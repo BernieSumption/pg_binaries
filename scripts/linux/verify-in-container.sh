@@ -29,7 +29,7 @@ cp /tmp/vector/pgvector/share/extension/* "$pgroot/share/extension/"
 useradd -m postgres
 mkdir -p /tmp/pgdata /tmp/pgsocket
 chown postgres:postgres /tmp/pgdata /tmp/pgsocket
-runuser -u postgres -- "$pgroot/bin/initdb" -D /tmp/pgdata --no-instructions
+runuser -u postgres -- "$pgroot/bin/initdb" -D /tmp/pgdata --encoding=UTF8 --locale=C --no-instructions
 runuser -u postgres -- "$pgroot/bin/pg_ctl" -D /tmp/pgdata -o '-k /tmp/pgsocket -p 55431 -h ""' -w start
 trap 'runuser -u postgres -- "$pgroot/bin/pg_ctl" -D /tmp/pgdata -m immediate stop >/dev/null 2>&1 || true' EXIT
 psql=(runuser -u postgres -- "$pgroot/bin/psql" -X -v ON_ERROR_STOP=1 -h /tmp/pgsocket -p 55431 -d postgres)
