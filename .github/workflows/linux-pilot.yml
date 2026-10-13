@@ -1,0 +1,34 @@
+name: Linux x86-64 pilot
+on:
+  workflow_dispatch:
+  push:
+    branches: [spike]
+    paths:
+      - 'scripts/linux/**'
+      - 'tests/schema.sql'
+      - '.github/workflows/linux-pilot.yml'
+jobs:
+  linux:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 55
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build exact PostgreSQL and pgvector archives
+        run: scripts/linux/build.sh "$RUNNER_TEMP/pilot"
+      - name: Verify relocated archives on clean Ubuntu 24.04
+        run: scripts/linux/verify.sh "$RUNNER_TEMP/pilot"
+      - name: Record archive checksums and host version
+        run: |
+          cat /etc/os-release
+          uname -m
+          cat "$RUNNER_TEMP/pilot/"*.sha256
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: linux-pilot-archives
+          path: |
+            ${{ runner.temp }}/pilot/*.tar.gz
+            ${{ runner.temp }}/pilot/*.sha256
+          retention-days: 3
