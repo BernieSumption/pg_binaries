@@ -64,7 +64,7 @@ psql=("$pg/bin/psql" -h "$work/socket" -p 54329 -d postgres -X -v ON_ERROR_STOP=
 "${psql[@]}" -f "$repo/tests/schema.sql"
 "${psql[@]}" -c "CREATE COLLATION pilot_icu (provider = icu, locale = 'und-u-ks-level2', deterministic = false)"
 "${psql[@]}" -c "SELECT name FROM (VALUES ('a'), ('A')) AS names(name) ORDER BY name COLLATE pilot_icu"
-locale_name=$(locale -a | awk '/UTF-8|utf8/ {print; exit}')
+locale_name=$(locale -a | awk '/UTF-8|utf8/ && !found {print; found=1}')
 if [[ -z $locale_name ]]; then
   echo 'No UTF-8 libc locale available on macOS verifier' >&2
   exit 1
