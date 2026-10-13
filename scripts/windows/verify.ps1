@@ -9,6 +9,7 @@ $pgArchive = Join-Path $dist "postgresql-$pgVersion-windows-x86_64.zip"
 $vectorArchive = Join-Path $dist "pgvector-$vectorVersion-postgresql-$pgVersion-windows-x86_64.zip"
 $work = Join-Path $env:RUNNER_TEMP 'pg-binaries-windows-verify'
 $unpacked = Join-Path $work 'unpacked'
+$unpackedData = Join-Path $work 'unpacked database cluster'
 $moved = Join-Path $work 'relocated install/PostgreSQL 18.6'
 $data = Join-Path $work 'database cluster'
 
@@ -27,9 +28,9 @@ Assert-ArchiveHash $vectorArchive
 New-Item -ItemType Directory -Force $unpacked, (Split-Path $moved -Parent) | Out-Null
 Expand-Archive $pgArchive -DestinationPath $unpacked
 Expand-Archive $vectorArchive -DestinationPath $unpacked
-Move-Item (Join-Path $unpacked 'postgresql') $moved
 
-$pgManifest = Get-Content (Join-Path $moved 'manifest.json') -Raw | ConvertFrom-Json
+$pgRoot = Join-Path $unpacked 'postgresql'
+$pgManifest = Get-Content (Join-Path $pgRoot 'manifest.json') -Raw | ConvertFrom-Json
 $vectorRoot = Join-Path $unpacked 'pgvector'
 $vectorManifest = Get-Content (Join-Path $vectorRoot 'manifest.json') -Raw | ConvertFrom-Json
 if ($pgManifest.schema_version -ne 1 -or $vectorManifest.schema_version -ne 1 -or
@@ -40,21 +41,39 @@ if ($pgManifest.schema_version -ne 1 -or $vectorManifest.schema_version -ne 1 -o
     $pgManifest.architecture -ne 'x86_64' -or $vectorManifest.architecture -ne 'x86_64') {
   throw 'Archive manifests do not match this verification target'
 }
-if (-not (Test-Path (Join-Path $moved 'LICENSES/PostgreSQL.txt')) -or
+if (-not (Test-Path (Join-Path $pgRoot 'LICENSES/PostgreSQL.txt')) -or
     -not (Test-Path (Join-Path $vectorRoot 'LICENSES/pgvector.txt')) -or
-    -not (Test-Path (Join-Path $moved 'LICENSES/dependencies/icu.txt'))) {
+    -not (Test-Path (Join-Path $pgRoot 'LICENSES/dependencies/icu.txt'))) {
   throw 'A required license text is missing'
 }
 
+$env:PGHOST = '127.0.0.1'
+$env:PGPORT = '55432'
+$env:PGUSER = 'postgres'
+$env:PGDATABASE = 'postgres'
+$unpackedBin = Join-Path $pgRoot 'bin'
+$env:PATH = "$unpackedBin;$env:SystemRoot\System32;$env:SystemRoot"
+& (Join-Path $unpackedBin 'initdb.exe') -D $unpackedData -U postgres -A trust --no-instructions
+$unpackedStarted = $false
+try {
+  & (Join-Path $unpackedBin 'pg_ctl.exe') -D $unpackedData -l (Join-Path $work 'postgres-unpacked.log') -o "-h 127.0.0.1 -p $env:PGPORT" -w start
+  $unpackedStarted = $true
+  $unpackedVersion = (& (Join-Path $unpackedBin 'psql.exe') -At -c 'SHOW server_version').Trim()
+  $unpackedQuery = (& (Join-Path $unpackedBin 'psql.exe') -At -c 'SELECT 1').Trim()
+  if ($unpackedVersion -ne $pgVersion -or $unpackedQuery -ne '1') {
+    throw "Unpacked archive failed version/query check: $unpackedVersion / $unpackedQuery"
+  }
+  Write-Host "Verified unpacked PostgreSQL $unpackedVersion startup and query"
+} finally {
+  if ($unpackedStarted) { & (Join-Path $unpackedBin 'pg_ctl.exe') -D $unpackedData -m immediate -w stop }
+}
+
+Move-Item $pgRoot $moved
 Copy-Item (Join-Path $vectorRoot 'lib/vector.dll') (Join-Path $moved 'lib/vector.dll')
 Copy-Item (Join-Path $vectorRoot 'share/extension/*') (Join-Path $moved 'share/extension')
 
 $bin = Join-Path $moved 'bin'
 $env:PATH = "$bin;$env:SystemRoot\System32;$env:SystemRoot"
-$env:PGHOST = '127.0.0.1'
-$env:PGPORT = '55432'
-$env:PGUSER = 'postgres'
-$env:PGDATABASE = 'postgres'
 $initdb = Join-Path $bin 'initdb.exe'
 $pgCtl = Join-Path $bin 'pg_ctl.exe'
 $psql = Join-Path $bin 'psql.exe'
