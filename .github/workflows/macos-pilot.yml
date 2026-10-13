@@ -1,0 +1,41 @@
+name: Intel macOS PostgreSQL 18.6 pilot
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: macos-pilot-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: macos-15-intel
+    timeout-minutes: 100
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and package PostgreSQL and pgvector
+        run: bash scripts/macos/build.sh "$RUNNER_TEMP/archives"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos-pilot-archives
+          path: |
+            ${{ runner.temp }}/archives/*.tar.gz
+            ${{ runner.temp }}/archives/*.sha256
+          if-no-files-found: error
+          retention-days: 1
+
+  verify:
+    needs: build
+    runs-on: macos-15-intel
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: macos-pilot-archives
+          path: ${{ runner.temp }}/archives
+      - name: Check downloaded archives on a fresh runner
+        run: bash scripts/macos/verify.sh "$RUNNER_TEMP/archives"

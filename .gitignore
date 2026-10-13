@@ -1,0 +1,8 @@
+# Local build products and downloaded sources
+dist/
+build/
+out/
+*.tar.gz
+*.zip
+*.sha256
+*.log
