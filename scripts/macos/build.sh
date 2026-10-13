@@ -44,7 +44,7 @@ make install
 make -C contrib install
 
 package_dir="$work_dir/package"
-mkdir -p "$package_dir/postgresql/LICENSES" "$package_dir/pgvector/lib/postgresql" "$package_dir/pgvector/share/extension" "$package_dir/pgvector/LICENSES"
+mkdir -p "$package_dir/postgresql/LICENSES" "$package_dir/pgvector/lib" "$package_dir/pgvector/share/extension" "$package_dir/pgvector/LICENSES"
 cp -R "$install_dir"/. "$package_dir/postgresql/"
 cp "$work_dir/postgresql-${pg_version}/COPYRIGHT" "$package_dir/postgresql/LICENSES/PostgreSQL.txt"
 python3 "$script_dir/bundle.py" "$package_dir/postgresql"
@@ -65,7 +65,7 @@ EOF
 cd "$work_dir/pgvector-${vector_version}"
 make PG_CONFIG="$install_dir/bin/pg_config" -j "$(sysctl -n hw.ncpu)"
 make PG_CONFIG="$install_dir/bin/pg_config" install
-cp "$install_dir/lib/postgresql/vector.so" "$package_dir/pgvector/lib/postgresql/"
+cp "$install_dir/lib/vector.dylib" "$package_dir/pgvector/lib/"
 cp "$install_dir/share/extension/vector"* "$package_dir/pgvector/share/extension/"
 cp LICENSE "$package_dir/pgvector/LICENSES/pgvector.txt"
 python3 "$script_dir/bundle.py" "$package_dir/pgvector"
