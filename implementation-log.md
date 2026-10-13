@@ -65,10 +65,12 @@ not settle their open product decisions.
 
 ## Current blockers and questions
 
-- A fresh Windows Actions runner has the Visual C++ runtime installed. A pass
-  there alone will not demonstrate portability to a stock Windows host lacking
-  that runtime. The archive must either carry the redistributable runtime or
-  declare it as a normal OS prerequisite; record which approach actually works.
+- REVIEW: A fresh Windows Actions runner has the Visual C++ runtime installed.
+  A pass there alone does not demonstrate portability to a stock Windows host
+  lacking that runtime. The pilot manifest declares the Microsoft Visual C++
+  2015-2022 Redistributable (x64) as an OS prerequisite. The product decision
+  to retain that prerequisite or bundle the permitted redistributable remains
+  open; a stock host without it has not been tested.
 
 ## Evidence
 
@@ -83,6 +85,7 @@ Pilot CI runs:
 - [Linux pilot run 38475251840](https://github.com/BernieSumption/pg_binaries/actions/runs/38475251840), commit `ca7191d`: **passed** on Ubuntu 24.04.5 LTS, x86_64. The independent verifier unpacked and moved the final PostgreSQL archive, checked both manifests and licenses, started PostgreSQL 18.6, applied the shared schema corpus, created and queried ICU and libc collations, exercised LZ4 TOAST and Zstandard WAL and dump compression, installed pgvector 0.8.7, and ran an HNSW indexed nearest-neighbor query. The short-lived downloadable artifact is [11853747706](https://github.com/BernieSumption/pg_binaries/actions/runs/38475251840/artifacts/11853747706), about 31 MB. Archive SHA-256: PostgreSQL `783f1c08c50f19c9a752d298d26522da60dc16e525f07b631b5742b41d011fe2`; pgvector `ae17373ba603240d201a50d9c2d93a238b0689b19b73dc65b1a0abd9db272224`.
 - A subsequent audit of that downloadable Linux archive found that its runtime directory held ICU, OpenSSL, LZ4, Zstandard, and other libraries without all corresponding dependency copyright texts. The first license collector looked up the `ldd` symlink path; Debian package ownership is often recorded against the resolved real file. Commit `b65faba` resolves the path, requires a copyright file for every copied non-system library, and avoids duplicating PostgreSQL's own libraries. This changes the archive bytes, so the earlier passing checksums are historical evidence only; a new build and verification are required.
 - The repaired Linux archives were built locally entirely inside an x86-64 Docker container. Their license directory now includes ICU, OpenSSL, LZ4, Zstandard, libxml2, libxslt, and other copied library copyright files. The moved archives passed the clean Ubuntu 24.04 Docker verifier. The verifier now checks representative dependency license files explicitly. The local macOS Docker wrapper also now builds the verifier image for `linux/amd64`, matching the container it runs.
+- [Final Linux license-checked run 38478489346](https://github.com/BernieSumption/pg_binaries/actions/runs/38478489346), commit `08f0d5a`: **passed** the same archive relocation and runtime test on Ubuntu 24.04.5 LTS x86_64, including assertions for representative bundled library copyright texts. [Temporary archive artifact 11857041455](https://github.com/BernieSumption/pg_binaries/actions/runs/38478489346/artifacts/11857041455), 30.7 MB. Archive SHA-256: PostgreSQL `39e53d611b5f4d6c84f7c1e987a0759b1b668480dd3446de7cea9ff0a34d33de`; pgvector `d4dc1c94eafab7a0f9a7c02d3955082788def6994e98dbb8b428aea2f3e139aa`.
 
 macOS has not yet passed end-to-end verification. A Windows 2022 runner already
 has the Microsoft Visual C++ runtime; stock-host behavior without it remains
