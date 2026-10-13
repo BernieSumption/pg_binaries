@@ -25,11 +25,19 @@ for package in libicu70 libssl3 liblz4-1 libzstd1 libxml2 libxslt1.1; do
   test -s "/tmp/first/postgresql/LICENSES/$package.copyright"
 done
 test "$(/tmp/first/postgresql/bin/postgres --version)" = 'postgres (PostgreSQL) 18.6'
+useradd -m postgres
+mkdir -p /tmp/first-data /tmp/first-socket
+chown postgres:postgres /tmp/first-data /tmp/first-socket
+runuser -u postgres -- /tmp/first/postgresql/bin/initdb -D /tmp/first-data --encoding=UTF8 --locale=C --no-instructions
+runuser -u postgres -- /tmp/first/postgresql/bin/pg_ctl -D /tmp/first-data -o '-k /tmp/first-socket -p 55430 -h ""' -w start
+trap 'runuser -u postgres -- /tmp/first/postgresql/bin/pg_ctl -D /tmp/first-data -m immediate stop >/dev/null 2>&1 || true' EXIT
+runuser -u postgres -- /tmp/first/postgresql/bin/psql -XAt -h /tmp/first-socket -p 55430 -d postgres -c 'SHOW server_version' | grep -Fx '18.6'
+runuser -u postgres -- /tmp/first/postgresql/bin/pg_ctl -D /tmp/first-data -m fast -w stop
+trap - EXIT
 mv /tmp/first/postgresql /tmp/moved/postgresql
 pgroot=/tmp/moved/postgresql
 cp /tmp/vector/pgvector/lib/* "$pgroot/lib/"
 cp /tmp/vector/pgvector/share/extension/* "$pgroot/share/extension/"
-useradd -m postgres
 mkdir -p /tmp/pgdata /tmp/pgsocket
 chown postgres:postgres /tmp/pgdata /tmp/pgsocket
 runuser -u postgres -- "$pgroot/bin/initdb" -D /tmp/pgdata --encoding=UTF8 --locale=C --no-instructions
