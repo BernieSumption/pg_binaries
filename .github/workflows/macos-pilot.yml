@@ -2,6 +2,12 @@ name: Intel macOS PostgreSQL 18.6 pilot
 
 on:
   workflow_dispatch:
+  push:
+    branches: [spike]
+    paths:
+      - scripts/macos/**
+      - tests/schema.sql
+      - .github/workflows/macos-pilot.yml
 
 permissions:
   contents: read
