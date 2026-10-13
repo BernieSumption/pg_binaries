@@ -71,12 +71,15 @@ while True:
             target = libdir / source.name
             if source.resolve().is_relative_to(root):
                 continue
+            if target.exists():
+                if digest(target) != digest(source.resolve()):
+                    raise SystemExit(f"dependency filename collision: {target} and {source}")
+                # PostgreSQL's install tree was copied into the package first.
+                # Its dylibs already exist here, but still carry absolute IDs.
+                continue
             external_sources[source.name] = str(source.resolve())
-            if not target.exists():
-                shutil.copy2(source.resolve(), target)
-                changed = True
-            elif digest(target) != digest(source.resolve()):
-                raise SystemExit(f"dependency filename collision: {target} and {source}")
+            shutil.copy2(source.resolve(), target)
+            changed = True
     if not changed:
         break
 
