@@ -28,13 +28,40 @@ not settle their open product decisions.
 ## Access preflight
 
 - On 2026-10-13, ordinary sandbox calls could not reach the Docker socket or
-  resolve GitHub and PostgreSQL source hosts. Auto-reviewed sandbox escalation
-  succeeded without a user prompt: `docker info` reported Docker 29.8.0 Linux;
+  resolve GitHub and PostgreSQL source hosts. Escalated calls succeeded for
+  some checks, but the user subsequently reported additional local permission
+  prompts. Treat unattended access as **unresolved**; do not claim those
+  prompts are gone. `docker info` reported Docker 29.8.0 Linux;
   `gh api` returned this repository; `git ls-remote origin refs/heads/spike`
   returned a commit; an authenticated `git push --dry-run` succeeded; and an
   HTTPS HEAD request returned 200 for the PostgreSQL 18.6 source archive.
-  Builds, source downloads, Git pushes, and CI operations should use that
-  access path where the sandbox denies them.
+- Docker keeps compilation and compiled-artifact tests off the host, but access
+  to the Docker socket is still a host permission boundary. Git staging and
+  commits also write `.git`, and GitHub/source calls need network access.
+  Those operations can prompt even when the build itself runs in Docker.
+- The user requires an unattended run without further local permission prompts.
+  The goal was paused while this access behavior was clarified. Do not resume
+  build, push, or CI iteration merely because an earlier escalated call worked.
+- A machine-local, Git-ignored project rule file now exists at
+  `.codex/rules/pilot.rules`. It covers Docker, the Linux Docker wrapper scripts,
+  spike staging/commits/pushes, and pilot Actions inspection, artifact download,
+  reruns, and workflow triggers. `codex execpolicy check` confirmed intended
+  matches and that a main push and unrelated workflow trigger do not match.
+  After the first restart, a read-only `docker info` succeeded without an
+  approval pause. The later rule additions were checked statically; their live
+  effect depends on Codex loading the edited file after another restart.
+
+## Operating constraints carried from the conversation
+
+- Do not edit `docs/` or settle its unresolved product decisions. Keep new
+  questions or implementation incompatibilities in this log with `REVIEW:`.
+- Reuse shared version pins, archive layout, manifest fields, and
+  `tests/schema.sql` across platforms. Use parallel agents only for distinct
+  work, avoiding duplicate build logic where a common component is practical.
+- All compilation and compiled-artifact tests on the local computer run inside
+  Docker. Native macOS and Windows builds/tests run on standard GitHub-hosted
+  runners. Keep workflow triggers narrow, timeouts bounded, and artifacts short
+  lived. Do not publish a Release, choose a source-code license, or change main.
 
 ## Current blockers and questions
 
@@ -45,6 +72,16 @@ not settle their open product decisions.
 
 ## Evidence
 
-No platform combination has passed end-to-end verification yet. Record run
-links, archive checksums, exact operating system details, and any failures here
-as the workflows run.
+Pilot CI runs:
+
+- [Intel macOS pilot run 38472480717](https://github.com/BernieSumption/pg_binaries/actions/runs/38472480717), commit `ff99636`: PostgreSQL built, but the dependency bundler mistook a static `.a` archive for a Mach-O binary. Packaging stopped; the bundler needs a stronger file-type check.
+- [Windows pilot run 38472429193](https://github.com/BernieSumption/pg_binaries/actions/runs/38472429193), commit `4bb8625`: failed during Meson setup because `flex`/`win_flex` was absent from the runner PATH. This happened after dependency installation, before PostgreSQL compilation.
+- [Linux pilot run 38472795566](https://github.com/BernieSumption/pg_binaries/actions/runs/38472795566), commit `35d2b02`: failed during `configure` because the build image lacked `pkg-config`, needed to detect ICU.
+- [Linux pilot run 38474130386](https://github.com/BernieSumption/pg_binaries/actions/runs/38474130386), commit `05d5bb9`: built both archives, unpacked and moved PostgreSQL onto clean Ubuntu 24.04, started the server, and passed the shared schema corpus. ICU collation creation then failed because `initdb` chose a SQL_ASCII database on the minimal verifier image. The verifier needs explicit UTF-8 initialization before collation testing. The run uploaded 30.9 MB of temporary artifacts (Actions artifact ID `11853088087`); no full end-to-end pass yet.
+
+No platform combination has passed end-to-end verification yet. Record archive
+checksums, exact operating system details, and failures as the workflows run.
+
+The macOS workflow was not dispatchable while its file existed only on `spike`:
+GitHub returned a 404 because it was absent from the default branch. A path
+scoped `spike` push trigger started the pilot without changing `main`.

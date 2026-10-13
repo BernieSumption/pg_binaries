@@ -6,3 +6,6 @@ out/
 *.zip
 *.sha256
 *.log
+
+# Machine-local Codex permissions
+.codex/
