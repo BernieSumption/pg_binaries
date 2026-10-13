@@ -2,6 +2,7 @@
 set -euo pipefail
 
 archives=$(cd "${1:?archive directory required}" && pwd)
+repo=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 pg_name=postgresql-18.6-macos-x86_64.tar.gz
 vector_name=pgvector-0.8.7-postgresql-18.6-macos-x86_64.tar.gz
 work=$(mktemp -d /tmp/pgv.XXXXXX)
@@ -60,7 +61,7 @@ pg="$work/moved/postgresql"
 start_server "$pg" moved
 psql=("$pg/bin/psql" -h "$work/socket" -p 54329 -d postgres -X -v ON_ERROR_STOP=1)
 
-"${psql[@]}" -f "$(cd "$(dirname "$0")/../.." && pwd)/tests/schema.sql"
+"${psql[@]}" -f "$repo/tests/schema.sql"
 "${psql[@]}" -c "CREATE COLLATION pilot_icu (provider = icu, locale = 'und-u-ks-level2', deterministic = false)"
 "${psql[@]}" -c "SELECT name FROM (VALUES ('a'), ('A')) AS names(name) ORDER BY name COLLATE pilot_icu"
 locale_name=$(locale -a | awk '/UTF-8|utf8/ {print; exit}')

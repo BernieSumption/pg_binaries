@@ -74,7 +74,7 @@ def ensure_loader_path_dependency(binary, dep):
         raise SystemExit(f"missing source for loader-path dependency: {binary}: {source}")
     target.parent.mkdir(parents=True, exist_ok=True)
     shutil.copy2(source, target)
-    external_sources[source.name] = str(source)
+    external_sources[target.name] = str(source)
     return True
 
 
