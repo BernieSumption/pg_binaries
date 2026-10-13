@@ -63,8 +63,8 @@ cat > "$package_dir/postgresql/manifest.json" <<EOF
 EOF
 
 cd "$work_dir/pgvector-${vector_version}"
-make PG_CONFIG="$install_dir/bin/pg_config" -j "$(sysctl -n hw.ncpu)"
-make PG_CONFIG="$install_dir/bin/pg_config" install
+make PG_CONFIG="$install_dir/bin/pg_config" OPTFLAGS= -j "$(sysctl -n hw.ncpu)"
+make PG_CONFIG="$install_dir/bin/pg_config" OPTFLAGS= install
 cp "$install_dir/lib/vector.dylib" "$package_dir/pgvector/lib/"
 cp "$install_dir/share/extension/vector"* "$package_dir/pgvector/share/extension/"
 cp LICENSE "$package_dir/pgvector/LICENSES/pgvector.txt"

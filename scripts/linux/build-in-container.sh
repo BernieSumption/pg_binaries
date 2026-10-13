@@ -19,8 +19,8 @@ cd /work/src
 curl -fL --retry 3 -o pgvector.tar.gz "https://github.com/pgvector/pgvector/archive/refs/tags/v${vector_version}.tar.gz"
 tar -xf pgvector.tar.gz
 cd "pgvector-${vector_version}"
-make -j "$(nproc)" PG_CONFIG=/opt/postgresql/bin/pg_config
-make install PG_CONFIG=/opt/postgresql/bin/pg_config
+make -j "$(nproc)" PG_CONFIG=/opt/postgresql/bin/pg_config OPTFLAGS=
+make install PG_CONFIG=/opt/postgresql/bin/pg_config OPTFLAGS=
 cp -a /opt/postgresql/. /work/stage/postgresql/
 # The extension is delivered separately and must not be silently bundled.
 mkdir -p /work/stage/pgvector/lib /work/stage/pgvector/share/extension /work/stage/pgvector/LICENSES
