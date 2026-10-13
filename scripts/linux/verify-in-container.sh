@@ -21,6 +21,9 @@ for path, component, version in [
 PY
 test -s /tmp/first/postgresql/LICENSES/PostgreSQL.txt
 test -s /tmp/vector/pgvector/LICENSES/pgvector.txt
+for package in libicu70 libssl3 liblz4-1 libzstd1 libxml2 libxslt1.1; do
+  test -s "/tmp/first/postgresql/LICENSES/$package.copyright"
+done
 test "$(/tmp/first/postgresql/bin/postgres --version)" = 'postgres (PostgreSQL) 18.6'
 mv /tmp/first/postgresql /tmp/moved/postgresql
 pgroot=/tmp/moved/postgresql
