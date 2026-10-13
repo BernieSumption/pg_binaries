@@ -23,6 +23,21 @@ jobs:
           python-version: '3.12'
       - name: Install Meson and Ninja
         run: python -m pip install --disable-pip-version-check meson ninja
+      - name: Provide Flex and Bison for the PostgreSQL build
+        run: |
+          $archive = Join-Path $env:RUNNER_TEMP 'win_flex_bison-2.5.25.zip'
+          $tools = Join-Path $env:RUNNER_TEMP 'win_flex_bison-2.5.25'
+          Invoke-WebRequest 'https://github.com/lexxmark/winflexbison/releases/download/v2.5.25/win_flex_bison-2.5.25.zip' -OutFile $archive
+          $actual = (Get-FileHash $archive -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($actual -ne '8d324b62be33604b2c45ad1dd34ab93d722534448f55a16ca7292de32b6ac135') {
+            throw "WinFlexBison checksum mismatch: $actual"
+          }
+          Expand-Archive $archive -DestinationPath $tools
+          $flex = Get-ChildItem $tools -Recurse -Filter win_flex.exe | Select-Object -First 1
+          if (-not $flex -or -not (Test-Path (Join-Path $flex.DirectoryName 'win_bison.exe'))) {
+            throw 'WinFlexBison executables missing from archive'
+          }
+          Add-Content -Path $env:GITHUB_PATH -Value $flex.DirectoryName
       - name: Install PostgreSQL libraries
         run: |
           & "$env:VCPKG_INSTALLATION_ROOT\vcpkg.exe" install icu:x64-windows zlib:x64-windows lz4:x64-windows zstd:x64-windows openssl:x64-windows
