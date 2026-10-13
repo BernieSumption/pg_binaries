@@ -69,4 +69,5 @@ runuser -u postgres -- "$pgroot/bin/pg_dump" -h /tmp/pgsocket -p 55431 -Fc -Z zs
 runuser -u postgres -- "$pgroot/bin/pg_restore" -l /tmp/probe.dump >/dev/null
 runuser -u postgres -- "$pgroot/bin/pg_ctl" -D /tmp/pgdata -m fast -w stop
 trap - EXIT
-echo 'PASS: moved PostgreSQL 18.6 archive and pgvector 0.8.7 archive on Ubuntu 24.04'
+. /etc/os-release
+echo "PASS: moved PostgreSQL 18.6 archive and pgvector 0.8.7 archive on $PRETTY_NAME"
