@@ -42,13 +42,21 @@ for pass in 1 2 3; do
       case "$library" in
         linux-vdso*|ld-linux*|libc.so*|libm.so*|libpthread.so*|libdl.so*|librt.so*|libresolv.so*|libnss_*) continue ;;
       esac
+      # Libraries built by PostgreSQL are already present in the staged lib/.
+      case "$path" in /opt/postgresql/lib/*|"$root"/lib/*) continue ;; esac
       dest="$root/lib/runtime/$library"
       if [[ ! -e "$dest" ]]; then
         cp -L "$path" "$dest"
-        package=$(dpkg-query -S "$path" 2>/dev/null | head -1 | cut -d: -f1 || true)
-        if [[ -n "$package" && -f "/usr/share/doc/$package/copyright" ]]; then
-          cp "/usr/share/doc/$package/copyright" "$root/LICENSES/${package}.copyright"
+        resolved=$(readlink -f "$path")
+        package=$(dpkg-query -S "$path" "$resolved" 2>/dev/null | head -1 | cut -d: -f1 || true)
+        if [[ -z "$package" ]]; then
+          package=$(dpkg-query -S "*/$(basename "$resolved")" 2>/dev/null | head -1 | cut -d: -f1 || true)
         fi
+        if [[ -z "$package" || ! -f "/usr/share/doc/$package/copyright" ]]; then
+          echo "No package copyright found for bundled library $library ($path)" >&2
+          exit 1
+        fi
+        cp "/usr/share/doc/$package/copyright" "$root/LICENSES/${package}.copyright"
       fi
     done < <(ldd "$elf" 2>/dev/null | awk '$2 == "=>" && $3 ~ /^\// {print $1, $3}')
   done < <(find "$root/bin" "$root/lib" -type f -print0)
