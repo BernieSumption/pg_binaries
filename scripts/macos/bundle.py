@@ -3,6 +3,7 @@
 
 import os
 import json
+import hashlib
 import pathlib
 import shutil
 import subprocess
@@ -30,9 +31,13 @@ def is_system(path):
     return path.startswith(("/usr/lib/", "/System/Library/"))
 
 
+def digest(path):
+    return hashlib.sha256(path.read_bytes()).digest()
+
+
 def files():
     for path in root.rglob("*"):
-        if path.is_file() and not path.is_symlink():
+        if path.is_file() and not path.is_symlink() and path.suffix != ".a":
             yield path
 
 
@@ -70,7 +75,7 @@ while True:
             if not target.exists():
                 shutil.copy2(source.resolve(), target)
                 changed = True
-            elif target.stat().st_size != source.resolve().stat().st_size:
+            elif digest(target) != digest(source.resolve()):
                 raise SystemExit(f"dependency filename collision: {target} and {source}")
     if not changed:
         break

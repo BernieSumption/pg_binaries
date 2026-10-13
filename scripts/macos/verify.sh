@@ -91,7 +91,7 @@ stop_server
 python3 - "$pg" <<'PY'
 import pathlib, subprocess, sys
 for binary in pathlib.Path(sys.argv[1]).rglob('*'):
-    if not binary.is_file() or binary.is_symlink():
+    if not binary.is_file() or binary.is_symlink() or binary.suffix == '.a':
         continue
     result = subprocess.run(['otool', '-L', str(binary)], capture_output=True, text=True)
     if result.returncode:
