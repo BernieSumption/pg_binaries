@@ -30,8 +30,7 @@ not settle their open product decisions.
 - On 2026-10-13, ordinary sandbox calls could not reach the Docker socket or
   resolve GitHub and PostgreSQL source hosts. Escalated calls succeeded for
   some checks, but the user subsequently reported additional local permission
-  prompts. Treat unattended access as **unresolved**; do not claim those
-  prompts are gone. `docker info` reported Docker 29.8.0 Linux;
+  prompts. `docker info` reported Docker 29.8.0 Linux;
   `gh api` returned this repository; `git ls-remote origin refs/heads/spike`
   returned a commit; an authenticated `git push --dry-run` succeeded; and an
   HTTPS HEAD request returned 200 for the PostgreSQL 18.6 source archive.
@@ -40,16 +39,17 @@ not settle their open product decisions.
   commits also write `.git`, and GitHub/source calls need network access.
   Those operations can prompt even when the build itself runs in Docker.
 - The user requires an unattended run without further local permission prompts.
-  The goal was paused while this access behavior was clarified. Do not resume
-  build, push, or CI iteration merely because an earlier escalated call worked.
+  The goal was paused while this access behavior was clarified, then the user
+  explicitly resumed it after the local permission rules were installed.
 - A machine-local, Git-ignored project rule file now exists at
   `.codex/rules/pilot.rules`. It covers Docker, the Linux Docker wrapper scripts,
   spike staging/commits/pushes, and pilot Actions inspection, artifact download,
   reruns, and workflow triggers. `codex execpolicy check` confirmed intended
   matches and that a main push and unrelated workflow trigger do not match.
-  After the first restart, a read-only `docker info` succeeded without an
-  approval pause. The later rule additions were checked statically; their live
-  effect depends on Codex loading the edited file after another restart.
+  After restart, `docker info`, Docker builds, Git staging/commits/pushes, and
+  GitHub Actions inspection have succeeded without further approval pauses.
+  This is observed behavior for those tested operations, not a guarantee that
+  every future command will be permitted.
 
 ## Operating constraints carried from the conversation
 
