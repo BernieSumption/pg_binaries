@@ -65,7 +65,7 @@ not settle their open product decisions.
 
 ## Current blockers and questions
 
-- The upstream [pgvector 0.8.7 Makefile](https://github.com/pgvector/pgvector/blob/v0.8.7/Makefile) defaults to `-march=native` on Unix and explicitly recommends `make OPTFLAGS=""` for portability. Earlier Linux and Intel macOS pgvector builds inherited that runner-specific setting, so their passing functionality alone cannot establish portability across x86-64 CPUs. The pilot scripts now override `OPTFLAGS` to empty on both platforms; those archive bytes must be rebuilt and verified. The Windows Makefile has no `/arch` flag by default.
+- The upstream [pgvector 0.8.7 Makefile](https://github.com/pgvector/pgvector/blob/v0.8.7/Makefile) defaults to `-march=native` on Unix and explicitly recommends `make OPTFLAGS=""` for portability. Earlier Linux and Intel macOS pgvector builds inherited that runner-specific setting, so their passing functionality alone could not establish portability across x86-64 CPUs. The pilot scripts override `OPTFLAGS` to empty on both platforms, and the later Linux and macOS archives below were rebuilt and verified. The Windows Makefile has no `/arch` flag by default.
 - The CPU-portable Linux scripts produced new archives entirely in Docker, with no `-march=native` invocation in the build log; the same archives passed the two-location clean Ubuntu 24.04 Docker verifier locally.
 - [CPU-portable Linux run 38480393168](https://github.com/BernieSumption/pg_binaries/actions/runs/38480393168), commit `be9aea2`: **passed** on Ubuntu 24.04.5 LTS x86_64 with the empty pgvector `OPTFLAGS` override, two-location startup, relocated full SQL tests, and dependency license assertions. The CI compile log has no `-march=native`. [Temporary artifact 11856124035](https://github.com/BernieSumption/pg_binaries/actions/runs/38480393168/artifacts/11856124035), 30.7 MB. Archive SHA-256: PostgreSQL `767618fcbf1f5ccbb4a3b54a1cc163a36efc96bc89fb3089398c76e76e2553e9`; pgvector `39071e565cb997ba2482437d80a94489da0a3cd5d9767a9ec5a7a16536c89ab2`.
 - REVIEW: A fresh Windows Actions runner has the Visual C++ runtime installed.
@@ -118,8 +118,8 @@ scoped `spike` push trigger started the pilot without changing `main`.
   library and data copyright texts, and SHA-256 companion file. Its final local
   SHA-256 is `49ce4f54781eddc6cb9458b2b30edf788e4f6ca8a40e2281fc66ffce7ac07adf`;
   it is about 85 MB compressed and 253 MB staged. It contains 108 license-path
-  entries, including PROJ and GDAL data copyright texts. These are local pilot
-  facts pending the GitHub Actions run.
+  entries, including PROJ and GDAL data copyright texts. Rebuilding from the
+  same scripts on Actions produces different archive bytes and a separate hash.
 - On clean Ubuntu 24.04 x86-64 Docker, the verifier checked archive hashes,
   unpacked and moved PostgreSQL, installed the PostGIS files into that moved
   prefix without overwriting different PostgreSQL library bytes, and set the
@@ -142,3 +142,13 @@ scoped `spike` push trigger started the pilot without changing `main`.
   24.04 Docker. Older Linux hosts and macOS/Windows PostGIS builds remain
   untested, and full geocoding data is outside this pilot. No `docs/` decision
   has been changed by these limits.
+- [PostGIS Linux pilot run 38488516771](https://github.com/BernieSumption/pg_binaries/actions/runs/38488516771),
+  commit `d397992`: **passed** on a standard Ubuntu 24.04 runner. The job
+  rebuilt the exact PostgreSQL 18.6 Linux archive in Docker, then built
+  PostGIS 3.6.4 and passed a separate clean Ubuntu 24.04 Docker verifier after
+  moving the unpacked PostgreSQL prefix. The verifier checked hashes, the
+  seven extension creations and representative SQL above, PROJ's moved data
+  path, loader executables, and absence of PROJ data errors. The temporary
+  [artifact 11861505083](https://github.com/BernieSumption/pg_binaries/actions/runs/38488516771/artifacts/11861505083)
+  is 88,157,068 bytes and expires after one day. Its PostGIS archive SHA-256 is
+  `768edc6a969a1080f643e37ff1c7cad92462507f0d4cba2e108ef59a8f9f03ea`.
