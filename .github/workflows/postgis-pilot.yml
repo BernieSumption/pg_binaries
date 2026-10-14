@@ -1,0 +1,32 @@
+name: PostGIS Linux feasibility pilot
+on:
+  workflow_dispatch:
+  push:
+    branches: [spike]
+    paths:
+      - 'scripts/postgis/**'
+      - '.github/workflows/postgis-pilot.yml'
+jobs:
+  linux-postgis:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 70
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build exact PostgreSQL 18.6 Linux core archive
+        run: bash scripts/linux/build.sh "$RUNNER_TEMP/core"
+      - name: Build and probe PostGIS 3.6.4 against PostgreSQL 18.6
+        run: bash scripts/postgis/build.sh "$RUNNER_TEMP/core" "$RUNNER_TEMP/postgis"
+      - name: Verify relocated archives on clean Ubuntu 24.04
+        run: bash scripts/postgis/verify.sh "$RUNNER_TEMP/core" "$RUNNER_TEMP/postgis"
+      - name: Record result
+        run: cat "$RUNNER_TEMP/postgis/"*.sha256
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: postgis-linux-feasibility
+          path: |
+            ${{ runner.temp }}/postgis/*.tar.gz
+            ${{ runner.temp }}/postgis/*.sha256
+          retention-days: 1

@@ -107,3 +107,38 @@ artifacts are short-lived Actions artifacts, not a permanent GitHub Release.
 The macOS workflow was not dispatchable while its file existed only on `spike`:
 GitHub returned a 404 because it was absent from the default branch. A path
 scoped `spike` push trigger started the pilot without changing `main`.
+
+## PostGIS Linux feasibility pilot
+
+- After the three-platform PostgreSQL and pgvector slice passed, the pilot
+  built PostGIS **3.6.4** against the exact PostgreSQL **18.6** Linux archive.
+  Local compilation and compiled-artifact tests ran in disposable x86-64 Docker
+  containers. The source release is listed on the [PostGIS download page](https://postgis.net/development/source_code/).
+- The candidate PostGIS archive has its own manifest, PostGIS license, bundled
+  library and data copyright texts, and SHA-256 companion file. Its final local
+  SHA-256 is `49ce4f54781eddc6cb9458b2b30edf788e4f6ca8a40e2281fc66ffce7ac07adf`;
+  it is about 85 MB compressed and 253 MB staged. It contains 108 license-path
+  entries, including PROJ and GDAL data copyright texts. These are local pilot
+  facts pending the GitHub Actions run.
+- On clean Ubuntu 24.04 x86-64 Docker, the verifier checked archive hashes,
+  unpacked and moved PostgreSQL, installed the PostGIS files into that moved
+  prefix without overwriting different PostgreSQL library bytes, and set the
+  bundled PROJ and GDAL data paths. It created `postgis`, `postgis_raster`,
+  `postgis_topology`, `postgis_sfcgal`, `address_standardizer`,
+  `address_standardizer_data_us`, and `postgis_tiger_geocoder`. It checked a
+  numeric EPSG transform, GEOS geometry operation, raster pixel value,
+  topology creation, SFCGAL 3D intersection, US address standardization, TIGER
+  address normalization, loader executable startup, and absence of PROJ data
+  errors in the server log.
+- `tiger.state` is empty: the extension code and normalization function work,
+  but real TIGER geocoding needs the external Census address corpus. The pilot
+  did not download or test that corpus.
+- REVIEW: This build uses GEOS 3.10.2 and SFCGAL 1.4.1 from Ubuntu 22.04.
+  [PostGIS installation requirements](https://postgis.net/docs/postgis_installation.html)
+  say GEOS 3.14+ and SFCGAL 2.1+ are needed for full current feature coverage.
+  The successful subset must not be taken as a decision to exclude those
+  features; a later build needs newer dependencies if full coverage is required.
+- REVIEW: The PostGIS archive has so far been relocated only on clean Ubuntu
+  24.04 Docker. Older Linux hosts and macOS/Windows PostGIS builds remain
+  untested, and full geocoding data is outside this pilot. No `docs/` decision
+  has been changed by these limits.
