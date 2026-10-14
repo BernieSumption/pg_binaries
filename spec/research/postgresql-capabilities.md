@@ -1,0 +1,52 @@
+# PostgreSQL build-option research
+
+The [capability sections](../capabilities.md) own feature decisions, rationale, delivery and verification. This technical appendix retains source-option comparisons and module research. It compares upstream tags `REL_15_0` through `REL_18_0`, checked on 14 October 2026. Repeat the option comparison for a newly supported major and inspect relevant minor changes.
+
+## Extension-module build dependencies
+
+Modules activated with `CREATE EXTENSION` belong in the [extension profiles](../extensions/README.md). The following findings identify build prerequisites for that outstanding per-module inventory. They do not select new offerings. Include `pgcrypto`, `sslinfo` and `pg_buffercache` in that work, using the [TLS/OpenSSL](../capabilities.md#tls-and-openssl) and [NUMA](../capabilities.md#numa-inspection) sections for their core dependencies.
+
+Size figures are distribution-package references, not our archive overhead. The libxslt estimate below comes from [Ubuntu's package figures](https://packages.ubuntu.com/jammy/amd64/libxslt1.1). Unknown sizes require no experiment. Follow the [size policy](../capabilities.md) before proposing measurement work.
+
+| Module/build choice | SQL affected | Dependencies and delivery | Size considerations and recommendation |
+| --- | --- | --- | --- |
+| libxslt: `--with-libxslt`; `libxslt` | `xml2` extension's `xslt_process`; legacy XPath functions are also SQL-visible. | Build `xml2` with libxml2; enable libxslt for working XSLT. Without libxslt, `xslt_process` is an error stub. Module/libxslt can be separate if executable dependency scans confirm isolation. | libxslt proxy ≈0.16 MB, excluding libgcrypt and shared libxml2. **Separate**, if `xml2` selected; upstream deprecation does not erase existing schema use. [xml2](https://github.com/postgres/postgres/blob/REL_18_0/doc/src/sgml/xml2.sgml), [stub](https://github.com/postgres/postgres/blob/REL_18_0/contrib/xml2/xslt_proc.c#L183-L191). |
+| Perl, Python, Tcl: `--with-perl/python/tcl`, `--with-tclconfig`; `plperl/plpython/pltcl`, `tcl_version` | `LANGUAGE plperl/plperlu/plpython3u/pltcl/pltclu` function and procedure definitions; language-specific transforms also matter. | Build language modules against pinned interpreter ABI; install language extension and bundled interpreter libraries/standard resources when selected. No normal server restart. Python third-party imports are additional application dependencies. | Complete relocatable interpreter closures **unknown**; a shared library alone understates cost. **Separate**, with explicit supported runtimes/transforms. [Perl](https://www.postgresql.org/docs/18/plperl.html), [Python](https://www.postgresql.org/docs/18/plpython.html), [Tcl](https://www.postgresql.org/docs/18/pltcl.html). |
+| UUID: `--with-uuid=bsd/e2fs/ossp` (`--with-ossp-uuid` alias); `uuid` | `uuid-ossp` functions, including deterministic UUID v3/v5, can appear in defaults and expressions. Core `uuid` type and core UUID generators do not require this option. | Compile optional module with the chosen platform UUID implementation; separate module and any non-OS library. macOS UUID functions may come from libc. | Exact delta **unknown**; OS implementation can avoid a bundled UUID library. **Separate**; selecting `ossp` is not necessary just because the extension is named `uuid-ossp`. [UUID module](https://github.com/postgres/postgres/blob/REL_18_0/doc/src/sgml/uuid-ossp.sgml). |
+| SELinux: `--with-selinux`; `selinux` | `SECURITY LABEL FOR selinux` on tables, columns, schemas, functions and other objects; `sepgsql` SQL functions. | Separate module but requires Linux SELinux policy/kernel support, preload and restart; cannot satisfy arbitrary clean macOS/Windows hosts by downloading libselinux. | Library/policy closure **unknown**. Recommendation for discussion: documented unsupported SELinux-specific schemas; this is a real DDL omission. Generic `SECURITY LABEL` syntax remains core, but needs a provider. [sepgsql requirements](https://github.com/postgres/postgres/blob/REL_18_0/doc/src/sgml/sepgsql.sgml). |
+
+## Compression operations by PostgreSQL major
+
+The same dependency switch enables multiple unrelated operations. Advertise and test operations individually; “supports zstd” is insufficient.
+
+| Operation | 15 | 16 | 17 | 18 |
+| --- | --- | --- | --- | --- |
+| TOAST column compression | built-in pglz; optional LZ4 | same | same | same |
+| WAL full-page-image compression | built-in pglz; optional LZ4/Zstd | same | same | same |
+| `pg_dump` compressed plain/custom/directory and corresponding restore | zlib/gzip only | adds LZ4/Zstd | same | same |
+| `pg_basebackup` client/server compression | gzip/LZ4/Zstd, subject to format/location restrictions | same families | same families | same families |
+| `pg_receivewal` compressed WAL files | gzip/LZ4; no Zstd | same | same | same |
+| `pgcrypto` PGP compression | optional zlib ZIP/ZLIB algorithms | same | same | same |
+
+Dump tar format does not support compression; externally wrapping a tar stream is a separate operation. Streaming WAL in `pg_basebackup` has additional compression restrictions. Sources: tagged [15 dump](https://github.com/postgres/postgres/blob/REL_15_0/doc/src/sgml/ref/pg_dump.sgml), [16 dump](https://github.com/postgres/postgres/blob/REL_16_0/doc/src/sgml/ref/pg_dump.sgml), [15 basebackup](https://github.com/postgres/postgres/blob/REL_15_0/doc/src/sgml/ref/pg_basebackup.sgml), [18 basebackup](https://github.com/postgres/postgres/blob/REL_18_0/doc/src/sgml/ref/pg_basebackup.sgml), [15 receivewal](https://github.com/postgres/postgres/blob/REL_15_0/doc/src/sgml/ref/pg_receivewal.sgml), [18 receivewal](https://github.com/postgres/postgres/blob/REL_18_0/doc/src/sgml/ref/pg_receivewal.sgml), [WAL settings](https://www.postgresql.org/docs/18/runtime-config-wal.html).
+
+## Remaining option families and version changes
+
+The capability document and module table above cover functional external-dependency switches. The remaining configure help families are build policy:
+
+| Family | Options and treatment |
+| --- | --- |
+| Instrumentation and test support | `--enable-debug`, `profiling`, `coverage`, `dtrace`, `cassert`, `tap-tests`, `injection-points` and `PG_TEST_EXTRA`: use appropriate CI configurations; omit instrumentation/test hooks from download builds. Debug symbols can be separate diagnostic artifacts. Assertions, coverage and injection points are not schema capability substitutes; DTrace exposes tracing probes. |
+| Layout/ABI variants | `--with-blocksize`, `segsize`, `segsize-blocks`, `wal-blocksize`; retain standard values, do not offer variants. These affect cluster format or limits and require rebuilding/reinitializing, rather than downloading an extension. `--disable-largefile` is an Autoconf compatibility option: keep normal large-file support. |
+| Platform/compiler mechanics | `--build`, `--host`, `--with-template`, include/library paths (`--with-libs` alias), `--enable-depend`, rpath, compiler/linker/environment variables, Meson sysroot/tool paths and built-in buildtype/optimization/debug/sanitizer/coverage/linkage options. Pin/audit them for relocation, CPU baseline and reproducibility. They do not select SQL features. |
+| Installation/defaults | Prefix and every install-directory override; `--with-extra-version`; `--with-pgport` (runtime-overridable default). Preserve relocatable standard layout and upstream version identity. Generic Autoconf help/version/cache/source/quiet/option-checking/enable/with controls are build invocation controls. Reject unknown recipe options. |
+| Obsolete/low-level variants | `--enable-integer-datetimes` is accepted compatibility spelling; disabling it is unsupported. PG15–17 have spinlock/atomic overrides; retain defaults. PG15–16 have optional libpq thread safety; keep enabled. |
+| Meson packaging/documentation | `docs`, `docs_pdf`, `docs_html_style`, program paths, `PG_GIT_REVISION`: build/docs/provenance controls, not server feature packages. Build-time Python/Perl utilities do not imply PL/Python/PL/Perl support. |
+
+PG15 has no upstream Meson build. PG16 adds Meson and `segsize-blocks`; ICU becomes a default Autoconf dependency in 16 (still explicitly select it). PG17 adds injection points and removes the libpq thread-safety disable switch. PG18 removes spinlock/atomic-disable options and adds libcurl, libnuma and liburing. Meson commonly uses `auto` dependency detection, so installing a new builder library can silently change capabilities unless recipes explicitly enable/disable them. Sources: tagged [15 configure](https://github.com/postgres/postgres/blob/REL_15_0/configure.ac), [16 configure](https://github.com/postgres/postgres/blob/REL_16_0/configure.ac), [17 configure](https://github.com/postgres/postgres/blob/REL_17_0/configure.ac), [18 configure help](https://github.com/postgres/postgres/blob/REL_18_0/configure), [16 Meson options](https://github.com/postgres/postgres/blob/REL_16_0/meson_options.txt), [18 Meson options](https://github.com/postgres/postgres/blob/REL_18_0/meson_options.txt).
+
+## Current pilot and required verification
+
+Linux explicitly enables ICU/LZ4/Zstd/OpenSSL/libxml2/libxslt/e2fs UUID, obtains zlib/readline by default and installs buildable contrib modules. macOS enables the same except UUID, disables readline, and installs buildable contrib modules. Windows explicitly enables ICU/LZ4/Zstd/zlib/OpenSSL but leaves other Meson features at auto; copying every vcpkg DLL is not a capability manifest or minimal closure. These observations come from the repository's [Linux recipe](../../scripts/linux/build-in-container.sh), [macOS recipe](../../scripts/macos/build.sh) and [Windows recipe](../../scripts/windows/build.ps1), not clean-host verification.
+
+Replace auto detection with declared choices and verify `pg_config --configure`, generated configuration headers, linked dependencies and SQL behavior. At minimum test XML expressions/defaults and schema round-trip, ICU collation DDL, LZ4 column DDL, each applicable compression operation, and requested language/crypto/UUID/XML modules after relocation. Test SSL-disabled local startup with working `pgcrypto` if that recommendation is adopted. Test declared exclusions explicitly. A successful `make -C contrib install` neither establishes a supported contrib portfolio nor independent extension packaging: the separate contrib inventory audit must enumerate SQL names, dependencies, runtime settings and verification requirements.
