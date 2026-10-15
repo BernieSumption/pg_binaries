@@ -1,0 +1,271 @@
+{
+  "schema_version": 1,
+  "kind": "intended_coverage",
+  "release_selection": {
+    "channel": "stable",
+    "published_on_or_after": "2025-09-25",
+    "cutoff_inclusive": true,
+    "include_maintenance_releases_of_older_lines": true,
+    "unresolved_release_dates": "research_required"
+  },
+  "postgresql": {
+    "major_range": { "min_inclusive": 15 },
+    "release_selection": "inherit",
+    "release_authority": "https://www.postgresql.org/docs/release/",
+    "artifact_policy": "one_current_build_per_exact_release_and_platform",
+    "bundled_sql_extensions": {
+      "required_names": ["plpgsql", "fuzzystrmatch"],
+      "complete_selection_status": "research_required",
+      "notes": ["Audit upstream contrib modules and procedural languages before claiming complete schema capability coverage."]
+    }
+  },
+  "os_policy": {
+    "maximum_release_age_years": 4,
+    "prefer_full_window": true,
+    "current_os_has_priority": true,
+    "narrowing_allowed_when": "older_support_compromises_current_os_support",
+    "narrowing_requires": ["affected_versions", "evidence", "reason"],
+    "external_runtime_installation_allowed": false,
+    "notes": ["Resolve exact OS editions and versions at a dated support assessment. A build SDK or container may be older than the supported runtime range."]
+  },
+  "platforms": [
+    {
+      "id": "linux-x86_64",
+      "os": "linux",
+      "architecture": "x86_64",
+      "libc_family": null,
+      "libc_family_candidates": ["glibc"],
+      "libc_scope_status": "review_required",
+      "support_definition_status": "research_required",
+      "minimum_libc_version": null,
+      "os_release_ranges": [],
+      "cpu_baseline_status": "research_required",
+      "notes": ["Name supported distributions and releases. Musl/Alpine compatibility is not implied by a glibc artifact; the first Linux ABI target remains undecided."]
+    },
+    {
+      "id": "macos-x86_64",
+      "os": "macos",
+      "architecture": "x86_64",
+      "support_definition_status": "research_required",
+      "os_release_ranges": [],
+      "cpu_baseline_status": "research_required",
+      "notes": ["Support current macOS releases that run on Intel hardware; do not infer Intel support from the newest Apple Silicon release."]
+    },
+    {
+      "id": "windows-x86_64",
+      "os": "windows",
+      "architecture": "x86_64",
+      "support_definition_status": "research_required",
+      "os_release_ranges": [],
+      "cpu_baseline_status": "research_required",
+      "notes": ["Specify desktop editions and feature-release versions. A Windows Server CI result is not desktop evidence. Bundle permitted non-OS CRT files or use a verified static-linking route."]
+    }
+  ],
+  "source_projects": {
+    "pgvector": {
+      "url": "https://github.com/pgvector/pgvector",
+      "version_order": "numeric_tuple",
+      "compatibility_rules": [
+        {
+          "source_versions": { "gte": "0.8.2", "lt": "0.9" },
+          "postgresql_majors": { "min_inclusive": 15, "max_inclusive": 18 },
+          "status": "expected_requires_release_checks",
+          "basis": "extensions/items/planned/vector.md"
+        }
+      ],
+      "unmatched_releases": "research_required"
+    },
+    "postgis": {
+      "url": "https://postgis.net/development/source_code/",
+      "version_order": "numeric_tuple",
+      "compatibility_rules": [
+        {
+          "source_versions": { "gte": "3.6", "lt": "3.7" },
+          "postgresql_majors": { "min_inclusive": 15, "max_inclusive": 18 },
+          "status": "expected_requires_release_checks",
+          "basis": "extensions/items/planned/postgis.md"
+        }
+      ],
+      "unmatched_releases": "research_required",
+      "notes": ["Eligible maintenance releases of older PostGIS branches remain in scope; their PostgreSQL ranges need research. Never silently filter them out."]
+    },
+    "postgis-tiger-geocoder": {
+      "url": "https://gitea.osgeo.org/postgis/postgis_tiger_geocoder",
+      "version_order": "numeric_tuple",
+      "compatibility_rules": [
+        {
+          "source_versions": { "gte": "2025.1", "lt": "2026" },
+          "postgresql_majors": { "min_inclusive": 16, "max_inclusive": 18 },
+          "status": "expected_requires_release_checks",
+          "basis": "extensions/items/planned/postgis_tiger_geocoder.md"
+        }
+      ],
+      "unmatched_releases": "research_required",
+      "notes": ["The year in the source version identifies Census vintage, not the publication date. Read actual release dates."]
+    },
+    "address-standardizer": {
+      "url": "https://github.com/postgis/address_standardizer",
+      "version_order": "numeric_tuple",
+      "compatibility_rules": [],
+      "unmatched_releases": "research_required",
+      "notes": ["Standalone releases require their own PostgreSQL compatibility research; do not inherit a PostGIS source range."]
+    }
+  },
+  "extension_policy": {
+    "release_selection": "inherit",
+    "platform_selection": "all",
+    "sql_versions": "read_exact_install_and_update_scripts",
+    "sql_dependency_names": "upstream_control_files_only",
+    "sql_dependency_version_policy": "client_defined",
+    "verification_dependency_versions": "record_exact_tested_combination",
+    "unknown_compatibility": "research_required",
+    "unsupported_combination_requires": ["upstream_evidence", "reason"],
+    "package_unit": "independently_selectable_sql_extension",
+    "source_overlap": "preserve_source_identity_and_report_ambiguity",
+    "native_build_strategy": "separate_per_postgresql_major",
+    "build_baseline_candidate": "oldest_eligible_compatible_minor_in_major",
+    "reuse_requires": "test_same_artifact_on_every_advertised_minor",
+    "future_minor_compatibility": "unverified",
+    "arbitrary_extension_pair_compatibility": "not_guaranteed"
+  },
+  "extensions": [
+    {
+      "sql_name": "vector",
+      "profile": "extensions/items/planned/vector.md",
+      "sources": [{ "project": "pgvector", "source_versions": { "all": true } }],
+      "required_sql_names": [],
+      "creation_dependencies_status": "expected_requires_release_checks",
+      "notes": ["The upstream project is pgvector; the SQL extension name is vector."]
+    },
+    {
+      "sql_name": "postgis",
+      "profile": "extensions/items/planned/postgis.md",
+      "sources": [{ "project": "postgis", "source_versions": { "all": true } }],
+      "required_sql_names": [],
+      "creation_dependencies_status": "expected_requires_release_checks",
+      "notes": ["Core spatial functionality is independently downloadable. PROJ resources required by advertised operations must be bundled."]
+    },
+    {
+      "sql_name": "postgis_raster",
+      "profile": "extensions/items/planned/postgis_raster.md",
+      "sources": [{ "project": "postgis", "source_versions": { "all": true } }],
+      "required_sql_names": ["postgis"],
+      "creation_dependencies_status": "expected_requires_release_checks",
+      "notes": ["Record available GDAL drivers and activation settings; raster files owned by applications are not bundled."]
+    },
+    {
+      "sql_name": "postgis_topology",
+      "profile": "extensions/items/planned/postgis_topology.md",
+      "sources": [{ "project": "postgis", "source_versions": { "all": true } }],
+      "required_sql_names": ["postgis"],
+      "creation_dependencies_status": "expected_requires_release_checks",
+      "notes": []
+    },
+    {
+      "sql_name": "postgis_sfcgal",
+      "profile": "extensions/items/planned/postgis_sfcgal.md",
+      "sources": [{ "project": "postgis", "source_versions": { "all": true } }],
+      "required_sql_names": ["postgis"],
+      "creation_dependencies_status": "expected_requires_release_checks",
+      "notes": ["Select SFCGAL against exact PostGIS release requirements; the pilot dependency does not establish full feature coverage."]
+    },
+    {
+      "sql_name": "address_standardizer",
+      "profile": "extensions/items/planned/address_standardizer.md",
+      "sources": [
+        { "project": "postgis", "source_versions": { "lt": "3.7" } },
+        { "project": "address-standardizer", "source_versions": { "all": true } }
+      ],
+      "required_sql_names": [],
+      "creation_dependencies_status": "expected_requires_release_checks",
+      "notes": ["PostGIS-bundled and standalone source releases are distinct choices; independent downloads follow the SQL module boundary."]
+    },
+    {
+      "sql_name": "address_standardizer_data_us",
+      "profile": "extensions/items/planned/address_standardizer_data_us.md",
+      "sources": [
+        { "project": "postgis", "source_versions": { "lt": "3.7" } },
+        { "project": "address-standardizer", "source_versions": { "all": true } }
+      ],
+      "required_sql_names": [],
+      "creation_dependencies_status": "research_required",
+      "notes": ["Small US rules and lookup tables shipped upstream are included; they are not the bulk Census corpus. The parser is needed to use these tables for normalization. Verify creation dependencies against each exact tagged control file; do not infer them from this usage requirement."]
+    },
+    {
+      "sql_name": "postgis_tiger_geocoder",
+      "profile": "extensions/items/planned/postgis_tiger_geocoder.md",
+      "sources": [
+        { "project": "postgis", "source_versions": { "lt": "3.7" } },
+        { "project": "postgis-tiger-geocoder", "source_versions": { "all": true } }
+      ],
+      "required_sql_names": ["postgis", "fuzzystrmatch"],
+      "creation_dependencies_status": "expected_requires_release_checks",
+      "notes": ["Bundle schema and small upstream lookups. Exclude bulk Census data used to populate geocoding tables. Verify standalone control-file dependencies separately."]
+    }
+  ],
+  "capabilities": {
+    "required_when_upstream_supports": [
+      "collation.icu", "collation.libc", "compression.zlib",
+      "compression.lz4", "compression.zstd", "datetime.timezones",
+      "sql.xml", "connection.tls"
+    ],
+    "undecided_capabilities": [
+      "connection.gssapi", "connection.ldap", "connection.oauth", "inspection.numa"
+    ],
+    "excluded_capabilities": [
+      "connection.pam_bsd", "execution.jit", "diagnostics.translations",
+      "client.line_editing", "service.integration", "execution.io_uring"
+    ],
+    "inclusion_policy": "build/build-policy.md",
+    "profiles": {
+      "collation.icu": "build/items/planned/icu-collations.md",
+      "collation.libc": "build/items/planned/libc-collations.md",
+      "sql.xml": "build/items/planned/xml.md",
+      "compression.zlib": "build/items/planned/zlib-compression.md",
+      "compression.lz4": "build/items/planned/lz4-compression.md",
+      "compression.zstd": "build/items/planned/zstandard-compression.md",
+      "connection.tls": "build/items/planned/tls-and-openssl.md",
+      "datetime.timezones": "build/items/planned/timezone-data.md",
+      "connection.gssapi": "build/build-notes.md#gssapi-authentication-and-encryption",
+      "connection.ldap": "build/build-notes.md#ldap-service-integration",
+      "connection.pam_bsd": "build/items/rejected/pam-and-bsd-authentication.md",
+      "connection.oauth": "build/build-notes.md#oauth-client-flow",
+      "execution.jit": "build/items/rejected/llvm-jit.md",
+      "diagnostics.translations": "build/items/rejected/translated-diagnostics.md",
+      "client.line_editing": "build/items/rejected/interactive-psql-editing.md",
+      "service.integration": "build/items/rejected/service-discovery-and-notification.md",
+      "execution.io_uring": "build/items/rejected/io_uring.md",
+      "inspection.numa": "build/items/proposed/numa-inspection.md"
+    },
+    "per_release_applicability_status": "research_required",
+    "other_compile_options_audit_status": "research_required",
+    "notes": ["Compression must be expanded into individual supported operations such as TOAST, WAL and dump/restore. It is not a claim that each algorithm supports each operation in every major."]
+  },
+  "resources": {
+    "include": ["schema_initialization", "supported_ddl", "required_runtime_libraries", "required_runtime_resources", "small_upstream_defaults"],
+    "exclude_large_external_datasets_used_only_for": ["application_queries", "cluster_maintenance", "administration", "table_population"],
+    "removing_upstream_default_requires": ["reason", "size_measurement", "behaviour_tests"],
+    "notes": ["Data-dependent DDL can need application inputs. Record those requirements instead of claiming that every migration works without data."]
+  },
+  "distribution": {
+    "public_without_authentication": true,
+    "free_downloads": true,
+    "catalogue_version_defaults": false,
+    "corrected_build_policy": "new_resolutions_receive_current_corrected_build",
+    "retain_superseded_binary_builds_forever": false,
+    "checksums": "sha256",
+    "archive_filename_contains_full_checksum": true,
+    "hosting_status": "review_required"
+  },
+  "coverage": {
+    "failed_build_is": "unavailable_download",
+    "unknown_research_blocks_completion": true,
+    "goal_percent": 100,
+    "compare_against": "dated_upstream_release_snapshot",
+    "notes": ["No download entries or passing results belong in this authored inventory. Generate availability and coverage from release discovery and artifact evidence."]
+  },
+  "notes": [
+    "This inventory declares intended coverage, not current downloadable availability.",
+    "Notes explain structured facts for human readers. A future website may render this metadata; rendering is outside this specification."
+  ]
+}

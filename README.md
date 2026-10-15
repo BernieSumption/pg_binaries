@@ -1,19 +1,36 @@
 # PostgreSQL binaries project
 
-This repository supplies portable PostgreSQL and extension binaries for tools that apply and inspect database schemas. A separate client library will use the catalogue to choose downloads, start PostgreSQL and expose a connection.
+This repository supplies portable PostgreSQL and extension binaries for tools that apply and inspect database schemas. A separate client library uses the catalogue to choose downloads, start PostgreSQL and expose a connection.
 
-## Project documents
+## Reading order
 
-- [Specification guide](spec/README.md) — purpose, review order and document authority.
-- [Intended inventory](spec/inventory.json) and [format](spec/inventory-format.md) — version ranges, platforms, capabilities and metadata.
-- [Functional specification](spec/functional.md) — concrete guarantees and why they exist.
-- [Testing specifications](spec/testing/README.md) — evidence required for each guarantee.
-- [Extension profiles](spec/extensions/README.md) — support research, version transitions and data requirements.
-- [Architecture](spec/architecture.md) and [implementation decisions](spec/implementation-decisions.md) — responsibilities and AI-maintained technical reasoning.
-- [Product decisions](spec/product-decisions.md) — human review queue for scope and guarantees.
-- [Pilot evidence](spec/evidence.md) — passing combinations and their limits.
+Review these assets together:
 
-The specification defines the project contract. Its inventory describes intended coverage; [verification evidence](spec/evidence.md) records results and remaining gaps.
+1. [Functional policy](specs/functional/functional-policy.md) — Use case, concrete guarantees and their reasons.
+2. [Inventory](specs/functional/functional-inventory.json) — Intended versions, platforms and features; the [format reference](specs/functional/functional-inventory-format.md) explains the fields.
+3. [Testing policy](specs/testing/testing-policy.md) — Evidence required for those guarantees, with a [requirement map](specs/testing/testing-notes.md#requirement-map).
+
+Then consult the area relevant to the work:
+
+| Board | Policy | Notes and items |
+| --- | --- | --- |
+| Functional | [Product guarantees](specs/functional/functional-policy.md) | [Technical context](specs/functional/functional-notes.md); [implementation items](specs/functional/items/) |
+| Build | [Inclusion criteria](specs/build/build-policy.md) | [Option research](specs/build/build-notes.md); [feature items](specs/build/items/) |
+| Extensions | [Selection and packaging](specs/extensions/extensions-policy.md) | [Dependency and resource research](specs/extensions/extensions-notes.md); [extension items](specs/extensions/items/) |
+| Testing | [Acceptance rules](specs/testing/testing-policy.md) | [Requirement map and gaps](specs/testing/testing-notes.md); [test procedures](specs/testing/items/) |
+
+The [architecture](specs/functional/functional-architecture.md) describes component boundaries and the delivery pipeline. [Pilot evidence](specs/testing/testing-evidence.md) records existing passes and their limits. The inventory defines intended coverage; generated verification and download records establish actual results.
+
+## Human review
+
+Each board's `items/proposed/` folder is its human review queue:
+
+- [Functional proposals](specs/functional/items/proposed/)
+- [Build proposals](specs/build/items/proposed/)
+- [Extension proposals](specs/extensions/items/proposed/)
+- [Testing proposals](specs/testing/items/proposed/)
+
+The [board format in AGENTS.md](AGENTS.md#specification-boards) defines policy, notes and the five workflow folders. [style.md](style.md) defines the writing conventions.
 
 ## Licence
 
