@@ -64,6 +64,7 @@ cp -a "$extroot/share/extension/." "$pgroot/share/extension/"
 cp -a "$extroot/share/proj" "$extroot/share/gdal" "$pgroot/share/"
 test -s "$extroot/LICENSES/proj-data.copyright"
 test -s "$extroot/LICENSES/gdal-data.copyright"
+python3 /usr/local/bin/check-elf-dependencies "$pgroot"
 export PROJ_LIB="$pgroot/share/proj" PROJ_DATA="$pgroot/share/proj" GDAL_DATA="$pgroot/share/gdal"
 useradd -m postgres
 chown postgres:postgres /tmp/data /tmp/socket
