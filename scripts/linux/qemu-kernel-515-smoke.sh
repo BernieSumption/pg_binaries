@@ -100,9 +100,6 @@ vector_archive="pgvector-0.8.7-postgresql-${pg_version}-linux-x86_64.tar.gz"
 sha256sum "$archives/$pg_archive" "$archives/$vector_archive" > "$evidence/archive-checksums.sha256"
 scp "${scp_args[@]}" "$archives/$pg_archive" "$archives/$vector_archive" smoke@127.0.0.1:/tmp/
 scp "${scp_args[@]}" "$archives/$pg_archive.sha256" "$archives/$vector_archive.sha256" smoke@127.0.0.1:/tmp/
-scp "${scp_args[@]}" "$(dirname "$0")/qemu-kernel-515-guest-smoke.sh" smoke@127.0.0.1:/tmp/guest-smoke.sh
-ssh "${ssh_args[@]}" smoke@127.0.0.1 "bash /tmp/guest-smoke.sh '$pg_version' '$pg_archive' '$vector_archive'" \
-  | tee "$evidence/guest-test.log"
 scp -r "${scp_args[@]}" /repo/tests smoke@127.0.0.1:/tmp/
 scp "${scp_args[@]}" /repo/scripts/linux/verify-in-container.sh \
   /repo/scripts/linux/qemu-kernel-515-guest-full.sh \

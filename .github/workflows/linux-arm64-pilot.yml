@@ -10,8 +10,19 @@ on:
   push:
     branches: [spike]
     paths:
-      - 'scripts/linux/**'
+      - 'scripts/linux/Dockerfile'
+      - 'scripts/linux/build.sh'
+      - 'scripts/linux/build-in-container.sh'
+      - 'scripts/linux/bundle-glibc-in-container.sh'
+      - 'scripts/linux/launcher.c'
+      - 'scripts/linux/verify.sh'
+      - 'scripts/linux/verify.Dockerfile'
+      - 'scripts/linux/verify-in-container.sh'
+      - 'scripts/linux/verify-glibc-portability.sh'
+      - 'scripts/linux/verify-no-host-userspace.sh'
       - 'tools/check_elf_dependencies.py'
+      - 'tools/discover_builtins.py'
+      - 'tools/write_linux_license_inventory.py'
       - 'tools/plan_work.py'
       - 'tools/emit_linux_pilot_records.py'
       - 'tests/schema.sql'

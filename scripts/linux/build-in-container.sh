@@ -39,6 +39,7 @@ mv /work/stage/postgresql/share/extension/vector* /work/stage/pgvector/share/ext
 cp LICENSE /work/stage/pgvector/LICENSES/pgvector.txt
 mkdir -p /work/stage/postgresql/LICENSES
 cp "/work/src/postgresql-${pg_version}/COPYRIGHT" /work/stage/postgresql/LICENSES/PostgreSQL.txt
+cp -a /usr/share/common-licenses /work/stage/postgresql/LICENSES/common-licenses
 builtins=$(python3 /usr/local/bin/discover-builtins /work/stage/postgresql)
 
 # Copy runtime libraries into the archive, then make every ELF file look for

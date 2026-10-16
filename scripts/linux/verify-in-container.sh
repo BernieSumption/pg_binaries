@@ -21,6 +21,7 @@ tar -xzf "$vector" -C /tmp/vector
 python3 - "$pg_version" "$architecture" <<'PY'
 import json
 from pathlib import Path
+import re
 import sys
 version = sys.argv[1]
 architecture = sys.argv[2]
@@ -69,6 +70,10 @@ for entry in runtime:
     assert Path(entry['license_file']).name == entry['license_file'], entry
     license_path = license_dir / entry['license_file']
     assert license_path.is_file() and license_path.stat().st_size > 0, entry
+    for name in re.findall(r'/usr/share/common-licenses/([A-Za-z0-9.+-]+)',
+                           license_path.read_text(encoding='utf-8', errors='replace')):
+        common = license_dir / 'common-licenses' / name.rstrip('.,;:')
+        assert common.is_file() and common.stat().st_size > 0, common
     assert entry['payload_paths'], entry
     for relative in entry['payload_paths']:
         relative_path = Path(relative)

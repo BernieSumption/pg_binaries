@@ -7,6 +7,8 @@ architecture=${2:?}
   echo "Expected Linux 5.15, got $(uname -r)" >&2
   exit 1
 }
+printf 'guest_os='; . /etc/os-release; printf '%s\n' "$PRETTY_NAME"
+printf 'guest_kernel=%s\n' "$(uname -r)"
 test -d /tmp/tests
 test -f /tmp/check_elf_dependencies.py
 test -f /tmp/verify-in-container.sh
