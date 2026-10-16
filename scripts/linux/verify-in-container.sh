@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 pg_version=${PG_VERSION:-18.6}
-if [[ ! $pg_version =~ ^(17|18)\.[0-9]+$ ]]; then
-  echo "Linux pilot currently supports PostgreSQL 17 and 18 minors only: $pg_version" >&2
+if [[ ! $pg_version =~ ^(15|16|17|18)\.[0-9]+$ ]]; then
+  echo "Linux pilot currently supports PostgreSQL 15 through 18 minors only: $pg_version" >&2
   exit 2
 fi
 pg="postgresql-${pg_version}-linux-x86_64.tar.gz"
@@ -105,7 +105,12 @@ INSERT INTO embedding VALUES (1, '[1,0,0]'), (2, '[0,1,0]'), (3, '[0,0,1]');
 CREATE INDEX embedding_hnsw ON embedding USING hnsw (embedding vector_l2_ops);
 SELECT id, embedding <-> '[1,0,0]'::vector AS distance FROM embedding ORDER BY distance LIMIT 2;
 SQL
-runuser -u postgres -- "$pgroot/bin/pg_dump" -h /tmp/pgsocket -p 55431 -Fc -Z zstd:1 -f /tmp/probe.dump postgres
+if [[ $pg_version == 15.* ]]; then
+  dump_compression=(-Z 1)
+else
+  dump_compression=(-Z zstd:1)
+fi
+runuser -u postgres -- "$pgroot/bin/pg_dump" -h /tmp/pgsocket -p 55431 -Fc "${dump_compression[@]}" -f /tmp/probe.dump postgres
 "${psql[@]}" -c 'CREATE DATABASE restored'
 runuser -u postgres -- "$pgroot/bin/pg_restore" --exit-on-error -h /tmp/pgsocket -p 55431 -d restored /tmp/probe.dump
 restored=(runuser -u postgres -- "$pgroot/bin/psql" -X -v ON_ERROR_STOP=1 -h /tmp/pgsocket -p 55431 -d restored)

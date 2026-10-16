@@ -68,10 +68,10 @@ def plan(root):
 
 
 def select_linux_pilot(root, version):
-    """Select one declared PostgreSQL 17 or 18 x86-64 Linux pilot build."""
-    if not re.fullmatch(r"(17|18)\.[0-9]+", version):
+    """Select one declared PostgreSQL 15 through 18 x86-64 Linux pilot build."""
+    if not re.fullmatch(r"(15|16|17|18)\.[0-9]+", version):
         raise coverage.CoverageError(
-            "Linux pilot currently supports PostgreSQL 17 and 18 minors only")
+            "Linux pilot currently supports PostgreSQL 15 through 18 minors only")
     work = plan(root)
     target = [version, "linux-x86_64"]
     if target not in work["build_missing"]["core"]:

@@ -88,31 +88,39 @@ class PlanWorkTests(unittest.TestCase):
         second = plan_work.plan(self.root)
         self.assertEqual(json.dumps(first, sort_keys=True), json.dumps(second, sort_keys=True))
 
-    def test_linux_pilot_selects_declared_missing_seventeen_and_eighteen_targets(self):
+    def test_linux_pilot_selects_declared_missing_fifteen_through_eighteen_targets(self):
         snapshot = {"as_of": "2026-01-01", "source": "https://example.test/releases",
-                    "releases": [{"version": "17.11", "release_date": "2025-09-25"},
+                    "releases": [{"version": "15.19", "release_date": "2025-09-25"},
+                                 {"version": "16.15", "release_date": "2025-09-25"},
+                                 {"version": "17.11", "release_date": "2025-09-25"},
                                  {"version": "18.0", "release_date": "2025-09-25"}]}
         self.write("support/postgresql-releases.json", snapshot)
+        self.assertEqual(plan_work.select_linux_pilot(self.root, "15.19"), {
+            "postgresql_version": "15.19", "platform": "linux-x86_64",
+            "work": "build_missing", "snapshot_as_of": "2026-01-01"})
+        self.assertEqual(plan_work.select_linux_pilot(self.root, "16.15"), {
+            "postgresql_version": "16.15", "platform": "linux-x86_64",
+            "work": "build_missing", "snapshot_as_of": "2026-01-01"})
         self.assertEqual(plan_work.select_linux_pilot(self.root, "17.11"), {
             "postgresql_version": "17.11", "platform": "linux-x86_64",
             "work": "build_missing", "snapshot_as_of": "2026-01-01"})
         self.assertEqual(plan_work.select_linux_pilot(self.root, "18.0"), {
             "postgresql_version": "18.0", "platform": "linux-x86_64",
             "work": "build_missing", "snapshot_as_of": "2026-01-01"})
-        with self.assertRaisesRegex(plan_work.coverage.CoverageError, "17 and 18 minors"):
-            plan_work.select_linux_pilot(self.root, "15.9")
+        with self.assertRaisesRegex(plan_work.coverage.CoverageError, "15 through 18 minors"):
+            plan_work.select_linux_pilot(self.root, "14.9")
         with self.assertRaisesRegex(plan_work.coverage.CoverageError, "not a missing declared"):
             plan_work.select_linux_pilot(self.root, "18.9")
 
     def test_linux_pilot_rejects_existing_public_download(self):
         snapshot = {"as_of": "2026-01-01", "source": "https://example.test/releases",
-                    "releases": [{"version": "17.11", "release_date": "2025-09-25"}]}
+                    "releases": [{"version": "15.19", "release_date": "2025-09-25"}]}
         self.write("support/postgresql-releases.json", snapshot)
-        self.write("inventory.json", {"postgresql": {"17.11": {"downloads": {
+        self.write("inventory.json", {"postgresql": {"15.19": {"downloads": {
             "linux-x86_64": {"url": "https://example.test/pg.tgz", "sha256": "a" * 64}}}},
             "extensions": {}})
         with self.assertRaisesRegex(plan_work.coverage.CoverageError, "not a missing declared"):
-            plan_work.select_linux_pilot(self.root, "17.11")
+            plan_work.select_linux_pilot(self.root, "15.19")
 
 
 if __name__ == "__main__":

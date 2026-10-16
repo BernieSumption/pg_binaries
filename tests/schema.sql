@@ -1,4 +1,4 @@
--- Shared PostgreSQL 18 schema and migration smoke test.
+-- Shared PostgreSQL 15+ schema and migration smoke test.
 -- Run with psql -X -v ON_ERROR_STOP=1 -f tests/schema.sql against an empty database.
 CREATE SCHEMA pilot;
 
