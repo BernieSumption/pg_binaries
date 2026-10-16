@@ -1,0 +1,41 @@
+{
+  "ci": {
+    "build_revision": "c2c884dfce1fcec634b015267f199b8bd6253abe",
+    "provider": "github-actions",
+    "run_id": "38975180522",
+    "run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/38975180522",
+    "source_revision": "c2c884dfce1fcec634b015267f199b8bd6253abe",
+    "test_revision": "c2c884dfce1fcec634b015267f199b8bd6253abe"
+  },
+  "component": "postgresql",
+  "environment": {
+    "architecture": "x86_64",
+    "clean_system": true,
+    "dependency_check_profile": "linux-runtime-v1",
+    "dependency_checks_passed": true,
+    "distribution": "Ubuntu 22.04.5 LTS",
+    "distribution_version": "22.04",
+    "endpoint": "minimum",
+    "image_id": "sha256:e3297e0aa6c408ac90d854348465d3991c65159b444c4ef9016f52f6807290e3",
+    "kernel_release": "5.15.0-1109-kvm",
+    "os": "linux",
+    "os_version": "5.15"
+  },
+  "outcome": "passed",
+  "platform": "linux-x86_64",
+  "postgresql_version": "18.6",
+  "profile_id": "linux-minimum-kernel-x86_64",
+  "profile_revision": "889b9c0f2d3ed03c22a4943795ff89c7c7f8199b2cc14164582a706f8767b9cc",
+  "schema_version": 2,
+  "scope": "pilot-smoke",
+  "sha256": "492535fda8cee99a7c98d8301add32d69fb85177d35aee26c94660ee0f1fe743",
+  "test_cases": [
+    "built-in-extension-smoke",
+    "core-schema-smoke",
+    "dependency-load",
+    "dump-restore",
+    "relocation"
+  ],
+  "test_revision": "c2c884dfce1fcec634b015267f199b8bd6253abe",
+  "version": "18.6"
+}
