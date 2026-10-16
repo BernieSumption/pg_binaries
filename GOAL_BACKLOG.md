@@ -16,11 +16,13 @@ This backlog records work for the current development goal. The specifications d
 - [ ] Represent and check documented extension OS and PostgreSQL subsets without hiding architecture gaps; MobilityDB and online_advisor are candidates that need this before an inclusion declaration.
 - [ ] Drive builds, endpoint tests, and candidate inventory generation from the intended-support source. Demonstrate that a routine support addition does not require editing parallel workflow lists.
 - [ ] Record immutable archive checksums, source versions, applicable upstream compatibility, test revision, environment, and results so evidence can be reused only while applicable.
+- [ ] Retain verification records beyond pilot artifact expiry, including failed and skipped attempts; define a complete publication test profile before any record can establish eligibility.
 
 ## Archives and tests
 
 - [ ] Produce self-contained `.tar.gz` PostgreSQL archives and a common extension installation layout for the declared targets. Exercise the documented installation procedure and relocation on clean supported systems.
 - [ ] Verify tools, UTF-8 schema operations, enabled features, built-in and selected external extensions, licensing, and representative diagnostic failures against the final archive bytes.
+- [ ] Complete behavior checks for every built-in SQL extension discovered from each archive. The remaining Linux 18.6 controls need filesystem fixtures, extra sessions, preload or TLS configuration, or careful inspection assertions; investigate a safe isolated `pg_surgery` check before requesting any change to the universal test requirement.
 - [ ] Keep routine checks within standard GitHub-hosted runner and storage limits; investigate any combination count that appears impractical before reducing coverage.
 
 ## Publication readiness
