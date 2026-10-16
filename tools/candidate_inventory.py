@@ -2,13 +2,18 @@
 """Build a structural draft of a future inventory from proposed assets.
 
 This helper does not establish publication eligibility or validate all inventory
-metadata, including OS support and PostgreSQL included-extension declarations.
+metadata, including OS support and archive contents.
 """
 
 from copy import deepcopy
 import importlib.util
 from pathlib import Path
 import re
+
+_BUILTINS_SPEC = importlib.util.spec_from_file_location(
+    "candidate_builtins", Path(__file__).with_name("discover_builtins.py"))
+_builtins = importlib.util.module_from_spec(_BUILTINS_SPEC)
+_BUILTINS_SPEC.loader.exec_module(_builtins)
 
 _COVERAGE_SPEC = importlib.util.spec_from_file_location("candidate_coverage", Path(__file__).with_name("coverage.py"))
 _coverage = importlib.util.module_from_spec(_COVERAGE_SPEC)
@@ -86,6 +91,16 @@ def merge_candidate(base_inventory, proposed_entries, support, snapshot, root=No
             if target not in expected_core:
                 raise CandidateError(f"unsupported PostgreSQL target {target}")
             target_key = ("postgresql", version, platform)
+            included_extensions = item.get("included_extensions")
+            if (not isinstance(included_extensions, list)
+                    or any(not isinstance(name, str) or not _builtins.EXTENSION_NAME.fullmatch(name)
+                           for name in included_extensions)
+                    or included_extensions != sorted(set(included_extensions))):
+                raise CandidateError("included_extensions must be a sorted unique array of names")
+            existing_version = candidate["postgresql"].get(version, {})
+            existing_names = existing_version.get("included_extensions")
+            if existing_names is not None and existing_names != included_extensions:
+                raise CandidateError(f"inconsistent included_extensions for PostgreSQL {version}")
         else:
             target = None
             ext_versions = support.get("extensions", {})
@@ -134,7 +149,9 @@ def merge_candidate(base_inventory, proposed_entries, support, snapshot, root=No
                     raise CandidateError(f"missing passed {endpoint} verification for {component} {version} {pg} {platform}")
 
         if component == "postgresql":
-            downloads = candidate["postgresql"].setdefault(version, {}).setdefault("downloads", {})
+            version_entry = candidate["postgresql"].setdefault(version, {})
+            version_entry["included_extensions"] = included_extensions
+            downloads = version_entry.setdefault("downloads", {})
             downloads[platform] = download
         else:
             downloads = (candidate["extensions"].setdefault(component, {})

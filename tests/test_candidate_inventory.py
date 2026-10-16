@@ -49,7 +49,7 @@ class CandidateInventoryTests(unittest.TestCase):
                  version="15.9", platform="linux-x86_64"):
         url = f"https://github.com/BernieSumption/pg_binaries/releases/download/{tag}/{filename}"
         return {"component": "postgresql", "version": version, "platform": platform,
-                "tag": tag, "filename": filename, "sha256": sha,
+                "tag": tag, "filename": filename, "sha256": sha, "included_extensions": ["example"],
                 "verification": [self.evidence(url, sha, endpoint, version, platform)
                                  for endpoint in ("minimum", "current")]}
 
@@ -141,6 +141,18 @@ class CandidateInventoryTests(unittest.TestCase):
         with self.assertRaisesRegex(candidate_inventory.CandidateError, "missing passed"):
             candidate_inventory.merge_candidate(self.old, [proposal], self.support, self.snapshot,
                                                  root=self.root)
+
+    def test_carries_included_extensions_and_rejects_inconsistent_platform_claims(self):
+        proposal = self.proposal()
+        result = candidate_inventory.merge_candidate(self.old, [proposal], self.support, self.snapshot,
+                                                     root=self.root)
+        self.assertEqual(result["postgresql"]["15.9"]["included_extensions"], ["example"])
+        second = self.proposal(tag="catalog-20261016-3", filename="pg-linux-arm64-15.9.tar.gz",
+                               platform="linux-arm64")
+        second["included_extensions"] = ["different"]
+        with self.assertRaisesRegex(candidate_inventory.CandidateError, "inconsistent included_extensions"):
+            candidate_inventory.merge_candidate(self.old, [self.proposal(), second], self.support,
+                                                 self.snapshot, root=self.root)
 
     def test_real_pilot_only_registry_rejects_candidate_evidence(self):
         proposal = self.proposal()

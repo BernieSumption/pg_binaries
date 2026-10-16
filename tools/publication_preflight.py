@@ -3,19 +3,25 @@
 
 Passing this check is not a publication eligibility decision. It validates
 candidate structure, support coverage, retained checksums, and local staged
-archive bytes only. It does not validate included extensions, package metadata,
-licensing, behavioral evidence, or public URL availability.
+archive bytes, including PostgreSQL built-in extension declarations. It does
+not validate package metadata, licensing, behavioral evidence, or public URL
+availability.
 """
 
 import hashlib
 import importlib.util
 from pathlib import Path
 import re
+import tarfile
 
 _COVERAGE_SPEC = importlib.util.spec_from_file_location(
     "preflight_coverage", Path(__file__).with_name("coverage.py"))
 _coverage = importlib.util.module_from_spec(_COVERAGE_SPEC)
 _COVERAGE_SPEC.loader.exec_module(_coverage)
+_BUILTINS_SPEC = importlib.util.spec_from_file_location(
+    "preflight_builtins", Path(__file__).with_name("discover_builtins.py"))
+_builtins = importlib.util.module_from_spec(_BUILTINS_SPEC)
+_BUILTINS_SPEC.loader.exec_module(_builtins)
 NEW_ASSET_URL = re.compile(
     r"^https://github\.com/BernieSumption/pg_binaries/releases/download/"
     r"catalog-\d{8}-\d+/[A-Za-z0-9._+-]+\.tar\.gz$")
@@ -61,6 +67,29 @@ def _covers_extension(target, extension_ranges):
     return False
 
 
+def _archive_builtins(path):
+    """Read built-in SQL names from PostgreSQL control-file members."""
+    try:
+        with tarfile.open(path, "r:gz") as archive:
+            names = []
+            for member in archive.getmembers():
+                parts = Path(member.name).parts
+                if parts and parts[-1].endswith(".control"):
+                    if (len(parts) != 4 or parts[0] != "postgresql"
+                            or parts[1:3] != ("share", "extension")):
+                        raise PreflightError(
+                            f"PostgreSQL extension control is outside postgresql/share/extension: {member.name}")
+                    name = parts[-1][:-len(".control")]
+                    if not member.isfile() or not _builtins.EXTENSION_NAME.fullmatch(name):
+                        raise PreflightError(f"malformed PostgreSQL extension control in staged archive: {member.name}")
+                    names.append(name)
+            if not names or len(names) != len(set(names)):
+                raise PreflightError(f"missing or duplicate PostgreSQL extension controls in staged archive: {path}")
+            return sorted(names)
+    except (OSError, tarfile.TarError) as exc:
+        raise PreflightError(f"cannot read PostgreSQL archive controls from {path}: {exc}") from exc
+
+
 def preflight_candidate(base_inventory, candidate, support, snapshot, staged_assets):
     """Validate candidate references and staged bytes without contacting GitHub.
 
@@ -89,6 +118,12 @@ def preflight_candidate(base_inventory, candidate, support, snapshot, staged_ass
     if dropped_refs:
         raise PreflightError(f"candidate dropped retained URL: {dropped_refs[0]}")
     candidate_core, candidate_extensions = _candidate_targets(candidate)
+    core_by_url = {}
+    for target, entry in candidate_core.items():
+        url = entry["url"]
+        if url in core_by_url:
+            raise PreflightError(f"PostgreSQL archive URL is reused across targets: {url}")
+        core_by_url[url] = target[0]
     missing_core = sorted(expected_core - set(candidate_core))
     if missing_core:
         version, platform = missing_core[0]
@@ -135,6 +170,15 @@ def preflight_candidate(base_inventory, candidate, support, snapshot, staged_ass
             raise PreflightError(f"cannot read staged asset for {url}: {exc}") from exc
         if digest != candidate_checksum:
             raise PreflightError(f"staged asset bytes do not match candidate checksum: {url}")
+        if url in core_by_url:
+            version = core_by_url[url]
+            declared = candidate["postgresql"][version].get("included_extensions")
+            if not isinstance(declared, list):
+                raise PreflightError(f"PostgreSQL {version} requires included_extensions")
+            actual = _archive_builtins(path)
+            if declared != actual:
+                raise PreflightError(
+                    f"PostgreSQL {version} included_extensions do not match staged archive controls")
 
     return {
         "preflight_status": "passed",

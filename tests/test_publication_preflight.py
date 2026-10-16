@@ -1,7 +1,9 @@
 import hashlib
 import importlib.util
+import io
 from pathlib import Path
 import tempfile
+import tarfile
 import unittest
 
 
@@ -42,8 +44,20 @@ class PublicationPreflightTests(unittest.TestCase):
                 self._add_extension(platform, f"extension-{platform}")
 
     def _add_core(self, inventory, version, platform, content, *, tag="catalog-20261016-1"):
-        url, checksum = self._stage(content, f"pg-{platform}-{version}.tar.gz", tag)
-        inventory["postgresql"].setdefault(version, {"downloads": {}})["downloads"][platform] = {
+        filename = f"pg-{platform}-{version}.tar.gz"
+        path = self.root / filename
+        with tarfile.open(path, "w:gz") as archive:
+            payload = b"comment = 'built in'\n"
+            member = tarfile.TarInfo("postgresql/share/extension/example.control")
+            member.size = len(payload)
+            archive.addfile(member, io.BytesIO(payload))
+        payload = path.read_bytes()
+        checksum = hashlib.sha256(payload).hexdigest()
+        url = f"https://github.com/BernieSumption/pg_binaries/releases/download/{tag}/{filename}"
+        self.staged[url] = {"path": str(path), "sha256": checksum}
+        entry = inventory["postgresql"].setdefault(version, {"included_extensions": ["example"], "downloads": {}})
+        entry["included_extensions"] = ["example"]
+        entry["downloads"][platform] = {
             "url": url, "sha256": checksum,
         }
 
@@ -83,6 +97,57 @@ class PublicationPreflightTests(unittest.TestCase):
         url = next(iter(self.staged))
         Path(self.staged[url]["path"]).write_text("different bytes", encoding="utf-8")
         with self.assertRaisesRegex(publication_preflight.PreflightError, "bytes do not match"):
+            self.check()
+
+    def test_rejects_included_extensions_that_do_not_match_archive_controls(self):
+        self.candidate["postgresql"]["15.9"]["included_extensions"] = ["wrong"]
+        with self.assertRaisesRegex(publication_preflight.PreflightError,
+                                    "do not match staged archive controls"):
+            self.check()
+
+    def test_rejects_postgresql_archive_without_control_files(self):
+        url = next(url for url in self.staged if "pg-linux-x86_64-15.9" in url)
+        path = Path(self.staged[url]["path"])
+        with tarfile.open(path, "w:gz") as archive:
+            payload = b"no extension controls"
+            member = tarfile.TarInfo("postgresql/README")
+            member.size = len(payload)
+            archive.addfile(member, io.BytesIO(payload))
+        checksum = hashlib.sha256(path.read_bytes()).hexdigest()
+        self.staged[url]["sha256"] = checksum
+        self.candidate["postgresql"]["15.9"]["downloads"]["linux-x86_64"]["sha256"] = checksum
+        with self.assertRaisesRegex(publication_preflight.PreflightError,
+                                    "missing or duplicate PostgreSQL extension controls"):
+            self.check()
+
+    def test_rejects_malformed_postgresql_control_filename(self):
+        url = next(url for url in self.staged if "pg-linux-x86_64-15.9" in url)
+        path = Path(self.staged[url]["path"])
+        with tarfile.open(path, "w:gz") as archive:
+            payload = b"comment = 'built in'\n"
+            member = tarfile.TarInfo("postgresql/share/extension/bad name.control")
+            member.size = len(payload)
+            archive.addfile(member, io.BytesIO(payload))
+        checksum = hashlib.sha256(path.read_bytes()).hexdigest()
+        self.staged[url]["sha256"] = checksum
+        self.candidate["postgresql"]["15.9"]["downloads"]["linux-x86_64"]["sha256"] = checksum
+        with self.assertRaisesRegex(publication_preflight.PreflightError,
+                                    "malformed PostgreSQL extension control"):
+            self.check()
+
+    def test_rejects_decoy_control_outside_postgresql_root(self):
+        url = next(url for url in self.staged if "pg-linux-x86_64-15.9" in url)
+        path = Path(self.staged[url]["path"])
+        with tarfile.open(path, "w:gz") as archive:
+            payload = b"comment = 'built in'\n"
+            member = tarfile.TarInfo("other/share/extension/example.control")
+            member.size = len(payload)
+            archive.addfile(member, io.BytesIO(payload))
+        checksum = hashlib.sha256(path.read_bytes()).hexdigest()
+        self.staged[url]["sha256"] = checksum
+        self.candidate["postgresql"]["15.9"]["downloads"]["linux-x86_64"]["sha256"] = checksum
+        with self.assertRaisesRegex(publication_preflight.PreflightError,
+                                    "outside postgresql/share/extension"):
             self.check()
 
     def test_rejects_changed_retained_checksum(self):
