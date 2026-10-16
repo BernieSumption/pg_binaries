@@ -18,32 +18,45 @@ trap cleanup EXIT
 
 cd "$archives"
 shasum -a 256 -c "$pg_name.sha256" "$vector_name.sha256"
-mkdir -p "$work/first" "$work/moved" "$work/socket"
+mkdir -p "$work/first" "$work/extension" "$work/moved" "$work/socket"
 tar -xzf "$archives/$pg_name" -C "$work/first"
-tar -xzf "$archives/$vector_name" -C "$work/first"
+tar -xzf "$archives/$vector_name" -C "$work/extension"
 
-python3 - "$work/first/postgresql/manifest.json" "$work/first/pgvector/manifest.json" <<'PY'
-import json, sys
-pg, vector = [json.load(open(path)) for path in sys.argv[1:]]
+python3 - "$work/first/postgresql" "$work/extension" <<'PY'
+import json, pathlib, sys
+core, extension = map(pathlib.Path, sys.argv[1:])
+pg = json.loads((core / 'manifest.json').read_text())
+vector = json.loads((extension / 'metadata.json').read_text())
 expected = {"schema_version": 1, "postgresql_version": "18.6", "platform": "macos", "architecture": "x86_64"}
-for artifact in (pg, vector):
-    for key, value in expected.items():
-        if artifact.get(key) != value:
-            raise SystemExit(f"artifact mismatch: {key}: {artifact.get(key)!r} != {value!r}")
+for key, value in expected.items():
+    if pg.get(key) != value:
+        raise SystemExit(f"PostgreSQL manifest mismatch: {key}: {pg.get(key)!r} != {value!r}")
 if pg.get("component") != "postgresql" or pg.get("version") != "18.6":
     raise SystemExit("PostgreSQL manifest mismatch")
-if vector.get("component") != "pgvector" or vector.get("version") != "0.8.7":
-    raise SystemExit("pgvector manifest mismatch")
+controls = {path.stem for path in (core / 'share/extension').glob('*.control')}
+if not controls or pg.get('included_extensions') != sorted(controls) or 'vector' in controls:
+    raise SystemExit('built-in extension inventory mismatch')
+if vector != {'project': 'pgvector', 'version': '0.8.7', 'sql_names': ['vector'],
+              'requires': [], 'configuration_prerequisites': [], 'runtime_prerequisites': []}:
+    raise SystemExit('pgvector metadata mismatch')
+for source in (extension / 'pgvector').rglob('*'):
+    destination = core / source.relative_to(extension / 'pgvector')
+    if destination.exists() or destination.is_symlink():
+        if source.is_dir() and not source.is_symlink() and destination.is_dir() and not destination.is_symlink():
+            continue
+        raise SystemExit(f'extension payload collision: {source.relative_to(extension / "pgvector")}')
 PY
 test -s "$work/first/postgresql/LICENSES/PostgreSQL.txt"
-test -s "$work/first/pgvector/LICENSES/pgvector.txt"
+test -s "$work/extension/pgvector/LICENSES/pgvector.txt"
+ditto "$work/extension/pgvector" "$work/first/postgresql"
+test -s "$work/first/postgresql/LICENSES/pgvector.txt"
 
 start_server() {
   local pg_root=$1
   local run_name=$2
   pg_ctl="$pg_root/bin/pg_ctl"
   data_dir="$work/$run_name-data"
-  "$pg_root/bin/initdb" -D "$data_dir" --no-instructions >/dev/null
+  "$pg_root/bin/initdb" -D "$data_dir" --encoding=UTF8 --no-instructions >/dev/null
   "$pg_ctl" -D "$data_dir" -o "-k $work/socket -p 54329 -c listen_addresses=''" -l "$work/$run_name.log" -w start
   "$pg_root/bin/psql" -h "$work/socket" -p 54329 -d postgres -XAt -c 'SHOW server_version' | grep -Fx '18.6'
 }
@@ -55,6 +68,12 @@ stop_server() {
 
 export DYLD_LIBRARY_PATH= DYLD_FALLBACK_LIBRARY_PATH=
 start_server "$work/first/postgresql" first
+first_psql=("$work/first/postgresql/bin/psql" -h "$work/socket" -p 54329 -d postgres -X -v ON_ERROR_STOP=1)
+"${first_psql[@]}" -f "$repo/tests/schema.sql"
+"${first_psql[@]}" -c 'CREATE EXTENSION vector'
+"${first_psql[@]}" -c 'CREATE TABLE first_vectors (embedding vector(3))'
+"${first_psql[@]}" -c "INSERT INTO first_vectors VALUES ('[1,0,0]')"
+"${first_psql[@]}" -At -c "SELECT embedding <-> '[1,0,0]'::vector FROM first_vectors" | grep -Fx 0
 stop_server
 mv "$work/first/postgresql" "$work/moved/postgresql"
 pg="$work/moved/postgresql"
@@ -78,8 +97,6 @@ printf "CREATE COLLATION pilot_libc (provider = libc, locale = '%s');\n" "$local
 "${psql[@]}" -c "SELECT pg_reload_conf()"
 "${psql[@]}" -At -c "SHOW wal_compression" | grep -Fx zstd
 
-ditto "$work/first/pgvector/lib" "$pg/lib"
-ditto "$work/first/pgvector/share" "$pg/share"
 "${psql[@]}" -c 'CREATE EXTENSION vector'
 "${psql[@]}" -At -c "SELECT extversion FROM pg_extension WHERE extname = 'vector'" | grep -Fx '0.8.7'
 "${psql[@]}" -At -c "SELECT '[1,2,3]'::vector <-> '[2,3,4]'::vector" | grep -Fx '1.7320508075688772'
@@ -87,6 +104,12 @@ ditto "$work/first/pgvector/share" "$pg/share"
 "${psql[@]}" -c "INSERT INTO pilot_vectors VALUES (1, '[1,2,3]'), (2, '[2,3,4]')"
 "${psql[@]}" -c "CREATE INDEX ON pilot_vectors USING hnsw (embedding vector_l2_ops)"
 "${psql[@]}" -At -c "SELECT id FROM pilot_vectors ORDER BY embedding <-> '[1,2,3]' LIMIT 1" | grep -Fx 1
+"$pg/bin/pg_dump" -h "$work/socket" -p 54329 -Fc -Z zstd:1 -f "$work/pilot.dump" postgres
+"${psql[@]}" -c 'CREATE DATABASE restored'
+"$pg/bin/pg_restore" --exit-on-error -h "$work/socket" -p 54329 -d restored "$work/pilot.dump"
+restored=("$pg/bin/psql" -h "$work/socket" -p 54329 -d restored -X -v ON_ERROR_STOP=1)
+"${restored[@]}" -At -c 'SELECT pilot.active_item_count(1)' | grep -Fx 1
+"${restored[@]}" -At -c "SELECT id FROM pilot_vectors ORDER BY embedding <-> '[1,2,3]' LIMIT 1" | grep -Fx 1
 stop_server
 
 python3 - "$pg" <<'PY'

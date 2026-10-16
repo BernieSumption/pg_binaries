@@ -49,6 +49,7 @@ cp -R "$install_dir"/. "$package_dir/postgresql/"
 cp "$work_dir/postgresql-${pg_version}/COPYRIGHT" "$package_dir/postgresql/LICENSES/PostgreSQL.txt"
 python3 "$script_dir/bundle.py" "$package_dir/postgresql"
 python3 "$script_dir/licenses.py" "$package_dir/postgresql"
+builtins=$(python3 "$script_dir/../../tools/discover_builtins.py" "$package_dir/postgresql")
 
 cat > "$package_dir/postgresql/manifest.json" <<EOF
 {
@@ -58,6 +59,7 @@ cat > "$package_dir/postgresql/manifest.json" <<EOF
   "postgresql_version": "$pg_version",
   "platform": "macos",
   "architecture": "x86_64",
+  "included_extensions": $builtins,
   "capabilities": ["icu", "libc_collations", "lz4", "zstd_wal"]
 }
 EOF
@@ -70,22 +72,17 @@ cp "$install_dir/share/extension/vector"* "$package_dir/pgvector/share/extension
 cp LICENSE "$package_dir/pgvector/LICENSES/pgvector.txt"
 python3 "$script_dir/bundle.py" "$package_dir/pgvector"
 python3 "$script_dir/licenses.py" "$package_dir/pgvector"
+mv "$package_dir/pgvector/bundled-dependencies.json" "$package_dir/pgvector/LICENSES/pgvector-bundled-dependencies.json"
+mv "$package_dir/pgvector/LICENSES/inventory.json" "$package_dir/pgvector/LICENSES/pgvector-dependency-inventory.json"
 
-cat > "$package_dir/pgvector/manifest.json" <<EOF
-{
-  "schema_version": 1,
-  "component": "pgvector",
-  "version": "$vector_version",
-  "postgresql_version": "$pg_version",
-  "platform": "macos",
-  "architecture": "x86_64"
-}
+cat > "$package_dir/metadata.json" <<EOF
+{"project":"pgvector","version":"${vector_version}","sql_names":["vector"],"requires":[],"configuration_prerequisites":[],"runtime_prerequisites":[]}
 EOF
 
 pg_archive="postgresql-${pg_version}-macos-x86_64.tar.gz"
 vector_archive="pgvector-${vector_version}-postgresql-${pg_version}-macos-x86_64.tar.gz"
 tar -C "$package_dir" -czf "$output_dir/$pg_archive" postgresql
-tar -C "$package_dir" -czf "$output_dir/$vector_archive" pgvector
+tar -C "$package_dir" -czf "$output_dir/$vector_archive" pgvector metadata.json
 cd "$output_dir"
 shasum -a 256 "$pg_archive" > "$pg_archive.sha256"
 shasum -a 256 "$vector_archive" > "$vector_archive.sha256"

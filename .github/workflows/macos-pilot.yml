@@ -6,6 +6,7 @@ on:
     branches: [spike]
     paths:
       - scripts/macos/**
+      - tools/discover_builtins.py
       - tests/schema.sql
       - .github/workflows/macos-pilot.yml
 
