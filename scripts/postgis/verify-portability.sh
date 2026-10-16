@@ -1,10 +1,12 @@
 #!/bin/sh
 set -eu
+architecture=${PG_ARCHITECTURE:-x86_64}
+case "$architecture" in x86_64|arm64) ;; *) echo "Unsupported Linux architecture: $architecture" >&2; exit 2 ;; esac
 
 core=${1:?usage: verify-portability.sh CORE_ARCHIVES POSTGIS_ARCHIVES}
 extension=${2:?}
-pg_archive=postgresql-18.6-linux-x86_64.tar.gz
-postgis_archive=postgis-3.6.4-postgresql-18.6-linux-x86_64.tar.gz
+pg_archive="postgresql-18.6-linux-${architecture}.tar.gz"
+postgis_archive="postgis-3.6.4-postgresql-18.6-linux-${architecture}.tar.gz"
 cd "$core"
 sha256sum -c "$pg_archive.sha256"
 cd "$extension"

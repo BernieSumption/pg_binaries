@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
+architecture=${PG_ARCHITECTURE:-x86_64}
+case "$architecture" in x86_64|arm64) ;; *) echo "Unsupported Linux architecture: $architecture" >&2; exit 2 ;; esac
 pg_version=18.6
 postgis_version=3.6.4
-pg_archive="postgresql-${pg_version}-linux-x86_64.tar.gz"
-postgis_archive="postgis-${postgis_version}-postgresql-${pg_version}-linux-x86_64.tar.gz"
+pg_archive="postgresql-${pg_version}-linux-${architecture}.tar.gz"
+postgis_archive="postgis-${postgis_version}-postgresql-${pg_version}-linux-${architecture}.tar.gz"
 cd /input
 sha256sum -c "$pg_archive.sha256"
 mkdir -p /work/prefix /work/source /work/stage/postgis/{lib,share/extension,LICENSES} /out
@@ -25,6 +27,7 @@ make install
 stage=/work/stage/postgis
 python3 - <<'PY'
 import json
+import os
 import pathlib
 import re
 import shutil
@@ -109,7 +112,7 @@ done < <(find "$stage/lib" -type f -print0)
 python3 /usr/local/bin/write-postgis-license-inventory \
   "$stage" /work/runtime-map.tsv "$postgis_source_sha256"
 cat > "$stage/manifest.json" <<EOF
-{"schema_version":1,"component":"postgis","version":"${postgis_version}","postgresql_version":"${pg_version}","platform":"linux","architecture":"x86_64","pilot":true,"runtime_environment":{"PROJ_LIB":"share/proj","PROJ_DATA":"share/proj","GDAL_DATA":"share/gdal"}}
+{"schema_version":1,"component":"postgis","version":"${postgis_version}","postgresql_version":"${pg_version}","platform":"linux","architecture":"${architecture}","pilot":true,"runtime_environment":{"PROJ_LIB":"share/proj","PROJ_DATA":"share/proj","GDAL_DATA":"share/gdal"}}
 EOF
 
 # Test installed extensions against the extracted PostgreSQL archive. Runtime

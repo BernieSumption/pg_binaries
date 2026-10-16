@@ -25,11 +25,17 @@
       "case_ids": ["archive-assembly", "core-schema-smoke", "debug-symbol-linkage", "relocation"],
       "sources": [".github/workflows/windows-pilot.yml", "scripts/windows/build.ps1", "scripts/windows/verify.ps1", "tests/schema.sql", "tests/test_create_windows_symbols.py", "tools/create_windows_symbols.py"]
     },
+    "postgis-pilot-linux-arm64": {
+      "scope": "pilot-smoke",
+      "platforms": ["linux-arm64"],
+      "case_ids": ["postgis-alpine", "postgis-extension-smoke", "postgis-license-mapping", "postgis-relocation", "postgis-runtime-closure", "postgis-ubuntu20"],
+      "sources": [".github/workflows/postgis-pilot.yml", "scripts/postgis/probe.sql", "scripts/postgis/verify-in-container.sh", "scripts/postgis/verify-portability.sh", "scripts/postgis/verify.Dockerfile", "scripts/postgis/verify.sh", "tests/test_emit_postgis_pilot_record.py", "tests/test_reuse_linux_core_artifact.py", "tools/check_elf_dependencies.py", "tools/check_postgis_license_inventory.py", "tools/emit_postgis_pilot_record.py", "tools/reuse_linux_core_artifact.py"]
+    },
     "postgis-pilot-linux-x86_64": {
       "scope": "pilot-smoke",
       "platforms": ["linux-x86_64"],
       "case_ids": ["postgis-alpine", "postgis-extension-smoke", "postgis-license-mapping", "postgis-relocation", "postgis-runtime-closure", "postgis-ubuntu20"],
-      "sources": [".github/workflows/postgis-pilot.yml", "scripts/postgis/probe.sql", "scripts/postgis/verify-in-container.sh", "scripts/postgis/verify-portability.sh", "scripts/postgis/verify.Dockerfile", "tests/test_reuse_linux_core_artifact.py", "tools/check_elf_dependencies.py", "tools/check_postgis_license_inventory.py", "tools/emit_postgis_pilot_record.py", "tools/reuse_linux_core_artifact.py"]
+      "sources": [".github/workflows/postgis-pilot.yml", "scripts/postgis/probe.sql", "scripts/postgis/verify-in-container.sh", "scripts/postgis/verify-portability.sh", "scripts/postgis/verify.Dockerfile", "scripts/postgis/verify.sh", "tests/test_emit_postgis_pilot_record.py", "tests/test_reuse_linux_core_artifact.py", "tools/check_elf_dependencies.py", "tools/check_postgis_license_inventory.py", "tools/emit_postgis_pilot_record.py", "tools/reuse_linux_core_artifact.py"]
     },
     "macos-pilot-arm64": {
       "scope": "pilot-smoke",

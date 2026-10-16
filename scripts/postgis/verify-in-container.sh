@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
-pg_archive=postgresql-18.6-linux-x86_64.tar.gz
-postgis_archive=postgis-3.6.4-postgresql-18.6-linux-x86_64.tar.gz
+architecture=${PG_ARCHITECTURE:-x86_64}
+case "$architecture" in x86_64|arm64) ;; *) echo "Unsupported Linux architecture: $architecture" >&2; exit 2 ;; esac
+pg_archive="postgresql-18.6-linux-${architecture}.tar.gz"
+postgis_archive="postgis-3.6.4-postgresql-18.6-linux-${architecture}.tar.gz"
 cd /input
 sha256sum -c "$pg_archive.sha256"
 cd /out
@@ -11,13 +13,14 @@ tar -xzf "/input/$pg_archive" -C /tmp/first
 tar -xzf "/out/$postgis_archive" -C /tmp/extension
 python3 - <<'PY'
 import json
+import os
 import pathlib
 import re
 
 with open('/tmp/extension/postgis/manifest.json') as f:
     m = json.load(f)
 assert (m['schema_version'], m['component'], m['version'], m['postgresql_version'],
-        m['platform'], m['architecture']) == (1, 'postgis', '3.6.4', '18.6', 'linux', 'x86_64'), m
+        m['platform'], m['architecture']) == (1, 'postgis', '3.6.4', '18.6', 'linux', os.environ.get('PG_ARCHITECTURE', 'x86_64')), m
 
 support = json.loads(pathlib.Path('/work/support.json').read_text())
 allowed = set(support['extensions']['PostGIS']['sql_names'])

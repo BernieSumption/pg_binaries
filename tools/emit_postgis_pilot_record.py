@@ -13,10 +13,6 @@ import sys
 import coverage
 
 
-PROFILE_ID = "postgis-pilot-linux-x86_64"
-ARCHIVE = "postgis-3.6.4-postgresql-18.6-linux-x86_64.tar.gz"
-
-
 def sha256_file(path):
     digest = hashlib.sha256()
     with path.open("rb") as stream:
@@ -25,9 +21,12 @@ def sha256_file(path):
     return digest.hexdigest()
 
 
-def emit(root, archives, core_archives, output, image_id, kernel):
-    if platform.machine() != "x86_64":
-        raise coverage.CoverageError("PostGIS pilot requires an x86-64 runner")
+def emit(root, archives, core_archives, output, image_id, kernel, architecture="x86_64"):
+    machines = {"x86_64": "x86_64", "arm64": "aarch64"}
+    if architecture not in machines or platform.machine() != machines[architecture]:
+        raise coverage.CoverageError("PostGIS pilot requires a matching native runner")
+    platform_id = f"linux-{architecture}"
+    archive_name = f"postgis-3.6.4-postgresql-18.6-{platform_id}.tar.gz"
     revision = os.environ.get("GITHUB_SHA", "")
     run_id = os.environ.get("GITHUB_RUN_ID", "")
     repository = os.environ.get("GITHUB_REPOSITORY", "")
@@ -49,18 +48,18 @@ def emit(root, archives, core_archives, output, image_id, kernel):
     if not release.get("PRETTY_NAME") or not re.fullmatch(r"\d+(?:\.\d+)*", release.get("VERSION_ID", "")):
         raise coverage.CoverageError("runner OS release is incomplete")
 
-    profile = coverage.verification_profile(root, PROFILE_ID)
-    if profile["scope"] != "pilot-smoke" or "linux-x86_64" not in profile["platforms"]:
+    profile = coverage.verification_profile(root, f"postgis-pilot-{platform_id}")
+    if profile["scope"] != "pilot-smoke" or platform_id not in profile["platforms"]:
         raise coverage.CoverageError("invalid PostGIS pilot profile")
-    archive = archives / ARCHIVE
-    checksum = archives / f"{ARCHIVE}.sha256"
+    archive = archives / archive_name
+    checksum = archives / f"{archive_name}.sha256"
     fields = checksum.read_text(encoding="utf-8").split()
-    if len(fields) != 2 or fields[1] != ARCHIVE:
+    if len(fields) != 2 or fields[1] != archive_name:
         raise coverage.CoverageError("PostGIS archive checksum file is malformed")
     digest = sha256_file(archive)
     if digest.lower() != fields[0].lower():
         raise coverage.CoverageError("PostGIS archive checksum mismatch")
-    core_name = "postgresql-18.6-linux-x86_64.tar.gz"
+    core_name = f"postgresql-18.6-{platform_id}.tar.gz"
     core_fields = (core_archives / f"{core_name}.sha256").read_text(encoding="utf-8").split()
     if len(core_fields) != 2 or core_fields[1] != core_name:
         raise coverage.CoverageError("PostgreSQL core checksum file is malformed")
@@ -87,7 +86,7 @@ def emit(root, archives, core_archives, output, image_id, kernel):
         "sha256": digest,
         "assembled_core": {"archive": core_name, "sha256": core_digest, "version": "18.6"},
         "version": "3.6.4",
-        "platform": "linux-x86_64",
+        "platform": platform_id,
         "postgresql_version": "18.6",
         "environment": {
             "os": "linux",
@@ -95,7 +94,7 @@ def emit(root, archives, core_archives, output, image_id, kernel):
             "kernel_release": kernel,
             "distribution": release["PRETTY_NAME"],
             "distribution_version": release["VERSION_ID"],
-            "architecture": "x86_64",
+            "architecture": architecture,
             "clean_system": True,
             "endpoint": "current",
             "image_id": image_id,
@@ -112,7 +111,7 @@ def emit(root, archives, core_archives, output, image_id, kernel):
     for name in names:
         extension_record = {**record, "component": name, "project": "PostGIS"}
         coverage.validate_verification_record(extension_record, support, root)
-        path = output / f"{name}-3.6.4-postgresql-18.6-linux-x86_64-{run_id}.json"
+        path = output / f"{name}-3.6.4-postgresql-18.6-{platform_id}-{run_id}.json"
         path.write_text(json.dumps(extension_record, indent=2, sort_keys=True) + "\n",
                         encoding="utf-8")
         paths.append(path)
@@ -121,6 +120,7 @@ def emit(root, archives, core_archives, output, image_id, kernel):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--architecture", choices=["x86_64", "arm64"], default="x86_64")
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[1])
     parser.add_argument("--archives", type=Path, required=True)
     parser.add_argument("--core-archives", type=Path, required=True)
@@ -130,7 +130,7 @@ def main():
     args = parser.parse_args()
     try:
         for path in emit(args.root, args.archives, args.core_archives, args.output,
-                         args.image_id, args.kernel):
+                         args.image_id, args.kernel, args.architecture):
             print(path)
         return 0
     except (coverage.CoverageError, OSError, ValueError) as exc:
