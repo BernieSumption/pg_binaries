@@ -22,8 +22,8 @@
     "windows-pilot-x86_64": {
       "scope": "pilot-smoke",
       "platforms": ["windows-x86_64"],
-      "case_ids": ["archive-assembly", "core-schema-smoke", "relocation"],
-      "sources": [".github/workflows/windows-pilot.yml", "scripts/windows/verify.ps1", "tests/schema.sql"]
+      "case_ids": ["archive-assembly", "core-schema-smoke", "debug-symbol-linkage", "relocation"],
+      "sources": [".github/workflows/windows-pilot.yml", "scripts/windows/build.ps1", "scripts/windows/verify.ps1", "tests/schema.sql", "tests/test_create_windows_symbols.py", "tools/create_windows_symbols.py"]
     },
     "postgis-pilot-linux-x86_64": {
       "scope": "pilot-smoke",

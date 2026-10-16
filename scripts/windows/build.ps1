@@ -30,7 +30,7 @@ $env:PATH = "$(Join-Path $vcpkg 'bin');$env:PATH"
 
 $mesonArgs = @(
   'setup', $pgBuild, $pgSource,
-  "--prefix=$pgInstall", '--buildtype=release',
+  "--prefix=$pgInstall", '--buildtype=debugoptimized',
   '-Dicu=enabled', '-Dlz4=enabled', '-Dzstd=enabled',
   '-Dzlib=enabled', '-Dssl=openssl', '-Dlibxml=enabled', '-Dlibxslt=enabled',
   '-Dreadline=disabled',
@@ -43,6 +43,7 @@ meson install -C $pgBuild
 
 # Place redistributable dependency DLLs with PostgreSQL binaries, where the
 # Windows loader will find them without vcpkg or the builder's PATH.
+$bundledRuntimeDlls = @(Get-ChildItem (Join-Path $vcpkg 'bin') -Filter '*.dll' -File | Select-Object -ExpandProperty Name)
 Copy-Item (Join-Path $vcpkg 'bin/*.dll') (Join-Path $pgInstall 'bin')
 
 $pgLicenses = Join-Path $pgInstall 'LICENSES'
@@ -68,11 +69,22 @@ $pgManifest = [ordered]@{
   included_extensions = $builtins
   source_sha256 = (Get-FileHash $pgSourceArchive -Algorithm SHA256).Hash.ToLowerInvariant()
   runtime_dependencies = @('ICU', 'LZ4', 'Zstandard', 'zlib', 'OpenSSL')
+  bundled_runtime_dlls = $bundledRuntimeDlls
   os_prerequisites = @('Microsoft Visual C++ 2015-2022 Redistributable (x64)')
 }
 $pgManifest | ConvertTo-Json -Depth 5 | Set-Content -Encoding utf8 (Join-Path $pgInstall 'manifest.json')
 
 $env:PGROOT = $pgInstall
+$vectorMakefile = Join-Path $vectorSource 'Makefile.win'
+$makefileText = Get-Content $vectorMakefile -Raw
+$compileRule = 'CFLAGS = $(CFLAGS) $(PG_CFLAGS)'
+$linkRule = '$(CC) $(CFLAGS) $(OBJS) $(LIBS) /link /DLL /OUT:$(SHLIB)'
+if (-not $makefileText.Contains($compileRule) -or -not $makefileText.Contains($linkRule)) {
+  throw 'pgvector Makefile.win debug build rules have changed'
+}
+$makefileText = $makefileText.Replace($compileRule, "$compileRule /Z7")
+$makefileText = $makefileText.Replace($linkRule, $linkRule.Replace('/link /DLL', '/link /DEBUG /DLL'))
+Set-Content -Path $vectorMakefile -Value $makefileText -Encoding ascii -NoNewline
 Push-Location $vectorSource
 try {
   nmake /F Makefile.win
@@ -109,4 +121,6 @@ foreach ($archive in @($pgArchive, $vectorArchive)) {
   $hash = (Get-FileHash $archive -Algorithm SHA256).Hash.ToLowerInvariant()
   "$hash  $(Split-Path $archive -Leaf)" | Set-Content -Encoding ascii "$archive.sha256"
 }
+python (Join-Path $repo 'tools/create_windows_symbols.py') $pgArchive $vectorArchive --staged-pdbs $pgBuild $vectorSource --output-dir (Join-Path $dist 'debug-symbols')
+if ($LASTEXITCODE -ne 0) { throw 'Failed to index matching Windows PDB files' }
 Write-Host "Built $pgArchive and $vectorArchive"
