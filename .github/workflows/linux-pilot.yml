@@ -5,6 +5,7 @@ on:
     branches: [spike]
     paths:
       - 'scripts/linux/**'
+      - 'tools/check_elf_dependencies.py'
       - 'tests/schema.sql'
       - 'tests/builtins/**'
       - '.github/workflows/linux-pilot.yml'

@@ -50,6 +50,7 @@ while IFS= read -r -d '' source; do
 done < <(find "$extroot" -mindepth 1 -print0)
 cp -a "$extroot/." "$pgroot/"
 test -s "$pgroot/LICENSES/pgvector.txt"
+python3 /usr/local/bin/check-elf-dependencies "$pgroot"
 test "$(/tmp/first/postgresql/bin/postgres --version)" = 'postgres (PostgreSQL) 18.6'
 useradd -m postgres
 mkdir -p /tmp/first-data /tmp/first-socket

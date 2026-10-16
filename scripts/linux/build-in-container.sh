@@ -67,7 +67,8 @@ while IFS= read -r -d '' elf; do
   case "$elf" in
     "$root/bin/"*) rpath='$ORIGIN/../lib:$ORIGIN/../lib/runtime' ;;
     "$root/lib/runtime/"*) rpath='$ORIGIN' ;;
-    *) rpath='$ORIGIN:$ORIGIN/runtime' ;;
+    *) relative_lib=$(realpath --relative-to="$(dirname "$elf")" "$root/lib")
+       rpath="\$ORIGIN/$relative_lib:\$ORIGIN/$relative_lib/runtime" ;;
   esac
   patchelf --set-rpath "$rpath" "$elf"
 done < <(find "$root/bin" "$root/lib" -type f -print0)
