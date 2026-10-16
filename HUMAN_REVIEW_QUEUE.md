@@ -36,7 +36,7 @@ The [testing specification](specs/testing.md) requires final archives to run on 
 
 Please decide whether to authorize a suitable endpoint test environment beyond standard GitHub-hosted runners, or revise the OS minima and test-environment requirements in the specifications and repository instructions. macOS 15 is a candidate minimum with direct x86-64 and arm64 runners. A newer Linux floor may align with direct runners after both kernel versions are checked. Windows x86-64 standard runners are Server editions, while the available Windows client runner is arm64 Windows 11, so raising the Windows floor alone does not resolve the client endpoint. Until the decision and endpoint tests, do not advertise these minima or treat a current-runner smoke test as endpoint evidence. Other policy and implementation work can proceed.
 
-Answer: look into QEMU. If it is straightforward to set up, no unusually high maintenance burden compared to the other things we're doing in this repo, go ahead with it. Basic idea is:
+Answer: look into QEMU, or other solutions for running a linux distro of choice on Github Actions. If it is straightforward to set up, no unusually high maintenance burden compared to the other things we're doing in this repo, go ahead with it. Basic idea is:
 
 GitHub Actions runner, current Linux
   └─ QEMU virtual machine
