@@ -28,8 +28,8 @@
     "postgis-pilot-linux-x86_64": {
       "scope": "pilot-smoke",
       "platforms": ["linux-x86_64"],
-      "case_ids": ["postgis-extension-smoke", "postgis-relocation"],
-      "sources": [".github/workflows/postgis-pilot.yml", "scripts/postgis/probe.sql", "scripts/postgis/verify-in-container.sh"]
+      "case_ids": ["postgis-alpine", "postgis-extension-smoke", "postgis-license-mapping", "postgis-relocation", "postgis-runtime-closure", "postgis-ubuntu20"],
+      "sources": [".github/workflows/postgis-pilot.yml", "scripts/postgis/probe.sql", "scripts/postgis/verify-in-container.sh", "scripts/postgis/verify-portability.sh", "scripts/postgis/verify.Dockerfile", "tools/check_elf_dependencies.py", "tools/check_postgis_license_inventory.py"]
     }
   }
 }

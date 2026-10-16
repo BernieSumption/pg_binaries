@@ -13,6 +13,11 @@ on:
       - 'tools/write_linux_license_inventory.py'
       - 'tools/discover_builtins.py'
       - 'support.json'
+      - 'support/verification-profiles.json'
+      - 'tools/check_elf_dependencies.py'
+      - 'tools/check_postgis_license_inventory.py'
+      - 'tools/emit_postgis_pilot_record.py'
+      - 'tools/write_postgis_license_inventory.py'
       - '.github/workflows/postgis-pilot.yml'
 jobs:
   linux-postgis:
@@ -37,7 +42,13 @@ jobs:
               --entrypoint sh "$image" /repo/scripts/postgis/verify-portability.sh /core /ext
           done
       - name: Record result
-        run: cat "$RUNNER_TEMP/postgis/"*.sha256
+        run: |
+          python3 tools/emit_postgis_pilot_record.py \
+            --archives "$RUNNER_TEMP/postgis" \
+            --output "$RUNNER_TEMP/postgis-records" \
+            --image-id "$(docker image inspect --format '{{.Id}}' pg-binaries-postgis-verifier)" \
+            --kernel "$(uname -r)"
+          cat "$RUNNER_TEMP/postgis/"*.sha256
       - uses: actions/upload-artifact@v4
         if: success()
         with:
@@ -46,3 +57,9 @@ jobs:
             ${{ runner.temp }}/postgis/*.tar.gz
             ${{ runner.temp }}/postgis/*.sha256
           retention-days: 1
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: postgis-pilot-verification
+          path: ${{ runner.temp }}/postgis-records/*.json
+          retention-days: 3
