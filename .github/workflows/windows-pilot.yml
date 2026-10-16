@@ -10,6 +10,7 @@ on:
       - 'tools/discover_builtins.py'
       - 'tools/create_windows_symbols.py'
       - 'tests/schema.sql'
+      - 'tests/builtins/**'
       - 'tests/test_create_windows_symbols.py'
 
 jobs:

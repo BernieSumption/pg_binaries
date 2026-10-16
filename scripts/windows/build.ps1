@@ -34,6 +34,7 @@ $mesonArgs = @(
   '-Dicu=enabled', '-Dlz4=enabled', '-Dzstd=enabled',
   '-Dzlib=enabled', '-Dssl=openssl', '-Dlibxml=enabled', '-Dlibxslt=enabled',
   '-Dreadline=disabled',
+  '-Dplperl=disabled', '-Dplpython=disabled', '-Dpltcl=disabled',
   "-Dextra_include_dirs=$(Join-Path $vcpkg 'include')",
   "-Dextra_lib_dirs=$(Join-Path $vcpkg 'lib')"
 )

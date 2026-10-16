@@ -78,6 +78,10 @@ BEGIN
 END
 $$;
 
+SELECT CASE WHEN EXISTS (
+    SELECT 1 FROM pg_available_extensions WHERE name = 'uuid-ossp'
+) THEN 'true' ELSE 'false' END AS has_uuid_ossp \gset
+\if :has_uuid_ossp
 CREATE EXTENSION "uuid-ossp";
 CREATE TABLE builtin_uuid_ossp (id uuid DEFAULT uuid_generate_v4());
 INSERT INTO builtin_uuid_ossp DEFAULT VALUES;
@@ -89,6 +93,7 @@ BEGIN
     END IF;
 END
 $$;
+\endif
 
 CREATE EXTENSION btree_gist;
 CREATE TABLE builtin_btree_gist (

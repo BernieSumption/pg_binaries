@@ -93,10 +93,11 @@ $env:PGHOST = '127.0.0.1'
 $env:PGPORT = '55432'
 $env:PGUSER = 'postgres'
 $env:PGDATABASE = 'postgres'
+$env:PGSSLMODE = 'disable'
 $initialData = Join-Path $work 'initial database cluster'
 $initialBin = Join-Path $pgRoot 'bin'
 $env:PATH = "$initialBin;$env:SystemRoot\System32;$env:SystemRoot"
-& (Join-Path $initialBin 'initdb.exe') -D $initialData -U postgres -A trust --no-instructions
+& (Join-Path $initialBin 'initdb.exe') -D $initialData -U postgres -A trust --encoding=UTF8 --no-instructions
 $initialStarted = $false
 try {
   & (Join-Path $initialBin 'pg_ctl.exe') -D $initialData -l (Join-Path $work 'postgres-before-move.log') -o "-h 127.0.0.1 -p $env:PGPORT" -w start
@@ -122,7 +123,21 @@ $psql = Join-Path $bin 'psql.exe'
 $pgDump = Join-Path $bin 'pg_dump.exe'
 $pgRestore = Join-Path $bin 'pg_restore.exe'
 
-& $initdb -D $data -U postgres -A trust --no-instructions
+& $initdb -D $data -U postgres -A trust --encoding=UTF8 --no-instructions
+. (Join-Path $PSScriptRoot 'tls-fixtures.ps1')
+New-PilotTlsFixtures (Join-Path $data 'tls')
+@'
+shared_preload_libraries = 'pg_stat_statements'
+wal_level = logical
+ssl = on
+ssl_cert_file = 'tls/server.crt'
+ssl_key_file = 'tls/server.key'
+ssl_ca_file = 'tls/ca.crt'
+'@ | Add-Content -Encoding ascii (Join-Path $data 'postgresql.conf')
+@'
+hostssl all all 127.0.0.1/32 cert
+hostnossl all all 127.0.0.1/32 trust
+'@ | Set-Content -Encoding ascii (Join-Path $data 'pg_hba.conf')
 $started = $false
 try {
   & $pgCtl -D $data -l (Join-Path $work 'postgres.log') -o "-h 127.0.0.1 -p $env:PGPORT" -w start
@@ -133,6 +148,33 @@ try {
   if ($basicQuery -ne '1') { throw "PostgreSQL query returned $basicQuery, expected 1" }
 
   & $psql -X -v ON_ERROR_STOP=1 -f (Join-Path $repo 'tests/schema.sql')
+  & $psql -X -v ON_ERROR_STOP=1 -f (Join-Path $repo 'tests/builtins/basic.sql')
+  & $psql -X -v ON_ERROR_STOP=1 -v "loopback_conninfo=host=127.0.0.1 port=$env:PGPORT dbname=postgres sslmode=disable" -v loopback_host=127.0.0.1 -v "loopback_port=$env:PGPORT" -f (Join-Path $repo 'tests/builtins/loopback.sql')
+  $fixturePath = (Join-Path $repo 'tests/builtins/file_fdw.csv').Replace('\', '/')
+  & $psql -X -v ON_ERROR_STOP=1 -v "fixture_path=$fixturePath" -f (Join-Path $repo 'tests/builtins/fixture.sql')
+  foreach ($suite in @('preloaded', 'wal', 'logical')) {
+    & $psql -X -v ON_ERROR_STOP=1 -f (Join-Path $repo "tests/builtins/$suite.sql")
+  }
+  $notifications = (& $psql -X -v ON_ERROR_STOP=1 -f (Join-Path $repo 'tests/builtins/tcn.sql')) -join "`n"
+  Write-Host $notifications
+  if (-not $notifications.Contains('Asynchronous notification "tcn" with payload ""builtin_tcn",I,"id"=''91''"')) {
+    throw 'tcn did not deliver the expected insert notification'
+  }
+  $tlsEnvironment = @{}
+  foreach ($name in @('PGSSLMODE', 'PGSSLROOTCERT', 'PGSSLCERT', 'PGSSLKEY')) {
+    $tlsEnvironment[$name] = [Environment]::GetEnvironmentVariable($name, 'Process')
+  }
+  try {
+    $env:PGSSLMODE = 'verify-ca'
+    $env:PGSSLROOTCERT = Join-Path $data 'tls/ca.crt'
+    $env:PGSSLCERT = Join-Path $data 'tls/client.crt'
+    $env:PGSSLKEY = Join-Path $data 'tls/client.key'
+    & $psql -X -v ON_ERROR_STOP=1 -f (Join-Path $repo 'tests/builtins/ssl.sql')
+  } finally {
+    foreach ($name in $tlsEnvironment.Keys) {
+      [Environment]::SetEnvironmentVariable($name, $tlsEnvironment[$name], 'Process')
+    }
+  }
   $collationSql = @'
 CREATE COLLATION pilot_icu (provider = icu, locale = 'en-US-u-ks-level2', deterministic = false);
 SELECT 'a' COLLATE pilot_icu < 'B' COLLATE pilot_icu;
@@ -174,6 +216,7 @@ SELECT id, embedding <-> '[1,0,0]'::vector AS distance FROM pilot_vectors ORDER 
   & $psql -X -v ON_ERROR_STOP=1 -c $vectorSql
   $installed = (& $psql -At -c "SELECT extversion FROM pg_extension WHERE extname = 'vector'").Trim()
   if ($installed -ne $vectorVersion) { throw "pgvector reports $installed, expected $vectorVersion" }
+  & $psql -X -v ON_ERROR_STOP=1 -f (Join-Path $repo 'tests/builtins/coverage.sql')
   $restoreDump = Join-Path $work 'restorable.dump'
   & $pgDump -Fc -Z zstd -f $restoreDump postgres
   & $psql -X -v ON_ERROR_STOP=1 -c 'CREATE DATABASE restored'
@@ -183,7 +226,9 @@ SELECT id, embedding <-> '[1,0,0]'::vector AS distance FROM pilot_vectors ORDER 
   if ($restoredCount -ne '1' -or $restoredNearest -ne '1') {
     throw "Restored schema/vector check failed: $restoredCount / $restoredNearest"
   }
+  & $psql -X -v ON_ERROR_STOP=1 -c 'CREATE DATABASE surgery_check'
+  & $psql -X -v ON_ERROR_STOP=1 -d surgery_check -f (Join-Path $repo 'tests/builtins/surgery.sql')
   Write-Host "Verified PostgreSQL $reported and pgvector $installed on Windows $([Environment]::OSVersion.Version) after archive relocation"
 } finally {
-  if ($started) { & $pgCtl -D $data -m immediate -w stop }
+  if ($started) { & $pgCtl -D $data -m fast -w stop }
 }
