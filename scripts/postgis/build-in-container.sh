@@ -14,6 +14,7 @@ test "$("$pgroot/bin/pg_config" --version)" = 'PostgreSQL 18.6'
 export PATH="$pgroot/bin:$PATH"
 cd /work/source
 curl -fL --retry 3 -o postgis.tar.gz "https://download.osgeo.org/postgis/source/postgis-${postgis_version}.tar.gz"
+postgis_source_sha256=$(sha256sum postgis.tar.gz | cut -d' ' -f1)
 tar -xzf postgis.tar.gz
 cd "postgis-${postgis_version}"
 ./configure --with-pgconfig="$pgroot/bin/pg_config" --with-sfcgal=/usr/bin/sfcgal-config
@@ -61,7 +62,9 @@ for name in allowed:
         shutil.copy2(library, stage / 'lib' / library.name)
 PY
 cp COPYING "$stage/LICENSES/PostGIS.txt"
+cp -a /usr/share/common-licenses "$stage/LICENSES/common-licenses"
 mkdir -p "$stage/lib/runtime" "$stage/share"
+: > /work/runtime-map.tsv
 cp -a /usr/share/proj "$stage/share/proj"
 cp -a /usr/share/gdal "$stage/share/gdal"
 cp /usr/share/doc/proj-data/copyright "$stage/LICENSES/proj-data.copyright"
@@ -90,6 +93,7 @@ for pass in 1 2 3 4; do
           exit 1
         fi
         cp "/usr/share/doc/$package/copyright" "$stage/LICENSES/${package}.copyright"
+        printf '%s\t%s\n' "$package" "lib/runtime/$library" >> /work/runtime-map.tsv
       fi
     done < <(ldd "$elf" 2>/dev/null | awk '$2 == "=>" && $3 ~ /^\// {print $1, $3}')
   done < <(find "$stage/lib" -type f -print0)
@@ -102,6 +106,8 @@ while IFS= read -r -d '' elf; do
   esac
   patchelf --set-rpath "$rpath" "$elf"
 done < <(find "$stage/lib" -type f -print0)
+python3 /usr/local/bin/write-postgis-license-inventory \
+  "$stage" /work/runtime-map.tsv "$postgis_source_sha256"
 cat > "$stage/manifest.json" <<EOF
 {"schema_version":1,"component":"postgis","version":"${postgis_version}","postgresql_version":"${pg_version}","platform":"linux","architecture":"x86_64","pilot":true,"runtime_environment":{"PROJ_LIB":"share/proj","PROJ_DATA":"share/proj","GDAL_DATA":"share/gdal"}}
 EOF

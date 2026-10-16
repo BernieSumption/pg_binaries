@@ -49,6 +49,7 @@ for path in extension_dir.glob('*.sql'):
     name = path.name.split('--', 1)[0]
     assert name in allowed, f'Unselected SQL script in archive: {path.name}'
 PY
+python3 /usr/local/bin/check-postgis-license-inventory /tmp/extension/postgis
 mv /tmp/first/postgresql /tmp/moved/postgresql
 pgroot=/tmp/moved/postgresql
 extroot=/tmp/extension/postgis

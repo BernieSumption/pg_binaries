@@ -9,6 +9,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 passwd util-linux \
  && rm -rf /var/lib/apt/lists/*
 COPY scripts/postgis/build-in-container.sh /usr/local/bin/build-postgis-pilot
+COPY tools/write_postgis_license_inventory.py /usr/local/bin/write-postgis-license-inventory
 COPY scripts/postgis/probe.sql /work/probe.sql
 COPY support.json /work/support.json
 RUN chmod +x /usr/local/bin/build-postgis-pilot
