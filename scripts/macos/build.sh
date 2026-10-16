@@ -44,7 +44,7 @@ tar -xzf "$work_dir/pgvector.tar.gz" -C "$work_dir"
 
 install_dir="$work_dir/install/postgresql"
 cd "$work_dir/postgresql-${pg_version}"
-./configure --prefix="$install_dir" --with-icu --with-ssl=openssl --with-lz4 --with-zstd --with-libxml --with-libxslt --with-zlib --with-uuid=e2fs --without-readline
+CFLAGS='-O2 -g' ./configure --prefix="$install_dir" --with-icu --with-ssl=openssl --with-lz4 --with-zstd --with-libxml --with-libxslt --with-zlib --with-uuid=e2fs --without-readline
 make -j "$(sysctl -n hw.ncpu)"
 make -C contrib -j "$(sysctl -n hw.ncpu)"
 make install
@@ -72,7 +72,7 @@ cat > "$package_dir/postgresql/manifest.json" <<EOF
 EOF
 
 cd "$work_dir/pgvector-${vector_version}"
-make PG_CONFIG="$install_dir/bin/pg_config" OPTFLAGS= -j "$(sysctl -n hw.ncpu)"
+make PG_CONFIG="$install_dir/bin/pg_config" OPTFLAGS='-O2 -g' -j "$(sysctl -n hw.ncpu)"
 make PG_CONFIG="$install_dir/bin/pg_config" OPTFLAGS= install
 cp "$install_dir/lib/vector.dylib" "$package_dir/pgvector/lib/"
 cp "$install_dir/share/extension/vector"* "$package_dir/pgvector/share/extension/"
@@ -86,6 +86,36 @@ cat > "$package_dir/metadata.json" <<EOF
 {"project":"pgvector","version":"${vector_version}","sql_names":["vector"],"requires":[],"configuration_prerequisites":[],"runtime_prerequisites":[]}
 EOF
 
+python3 - "$package_dir" > "$work_dir/macho-paths.bin" <<'PY'
+import json
+import pathlib
+import subprocess
+import sys
+
+package = pathlib.Path(sys.argv[1])
+for component in ("postgresql", "pgvector"):
+    root = package / component
+    dependency_file = root / ("bundled-dependencies.json" if component == "postgresql" else "LICENSES/pgvector-bundled-dependencies.json")
+    external = set(json.loads(dependency_file.read_text()))
+    for directory in ("bin", "lib", "libexec"):
+        if component == "pgvector" and directory != "lib":
+            continue
+        candidate_dir = root / directory
+        if not candidate_dir.exists():
+            continue
+        for path in sorted(candidate_dir.rglob("*")):
+            if not path.is_file() or path.is_symlink() or path.name in external:
+                continue
+            if subprocess.run(("lipo", "-archs", str(path)), capture_output=True).returncode == 0:
+                sys.stdout.buffer.write(str(path).encode() + b"\0")
+PY
+dsyms="$work_dir/dsyms"
+while IFS= read -r -d '' binary; do
+  relative=${binary#"$package_dir"/}
+  mkdir -p "$dsyms/$(dirname "$relative")"
+  dsymutil "$binary" -o "$dsyms/$relative.dSYM"
+done < "$work_dir/macho-paths.bin"
+
 pg_archive="postgresql-${pg_version}-macos-${platform_arch}.tar.gz"
 vector_archive="pgvector-${vector_version}-postgresql-${pg_version}-macos-${platform_arch}.tar.gz"
 tar -C "$package_dir" -czf "$output_dir/$pg_archive" postgresql
@@ -93,4 +123,7 @@ tar -C "$package_dir" -czf "$output_dir/$vector_archive" pgvector metadata.json
 cd "$output_dir"
 shasum -a 256 "$pg_archive" > "$pg_archive.sha256"
 shasum -a 256 "$vector_archive" > "$vector_archive.sha256"
+python3 "$script_dir/../../tools/create_macos_symbols.py" \
+  "$output_dir/$pg_archive" "$output_dir/$vector_archive" \
+  --staged-dsyms "$dsyms" --output-dir "$output_dir/debug-symbols"
 ls -lh "$pg_archive" "$vector_archive"

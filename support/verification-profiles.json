@@ -16,8 +16,8 @@
     "macos-pilot-x86_64": {
       "scope": "pilot-smoke",
       "platforms": ["macos-x86_64"],
-      "case_ids": ["archive-assembly", "built-in-extension-smoke", "core-schema-smoke", "relocation"],
-      "sources": [".github/workflows/macos-pilot.yml", "scripts/macos/build.sh", "scripts/macos/bundle.py", "scripts/macos/licenses.py", "scripts/macos/verify.sh", "tests/builtins/basic.sql", "tests/builtins/coverage.sql", "tests/builtins/file_fdw.csv", "tests/builtins/fixture.sql", "tests/builtins/logical.sql", "tests/builtins/loopback.sql", "tests/builtins/preloaded.sql", "tests/builtins/ssl.sql", "tests/builtins/surgery.sql", "tests/builtins/tcn.sql", "tests/builtins/wal.sql", "tests/schema.sql", "tests/test_emit_macos_pilot_records.py", "tools/emit_macos_pilot_records.py"]
+      "case_ids": ["archive-assembly", "built-in-extension-smoke", "core-schema-smoke", "debug-symbol-linkage", "relocation"],
+      "sources": [".github/workflows/macos-pilot.yml", "scripts/macos/build.sh", "scripts/macos/bundle.py", "scripts/macos/licenses.py", "scripts/macos/verify.sh", "tests/builtins/basic.sql", "tests/builtins/coverage.sql", "tests/builtins/file_fdw.csv", "tests/builtins/fixture.sql", "tests/builtins/logical.sql", "tests/builtins/loopback.sql", "tests/builtins/preloaded.sql", "tests/builtins/ssl.sql", "tests/builtins/surgery.sql", "tests/builtins/tcn.sql", "tests/builtins/wal.sql", "tests/schema.sql", "tests/test_create_macos_symbols.py", "tests/test_emit_macos_pilot_records.py", "tools/create_macos_symbols.py", "tools/emit_macos_pilot_records.py"]
     },
     "windows-pilot-x86_64": {
       "scope": "pilot-smoke",
@@ -34,8 +34,8 @@
     "macos-pilot-arm64": {
       "scope": "pilot-smoke",
       "platforms": ["macos-arm64"],
-      "case_ids": ["archive-assembly", "built-in-extension-smoke", "core-schema-smoke", "relocation"],
-      "sources": [".github/workflows/macos-arm64-pilot.yml", "scripts/macos/build.sh", "scripts/macos/bundle.py", "scripts/macos/licenses.py", "scripts/macos/verify.sh", "tests/builtins/basic.sql", "tests/builtins/coverage.sql", "tests/builtins/file_fdw.csv", "tests/builtins/fixture.sql", "tests/builtins/logical.sql", "tests/builtins/loopback.sql", "tests/builtins/preloaded.sql", "tests/builtins/ssl.sql", "tests/builtins/surgery.sql", "tests/builtins/tcn.sql", "tests/builtins/wal.sql", "tests/schema.sql", "tests/test_emit_macos_pilot_records.py", "tools/emit_macos_pilot_records.py"]
+      "case_ids": ["archive-assembly", "built-in-extension-smoke", "core-schema-smoke", "debug-symbol-linkage", "relocation"],
+      "sources": [".github/workflows/macos-arm64-pilot.yml", "scripts/macos/build.sh", "scripts/macos/bundle.py", "scripts/macos/licenses.py", "scripts/macos/verify.sh", "tests/builtins/basic.sql", "tests/builtins/coverage.sql", "tests/builtins/file_fdw.csv", "tests/builtins/fixture.sql", "tests/builtins/logical.sql", "tests/builtins/loopback.sql", "tests/builtins/preloaded.sql", "tests/builtins/ssl.sql", "tests/builtins/surgery.sql", "tests/builtins/tcn.sql", "tests/builtins/wal.sql", "tests/schema.sql", "tests/test_create_macos_symbols.py", "tests/test_emit_macos_pilot_records.py", "tools/create_macos_symbols.py", "tools/emit_macos_pilot_records.py"]
     },
     "linux-minimum-kernel-x86_64": {
       "scope": "pilot-smoke",
