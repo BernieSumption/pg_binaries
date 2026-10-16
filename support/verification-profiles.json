@@ -16,14 +16,14 @@
     "macos-pilot-x86_64": {
       "scope": "pilot-smoke",
       "platforms": ["macos-x86_64"],
-      "case_ids": ["archive-assembly", "core-schema-smoke", "relocation"],
-      "sources": [".github/workflows/macos-pilot.yml", "scripts/macos/bundle.py", "scripts/macos/verify.sh"]
+      "case_ids": ["archive-assembly", "built-in-extension-smoke", "core-schema-smoke", "relocation"],
+      "sources": [".github/workflows/macos-pilot.yml", "scripts/macos/bundle.py", "scripts/macos/verify.sh", "tests/builtins/basic.sql", "tests/builtins/file_fdw.csv", "tests/builtins/fixture.sql", "tests/builtins/loopback.sql", "tests/schema.sql"]
     },
     "windows-pilot-x86_64": {
       "scope": "pilot-smoke",
       "platforms": ["windows-x86_64"],
       "case_ids": ["archive-assembly", "core-schema-smoke", "relocation"],
-      "sources": [".github/workflows/windows-pilot.yml", "scripts/windows/verify.ps1"]
+      "sources": [".github/workflows/windows-pilot.yml", "scripts/windows/verify.ps1", "tests/schema.sql"]
     },
     "postgis-pilot-linux-x86_64": {
       "scope": "pilot-smoke",
