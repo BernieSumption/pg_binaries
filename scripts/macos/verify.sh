@@ -82,6 +82,8 @@ psql=("$pg/bin/psql" -h "$work/socket" -p 54329 -d postgres -X -v ON_ERROR_STOP=
 
 "${psql[@]}" -f "$repo/tests/schema.sql"
 "${psql[@]}" -f "$repo/tests/builtins/basic.sql"
+"${psql[@]}" -v loopback_conninfo="host=$work/socket port=54329 dbname=postgres" -v loopback_host="$work/socket" -v loopback_port=54329 -f "$repo/tests/builtins/loopback.sql"
+"${psql[@]}" -v fixture_path="$repo/tests/builtins/file_fdw.csv" -f "$repo/tests/builtins/fixture.sql"
 "${psql[@]}" -c "CREATE COLLATION pilot_icu (provider = icu, locale = 'und-u-ks-level2', deterministic = false)"
 "${psql[@]}" -c "SELECT name FROM (VALUES ('a'), ('A')) AS names(name) ORDER BY name COLLATE pilot_icu"
 locale_name=$(locale -a | awk '/UTF-8|utf8/ && !found {print; found=1}')

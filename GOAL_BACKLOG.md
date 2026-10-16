@@ -18,11 +18,13 @@ This backlog records work for the current development goal. The specifications d
 - [ ] Drive builds, endpoint tests, and candidate inventory generation from the intended-support source. Demonstrate that a routine support addition does not require editing parallel workflow lists.
 - [ ] Record immutable archive checksums, source versions, applicable upstream compatibility, test revision, environment, and results so evidence can be reused only while applicable.
 - [ ] Retain verification records beyond pilot artifact expiry, including failed and skipped attempts; define a complete publication test profile before any record can establish eligibility.
+- [ ] Require release evidence to map each redistributed component and version to its licence, notices, and any required source offer or source link; check those files in final archive bytes.
 
 ## Archives and tests
 
 - [ ] Produce self-contained `.tar.gz` PostgreSQL archives and a common extension installation layout for the declared targets. Exercise the documented installation procedure and relocation on clean supported systems.
 - [ ] Verify tools, UTF-8 schema operations, enabled features, built-in and selected external extensions, licensing, and representative diagnostic failures against the final archive bytes.
+- [ ] Test DDL written for each intended extension version against the next-highest selected package version, including the documented compatibility boundaries.
 - [ ] Extend the archive-derived built-in extension checks beyond the Linux pilots. The Linux verifier now checks every control in its PostgreSQL 15.19, 16.15, 17.11 and 18.6 archives, including version-specific modules; other platform archives still need the same discovery and behaviour coverage.
 - [ ] Keep routine checks within standard GitHub-hosted runner and storage limits; investigate any combination count that appears impractical before reducing coverage.
 
