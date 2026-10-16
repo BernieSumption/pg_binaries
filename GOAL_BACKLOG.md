@@ -9,6 +9,7 @@ This backlog records work for the current development goal. The specifications d
 - [ ] Establish a supported OS minimum and practical clean-system tests for the minimum and current endpoints on all six OS/architecture combinations.
 - [ ] Prove that PostgreSQL and selected extensions can build and run natively on Windows arm64, or record the specific upstream and tooling blockers for human review.
 - [ ] Resolve Address Standardizer's US address-data redistribution rights before deciding whether its project can be included under the specification's hard licensing rule.
+- [ ] Align optional PostgreSQL capabilities across platforms: provide and test `uuid-ossp` where advertised, and make the readline exclusion explicit in every build script.
 
 ## Support and coverage
 
@@ -22,7 +23,7 @@ This backlog records work for the current development goal. The specifications d
 
 - [ ] Produce self-contained `.tar.gz` PostgreSQL archives and a common extension installation layout for the declared targets. Exercise the documented installation procedure and relocation on clean supported systems.
 - [ ] Verify tools, UTF-8 schema operations, enabled features, built-in and selected external extensions, licensing, and representative diagnostic failures against the final archive bytes.
-- [ ] Complete behavior checks for every built-in SQL extension discovered from each archive. The remaining Linux 18.6 controls need filesystem fixtures, extra sessions, preload or TLS configuration, or careful inspection assertions; investigate a safe isolated `pg_surgery` check before requesting any change to the universal test requirement.
+- [ ] Extend the archive-derived built-in extension checks beyond the Linux pilots. The Linux verifier now checks every control in its PostgreSQL 15.19, 16.15, 17.11 and 18.6 archives, including version-specific modules; other platform archives still need the same discovery and behaviour coverage.
 - [ ] Keep routine checks within standard GitHub-hosted runner and storage limits; investigate any combination count that appears impractical before reducing coverage.
 
 ## Publication readiness

@@ -87,7 +87,18 @@ pgroot=/tmp/moved/postgresql
 mkdir -p /tmp/pgdata /tmp/pgsocket
 chown postgres:postgres /tmp/pgdata /tmp/pgsocket
 runuser -u postgres -- "$pgroot/bin/initdb" -D /tmp/pgdata --encoding=UTF8 --locale=C --no-instructions
-runuser -u postgres -- "$pgroot/bin/pg_ctl" -D /tmp/pgdata -o '-k /tmp/pgsocket -p 55431 -h "" -c shared_preload_libraries=pg_stat_statements' -w start
+mkdir -p /tmp/pilot-tls
+openssl req -x509 -newkey rsa:2048 -sha256 -days 1 -nodes -subj '/CN=pilot-ca' -keyout /tmp/pilot-tls/ca.key -out /tmp/pilot-tls/ca.crt >/dev/null 2>&1
+for peer in server client; do
+  if [[ $peer == server ]]; then cn=localhost; else cn=postgres; fi
+  openssl req -newkey rsa:2048 -sha256 -nodes -subj "/CN=$cn" -keyout "/tmp/pilot-tls/$peer.key" -out "/tmp/pilot-tls/$peer.csr" >/dev/null 2>&1
+  openssl x509 -req -in "/tmp/pilot-tls/$peer.csr" -CA /tmp/pilot-tls/ca.crt -CAkey /tmp/pilot-tls/ca.key -CAcreateserial -days 1 -sha256 -out "/tmp/pilot-tls/$peer.crt" >/dev/null 2>&1
+done
+chown -R postgres:postgres /tmp/pilot-tls
+chmod 600 /tmp/pilot-tls/*.key
+printf 'local all all trust\nhostssl all all 127.0.0.1/32 cert\n' > /tmp/pgdata/pg_hba.conf
+chown postgres:postgres /tmp/pgdata/pg_hba.conf
+runuser -u postgres -- "$pgroot/bin/pg_ctl" -D /tmp/pgdata -o '-k /tmp/pgsocket -p 55431 -h 127.0.0.1 -c shared_preload_libraries=pg_stat_statements -c wal_level=logical -c ssl=on -c ssl_cert_file=/tmp/pilot-tls/server.crt -c ssl_key_file=/tmp/pilot-tls/server.key -c ssl_ca_file=/tmp/pilot-tls/ca.crt' -w start
 trap 'runuser -u postgres -- "$pgroot/bin/pg_ctl" -D /tmp/pgdata -m immediate stop >/dev/null 2>&1 || true' EXIT
 psql=(runuser -u postgres -- "$pgroot/bin/psql" -X -v ON_ERROR_STOP=1 -h /tmp/pgsocket -p 55431 -d postgres)
 "${psql[@]}" -Atqc 'SELECT version()' | grep -F "PostgreSQL $pg_version"
@@ -100,6 +111,13 @@ psql=(runuser -u postgres -- "$pgroot/bin/psql" -X -v ON_ERROR_STOP=1 -h /tmp/pg
 tcn_output=$("${psql[@]}" -f /tests/builtins/tcn.sql)
 printf '%s\n' "$tcn_output"
 grep -F "Asynchronous notification \"tcn\" with payload \"\"builtin_tcn\",I,\"id\"='91'\"" <<< "$tcn_output"
+runuser -u postgres -- env PGSSLMODE=verify-ca PGSSLROOTCERT=/tmp/pilot-tls/ca.crt PGSSLCERT=/tmp/pilot-tls/client.crt PGSSLKEY=/tmp/pilot-tls/client.key "$pgroot/bin/psql" -X -v ON_ERROR_STOP=1 -h 127.0.0.1 -p 55431 -d postgres -f /tests/builtins/ssl.sql
+if [[ $pg_version == 18.* ]]; then
+  "${psql[@]}" -f /tests/builtins/logical.sql
+fi
+if [[ $pg_version == 15.* || $pg_version == 16.* ]]; then
+  "${psql[@]}" -f /tests/builtins/legacy.sql
+fi
 "${psql[@]}" <<'SQL'
 CREATE COLLATION pilot_icu (provider = icu, locale = 'en-US-u-kn-true', deterministic = false);
 CREATE COLLATION pilot_libc (provider = libc, locale = 'C');
@@ -119,6 +137,7 @@ INSERT INTO embedding VALUES (1, '[1,0,0]'), (2, '[0,1,0]'), (3, '[0,0,1]');
 CREATE INDEX embedding_hnsw ON embedding USING hnsw (embedding vector_l2_ops);
 SELECT id, embedding <-> '[1,0,0]'::vector AS distance FROM embedding ORDER BY distance LIMIT 2;
 SQL
+"${psql[@]}" -f /tests/builtins/coverage.sql
 if [[ $pg_version == 15.* ]]; then
   dump_compression=(-Z 1)
 else
