@@ -24,7 +24,7 @@ Test archives on clean systems at the minimum and a current supported OS release
 
 ## Current implementation gaps
 
-The repository's pilot scripts build x86-64 artifacts only. macOS and Linux build scripts target x86-64; the Windows build uses the x64 vcpkg tree. No current script builds or tests arm64 artifacts, and there is no `inventory.json` recording verified minimum OS versions. These scripts therefore do not establish the intended support above.
+The repository has x86-64 pilots and a Linux arm64 pilot workflow targeting PostgreSQL 18.6. The Linux scripts can build and verify x86-64 or arm64 archives, while the macOS build targets x86-64 and the Windows build uses the x64 vcpkg tree. No passing arm64 result is recorded yet, and there is no `inventory.json` recording verified minimum OS versions. These pilots therefore do not establish the intended support above.
 
 As of October 2026, standard GitHub-hosted runners do not provide macOS 11 or Windows 10 endpoint hosts. Ubuntu 22.04 runner images currently use a newer kernel than 5.15; a container does not replace the host kernel. The proposed minima therefore lack the required endpoint test path under the current runner constraint. Investigate clean endpoint environments before finalizing or advertising these floors; if none can satisfy the testing specification, record the required decision in `HUMAN_REVIEW_QUEUE.md`. [GitHub-hosted runner matrix](https://docs.github.com/en/actions/reference/runners/github-hosted-runners), [Ubuntu 22.04 runner image](https://github.com/actions/runner-images/blob/main/images/ubuntu/Ubuntu2204-Readme.md).
 

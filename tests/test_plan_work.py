@@ -107,6 +107,11 @@ class PlanWorkTests(unittest.TestCase):
         self.assertEqual(plan_work.select_linux_pilot(self.root, "18.0"), {
             "postgresql_version": "18.0", "platform": "linux-x86_64",
             "work": "build_missing", "snapshot_as_of": "2026-01-01"})
+        self.assertEqual(plan_work.select_linux_pilot(self.root, "18.0", "arm64"), {
+            "postgresql_version": "18.0", "platform": "linux-arm64",
+            "work": "build_missing", "snapshot_as_of": "2026-01-01"})
+        with self.assertRaisesRegex(plan_work.coverage.CoverageError, "architecture must be"):
+            plan_work.select_linux_pilot(self.root, "18.0", "ppc64le")
         with self.assertRaisesRegex(plan_work.coverage.CoverageError, "15 through 18 minors"):
             plan_work.select_linux_pilot(self.root, "14.9")
         with self.assertRaisesRegex(plan_work.coverage.CoverageError, "not a missing declared"):
@@ -121,6 +126,16 @@ class PlanWorkTests(unittest.TestCase):
             "extensions": {}})
         with self.assertRaisesRegex(plan_work.coverage.CoverageError, "not a missing declared"):
             plan_work.select_linux_pilot(self.root, "15.19")
+
+    def test_linux_arm64_pilot_rejects_existing_public_download(self):
+        snapshot = {"as_of": "2026-01-01", "source": "https://example.test/releases",
+                    "releases": [{"version": "15.19", "release_date": "2025-09-25"}]}
+        self.write("support/postgresql-releases.json", snapshot)
+        self.write("inventory.json", {"postgresql": {"15.19": {"downloads": {
+            "linux-arm64": {"url": "https://example.test/pg-arm64.tgz", "sha256": "a" * 64}}}},
+            "extensions": {}})
+        with self.assertRaisesRegex(plan_work.coverage.CoverageError, "not a missing declared"):
+            plan_work.select_linux_pilot(self.root, "15.19", "arm64")
 
 
 if __name__ == "__main__":

@@ -1,27 +1,34 @@
 #!/usr/bin/env bash
 set -euo pipefail
 pg_version=${PG_VERSION:-18.6}
+architecture=${PG_ARCHITECTURE:-x86_64}
+case "$architecture" in x86_64|arm64) ;; *) echo "Unsupported Linux architecture: $architecture" >&2; exit 2 ;; esac
+case "$architecture:$(uname -m)" in
+  x86_64:x86_64|arm64:aarch64) ;;
+  *) echo "Verifier container architecture does not match $architecture: $(uname -m)" >&2; exit 2 ;;
+esac
 if [[ ! $pg_version =~ ^(15|16|17|18)\.[0-9]+$ ]]; then
   echo "Linux pilot currently supports PostgreSQL 15 through 18 minors only: $pg_version" >&2
   exit 2
 fi
-pg="postgresql-${pg_version}-linux-x86_64.tar.gz"
-vector="pgvector-0.8.7-postgresql-${pg_version}-linux-x86_64.tar.gz"
+pg="postgresql-${pg_version}-linux-${architecture}.tar.gz"
+vector="pgvector-0.8.7-postgresql-${pg_version}-linux-${architecture}.tar.gz"
 cd /out
 sha256sum -c "$pg.sha256" "$vector.sha256"
 mkdir -p /tmp/first /tmp/moved /tmp/vector
 tar -xzf "$pg" -C /tmp/first
 tar -xzf "$vector" -C /tmp/vector
-python3 - "$pg_version" <<'PY'
+python3 - "$pg_version" "$architecture" <<'PY'
 import json
 from pathlib import Path
 import sys
 version = sys.argv[1]
+architecture = sys.argv[2]
 with open('/tmp/first/postgresql/manifest.json') as f:
     m = json.load(f)
 assert (m['schema_version'], m['component'], m['version'],
         m['postgresql_version'], m['platform'], m['architecture']) == (
-            1, 'postgresql', version, version, 'linux', 'x86_64'), m
+            1, 'postgresql', version, version, 'linux', architecture), m
 controls = {path.stem for path in Path('/tmp/first/postgresql/share/extension').glob('*.control')}
 assert controls and m['included_extensions'] == sorted(controls), m
 assert 'vector' not in controls, controls

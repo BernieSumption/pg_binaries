@@ -1,13 +1,19 @@
 #!/usr/bin/env bash
 set -euo pipefail
 pg_version=${PG_VERSION:-18.6}
+architecture=${PG_ARCHITECTURE:-x86_64}
+case "$architecture" in x86_64|arm64) ;; *) echo "Unsupported Linux architecture: $architecture" >&2; exit 2 ;; esac
+case "$architecture:$(uname -m)" in
+  x86_64:x86_64|arm64:aarch64) ;;
+  *) echo "Build container architecture does not match $architecture: $(uname -m)" >&2; exit 2 ;;
+esac
 if [[ ! $pg_version =~ ^(15|16|17|18)\.[0-9]+$ ]]; then
   echo "Linux pilot currently supports PostgreSQL 15 through 18 minors only: $pg_version" >&2
   exit 2
 fi
 vector_version=0.8.7
-pg_archive="postgresql-${pg_version}-linux-x86_64.tar.gz"
-vector_archive="pgvector-${vector_version}-postgresql-${pg_version}-linux-x86_64.tar.gz"
+pg_archive="postgresql-${pg_version}-linux-${architecture}.tar.gz"
+vector_archive="pgvector-${vector_version}-postgresql-${pg_version}-linux-${architecture}.tar.gz"
 mkdir -p /work/src /work/stage/postgresql /work/stage/pgvector /out
 cd /work/src
 curl -fL --retry 3 -o postgresql.tar.bz2 "https://ftp.postgresql.org/pub/source/v${pg_version}/postgresql-${pg_version}.tar.bz2"
@@ -78,7 +84,7 @@ while IFS= read -r -d '' elf; do
 done < <(find "$root/bin" "$root/lib" -type f -print0)
 
 cat > "$root/manifest.json" <<EOF
-{"schema_version":1,"component":"postgresql","version":"${pg_version}","postgresql_version":"${pg_version}","platform":"linux","architecture":"x86_64","glibc_baseline":"2.35","included_extensions":${builtins},"capabilities":{"icu":true,"libc_collations":true,"lz4":true,"zstd":true}}
+{"schema_version":1,"component":"postgresql","version":"${pg_version}","postgresql_version":"${pg_version}","platform":"linux","architecture":"${architecture}","glibc_baseline":"2.35","included_extensions":${builtins},"capabilities":{"icu":true,"libc_collations":true,"lz4":true,"zstd":true}}
 EOF
 
 cat > /work/stage/metadata.json <<EOF

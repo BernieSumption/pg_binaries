@@ -67,13 +67,15 @@ def plan(root):
     return result
 
 
-def select_linux_pilot(root, version):
-    """Select one declared PostgreSQL 15 through 18 x86-64 Linux pilot build."""
+def select_linux_pilot(root, version, architecture="x86_64"):
+    """Select one declared PostgreSQL 15 through 18 Linux pilot build."""
     if not re.fullmatch(r"(15|16|17|18)\.[0-9]+", version):
         raise coverage.CoverageError(
             "Linux pilot currently supports PostgreSQL 15 through 18 minors only")
+    if architecture not in ("x86_64", "arm64"):
+        raise coverage.CoverageError("Linux pilot architecture must be x86_64 or arm64")
     work = plan(root)
-    target = [version, "linux-x86_64"]
+    target = [version, f"linux-{architecture}"]
     if target not in work["build_missing"]["core"]:
         raise coverage.CoverageError(f"{target} is not a missing declared core build")
     return {"postgresql_version": version, "platform": target[1],
@@ -84,9 +86,10 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[1])
     parser.add_argument("--select-linux-pilot", metavar="VERSION")
+    parser.add_argument("--architecture", choices=("x86_64", "arm64"), default="x86_64")
     args = parser.parse_args()
     try:
-        result = (select_linux_pilot(args.root, args.select_linux_pilot)
+        result = (select_linux_pilot(args.root, args.select_linux_pilot, args.architecture)
                   if args.select_linux_pilot else plan(args.root))
         print(json.dumps(result, indent=2, sort_keys=True))
         return 0

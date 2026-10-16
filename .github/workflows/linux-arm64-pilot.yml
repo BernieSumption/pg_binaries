@@ -1,0 +1,49 @@
+name: Linux arm64 PostgreSQL 18.6 pilot
+on:
+  workflow_dispatch:
+    inputs:
+      postgresql_version:
+        description: One declared PostgreSQL 15 through 18 minor version
+        required: true
+        default: '18.6'
+        type: string
+  push:
+    branches: [spike]
+    paths:
+      - 'scripts/linux/**'
+      - 'tools/check_elf_dependencies.py'
+      - 'tools/plan_work.py'
+      - 'tests/schema.sql'
+      - 'tests/builtins/**'
+      - 'tests/test_plan_work.py'
+      - '.github/workflows/linux-arm64-pilot.yml'
+jobs:
+  linux-arm64:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 55
+    env:
+      PG_VERSION: ${{ inputs.postgresql_version || '18.6' }}
+      PG_ARCHITECTURE: arm64
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Preview one declared Linux arm64 build target
+        run: python3 tools/plan_work.py --select-linux-pilot "$PG_VERSION" --architecture arm64
+      - name: Build exact PostgreSQL and pgvector archives
+        run: scripts/linux/build.sh "$RUNNER_TEMP/pilot"
+      - name: Verify relocated archives on clean Ubuntu 24.04 arm64
+        run: scripts/linux/verify.sh "$RUNNER_TEMP/pilot"
+      - name: Record archive checksums and host architecture
+        run: |
+          cat /etc/os-release
+          test "$(uname -m)" = aarch64
+          cat "$RUNNER_TEMP/pilot/"*.sha256
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: linux-arm64-pilot-archives
+          path: |
+            ${{ runner.temp }}/pilot/*.tar.gz
+            ${{ runner.temp }}/pilot/*.sha256
+          retention-days: 3

@@ -11,6 +11,7 @@ import sys
 SYSTEM_LIBRARIES = {
     "libc.so.6", "libm.so.6", "libpthread.so.0", "libdl.so.2",
     "librt.so.1", "libresolv.so.2", "ld-linux-x86-64.so.2",
+    "ld-linux-aarch64.so.1",
 }
 DEPENDENCY = re.compile(r"^\s*(\S+)\s+=>\s+(/\S+)")
 LOADER = re.compile(r"^\s*(/\S+)\s+\(")
