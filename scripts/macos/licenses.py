@@ -23,6 +23,7 @@ for library, source in sources.items():
     formulas.setdefault((name, version), []).append(library)
 
 known_urls = {
+    "icu4c": "https://raw.githubusercontent.com/unicode-org/icu/main/LICENSE",
     "icu4c@78": "https://raw.githubusercontent.com/unicode-org/icu/main/LICENSE",
     "openssl@3": "https://raw.githubusercontent.com/openssl/openssl/master/LICENSE.txt",
     "lz4": "https://raw.githubusercontent.com/lz4/lz4/dev/lib/LICENSE",
@@ -34,9 +35,24 @@ known_urls = {
 }
 inventory = []
 for (name, version), libraries in sorted(formulas.items()):
-    prefix = pathlib.Path("/usr/local/Cellar") / name / version
-    if not prefix.exists():
-        prefix = pathlib.Path("/opt/homebrew/Cellar") / name / version
+    source_paths = [pathlib.Path(sources[library]) for library in libraries]
+    prefix = None
+    for source_path in source_paths:
+        parts = source_path.parts
+        if "Cellar" in parts:
+            index = parts.index("Cellar")
+            candidate = pathlib.Path(*parts[:index + 3])
+            if candidate.exists():
+                prefix = candidate
+                break
+    if prefix is None:
+        for cellar in (pathlib.Path("/opt/homebrew/Cellar"), pathlib.Path("/usr/local/Cellar")):
+            candidate = cellar / name / version
+            if candidate.exists():
+                prefix = candidate
+                break
+    if prefix is None:
+        raise SystemExit(f"cannot locate Homebrew package {name} {version}")
     candidates = sorted(
         p for p in prefix.rglob("*")
         if p.is_file() and p.name.lower() in {"license", "license.txt", "copying", "copyright"}

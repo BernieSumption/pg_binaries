@@ -2,9 +2,15 @@
 set -euo pipefail
 
 archives=$(cd "${1:?archive directory required}" && pwd)
+architecture=${2:-$(uname -m)}
+case "$architecture" in x86_64|arm64) ;; *) echo "Unsupported macOS architecture: $architecture" >&2; exit 1 ;; esac
 repo=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
-pg_name=postgresql-18.6-macos-x86_64.tar.gz
-vector_name=pgvector-0.8.7-postgresql-18.6-macos-x86_64.tar.gz
+if [[ $(uname -s) != Darwin || $(uname -m) != "$architecture" ]]; then
+  echo "Verification requires native macOS $architecture" >&2
+  exit 1
+fi
+pg_name="postgresql-18.6-macos-${architecture}.tar.gz"
+vector_name="pgvector-0.8.7-postgresql-18.6-macos-${architecture}.tar.gz"
 work=$(mktemp -d /tmp/pgv.XXXXXX)
 data_dir=
 pg_ctl=
@@ -22,12 +28,12 @@ mkdir -p "$work/first" "$work/extension" "$work/moved" "$work/socket"
 tar -xzf "$archives/$pg_name" -C "$work/first"
 tar -xzf "$archives/$vector_name" -C "$work/extension"
 
-python3 - "$work/first/postgresql" "$work/extension" <<'PY'
+python3 - "$work/first/postgresql" "$work/extension" "$architecture" <<'PY'
 import json, pathlib, sys
-core, extension = map(pathlib.Path, sys.argv[1:])
+core, extension = map(pathlib.Path, sys.argv[1:3])
 pg = json.loads((core / 'manifest.json').read_text())
 vector = json.loads((extension / 'metadata.json').read_text())
-expected = {"schema_version": 1, "postgresql_version": "18.6", "platform": "macos", "architecture": "x86_64"}
+expected = {"schema_version": 1, "postgresql_version": "18.6", "platform": "macos", "architecture": sys.argv[3]}
 for key, value in expected.items():
     if pg.get(key) != value:
         raise SystemExit(f"PostgreSQL manifest mismatch: {key}: {pg.get(key)!r} != {value!r}")

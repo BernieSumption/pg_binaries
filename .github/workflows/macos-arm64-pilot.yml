@@ -1,0 +1,70 @@
+name: Apple Silicon macOS PostgreSQL 18.6 pilot
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [spike]
+    paths:
+      - scripts/macos/**
+      - tools/discover_builtins.py
+      - tools/emit_macos_pilot_records.py
+      - tests/schema.sql
+      - tests/builtins/**
+      - tests/test_emit_macos_pilot_records.py
+      - support/verification-profiles.json
+      - .github/workflows/macos-arm64-pilot.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: macos-arm64-pilot-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 100
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and package PostgreSQL and pgvector
+        run: bash scripts/macos/build.sh "$RUNNER_TEMP/archives" arm64
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos-arm64-pilot-archives
+          path: |
+            ${{ runner.temp }}/archives/*.tar.gz
+            ${{ runner.temp }}/archives/*.sha256
+          if-no-files-found: error
+          retention-days: 1
+
+  verify:
+    needs: build
+    runs-on: macos-15
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: macos-arm64-pilot-archives
+          path: ${{ runner.temp }}/archives
+      - name: Check downloaded archives on a fresh Apple Silicon runner
+        run: bash scripts/macos/verify.sh "$RUNNER_TEMP/archives" arm64
+      - name: Check pilot record emitter
+        run: python3 -m unittest tests/test_emit_macos_pilot_records.py
+      - name: Emit pilot-smoke verification records
+        run: |
+          image_id="${ImageOS:?runner image OS missing}/${ImageVersion:?runner image version missing}"
+          python3 tools/emit_macos_pilot_records.py \
+            --archives "$RUNNER_TEMP/archives" \
+            --output "$RUNNER_TEMP/verification-records" \
+            --postgresql-version 18.6 \
+            --os-version "$(sw_vers -productVersion)" \
+            --architecture "$(uname -m)" \
+            --image-id "$image_id"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos-arm64-pilot-verification-records
+          path: ${{ runner.temp }}/verification-records/*.json
+          if-no-files-found: error
+          retention-days: 7

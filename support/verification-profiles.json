@@ -17,7 +17,7 @@
       "scope": "pilot-smoke",
       "platforms": ["macos-x86_64"],
       "case_ids": ["archive-assembly", "built-in-extension-smoke", "core-schema-smoke", "relocation"],
-      "sources": [".github/workflows/macos-pilot.yml", "scripts/macos/bundle.py", "scripts/macos/verify.sh", "tests/builtins/basic.sql", "tests/builtins/coverage.sql", "tests/builtins/file_fdw.csv", "tests/builtins/fixture.sql", "tests/builtins/logical.sql", "tests/builtins/loopback.sql", "tests/builtins/preloaded.sql", "tests/builtins/ssl.sql", "tests/builtins/surgery.sql", "tests/builtins/tcn.sql", "tests/builtins/wal.sql", "tests/schema.sql"]
+      "sources": [".github/workflows/macos-pilot.yml", "scripts/macos/build.sh", "scripts/macos/bundle.py", "scripts/macos/licenses.py", "scripts/macos/verify.sh", "tests/builtins/basic.sql", "tests/builtins/coverage.sql", "tests/builtins/file_fdw.csv", "tests/builtins/fixture.sql", "tests/builtins/logical.sql", "tests/builtins/loopback.sql", "tests/builtins/preloaded.sql", "tests/builtins/ssl.sql", "tests/builtins/surgery.sql", "tests/builtins/tcn.sql", "tests/builtins/wal.sql", "tests/schema.sql", "tests/test_emit_macos_pilot_records.py", "tools/emit_macos_pilot_records.py"]
     },
     "windows-pilot-x86_64": {
       "scope": "pilot-smoke",
@@ -30,6 +30,12 @@
       "platforms": ["linux-x86_64"],
       "case_ids": ["postgis-alpine", "postgis-extension-smoke", "postgis-license-mapping", "postgis-relocation", "postgis-runtime-closure", "postgis-ubuntu20"],
       "sources": [".github/workflows/postgis-pilot.yml", "scripts/postgis/probe.sql", "scripts/postgis/verify-in-container.sh", "scripts/postgis/verify-portability.sh", "scripts/postgis/verify.Dockerfile", "tools/check_elf_dependencies.py", "tools/check_postgis_license_inventory.py", "tools/emit_postgis_pilot_record.py"]
+    },
+    "macos-pilot-arm64": {
+      "scope": "pilot-smoke",
+      "platforms": ["macos-arm64"],
+      "case_ids": ["archive-assembly", "built-in-extension-smoke", "core-schema-smoke", "relocation"],
+      "sources": [".github/workflows/macos-arm64-pilot.yml", "scripts/macos/build.sh", "scripts/macos/bundle.py", "scripts/macos/licenses.py", "scripts/macos/verify.sh", "tests/builtins/basic.sql", "tests/builtins/coverage.sql", "tests/builtins/file_fdw.csv", "tests/builtins/fixture.sql", "tests/builtins/logical.sql", "tests/builtins/loopback.sql", "tests/builtins/preloaded.sql", "tests/builtins/ssl.sql", "tests/builtins/surgery.sql", "tests/builtins/tcn.sql", "tests/builtins/wal.sql", "tests/schema.sql", "tests/test_emit_macos_pilot_records.py", "tools/emit_macos_pilot_records.py"]
     }
   }
 }

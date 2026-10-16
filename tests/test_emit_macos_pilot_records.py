@@ -30,10 +30,16 @@ class EmitMacOSPilotRecordsTests(unittest.TestCase):
         (self.root / "workflow.yml").write_text("pilot workflow\n", encoding="utf-8")
         (self.root / "support/verification-profiles.json").write_text(json.dumps({
             "schema_version": 1,
-            "profiles": {"macos-pilot-x86_64": {
-                "scope": "pilot-smoke", "platforms": ["macos-x86_64"],
-                "case_ids": ["core-schema-smoke"], "sources": ["workflow.yml"],
-            }},
+            "profiles": {
+                "macos-pilot-x86_64": {
+                    "scope": "pilot-smoke", "platforms": ["macos-x86_64"],
+                    "case_ids": ["core-schema-smoke"], "sources": ["workflow.yml"],
+                },
+                "macos-pilot-arm64": {
+                    "scope": "pilot-smoke", "platforms": ["macos-arm64"],
+                    "case_ids": ["core-schema-smoke"], "sources": ["workflow.yml"],
+                },
+            },
         }), encoding="utf-8")
         (self.root / "support.json").write_text(json.dumps({
             "os_support": {"macos": {"minimum_version": "11.0"}},
@@ -96,6 +102,28 @@ class EmitMacOSPilotRecordsTests(unittest.TestCase):
         with self.assertRaisesRegex(records.coverage.CoverageError,
                                     "not the expected macOS pilot"):
             self.emit()
+
+    def test_emits_arm64_records(self):
+        names = (
+            "postgresql-18.6-macos-arm64.tar.gz",
+            "pgvector-0.8.7-postgresql-18.6-macos-arm64.tar.gz",
+        )
+        for name in names:
+            data = ("archive " + name).encode()
+            (self.archives / name).write_bytes(data)
+            (self.archives / f"{name}.sha256").write_text(
+                f"{hashlib.sha256(data).hexdigest()}  {name}\n", encoding="utf-8")
+        paths = records.emit(self.root, self.archives, self.output, "18.6", "b" * 40,
+                              "15.7", "arm64", "macos-15/ImageVersion=2026.01")
+        self.assertEqual({path.name for path in paths}, {
+            "postgresql-18.6-macos-arm64-12345.json",
+            "vector-18.6-macos-arm64-12345.json",
+        })
+        for path in paths:
+            data = json.loads(path.read_text(encoding="utf-8"))
+            self.assertEqual(data["profile_id"], "macos-pilot-arm64")
+            self.assertEqual(data["platform"], "macos-arm64")
+            self.assertEqual(data["environment"]["architecture"], "arm64")
 
     def test_rejects_archive_bytes_that_do_not_match_checksum(self):
         (self.archives / "postgresql-18.6-macos-x86_64.tar.gz").write_bytes(b"changed")

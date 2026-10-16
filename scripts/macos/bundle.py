@@ -11,6 +11,7 @@ import sys
 
 
 root = pathlib.Path(sys.argv[1]).resolve()
+expected_arch = sys.argv[2] if len(sys.argv) > 2 else None
 libdir = root / "lib"
 libdir.mkdir(parents=True, exist_ok=True)
 external_sources = {}
@@ -113,6 +114,10 @@ for binary in files():
     deps = macho_dependencies(binary)
     if deps is None:
         continue
+    if expected_arch:
+        result = run("lipo", "-verify_arch", expected_arch, str(binary))
+        if result.returncode:
+            raise SystemExit(f"Mach-O file lacks {expected_arch} architecture: {binary}")
     relative_lib = os.path.relpath(libdir, binary.parent)
     loader_lib = "@loader_path" if relative_lib == "." else "@loader_path/" + relative_lib
     for dep in deps:
@@ -137,6 +142,10 @@ for binary in files():
     deps = macho_dependencies(binary)
     if deps is None:
         continue
+    if expected_arch:
+        result = run("lipo", "-verify_arch", expected_arch, str(binary))
+        if result.returncode:
+            raise SystemExit(f"Mach-O file lacks {expected_arch} architecture: {binary}")
     for dep in deps:
         if dep.startswith("/") and not is_system(dep):
             raise SystemExit(f"non-system absolute dependency remains: {binary}: {dep}")

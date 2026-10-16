@@ -3,15 +3,21 @@ set -euo pipefail
 
 pg_version=18.6
 vector_version=0.8.7
+architecture=${2:-$(uname -m)}
 script_dir=$(cd "$(dirname "$0")" && pwd)
 output_dir=$(mkdir -p "${1:?output directory required}" && cd "$1" && pwd)
 work_dir=$(mktemp -d "${RUNNER_TEMP:-/tmp}/pg-macos-pilot.XXXXXX")
 trap 'rm -rf "$work_dir"' EXIT
 
-if [[ $(uname -s) != Darwin || $(uname -m) != x86_64 ]]; then
-  echo 'This build requires Intel macOS' >&2
+if [[ $(uname -s) != Darwin || $(uname -m) != "$architecture" ]]; then
+  echo "This build requires native macOS $architecture" >&2
   exit 1
 fi
+case "$architecture" in
+  x86_64) platform_arch=x86_64 ;;
+  arm64) platform_arch=arm64 ;;
+  *) echo "Unsupported macOS architecture: $architecture" >&2; exit 1 ;;
+esac
 
 brew install icu4c openssl@3 lz4 zstd libxml2 libxslt e2fsprogs
 brew_prefixes=()
@@ -29,6 +35,7 @@ for prefix in "${brew_prefixes[@]}"; do
   LDFLAGS+=" -L$prefix/lib"
 done
 export CPPFLAGS LDFLAGS
+export MACOSX_DEPLOYMENT_TARGET=11.0
 
 curl -fL --retry 3 "https://ftp.postgresql.org/pub/source/v${pg_version}/postgresql-${pg_version}.tar.bz2" -o "$work_dir/postgresql.tar.bz2"
 curl -fL --retry 3 "https://github.com/pgvector/pgvector/archive/refs/tags/v${vector_version}.tar.gz" -o "$work_dir/pgvector.tar.gz"
@@ -47,7 +54,7 @@ package_dir="$work_dir/package"
 mkdir -p "$package_dir/postgresql/LICENSES" "$package_dir/pgvector/lib" "$package_dir/pgvector/share/extension" "$package_dir/pgvector/LICENSES"
 cp -R "$install_dir"/. "$package_dir/postgresql/"
 cp "$work_dir/postgresql-${pg_version}/COPYRIGHT" "$package_dir/postgresql/LICENSES/PostgreSQL.txt"
-python3 "$script_dir/bundle.py" "$package_dir/postgresql"
+python3 "$script_dir/bundle.py" "$package_dir/postgresql" "$architecture"
 python3 "$script_dir/licenses.py" "$package_dir/postgresql"
 builtins=$(python3 "$script_dir/../../tools/discover_builtins.py" "$package_dir/postgresql")
 
@@ -58,7 +65,7 @@ cat > "$package_dir/postgresql/manifest.json" <<EOF
   "version": "$pg_version",
   "postgresql_version": "$pg_version",
   "platform": "macos",
-  "architecture": "x86_64",
+  "architecture": "$platform_arch",
   "included_extensions": $builtins,
   "capabilities": ["icu", "libc_collations", "lz4", "zstd_wal"]
 }
@@ -70,7 +77,7 @@ make PG_CONFIG="$install_dir/bin/pg_config" OPTFLAGS= install
 cp "$install_dir/lib/vector.dylib" "$package_dir/pgvector/lib/"
 cp "$install_dir/share/extension/vector"* "$package_dir/pgvector/share/extension/"
 cp LICENSE "$package_dir/pgvector/LICENSES/pgvector.txt"
-python3 "$script_dir/bundle.py" "$package_dir/pgvector"
+python3 "$script_dir/bundle.py" "$package_dir/pgvector" "$architecture"
 python3 "$script_dir/licenses.py" "$package_dir/pgvector"
 mv "$package_dir/pgvector/bundled-dependencies.json" "$package_dir/pgvector/LICENSES/pgvector-bundled-dependencies.json"
 mv "$package_dir/pgvector/LICENSES/inventory.json" "$package_dir/pgvector/LICENSES/pgvector-dependency-inventory.json"
@@ -79,8 +86,8 @@ cat > "$package_dir/metadata.json" <<EOF
 {"project":"pgvector","version":"${vector_version}","sql_names":["vector"],"requires":[],"configuration_prerequisites":[],"runtime_prerequisites":[]}
 EOF
 
-pg_archive="postgresql-${pg_version}-macos-x86_64.tar.gz"
-vector_archive="pgvector-${vector_version}-postgresql-${pg_version}-macos-x86_64.tar.gz"
+pg_archive="postgresql-${pg_version}-macos-${platform_arch}.tar.gz"
+vector_archive="pgvector-${vector_version}-postgresql-${pg_version}-macos-${platform_arch}.tar.gz"
 tar -C "$package_dir" -czf "$output_dir/$pg_archive" postgresql
 tar -C "$package_dir" -czf "$output_dir/$vector_archive" pgvector metadata.json
 cd "$output_dir"

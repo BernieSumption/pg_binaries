@@ -13,8 +13,6 @@ import sys
 import coverage
 
 
-PROFILE_ID = "macos-pilot-x86_64"
-PLATFORM = "macos-x86_64"
 DEPENDENCY_PROFILE = "macho-system-dependencies-v1"
 HASH_CHUNK_SIZE = 1024 * 1024
 
@@ -29,16 +27,18 @@ def sha256_file(path):
 
 def emit(root, archive_dir, output_dir, pg_version, revision, os_version,
          architecture, image_id):
-    if architecture != "x86_64":
-        raise coverage.CoverageError("macOS pilot runner architecture must be x86_64")
+    if architecture not in {"x86_64", "arm64"}:
+        raise coverage.CoverageError("macOS pilot runner architecture must be x86_64 or arm64")
     if not re.fullmatch(r"(?:[0-9a-fA-F]{40}|[0-9a-fA-F]{64})", revision):
         raise coverage.CoverageError("test revision must be a full Git commit hash")
     if not re.fullmatch(r"\d+(?:\.\d+)*", os_version):
         raise coverage.CoverageError("macOS version must be numeric dotted version")
     if not image_id:
         raise coverage.CoverageError("runner image identifier is required")
-    profile = coverage.verification_profile(root, PROFILE_ID)
-    if profile["scope"] != "pilot-smoke" or PLATFORM not in profile["platforms"]:
+    profile_id = f"macos-pilot-{architecture}"
+    platform = f"macos-{architecture}"
+    profile = coverage.verification_profile(root, profile_id)
+    if profile["scope"] != "pilot-smoke" or platform not in profile["platforms"]:
         raise coverage.CoverageError("registered profile is not the expected macOS pilot")
     support = coverage.load_json(Path(root) / "support.json")
     run_id = os.environ.get("GITHUB_RUN_ID", "")
@@ -47,8 +47,8 @@ def emit(root, archive_dir, output_dir, pg_version, revision, os_version,
     if not run_id or not repository or not server_url:
         raise coverage.CoverageError("GitHub Actions run provenance is required")
     names = (
-        (f"postgresql-{pg_version}-macos-x86_64.tar.gz", "postgresql", pg_version),
-        (f"pgvector-0.8.7-postgresql-{pg_version}-macos-x86_64.tar.gz", "vector", "0.8.7"),
+        (f"postgresql-{pg_version}-macos-{architecture}.tar.gz", "postgresql", pg_version),
+        (f"pgvector-0.8.7-postgresql-{pg_version}-macos-{architecture}.tar.gz", "vector", "0.8.7"),
     )
     records = []
     for filename, component, version in names:
@@ -84,7 +84,7 @@ def emit(root, archive_dir, output_dir, pg_version, revision, os_version,
             "sha256": actual_sha,
             "component": component,
             "version": version,
-            "platform": PLATFORM,
+            "platform": platform,
             "postgresql_version": pg_version,
             "environment": {
                 "os": "macos",
@@ -98,7 +98,7 @@ def emit(root, archive_dir, output_dir, pg_version, revision, os_version,
             },
         }
         coverage.validate_verification_record(record, support, root)
-        path = output_dir / f"{component}-{pg_version}-macos-x86_64-{run_id}.json"
+        path = output_dir / f"{component}-{pg_version}-macos-{architecture}-{run_id}.json"
         records.append((path, record))
     output_dir.mkdir(parents=True, exist_ok=True)
     for path, record in records:
