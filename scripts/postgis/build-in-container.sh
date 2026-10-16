@@ -130,4 +130,5 @@ cd /work/stage
 tar -czf "/out/$postgis_archive" postgis
 cd /out
 sha256sum "$postgis_archive" > "$postgis_archive.sha256"
+python3 /usr/local/bin/create-linux-symbols "$postgis_archive" --output-dir /out/debug-symbols
 du -sh /work/stage/postgis "$stage/lib/runtime" "$stage/share/proj" "$stage/share/gdal"

@@ -1,7 +1,7 @@
 FROM ubuntu:22.04
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential curl ca-certificates pkg-config file patchelf \
+    build-essential binutils curl ca-certificates pkg-config file patchelf \
     libgeos-dev libproj-dev libgdal-dev libjson-c-dev libxml2-dev \
     libsfcgal-dev libpcre2-dev libprotobuf-c-dev protobuf-c-compiler \
     libicu-dev liblz4-dev libzstd-dev libssl-dev libxslt1-dev \
@@ -10,6 +10,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
  && rm -rf /var/lib/apt/lists/*
 COPY scripts/postgis/build-in-container.sh /usr/local/bin/build-postgis-pilot
 COPY tools/write_postgis_license_inventory.py /usr/local/bin/write-postgis-license-inventory
+COPY tools/create_linux_symbols.py /usr/local/bin/create-linux-symbols
 COPY scripts/postgis/probe.sql /work/probe.sql
 COPY support.json /work/support.json
 RUN chmod +x /usr/local/bin/build-postgis-pilot

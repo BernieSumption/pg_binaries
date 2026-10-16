@@ -59,6 +59,45 @@ class CreateLinuxSymbolsTests(unittest.TestCase):
                 with self.assertRaisesRegex(RuntimeError, "no GNU build ID"):
                     symbols.extract([archive], root / "symbols")
 
+    def test_indexes_postgis_modules_but_excludes_bundled_runtime(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            module = b"\x7fELF postgis"
+            archive = self.make_archive(root, {
+                "postgis/lib/postgis-3.so": module,
+                "postgis/lib/runtime/libgeos_c.so": b"\x7fELF runtime",
+            })
+            original_hash = hashlib.sha256(archive.read_bytes()).hexdigest()
+
+            def fake_run(command, **kwargs):
+                if command[0] == "objcopy":
+                    Path(command[-1]).write_bytes(b"debug symbols")
+
+            with patch.object(symbols, "build_id", side_effect=["ab12", "ab12"]), \
+                    patch.object(symbols, "has_dwarf", return_value=True), \
+                    patch.object(symbols.subprocess, "run", side_effect=fake_run):
+                index = symbols.extract([archive], root / "symbols")
+
+            self.assertEqual([entry["module_path"] for entry in index["files"]],
+                             ["postgis/lib/postgis-3.so"])
+            self.assertEqual(index["files"][0]["archive_sha256"], original_hash)
+            self.assertEqual(hashlib.sha256(archive.read_bytes()).hexdigest(), original_hash)
+
+    def test_rejects_postgis_debug_file_without_dwarf(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            archive = self.make_archive(root, {"postgis/lib/postgis-3.so": b"\x7fELF postgis"})
+
+            def fake_run(command, **kwargs):
+                if command[0] == "objcopy":
+                    Path(command[-1]).write_bytes(b"debug symbols")
+
+            with patch.object(symbols, "build_id", side_effect=["ab12", "ab12"]), \
+                    patch.object(symbols, "has_dwarf", return_value=False), \
+                    patch.object(symbols.subprocess, "run", side_effect=fake_run):
+                with self.assertRaisesRegex(RuntimeError, "No DWARF"):
+                    symbols.extract([archive], root / "symbols")
+
 
 if __name__ == "__main__":
     unittest.main()

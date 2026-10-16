@@ -33,6 +33,8 @@ def module_member(name: str) -> bool:
         "postgresql/lib/runtime/", "postgresql/lib/glibc/"
     )):
         return True
+    if name.startswith("postgis/lib/") and not name.startswith("postgis/lib/runtime/"):
+        return True
     return name == "pgvector/lib/vector.so"
 
 
