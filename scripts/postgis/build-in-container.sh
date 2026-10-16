@@ -18,7 +18,6 @@ tar -xzf postgis.tar.gz
 cd "postgis-${postgis_version}"
 ./configure --with-pgconfig="$pgroot/bin/pg_config" --with-sfcgal=/usr/bin/sfcgal-config
 make -j 4
-touch /work/install-marker
 make install
 
 # Stage only the SQL extensions declared for PostGIS in support.json.
@@ -61,24 +60,21 @@ for name in allowed:
             raise SystemExit(f'Missing module library {library} for {name}')
         shutil.copy2(library, stage / 'lib' / library.name)
 PY
-mkdir -p "$stage/bin"
-find "$pgroot/bin" -maxdepth 1 -type f -newer /work/install-marker -print -exec cp -v {} "$stage/bin/" \;
-find /usr/local/bin -maxdepth 1 -type f -newer /work/install-marker -print -exec cp -v {} "$stage/bin/" \;
 cp COPYING "$stage/LICENSES/PostGIS.txt"
 mkdir -p "$stage/lib/runtime" "$stage/share"
 cp -a /usr/share/proj "$stage/share/proj"
 cp -a /usr/share/gdal "$stage/share/gdal"
 cp /usr/share/doc/proj-data/copyright "$stage/LICENSES/proj-data.copyright"
 cp /usr/share/doc/gdal-data/copyright "$stage/LICENSES/gdal-data.copyright"
-# Bundle the ELF dependency closure, excluding the glibc ABI supplied by the
-# supported Linux host. SFCGAL and GDAL pull in a substantial C++ stack.
+# Bundle the ELF dependency closure for the selected SQL modules. The
+# PostgreSQL archive supplies glibc and libpq; SFCGAL and GDAL add C++ libraries.
 for pass in 1 2 3 4; do
   while IFS= read -r -d '' elf; do
     if ! file -b "$elf" | grep -q ELF; then continue; fi
     while read -r library path; do
       [[ -f "$path" ]] || continue
       case "$library" in
-        linux-vdso*|ld-linux*|libc.so*|libm.so*|libpthread.so*|libdl.so*|librt.so*|libresolv.so*|libnss_*) continue ;;
+        linux-vdso*|ld-linux*|libc.so*|libm.so*|libpthread.so*|libdl.so*|librt.so*|libresolv.so*|libnss_*|libpq.so*) continue ;;
       esac
       case "$path" in "$pgroot"/lib/*|"$stage"/lib/*) continue ;; esac
       dest="$stage/lib/runtime/$library"
@@ -96,17 +92,16 @@ for pass in 1 2 3 4; do
         cp "/usr/share/doc/$package/copyright" "$stage/LICENSES/${package}.copyright"
       fi
     done < <(ldd "$elf" 2>/dev/null | awk '$2 == "=>" && $3 ~ /^\// {print $1, $3}')
-  done < <(find "$stage/lib" "$stage/bin" -type f -print0)
+  done < <(find "$stage/lib" -type f -print0)
 done
 while IFS= read -r -d '' elf; do
   if ! file -b "$elf" | grep -q ELF; then continue; fi
   case "$elf" in
     "$stage/lib/runtime/"*) rpath='$ORIGIN' ;;
-    "$stage/bin/"*) rpath='$ORIGIN/../lib:$ORIGIN/../lib/runtime' ;;
     *) rpath='$ORIGIN:$ORIGIN/runtime' ;;
   esac
   patchelf --set-rpath "$rpath" "$elf"
-done < <(find "$stage/lib" "$stage/bin" -type f -print0)
+done < <(find "$stage/lib" -type f -print0)
 cat > "$stage/manifest.json" <<EOF
 {"schema_version":1,"component":"postgis","version":"${postgis_version}","postgresql_version":"${pg_version}","platform":"linux","architecture":"x86_64","pilot":true,"runtime_environment":{"PROJ_LIB":"share/proj","PROJ_DATA":"share/proj","GDAL_DATA":"share/gdal"}}
 EOF

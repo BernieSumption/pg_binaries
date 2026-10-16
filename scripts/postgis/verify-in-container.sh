@@ -43,6 +43,7 @@ lib_dir = pathlib.Path('/tmp/extension/postgis/lib')
 module_libraries = {path.name for path in lib_dir.glob('*.so*')}
 assert module_libraries == expected_modules, (
     f'PostGIS module libraries {sorted(module_libraries)} != expected {sorted(expected_modules)}')
+assert not (pathlib.Path('/tmp/extension/postgis') / 'bin').exists()
 
 for path in extension_dir.glob('*.sql'):
     name = path.name.split('--', 1)[0]
@@ -60,18 +61,9 @@ while IFS= read -r -d '' library; do
 done < <(find "$extroot/lib" -type f -print0)
 cp -a --update=none "$extroot/lib/." "$pgroot/lib/"
 cp -a "$extroot/share/extension/." "$pgroot/share/extension/"
-cp -a "$extroot/bin/." "$pgroot/bin/"
 cp -a "$extroot/share/proj" "$extroot/share/gdal" "$pgroot/share/"
 test -s "$extroot/LICENSES/proj-data.copyright"
 test -s "$extroot/LICENSES/gdal-data.copyright"
-for loader in shp2pgsql raster2pgsql; do
-  if ldd "$pgroot/bin/$loader" | grep -q 'not found'; then
-    echo "Missing dynamic dependency for $loader" >&2
-    exit 1
-  fi
-  "$pgroot/bin/$loader" -? > "/tmp/$loader.help" 2>&1 || true
-  grep -qi 'usage' "/tmp/$loader.help"
-done
 export PROJ_LIB="$pgroot/share/proj" PROJ_DATA="$pgroot/share/proj" GDAL_DATA="$pgroot/share/gdal"
 useradd -m postgres
 chown postgres:postgres /tmp/data /tmp/socket
