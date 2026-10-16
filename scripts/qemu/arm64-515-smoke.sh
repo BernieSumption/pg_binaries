@@ -35,6 +35,7 @@ trap cleanup EXIT
 curl --fail --location --retry 3 "$image_url" --output "$image"
 printf '%s  %s\n' "$image_sha256" "$image" | sha256sum --check
 image_format=$(qemu-img info --output=json "$image" | python3 -c 'import json,sys; print(json.load(sys.stdin)["format"])')
+qemu-img resize "$image" 8G
 printf 'test_revision=%s\npostgresql_version=%s\nimage_url=%s\nimage_sha256=%s\nimage_manifest_url=%s\nimage_format=%s\nqemu_version=%s\nrunner_kernel=%s\n' \
   "$test_revision" "$pg_version" "$image_url" "$image_sha256" \
   "${image_url%.img}.manifest" "$image_format" "$(qemu-system-aarch64 --version | head -1)" "$(uname -r)" \
@@ -95,6 +96,13 @@ if [[ $ready != true ]]; then
   tail -n 120 "$work/qemu.log" >&2 || true
   exit 1
 fi
+
+guest_root_bytes=$(ssh "${ssh_args[@]}" smoke@127.0.0.1 'df -B1 --output=size / | tail -1 | tr -d " "')
+if [[ ! $guest_root_bytes =~ ^[0-9]+$ ]] || (( guest_root_bytes < 6 * 1024 * 1024 * 1024 )); then
+  echo "Guest root filesystem did not expand to at least 6 GiB: $guest_root_bytes bytes" >&2
+  exit 1
+fi
+printf 'guest_root_filesystem_bytes=%s\n' "$guest_root_bytes" >> "$evidence/environment.txt"
 
 pg_archive="postgresql-${pg_version}-linux-arm64.tar.gz"
 vector_archive="pgvector-0.8.7-postgresql-${pg_version}-linux-arm64.tar.gz"
