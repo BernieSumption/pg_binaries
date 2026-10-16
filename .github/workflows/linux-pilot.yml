@@ -112,6 +112,16 @@ jobs:
             --output "$RUNNER_TEMP/pilot/verification" \
             --postgresql-version "$PG_VERSION" \
             --architecture x86_64
+      - name: Retain verified core archive for same-revision PostGIS reuse
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-pilot-core-archives
+          path: |
+            ${{ runner.temp }}/pilot/postgresql-18.6-linux-x86_64.tar.gz
+            ${{ runner.temp }}/pilot/postgresql-18.6-linux-x86_64.tar.gz.sha256
+            ${{ runner.temp }}/pilot/verification/postgresql-18.6-linux-x86_64-${{ github.run_id }}.json
+          if-no-files-found: error
+          retention-days: 1
       - uses: actions/upload-artifact@v4
         if: always()
         with:
