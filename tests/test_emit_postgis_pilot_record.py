@@ -18,7 +18,7 @@ OS_RELEASE = 'PRETTY_NAME="Ubuntu 24.04"\nVERSION_ID="24.04"\n'
 
 
 class PostgisRecordTests(unittest.TestCase):
-    def emit(self, directory, architecture, corrupt_core=False):
+    def emit(self, directory, architecture, corrupt_core=False, minimum=False, bad_log=False, bad_digest=False):
         root = Path(directory)
         for name in (f'postgresql-18.6-linux-{architecture}.tar.gz',
                      f'postgis-3.6.4-postgresql-18.6-linux-{architecture}.tar.gz'):
@@ -28,12 +28,27 @@ class PostgisRecordTests(unittest.TestCase):
             if corrupt_core and name.startswith('postgresql-'):
                 digest = '0' * 64
             (root / (name + '.sha256')).write_text(f'{digest}  {name}\n')
+        evidence = None
+        if minimum:
+            evidence = root / 'evidence'
+            evidence.mkdir()
+            pinned = emitter.ARCHITECTURES[architecture]['image_sha256']
+            (evidence / 'environment.txt').write_text(
+                f"test_revision={ENV['GITHUB_SHA']}\npostgresql_version=18.6\nimage_sha256={pinned}\n")
+            (evidence / 'full-verifier.log').write_text(
+                f"guest_os=Ubuntu 22.04.5 LTS\nguest_kernel={'6.8.0' if bad_log else '5.15.0-1'}\n"
+                f"guest_architecture={architecture}\n"
+                "PASS: PostGIS 3.6.4 minimum-kernel archive verification\n")
+            checksums = ''.join(path.read_text() for path in sorted(root.glob('*.sha256')))
+            if bad_digest:
+                checksums = '0' * 64 + checksums[64:]
+            (evidence / 'archive-checksums.sha256').write_text(checksums)
         read_text = Path.read_text
         def read(path, *args, **kwargs):
             return OS_RELEASE if str(path) == '/etc/os-release' else read_text(path, *args, **kwargs)
         with patch.dict(os.environ, ENV), patch.object(Path, 'read_text', read):
             return emitter.emit(ROOT, root, root, root / 'records',
-                                'sha256:' + '1' * 64, '6.11.0-ubuntu', architecture)
+                                'sha256:' + '1' * 64, '6.11.0-ubuntu', architecture, evidence)
 
     def test_records_bind_both_archives_and_matching_profile(self):
         for architecture, machine in (('x86_64', 'x86_64'), ('arm64', 'aarch64')):
@@ -50,6 +65,27 @@ class PostgisRecordTests(unittest.TestCase):
                                      f'postgresql-18.6-linux-{architecture}.tar.gz')
                     self.assertEqual(record['scope'], 'pilot-smoke')
                     self.assertIn(architecture, path.name)
+
+    def test_minimum_records_bind_guest_and_both_archives(self):
+        for architecture, machine in (('x86_64', 'x86_64'), ('arm64', 'aarch64')):
+            with tempfile.TemporaryDirectory() as directory:
+                with patch.object(emitter.platform, 'machine', return_value=machine):
+                    paths = self.emit(directory, architecture, minimum=True)
+                self.assertEqual(len(paths), 4)
+                for path in paths:
+                    record = json.loads(path.read_text())
+                    self.assertEqual(record['environment']['endpoint'], 'minimum')
+                    self.assertEqual(record['environment']['kernel_release'], '5.15.0-1')
+                    self.assertEqual(record['profile_id'], f'postgis-minimum-kernel-{architecture}')
+                    self.assertIn('-minimum-', path.name)
+
+    def test_minimum_rejects_guest_kernel_or_archive_mismatch(self):
+        for kwargs in ({'bad_log': True}, {'bad_digest': True}):
+            with tempfile.TemporaryDirectory() as directory:
+                with patch.object(emitter.platform, 'machine', return_value='x86_64'):
+                    with self.assertRaises(coverage.CoverageError):
+                        self.emit(directory, 'x86_64', minimum=True, **kwargs)
+                self.assertFalse((Path(directory) / 'records').exists())
 
     def test_rejects_wrong_native_runner(self):
         with patch.object(emitter.platform, 'machine', return_value='x86_64'):

@@ -5,6 +5,9 @@ on:
     branches: [spike]
     paths:
       - 'scripts/postgis/**'
+      - 'scripts/linux/qemu-kernel-515.Dockerfile'
+      - 'scripts/qemu/arm64-515.Dockerfile'
+      - 'tools/emit_linux_minimum_pilot_records.py'
       - 'scripts/linux/Dockerfile'
       - 'scripts/linux/build.sh'
       - 'scripts/linux/build-in-container.sh'
@@ -84,6 +87,27 @@ jobs:
             --image-id "$(docker image inspect --format '{{.Id}}' pg-binaries-postgis-verifier)" \
             --kernel "$(uname -r)"
           cat "$RUNNER_TEMP/postgis/"*.sha256
+      - name: Verify exact archives on Linux 5.15 in QEMU
+        run: |
+          dockerfile=scripts/linux/qemu-kernel-515.Dockerfile
+          if [[ "$PG_ARCHITECTURE" = arm64 ]]; then dockerfile=scripts/qemu/arm64-515.Dockerfile; fi
+          docker build -f "$dockerfile" -t pg-binaries-postgis-qemu .
+          mkdir -p "$RUNNER_TEMP/postgis-qemu"
+          docker run --rm -e PG_ARCHITECTURE -e GITHUB_SHA \
+            -v "$GITHUB_WORKSPACE:/repo:ro" -v "$RUNNER_TEMP/core:/core:ro" \
+            -v "$RUNNER_TEMP/postgis:/ext:ro" -v "$RUNNER_TEMP/postgis-qemu:/work" \
+            pg-binaries-postgis-qemu bash /repo/scripts/postgis/qemu-kernel-515.sh /core 18.6 /work /ext
+          python3 tools/emit_postgis_pilot_record.py \
+            --architecture "$PG_ARCHITECTURE" --archives "$RUNNER_TEMP/postgis" \
+            --core-archives "$RUNNER_TEMP/core" --output "$RUNNER_TEMP/postgis-records" \
+            --evidence "$RUNNER_TEMP/postgis-qemu/evidence" \
+            --image-id "$(docker image inspect --format '{{.Id}}' pg-binaries-postgis-qemu)" --kernel "$(uname -r)"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: postgis-${{ matrix.architecture }}-minimum-kernel-evidence
+          path: ${{ runner.temp }}/postgis-qemu/evidence/**
+          retention-days: 3
       - uses: actions/upload-artifact@v4
         if: success()
         with:

@@ -54,6 +54,18 @@
       "platforms": ["linux-arm64"],
       "case_ids": ["built-in-extension-smoke", "core-schema-smoke", "dependency-load", "dump-restore", "relocation"],
       "sources": [".github/workflows/linux-arm64-pilot.yml", "scripts/linux/qemu-kernel-515-guest-full.sh", "scripts/linux/verify-in-container.sh", "scripts/qemu/arm64-515-smoke.sh", "scripts/qemu/arm64-515.Dockerfile", "tests/builtins/basic.sql", "tests/builtins/coverage.sql", "tests/builtins/file_fdw.csv", "tests/builtins/fixture.sql", "tests/builtins/legacy.sql", "tests/builtins/logical.sql", "tests/builtins/loopback.sql", "tests/builtins/preloaded.sql", "tests/builtins/ssl.sql", "tests/builtins/surgery.sql", "tests/builtins/tcn.sql", "tests/builtins/wal.sql", "tests/schema.sql", "tests/test_emit_linux_minimum_pilot_records.py", "tools/check_elf_dependencies.py", "tools/emit_linux_minimum_pilot_records.py"]
+    },
+    "postgis-minimum-kernel-x86_64": {
+      "scope": "pilot-smoke",
+      "platforms": ["linux-x86_64"],
+      "case_ids": ["postgis-extension-smoke", "postgis-license-mapping", "postgis-relocation", "postgis-runtime-closure"],
+      "sources": [".github/workflows/postgis-pilot.yml", "scripts/linux/qemu-kernel-515.Dockerfile", "scripts/postgis/probe.sql", "scripts/postgis/qemu-kernel-515-guest.sh", "scripts/postgis/qemu-kernel-515.sh", "scripts/postgis/verify-in-container.sh", "scripts/qemu/arm64-515.Dockerfile", "tests/test_emit_postgis_pilot_record.py", "tools/check_elf_dependencies.py", "tools/check_postgis_license_inventory.py", "tools/emit_linux_minimum_pilot_records.py", "tools/emit_postgis_pilot_record.py"]
+    },
+    "postgis-minimum-kernel-arm64": {
+      "scope": "pilot-smoke",
+      "platforms": ["linux-arm64"],
+      "case_ids": ["postgis-extension-smoke", "postgis-license-mapping", "postgis-relocation", "postgis-runtime-closure"],
+      "sources": [".github/workflows/postgis-pilot.yml", "scripts/linux/qemu-kernel-515.Dockerfile", "scripts/postgis/probe.sql", "scripts/postgis/qemu-kernel-515-guest.sh", "scripts/postgis/qemu-kernel-515.sh", "scripts/postgis/verify-in-container.sh", "scripts/qemu/arm64-515.Dockerfile", "tests/test_emit_postgis_pilot_record.py", "tools/check_elf_dependencies.py", "tools/check_postgis_license_inventory.py", "tools/emit_linux_minimum_pilot_records.py", "tools/emit_postgis_pilot_record.py"]
     }
   }
 }

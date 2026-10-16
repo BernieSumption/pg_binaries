@@ -63,7 +63,7 @@ while IFS= read -r -d '' library; do
     exit 1
   fi
 done < <(find "$extroot/lib" -type f -print0)
-cp -a --update=none "$extroot/lib/." "$pgroot/lib/"
+cp -an "$extroot/lib/." "$pgroot/lib/"
 cp -a "$extroot/share/extension/." "$pgroot/share/extension/"
 cp -a "$extroot/share/proj" "$extroot/share/gdal" "$pgroot/share/"
 test -s "$extroot/LICENSES/proj-data.copyright"

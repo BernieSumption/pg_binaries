@@ -11,6 +11,7 @@ import re
 import sys
 
 import coverage
+from emit_linux_minimum_pilot_records import ARCHITECTURES, parse_key_values, parse_archive_checksums
 
 
 def sha256_file(path):
@@ -21,7 +22,7 @@ def sha256_file(path):
     return digest.hexdigest()
 
 
-def emit(root, archives, core_archives, output, image_id, kernel, architecture="x86_64"):
+def emit(root, archives, core_archives, output, image_id, kernel, architecture="x86_64", evidence=None):
     machines = {"x86_64": "x86_64", "arm64": "aarch64"}
     if architecture not in machines or platform.machine() != machines[architecture]:
         raise coverage.CoverageError("PostGIS pilot requires a matching native runner")
@@ -48,7 +49,27 @@ def emit(root, archives, core_archives, output, image_id, kernel, architecture="
     if not release.get("PRETTY_NAME") or not re.fullmatch(r"\d+(?:\.\d+)*", release.get("VERSION_ID", "")):
         raise coverage.CoverageError("runner OS release is incomplete")
 
-    profile = coverage.verification_profile(root, f"postgis-pilot-{platform_id}")
+    endpoint = "current"
+    profile_id = f"postgis-pilot-{platform_id}"
+    if evidence is not None:
+        env = parse_key_values(evidence / "environment.txt")
+        pinned = ARCHITECTURES[architecture]["image_sha256"]
+        if (env.get("test_revision") != revision or env.get("postgresql_version") != "18.6"
+                or env.get("image_sha256") != pinned):
+            raise coverage.CoverageError("minimum-kernel evidence provenance mismatch")
+        log = (evidence / "full-verifier.log").read_text()
+        guest_kernel = re.search(r"(?m)^guest_kernel=(5\.15\.\S+)$", log)
+        if (not guest_kernel or "guest_os=Ubuntu 22.04" not in log
+                or f"guest_architecture={architecture}\n" not in log
+                or "\nPASS: PostGIS 3.6.4 minimum-kernel archive verification\n" not in log):
+            raise coverage.CoverageError("minimum-kernel guest verification did not pass")
+        kernel = guest_kernel.group(1)
+        kernel_match = re.match(r"^(\d+(?:\.\d+)*)", kernel)
+        release = {"PRETTY_NAME": "Ubuntu 22.04", "VERSION_ID": "22.04"}
+        image_id = f"sha256:{pinned}"
+        endpoint = "minimum"
+        profile_id = f"postgis-minimum-kernel-{architecture}"
+    profile = coverage.verification_profile(root, profile_id)
     if profile["scope"] != "pilot-smoke" or platform_id not in profile["platforms"]:
         raise coverage.CoverageError("invalid PostGIS pilot profile")
     archive = archives / archive_name
@@ -66,6 +87,10 @@ def emit(root, archives, core_archives, output, image_id, kernel, architecture="
     core_digest = sha256_file(core_archives / core_name)
     if core_digest.lower() != core_fields[0].lower():
         raise coverage.CoverageError("PostgreSQL core archive checksum mismatch")
+    if evidence is not None:
+        checksums = parse_archive_checksums(evidence / "archive-checksums.sha256")
+        if checksums != {archive_name: digest, core_name: core_digest}:
+            raise coverage.CoverageError("minimum-kernel evidence archive checksum mismatch")
     record = {
         "schema_version": 2,
         "scope": "pilot-smoke",
@@ -96,7 +121,7 @@ def emit(root, archives, core_archives, output, image_id, kernel, architecture="
             "distribution_version": release["VERSION_ID"],
             "architecture": architecture,
             "clean_system": True,
-            "endpoint": "current",
+            "endpoint": endpoint,
             "image_id": image_id,
             "dependency_check_profile": "postgis-runtime-v1",
             "dependency_checks_passed": True,
@@ -111,7 +136,8 @@ def emit(root, archives, core_archives, output, image_id, kernel, architecture="
     for name in names:
         extension_record = {**record, "component": name, "project": "PostGIS"}
         coverage.validate_verification_record(extension_record, support, root)
-        path = output / f"{name}-3.6.4-postgresql-18.6-{platform_id}-{run_id}.json"
+        suffix = "-minimum" if evidence is not None else ""
+        path = output / f"{name}-3.6.4-postgresql-18.6-{platform_id}{suffix}-{run_id}.json"
         path.write_text(json.dumps(extension_record, indent=2, sort_keys=True) + "\n",
                         encoding="utf-8")
         paths.append(path)
@@ -125,12 +151,13 @@ def main():
     parser.add_argument("--archives", type=Path, required=True)
     parser.add_argument("--core-archives", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--evidence", type=Path)
     parser.add_argument("--image-id", required=True)
     parser.add_argument("--kernel", required=True)
     args = parser.parse_args()
     try:
         for path in emit(args.root, args.archives, args.core_archives, args.output,
-                         args.image_id, args.kernel, args.architecture):
+                         args.image_id, args.kernel, args.architecture, args.evidence):
             print(path)
         return 0
     except (coverage.CoverageError, OSError, ValueError) as exc:
