@@ -83,4 +83,4 @@ if grep -Eq 'proj_create|proj\.db|ERROR:.*PROJ' /tmp/data/server.log; then
 fi
 runuser -u postgres -- "$pgroot/bin/pg_ctl" -D /tmp/data -m fast -w stop
 trap - EXIT
-echo 'PASS: relocated PostgreSQL and PostGIS archives on clean Ubuntu 24.04'
+echo 'PASS: relocated PostgreSQL and PostGIS archives on clean verifier'
