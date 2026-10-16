@@ -1,0 +1,65 @@
+{
+  "assembled_core": {
+    "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+    "sha256": "50e74cadd9637d52772c09f246a8d263d3b4a1c8a3db8323715def4ab2f443cd",
+    "version": "18.6"
+  },
+  "ci": {
+    "build_revision": "59402c7c4ab2a66288292ef4ab61626c577d9c0a",
+    "provider": "github-actions",
+    "run_id": "38972858427",
+    "run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/38972858427",
+    "source_revision": "59402c7c4ab2a66288292ef4ab61626c577d9c0a",
+    "test_revision": "59402c7c4ab2a66288292ef4ab61626c577d9c0a"
+  },
+  "component": "postgis",
+  "environment": {
+    "architecture": "x86_64",
+    "clean_system": true,
+    "dependency_check_profile": "postgis-runtime-v1",
+    "dependency_checks_passed": true,
+    "distribution": "Ubuntu 24.04.5 LTS",
+    "distribution_version": "24.04",
+    "endpoint": "current",
+    "image_id": "sha256:ca77bef0c37bc2e9126542dbdbbb08d038cca7590d428b84810158f469d19ce8",
+    "kernel_release": "6.17.0-1022-azure",
+    "os": "linux",
+    "os_version": "6.17.0"
+  },
+  "outcome": "passed",
+  "platform": "linux-x86_64",
+  "postgresql_version": "18.6",
+  "profile_id": "postgis-pilot-linux-x86_64",
+  "profile_revision": "99e1998e0aee33d3aafae7b438a87fb68b86ed2dc09f2d47d7d446f19cbbac5e",
+  "project": "PostGIS",
+  "schema_version": 2,
+  "scope": "pilot-smoke",
+  "sha256": "75c6e97d325675c3b9ee393ddd7a9b2fbb77c77479b5de529ca7822634aeef70",
+  "test_cases": [
+    "postgis-alpine",
+    "postgis-extension-smoke",
+    "postgis-license-mapping",
+    "postgis-relocation",
+    "postgis-runtime-closure",
+    "postgis-ubuntu20"
+  ],
+  "test_revision": "59402c7c4ab2a66288292ef4ab61626c577d9c0a",
+  "verification_profile": {
+    "case_ids": [
+      "postgis-alpine",
+      "postgis-extension-smoke",
+      "postgis-license-mapping",
+      "postgis-relocation",
+      "postgis-runtime-closure",
+      "postgis-ubuntu20"
+    ],
+    "platforms": [
+      "linux-x86_64"
+    ],
+    "profile_id": "postgis-pilot-linux-x86_64",
+    "profile_revision": "99e1998e0aee33d3aafae7b438a87fb68b86ed2dc09f2d47d7d446f19cbbac5e",
+    "scope": "pilot-smoke",
+    "sources_available": true
+  },
+  "version": "3.6.4"
+}
