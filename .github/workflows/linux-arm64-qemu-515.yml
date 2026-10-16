@@ -1,19 +1,5 @@
 name: Linux arm64 kernel 5.15 QEMU feasibility
 on:
-  push:
-    branches: [spike]
-    paths:
-      - .github/workflows/linux-arm64-qemu-515.yml
-      - scripts/qemu/arm64-515*
-      - scripts/linux/qemu-kernel-515-guest-full.sh
-      - scripts/linux/verify-in-container.sh
-      - tools/check_elf_dependencies.py
-      - tests/**
-      - scripts/linux/Dockerfile
-      - scripts/linux/build.sh
-      - scripts/linux/build-in-container.sh
-      - scripts/linux/bundle-glibc-in-container.sh
-      - scripts/linux/launcher.c
   workflow_dispatch:
     inputs:
       postgresql_version:

@@ -1,18 +1,5 @@
 name: Linux x86-64 kernel 5.15 QEMU feasibility
 on:
-  push:
-    branches: [spike]
-    paths:
-      - .github/workflows/linux-qemu-515.yml
-      - scripts/linux/qemu-kernel-515*
-      - scripts/linux/verify-in-container.sh
-      - tools/check_elf_dependencies.py
-      - tests/**
-      - scripts/linux/Dockerfile
-      - scripts/linux/build.sh
-      - scripts/linux/build-in-container.sh
-      - scripts/linux/bundle-glibc-in-container.sh
-      - scripts/linux/launcher.c
   workflow_dispatch:
     inputs:
       postgresql_version:

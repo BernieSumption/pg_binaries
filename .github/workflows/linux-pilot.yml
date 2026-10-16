@@ -20,6 +20,7 @@ on:
       - 'scripts/linux/verify-in-container.sh'
       - 'scripts/linux/verify-glibc-portability.sh'
       - 'scripts/linux/verify-no-host-userspace.sh'
+      - 'scripts/linux/qemu-kernel-515*'
       - 'tools/check_elf_dependencies.py'
       - 'tools/discover_builtins.py'
       - 'tools/write_linux_license_inventory.py'
@@ -32,7 +33,7 @@ on:
 jobs:
   linux:
     runs-on: ubuntu-24.04
-    timeout-minutes: 55
+    timeout-minutes: 110
     env:
       PG_VERSION: ${{ inputs.postgresql_version || '18.6' }}
     permissions:
@@ -72,6 +73,20 @@ jobs:
             --architecture x86_64 \
             --image-id "$image_id" \
             --kernel-version "$(uname -r)"
+      - name: Build disposable Linux 5.15 QEMU environment
+        run: docker build -f scripts/linux/qemu-kernel-515.Dockerfile -t pg-binaries-linux-qemu .
+      - name: Verify the same archives in an Ubuntu 22.04 Linux 5.15 guest
+        run: |
+          mkdir -p "$RUNNER_TEMP/qemu-linux-515"
+          chmod 0777 "$RUNNER_TEMP/qemu-linux-515"
+          docker run --rm --network bridge --cap-drop=ALL --security-opt no-new-privileges \
+            -v "$GITHUB_WORKSPACE:/repo:ro" \
+            -v "$RUNNER_TEMP/pilot:/archives:ro" \
+            -v "$RUNNER_TEMP/qemu-linux-515:/work" \
+            -e PG_VERSION="$PG_VERSION" \
+            -e GITHUB_SHA="$GITHUB_SHA" \
+            pg-binaries-linux-qemu \
+            bash /repo/scripts/linux/qemu-kernel-515-smoke.sh /archives "$PG_VERSION" /work
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -80,4 +95,5 @@ jobs:
             ${{ runner.temp }}/pilot/*.tar.gz
             ${{ runner.temp }}/pilot/*.sha256
             ${{ runner.temp }}/pilot/verification/*.json
+            ${{ runner.temp }}/qemu-linux-515/evidence/**
           retention-days: 3
