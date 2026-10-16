@@ -3,9 +3,9 @@ on:
   workflow_dispatch:
     inputs:
       postgresql_version:
-        description: One declared PostgreSQL 15 through 18 minor version
-        required: true
-        default: '18.6'
+        description: One declared PostgreSQL minor version; leave blank for the highest missing Linux arm64 target
+        required: false
+        default: ''
         type: string
   push:
     branches: [spike]
@@ -42,14 +42,22 @@ jobs:
     runs-on: ubuntu-24.04-arm
     timeout-minutes: 110
     env:
-      PG_VERSION: ${{ inputs.postgresql_version || '18.6' }}
       PG_ARCHITECTURE: arm64
     permissions:
       contents: read
     steps:
       - uses: actions/checkout@v4
-      - name: Preview one declared Linux arm64 build target
-        run: python3 tools/plan_work.py --select-linux-pilot "$PG_VERSION" --architecture arm64
+      - name: Select one declared Linux arm64 build target
+        env:
+          REQUESTED_PG_VERSION: ${{ inputs.postgresql_version }}
+        run: |
+          if [ -n "$REQUESTED_PG_VERSION" ]; then
+            python3 tools/plan_work.py --select-linux-pilot "$REQUESTED_PG_VERSION" --architecture arm64 > "$RUNNER_TEMP/selection.json"
+          else
+            python3 tools/plan_work.py --select-next-linux-pilot --architecture arm64 > "$RUNNER_TEMP/selection.json"
+          fi
+          python3 -c 'import json,sys; print("PG_VERSION=" + json.load(open(sys.argv[1], encoding="utf-8"))["postgresql_version"])' \
+            "$RUNNER_TEMP/selection.json" >> "$GITHUB_ENV"
       - name: Confirm native arm64 runner
         run: test "$(uname -m)" = aarch64
       - name: Build exact PostgreSQL and pgvector archives

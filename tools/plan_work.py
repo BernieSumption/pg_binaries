@@ -83,15 +83,38 @@ def select_linux_pilot(root, version, architecture="x86_64"):
             "work": "build_missing", "snapshot_as_of": work["snapshot_as_of"]}
 
 
+def select_next_linux_pilot(root, architecture="x86_64"):
+    """Select the highest declared missing PostgreSQL target for one Linux architecture."""
+    if architecture not in ("x86_64", "arm64"):
+        raise coverage.CoverageError("Linux pilot architecture must be x86_64 or arm64")
+    work = plan(root)
+    platform = f"linux-{architecture}"
+    candidates = [target[0] for target in work["build_missing"]["core"]
+                  if target[1] == platform]
+    if not candidates:
+        raise coverage.CoverageError(f"no missing declared core build for {platform}")
+    version = max(candidates, key=lambda item: coverage.version_parts(item, "PostgreSQL version"))
+    return {"postgresql_version": version, "platform": platform,
+            "work": "build_missing", "snapshot_as_of": work["snapshot_as_of"]}
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[1])
     parser.add_argument("--select-linux-pilot", metavar="VERSION")
+    parser.add_argument("--select-next-linux-pilot", action="store_true")
     parser.add_argument("--architecture", choices=("x86_64", "arm64"), default="x86_64")
     args = parser.parse_args()
     try:
-        result = (select_linux_pilot(args.root, args.select_linux_pilot, args.architecture)
-                  if args.select_linux_pilot else plan(args.root))
+        selectors = int(args.select_linux_pilot is not None) + int(args.select_next_linux_pilot)
+        if selectors > 1:
+            raise coverage.CoverageError("choose only one Linux pilot selector")
+        if args.select_linux_pilot is not None:
+            result = select_linux_pilot(args.root, args.select_linux_pilot, args.architecture)
+        elif args.select_next_linux_pilot:
+            result = select_next_linux_pilot(args.root, args.architecture)
+        else:
+            result = plan(args.root)
         print(json.dumps(result, indent=2, sort_keys=True))
         return 0
     except (coverage.CoverageError, KeyError, TypeError, ValueError) as exc:

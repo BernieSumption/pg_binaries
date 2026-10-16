@@ -153,6 +153,39 @@ class PlanWorkTests(unittest.TestCase):
         with self.assertRaisesRegex(plan_work.coverage.CoverageError, "not a missing declared"):
             plan_work.select_linux_pilot(self.root, "15.19", "arm64")
 
+    def test_next_linux_pilot_selects_highest_missing_declared_target(self):
+        snapshot = {"as_of": "2026-01-01", "source": "https://example.test/releases",
+                    "releases": [{"version": "15.9", "release_date": "2025-09-25"},
+                                 {"version": "16.11", "release_date": "2025-09-25"},
+                                 {"version": "18.2", "release_date": "2025-09-25"}]}
+        self.write("support/postgresql-releases.json", snapshot)
+        self.assertEqual(plan_work.select_next_linux_pilot(self.root), {
+            "postgresql_version": "18.2", "platform": "linux-x86_64",
+            "work": "build_missing", "snapshot_as_of": "2026-01-01"})
+        self.assertEqual(plan_work.select_next_linux_pilot(self.root, "arm64"), {
+            "postgresql_version": "18.2", "platform": "linux-arm64",
+            "work": "build_missing", "snapshot_as_of": "2026-01-01"})
+
+    def test_next_linux_pilot_skips_downloaded_target_and_rejects_empty_architecture(self):
+        snapshot = {"as_of": "2026-01-01", "source": "https://example.test/releases",
+                    "releases": [{"version": "15.9", "release_date": "2025-09-25"},
+                                 {"version": "18.2", "release_date": "2025-09-25"}]}
+        self.write("support/postgresql-releases.json", snapshot)
+        checksum = "a" * 64
+        self.write("inventory.json", {"postgresql": {
+            "18.2": {"downloads": {"linux-x86_64": {
+                "url": "https://example.test/postgres.tgz", "sha256": checksum}}}},
+            "extensions": {}})
+        self.assertEqual(plan_work.select_next_linux_pilot(self.root)["postgresql_version"], "15.9")
+        self.write("inventory.json", {"postgresql": {
+            version: {"downloads": {"linux-x86_64": {
+                "url": f"https://example.test/{version}.tgz", "sha256": checksum}}}
+            for version in ("15.9", "18.2")}, "extensions": {}})
+        with self.assertRaisesRegex(plan_work.coverage.CoverageError, "no missing declared core build"):
+            plan_work.select_next_linux_pilot(self.root)
+        with self.assertRaisesRegex(plan_work.coverage.CoverageError, "architecture must be"):
+            plan_work.select_next_linux_pilot(self.root, "ppc64le")
+
 
 if __name__ == "__main__":
     unittest.main()

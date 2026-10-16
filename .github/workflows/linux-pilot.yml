@@ -3,9 +3,9 @@ on:
   workflow_dispatch:
     inputs:
       postgresql_version:
-        description: One declared PostgreSQL 15 through 18 minor version
-        required: true
-        default: '18.6'
+        description: One declared PostgreSQL minor version; leave blank for the highest missing Linux x86-64 target
+        required: false
+        default: ''
         type: string
   push:
     branches: [spike]
@@ -40,14 +40,21 @@ jobs:
   linux:
     runs-on: ubuntu-24.04
     timeout-minutes: 110
-    env:
-      PG_VERSION: ${{ inputs.postgresql_version || '18.6' }}
     permissions:
       contents: read
     steps:
       - uses: actions/checkout@v4
-      - name: Preview one declared Linux build target
-        run: python3 tools/plan_work.py --select-linux-pilot "$PG_VERSION"
+      - name: Select one declared Linux build target
+        env:
+          REQUESTED_PG_VERSION: ${{ inputs.postgresql_version }}
+        run: |
+          if [ -n "$REQUESTED_PG_VERSION" ]; then
+            python3 tools/plan_work.py --select-linux-pilot "$REQUESTED_PG_VERSION" > "$RUNNER_TEMP/selection.json"
+          else
+            python3 tools/plan_work.py --select-next-linux-pilot > "$RUNNER_TEMP/selection.json"
+          fi
+          python3 -c 'import json,sys; print("PG_VERSION=" + json.load(open(sys.argv[1], encoding="utf-8"))["postgresql_version"])' \
+            "$RUNNER_TEMP/selection.json" >> "$GITHUB_ENV"
       - name: Build exact PostgreSQL and pgvector archives
         run: scripts/linux/build.sh "$RUNNER_TEMP/pilot"
       - name: Verify relocated archives on clean Ubuntu 24.04
