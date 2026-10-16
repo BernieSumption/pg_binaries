@@ -7,6 +7,16 @@
 
 Agents must NEVER modify spec documents, if a spec change is desired add something to HUMAN_REVIEW_QUEUE.md.
 
+## Specifications override goals
+
+This repository is set up to allow long-running independent agentic work using Codex goal mode. This involves a prompt supplied by the user to drive work. The user will never deliberately override specification points in a prompt. Any appearance that they have done so is a mistake by the user or a misinterpretation by you. Stop and clarify immediately.
+
+## Optimise for low cost in development, then development speed
+
+Use sub-agents, particularly cheap ones, for bounded research or execution tasks within their capabilities.
+
+Use parallel subagents when work items are genuinely not interdependent. Use serial work when operating in parallel may cause some work to have to be re-done.
+
 ### Policies
 
 Policies are AI-managed. Agents can edit them at will to implement the requirements in the specification.
