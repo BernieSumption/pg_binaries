@@ -115,7 +115,7 @@ for binary in files():
     if deps is None:
         continue
     if expected_arch:
-        result = run("lipo", "-verify_arch", expected_arch, str(binary))
+        result = run("lipo", str(binary), "-verify_arch", expected_arch)
         if result.returncode:
             raise SystemExit(f"Mach-O file lacks {expected_arch} architecture: {binary}")
     relative_lib = os.path.relpath(libdir, binary.parent)
@@ -143,7 +143,7 @@ for binary in files():
     if deps is None:
         continue
     if expected_arch:
-        result = run("lipo", "-verify_arch", expected_arch, str(binary))
+        result = run("lipo", str(binary), "-verify_arch", expected_arch)
         if result.returncode:
             raise SystemExit(f"Mach-O file lacks {expected_arch} architecture: {binary}")
     for dep in deps:
