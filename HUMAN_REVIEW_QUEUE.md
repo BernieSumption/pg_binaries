@@ -1,5 +1,11 @@
 # Human review queue
 
+## Windows Visual C++ runtime redistribution
+
+The [functional specification](specs/functional.md) permits relying on the universal Windows C runtime but requires bundling or static linking non-universal dependencies. The successful Windows x86-64 pilot archive from [CI run 38945177696](https://github.com/BernieSumption/pg_binaries/actions/runs/38945177696) (`SHA-256 000e373b51f0bd792c8a203ac984b1486ff5773de91850f9288981162bd3c521`) does not contain `VCRUNTIME140.dll`, although `postgres.exe` imports it. Its verifier runs on Windows Server 2022, where an installed runtime can hide that omission. The archive manifest currently names the Microsoft Visual C++ Redistributable as an OS prerequisite, which does not meet the specified clean-machine installation.
+
+[Microsoft distinguishes the Universal CRT supplied with Windows 10 and 11](https://learn.microsoft.com/en-us/cpp/windows/universal-crt-deployment?view=msvc-170) from Visual C++ runtime files. [Its redistribution guidance](https://learn.microsoft.com/en-us/cpp/windows/redistributing-visual-cpp-files?view=msvc-170) permits distribution of individual redistributable files only under applicable Visual Studio licence terms. Please establish that this project can redistribute the required Visual C++ runtime files in its public archives, or select an alternative build strategy that avoids them. Until an authorized runtime strategy is implemented and tested on a clean Windows system, do not advertise the Windows archive as self-contained.
+
 ## Native Windows arm64 PostgreSQL server
 
 The [functional specification](specs/functional.md) requires PostgreSQL on Windows arm64. A standard [Windows 11 arm64 GitHub-hosted runner](https://github.com/actions/runner-images) is available for development, but [PostgreSQL 18's Windows notes](https://www.postgresql.org/docs/18/installation-platform-notes.html#WIN64) describe only x64 builds. The [upstream Windows port notes](https://wiki.postgresql.org/wiki/Windows) say arm64 has not been reported working. A current [psqlODBC arm64 CI job](https://github.com/postgresql-interfaces/psqlodbc/blob/main/.github/workflows/main.yml) builds libpq only and records a full-server `msvc_gendef.pl` failure on arm64. Our Windows pilot also selects an x64 compiler and dependency tree.
