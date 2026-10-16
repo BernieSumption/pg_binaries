@@ -286,3 +286,82 @@ BEGIN
     END IF;
 END
 $$;
+
+CREATE EXTENSION intagg;
+DO $$
+BEGIN
+    IF (SELECT int_array_aggregate(value ORDER BY value)
+        FROM (VALUES (3), (1), (2)) AS input(value)) <> ARRAY[1, 2, 3] THEN
+        RAISE EXCEPTION 'intagg integer aggregation failed';
+    END IF;
+    IF (SELECT array_agg(value ORDER BY value)
+        FROM int_array_enum(ARRAY[3, 1, 2]) AS values(value)) <> ARRAY[1, 2, 3] THEN
+        RAISE EXCEPTION 'intagg array enumeration failed';
+    END IF;
+END
+$$;
+
+CREATE EXTENSION isn;
+CREATE TABLE builtin_isn (value isbn);
+INSERT INTO builtin_isn VALUES ('0-393-04002-X');
+DO $$
+BEGIN
+    IF (SELECT value::text FROM builtin_isn) <> '0-393-04002-X' THEN
+        RAISE EXCEPTION 'isn ISBN parsing or output failed';
+    END IF;
+END
+$$;
+
+CREATE EXTENSION autoinc;
+CREATE SEQUENCE builtin_autoinc_sequence START WITH 100;
+CREATE TABLE builtin_autoinc (id integer, label text);
+CREATE TRIGGER builtin_autoinc_trigger
+    BEFORE INSERT OR UPDATE ON builtin_autoinc
+    FOR EACH ROW EXECUTE FUNCTION autoinc(id, builtin_autoinc_sequence);
+INSERT INTO builtin_autoinc VALUES (NULL, 'first'), (NULL, 'second');
+DO $$
+BEGIN
+    IF (SELECT array_agg(id ORDER BY id) FROM builtin_autoinc) <> ARRAY[100, 101] THEN
+        RAISE EXCEPTION 'autoinc trigger did not assign sequence values';
+    END IF;
+END
+$$;
+
+CREATE EXTENSION moddatetime;
+CREATE TABLE builtin_moddatetime (id integer PRIMARY KEY, updated_at timestamp NOT NULL);
+CREATE TRIGGER builtin_moddatetime_trigger
+    BEFORE UPDATE ON builtin_moddatetime
+    FOR EACH ROW EXECUTE FUNCTION moddatetime(updated_at);
+INSERT INTO builtin_moddatetime VALUES (1, CURRENT_TIMESTAMP);
+UPDATE builtin_moddatetime SET updated_at = NULL WHERE id = 1;
+DO $$
+BEGIN
+    IF (SELECT updated_at IS NULL FROM builtin_moddatetime WHERE id = 1) THEN
+        RAISE EXCEPTION 'moddatetime trigger did not restore the update timestamp';
+    END IF;
+END
+$$;
+
+CREATE EXTENSION pageinspect;
+CREATE TABLE builtin_pageinspect (value integer);
+INSERT INTO builtin_pageinspect VALUES (1);
+CREATE INDEX builtin_pageinspect_index ON builtin_pageinspect USING btree (value);
+DO $$
+BEGIN
+    IF (SELECT root FROM bt_metap('builtin_pageinspect_index')) < 1 THEN
+        RAISE EXCEPTION 'pageinspect did not read B-tree metadata';
+    END IF;
+END
+$$;
+
+CREATE EXTENSION IF NOT EXISTS plpgsql;
+CREATE FUNCTION builtin_plpgsql_probe() RETURNS integer
+LANGUAGE plpgsql
+AS $$ BEGIN RETURN 42; END $$;
+DO $$
+BEGIN
+    IF builtin_plpgsql_probe() <> 42 THEN
+        RAISE EXCEPTION 'PL/pgSQL function returned an unexpected value';
+    END IF;
+END
+$$;
