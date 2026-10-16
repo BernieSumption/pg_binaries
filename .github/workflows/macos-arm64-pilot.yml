@@ -11,7 +11,6 @@ on:
       - tests/schema.sql
       - tests/builtins/**
       - tests/test_emit_macos_pilot_records.py
-      - support/verification-profiles.json
       - .github/workflows/macos-arm64-pilot.yml
 
 permissions:

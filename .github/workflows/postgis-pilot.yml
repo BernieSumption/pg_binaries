@@ -13,7 +13,6 @@ on:
       - 'tools/write_linux_license_inventory.py'
       - 'tools/discover_builtins.py'
       - 'support.json'
-      - 'support/verification-profiles.json'
       - 'tools/check_elf_dependencies.py'
       - 'tools/check_postgis_license_inventory.py'
       - 'tools/emit_postgis_pilot_record.py'
