@@ -8,7 +8,6 @@ on:
       - scripts/macos/**
       - tools/discover_builtins.py
       - tools/emit_macos_pilot_records.py
-      - support/verification-profiles.json
       - tests/schema.sql
       - tests/builtins/**
       - .github/workflows/macos-pilot.yml
@@ -18,7 +17,7 @@ permissions:
 
 concurrency:
   group: macos-pilot-${{ github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   build:
