@@ -302,6 +302,90 @@ Target support: None while excluded. Upstream declares PostgreSQL 9.2+, which in
 
 Sources: [upstream README, requirements, setup and license](https://github.com/omniti-labs/pg_jobmon), [PGXN release record](https://pgxn.org/dist/pg_jobmon/), [pg_partman documentation describing optional integration](https://github.com/pgpartman/pg_partman), [AWS extension support overview](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/PostgreSQL.Concepts.General.FeatureSupport.Extensions.html), [Supabase extension catalogue](https://supabase.com/docs/guides/database/extensions).
 
+## lantern — exclude
+
+Description: [Lantern](https://github.com/lanterndata/lantern) provides vector indexing and search for PostgreSQL. Its SQL extension name is `lantern`.
+
+For inclusion: It offers a distinct HNSW index implementation that can use PostgreSQL's `vector` type, and upstream has an associated managed service and a visible user community.
+
+Against inclusion: Lantern overlaps with pgvector's vector-search use case, and its latest release is v0.5.0 from November 2024. No current major-host support or PostgreSQL 18 compatibility is documented in the reviewed primary sources. Its native implementation adds substantial build and testing work across the project's targets. The AGPL-3.0 licence permits redistribution subject to its source and licence obligations; it does not prohibit redistribution. The inactivity, overlapping use case and support cost outweigh the case for adding this extension.
+
+Version policy: Exclude. The latest release predates the 25 September 2025 cutoff; no later supported release line or PostgreSQL 18 compatibility evidence was identified.
+
+Target support: None while excluded. Upstream documents PostgreSQL through 17 and Linux and Intel macOS build paths; it does not establish the required cross-platform support.
+
+Sources: [upstream repository and licence](https://github.com/lanterndata/lantern), [release history](https://github.com/lanterndata/lantern/releases), [installation and compatibility](https://lantern.dev/docs/lantern-hnsw/install), [pgvector migration guide](https://lantern.dev/docs/migrate/pgvector-self).
+
+## lantern_extras — exclude
+
+Description: [Lantern Extras](https://github.com/lanterndata/lantern_extras) provides the SQL extension `lantern_extras` and companion tools for generating, downloading, parsing and importing embeddings and vector benchmark data.
+
+For inclusion: The functions can support applications using Lantern, and SQL objects can appear in application schemas.
+
+Against inclusion: The standalone repository's latest tagged release is 0.3.0 from October 2024. Lantern's 0.4.0 release notes say the extras code moved into the main Lantern repository, so the separate project is inactive and superseded, not abandoned. The feature set downloads models and datasets, can perform CPU-intensive inference, and depends on ONNX Runtime; this adds substantial runtime, data and supply-chain work. Its BSL 1.1 licence permits redistribution but imposes production-use conditions; this is not a redistribution prohibition.
+
+Version policy: None for the separate project while excluded. Reconsider if it becomes independently maintained and has a practical self-contained runtime and data closure.
+
+Target support: None while excluded.
+
+Sources: [repository and release history](https://github.com/lanterndata/lantern_extras), [0.3.0 release](https://github.com/lanterndata/lantern_extras/releases), [Lantern 0.4.0 release notes](https://github.com/lanterndata/lantern/releases), [licence](https://github.com/lanterndata/lantern_extras/blob/main/LICENSE).
+
+## login_hook — exclude
+
+Description: [login_hook](https://github.com/splendiddata/login_hook) invokes a user-defined function when a client logs in. Its SQL extension name is `login_hook`.
+
+For inclusion: It provides login-time behavior that application schemas and administration functions may rely on. Upstream says it works with PostgreSQL 13–17.
+
+Against inclusion: Upstream recommends PostgreSQL's native login event trigger starting with PostgreSQL 17 and says maintenance will be discontinued after PostgreSQL 19. The project remains available; this is planned end of maintenance, not abandonment. It must be loaded through `session_preload_libraries`, and an error in the login function can prevent ordinary users from logging in. The native replacement covers the use case from PostgreSQL 17 onward; the remaining PostgreSQL 15–16 use case does not outweigh the maintenance horizon and operational risk.
+
+Version policy: None while excluded. The maintenance horizon and native replacement do not justify adding the extension.
+
+Target support: None while excluded.
+
+Sources: [upstream compatibility, maintenance and operational notes](https://github.com/splendiddata/login_hook), [PostgreSQL 17 native login event trigger example](https://www.postgresql.org/docs/17/event-trigger-database-login-example.html).
+
+## pg-strom — exclude
+
+Description: [PG-Strom](https://github.com/heterodb/pg-strom) accelerates analytical workloads using PostgreSQL with GPUs, NVMe and Apache Arrow. Its SQL extension name is `pg_strom`.
+
+For inclusion: It is actively maintained, PostgreSQL-licensed, has substantial upstream adoption, and current upstream documentation supports PostgreSQL 15 and later. It provides a differentiated GPU query execution path.
+
+Against inclusion: Upstream requires Linux on x86-64, an NVIDIA GPU of a specified compute capability, and a compatible CUDA toolkit and driver; some features also need additional drivers and licensed HeteroDB components. These hardware and runtime prerequisites conflict with the project's self-contained archives and exclude macOS, Windows and arm64. The exclusion is based on target and runtime constraints, not redistribution rights.
+
+Version policy: None while excluded. Reconsider only if a useful supported mode can run within the project's platform and self-contained runtime requirements.
+
+Target support: None while excluded.
+
+Sources: [upstream project and licence](https://github.com/heterodb/pg-strom), [installation requirements](https://github.com/heterodb/pg-strom/blob/master/man/install.md), [release history](https://github.com/heterodb/pg-strom/releases).
+
+## pg_transport — exclude
+
+Description: AWS's [pg_transport](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/PostgreSQL.TransportableDB.Setup.html) extension physically transports PostgreSQL database files between instances. Its SQL extension name is `pg_transport`.
+
+For inclusion: It provides a fast database migration workflow for Amazon RDS users.
+
+Against inclusion: AWS explicitly limits transportable databases to RDS for PostgreSQL and says the capability cannot be used with on-premises or EC2-hosted PostgreSQL. Its function depends on RDS-specific instance coordination and setup, so it has no established use in this standalone distribution. The reviewed sources do not establish that redistribution is prohibited.
+
+Version policy: None while excluded. Reconsider if AWS documents independent use or another maintained project provides a portable implementation.
+
+Target support: None while excluded.
+
+Sources: [AWS transport limitations](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/PostgreSQL.TransportableDB.html), [AWS setup instructions](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/PostgreSQL.TransportableDB.Setup.html).
+
+## rds_tools — exclude
+
+Description: [Amazon RDS for PostgreSQL](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/PostgreSQL_rds_tools-functions-reference.html) provides `rds_tools` functions for inspecting RDS instance information and operational state. Its SQL extension name is `rds_tools`.
+
+For inclusion: AWS documents functions that can be useful to applications and administrators running on RDS for PostgreSQL.
+
+Against inclusion: The functions expose RDS-specific instance metadata and operational state, so their behavior depends on AWS's managed service. The reviewed primary sources do not establish independent source, portable behavior or use outside RDS. This service coupling makes it unsuitable for a cross-platform standalone distribution; it is not a finding that redistribution is prohibited.
+
+Version policy: None while excluded. Reconsider if AWS publishes an independently buildable implementation with behavior useful outside its managed service.
+
+Target support: None while excluded. AWS service availability does not establish independent OS or PostgreSQL compatibility.
+
+Sources: [AWS rds_tools function reference](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/PostgreSQL_rds_tools-functions-reference.html), [AWS extension catalogue](https://docs.aws.amazon.com/AmazonRDS/latest/PostgreSQLReleaseNotes/postgresql-extensions.html).
+
 ## Unreviewed projects
 
 Candidates extracted from the October 2026 research. No inclusion decision is implied. Names in the second column are SQL extension names used by `CREATE EXTENSION`. Provider documentation is linked where the research did not identify an upstream source project.
@@ -318,16 +402,12 @@ Candidates extracted from the October 2026 research. No inclusion decision is im
 | h3-pg | `h3`, `h3_postgis` | [Upstream](https://github.com/postgis/h3-pg) |
 | index_advisor | `index_advisor` | [Upstream](https://github.com/supabase/index_advisor) |
 | ip4r | `ip4r` | [Upstream](https://github.com/RhodiumToad/ip4r) |
-| lantern | `lantern` | [Upstream](https://github.com/lanterndata/lantern) |
-| lantern_extras | `lantern_extras` | [Upstream](https://github.com/lanterndata/lantern_extras) |
-| login_hook | `login_hook` | [Upstream](https://github.com/splendiddata/login_hook) |
 | MobilityDB | `mobilitydb` | [Upstream](https://github.com/MobilityDB/MobilityDB) |
 | mysql_fdw | `mysql_fdw` | [Upstream](https://github.com/EnterpriseDB/mysql_fdw) |
 | online_advisor | `online_advisor` | [Upstream](https://github.com/knizhnik/online_advisor) |
 | orafce | `orafce` | [Upstream](https://github.com/orafce/orafce) |
 | paradedb | `pg_search` | [Upstream](https://github.com/paradedb/paradedb) |
 | pg-semver | `semver` | [Upstream](https://github.com/theory/pg-semver) |
-| pg-strom | `pg_strom` | [Upstream](https://github.com/heterodb/pg-strom) |
 | pg_background | `pg_background` | [Upstream](https://github.com/vibhorkum/pg_background) |
 | pg_bigm | `pg_bigm` | [Upstream](https://github.com/pgbigm/pg_bigm) |
 | pg_duckdb | `pg_duckdb` | [Upstream](https://github.com/duckdb/pg_duckdb) |
@@ -354,7 +434,6 @@ Candidates extracted from the October 2026 research. No inclusion decision is im
 | pg_tiktoken | `pg_tiktoken` | [Upstream](https://github.com/kelvich/pg_tiktoken) |
 | pg_tle | `pg_tle` | [Upstream](https://github.com/aws/pg_tle) |
 | pg_track_settings | `pg_track_settings` | [Upstream](https://github.com/rjuju/pg_track_settings) |
-| pg_transport | `pg_transport` | [Upstream](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/PostgreSQL.TransportableDB.Setup.html) |
 | pg_uuidv7 | `pg_uuidv7` | [Upstream](https://github.com/fboulnois/pg_uuidv7) |
 | pg_wait_sampling | `pg_wait_sampling` | [Upstream](https://github.com/postgrespro/pg_wait_sampling) |
 | pgactive | `pgactive` | [Upstream](https://github.com/aws/pgactive) |
@@ -392,7 +471,6 @@ Candidates extracted from the October 2026 research. No inclusion decision is im
 | prefix | `prefix` | [Upstream](https://github.com/dimitri/prefix) |
 | rdkit | `rdkit` | [Upstream](https://github.com/rdkit/rdkit) |
 | rds_casts | `rds_casts` | [Upstream](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/PostgreSQL.CustomCasts.html) |
-| rds_tools | `rds_tools` | [Upstream](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/PostgreSQL_rds_tools-functions-reference.html) |
 | rum | `rum` | [Upstream](https://github.com/postgrespro/rum) |
 | session_variable | `session_variable` | [Upstream](https://github.com/splendiddata/session_variable) |
 | tdigest | `tdigest` | [Upstream](https://github.com/tvondra/tdigest) |

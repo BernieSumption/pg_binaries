@@ -98,6 +98,11 @@ def validate_support(support):
             for field in ("postgresql_minimum_major", "postgresql_maximum_major"):
                 if field in policy and (not isinstance(policy[field], int) or isinstance(policy[field], bool)):
                     raise CoverageError(f"support extension {project} {version}: {field} must be an integer")
+            systems = policy.get("operating_systems", list(support["os_support"]))
+            if (not isinstance(systems, list) or not systems
+                    or any(not isinstance(name, str) or name not in support["os_support"] for name in systems)
+                    or len(systems) != len(set(systems))):
+                raise CoverageError(f"support extension {project} {version}: invalid operating_systems")
 
 
 def validate_extension_policy(root, support):
@@ -124,6 +129,7 @@ def expected_targets(support, releases):
     for project, ext in support.get("extensions", {}).items():
         for sql_name in ext.get("sql_names", []):
             for ext_version, policy in ext.get("versions", {}).items():
+                systems = policy.get("operating_systems", list(support["os_support"]))
                 low = int(policy.get("postgresql_minimum_major", support["postgresql"]["minimum_major"]))
                 high = int(policy.get("postgresql_maximum_major", 999))
                 if low > high:
@@ -131,8 +137,9 @@ def expected_targets(support, releases):
                 for pg in releases:
                     major = version_parts(pg, "snapshot")[0]
                     if low <= major <= high:
-                        for platform in platforms:
-                            extensions.add((sql_name, ext_version, pg, platform))
+                        for os in systems:
+                            for arch in support["architectures"]:
+                                extensions.add((sql_name, ext_version, pg, f"{os}-{arch}"))
     return core, extensions
 
 

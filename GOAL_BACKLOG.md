@@ -13,6 +13,7 @@ This backlog records work for the current development goal. The specifications d
 ## Support and coverage
 
 - [ ] Define one authoritative intended-support source and a coverage report that shows every missing PostgreSQL version, platform, extension version, or verification result, including failed and skipped work.
+- [ ] Represent and check documented extension OS and PostgreSQL subsets without hiding architecture gaps; MobilityDB and online_advisor are candidates that need this before an inclusion declaration.
 - [ ] Drive builds, endpoint tests, and candidate inventory generation from the intended-support source. Demonstrate that a routine support addition does not require editing parallel workflow lists.
 - [ ] Record immutable archive checksums, source versions, applicable upstream compatibility, test revision, environment, and results so evidence can be reused only while applicable.
 

@@ -58,6 +58,36 @@ class CoverageTests(unittest.TestCase):
                              <= coverage.version_parts(hi, "test")
                              for name, _, lo, hi, _ in have_extensions))
 
+    def test_extension_os_subset_keeps_both_architectures_and_pg_range(self):
+        self.support["extensions"]["Example"]["versions"]["1.0"] = {
+            "postgresql_minimum_major": 16,
+            "postgresql_maximum_major": 17,
+            "operating_systems": ["linux"],
+        }
+        _, targets = coverage.expected_targets(self.support, ["15.9", "16.11", "17.7", "18.0"])
+        self.assertEqual(targets, {
+            ("example", "1.0", pg, platform)
+            for pg in ("16.11", "17.7")
+            for platform in ("linux-x86_64", "linux-arm64")
+        })
+
+    def test_extension_os_subset_rejects_empty_unknown_and_duplicate(self):
+        self.support["os_support"] = {
+            name: {"minimum_version": "1.0"} for name in ("macos", "windows", "linux")
+        }
+        policy = self.support["extensions"]["Example"]["versions"]["1.0"]
+        for systems in ([], ["linx"], ["linux", "linux"], [42]):
+            with self.subTest(systems=systems):
+                policy["operating_systems"] = systems
+                with self.assertRaises(coverage.CoverageError):
+                    coverage.validate_support(self.support)
+
+    def test_open_pg_range_includes_future_stable_major(self):
+        policy = self.support["extensions"]["Example"]["versions"]["1.0"]
+        policy.pop("postgresql_maximum_major")
+        _, targets = coverage.expected_targets(self.support, ["18.0", "19.0"])
+        self.assertEqual(len(targets), 12)
+
     def test_overlapping_ranges_rejected(self):
         item = {"url": "https://example.test/a", "sha256": "a" * 64,
                 "postgresql_support": {"from": "15.0", "to": "16.9"}}
