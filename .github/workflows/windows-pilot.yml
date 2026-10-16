@@ -40,7 +40,7 @@ jobs:
           Add-Content -Path $env:GITHUB_PATH -Value $flex.DirectoryName
       - name: Install PostgreSQL libraries
         run: |
-          & "$env:VCPKG_INSTALLATION_ROOT\vcpkg.exe" install icu:x64-windows zlib:x64-windows lz4:x64-windows zstd:x64-windows openssl:x64-windows
+          & "$env:VCPKG_INSTALLATION_ROOT\vcpkg.exe" install icu:x64-windows zlib:x64-windows lz4:x64-windows zstd:x64-windows openssl:x64-windows libxml2:x64-windows libxslt:x64-windows
       - name: Build and package
         shell: cmd
         run: scripts\windows\build.cmd

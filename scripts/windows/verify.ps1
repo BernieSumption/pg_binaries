@@ -101,6 +101,8 @@ END $$;
 SELECT 'a' COLLATE pilot_libc < 'b' COLLATE pilot_libc;
 '@
   & $psql -X -v ON_ERROR_STOP=1 -c $collationSql
+  $xmlResult = (& $psql -X -At -v ON_ERROR_STOP=1 -c "SELECT (xpath('/x/text()', '<x>ok</x>'::xml))[1]::text").Trim()
+  if ($xmlResult -ne 'ok') { throw "XML schema operation returned $xmlResult, expected ok" }
 
   $compressionSql = @'
 CREATE TABLE pilot_compression (id integer PRIMARY KEY, payload text COMPRESSION lz4);
