@@ -30,7 +30,7 @@ These decisions apply to PostgreSQL majors 15 and later on supported platforms. 
 
 PostgreSQL's configure options and Meson option names evolve. The decisions above describe capabilities, not a promise that an identical switch exists in every major. Build scripts must use the option supported by each major's source and verify the resulting capability. PostgreSQL 15 is the minimum supported major; PostgreSQL 18 documentation is the current source for Meson option names and newer facilities.
 
-The current pilot scripts request ICU, LZ4, Zstandard, OpenSSL, libxml2, libxslt and zlib on all three operating systems. All three explicitly disable readline. Linux and macOS select e2fs UUID support; Windows does not select a UUID library. Current build coverage is x86-64 only, so this policy does not establish arm64 build or runtime verification.
+The current pilot scripts request ICU, LZ4, Zstandard, OpenSSL, libxml2, libxslt and zlib on all three operating systems. All three explicitly disable readline. Linux and macOS select e2fs UUID support; Windows does not select a UUID library. Linux has an arm64 build and runtime pilot; macOS arm64 remains unverified.
 
 ## Sources
 

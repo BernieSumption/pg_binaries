@@ -18,7 +18,7 @@ Against inclusion: Native code must be built and checked against each claimed Po
 
 Version policy: Support the latest patch release of the 0.8 line, currently 0.8.7. Upstream's changelog records additions and fixes in that line, with no documented DDL break. Retain the latest release before any future documented compatibility break and assume a future major-version transition breaks compatibility. Releases before the September 2025 cutoff are not selected without a specific reason.
 
-Target support: PostgreSQL 15 and later on Linux, macOS and Windows, x86-64 and arm64, subject to upstream's documented PostgreSQL support and verified archive results. Upstream currently documents PostgreSQL 13+ and Linux, macOS and Windows build procedures; its Windows instructions are for x64, so arm64 needs separate build and test evidence before any inventory claim.
+Target support: PostgreSQL 15 and later on Linux and macOS for x86-64 and arm64, and Windows for x86-64, subject to upstream's documented PostgreSQL support and verified archive results. Upstream currently documents PostgreSQL 13+ and Linux, macOS and Windows build procedures; its Windows instructions cover x64.
 
 Sources: [upstream build and usage guide](https://github.com/pgvector/pgvector), [changelog](https://github.com/pgvector/pgvector/blob/master/CHANGELOG.md), [licence](https://github.com/pgvector/pgvector/blob/master/LICENSE), [Supabase extension catalogue](https://supabase.com/docs/guides/database/extensions), [Neon extension catalogue](https://neon.com/docs/extensions/pg-extensions).
 
@@ -270,7 +270,7 @@ Against inclusion: The upstream source build uses Perl to generate installation 
 
 Version policy: Support 1.3.4, the latest published release as of 2026-10-16. Upstream's 1.3.5 changelog entry is marked unreleased. Release 1.3.4 restores extension upgrade-path testing; no documented SQL compatibility break requires an older published line. Recheck that conclusion and retain required update scripts when moving to a newer release.
 
-Target support: PostgreSQL 15–18 on Linux, macOS and Windows, x86-64 and arm64. Upstream reports testing through PostgreSQL 18. The installed SQL payload is architecture-independent, but archive assembly and behavior still require checks on each target before publication.
+Target support: PostgreSQL 15–18 on Linux and macOS for x86-64 and arm64, and Windows for x86-64. Upstream reports testing through PostgreSQL 18. The installed SQL payload is architecture-independent, but archive assembly and behavior still require checks on each target before publication.
 
 Sources: [PGXN release and metadata](https://pgxn.org/dist/pgtap/), [1.3.4 source, release notes and compatibility](https://api.pgxn.org/src/pgtap/pgtap-1.3.4/), [upstream build and release process](https://github.com/theory/pgtap), [Debian package](https://packages.debian.org/sid/source/pgtap).
 

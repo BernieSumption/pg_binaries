@@ -20,7 +20,7 @@ The Windows minimum is an OS compatibility floor, not a recommendation to run an
 
 Produce one binary set per architecture and platform, with no OS-version-specific variants within a supported range. Set build targets deliberately rather than inheriting the build runner's defaults. Bundle or statically link non-universal dependencies and use only platform interfaces available at the stated floor. On macOS, use a deployment target no newer than 11.0 and inspect linked system libraries. On Linux, inspect ELF interpreter and symbol-version requirements as well as kernel requirements. On Windows, inspect imported APIs and include non-universal runtime dependencies in the archive. An unavoidable external prerequisite requires a specification decision through `HUMAN_REVIEW_QUEUE.md` before an affected download is advertised.
 
-Test archives on clean systems at the minimum and a current supported OS release, for both architectures, following the testing specification. Do not infer support from a successful build, a CI runner image, or upstream support for PostgreSQL alone. Advertise a minimum in `inventory.json` only after the archive passes the required behavioral tests on that floor and all dependencies satisfy the portability requirements.
+Test archives on clean systems at the minimum and a current supported OS release, for every architecture declared for that OS, following the testing specification. Do not infer support from a successful build, a CI runner image, or upstream support for PostgreSQL alone. Advertise a minimum in `inventory.json` only after the archive passes the required behavioral tests on that floor and all dependencies satisfy the portability requirements.
 
 ## Current implementation gaps
 
