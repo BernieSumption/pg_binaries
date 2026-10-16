@@ -86,7 +86,6 @@ def emit(root, archives, core_archives, output, image_id, kernel):
         "outcome": "passed",
         "sha256": digest,
         "assembled_core": {"archive": core_name, "sha256": core_digest, "version": "18.6"},
-        "component": "PostGIS",
         "version": "3.6.4",
         "platform": "linux-x86_64",
         "postgresql_version": "18.6",
@@ -105,11 +104,19 @@ def emit(root, archives, core_archives, output, image_id, kernel):
         },
     }
     support = coverage.load_json(root / "support.json")
-    coverage.validate_verification_record(record, support, root)
+    names = support["extensions"]["PostGIS"]["sql_names"]
+    if sorted(names) != ["postgis", "postgis_raster", "postgis_sfcgal", "postgis_topology"]:
+        raise coverage.CoverageError("PostGIS SQL names differ from the tested pilot set")
     output.mkdir(parents=True, exist_ok=True)
-    path = output / f"postgis-3.6.4-postgresql-18.6-linux-x86_64-{run_id}.json"
-    path.write_text(json.dumps(record, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    return path
+    paths = []
+    for name in names:
+        extension_record = {**record, "component": name, "project": "PostGIS"}
+        coverage.validate_verification_record(extension_record, support, root)
+        path = output / f"{name}-3.6.4-postgresql-18.6-linux-x86_64-{run_id}.json"
+        path.write_text(json.dumps(extension_record, indent=2, sort_keys=True) + "\n",
+                        encoding="utf-8")
+        paths.append(path)
+    return paths
 
 
 def main():
@@ -122,8 +129,9 @@ def main():
     parser.add_argument("--kernel", required=True)
     args = parser.parse_args()
     try:
-        print(emit(args.root, args.archives, args.core_archives, args.output,
-                   args.image_id, args.kernel))
+        for path in emit(args.root, args.archives, args.core_archives, args.output,
+                         args.image_id, args.kernel):
+            print(path)
         return 0
     except (coverage.CoverageError, OSError, ValueError) as exc:
         print(f"PostGIS pilot record: {exc}", file=sys.stderr)
