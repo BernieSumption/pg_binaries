@@ -10,7 +10,9 @@ Please decide whether a PostgreSQL Windows arm64 port is within this project's i
 
 The [functional specification](specs/functional.md) requires one Linux archive per architecture to work across supported machines without non-universal external dependencies. The [OS policy](policies/os-support.md) states only a kernel 5.15 minimum. A kernel version does not identify the C library or dynamic loader. The current [Linux build](scripts/linux/build-in-container.sh) uses Ubuntu 22.04, records glibc 2.35, and deliberately leaves glibc and the ELF loader outside the archive. A clean machine with kernel 5.15 and an older or different libc can fail before PostgreSQL starts; the passing Ubuntu 24.04 pilot does not test that case.
 
-Please decide whether to keep the kernel-only Linux support claim and invest in a relocatable bundled or static user-space runtime, or amend the specification to state a supported user-space ABI floor and its test environments. Until the decision is implemented and tested, Linux archives must not be advertised as universal across distributions. A cheap older-libc container probe can measure the current gap, but it cannot establish the required kernel endpoint or universal compatibility.
+Please decide whether to keep the kernel-only Linux support claim and invest in a relocatable bundled or static user-space runtime, or amend the specification to state a supported user-space ABI floor and its test environments. Until the decision is implemented and tested, Linux archives must not be advertised as universal across distributions.
+
+A 2026-10-16 probe confirmed the gap: the local PostgreSQL 18.6 x86-64 archive (`SHA-256 7a41e9d4287c49f5a9885ed53667add5b4a0ea52dc8e157d28f4a7c06ad8d34c`) failed to run `postgres --version` in an Ubuntu 20.04 Docker container with glibc 2.31. The loader reported missing `GLIBC_2.33` through `GLIBC_2.35` symbols in PostgreSQL and bundled libraries. The container shares the host kernel, so this does not test the kernel 5.15 endpoint.
 
 ## Address Standardizer US data redistribution
 
