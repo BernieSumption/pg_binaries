@@ -1,65 +1,27 @@
 # Working instructions for this repository
 
-Follow [style.md](style.md) whenever generating text.
+## Specification docs
 
-## Specification boards
+- `specs/functional.md` what this project must provide
+- `specs/testing.md` - how everything is tested and how testing guarantees that the functional requirements are met 
 
-Everything under `specs/` belongs to a board with this format:
+Agents must NEVER modify spec documents, if a spec change is desired add something to HUMAN_REVIEW_QUEUE.md.
 
-```text
-specs/<area>/
-  <area>-policy.md
-  <area>-notes.md
-  items/
-    proposed/
-    planned/
-    implemented/
-    rejected/
-    deferred/
-```
+### Policies
 
-Use area-prefixed filenames for policy and notes so they remain identifiable in search results and editor tabs.
+Policies are AI-managed. Agents can edit them at will to implement the requirements in the specification.
 
-Create folders when required to add the first item and delete folders with no items in them.
+Policies are the key way in which humans review agent decisions, and agents ensure that decisions are followed consistently by future agents.
 
-### Policy
+Ensure that policies reflect the state of the codebase in each commit. If it is necessary to change a policy, update the codebase and commit both together.
 
-The policy states the human-reviewed rules, guarantees and selection criteria for an area, with the reasons they follow from the use case. It defines how to decide what to do. Concrete decisions, chosen mechanisms and implementation work belong in items.
+Policies can never authorise exceptions to specs, that would require a spec change, requested through HUMAN_REVIEW_QUEUE.md 
 
-Give policies stable identifiers with an area prefix: `FUNC001` (functional), `BUILD001` (build), `EXT001` (extensions) and `TEST01` (testing). Use three digits for FUNC, BUILD and EXT; testing retains its two-digit numbering. Do not renumber existing identifiers when inserting or moving rules. If an item is based on specific policies, it should cite them.
+### Codebase notes and comments
 
-### Notes
+When GENUINELY essential, code comments can be added to code, but remember that AI agents are VERY good at inferring details from code, and seem to constantly underestimate the ability of future agents to interpret their code so are prone to writing unnecessary comments.
 
-Notes are AI-managed working context: research, investigations, open technical questions and findings shared by several items. Cite sources and distinguish evidence from inference. Move a settled decision into an item; bring a policy gap, conflict or proposed exception to human review. Notes do not change policy.
-
-### Items
-
-Each item describes one decision or piece of work: what it entails, why, its scope, supporting evidence and completion criteria where implementation is required. Include enough reasoning to continue the work without repeating the investigation. Keep exact build/test results in verification records and link them from the item.
-
-The folder is the workflow status; do not duplicate it in a status field or separate implementation log.
-
-- `proposed/` — A concrete recommendation awaiting human review; surface it to the user and wait for a decision.
-- `planned/` — Approved work, or a direct consequence of policy, ready for an agent to implement.
-- `implemented/` — Completed work with the required verification evidence.
-- `rejected/` — A deliberate exclusion, with the reason preserved.
-- `deferred/` — Postponed work, with the reason and conditions for reconsideration.
-
-An agent takes an item from `planned/`, implements and verifies it, then moves it to `implemented/`. It stays in `planned/` while work is underway; there is no "implementing" state. A partial platform result does not complete the item's full scope. Direct consequences of policy may be recorded in `planned/` or `rejected/`; choices requiring human judgment go into `proposed/`. After review, move the item to the agreed folder and update affected policies or metadata.
-
-When starting a new interactive conversation with a human, scan for items in `specs/*/items/proposed/*.md` and remind the user that these items are awaiting review. If you have added a proposed item, let the user know in conversation. Don't take silence as acknowledgement here - periodically remind the user until they acknowledge the items to review.
-
-### Areas
-
-- [functional](specs/functional/functional-policy.md) — Product guarantees; items describe the implementation decisions and work that satisfy them.
-- [build](specs/build/build-policy.md) — PostgreSQL build configuration; items record feature selection, compiler settings, linking and layout.
-- [extensions](specs/extensions/extensions-policy.md) — Extension selection, versions and packaging; items record each SQL extension's scope and research.
-- [testing](specs/testing/testing-policy.md) — Evidence and acceptance rules; items describe executable verification work.
-
-Keep supporting assets within their owning board. The functional board owns the architecture, inventory and metadata format; testing owns the evidence summary. Supporting assets do not create another workflow or override policy. [README.md](README.md) provides the reading order.
-
-## Project contract
-
-Before implementing binaries, read the functional policy, [inventory](specs/functional/functional-inventory.json), testing policy and the policies for affected areas. Follow the [architecture](specs/functional/functional-architecture.md), revising technical choices when evidence supports doing so. Preserve the human-facing invariants. Keep policy and inventory consistent; record unresolved scope choices in the appropriate `items/proposed/` folder and present a concrete recommendation before changing the agreed scope.
+Agents are authorised to trim or delete code comments that do not provide information not obvious from the code.
 
 ## The human review queue
 
@@ -88,3 +50,34 @@ Agents may:
 This authorization covers development and CI iteration for the pilot. It does **not** authorize publishing a permanent GitHub Release or changing public release assets. Ask for a decision only if one of those becomes necessary to proceed.
 
 Repository instructions do not bypass tool sandbox, authentication, or GitHub permission checks. If a required operation is blocked by those controls, continue unaffected work and report the specific blocker.
+
+# Style guide
+
+Follow these rules whenever generating text, including code comments, policy documents, and interactive conversations with the user.
+
+Write for a reader who knows programming and PostgreSQL but is otherwise unfamiliar with our system. Minimise reading effort while preserving the reasoning needed to review a requirement.
+
+## Structure and precision
+
+1. Introduce the use case before the design, and define project-specific terms before using them. Use established technical terms precisely; familiar concepts such as ABI, DDL and transitive dependencies need no tutorial.
+2. Give each document one purpose and each rule one authoritative home. Link to shared policies instead of repeating them in every profile or test specification.
+3. State the requirement, its scope and its reason together. Explain how it follows from the use case; omit a separate “Why” paragraph when the sentence already explains it.
+4. Distinguish requirements, open decisions, research findings and verified results. Use **must** for requirements, **may** for allowed choices and **candidate** for unverified approaches. Name the versions and environment behind a compatibility claim.
+5. Use observable behaviour: “starts on a clean supported OS without installing a runtime” is more useful than “portable and robust”. Put machine-actionable constraints in metadata and explain their rationale in prose.
+6. Cite upstream facts and test evidence. Date changing observations and label inferences. Keep generated version lists out of manually maintained explanations.
+7. Write specifications without draft labels, document-level approval-status fields or dated status preambles. Approval must require no editorial changes. Record unresolved choices explicitly and use item folders for workflow status and verification records for results.
+
+## Economy of language
+
+Use direct verbs and descriptive headings. Combine sentences that express one thought, but keep distinct conditions separate. Retain examples that explain a difficult boundary. Remove repeated conclusions, obvious qualifications and disclaimers already established by the document's scope.
+
+Avoid AIisms, including:
+
+- Contrast formulas such as “It's not X, it's Y”, “X—not Y”, and “This isn't about X; it's about Y”. State the intended meaning directly. Use an explicit comparison only when the reader needs that distinction.
+- Metaphors and invented labels such as “load-bearing”, “guardrails”, “north star” and “decision surface”. Name the requirement, constraint or interface.
+- Promotional or empty phrases: “seamless”, “robust”, “leverage”, “delve”, “comprehensive solution”, “it is worth noting” and “simply”.
+- Rhetorical questions, repetitive “Why this matters” summaries, and praise for the design.
+
+## Editorial check
+
+Read in order. Can the reader understand each term without looking ahead? Does every paragraph add a requirement, reason, fact or useful example? Can a sentence be removed without losing any of those? Shorten it until further cuts would obscure the meaning.

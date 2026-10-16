@@ -1,6 +1,6 @@
 # Functional spec
 
-These guarantees define the product. Implementation items describe how to satisfy them.
+These guarantees define the product. Agents read these spec files for hard requirements, and manage and edit the files in `policies/` to reflect decisions and interpretations of these specs.
 
 ## OS support
 
@@ -67,6 +67,12 @@ Use these criteria to determine backwards compatibility:
 - When updating the current supported versions, use version numbers rather than release dates to establish support. So for example, if we support 2.1.7 and 3.0.1, and when checking for new versions we find that 2.1.11 has been release, it would be necessary to support it.
 
 In general we do not support extension releases made before 25 September 2025, but exceptions can be made, for example if there is a widely used incompatible version whose last release was before then, or if the current release was made before then.
+
+### Respect both test evidence and documented compatibility
+
+Always research the documented compatibility of each extension version.
+
+The claimed compatibility for a build output should be the smaller of the documented compatibility and the actual compatibility as checked by tests. For example, if an extension version claims to support Postgres 17.0 - 17.6, and tests indicate that 17.7 also works fine, do not widen the claim made by the documentation.
 
 ### Documenting extension support decisions
 
@@ -210,3 +216,13 @@ Include `postgres`, `initdb`, `pg_ctl`, `psql`, `pg_dump` and `pg_restore` with 
 ## Downloads include redistribution obligations
 
 Downloads must be free and public without authentication. Include applicable licence texts, notices and component/version mappings, plus any required source offers or source links. Resolve redistribution obligations before advertising a component.
+
+## Allow debugging of failures
+
+Assume that failures will happen, both in our own testing and on the machines of users. Both system-level errors like dynamic libraries failing to load and processes crashing or aborting with errors; and application-level errors like extension errors or missing files that are captured in log files.
+
+Anticipate these errors, and document how to capture them. This will partly be the responsibility of the client that loads these binaries, but our responsibility is to configure the build appropriately, configure log file location, and document what clients need to collect and provide to allow us to debug issues.
+
+How can we enable an excellent feedback loop where issues in our binaries can be fed back to us, with appropriate information for us to eg resolve symbols in stack traces.
+
+Document the plan to achieve this in `policies/debugging.md`
