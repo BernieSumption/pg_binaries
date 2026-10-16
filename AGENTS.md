@@ -36,6 +36,8 @@ Examples of things justifying requesting a human decision includes:
 
 While a request is in HUMAN_REVIEW_QUEUE.md, the old requirements remain in force. If an agent wants to proceed with a course of action that is against the specified behaviour, the appropriate response is to add a request to HUMAN_REVIEW_QUEUE.md and then stop the current work. It is always acceptable for agents to decide to stop in the face of inconsistent requirements, and never acceptable for them to implement behaviour that conflicts with a requirement.
 
+While blocked on a response in HUMAN_REVIEW_QUEUE.md, make progress on other non-dependent tasks if appropriate.
+
 ## Authorization
 
 Agents may:

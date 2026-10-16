@@ -4,7 +4,7 @@ These guarantees define the product. Agents read these spec files for hard requi
 
 ## OS support
 
-We support x86 and arm64 across Mac, Windows and Linux.
+We support x86-64 and arm64 across Mac, Windows and Linux.
 
 A single binary for each platform provides support for all supported OS versions. For each OS we document a support version - releases before this version are not tested or supported. We choose the support version based on:
 
@@ -113,9 +113,26 @@ Note: This policy document, as specified above, requires that decisions about wh
 
 ### Minimise the number of extension builds
 
-For every extension version we support, we provide enough downloads to cover every Postgres version we support. An extension built against version 15 of Postgres will not necessarily be compatible with version 18. Sometimes there may be breaks within a chain of minor releases, So for example perhaps one build is required to support 18.0-18.6 and another to support 18.6+.
+For every extension version we support, we provide enough downloads to cover every Postgres version we support (except in the case of extensions that genuinely do not support all of our Postgres versions). An extension built against version 15 of Postgres will not necessarily be compatible with version 18. Sometimes there may be breaks within a chain of minor releases, So for example perhaps one build is required to support 18.0-18.6 and another to support 18.6+.
 
 Avoid building the entire matrix of every Postgres version against every extension version. Researching compatibility in upstream docs, Make a minimal set of extension builds, and ensure that the correct tests exist to verify that a given extension build does in fact work as expected in every version it claims support for.
+
+## Declared support drives builds, tests and releases
+
+There must be a clear, documented process for adding supported PostgreSQL versions, extensions, extension versions and platforms.
+
+Express intended support in one authoritative place, separate from the inventory of available downloads. inventory.json should be generated from or validated against this source. Routine additions must not require independently updating build lists, test lists and release lists. For example, adding an extension release should identify the required builds and checks without manually enumerating them in several workflows.
+
+The delivery process must:
+
+- Detect when intended support lacks a verified download and report the requirement as unmet.
+- Determine which builds and tests are needed, reusing existing artifacts and applicable verification results.
+- Run the required builds and checks on appropriate GitHub Actions runners.
+- Publish verified archives and update the inventory, preserving references to unchanged downloads.
+
+Incomplete or failed work must remain visible until resolved. It must not disappear from coverage reporting merely because it has not been added to the public inventory.
+
+Document this process in `policies/delivery-process.md`. Explain what an agent edits to request new support, how that change produces unmet coverage checks, how builds and tests are selected and run, and how verified results become published downloads. Include a worked example. Agents choose the metadata format, orchestration and implementation.
 
 ## Documented release layout
 
@@ -157,7 +174,7 @@ Exclude an optional feature when
 - it is commonly disabled or known to cause issues that could affect our users
 - it is disabled by default and there's no good reason to depart from that default
 
-If a single option has factors arguing for and against enabling it, add it to HUMAN_REVIEW_QUEUE.md
+If a single option has factors arguing for and against enabling it, agents are authorised to make a call one way or the other if the evidence clearly favours one decision. If the case each way is strong, add it to HUMAN_REVIEW_QUEUE.md
 
 ### Documenting option support decisions
 

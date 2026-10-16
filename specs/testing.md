@@ -1,75 +1,63 @@
 # Testing spec
 
-The overarching
+Tests establish that our packaged PostgreSQL and extensions satisfy the functional spec. Agents choose the test machinery and representative cases.
 
-## Test build outputs outside of the container used to build them
+Document testing decisions and their reasoning in `policies/testing.md`, explaining how the chosen checks satisfy this spec.
 
-Before publishing a release, test the built archive on a clean supported systems, set up without any development utilities or dependencies that might be missing on client systems.
+`policies/delivery-process.md` specified elsewhere also relates to tests in that it documents the role tests play in delivering routine additions to the inventory.
 
-## Test the released artefacts
+## Test the archives on supported systems before publication
 
-While we should test as much as possible before release, only a post-release test can check if the paths in inventory.json are reachable and really correspond to the correct downloads.
+Before publication, test the final archives on clean supported systems, outside the environment used to build them. The test systems must not supply development tools or dependencies that would hide missing files in our downloads.
 
-## Ensure sufficient test coverage that any incorrect information in inventory.json would fail a test
+Assemble installations using only the archives, their metadata and the documented installation process. PostgreSQL must run as an ordinary user without undeclared setup or dependencies.
 
-Go through inventory.json systematically and specify tests.
+Test each supported OS and architecture. For compatibility ranges, testing the start and end is sufficient; testing every intermediate version is not required. This applies to OS versions and PostgreSQL versions supported by an extension build. Known intermediate incompatibilities must prevent advertising a continuous range even when both endpoints pass.
 
-Test on different OS versions to verify that our declared OS support ranges are correct.
+## Treat the documented install process as a tested asset
 
-Whenever a range is claimed, it is sufficient to test the start and end of the range, not every version in between. This applies to OS versions, PG versions for extensions, and any other compatibility ranges ranges.
-
-## Prefer data-driven tests
-
-Prefer a metadata structure that defines intended support
-
-## Optimise test execution time
-
-If tests take longer than a few minutes iteration speed suffers.
-
-Use parallelism for IO-bound tests and caching if appropriate.
-
-For example, if much of the test time considers of running an unchanged test suite against combinations of Postgres and extensions that have been tested before, consider committing a record of test outcomes (making sure of course that test suite changes would invalidate the cache). This is an example not a suggestion.
-
-## TEST07 — Verify failure behaviour
-
-Test unavailable versions, corrupt archives, missing required files and conflicting packages as well as successful installations. Check that failures are reported accurately, do not silently substitute versions, and leave no running server or invalid download marked as usable.
-
-These cases establish that clients can detect an unusable installation before relying on it.
-
-## TEST08 — Make the checks repeatable
-
-Required checks must run through repository test commands and the delivery pipeline. A written test procedure is complete only when its checks are implemented and produce retained results.
-
-Connect each promised behaviour to a test that observes it. Where a required environment or test is unavailable, report the gap and keep that part of coverage incomplete.
+This process is designed to be implemented by client library. During tests, we should make our own implementation, use agents to verify that our implementation is a faithful reproduction of the install process, and confirm that it works.
 
 ## Exercise the intended use case
 
-Tests must initialize a database, connect, execute representative DDL, inspect the resulting definitions and stop the server. Exercise the supplied command-line tools, enabled PostgreSQL features and each extension's schema functionality; successful startup or `CREATE EXTENSION` alone is insufficient.
+Initialize a UTF-8 database, connect, execute representative DDL, inspect the resulting definitions and stop the server cleanly. Exercise the supplied command-line tools, enabled PostgreSQL features and each extension's schema functionality.
 
-## Follow the documented installation process
-
-Tests must assemble installations using only the published archives, metadata and documented installation instructions. They must work as an ordinary user without undeclared setup or dependencies.
+Comprehensive testing of extension functionality is not necessary. Consider executed DLL to be a smoke test to detect build, packaging and compatibility problems. For example, create an extension, create a table or function using its objects, and execute a representative operation with an expected result. Successful startup or `CREATE EXTENSION` alone is insufficient, but we do not need to duplicate upstream's comprehensive tests.
 
 ## Verify relocation
 
-Repeat representative operations after moving the extracted installation to a different path, with the original location unavailable.
+Move the extracted installation to a different path and repeat representative operations with the original location unavailable. PostgreSQL and its extensions must still work using the documented installation process.
 
-## Check intended coverage as well as published coverage
+## Test the published downloads
 
-Compare available downloads with the versions and platforms required by the specifications and policy decisions. Report missing coverage separately from failures in published downloads.
+After publication, retrieve the public inventory and check that its download URLs are accessible without authentication. Verify checksums and establish that the downloaded bytes are the same archives that passed pre-publication testing.
 
-## Identify exactly what passed
+Include downloads referenced from older releases. A successful local build does not establish that the public release contains the correct files or that clients can obtain them.
 
-Retained results must identify the archive checksums, test revision and execution environment. Reused results must apply to the same artifacts and checks. Failed or skipped checks must remain visible.
+## Verify inventory claims and report coverage
 
-## Account for known exceptions within compatibility ranges
+Verify every inventory field against build evidence or behavioural tests. Check versions, included extensions, prerequisites and platform compatibility. Compatibility claims must also respect the upstream documentation required by the functional spec.
 
-Endpoint testing is the required sampling rule, not proof that every intermediate version works. Known intermediate incompatibilities must prevent advertising a continuous range even when both endpoints pass.
+Compare available downloads with the versions and platforms required by the specs and policy decisions. Report missing intended coverage separately from failures in published downloads. Failed or skipped checks must remain visible and must not count as passing evidence.
 
-## Verify each inventory field
+The ambition is that any incorrect fact in the inventory would cause a test failure. If that is not possible, then get as close as practical with the available compute.
 
-Verify every inventory field against build evidence or behavioural tests. For compatibility ranges, use the required endpoint tests and documented upstream compatibility. Passing sampled tests does not establish compatibility for every possible schema or environment within the range.
+Retain enough information to identify the archive checksums, test revision, execution environment and results for each verification. Passing smoke tests establishes the tested behaviour; it does not prove that every possible schema works.
 
-## Verify the debugging process
+## Stay within free GitHub runner limits
+
+Be aware of the free runner limits and consult them when deciding how many tests to run, and do not design a system that cannot be effectively run within this.
+
+Switching to a paid plan is an option, but would require going through HUMAN_REVIEW_QUEUE.md.
+
+## Verify that failures can be investigated
 
 For representative failures, verify that the documented diagnostic collection process produces the information needed to investigate them. Cover both system-level failures, such as a library failing to load or a process crashing, and errors reported through PostgreSQL logs. There is no requirement to reproduce every possible failure.
+
+## Keep testing proportionate
+
+Prefer tests driven by intended-support metadata over a manually maintained list of combinations that is difficult to check for completeness.
+
+Keep routine feedback fast and avoid repeating expensive checks when the relevant archives, tests and environments have not changed. Reused results must remain applicable to what is being verified.
+
+The intention is not to require thousands of test combinations. If the requirements imply that scale, add an item to HUMAN_REVIEW_QUEUE.md proposing alternatives rather than silently reducing coverage.
