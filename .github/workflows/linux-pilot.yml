@@ -26,9 +26,11 @@ on:
       - 'tools/write_linux_license_inventory.py'
       - 'tools/plan_work.py'
       - 'tools/emit_linux_pilot_records.py'
+      - 'tools/emit_linux_minimum_pilot_records.py'
       - 'tests/schema.sql'
       - 'tests/builtins/**'
       - 'tests/test_plan_work.py'
+      - 'tests/test_emit_linux_minimum_pilot_records.py'
       - '.github/workflows/linux-pilot.yml'
 jobs:
   linux:
@@ -87,6 +89,15 @@ jobs:
             -e GITHUB_SHA="$GITHUB_SHA" \
             pg-binaries-linux-qemu \
             bash /repo/scripts/linux/qemu-kernel-515-smoke.sh /archives "$PG_VERSION" /work
+      - name: Record minimum-kernel verification for the same archive bytes
+        run: |
+          python3 -m unittest tests/test_emit_linux_minimum_pilot_records.py
+          python3 tools/emit_linux_minimum_pilot_records.py \
+            --archives "$RUNNER_TEMP/pilot" \
+            --evidence "$RUNNER_TEMP/qemu-linux-515/evidence" \
+            --output "$RUNNER_TEMP/pilot/verification" \
+            --postgresql-version "$PG_VERSION" \
+            --architecture x86_64
       - uses: actions/upload-artifact@v4
         if: always()
         with:
