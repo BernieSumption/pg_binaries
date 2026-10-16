@@ -30,6 +30,7 @@ class CandidateInventoryTests(unittest.TestCase):
             "postgresql": {"minimum_major": 15, "stable_release_cutoff": "2025-09-25"},
             "os_support": {name: {"minimum_version": "1"} for name in ("macos", "windows", "linux")},
             "architectures": ["x86_64", "arm64"],
+            "platform_architectures": {"macos": ["x86_64", "arm64"], "windows": ["x86_64"], "linux": ["x86_64", "arm64"]},
             "extensions": {"Example": {"sql_names": ["example"], "versions": {"1.0": {
                 "postgresql_minimum_major": 15}}}},
         }

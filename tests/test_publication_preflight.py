@@ -22,6 +22,7 @@ class PublicationPreflightTests(unittest.TestCase):
             "os_support": {name: {"minimum_version": "1"}
                            for name in ("macos", "windows", "linux")},
             "architectures": ["x86_64", "arm64"],
+            "platform_architectures": {"macos": ["x86_64", "arm64"], "windows": ["x86_64"], "linux": ["x86_64", "arm64"]},
             "extensions": {"Example": {"sql_names": ["example"], "versions": {
                 "1.0": {"postgresql_minimum_major": 15}}}},
         }
@@ -34,8 +35,8 @@ class PublicationPreflightTests(unittest.TestCase):
                           "candidate_status": "structural-draft",
                           "postgresql": {}, "extensions": {}}
         self.staged = {}
-        for os_name in self.support["os_support"]:
-            for arch in self.support["architectures"]:
+        for os_name, architectures in self.support["platform_architectures"].items():
+            for arch in architectures:
                 platform = f"{os_name}-{arch}"
                 self._add_core(self.candidate, "15.9", platform, f"core-{platform}")
                 self._add_extension(platform, f"extension-{platform}")
@@ -73,9 +74,9 @@ class PublicationPreflightTests(unittest.TestCase):
     def test_passes_with_matching_local_files_and_complete_coverage(self):
         report = self.check()
         self.assertEqual(report["preflight_status"], "passed")
-        self.assertEqual(report["new_asset_count"], 12)
-        self.assertEqual(report["postgresql_target_count"], 6)
-        self.assertEqual(report["extension_target_count"], 6)
+        self.assertEqual(report["new_asset_count"], 10)
+        self.assertEqual(report["postgresql_target_count"], 5)
+        self.assertEqual(report["extension_target_count"], 5)
         self.assertNotIn("release_eligible", report)
 
     def test_rejects_staged_file_with_wrong_bytes(self):
@@ -125,9 +126,9 @@ class PublicationPreflightTests(unittest.TestCase):
             self.check()
 
     def test_rejects_incomplete_declared_coverage(self):
-        del self.candidate["postgresql"]["15.9"]["downloads"]["windows-arm64"]
+        del self.candidate["postgresql"]["15.9"]["downloads"]["windows-x86_64"]
         with self.assertRaisesRegex(publication_preflight.PreflightError,
-                                    "missing PostgreSQL target 15.9 windows-arm64"):
+                                    "missing PostgreSQL target 15.9 windows-x86_64"):
             self.check()
 
     def test_rejects_non_structural_candidate(self):

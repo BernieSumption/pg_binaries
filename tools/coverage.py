@@ -89,6 +89,16 @@ def validate_support(support):
             raise CoverageError(f"support {name} must declare minimum_version")
     if support.get("architectures") != ["x86_64", "arm64"]:
         raise CoverageError("support architectures must be [x86_64, arm64]")
+    platform_architectures = support.get("platform_architectures")
+    if (not isinstance(platform_architectures, dict)
+            or set(platform_architectures) != set(support["os_support"])
+            or any(not isinstance(values, list) or not values or len(values) != len(set(values))
+                   or any(value not in support["architectures"] for value in values)
+                   for values in platform_architectures.values())
+            or platform_architectures != {"macos": ["x86_64", "arm64"],
+                                          "windows": ["x86_64"],
+                                          "linux": ["x86_64", "arm64"]}):
+        raise CoverageError("support platform_architectures must declare macOS and Linux x86_64/arm64 and Windows x86_64")
     extensions = support.get("extensions")
     if not isinstance(extensions, dict) or not extensions:
         raise CoverageError("support extensions must be a nonempty object")
@@ -145,7 +155,7 @@ def validate_extension_policy(root, support):
 
 def expected_targets(support, releases):
     platforms = tuple(f"{os}-{arch}" for os in support["os_support"]
-                      for arch in support["architectures"])
+                      for arch in support["platform_architectures"][os])
     core = {(v, p) for v in releases for p in platforms}
     extensions = set()
     for project, ext in support.get("extensions", {}).items():
@@ -160,7 +170,7 @@ def expected_targets(support, releases):
                     major = version_parts(pg, "snapshot")[0]
                     if low <= major <= high:
                         for os in systems:
-                            for arch in support["architectures"]:
+                            for arch in support["platform_architectures"][os]:
                                 extensions.add((sql_name, ext_version, pg, f"{os}-{arch}"))
     return core, extensions
 
@@ -296,7 +306,7 @@ def verification_records(root, support):
         platform = data.get("platform")
         os_name, separator, architecture = platform.partition("-") if isinstance(platform, str) else ("", "", "")
         if (not separator or os_name not in support["os_support"]
-                or architecture not in support["architectures"]):
+                or architecture not in support["platform_architectures"][os_name]):
             raise CoverageError(f"verification record {path}: invalid platform")
         environment = data.get("environment")
         if (not isinstance(environment, dict)
@@ -371,7 +381,7 @@ def validate_verification_record(data, support, root, label="verification record
     platform = data.get("platform")
     os_name, separator, architecture = platform.partition("-") if isinstance(platform, str) else ("", "", "")
     if (not separator or os_name not in support["os_support"]
-            or architecture not in support["architectures"]
+            or architecture not in support["platform_architectures"][os_name]
             or environment.get("os") != os_name
             or environment.get("architecture") != architecture):
         raise CoverageError(f"{label}: environment identity does not match platform")

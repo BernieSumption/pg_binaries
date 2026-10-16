@@ -4,7 +4,7 @@ These guarantees define the product. Agents read these spec files for hard requi
 
 ## OS support
 
-We support x86-64 and arm64 across Mac, Windows and Linux.
+We support Mac and Linux on x86-64 and arm64, and Windows on x86-64 only.
 
 A single binary for each platform provides support for all supported OS versions. For each OS we document a support version - releases before this version are not tested or supported. We choose the support version based on:
 

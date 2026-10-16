@@ -21,6 +21,7 @@ class PlanWorkTests(unittest.TestCase):
             "os_support": {name: {"minimum_version": "1"}
                            for name in ("macos", "windows", "linux")},
             "architectures": ["x86_64", "arm64"],
+            "platform_architectures": {"macos": ["x86_64", "arm64"], "windows": ["x86_64"], "linux": ["x86_64", "arm64"]},
             "extensions": {"Example": {"sql_names": ["example"], "versions": {
                 "1.0": {"postgresql_minimum_major": 15}}}},
         }
@@ -55,12 +56,11 @@ class PlanWorkTests(unittest.TestCase):
         result = plan_work.plan(self.root)
         self.assertEqual(result["build_missing"]["core"], [
             ["15.9", "linux-arm64"], ["15.9", "macos-arm64"],
-            ["15.9", "macos-x86_64"], ["15.9", "windows-arm64"],
-            ["15.9", "windows-x86_64"]])
+            ["15.9", "macos-x86_64"], ["15.9", "windows-x86_64"]])
         self.assertEqual(result["verify_downloaded"]["core"], [["15.9", platform]])
         self.assertEqual(result["build_missing"]["extensions"], [
             ["example", "1.0", "15.9", p] for p in
-            ("linux-arm64", "macos-arm64", "macos-x86_64", "windows-arm64", "windows-x86_64")])
+            ("linux-arm64", "macos-arm64", "macos-x86_64", "windows-x86_64")])
         self.assertEqual(result["verify_downloaded"]["extensions"], [
             ["example", "1.0", "15.9", platform]])
 

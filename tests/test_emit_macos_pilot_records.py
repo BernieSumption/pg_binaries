@@ -38,6 +38,7 @@ class EmitMacOSPilotRecordsTests(unittest.TestCase):
         (self.root / "support.json").write_text(json.dumps({
             "os_support": {"macos": {"minimum_version": "11.0"}},
             "architectures": ["x86_64", "arm64"],
+            "platform_architectures": {"macos": ["x86_64", "arm64"], "windows": ["x86_64"], "linux": ["x86_64", "arm64"]},
         }), encoding="utf-8")
         self.archives = self.root / "archives"
         self.archives.mkdir()

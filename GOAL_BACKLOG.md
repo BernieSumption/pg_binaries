@@ -6,8 +6,7 @@ This backlog records work for the current development goal. The specifications d
 
 - [ ] Derive OS, PostgreSQL option, installation, testing, delivery, release, debugging, and extension policies from the specifications. Record source evidence and unresolved decisions. Do not infer required behaviour from the pilot scripts.
 - [ ] Investigate whether a Linux archive can satisfy the kernel-only support declaration on clean supported distributions, including non-glibc systems. If no compliant approach is feasible within the allowed infrastructure, add the decision to `HUMAN_REVIEW_QUEUE.md`.
-- [ ] Establish a supported OS minimum and practical clean-system tests for the minimum and current endpoints on all six OS/architecture combinations.
-- [ ] Prove that PostgreSQL and selected extensions can build and run natively on Windows arm64, or record the specific upstream and tooling blockers for human review.
+- [ ] Establish a supported OS minimum and practical clean-system tests for the minimum and current endpoints on all five OS/architecture combinations.
 - [ ] Resolve Address Standardizer's US address-data redistribution rights before deciding whether its project can be included under the specification's hard licensing rule.
 - [ ] Align optional PostgreSQL capabilities across platforms: provide and test `uuid-ossp` where advertised, and make the readline exclusion explicit in every build script.
 

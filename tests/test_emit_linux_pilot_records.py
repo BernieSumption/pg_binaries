@@ -38,6 +38,7 @@ class EmitLinuxPilotRecordsTests(unittest.TestCase):
         (self.root / "support.json").write_text(json.dumps({
             "os_support": {"linux": {"minimum_version": "5.15"}},
             "architectures": ["x86_64", "arm64"],
+            "platform_architectures": {"macos": ["x86_64", "arm64"], "windows": ["x86_64"], "linux": ["x86_64", "arm64"]},
         }), encoding="utf-8")
         self.archives = self.root / "archives"
         self.archives.mkdir()

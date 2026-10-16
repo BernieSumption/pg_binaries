@@ -23,6 +23,7 @@ class CoverageTests(unittest.TestCase):
             "postgresql": {"minimum_major": 15, "stable_release_cutoff": "2025-09-25"},
             "os_support": {"macos": {}, "windows": {}, "linux": {}},
             "architectures": ["x86_64", "arm64"],
+            "platform_architectures": {"macos": ["x86_64", "arm64"], "windows": ["x86_64"], "linux": ["x86_64", "arm64"]},
             "extensions": {"Example": {"sql_names": ["example"], "versions": {
                 "1.0": {"postgresql_minimum_major": 15, "postgresql_maximum_major": 17}
             }}},
@@ -36,9 +37,10 @@ class CoverageTests(unittest.TestCase):
         source.parent.mkdir(parents=True, exist_ok=True)
         source.write_text(source_text, encoding="utf-8")
         profiles = {profile_id: {"scope": scope,
-                                 "platforms": sorted(platforms or [f"{os}-{arch}" for os in
-                                                                   ("macos", "windows", "linux")
-                                                                   for arch in ("x86_64", "arm64")]),
+                                 "platforms": sorted(platforms or [
+                                     f"{os}-{arch}" for os in ("macos", "linux")
+                                     for arch in ("x86_64", "arm64")
+                                 ] + ["windows-x86_64"]),
                                  "case_ids": sorted(case_ids or ["case-a", "case-b"]),
                                  "sources": ["tests/fixture.sh"]}}
         registry = root / "support" / "verification-profiles.json"
@@ -69,8 +71,8 @@ class CoverageTests(unittest.TestCase):
 
     def test_ranges_must_cover_each_required_release(self):
         want_core, want_extensions = coverage.expected_targets(self.support, ["15.9"])
-        self.assertEqual(len(want_core), 6)
-        self.assertEqual(len(want_extensions), 6)
+        self.assertEqual(len(want_core), 5)
+        self.assertEqual(len(want_extensions), 5)
         inventory = {"postgresql": {}, "extensions": {"example": {"1.0": {"downloads": {
             "linux-x86_64": [{"postgresql_support": {"from": "15.0", "to": "15.8"},
                                "url": "https://example.test/a", "sha256": "a" * 64}]
@@ -125,7 +127,7 @@ class CoverageTests(unittest.TestCase):
         policy = self.support["extensions"]["Example"]["versions"]["1.0"]
         policy.pop("postgresql_maximum_major")
         _, targets = coverage.expected_targets(self.support, ["18.0", "19.0"])
-        self.assertEqual(len(targets), 12)
+        self.assertEqual(len(targets), 10)
 
     def test_overlapping_ranges_rejected(self):
         item = {"url": "https://example.test/a", "sha256": "a" * 64,
@@ -146,6 +148,7 @@ class CoverageTests(unittest.TestCase):
                                "windows": {"minimum_version": "10.0"},
                                "linux": {"minimum_version": "5.15"}},
                 "architectures": ["x86_64", "arm64"],
+            "platform_architectures": {"macos": ["x86_64", "arm64"], "windows": ["x86_64"], "linux": ["x86_64", "arm64"]},
                 "extensions": {"Example": {"sql_names": ["example"], "versions": {
                     "1.0": {"postgresql_minimum_major": 19}
                 }}},
@@ -153,8 +156,8 @@ class CoverageTests(unittest.TestCase):
             snapshot = {"as_of": "2026-01-01", "source": "https://example.test/releases",
                         "releases": [{"version": "15.9", "release_date": "2025-09-25"}]}
             checksum = "a" * 64
-            platforms = [f"{os}-{arch}" for os in ("macos", "windows", "linux")
-                         for arch in ("x86_64", "arm64")]
+            platforms = [f"{os}-{arch}" for os, arches in support["platform_architectures"].items()
+                         for arch in arches]
             inventory = {"postgresql": {"15.9": {"downloads": {
                 platform: {"url": "https://example.test/postgres.tar.gz", "sha256": checksum}
                 for platform in platforms
@@ -179,8 +182,8 @@ class CoverageTests(unittest.TestCase):
 
             status, output = run_cli()
             self.assertEqual(status, 1)
-            self.assertIn("core targets: 6 (6 missing)", output)
-            self.assertIn("core: 0 without download, 6 awaiting verification", output)
+            self.assertIn("core targets: 5 (5 missing)", output)
+            self.assertIn("core: 0 without download, 5 awaiting verification", output)
             self.assertIn("verification: unverified", output)
 
             records_dir = root / "support" / "verification"
@@ -197,8 +200,8 @@ class CoverageTests(unittest.TestCase):
             record_path.write_text(json.dumps(record), encoding="utf-8")
             status, output = run_cli()
             self.assertEqual(status, 1)
-            self.assertIn("core targets: 6 (6 missing)", output)
-            self.assertIn("core: 0 without download, 6 awaiting verification", output)
+            self.assertIn("core targets: 5 (5 missing)", output)
+            self.assertIn("core: 0 without download, 5 awaiting verification", output)
             self.assertIn("verification: incomplete", output)
             self.assertIn("verification skipped: postgresql 15.9 PostgreSQL 15.9 linux-arm64", output)
             self.assertIn("checks: case-a, case-b", output)
@@ -226,7 +229,7 @@ class CoverageTests(unittest.TestCase):
             record_path.write_text(json.dumps(record), encoding="utf-8")
             status, output = run_cli()
             self.assertEqual(status, 1)
-            self.assertIn("core targets: 6 (6 missing)", output)
+            self.assertIn("core targets: 5 (5 missing)", output)
             self.assertIn("verification: incomplete", output)
 
             record["environment"]["endpoint"] = "current"
@@ -247,7 +250,7 @@ class CoverageTests(unittest.TestCase):
                     path.write_text(json.dumps(copy), encoding="utf-8")
             status, output = run_cli()
             self.assertEqual(status, 0)
-            self.assertIn("core targets: 6 (0 missing)", output)
+            self.assertIn("core targets: 5 (0 missing)", output)
             self.assertIn("verification: structural-only", output)
 
             inventory["postgresql"]["15.9"]["downloads"].pop("linux-arm64")
