@@ -1,6 +1,8 @@
 import importlib.util
 import json
 from pathlib import Path
+import subprocess
+import sys
 import tempfile
 import unittest
 
@@ -170,6 +172,47 @@ class CandidateInventoryTests(unittest.TestCase):
         with self.assertRaisesRegex(candidate_inventory.CandidateError, "missing passed"):
             candidate_inventory.merge_candidate(self.old, [proposal], self.support, self.snapshot,
                                                  root=real_root)
+
+    def write_cli_inputs(self, proposals):
+        inputs = {"base.json": self.old, "proposed.json": proposals,
+                  "support.json": self.support, "snapshot.json": self.snapshot}
+        paths = {}
+        for name, value in inputs.items():
+            path = self.root / name
+            path.write_text(json.dumps(value), encoding="utf-8")
+            paths[name] = path
+        return paths
+
+    def run_candidate_cli(self, paths, *extra):
+        script = Path(__file__).resolve().parents[1] / "tools" / "candidate_inventory.py"
+        return subprocess.run(
+            [sys.executable, str(script), "--base-inventory", str(paths["base.json"]),
+             "--proposed-entries", str(paths["proposed.json"]), "--support", str(paths["support.json"]),
+             "--release-snapshot", str(paths["snapshot.json"]), "--root", str(self.root), *extra],
+            capture_output=True, text=True, check=False)
+
+    def test_cli_writes_structural_draft_to_stdout_or_file(self):
+        paths = self.write_cli_inputs([self.proposal()])
+        stdout_result = self.run_candidate_cli(paths)
+        self.assertEqual(stdout_result.returncode, 0, stdout_result.stderr)
+        candidate = json.loads(stdout_result.stdout)
+        self.assertEqual(candidate["candidate_status"], "structural-draft")
+
+        output = self.root / "candidate.json"
+        file_result = self.run_candidate_cli(paths, "--output", str(output))
+        self.assertEqual(file_result.returncode, 0, file_result.stderr)
+        self.assertEqual(json.loads(output.read_text(encoding="utf-8")), candidate)
+        self.assertEqual(file_result.stdout, "")
+
+    def test_cli_reports_invalid_candidate_and_writes_no_output(self):
+        proposal = self.proposal()
+        proposal["verification"] = []
+        paths = self.write_cli_inputs([proposal])
+        output = self.root / "candidate.json"
+        result = self.run_candidate_cli(paths, "--output", str(output))
+        self.assertEqual(result.returncode, 2)
+        self.assertIn("missing passed", result.stderr)
+        self.assertFalse(output.exists())
 
 
 if __name__ == "__main__":

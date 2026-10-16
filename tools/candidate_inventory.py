@@ -6,9 +6,12 @@ metadata, including OS support and archive contents.
 """
 
 from copy import deepcopy
+import argparse
 import importlib.util
+import json
 from pathlib import Path
 import re
+import sys
 
 _BUILTINS_SPEC = importlib.util.spec_from_file_location(
     "candidate_builtins", Path(__file__).with_name("discover_builtins.py"))
@@ -193,3 +196,38 @@ def _evidence_matches(record, download, component, version, platform, pg, endpoi
             and environment.get("clean_system") is True
             and ((endpoint == "minimum" and actual == minimum)
                  or (endpoint == "current" and actual > minimum)))
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--base-inventory", required=True, type=Path)
+    parser.add_argument("--proposed-entries", required=True, type=Path)
+    parser.add_argument("--support", required=True, type=Path)
+    parser.add_argument("--release-snapshot", required=True, type=Path)
+    parser.add_argument("--root", type=Path,
+                        help="repository root containing verification profile sources")
+    parser.add_argument("--output", type=Path,
+                        help="write the candidate JSON here; stdout is used when omitted")
+    args = parser.parse_args(argv)
+
+    def read_json(path):
+        with path.open(encoding="utf-8") as stream:
+            return json.load(stream)
+
+    try:
+        result = merge_candidate(read_json(args.base_inventory),
+                                 read_json(args.proposed_entries),
+                                 read_json(args.support),
+                                 read_json(args.release_snapshot), root=args.root)
+        rendered = json.dumps(result, indent=2, sort_keys=True) + "\n"
+        if args.output:
+            args.output.write_text(rendered, encoding="utf-8")
+        else:
+            sys.stdout.write(rendered)
+    except (OSError, json.JSONDecodeError, CandidateError) as exc:
+        parser.exit(2, f"candidate inventory: {exc}\n")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
