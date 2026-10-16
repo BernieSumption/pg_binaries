@@ -25,7 +25,7 @@ def sha256_file(path):
     return digest.hexdigest()
 
 
-def emit(root, archives, output, image_id, kernel):
+def emit(root, archives, core_archives, output, image_id, kernel):
     if platform.machine() != "x86_64":
         raise coverage.CoverageError("PostGIS pilot requires an x86-64 runner")
     revision = os.environ.get("GITHUB_SHA", "")
@@ -60,6 +60,13 @@ def emit(root, archives, output, image_id, kernel):
     digest = sha256_file(archive)
     if digest.lower() != fields[0].lower():
         raise coverage.CoverageError("PostGIS archive checksum mismatch")
+    core_name = "postgresql-18.6-linux-x86_64.tar.gz"
+    core_fields = (core_archives / f"{core_name}.sha256").read_text(encoding="utf-8").split()
+    if len(core_fields) != 2 or core_fields[1] != core_name:
+        raise coverage.CoverageError("PostgreSQL core checksum file is malformed")
+    core_digest = sha256_file(core_archives / core_name)
+    if core_digest.lower() != core_fields[0].lower():
+        raise coverage.CoverageError("PostgreSQL core archive checksum mismatch")
     record = {
         "schema_version": 2,
         "scope": "pilot-smoke",
@@ -78,6 +85,7 @@ def emit(root, archives, output, image_id, kernel):
         },
         "outcome": "passed",
         "sha256": digest,
+        "assembled_core": {"archive": core_name, "sha256": core_digest, "version": "18.6"},
         "component": "PostGIS",
         "version": "3.6.4",
         "platform": "linux-x86_64",
@@ -108,12 +116,14 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[1])
     parser.add_argument("--archives", type=Path, required=True)
+    parser.add_argument("--core-archives", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--image-id", required=True)
     parser.add_argument("--kernel", required=True)
     args = parser.parse_args()
     try:
-        print(emit(args.root, args.archives, args.output, args.image_id, args.kernel))
+        print(emit(args.root, args.archives, args.core_archives, args.output,
+                   args.image_id, args.kernel))
         return 0
     except (coverage.CoverageError, OSError, ValueError) as exc:
         print(f"PostGIS pilot record: {exc}", file=sys.stderr)

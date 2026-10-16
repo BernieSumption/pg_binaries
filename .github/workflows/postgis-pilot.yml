@@ -45,6 +45,7 @@ jobs:
         run: |
           python3 tools/emit_postgis_pilot_record.py \
             --archives "$RUNNER_TEMP/postgis" \
+            --core-archives "$RUNNER_TEMP/core" \
             --output "$RUNNER_TEMP/postgis-records" \
             --image-id "$(docker image inspect --format '{{.Id}}' pg-binaries-postgis-verifier)" \
             --kernel "$(uname -r)"
