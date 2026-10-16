@@ -5,6 +5,9 @@ on:
     paths:
       - .github/workflows/linux-qemu-515.yml
       - scripts/linux/qemu-kernel-515*
+      - scripts/linux/verify-in-container.sh
+      - tools/check_elf_dependencies.py
+      - tests/**
       - scripts/linux/Dockerfile
       - scripts/linux/build.sh
       - scripts/linux/build-in-container.sh
@@ -32,7 +35,7 @@ jobs:
           docker build -f scripts/linux/qemu-kernel-515.Dockerfile -t pg-binaries-linux-qemu .
       - name: Build the x86-64 pilot archives
         run: scripts/linux/build.sh "$RUNNER_TEMP/archives"
-      - name: Boot pinned Ubuntu 22.04 image and test in Linux 5.15 guest
+      - name: Boot pinned Ubuntu 22.04 image and run the archive verifier in Linux 5.15
         run: |
           mkdir -p "$RUNNER_TEMP/qemu-linux-515"
           chmod 0777 "$RUNNER_TEMP/qemu-linux-515"
