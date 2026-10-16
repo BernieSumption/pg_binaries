@@ -9,6 +9,7 @@ accepted by coverage.py.
 import argparse
 import importlib.util
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -66,12 +67,27 @@ def plan(root):
     return result
 
 
+def select_linux_pilot(root, version):
+    """Select one declared PostgreSQL 18 x86-64 Linux build for the pilot."""
+    if not re.fullmatch(r"18\.[0-9]+", version):
+        raise coverage.CoverageError("Linux pilot currently supports PostgreSQL 18 minors only")
+    work = plan(root)
+    target = [version, "linux-x86_64"]
+    if target not in work["build_missing"]["core"]:
+        raise coverage.CoverageError(f"{target} is not a missing declared core build")
+    return {"postgresql_version": version, "platform": target[1],
+            "work": "build_missing", "snapshot_as_of": work["snapshot_as_of"]}
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[1])
+    parser.add_argument("--select-linux-pilot", metavar="VERSION")
     args = parser.parse_args()
     try:
-        print(json.dumps(plan(args.root), indent=2, sort_keys=True))
+        result = (select_linux_pilot(args.root, args.select_linux_pilot)
+                  if args.select_linux_pilot else plan(args.root))
+        print(json.dumps(result, indent=2, sort_keys=True))
         return 0
     except (coverage.CoverageError, KeyError, TypeError, ValueError) as exc:
         print(f"plan-work: error: {exc}", file=sys.stderr)

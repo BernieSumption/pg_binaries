@@ -1,20 +1,27 @@
 #!/usr/bin/env bash
 set -euo pipefail
-pg=postgresql-18.6-linux-x86_64.tar.gz
-vector=pgvector-0.8.7-postgresql-18.6-linux-x86_64.tar.gz
+pg_version=${PG_VERSION:-18.6}
+if [[ ! $pg_version =~ ^18\.[0-9]+$ ]]; then
+  echo "Linux pilot currently supports PostgreSQL 18 minors only: $pg_version" >&2
+  exit 2
+fi
+pg="postgresql-${pg_version}-linux-x86_64.tar.gz"
+vector="pgvector-0.8.7-postgresql-${pg_version}-linux-x86_64.tar.gz"
 cd /out
 sha256sum -c "$pg.sha256" "$vector.sha256"
 mkdir -p /tmp/first /tmp/moved /tmp/vector
 tar -xzf "$pg" -C /tmp/first
 tar -xzf "$vector" -C /tmp/vector
-python3 - <<'PY'
+python3 - "$pg_version" <<'PY'
 import json
 from pathlib import Path
+import sys
+version = sys.argv[1]
 with open('/tmp/first/postgresql/manifest.json') as f:
     m = json.load(f)
 assert (m['schema_version'], m['component'], m['version'],
         m['postgresql_version'], m['platform'], m['architecture']) == (
-            1, 'postgresql', '18.6', '18.6', 'linux', 'x86_64'), m
+            1, 'postgresql', version, version, 'linux', 'x86_64'), m
 controls = {path.stem for path in Path('/tmp/first/postgresql/share/extension').glob('*.control')}
 assert controls and m['included_extensions'] == sorted(controls), m
 assert 'vector' not in controls, controls
@@ -51,14 +58,14 @@ done < <(find "$extroot" -mindepth 1 -print0)
 cp -a "$extroot/." "$pgroot/"
 test -s "$pgroot/LICENSES/pgvector.txt"
 python3 /usr/local/bin/check-elf-dependencies "$pgroot"
-test "$(/tmp/first/postgresql/bin/postgres --version)" = 'postgres (PostgreSQL) 18.6'
+test "$(/tmp/first/postgresql/bin/postgres --version)" = "postgres (PostgreSQL) $pg_version"
 useradd -m postgres
 mkdir -p /tmp/first-data /tmp/first-socket
 chown postgres:postgres /tmp/first-data /tmp/first-socket
 runuser -u postgres -- /tmp/first/postgresql/bin/initdb -D /tmp/first-data --encoding=UTF8 --locale=C --no-instructions
 runuser -u postgres -- /tmp/first/postgresql/bin/pg_ctl -D /tmp/first-data -o '-k /tmp/first-socket -p 55430 -h ""' -w start
 trap 'runuser -u postgres -- /tmp/first/postgresql/bin/pg_ctl -D /tmp/first-data -m immediate stop >/dev/null 2>&1 || true' EXIT
-runuser -u postgres -- /tmp/first/postgresql/bin/psql -XAt -h /tmp/first-socket -p 55430 -d postgres -c 'SHOW server_version' | grep -Fx '18.6'
+runuser -u postgres -- /tmp/first/postgresql/bin/psql -XAt -h /tmp/first-socket -p 55430 -d postgres -c 'SHOW server_version' | grep -Fx "$pg_version"
 runuser -u postgres -- /tmp/first/postgresql/bin/psql -X -v ON_ERROR_STOP=1 -h /tmp/first-socket -p 55430 -d postgres <<'SQL'
 CREATE EXTENSION vector;
 CREATE TABLE relocation_probe (embedding vector(3));
@@ -76,7 +83,7 @@ runuser -u postgres -- "$pgroot/bin/initdb" -D /tmp/pgdata --encoding=UTF8 --loc
 runuser -u postgres -- "$pgroot/bin/pg_ctl" -D /tmp/pgdata -o '-k /tmp/pgsocket -p 55431 -h ""' -w start
 trap 'runuser -u postgres -- "$pgroot/bin/pg_ctl" -D /tmp/pgdata -m immediate stop >/dev/null 2>&1 || true' EXIT
 psql=(runuser -u postgres -- "$pgroot/bin/psql" -X -v ON_ERROR_STOP=1 -h /tmp/pgsocket -p 55431 -d postgres)
-"${psql[@]}" -Atqc 'SELECT version()' | grep -F 'PostgreSQL 18.6'
+"${psql[@]}" -Atqc 'SELECT version()' | grep -F "PostgreSQL $pg_version"
 "${psql[@]}" -f /tests/schema.sql
 "${psql[@]}" -f /tests/builtins/basic.sql
 "${psql[@]}" <<'SQL'
@@ -115,4 +122,4 @@ SQL
 runuser -u postgres -- "$pgroot/bin/pg_ctl" -D /tmp/pgdata -m fast -w stop
 trap - EXIT
 . /etc/os-release
-echo "PASS: moved PostgreSQL 18.6 archive and pgvector 0.8.7 archive on $PRETTY_NAME"
+echo "PASS: moved PostgreSQL $pg_version archive and pgvector 0.8.7 archive on $PRETTY_NAME"

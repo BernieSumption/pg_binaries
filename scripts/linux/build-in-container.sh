@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
-pg_version=18.6
+pg_version=${PG_VERSION:-18.6}
+if [[ ! $pg_version =~ ^18\.[0-9]+$ ]]; then
+  echo "Linux pilot currently supports PostgreSQL 18 minors only: $pg_version" >&2
+  exit 2
+fi
 vector_version=0.8.7
 pg_archive="postgresql-${pg_version}-linux-x86_64.tar.gz"
 vector_archive="pgvector-${vector_version}-postgresql-${pg_version}-linux-x86_64.tar.gz"
