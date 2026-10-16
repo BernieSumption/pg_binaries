@@ -13,7 +13,7 @@ These decisions apply to PostgreSQL majors 15 and later on supported platforms. 
 | OpenSSL (`--with-ssl=openssl`, Meson `-Dssl=openssl`) | Include. TLS connections are a common PostgreSQL deployment requirement and OpenSSL is also used by supported PostgreSQL functionality such as `pgcrypto`. Keeping this standard feature avoids making the distribution unsuitable for secure client connections or extension builds. | OpenSSL is a runtime dependency and must be bundled with its redistribution notices. Windows and macOS builds must use the same feature decision even though their dependency packaging differs. |
 | libxml2 (`--with-libxml`, Meson `-Dlibxml=enabled`) | Include. It provides the SQL/XML implementation and the `xml` type's parsing and query operations. Those types and functions can appear in application schemas. | Bundle the runtime library and its transitive dependencies. |
 | libxslt (`--with-libxslt`, Meson `-Dlibxslt=enabled`) | Include. It extends PostgreSQL's `xml2` module with XSL transformations, a schema-visible function set, at low incremental cost once libxml2 is present. | Requires libxml2 and libxslt. |
-| UUID library (`--with-uuid=e2fs`; Meson equivalent where available) | Include the `uuid-ossp` contrib module. The extension exposes UUID-generating functions that applications can call from defaults and other schema objects. PostgreSQL's core UUID type and core UUID generators do not depend on this option. | Linux currently selects e2fs UUID; macOS and Windows build scripts do not explicitly select a UUID library. Resolve this mismatch before claiming `uuid-ossp` support across platforms. |
+| UUID library (`--with-uuid=e2fs`; Meson equivalent where available) | Include the `uuid-ossp` contrib module. The extension exposes UUID-generating functions that applications can call from defaults and other schema objects. PostgreSQL's core UUID type and core UUID generators do not depend on this option. | Linux and macOS select e2fs UUID. The macOS archive result awaits CI verification. Windows does not yet select a UUID library. |
 
 ## Exclude
 
@@ -30,7 +30,7 @@ These decisions apply to PostgreSQL majors 15 and later on supported platforms. 
 
 PostgreSQL's configure options and Meson option names evolve. The decisions above describe capabilities, not a promise that an identical switch exists in every major. Build scripts must use the option supported by each major's source and verify the resulting capability. PostgreSQL 15 is the minimum supported major; PostgreSQL 18 documentation is the current source for Meson option names and newer facilities.
 
-The current pilot scripts request ICU, LZ4, Zstandard, OpenSSL, libxml2, libxslt and zlib on all three operating systems. Linux and macOS explicitly disable readline; Windows does not yet make that choice explicit. Linux selects e2fs UUID support; macOS and Windows do not select a UUID library explicitly, and Windows does not explicitly build and install contrib modules. Current build coverage is x86-64 only, so this policy does not establish arm64 build or runtime verification.
+The current pilot scripts request ICU, LZ4, Zstandard, OpenSSL, libxml2, libxslt and zlib on all three operating systems. Linux and macOS explicitly disable readline; Windows does not yet make that choice explicit. Linux and macOS select e2fs UUID support; Windows does not select a UUID library. Current build coverage is x86-64 only, so this policy does not establish arm64 build or runtime verification.
 
 ## Sources
 

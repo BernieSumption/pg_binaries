@@ -13,10 +13,10 @@ if [[ $(uname -s) != Darwin || $(uname -m) != x86_64 ]]; then
   exit 1
 fi
 
-brew install icu4c openssl@3 lz4 zstd libxml2 libxslt
+brew install icu4c openssl@3 lz4 zstd libxml2 libxslt e2fsprogs
 brew_prefixes=()
 pkgconfig_paths=()
-for formula in icu4c openssl@3 lz4 zstd libxml2 libxslt; do
+for formula in icu4c openssl@3 lz4 zstd libxml2 libxslt e2fsprogs; do
   prefix=$(brew --prefix "$formula")
   brew_prefixes+=("$prefix")
   pkgconfig_paths+=("$prefix/lib/pkgconfig")
@@ -37,7 +37,7 @@ tar -xzf "$work_dir/pgvector.tar.gz" -C "$work_dir"
 
 install_dir="$work_dir/install/postgresql"
 cd "$work_dir/postgresql-${pg_version}"
-./configure --prefix="$install_dir" --with-icu --with-ssl=openssl --with-lz4 --with-zstd --with-libxml --with-libxslt --with-zlib --without-readline
+./configure --prefix="$install_dir" --with-icu --with-ssl=openssl --with-lz4 --with-zstd --with-libxml --with-libxslt --with-zlib --with-uuid=e2fs --without-readline
 make -j "$(sysctl -n hw.ncpu)"
 make -C contrib -j "$(sysctl -n hw.ncpu)"
 make install

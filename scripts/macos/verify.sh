@@ -34,7 +34,7 @@ for key, value in expected.items():
 if pg.get("component") != "postgresql" or pg.get("version") != "18.6":
     raise SystemExit("PostgreSQL manifest mismatch")
 controls = {path.stem for path in (core / 'share/extension').glob('*.control')}
-if not controls or pg.get('included_extensions') != sorted(controls) or 'vector' in controls:
+if not controls or pg.get('included_extensions') != sorted(controls) or 'vector' in controls or 'uuid-ossp' not in controls:
     raise SystemExit('built-in extension inventory mismatch')
 if vector != {'project': 'pgvector', 'version': '0.8.7', 'sql_names': ['vector'],
               'requires': [], 'configuration_prerequisites': [], 'runtime_prerequisites': []}:
@@ -81,6 +81,7 @@ start_server "$pg" moved
 psql=("$pg/bin/psql" -h "$work/socket" -p 54329 -d postgres -X -v ON_ERROR_STOP=1)
 
 "${psql[@]}" -f "$repo/tests/schema.sql"
+"${psql[@]}" -f "$repo/tests/builtins/basic.sql"
 "${psql[@]}" -c "CREATE COLLATION pilot_icu (provider = icu, locale = 'und-u-ks-level2', deterministic = false)"
 "${psql[@]}" -c "SELECT name FROM (VALUES ('a'), ('A')) AS names(name) ORDER BY name COLLATE pilot_icu"
 locale_name=$(locale -a | awk '/UTF-8|utf8/ && !found {print; found=1}')

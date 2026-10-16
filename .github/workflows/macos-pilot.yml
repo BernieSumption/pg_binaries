@@ -8,6 +8,7 @@ on:
       - scripts/macos/**
       - tools/discover_builtins.py
       - tests/schema.sql
+      - tests/builtins/**
       - .github/workflows/macos-pilot.yml
 
 permissions:
