@@ -1,66 +1,55 @@
 # Testing policy
 
-Verification establishes which packaged bytes satisfy the [functional guarantees](../functional/functional-policy.md). The inventory defines intended coverage; generated records hold the results.
+Clients need to know that the downloads they select can run PostgreSQL and load their schemas on a supported machine.
 
-## T01 — Test levels
+Tests must demonstrate the [functional guarantees](../functional/functional-policy.md) through the following checks.
 
-| Level | Purpose | Why a separate level is needed |
-| --- | --- | --- |
-| [Build](items/planned/build-verification.md) | Check sources, build options, dependencies and package contents; run a smoke test. | The builder may supply libraries or resources missing from the archive. |
-| [Artifact](items/planned/artifact-verification.md) | Test the final archives on clean supported systems after extraction and relocation. | This establishes portability and functionality for the tested bytes. |
-| [Consumer](items/planned/consumer-verification.md) | Resolve an explicit version request through public metadata, download it and run SQL. | This checks that a client can obtain and assemble the verified installation. |
+## TEST01 — Check each build before distributing it
 
-Test each SQL extension with explicitly selected prerequisite versions, recording
-the exact combination. Optional operation fixtures may select additional modules.
-These results establish no compatibility with other dependency versions; no
-dependency-version matrix or general resolver is required.
+Check that a build uses the requested source versions and settings, and that its archives contain the promised programs, extensions, libraries, resources and licence texts. Compare the files with their metadata and run a short startup and extension test.
 
-[Build items](../build/items/) identify the observations required for
-each feature. Build checks establish its configuration and dependencies; artifact
-tests establish behaviour after relocation. Tests proposed for unresolved features
-apply only if those features are selected. Unmeasured sizes do not fail acceptance,
-and no capability requires paired builds solely to measure its size.
+This catches incorrect or incomplete packages before testing them on other machines.
 
-## T02 — Verification records
+## TEST02 — Prove that the archives work away from the builder
 
-Binary verification records identify the following inputs and environment.
-Metadata-only tests record their input/fixture revisions, timestamps, commands
-and results; binary and runtime fields do not apply.
+Test the final archives on clean supported systems, without access to the build machine's files or installed dependencies. Run as an ordinary user, move the extracted installation, and repeat the checks using only documented settings.
 
-- The inventory and release-discovery revisions, test revision and timestamps.
-- Build IDs, recipe revision, source identities, and archive/dependency SHA-256 values.
-- Exact PostgreSQL, SQL extension and native-library versions.
-- OS release, edition and patch level; architecture and CPU capabilities; libc
-  version on Linux; locale inventory and relevant preinstalled runtimes.
-- Commands, results and retained diagnostic logs, including failures.
+Apply and inspect representative schemas, install the selected extensions, and exercise the advertised features and schema dump/restore. These operations must work offline after downloading the packages. The tested archive bytes must be the bytes distributed to clients.
 
-Build records additionally identify source URLs and hashes, patches, toolchains,
-SDKs, dependency inputs and effective build options. Consumer records include
-the request and catalogue revision. [Metadata fields](../functional/functional-inventory-format.md)
-connect these records to the downloadable bytes.
+## TEST03 — Test the client's download and startup path
 
-## T03 — Invalidation and coverage
+Use a reference test client to request explicit PostgreSQL and extension versions through the public metadata. Download without authentication or payment, assemble the installation, start PostgreSQL, run supplied SQL and exercise the packaged `psql` interactively.
 
-Changed binaries, dependencies, resources or packaging invalidate affected
-artifact results. Resolver changes require affected consumer tests. Every new
-PostgreSQL minor needs runtime verification, even when it reuses an extension
-archive. Reuse earlier results only where the tested inputs and environment
-still apply.
+The client must obtain everything it needs from the downloads and their metadata, without system provisioning or build-tree files. Check that it receives the requested versions, including the current corrected build when one replaces an earlier build of those versions.
 
-[Coverage checks](items/planned/coverage-verification.md) account for every intended target, including failures and unresolved research. Passing binary tests establishes verification; a public download check establishes availability. Neither reduces the inventory's intended scope.
+## TEST04 — Account for the whole promised range
 
-## T04 — Execution rules
+Check coverage against every eligible release in the inventory. For each extension version, test every PostgreSQL minor and OS range advertised as compatible.
 
-Run all local compilation and tests of compiled binaries inside Docker. The host
-may inspect files and validate metadata. Use standard free GitHub-hosted runners
-for native macOS and Windows tests. If available runners cannot demonstrate a
-required OS or runtime condition, record the evidence gap.
+Use explicitly selected prerequisite extension versions and record the combination tested. That result applies to that combination; it does not establish compatibility with other prerequisite versions or arbitrary extension pairs.
 
-Set explicit job timeouts, scope expensive jobs to affected targets, and retain
-compact logs and verification records. Give temporary archives short, explicit
-retention. Repeat tests to address changed inputs, failures, unresolved risks or
-required acceptance checks.
+Keep failed builds, failed tests and missing checks visible. A release cannot disappear from the coverage report because it is difficult to build. Passing local tests alone does not establish that a download is publicly available.
 
-## T05 — Completion of testing work
+## TEST05 — Keep a record of what passed and failed
 
-A test item is complete when its checks are executable, run at the appropriate pipeline stage, and retain the evidence required by T02. Exercise failure cases as well as successful fixtures. Writing the procedure alone does not complete its implementation. Per-target results belong in coverage records.
+For each test run, retain what was tested, on which system, how it was tested and the result. Identify the exact archives and dependency versions so a later corrected build cannot be mistaken for the tested build.
+
+Keep enough commands, settings and diagnostic output to investigate a failure and repeat the test. Preserve this history even when temporary archives or superseded downloads are removed.
+
+## TEST06 — Retest claims affected by a change
+
+Changes to binaries, dependencies, resources or packaging require the affected archive tests to run again. Changes to metadata or download selection require the affected client tests.
+
+Every new PostgreSQL minor needs its own runtime verification, even when an extension archive is reused. Earlier results remain usable only for checks whose tested inputs and environment still apply.
+
+## TEST07 — Verify failure behaviour
+
+Test unavailable versions, corrupt archives, missing required files and conflicting packages as well as successful installations. Check that failures are reported accurately, do not silently substitute versions, and leave no running server or invalid download marked as usable.
+
+These cases establish that clients can detect an unusable installation before relying on it.
+
+## TEST08 — Make the checks repeatable
+
+Required checks must run through repository test commands and the delivery pipeline. A written test procedure is complete only when its checks are implemented and produce retained results.
+
+Connect each promised behaviour to a test that observes it. Where a required environment or test is unavailable, report the gap and keep that part of coverage incomplete.

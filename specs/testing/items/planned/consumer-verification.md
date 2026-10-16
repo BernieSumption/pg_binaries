@@ -1,9 +1,9 @@
 # Reference consumer tests
 
 Test an explicit request through catalogue metadata, public downloads and
-standard PostgreSQL tools. This level covers F02, F03, F05 and F10–F13 and checks
-that F01/F08 availability constraints reach the requester. Follow the shared
-[execution and record rules](../../testing-policy.md).
+standard PostgreSQL tools. This level covers FUNC002, FUNC003, FUNC005 and FUNC010–FUNC013 and checks
+that FUNC001/FUNC008 availability constraints reach the requester. Follow the shared
+[execution and record details](test-execution-and-evidence.md).
 
 The reference consumer is a test harness. Fixtures supply selected SQL extension
 names and versions; SQL parsing, a connection library and a production lifecycle
@@ -78,4 +78,4 @@ download route.
 
 ## Completion
 
-Implement these checks under [T01–T05](../../testing-policy.md), connect them to the pipeline and retain verification records. See the [requirement map](../../testing-notes.md#requirement-map) for the guarantees they establish.
+Implement these checks under [TEST01–TEST08](../../testing-policy.md), connect them to the pipeline and retain verification records. See the [requirement map](../../testing-notes.md#requirement-map) for the guarantees they establish.

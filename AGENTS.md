@@ -20,13 +20,13 @@ specs/<area>/
 
 Use area-prefixed filenames for policy and notes so they remain identifiable in search results and editor tabs.
 
-Create folders when required to add the first item and delete folders with no items in them. FEEDBACK: see this new rule, remove .gitkeep files
+Create folders when required to add the first item and delete folders with no items in them.
 
 ### Policy
 
 The policy states the human-reviewed rules, guarantees and selection criteria for an area, with the reasons they follow from the use case. It defines how to decide what to do. Concrete decisions, chosen mechanisms and implementation work belong in items.
 
-Give policies stable, area-specific identifiers: `F01`, `BF01`, `E01` and `T01` (FEEDBACK: examples with real names and XXX format described elsewhere). Do not renumber existing identifiers when inserting or moving rules. If an item is based on specific policies, it should cite them.
+Give policies stable identifiers with an area prefix: `FUNC001` (functional), `BUILD001` (build), `EXT001` (extensions) and `TEST01` (testing). Use three digits for FUNC, BUILD and EXT; testing retains its two-digit numbering. Do not renumber existing identifiers when inserting or moving rules. If an item is based on specific policies, it should cite them.
 
 ### Notes
 
@@ -60,6 +60,19 @@ Keep supporting assets within their owning board. The functional board owns the 
 ## Project contract
 
 Before implementing binaries, read the functional policy, [inventory](specs/functional/functional-inventory.json), testing policy and the policies for affected areas. Follow the [architecture](specs/functional/functional-architecture.md), revising technical choices when evidence supports doing so. Preserve the human-facing invariants. Keep policy and inventory consistent; record unresolved scope choices in the appropriate `items/proposed/` folder and present a concrete recommendation before changing the agreed scope.
+
+## The human review queue
+
+When an agent needs to surface a decisions for a human, it should be added to `HUMAN_REVIEW_QUEUE.md`.
+
+When starting interactive sessions with humans, check HUMAN_REVIEW_QUEUE.md and notify the user if there are pending items there.
+
+Examples of things justifying requesting a human decision includes:
+
+- It's not clear whether to include an extension or Postgres capability because some criteria argue for and others against
+- The specified requirements are causing implementation issues or other problems and the project may benefit from altered requirements
+
+While a request is in HUMAN_REVIEW_QUEUE.md, the old requirements remain in force. If an agent wants to proceed with a course of action that is against the specified behaviour, the appropriate response is to add a request to HUMAN_REVIEW_QUEUE.md and then stop the current work. It is always acceptable for agents to decide to stop in the face of inconsistent requirements, and never acceptable for them to implement behaviour that conflicts with a requirement.
 
 ## Authorization
 

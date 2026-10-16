@@ -1,9 +1,9 @@
 # Coverage and evidence checks
 
 Check that discovery, test results and downloads account for the entire intended
-inventory. These checks establish F01, F02, F08, F11 and F13 and expose remaining
+inventory. These checks establish FUNC001, FUNC002, FUNC008, FUNC011 and FUNC013 and expose remaining
 requirements. Follow the [metadata contract](../../../functional/functional-inventory-format.md) and shared
-[verification record rules](../../testing-policy.md#t02--verification-records).
+[test record details](test-execution-and-evidence.md#test-records).
 
 ## Discovery
 
@@ -92,4 +92,4 @@ requested upstream versions.
 
 ## Completion
 
-Implement these checks under [T01–T05](../../testing-policy.md), connect them to the pipeline and retain verification records. See the [requirement map](../../testing-notes.md#requirement-map) for the guarantees they establish.
+Implement these checks under [TEST01–TEST08](../../testing-policy.md), connect them to the pipeline and retain verification records. See the [requirement map](../../testing-notes.md#requirement-map) for the guarantees they establish.

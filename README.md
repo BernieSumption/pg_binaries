@@ -28,7 +28,7 @@ Each board's `items/proposed/` folder is its human review queue:
 - [Functional proposals](specs/functional/items/proposed/)
 - [Build proposals](specs/build/items/proposed/)
 - [Extension proposals](specs/extensions/items/proposed/)
-- [Testing proposals](specs/testing/items/proposed/)
+- [Testing items](specs/testing/items/)
 
 The [board format in AGENTS.md](AGENTS.md#specification-boards) defines policy, notes and the five workflow folders. [style.md](style.md) defines the writing conventions.
 

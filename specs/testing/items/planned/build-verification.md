@@ -1,8 +1,8 @@
 # Build tests
 
 Reject incorrect packages before [artifact verification](artifact-verification.md). These
-checks support F04, F07–F10 and F12 and establish the identities used by
-F01–F03 and F08. Follow the shared [execution and record rules](../../testing-policy.md).
+checks support FUNC004, FUNC007–FUNC010 and FUNC012 and establish the identities used by
+FUNC001–FUNC003 and FUNC008. Follow the shared [execution and record details](test-execution-and-evidence.md).
 
 ## Sources and options
 
@@ -81,4 +81,4 @@ verification; build-environment libraries and resources can conceal omissions.
 
 ## Completion
 
-Implement these checks under [T01–T05](../../testing-policy.md), connect them to the pipeline and retain verification records. See the [requirement map](../../testing-notes.md#requirement-map) for the guarantees they establish.
+Implement these checks under [TEST01–TEST08](../../testing-policy.md), connect them to the pipeline and retain verification records. See the [requirement map](../../testing-notes.md#requirement-map) for the guarantees they establish.

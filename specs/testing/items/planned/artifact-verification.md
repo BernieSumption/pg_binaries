@@ -1,8 +1,8 @@
 # Artifact tests
 
 Test final archives independently of the builder. This level establishes
-F03–F10 and F12 for exact bytes and supplies runtime evidence for F01,
-F02 and F11. Follow the shared [execution and record rules](../../testing-policy.md) and
+FUNC003–FUNC010 and FUNC012 for exact bytes and supplies runtime evidence for FUNC001,
+FUNC002 and FUNC011. Follow the shared [execution and record details](test-execution-and-evidence.md) and
 [coverage requirements](coverage-verification.md).
 
 ## Clean environment
@@ -137,4 +137,4 @@ An artifact pass alone does not establish public download availability.
 
 ## Completion
 
-Implement these checks under [T01–T05](../../testing-policy.md), connect them to the pipeline and retain verification records. See the [requirement map](../../testing-notes.md#requirement-map) for the guarantees they establish.
+Implement these checks under [TEST01–TEST08](../../testing-policy.md), connect them to the pipeline and retain verification records. See the [requirement map](../../testing-notes.md#requirement-map) for the guarantees they establish.

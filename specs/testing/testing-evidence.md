@@ -21,13 +21,13 @@ The PostGIS Actions artifact was 88,157,068 bytes. The local combined package wa
 
 ## Remaining verification gaps
 
-- Public distribution and generated catalogue: temporary Actions artifacts may have expired and do not count as available coverage under F12.
-- Windows without a preinstalled non-OS CRT is unverified. The pilot declared a VC redistributable prerequisite, which does not satisfy F04.
+- Public distribution and generated catalogue: temporary Actions artifacts may have expired and do not count as available coverage under FUNC012.
+- Windows without a preinstalled non-OS CRT is unverified. The pilot declared a VC redistributable prerequisite, which does not satisfy FUNC004.
 - Exact OS ranges, desktop Windows, newer OS environments and CPU-baseline verification remain unresolved.
 - Only one PostgreSQL release and one pgvector release were built. No reuse of an extension archive across PostgreSQL minors has been demonstrated.
 - PostGIS was tested on Linux only, in one combined archive. Independent module packages, required-dependency-only installation and other source lines are unverified.
 - PostGIS used GEOS 3.10.2 and SFCGAL 1.4.1, limiting function coverage. The [SFCGAL profile](../extensions/items/planned/postgis_sfcgal.md) records the stricter tagged requirement found during research.
-- TIGER normalization passed with an empty `state` table. Real Census geocoding was untested; F09 now explicitly excludes the bulk corpus.
+- TIGER normalization passed with an empty `state` table. Real Census geocoding was untested; FUNC009 now explicitly excludes the bulk corpus.
 - Compile-option, contrib, resource, licence-obligation and schema dump/restore audits remain incomplete. XML/TLS support is required by the capability policy; verification remains outstanding.
 
 ## Cutoff expansion example

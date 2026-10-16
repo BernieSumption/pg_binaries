@@ -6,19 +6,19 @@ This file maps guarantees to observations and records gaps affecting several tes
 
 | Requirement | Main observations |
 | --- | --- |
-| F01 — Version coverage | Discover every eligible release; retain failed and unresolved targets. |
-| F02 — Exact choices | Preserve requested source, PostgreSQL and SQL versions; report absence or ambiguity. |
-| F03 — Independent modules | Install each module with its required closure; check ownership and omit unrelated downloads. |
-| F04 — Relocation | Audit CPU flags; run as an ordinary user in two locations on required OS environments. |
-| F05 — Tools and schemas | Initialize UTF-8, apply DDL, inspect catalogues, dump/restore schema and stop cleanly. |
-| F06 — Collations | Exercise ICU and available libc locales; record provider and locale availability. |
-| F07 — Capabilities | Audit options and test every included capability, including applicable compression operations. |
-| F08 — Extension combinations | Verify SQL/library identity and operations on every advertised PostgreSQL minor with required dependencies. |
-| F09 — Resources | Run offline with bundled resources; document exclusions and affected operations. |
-| F10 — Inspectable archives | Compare manifests; reject corruption, unsafe paths, file conflicts and missing dependencies. |
-| F11 — Corrected builds | Resolve the current build, detect stale caches and check consistent publication. |
-| F12 — Redistribution | Audit component obligations, retain required texts and download without payment or authentication. |
-| F13 — Metadata completeness | Check structured constraints, scoped notes and dated discovery/coverage records. |
+| FUNC001 — Version coverage | Discover every eligible release; retain failed and unresolved targets. |
+| FUNC002 — Exact choices | Preserve requested source, PostgreSQL and SQL versions; report absence or ambiguity. |
+| FUNC003 — Independent modules | Install each module with its required closure; check ownership and omit unrelated downloads. |
+| FUNC004 — Relocation | Audit CPU flags; run as an ordinary user in two locations on required OS environments. |
+| FUNC005 — Tools and schemas | Initialize UTF-8, apply DDL, inspect catalogues, dump/restore schema and stop cleanly. |
+| FUNC006 — Collations | Exercise ICU and available libc locales; record provider and locale availability. |
+| FUNC007 — Capabilities | Audit options and test every included capability, including applicable compression operations. |
+| FUNC008 — Extension combinations | Verify SQL/library identity and operations on every advertised PostgreSQL minor with required dependencies. |
+| FUNC009 — Resources | Run offline with bundled resources; document exclusions and affected operations. |
+| FUNC010 — Inspectable archives | Compare manifests; reject corruption, unsafe paths, file conflicts and missing dependencies. |
+| FUNC011 — Corrected builds | Resolve the current build, detect stale caches and check consistent publication. |
+| FUNC012 — Redistribution | Audit component obligations, retain required texts and download without payment or authentication. |
+| FUNC013 — Metadata completeness | Check structured constraints, scoped notes and dated discovery/coverage records. |
 
 ## Pilot evidence and gaps
 
