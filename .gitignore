@@ -6,6 +6,7 @@ out/
 *.zip
 *.sha256
 *.log
+__pycache__/
 
 # Build specification documents
 !specs/build/

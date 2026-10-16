@@ -3,6 +3,7 @@
 
 import argparse
 import datetime as dt
+import hashlib
 import json
 import re
 import sys
@@ -228,6 +229,59 @@ def _os_version_parts(value, label):
     return tuple(parts)
 
 
+def verification_profile(root, profile_id, allow_missing_sources=False):
+    """Resolve a registered profile and hash its case list and current source files."""
+    path = Path(root) / "support" / "verification-profiles.json"
+    registry = load_json(path)
+    if not isinstance(registry, dict) or registry.get("schema_version") != 1:
+        raise CoverageError("verification profile registry schema_version must be 1")
+    profiles = registry.get("profiles")
+    if not isinstance(profiles, dict) or profile_id not in profiles:
+        raise CoverageError(f"unknown verification profile {profile_id!r}")
+    profile = profiles[profile_id]
+    if not isinstance(profile, dict):
+        raise CoverageError(f"verification profile {profile_id}: expected an object")
+    scope = profile.get("scope")
+    cases = profile.get("case_ids")
+    sources = profile.get("sources")
+    platforms = profile.get("platforms")
+    if scope not in VERIFICATION_SCOPES:
+        raise CoverageError(f"verification profile {profile_id}: invalid scope")
+    if (not isinstance(cases, list) or not cases
+            or any(not isinstance(case, str) or not case.strip() for case in cases)
+            or cases != sorted(set(cases))):
+        raise CoverageError(f"verification profile {profile_id}: case_ids must be sorted unique strings")
+    if (not isinstance(sources, list) or not sources
+            or any(not isinstance(source, str) or not source for source in sources)
+            or sources != sorted(set(sources))):
+        raise CoverageError(f"verification profile {profile_id}: sources must be sorted unique paths")
+    if (not isinstance(platforms, list) or not platforms
+            or any(not isinstance(platform, str) or not platform for platform in platforms)
+            or platforms != sorted(set(platforms))):
+        raise CoverageError(f"verification profile {profile_id}: platforms must be sorted unique strings")
+    source_hashes = {}
+    sources_available = True
+    root = Path(root)
+    for source in sources:
+        source_path = Path(source)
+        if source_path.is_absolute() or ".." in source_path.parts:
+            raise CoverageError(f"verification profile {profile_id}: invalid source path {source!r}")
+        try:
+            source_hashes[source] = hashlib.sha256((root / source_path).read_bytes()).hexdigest()
+        except OSError as exc:
+            if not allow_missing_sources:
+                raise CoverageError(f"verification profile {profile_id}: cannot read source {source!r}: {exc}") from exc
+            sources_available = False
+            source_hashes[source] = None
+    digest_input = {"profile_id": profile_id, "scope": scope, "case_ids": cases,
+                    "platforms": platforms, "sources": source_hashes}
+    revision = hashlib.sha256(json.dumps(digest_input, sort_keys=True, separators=(",", ":"),
+                                         ensure_ascii=False).encode("utf-8")).hexdigest()
+    return {"profile_id": profile_id, "scope": scope, "case_ids": cases,
+            "platforms": platforms, "profile_revision": revision,
+            "sources_available": sources_available}
+
+
 def verification_records(root, support):
     records = []
     directory = root / "support" / "verification"
@@ -237,8 +291,8 @@ def verification_records(root, support):
         data = load_json(path)
         if not isinstance(data, dict):
             raise CoverageError(f"verification record {path} must be an object")
-        if data.get("schema_version") != 1:
-            raise CoverageError(f"verification record {path}: schema_version must be 1")
+        if data.get("schema_version") != 2:
+            raise CoverageError(f"verification record {path}: schema_version must be 2")
         platform = data.get("platform")
         os_name, separator, architecture = platform.partition("-") if isinstance(platform, str) else ("", "", "")
         if (not separator or os_name not in support["os_support"]
@@ -259,7 +313,9 @@ def verification_records(root, support):
         if ((endpoint == "minimum" and actual != minimum)
                 or (endpoint == "current" and actual <= minimum)):
             raise CoverageError(f"verification record {path}: OS version does not match {endpoint} endpoint")
-        validate_verification_record(data, support, f"verification record {path}")
+        current_profile = validate_verification_record(
+            data, support, root, f"verification record {path}", allow_stale=True)
+        data["_profile_current"] = current_profile
         required = ("outcome", "sha256", "component", "version", "platform", "postgresql_version")
         if any(key not in data for key in required):
             raise CoverageError(f"verification record {path}: missing required fields")
@@ -267,10 +323,27 @@ def verification_records(root, support):
     return records
 
 
-def validate_verification_record(data, support, label="verification record"):
+def validate_verification_record(data, support, root, label="verification record", allow_stale=False):
     """Validate the reusable evidence contract shared by coverage and candidates."""
-    if data.get("scope") not in VERIFICATION_SCOPES:
-        raise CoverageError(f"{label}: scope must be pilot-smoke or publication")
+    if data.get("schema_version") != 2:
+        raise CoverageError(f"{label}: schema_version must be 2")
+    profile_id = data.get("profile_id")
+    if not isinstance(profile_id, str) or not profile_id:
+        raise CoverageError(f"{label}: missing or invalid profile_id")
+    try:
+        profile = verification_profile(root, profile_id, allow_missing_sources=allow_stale)
+    except CoverageError as exc:
+        if not (allow_stale and str(exc).startswith("unknown verification profile")):
+            raise
+        profile = None
+    scope = data.get("scope")
+    if profile is not None and scope != profile["scope"]:
+        raise CoverageError(f"{label}: scope does not match registered profile")
+    if profile is None and scope not in VERIFICATION_SCOPES:
+        raise CoverageError(f"{label}: unknown historical profile scope")
+    profile_revision = data.get("profile_revision")
+    if not isinstance(profile_revision, str) or not SHA256.fullmatch(profile_revision):
+        raise CoverageError(f"{label}: malformed profile_revision")
     if data.get("outcome") not in VERIFICATION_OUTCOMES:
         raise CoverageError(f"{label}: outcome must be passed, failed, or skipped")
     if not isinstance(data.get("sha256"), str) or not SHA256.fullmatch(data["sha256"]):
@@ -281,8 +354,13 @@ def validate_verification_record(data, support, label="verification record"):
     cases = data.get("test_cases")
     if (not isinstance(cases, list) or not cases
             or any(not isinstance(case, str) or not case.strip() for case in cases)
-            or len(cases) != len(set(cases))):
+            or len(cases) != len(set(cases)) or cases != sorted(cases)):
         raise CoverageError(f"{label}: test_cases must be nonempty unique strings")
+    current_profile = (profile is not None and profile["sources_available"]
+                       and profile_revision == profile["profile_revision"]
+                       and cases == profile["case_ids"])
+    if not current_profile and not allow_stale:
+        raise CoverageError(f"{label}: test profile does not match current suite")
     environment = data.get("environment")
     if (not isinstance(environment, dict)
             or not all(isinstance(environment.get(field), str) and environment[field]
@@ -296,13 +374,17 @@ def validate_verification_record(data, support, label="verification record"):
             or environment.get("os") != os_name
             or environment.get("architecture") != architecture):
         raise CoverageError(f"{label}: environment identity does not match platform")
+    if profile is not None and platform not in profile["platforms"]:
+        raise CoverageError(f"{label}: platform is not supported by registered profile")
     if data["outcome"] == "passed" and environment["dependency_checks_passed"] is not True:
         raise CoverageError(f"{label}: passed outcome requires successful dependency checks")
+    return current_profile
 
 
 def verified(records, download, component, version, platform, pg_version, endpoint):
     return any(r.get("outcome") == "passed"
                and r.get("scope") == "publication"
+               and r.get("_profile_current") is True
                and r.get("sha256", "").lower() == download["sha256"].lower()
                and r.get("component") == component and str(r.get("version")) == str(version)
                and r.get("platform") == platform and r.get("postgresql_version") == pg_version
@@ -360,6 +442,7 @@ def main():
                   "core_without_download": [list(x) for x in core_without_download],
                   "core_awaiting_verification": [list(x) for x in core_awaiting_verification],
                   "required_extension_targets": len(want_ext),
+                  "stale_verification_records": sum(r.get("_profile_current") is False for r in records),
                   "missing_extension": [list(x) for x in missing_ext],
                   "extension_without_download": [list(x) for x in extension_without_download],
                   "extension_awaiting_verification": [list(x) for x in extension_awaiting_verification],

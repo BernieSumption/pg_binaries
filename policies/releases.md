@@ -14,4 +14,4 @@ Generate a candidate inventory from intended support, verified archive bytes, an
 
 Immediately after publication, run the anonymous download verification in [testing.md](testing.md) against the public `latest` inventory, including archives on older tags. Record the result and repair any failure with a new release and new URLs. A local dry run can test generation, ordering, retained references and failure handling, but it cannot establish public accessibility.
 
-The existing workflows upload short-lived GitHub Actions artifacts and do not publish releases. No current pilot archive is therefore advertised by a root `inventory.json`.
+The existing workflows upload short-lived GitHub Actions artifacts and do not publish releases. No current pilot archive is therefore advertised by a root `inventory.json`. The local preflight validates candidate references and staged bytes before any release operation; it is only one part of the publication checks above.

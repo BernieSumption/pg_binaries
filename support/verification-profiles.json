@@ -1,0 +1,35 @@
+{
+  "schema_version": 1,
+  "profiles": {
+    "linux-pilot-x86_64": {
+      "scope": "pilot-smoke",
+      "platforms": ["linux-x86_64"],
+      "case_ids": ["built-in-extension-smoke", "core-schema-smoke", "dependency-load", "dump-restore", "relocation"],
+      "sources": [".github/workflows/linux-pilot.yml", "scripts/linux/verify-in-container.sh", "scripts/linux/verify.Dockerfile", "scripts/linux/verify.sh", "tests/builtins/basic.sql", "tests/schema.sql", "tools/check_elf_dependencies.py"]
+    },
+    "linux-pilot-arm64": {
+      "scope": "pilot-smoke",
+      "platforms": ["linux-arm64"],
+      "case_ids": ["built-in-extension-smoke", "core-schema-smoke", "dependency-load", "dump-restore", "relocation"],
+      "sources": [".github/workflows/linux-arm64-pilot.yml", "scripts/linux/verify-in-container.sh", "scripts/linux/verify.Dockerfile", "scripts/linux/verify.sh", "tests/builtins/basic.sql", "tests/schema.sql", "tools/check_elf_dependencies.py"]
+    },
+    "macos-pilot-x86_64": {
+      "scope": "pilot-smoke",
+      "platforms": ["macos-x86_64"],
+      "case_ids": ["archive-assembly", "core-schema-smoke", "relocation"],
+      "sources": [".github/workflows/macos-pilot.yml", "scripts/macos/bundle.py", "scripts/macos/verify.sh"]
+    },
+    "windows-pilot-x86_64": {
+      "scope": "pilot-smoke",
+      "platforms": ["windows-x86_64"],
+      "case_ids": ["archive-assembly", "core-schema-smoke", "relocation"],
+      "sources": [".github/workflows/windows-pilot.yml", "scripts/windows/verify.ps1"]
+    },
+    "postgis-pilot-linux-x86_64": {
+      "scope": "pilot-smoke",
+      "platforms": ["linux-x86_64"],
+      "case_ids": ["postgis-extension-smoke", "postgis-relocation"],
+      "sources": [".github/workflows/postgis-pilot.yml", "scripts/postgis/probe.sql", "scripts/postgis/verify-in-container.sh"]
+    }
+  }
+}

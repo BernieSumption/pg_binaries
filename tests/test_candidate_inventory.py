@@ -1,5 +1,7 @@
 import importlib.util
+import json
 from pathlib import Path
+import tempfile
 import unittest
 
 
@@ -11,6 +13,18 @@ SPEC.loader.exec_module(candidate_inventory)
 
 class CandidateInventoryTests(unittest.TestCase):
     def setUp(self):
+        self.temporary = tempfile.TemporaryDirectory()
+        self.root = Path(self.temporary.name)
+        source = self.root / "tests" / "candidate_profile.py"
+        source.parent.mkdir(parents=True, exist_ok=True)
+        source.write_text("candidate test suite", encoding="utf-8")
+        registry = {"schema_version": 1, "profiles": {"candidate-test": {
+            "scope": "publication", "platforms": ["linux-x86_64"],
+            "case_ids": ["candidate-core", "candidate-relocation"],
+            "sources": ["tests/candidate_profile.py"]}}}
+        profile_path = self.root / "support" / "verification-profiles.json"
+        profile_path.parent.mkdir(parents=True, exist_ok=True)
+        profile_path.write_text(json.dumps(registry), encoding="utf-8")
         self.support = {
             "schema_version": 1,
             "postgresql": {"minimum_major": 15, "stable_release_cutoff": "2025-09-25"},
@@ -27,6 +41,9 @@ class CandidateInventoryTests(unittest.TestCase):
                         "linux-x86_64": {"url": "https://github.com/example/releases/download/old/pg.tgz",
                                          "sha256": "a" * 64}}}}, "extensions": {}}
 
+    def tearDown(self):
+        self.temporary.cleanup()
+
     def proposal(self, *, tag="catalog-20261016-1", filename="pg-linux-x86_64-15.9.tar.gz", sha="b" * 64,
                  version="15.9", platform="linux-x86_64"):
         url = f"https://github.com/BernieSumption/pg_binaries/releases/download/{tag}/{filename}"
@@ -35,12 +52,15 @@ class CandidateInventoryTests(unittest.TestCase):
                 "verification": [self.evidence(url, sha, endpoint, version, platform)
                                  for endpoint in ("minimum", "current")]}
 
-    @staticmethod
-    def evidence(url, sha, endpoint, version="15.9", platform="linux-x86_64"):
+    def evidence(self, url, sha, endpoint, version="15.9", platform="linux-x86_64"):
         os_name, architecture = platform.split("-")
-        return {"schema_version": 1, "scope": "publication", "outcome": "passed", "url": url, "sha256": sha,
+        profile_id = "candidate-test"
+        profile = candidate_inventory._coverage.verification_profile(
+            self.root, profile_id)
+        return {"schema_version": 2, "scope": profile["scope"], "profile_id": profile_id,
+                "profile_revision": profile["profile_revision"], "outcome": "passed", "url": url, "sha256": sha,
                 "component": "postgresql", "version": version, "platform": platform,
-                "postgresql_version": version, "test_revision": "a" * 40, "test_cases": ["smoke"],
+                "postgresql_version": version, "test_revision": "a" * 40, "test_cases": profile["case_ids"],
                 "environment": {"endpoint": endpoint, "os": os_name, "architecture": architecture,
                                 "os_version": "1" if endpoint == "minimum" else "2",
                                 "clean_system": True, "image_id": "ubuntu@sha256:image",
@@ -48,16 +68,19 @@ class CandidateInventoryTests(unittest.TestCase):
                                 "dependency_checks_passed": True}}
 
     def test_retains_unchanged_download_and_marks_candidate(self):
-        result = candidate_inventory.merge_candidate(self.old, [self.proposal()], self.support, self.snapshot)
+        result = candidate_inventory.merge_candidate(self.old, [self.proposal()], self.support, self.snapshot,
+                                                     root=self.root)
         self.assertEqual(result["candidate_status"], "structural-draft")
         self.assertEqual(result["postgresql"]["15.8"], self.old["postgresql"]["15.8"])
         self.assertEqual(result["postgresql"]["15.9"]["downloads"]["linux-x86_64"]["sha256"], "b" * 64)
+        self.assertEqual(self.old["postgresql"]["15.8"]["downloads"]["linux-x86_64"]["sha256"], "a" * 64)
 
     def test_correction_uses_new_url(self):
         base = {"postgresql": {"15.9": {"downloads": {"linux-x86_64": {
             "url": "https://github.com/example/releases/download/old/pg.tgz", "sha256": "a" * 64}}}},
                 "extensions": {}}
-        result = candidate_inventory.merge_candidate(base, [self.proposal()], self.support, self.snapshot)
+        result = candidate_inventory.merge_candidate(base, [self.proposal()], self.support, self.snapshot,
+                                                     root=self.root)
         self.assertNotEqual(result["postgresql"]["15.9"]["downloads"]["linux-x86_64"]["url"],
                             base["postgresql"]["15.9"]["downloads"]["linux-x86_64"]["url"])
         self.assertEqual(base["postgresql"]["15.9"]["downloads"]["linux-x86_64"]["sha256"], "a" * 64)
@@ -69,7 +92,8 @@ class CandidateInventoryTests(unittest.TestCase):
             "https://github.com/BernieSumption/pg_binaries/releases/download/catalog-20261016-1/pg-linux-x86_64-15.9.tar.gz",
             "b" * 64, endpoint, "15.10") for endpoint in ("minimum", "current")]
         with self.assertRaisesRegex(candidate_inventory.CandidateError, "URL is reused"):
-            candidate_inventory.merge_candidate(self.old, [first, second], self.support, self.snapshot)
+            candidate_inventory.merge_candidate(self.old, [first, second], self.support, self.snapshot,
+                                                 root=self.root)
 
     def test_rejects_url_already_in_base_even_when_checksum_matches(self):
         proposal = self.proposal()
@@ -82,7 +106,8 @@ class CandidateInventoryTests(unittest.TestCase):
             "url": "https://github.com/BernieSumption/pg_binaries/releases/download/catalog-20261016-1/pg-linux-x86_64-15.9.tar.gz",
             "sha256": "b" * 64}}}}, "extensions": {}}
         with self.assertRaisesRegex(candidate_inventory.CandidateError, "URL must be new"):
-            candidate_inventory.merge_candidate(base, [proposal], self.support, self.snapshot)
+            candidate_inventory.merge_candidate(base, [proposal], self.support, self.snapshot,
+                                                 root=self.root)
 
     def test_extension_evidence_uses_range_endpoints_not_intermediate_releases(self):
         url = "https://github.com/BernieSumption/pg_binaries/releases/download/catalog-20261016-2/example-linux-x86_64-1.0.tar.gz"
@@ -97,7 +122,8 @@ class CandidateInventoryTests(unittest.TestCase):
                     "tag": "catalog-20261016-2", "filename": "example-linux-x86_64-1.0.tar.gz",
                     "sha256": checksum, "postgresql_support": {"from": "15.0", "to": "15.10"},
                     "verification": records}
-        result = candidate_inventory.merge_candidate(self.old, [proposal], self.support, self.snapshot)
+        result = candidate_inventory.merge_candidate(self.old, [proposal], self.support, self.snapshot,
+                                                     root=self.root)
         self.assertEqual(result["candidate_status"], "structural-draft")
 
         restricted_support = dict(self.support, extensions={"Example": {
@@ -105,23 +131,32 @@ class CandidateInventoryTests(unittest.TestCase):
                 "postgresql_minimum_major": 15, "postgresql_maximum_major": 15}}}})
         outside = dict(proposal, postgresql_support={"from": "15.0", "to": "16.0"})
         with self.assertRaisesRegex(candidate_inventory.CandidateError, "exceeds declared"):
-            candidate_inventory.merge_candidate(self.old, [outside], restricted_support, self.snapshot)
+            candidate_inventory.merge_candidate(self.old, [outside], restricted_support, self.snapshot,
+                                                 root=self.root)
 
     def test_rejects_missing_evidence(self):
         proposal = self.proposal()
         proposal["verification"] = []
         with self.assertRaisesRegex(candidate_inventory.CandidateError, "missing passed"):
-            candidate_inventory.merge_candidate(self.old, [proposal], self.support, self.snapshot)
+            candidate_inventory.merge_candidate(self.old, [proposal], self.support, self.snapshot,
+                                                 root=self.root)
 
-    def test_pilot_smoke_evidence_cannot_make_candidate_eligible(self):
+    def test_real_pilot_only_registry_rejects_candidate_evidence(self):
         proposal = self.proposal()
+        real_root = Path(__file__).resolve().parents[1]
+        profile_id = "linux-pilot-x86_64"
+        profile = candidate_inventory._coverage.verification_profile(real_root, profile_id)
         for record in proposal["verification"]:
-            record["scope"] = "pilot-smoke"
+            record.update({"scope": profile["scope"], "profile_id": profile_id,
+                           "profile_revision": profile["profile_revision"], "test_cases": profile["case_ids"]})
         with self.assertRaisesRegex(candidate_inventory.CandidateError, "missing passed"):
-            candidate_inventory.merge_candidate(self.old, [proposal], self.support, self.snapshot)
-        result = candidate_inventory.merge_candidate(self.old, [self.proposal()], self.support, self.snapshot)
-        self.assertEqual(result["candidate_status"], "structural-draft")
-        self.assertNotIn("release_eligible", result)
+            candidate_inventory.merge_candidate(self.old, [proposal], self.support, self.snapshot,
+                                                 root=real_root)
+        for record in proposal["verification"]:
+            record["scope"] = "publication"
+        with self.assertRaisesRegex(candidate_inventory.CandidateError, "missing passed"):
+            candidate_inventory.merge_candidate(self.old, [proposal], self.support, self.snapshot,
+                                                 root=real_root)
 
 
 if __name__ == "__main__":

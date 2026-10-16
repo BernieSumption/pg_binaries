@@ -72,10 +72,19 @@ class PlanWorkTests(unittest.TestCase):
             "extensions": {}})
         records_dir = self.root / "support/verification"
         records_dir.mkdir(parents=True)
+        profile_sources = self.root / "tests" / "fixture.sh"
+        profile_sources.parent.mkdir(parents=True, exist_ok=True)
+        profile_sources.write_text("suite", encoding="utf-8")
+        profile_registry = {"schema_version": 1, "profiles": {"fixture-linux": {
+            "scope": "publication", "platforms": [platform], "case_ids": ["case-a", "case-b"],
+            "sources": ["tests/fixture.sh"]}}}
+        self.write("support/verification-profiles.json", profile_registry)
+        profile = plan_work.coverage.verification_profile(self.root, "fixture-linux")
         for endpoint in ("minimum", "current"):
-            record = {"schema_version": 1, "scope": "publication", "outcome": "passed", "sha256": checksum, "component": "postgresql",
+            record = {"schema_version": 2, "scope": profile["scope"], "profile_id": profile["profile_id"],
+                      "profile_revision": profile["profile_revision"], "outcome": "passed", "sha256": checksum, "component": "postgresql",
                       "version": "15.9", "platform": platform, "postgresql_version": "15.9",
-                      "test_revision": "a" * 40, "test_cases": ["smoke"],
+                      "test_revision": "a" * 40, "test_cases": profile["case_ids"],
                       "environment": {"os": "linux", "architecture": "x86_64",
                                       "os_version": "1" if endpoint == "minimum" else "2", "clean_system": True,
                                       "endpoint": endpoint, "image_id": "ubuntu@sha256:image",
@@ -84,6 +93,11 @@ class PlanWorkTests(unittest.TestCase):
             (records_dir / f"{endpoint}.json").write_text(json.dumps(record), encoding="utf-8")
         result = plan_work.plan(self.root)
         self.assertNotIn(["15.9", platform], result["verify_downloaded"]["core"])
+
+        profile_sources.write_text("changed suite", encoding="utf-8")
+        stale = plan_work.plan(self.root)
+        self.assertIn(["15.9", platform], stale["verify_downloaded"]["core"])
+        self.assertEqual(stale["stale_verification_records"], 2)
 
     def test_output_is_stable(self):
         first = plan_work.plan(self.root)

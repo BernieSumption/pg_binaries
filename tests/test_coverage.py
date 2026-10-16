@@ -28,6 +28,30 @@ class CoverageTests(unittest.TestCase):
             }}},
         }
 
+    @staticmethod
+    def add_profile(root, *, profile_id="fixture-linux", scope="pilot-smoke",
+                    platforms=None, case_ids=None, source_text="fixture source"):
+        root = Path(root)
+        source = root / "tests" / "fixture.sh"
+        source.parent.mkdir(parents=True, exist_ok=True)
+        source.write_text(source_text, encoding="utf-8")
+        profiles = {profile_id: {"scope": scope,
+                                 "platforms": sorted(platforms or [f"{os}-{arch}" for os in
+                                                                   ("macos", "windows", "linux")
+                                                                   for arch in ("x86_64", "arm64")]),
+                                 "case_ids": sorted(case_ids or ["case-a", "case-b"]),
+                                 "sources": ["tests/fixture.sh"]}}
+        registry = root / "support" / "verification-profiles.json"
+        registry.parent.mkdir(parents=True, exist_ok=True)
+        registry.write_text(json.dumps({"schema_version": 1, "profiles": profiles}), encoding="utf-8")
+        return coverage.verification_profile(root, profile_id)
+
+    @staticmethod
+    def add_profile_fields(record, profile):
+        record.update({"schema_version": 2, "profile_id": profile["profile_id"],
+                       "profile_revision": profile["profile_revision"], "scope": profile["scope"],
+                       "test_cases": profile["case_ids"]})
+
     def test_release_snapshot_filters_old_majors_and_cutoff(self):
         snapshot = {"as_of": "2026-01-01", "source": "https://example.test/releases", "releases": [
             {"version": "14.20", "release_date": "2025-10-01"},
@@ -160,12 +184,14 @@ class CoverageTests(unittest.TestCase):
 
             records_dir = root / "support" / "verification"
             records_dir.mkdir(parents=True)
-            record = {"schema_version": 1, "scope": "pilot-smoke", "outcome": "skipped", "sha256": checksum, "component": "postgresql",
+            profile = self.add_profile(root)
+            record = {"outcome": "skipped", "sha256": checksum, "component": "postgresql",
                       "version": "15.9", "platform": "linux-arm64", "postgresql_version": "15.9",
                       "test_revision": "a" * 40, "environment": {"os": "linux", "architecture": "arm64",
                       "os_version": "5.15", "clean_system": True,
                       "endpoint": "minimum", "image_id": "ubuntu@sha256:image",
-                      "dependency_check_profile": "linux-runtime-v1", "dependency_checks_passed": True}, "test_cases": ["smoke"]}
+                      "dependency_check_profile": "linux-runtime-v1", "dependency_checks_passed": True}}
+            self.add_profile_fields(record, profile)
             record_path = records_dir / "postgres.json"
             record_path.write_text(json.dumps(record), encoding="utf-8")
             status, output = run_cli()
@@ -174,7 +200,6 @@ class CoverageTests(unittest.TestCase):
             self.assertIn("core: 0 without download, 6 awaiting verification", output)
             self.assertIn("verification: incomplete", output)
 
-            record["scope"] = "publication"
             record["outcome"] = "passed"
             record_path.write_text(json.dumps(record), encoding="utf-8")
             status, output = run_cli()
@@ -183,6 +208,9 @@ class CoverageTests(unittest.TestCase):
             self.assertIn("verification: incomplete", output)
 
             record["environment"]["endpoint"] = "current"
+            profile = self.add_profile(root, scope="publication")
+            self.add_profile_fields(record, profile)
+            record_path.unlink()
             for platform in platforms:
                 os_name, architecture = platform.split("-", 1)
                 minimum = support["os_support"][os_name]["minimum_version"]
@@ -282,9 +310,11 @@ class CoverageTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             records_dir = Path(temporary) / "support" / "verification"
             records_dir.mkdir(parents=True)
-            record = {"schema_version": 1, "outcome": "passed", "sha256": "a" * 64, "component": "postgresql",
+            self.add_profile(Path(temporary))
+            record = {"schema_version": 2, "outcome": "passed", "sha256": "a" * 64, "component": "postgresql",
                       "version": "15.9", "platform": "linux-arm64", "postgresql_version": "15.9",
-                      "scope": "publication", "test_revision": "a" * 40,
+                      "profile_id": "fixture-linux", "profile_revision": "0" * 64,
+                      "scope": "pilot-smoke", "test_revision": "a" * 40,
                       "environment": "clean-linux", "test_cases": ["smoke"]}
             (records_dir / "invalid.json").write_text(json.dumps(record), encoding="utf-8")
             with self.assertRaises(coverage.CoverageError):
@@ -297,14 +327,16 @@ class CoverageTests(unittest.TestCase):
             root = Path(temporary)
             directory = root / "support" / "verification"
             directory.mkdir(parents=True)
-            record = {"schema_version": 1, "scope": "publication", "outcome": "passed", "sha256": "a" * 64,
+            profile = self.add_profile(root, platforms=["linux-x86_64"], case_ids=["case-a", "case-b"])
+            record = {"outcome": "passed", "sha256": "a" * 64,
                       "component": "postgresql", "version": "15.9", "platform": "linux-x86_64",
-                      "postgresql_version": "15.9", "test_revision": "a" * 40, "test_cases": ["smoke"],
+                      "postgresql_version": "15.9", "test_revision": "a" * 40,
                       "environment": {"os": "linux", "architecture": "x86_64", "os_version": "5.15",
                                       "clean_system": True, "endpoint": "minimum", "image_id": "ubuntu@sha256:image",
                                       "dependency_check_profile": "linux-runtime-v1", "dependency_checks_passed": True}}
+            self.add_profile_fields(record, profile)
             cases = [
-                ("wrong-schema", {"schema_version": 2}, {}, "5.15", "minimum"),
+                ("wrong-schema", {"schema_version": 1}, {}, "5.15", "minimum"),
                 ("wrong-os", {}, {"os": "macos"}, "5.15", "minimum"),
                 ("wrong-architecture", {}, {"architecture": "arm64"}, "5.15", "minimum"),
                 ("minimum-too-new", {}, {}, "5.16", "minimum"),
@@ -320,20 +352,22 @@ class CoverageTests(unittest.TestCase):
                     with self.assertRaises(coverage.CoverageError):
                         coverage.verification_records(root, self.support)
 
-    def test_verification_contract_rejects_pilot_as_publication_and_invalid_shape(self):
+    def test_profile_digest_and_exact_cases_reject_changed_or_forged_evidence(self):
         self.support["os_support"] = {name: {"minimum_version": "5.15"}
                                       for name in ("macos", "windows", "linux")}
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             directory = root / "support" / "verification"
             directory.mkdir(parents=True)
-            record = {"schema_version": 1, "scope": "pilot-smoke", "outcome": "passed",
+            profile = self.add_profile(root, platforms=["linux-x86_64"])
+            record = {"outcome": "passed",
                       "sha256": "a" * 64, "component": "postgresql", "version": "15.9",
                       "platform": "linux-x86_64", "postgresql_version": "15.9",
-                      "test_revision": "a" * 40, "test_cases": ["smoke"],
+                      "test_revision": "a" * 40,
                       "environment": {"os": "linux", "architecture": "x86_64", "os_version": "5.15",
                                       "clean_system": True, "endpoint": "minimum", "image_id": "ubuntu@sha256:image",
                                       "dependency_check_profile": "linux-runtime-v1", "dependency_checks_passed": True}}
+            self.add_profile_fields(record, profile)
             path = directory / "record.json"
             path.write_text(json.dumps(record), encoding="utf-8")
             loaded = coverage.verification_records(root, self.support)
@@ -342,7 +376,8 @@ class CoverageTests(unittest.TestCase):
                                                "linux-x86_64", "15.9", "minimum"))
             for changes in ({"outcome": "unknown"}, {"sha256": "bad"},
                             {"test_revision": "abc"}, {"test_cases": ["smoke", "smoke"]},
-                            {"scope": "publication", "environment": dict(record["environment"], image_id="")}):
+                            {"scope": "publication"}, {"profile_revision": "bad"},
+                            {"environment": dict(record["environment"], image_id="")}):
                 with self.subTest(changes=changes):
                     changed = dict(record, **{k: v for k, v in changes.items() if k != "environment"})
                     if "environment" in changes:
@@ -350,7 +385,30 @@ class CoverageTests(unittest.TestCase):
                     path.write_text(json.dumps(changed), encoding="utf-8")
                     with self.assertRaises(coverage.CoverageError):
                         coverage.verification_records(root, self.support)
-
-
+            path.write_text(json.dumps(record), encoding="utf-8")
+            first_revision = coverage.verification_profile(root, "fixture-linux")["profile_revision"]
+            (root / "tests" / "fixture.sh").write_text("changed source", encoding="utf-8")
+            changed_profile = coverage.verification_profile(root, "fixture-linux")
+            self.assertNotEqual(first_revision, changed_profile["profile_revision"])
+            stale_records = coverage.verification_records(root, self.support)
+            self.assertEqual(len(stale_records), 1)
+            self.assertFalse(stale_records[0]["_profile_current"])
+            self.assertFalse(coverage.verified(stale_records, {"sha256": "a" * 64}, "postgresql",
+                                               "15.9", "linux-x86_64", "15.9", "minimum"))
+            (root / "tests" / "fixture.sh").write_text("fixture source", encoding="utf-8")
+            registry_path = root / "support" / "verification-profiles.json"
+            registry = json.loads(registry_path.read_text(encoding="utf-8"))
+            registry["profiles"]["fixture-linux"]["case_ids"] = ["case-a", "case-b", "case-c"]
+            registry_path.write_text(json.dumps(registry), encoding="utf-8")
+            case_stale = coverage.verification_records(root, self.support)
+            self.assertFalse(case_stale[0]["_profile_current"])
+            (root / "tests" / "fixture.sh").unlink()
+            missing_source = coverage.verification_records(root, self.support)
+            self.assertFalse(missing_source[0]["_profile_current"])
+            registry["profiles"].pop("fixture-linux")
+            registry_path.write_text(json.dumps(registry), encoding="utf-8")
+            removed_profile = coverage.verification_records(root, self.support)
+            self.assertEqual(len(removed_profile), 1)
+            self.assertFalse(removed_profile[0]["_profile_current"])
 if __name__ == "__main__":
     unittest.main()

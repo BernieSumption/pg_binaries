@@ -29,7 +29,7 @@ TAG = re.compile(r"^catalog-\d{8}-\d+$")
 FILENAME = re.compile(r"^[A-Za-z0-9._+-]+\.tar\.gz$")
 
 
-def merge_candidate(base_inventory, proposed_entries, support, snapshot):
+def merge_candidate(base_inventory, proposed_entries, support, snapshot, root=None):
     """Return an unpublished structural draft containing base entries and proposals.
 
     Each proposal has ``component`` (``postgresql`` or an inventory SQL name),
@@ -39,6 +39,7 @@ def merge_candidate(base_inventory, proposed_entries, support, snapshot):
     minimum and current OS endpoints crossed with the PostgreSQL range endpoints.
     """
     try:
+        root = Path(root) if root is not None else Path(__file__).resolve().parents[1]
         releases = release_snapshot(snapshot, support)
         _coverage.validate_support(support)
         expected_core, expected_extensions = expected_targets(support, releases)
@@ -128,7 +129,7 @@ def merge_candidate(base_inventory, proposed_entries, support, snapshot):
             raise CandidateError("missing verification evidence")
         for pg in required_pg:
             for endpoint in ("minimum", "current"):
-                if not any(_evidence_matches(r, download, component, version, platform, pg, endpoint, support)
+                if not any(_evidence_matches(r, download, component, version, platform, pg, endpoint, support, root)
                            for r in records):
                     raise CandidateError(f"missing passed {endpoint} verification for {component} {version} {pg} {platform}")
 
@@ -147,11 +148,11 @@ def merge_candidate(base_inventory, proposed_entries, support, snapshot):
     return candidate
 
 
-def _evidence_matches(record, download, component, version, platform, pg, endpoint, support):
+def _evidence_matches(record, download, component, version, platform, pg, endpoint, support, root):
     if not isinstance(record, dict):
         return False
     try:
-        _coverage.validate_verification_record(record, support, "candidate evidence")
+        _coverage.validate_verification_record(record, support, root, "candidate evidence")
     except CoverageError:
         return False
     environment = record.get("environment")
@@ -163,7 +164,7 @@ def _evidence_matches(record, download, component, version, platform, pg, endpoi
         minimum = _coverage._os_version_parts(support["os_support"][os_name]["minimum_version"], "support")
     except (CoverageError, KeyError, TypeError):
         return False
-    return (record.get("schema_version") == 1 and record.get("scope") == "publication"
+    return (record.get("schema_version") == 2 and record.get("scope") == "publication"
             and record.get("outcome") == "passed"
             and str(record.get("sha256", "")).lower() == str(download["sha256"]).lower()
             and record.get("component") == component and str(record.get("version")) == str(version)

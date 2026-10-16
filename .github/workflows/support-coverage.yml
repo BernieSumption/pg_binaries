@@ -9,11 +9,13 @@ on:
       - tools/coverage.py
       - tools/plan_work.py
       - tools/candidate_inventory.py
+      - tools/publication_preflight.py
       - tools/discover_postgresql.py
       - tools/discover_builtins.py
       - tests/test_coverage.py
       - tests/test_plan_work.py
       - tests/test_candidate_inventory.py
+      - tests/test_publication_preflight.py
       - tests/test_discover_postgresql.py
       - tests/test_discover_builtins.py
       - .github/workflows/support-coverage.yml
@@ -29,7 +31,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Validate support tooling
-        run: python3 -m unittest tests/test_coverage.py tests/test_discover_postgresql.py tests/test_discover_builtins.py tests/test_plan_work.py tests/test_candidate_inventory.py
+        run: python3 -m unittest tests/test_coverage.py tests/test_discover_postgresql.py tests/test_discover_builtins.py tests/test_plan_work.py tests/test_candidate_inventory.py tests/test_publication_preflight.py
       - name: Check the PostgreSQL release snapshot against upstream
         run: python3 tools/discover_postgresql.py --check
       - name: Report unmet support

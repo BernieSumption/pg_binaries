@@ -54,6 +54,7 @@ def plan(root):
         required_extensions, available_extensions, records)
     result = {
         "snapshot_as_of": snapshot["as_of"],
+        "stale_verification_records": sum(r.get("_profile_current") is False for r in records),
         "build_missing": {
             "core": [list(target) for target in core_build],
             "extensions": [list(target) for target in ext_without],
