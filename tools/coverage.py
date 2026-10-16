@@ -112,8 +112,18 @@ def validate_extension_policy(root, support):
     except (OSError, UnicodeError) as exc:
         raise CoverageError(f"cannot read extension policy {path}: {exc}") from exc
     included = re.findall(r"^## ([^\n]+?) — include\s*$", policy, re.MULTILINE)
+    excluded = re.findall(r"^## ([^\n]+?) — exclude\s*$", policy, re.MULTILINE)
     if len(included) != len(set(included)):
         raise CoverageError("extension policy contains duplicate include headings")
+    if len(excluded) != len(set(excluded)) or set(included) & set(excluded):
+        raise CoverageError("extension policy contains conflicting or duplicate decisions")
+    section = re.search(r"^## Unreviewed projects\s*\n(.*?)(?=^## |\Z)", policy,
+                        re.MULTILINE | re.DOTALL)
+    if section:
+        unreviewed = [name.strip() for name in re.findall(r"^\|\s*([^|]+?)\s*\|", section[1], re.MULTILINE)
+                      if name.strip() not in {"Project", "---"}]
+        if len(unreviewed) != len(set(unreviewed)) or set(unreviewed) & (set(included) | set(excluded)):
+            raise CoverageError("extension policy repeats a project in unreviewed and decision sections")
     declared = set(support["extensions"])
     if set(included) != declared:
         missing = sorted(declared - set(included))
