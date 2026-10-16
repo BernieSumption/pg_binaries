@@ -16,6 +16,7 @@ $vectorSource = Join-Path $work "pgvector-$vectorVersion"
 $pgBuild = Join-Path $work 'pg-build'
 $pgInstall = Join-Path $work 'postgresql'
 $vectorPackage = Join-Path $work 'pgvector'
+$vectorArchiveRoot = Join-Path $work 'pgvector-archive'
 
 New-Item -ItemType Directory -Force $work, $dist | Out-Null
 Invoke-WebRequest "https://ftp.postgresql.org/pub/source/v$pgVersion/postgresql-$pgVersion.tar.gz" -OutFile $pgSourceArchive
@@ -54,6 +55,7 @@ Get-ChildItem (Join-Path $vcpkg 'share') -Directory | ForEach-Object {
     Copy-Item $copyright (Join-Path $dependencyLicenses "$($_.Name).txt")
   }
 }
+$builtins = @(& python (Join-Path $repo 'tools/discover_builtins.py') $pgInstall | ConvertFrom-Json)
 
 $pgManifest = [ordered]@{
   schema_version = 1
@@ -62,6 +64,7 @@ $pgManifest = [ordered]@{
   postgresql_version = $pgVersion
   platform = 'windows'
   architecture = 'x86_64'
+  included_extensions = $builtins
   source_sha256 = (Get-FileHash $pgSourceArchive -Algorithm SHA256).Hash.ToLowerInvariant()
   runtime_dependencies = @('ICU', 'LZ4', 'Zstandard', 'zlib', 'OpenSSL')
   os_prerequisites = @('Microsoft Visual C++ 2015-2022 Redistributable (x64)')
@@ -80,21 +83,27 @@ Copy-Item (Join-Path $vectorSource 'vector.dll') (Join-Path $vectorPackage 'lib/
 Copy-Item (Join-Path $vectorSource 'vector.control') (Join-Path $vectorPackage 'share/extension/vector.control')
 Copy-Item (Join-Path $vectorSource 'sql/vector--*.sql') (Join-Path $vectorPackage 'share/extension')
 Copy-Item (Join-Path $vectorSource 'LICENSE') (Join-Path $vectorPackage 'LICENSES/pgvector.txt')
-$vectorManifest = [ordered]@{
-  schema_version = 1
-  component = 'pgvector'
+$vectorMetadata = [ordered]@{
+  project = 'pgvector'
   version = $vectorVersion
-  postgresql_version = $pgVersion
-  platform = 'windows'
-  architecture = 'x86_64'
-  source_sha256 = (Get-FileHash $vectorSourceArchive -Algorithm SHA256).Hash.ToLowerInvariant()
+  sql_names = @('vector')
+  requires = @()
+  configuration_prerequisites = @()
+  runtime_prerequisites = @()
 }
-$vectorManifest | ConvertTo-Json -Depth 5 | Set-Content -Encoding utf8 (Join-Path $vectorPackage 'manifest.json')
+$vectorMetadata | ConvertTo-Json -Depth 5 | Set-Content -Encoding utf8 (Join-Path $work 'metadata.json')
+New-Item -ItemType Directory -Force $vectorArchiveRoot | Out-Null
+Move-Item $vectorPackage (Join-Path $vectorArchiveRoot 'pgvector')
+Move-Item (Join-Path $work 'metadata.json') (Join-Path $vectorArchiveRoot 'metadata.json')
 
-$pgArchive = Join-Path $dist "postgresql-$pgVersion-windows-x86_64.zip"
-$vectorArchive = Join-Path $dist "pgvector-$vectorVersion-postgresql-$pgVersion-windows-x86_64.zip"
-Compress-Archive -Path $pgInstall -DestinationPath $pgArchive -CompressionLevel Optimal -Force
-Compress-Archive -Path $vectorPackage -DestinationPath $vectorArchive -CompressionLevel Optimal -Force
+$pgArchive = Join-Path $dist "postgresql-$pgVersion-windows-x86_64.tar.gz"
+$vectorArchive = Join-Path $dist "pgvector-$vectorVersion-postgresql-$pgVersion-windows-x86_64.tar.gz"
+if (Test-Path $pgArchive) { Remove-Item $pgArchive -Force }
+if (Test-Path $vectorArchive) { Remove-Item $vectorArchive -Force }
+tar.exe -czf $pgArchive -C $work postgresql
+if ($LASTEXITCODE -ne 0) { throw 'Failed to create PostgreSQL tar.gz archive' }
+tar.exe -czf $vectorArchive -C $vectorArchiveRoot pgvector metadata.json
+if ($LASTEXITCODE -ne 0) { throw 'Failed to create pgvector tar.gz archive' }
 foreach ($archive in @($pgArchive, $vectorArchive)) {
   $hash = (Get-FileHash $archive -Algorithm SHA256).Hash.ToLowerInvariant()
   "$hash  $(Split-Path $archive -Leaf)" | Set-Content -Encoding ascii "$archive.sha256"

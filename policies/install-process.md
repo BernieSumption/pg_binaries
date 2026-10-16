@@ -46,4 +46,4 @@ Tests must make the original prefix unavailable before exercising the relocated 
 
 ## Current spike evidence
 
-The pilot scripts currently build PostgreSQL and extension archives separately. The Linux and macOS pgvector packages use the project-named payload and sibling metadata described above. The Windows pilot still produces ZIP archives rather than `.tar.gz`. These are implementation observations, not changes to the required archive format or copy-based installation process above.
+The pilot scripts currently build PostgreSQL and extension archives separately. All three x86-64 pgvector pilots now use the project-named payload and sibling metadata described above. This format check does not establish every operating system or dependency claim required for publication.

@@ -5,11 +5,11 @@ $repo = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
 $dist = Join-Path $repo 'dist/windows'
 $pgVersion = '18.6'
 $vectorVersion = '0.8.7'
-$pgArchive = Join-Path $dist "postgresql-$pgVersion-windows-x86_64.zip"
-$vectorArchive = Join-Path $dist "pgvector-$vectorVersion-postgresql-$pgVersion-windows-x86_64.zip"
+$pgArchive = Join-Path $dist "postgresql-$pgVersion-windows-x86_64.tar.gz"
+$vectorArchive = Join-Path $dist "pgvector-$vectorVersion-postgresql-$pgVersion-windows-x86_64.tar.gz"
 $work = Join-Path $env:RUNNER_TEMP 'pg-binaries-windows-verify'
-$unpacked = Join-Path $work 'unpacked'
-$unpackedData = Join-Path $work 'unpacked database cluster'
+$pgExtract = Join-Path $work 'postgresql archive'
+$vectorExtract = Join-Path $work 'pgvector archive'
 $moved = Join-Path $work 'relocated install/PostgreSQL 18.6'
 $data = Join-Path $work 'database cluster'
 
@@ -25,52 +25,94 @@ function Assert-ArchiveHash([string]$archive) {
 
 Assert-ArchiveHash $pgArchive
 Assert-ArchiveHash $vectorArchive
-New-Item -ItemType Directory -Force $unpacked, (Split-Path $moved -Parent) | Out-Null
-Expand-Archive $pgArchive -DestinationPath $unpacked
-Expand-Archive $vectorArchive -DestinationPath $unpacked
+New-Item -ItemType Directory -Force $pgExtract, $vectorExtract, (Split-Path $moved -Parent) | Out-Null
+tar.exe -xzf $pgArchive -C $pgExtract
+if ($LASTEXITCODE -ne 0) { throw 'Failed to extract PostgreSQL archive' }
+tar.exe -xzf $vectorArchive -C $vectorExtract
+if ($LASTEXITCODE -ne 0) { throw 'Failed to extract pgvector archive' }
 
-$pgRoot = Join-Path $unpacked 'postgresql'
-$pgManifest = Get-Content (Join-Path $pgRoot 'manifest.json') -Raw | ConvertFrom-Json
-$vectorRoot = Join-Path $unpacked 'pgvector'
-$vectorManifest = Get-Content (Join-Path $vectorRoot 'manifest.json') -Raw | ConvertFrom-Json
-if ($pgManifest.schema_version -ne 1 -or $vectorManifest.schema_version -ne 1 -or
-    $pgManifest.component -ne 'postgresql' -or $vectorManifest.component -ne 'pgvector' -or
-    $pgManifest.version -ne $pgVersion -or $vectorManifest.version -ne $vectorVersion -or
-    $pgManifest.postgresql_version -ne $vectorManifest.postgresql_version -or
-    $pgManifest.platform -ne 'windows' -or $vectorManifest.platform -ne 'windows' -or
-    $pgManifest.architecture -ne 'x86_64' -or $vectorManifest.architecture -ne 'x86_64') {
-  throw 'Archive manifests do not match this verification target'
+$pgRoot = Join-Path $pgExtract 'postgresql'
+$vectorRoot = Join-Path $vectorExtract 'pgvector'
+$metadataPath = Join-Path $vectorExtract 'metadata.json'
+if (-not (Test-Path $pgRoot -PathType Container) -or
+    @(Get-ChildItem $pgExtract -Force | Where-Object Name -ne 'postgresql').Count -ne 0 -or
+    -not (Test-Path $vectorRoot -PathType Container) -or -not (Test-Path $metadataPath -PathType Leaf) -or
+    @(Get-ChildItem $vectorExtract -Force | Where-Object { $_.Name -notin @('pgvector', 'metadata.json') }).Count -ne 0) {
+  throw 'Archive top-level layout is invalid'
 }
-if (-not (Test-Path (Join-Path $pgRoot 'LICENSES/PostgreSQL.txt')) -or
+$pgManifest = Get-Content (Join-Path $pgRoot 'manifest.json') -Raw | ConvertFrom-Json
+if ($pgManifest.schema_version -ne 1 -or $pgManifest.component -ne 'postgresql' -or
+    $pgManifest.version -ne $pgVersion -or $pgManifest.postgresql_version -ne $pgVersion -or
+    $pgManifest.platform -ne 'windows' -or $pgManifest.architecture -ne 'x86_64') {
+  throw 'PostgreSQL manifest does not match this verification target'
+}
+$controls = @(Get-ChildItem (Join-Path $pgRoot 'share/extension/*.control') -File | ForEach-Object BaseName | Sort-Object)
+if ($controls.Count -eq 0 -or @($pgManifest.included_extensions).Count -ne $controls.Count -or
+    (Compare-Object $controls @($pgManifest.included_extensions))) {
+  throw 'Built-in extension inventory does not match the extracted archive'
+}
+$vectorMetadata = Get-Content $metadataPath -Raw | ConvertFrom-Json
+foreach ($field in @('project', 'version', 'sql_names', 'requires', 'configuration_prerequisites', 'runtime_prerequisites')) {
+  if ($null -eq $vectorMetadata.$field) { throw "pgvector metadata is missing $field" }
+}
+if ($vectorMetadata.project -ne 'pgvector' -or $vectorMetadata.version -ne $vectorVersion -or
+    @($vectorMetadata.sql_names) -notcontains 'vector') { throw 'pgvector metadata does not match this verification target' }
+foreach ($field in @('sql_names', 'requires', 'configuration_prerequisites', 'runtime_prerequisites')) {
+  if ($vectorMetadata.$field -isnot [System.Array]) { throw "pgvector metadata field $field must be an array" }
+}
+if (@($vectorMetadata.sql_names).Count -ne 1 -or @($vectorMetadata.requires).Count -ne 0 -or
+    @($vectorMetadata.configuration_prerequisites).Count -ne 0 -or
+    @($vectorMetadata.runtime_prerequisites).Count -ne 0) { throw 'pgvector metadata prerequisites or SQL names are unexpected' }
+if (-not (Test-Path (Join-Path $pgRoot 'manifest.json')) -or
+    -not (Test-Path (Join-Path $pgRoot 'LICENSES/PostgreSQL.txt')) -or
     -not (Test-Path (Join-Path $vectorRoot 'LICENSES/pgvector.txt')) -or
-    -not (Test-Path (Join-Path $pgRoot 'LICENSES/dependencies/icu.txt'))) {
-  throw 'A required license text is missing'
+    -not (Test-Path (Join-Path $pgRoot 'LICENSES/dependencies/icu.txt'))) { throw 'A required license text is missing' }
+
+$coreEntries = @{}
+Get-ChildItem $pgRoot -Force -Recurse | ForEach-Object {
+  $relative = $_.FullName.Substring($pgRoot.Length).TrimStart('\', '/')
+  if ($relative) { $coreEntries[$relative.ToLowerInvariant()] = $_.PSIsContainer }
+}
+Get-ChildItem $vectorRoot -Force -Recurse | ForEach-Object {
+  $relative = $_.FullName.Substring($vectorRoot.Length).TrimStart('\', '/')
+  $key = $relative.ToLowerInvariant()
+  if ($relative -and $coreEntries.ContainsKey($key) -and
+      (-not $_.PSIsContainer -or -not $coreEntries[$key])) { throw "Payload path collision: $relative" }
+}
+Get-ChildItem $vectorRoot -File -Recurse | ForEach-Object {
+  $relative = $_.FullName.Substring($vectorRoot.Length).TrimStart('\', '/')
+  $destination = Join-Path $pgRoot $relative
+  New-Item -ItemType Directory -Force (Split-Path $destination -Parent) | Out-Null
+  Copy-Item $_.FullName $destination
+}
+if ((Test-Path (Join-Path $pgRoot 'metadata.json')) -or -not (Test-Path $metadataPath)) {
+  throw 'Extension metadata must remain outside the PostgreSQL prefix'
 }
 
 $env:PGHOST = '127.0.0.1'
 $env:PGPORT = '55432'
 $env:PGUSER = 'postgres'
 $env:PGDATABASE = 'postgres'
-$unpackedBin = Join-Path $pgRoot 'bin'
-$env:PATH = "$unpackedBin;$env:SystemRoot\System32;$env:SystemRoot"
-& (Join-Path $unpackedBin 'initdb.exe') -D $unpackedData -U postgres -A trust --no-instructions
-$unpackedStarted = $false
+$initialData = Join-Path $work 'initial database cluster'
+$initialBin = Join-Path $pgRoot 'bin'
+$env:PATH = "$initialBin;$env:SystemRoot\System32;$env:SystemRoot"
+& (Join-Path $initialBin 'initdb.exe') -D $initialData -U postgres -A trust --no-instructions
+$initialStarted = $false
 try {
-  & (Join-Path $unpackedBin 'pg_ctl.exe') -D $unpackedData -l (Join-Path $work 'postgres-unpacked.log') -o "-h 127.0.0.1 -p $env:PGPORT" -w start
-  $unpackedStarted = $true
-  $unpackedVersion = (& (Join-Path $unpackedBin 'psql.exe') -At -c 'SHOW server_version').Trim()
-  $unpackedQuery = (& (Join-Path $unpackedBin 'psql.exe') -At -c 'SELECT 1').Trim()
-  if ($unpackedVersion -ne $pgVersion -or $unpackedQuery -ne '1') {
-    throw "Unpacked archive failed version/query check: $unpackedVersion / $unpackedQuery"
-  }
-  Write-Host "Verified unpacked PostgreSQL $unpackedVersion startup and query"
+  & (Join-Path $initialBin 'pg_ctl.exe') -D $initialData -l (Join-Path $work 'postgres-before-move.log') -o "-h 127.0.0.1 -p $env:PGPORT" -w start
+  $initialStarted = $true
+  $initialPsql = Join-Path $initialBin 'psql.exe'
+  $initialVersion = (& $initialPsql -At -c 'SHOW server_version').Trim()
+  $initialQuery = (& $initialPsql -At -c 'SELECT 1').Trim()
+  if ($initialVersion -ne $pgVersion -or $initialQuery -ne '1') { throw 'Pre-move PostgreSQL smoke check failed' }
+  & $initialPsql -X -v ON_ERROR_STOP=1 -c "CREATE EXTENSION vector; CREATE TABLE pilot_vectors (id integer PRIMARY KEY, embedding vector(3)); INSERT INTO pilot_vectors VALUES (1, '[1,0,0]'), (2, '[0,1,0]'), (3, '[0,0,1]'); CREATE INDEX pilot_vectors_hnsw ON pilot_vectors USING hnsw (embedding vector_l2_ops);"
+  $nearest = (& $initialPsql -At -c "SELECT id FROM pilot_vectors ORDER BY embedding <-> '[1,0,0]'::vector LIMIT 1").Trim()
+  if ($nearest -ne '1') { throw "Pre-move pgvector query returned $nearest, expected 1" }
 } finally {
-  if ($unpackedStarted) { & (Join-Path $unpackedBin 'pg_ctl.exe') -D $unpackedData -m immediate -w stop }
+  if ($initialStarted) { & (Join-Path $initialBin 'pg_ctl.exe') -D $initialData -m immediate -w stop }
 }
 
 Move-Item $pgRoot $moved
-Copy-Item (Join-Path $vectorRoot 'lib/vector.dll') (Join-Path $moved 'lib/vector.dll')
-Copy-Item (Join-Path $vectorRoot 'share/extension/*') (Join-Path $moved 'share/extension')
 
 $bin = Join-Path $moved 'bin'
 $env:PATH = "$bin;$env:SystemRoot\System32;$env:SystemRoot"
@@ -87,6 +129,8 @@ try {
   $started = $true
   $reported = (& $psql -At -c 'SHOW server_version').Trim()
   if ($reported -ne $pgVersion) { throw "Server reports $reported, expected $pgVersion" }
+  $basicQuery = (& $psql -At -c 'SELECT 1').Trim()
+  if ($basicQuery -ne '1') { throw "PostgreSQL query returned $basicQuery, expected 1" }
 
   & $psql -X -v ON_ERROR_STOP=1 -f (Join-Path $repo 'tests/schema.sql')
   $collationSql = @'
@@ -130,6 +174,15 @@ SELECT id, embedding <-> '[1,0,0]'::vector AS distance FROM pilot_vectors ORDER 
   & $psql -X -v ON_ERROR_STOP=1 -c $vectorSql
   $installed = (& $psql -At -c "SELECT extversion FROM pg_extension WHERE extname = 'vector'").Trim()
   if ($installed -ne $vectorVersion) { throw "pgvector reports $installed, expected $vectorVersion" }
+  $restoreDump = Join-Path $work 'restorable.dump'
+  & $pgDump -Fc -Z zstd -f $restoreDump postgres
+  & $psql -X -v ON_ERROR_STOP=1 -c 'CREATE DATABASE restored'
+  & $pgRestore --exit-on-error -d restored $restoreDump
+  $restoredCount = (& $psql -X -At -d restored -c 'SELECT pilot.active_item_count(1)').Trim()
+  $restoredNearest = (& $psql -X -At -d restored -c "SELECT id FROM pilot_vectors ORDER BY embedding <-> '[1,0,0]'::vector LIMIT 1").Trim()
+  if ($restoredCount -ne '1' -or $restoredNearest -ne '1') {
+    throw "Restored schema/vector check failed: $restoredCount / $restoredNearest"
+  }
   Write-Host "Verified PostgreSQL $reported and pgvector $installed on Windows $([Environment]::OSVersion.Version) after archive relocation"
 } finally {
   if ($started) { & $pgCtl -D $data -m immediate -w stop }
