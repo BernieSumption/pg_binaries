@@ -89,3 +89,64 @@ BEGIN
     END IF;
 END
 $$;
+
+CREATE EXTENSION btree_gist;
+CREATE TABLE builtin_btree_gist (
+    room text,
+    occupied tstzrange,
+    EXCLUDE USING gist (room WITH =, occupied WITH &&)
+);
+INSERT INTO builtin_btree_gist VALUES ('blue', '[2026-01-01 10:00+00, 2026-01-01 11:00+00)');
+DO $$
+BEGIN
+    BEGIN
+        INSERT INTO builtin_btree_gist VALUES ('blue', '[2026-01-01 10:30+00, 2026-01-01 11:30+00)');
+        RAISE EXCEPTION 'btree_gist exclusion constraint accepted an overlapping range';
+    EXCEPTION WHEN exclusion_violation THEN
+        NULL;
+    END;
+END
+$$;
+
+CREATE EXTENSION cube;
+CREATE TABLE builtin_cube (bounds cube);
+INSERT INTO builtin_cube VALUES (cube(ARRAY[0.0, 0.0], ARRAY[2.0, 2.0]));
+DO $$
+BEGIN
+    IF NOT (SELECT bounds @> cube(ARRAY[1.0, 1.0]) FROM builtin_cube)
+       OR (SELECT bounds @> cube(ARRAY[3.0, 1.0]) FROM builtin_cube) THEN
+        RAISE EXCEPTION 'cube containment failed';
+    END IF;
+END
+$$;
+
+CREATE EXTENSION intarray;
+CREATE TABLE builtin_intarray (values integer[]);
+INSERT INTO builtin_intarray VALUES (ARRAY[1, 2, 3]);
+DO $$
+BEGIN
+    IF NOT (SELECT values @> ARRAY[2, 3] FROM builtin_intarray)
+       OR NOT (SELECT values && ARRAY[3, 4] FROM builtin_intarray)
+       OR (SELECT values @> ARRAY[4] FROM builtin_intarray) THEN
+        RAISE EXCEPTION 'intarray containment or overlap failed';
+    END IF;
+END
+$$;
+
+CREATE EXTENSION tablefunc;
+DO $check$
+BEGIN
+    IF (SELECT a FROM crosstab(
+            $$SELECT 'row1'::text, 'a'::text, 10 UNION ALL
+              SELECT 'row1', 'b', 20 ORDER BY 1, 2$$,
+            $$SELECT unnest(ARRAY['a', 'b'])$$
+        ) AS result(row_name text, a integer, b integer)) <> 10
+       OR (SELECT b FROM crosstab(
+            $$SELECT 'row1'::text, 'a'::text, 10 UNION ALL
+              SELECT 'row1', 'b', 20 ORDER BY 1, 2$$,
+            $$SELECT unnest(ARRAY['a', 'b'])$$
+        ) AS result(row_name text, a integer, b integer)) <> 20 THEN
+        RAISE EXCEPTION 'tablefunc crosstab result failed';
+    END IF;
+END
+$check$;
