@@ -77,6 +77,7 @@ trap 'runuser -u postgres -- "$pgroot/bin/pg_ctl" -D /tmp/pgdata -m immediate st
 psql=(runuser -u postgres -- "$pgroot/bin/psql" -X -v ON_ERROR_STOP=1 -h /tmp/pgsocket -p 55431 -d postgres)
 "${psql[@]}" -Atqc 'SELECT version()' | grep -F 'PostgreSQL 18.6'
 "${psql[@]}" -f /tests/schema.sql
+"${psql[@]}" -f /tests/builtins/basic.sql
 "${psql[@]}" <<'SQL'
 CREATE COLLATION pilot_icu (provider = icu, locale = 'en-US-u-kn-true', deterministic = false);
 CREATE COLLATION pilot_libc (provider = libc, locale = 'C');

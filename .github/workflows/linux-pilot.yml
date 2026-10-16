@@ -6,6 +6,7 @@ on:
     paths:
       - 'scripts/linux/**'
       - 'tests/schema.sql'
+      - 'tests/builtins/**'
       - '.github/workflows/linux-pilot.yml'
 jobs:
   linux:
