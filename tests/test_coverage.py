@@ -208,10 +208,21 @@ class CoverageTests(unittest.TestCase):
     def test_support_schema_requires_all_platforms_and_extensions(self):
         with self.assertRaises(coverage.CoverageError):
             coverage.validate_support({"schema_version": 2})
+        for pg_rule in ({"minimum_major": 16, "stable_release_cutoff": "2025-09-25"},
+                        {"minimum_major": 15, "stable_release_cutoff": "2026-01-01"}):
+            invalid = dict(self.support, postgresql=pg_rule)
+            with self.assertRaises(coverage.CoverageError):
+                coverage.validate_support(invalid)
         incomplete = dict(self.support)
         incomplete["os_support"] = {"linux": {"minimum_version": "5.15"}}
         with self.assertRaises(coverage.CoverageError):
             coverage.validate_support(incomplete)
+        duplicate = dict(self.support, extensions={
+            "Example": self.support["extensions"]["Example"],
+            "Other": {"sql_names": ["example"], "versions": {"1.0": {}}},
+        })
+        with self.assertRaises(coverage.CoverageError):
+            coverage.validate_support(duplicate)
 
     def test_extension_policy_includes_must_match_support_projects(self):
         with tempfile.TemporaryDirectory() as temporary:

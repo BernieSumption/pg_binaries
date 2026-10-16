@@ -76,6 +76,8 @@ def validate_support(support):
     pg = support.get("postgresql")
     if not isinstance(pg, dict):
         raise CoverageError("support postgresql must be an object")
+    if pg.get("minimum_major") != 15 or pg.get("stable_release_cutoff") != "2025-09-25":
+        raise CoverageError("support postgresql must retain the specification's major 15 and 2025-09-25 cutoff")
     if not isinstance(support.get("os_support"), dict) or set(support["os_support"]) != {"macos", "windows", "linux"}:
         raise CoverageError("support os_support must declare exactly macos, windows, and linux")
     for name, details in support["os_support"].items():
@@ -86,9 +88,15 @@ def validate_support(support):
     extensions = support.get("extensions")
     if not isinstance(extensions, dict) or not extensions:
         raise CoverageError("support extensions must be a nonempty object")
+    declared_sql_names = set()
     for project, ext in extensions.items():
         if not isinstance(ext, dict) or not isinstance(ext.get("sql_names"), list) or not ext["sql_names"]:
             raise CoverageError(f"support extension {project} must declare sql_names")
+        names = ext["sql_names"]
+        if (any(not isinstance(name, str) or not name for name in names)
+                or len(names) != len(set(names)) or declared_sql_names.intersection(names)):
+            raise CoverageError(f"support extension {project}: duplicate or invalid SQL extension name")
+        declared_sql_names.update(names)
         versions = ext.get("versions")
         if not isinstance(versions, dict) or not versions:
             raise CoverageError(f"support extension {project} must declare versions")
