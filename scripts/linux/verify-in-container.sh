@@ -94,6 +94,7 @@ psql=(runuser -u postgres -- "$pgroot/bin/psql" -X -v ON_ERROR_STOP=1 -h /tmp/pg
 "${psql[@]}" -f /tests/schema.sql
 "${psql[@]}" -f /tests/builtins/basic.sql
 "${psql[@]}" -f /tests/builtins/loopback.sql
+"${psql[@]}" -f /tests/builtins/fixture.sql
 "${psql[@]}" <<'SQL'
 CREATE COLLATION pilot_icu (provider = icu, locale = 'en-US-u-kn-true', deterministic = false);
 CREATE COLLATION pilot_libc (provider = libc, locale = 'C');

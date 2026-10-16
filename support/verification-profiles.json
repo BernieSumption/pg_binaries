@@ -5,13 +5,13 @@
       "scope": "pilot-smoke",
       "platforms": ["linux-x86_64"],
       "case_ids": ["built-in-extension-smoke", "core-schema-smoke", "dependency-load", "dump-restore", "relocation"],
-      "sources": [".github/workflows/linux-pilot.yml", "scripts/linux/verify-in-container.sh", "scripts/linux/verify.Dockerfile", "scripts/linux/verify.sh", "tests/builtins/basic.sql", "tests/builtins/loopback.sql", "tests/builtins/surgery.sql", "tests/schema.sql", "tools/check_elf_dependencies.py"]
+      "sources": [".github/workflows/linux-pilot.yml", "scripts/linux/verify-in-container.sh", "scripts/linux/verify.Dockerfile", "scripts/linux/verify.sh", "tests/builtins/basic.sql", "tests/builtins/file_fdw.csv", "tests/builtins/fixture.sql", "tests/builtins/loopback.sql", "tests/builtins/surgery.sql", "tests/schema.sql", "tools/check_elf_dependencies.py"]
     },
     "linux-pilot-arm64": {
       "scope": "pilot-smoke",
       "platforms": ["linux-arm64"],
       "case_ids": ["built-in-extension-smoke", "core-schema-smoke", "dependency-load", "dump-restore", "relocation"],
-      "sources": [".github/workflows/linux-arm64-pilot.yml", "scripts/linux/verify-in-container.sh", "scripts/linux/verify.Dockerfile", "scripts/linux/verify.sh", "tests/builtins/basic.sql", "tests/builtins/loopback.sql", "tests/builtins/surgery.sql", "tests/schema.sql", "tools/check_elf_dependencies.py"]
+      "sources": [".github/workflows/linux-arm64-pilot.yml", "scripts/linux/verify-in-container.sh", "scripts/linux/verify.Dockerfile", "scripts/linux/verify.sh", "tests/builtins/basic.sql", "tests/builtins/file_fdw.csv", "tests/builtins/fixture.sql", "tests/builtins/loopback.sql", "tests/builtins/surgery.sql", "tests/schema.sql", "tools/check_elf_dependencies.py"]
     },
     "macos-pilot-x86_64": {
       "scope": "pilot-smoke",
