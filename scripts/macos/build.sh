@@ -104,7 +104,7 @@ for component in ("postgresql", "pgvector"):
         if not candidate_dir.exists():
             continue
         for path in sorted(candidate_dir.rglob("*")):
-            if not path.is_file() or path.is_symlink() or path.name in external:
+            if not path.is_file() or path.is_symlink() or path.name in external or path.suffix == ".a":
                 continue
             if subprocess.run(("lipo", "-archs", str(path)), capture_output=True).returncode == 0:
                 sys.stdout.buffer.write(str(path).encode() + b"\0")

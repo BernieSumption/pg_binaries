@@ -55,7 +55,8 @@ def module_member(name: str, bundled_dependencies: set[str]) -> bool:
         return len(parts) == 3 and parts[1] == "lib" and parts[2] == "vector.dylib"
     if parts[0] != "postgresql" or len(parts) < 3:
         return False
-    return parts[1] in {"bin", "lib", "libexec"} and parts[-1] not in bundled_dependencies
+    return (parts[1] in {"bin", "lib", "libexec"}
+            and parts[-1] not in bundled_dependencies and not parts[-1].endswith(".a"))
 
 
 def uuids(path: Path) -> list[tuple[str, str]]:

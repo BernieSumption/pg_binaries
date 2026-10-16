@@ -14,6 +14,10 @@ SPEC.loader.exec_module(symbols)
 
 
 class CreateMacosSymbolsTests(unittest.TestCase):
+    def test_static_library_is_not_a_runtime_module(self):
+        self.assertFalse(symbols.module_member("postgresql/lib/libecpg.a", set()))
+        self.assertTrue(symbols.module_member("postgresql/lib/libpq.5.dylib", set()))
+
     def make_archive(self, directory, members):
         archive = directory / "pilot.tar.gz"
         with tarfile.open(archive, "w:gz") as bundle:
