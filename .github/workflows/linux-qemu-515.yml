@@ -1,0 +1,42 @@
+name: Linux x86-64 kernel 5.15 QEMU feasibility
+on:
+  workflow_dispatch:
+    inputs:
+      postgresql_version:
+        description: One declared PostgreSQL 15 through 18 minor version
+        required: true
+        default: '18.6'
+        type: string
+jobs:
+  qemu-linux-515:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    env:
+      PG_VERSION: ${{ inputs.postgresql_version }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build disposable QEMU test environment
+        run: |
+          docker build -f scripts/linux/qemu-kernel-515.Dockerfile -t pg-binaries-linux-qemu .
+      - name: Build the x86-64 pilot archives
+        run: scripts/linux/build.sh "$RUNNER_TEMP/archives"
+      - name: Boot pinned Ubuntu 22.04 image and test in Linux 5.15 guest
+        run: |
+          mkdir -p "$RUNNER_TEMP/qemu-linux-515"
+          docker run --rm --network bridge --cap-drop=ALL --security-opt no-new-privileges \
+            -v "$GITHUB_WORKSPACE:/repo:ro" \
+            -v "$RUNNER_TEMP/archives:/archives:ro" \
+            -v "$RUNNER_TEMP/qemu-linux-515:/work" \
+            -e PG_VERSION="$PG_VERSION" \
+            -e GITHUB_SHA="$GITHUB_SHA" \
+            pg-binaries-linux-qemu \
+            bash /repo/scripts/linux/qemu-kernel-515-smoke.sh /archives "$PG_VERSION" /work
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: linux-qemu-515-evidence
+          path: ${{ runner.temp }}/qemu-linux-515/evidence
+          if-no-files-found: ignore
+          retention-days: 3
