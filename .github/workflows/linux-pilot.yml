@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
     inputs:
       postgresql_version:
-        description: One declared PostgreSQL 18 minor version
+        description: One declared PostgreSQL 17 or 18 minor version
         required: true
         default: '18.6'
         type: string

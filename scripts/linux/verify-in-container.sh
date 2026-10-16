@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 pg_version=${PG_VERSION:-18.6}
-if [[ ! $pg_version =~ ^18\.[0-9]+$ ]]; then
-  echo "Linux pilot currently supports PostgreSQL 18 minors only: $pg_version" >&2
+if [[ ! $pg_version =~ ^(17|18)\.[0-9]+$ ]]; then
+  echo "Linux pilot currently supports PostgreSQL 17 and 18 minors only: $pg_version" >&2
   exit 2
 fi
 pg="postgresql-${pg_version}-linux-x86_64.tar.gz"
