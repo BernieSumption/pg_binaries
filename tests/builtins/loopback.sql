@@ -40,7 +40,7 @@ CREATE EXTENSION postgres_fdw;
 CREATE TABLE builtin_fdw_source (value integer);
 INSERT INTO builtin_fdw_source VALUES (73);
 CREATE SERVER builtin_fdw_server FOREIGN DATA WRAPPER postgres_fdw
-    OPTIONS (host :'loopback_host', port :'loopback_port', dbname 'postgres');
+    OPTIONS (host :'loopback_host', port :'loopback_port', dbname 'postgres', sslmode 'disable');
 CREATE USER MAPPING FOR CURRENT_USER SERVER builtin_fdw_server;
 CREATE FOREIGN TABLE builtin_fdw_remote (value integer) SERVER builtin_fdw_server
     OPTIONS (table_name 'builtin_fdw_source');
