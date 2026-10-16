@@ -93,7 +93,19 @@ CREATE INDEX embedding_hnsw ON embedding USING hnsw (embedding vector_l2_ops);
 SELECT id, embedding <-> '[1,0,0]'::vector AS distance FROM embedding ORDER BY distance LIMIT 2;
 SQL
 runuser -u postgres -- "$pgroot/bin/pg_dump" -h /tmp/pgsocket -p 55431 -Fc -Z zstd:1 -f /tmp/probe.dump postgres
-runuser -u postgres -- "$pgroot/bin/pg_restore" -l /tmp/probe.dump >/dev/null
+"${psql[@]}" -c 'CREATE DATABASE restored'
+runuser -u postgres -- "$pgroot/bin/pg_restore" --exit-on-error -h /tmp/pgsocket -p 55431 -d restored /tmp/probe.dump
+restored=(runuser -u postgres -- "$pgroot/bin/psql" -X -v ON_ERROR_STOP=1 -h /tmp/pgsocket -p 55431 -d restored)
+"${restored[@]}" <<'SQL'
+DO $$ BEGIN
+  IF pilot.active_item_count(1) <> 1 THEN RAISE EXCEPTION 'restored function or data missing'; END IF;
+  IF (SELECT count(*) FROM pilot.events_2026) <> 1 THEN RAISE EXCEPTION 'restored partition data missing'; END IF;
+  IF (SELECT extversion FROM pg_extension WHERE extname = 'vector') <> '0.8.7' THEN
+    RAISE EXCEPTION 'restored pgvector missing'; END IF;
+  IF (SELECT embedding <-> '[1,0,0]'::vector FROM embedding WHERE id = 1) <> 0 THEN
+    RAISE EXCEPTION 'restored vector data missing'; END IF;
+END $$;
+SQL
 runuser -u postgres -- "$pgroot/bin/pg_ctl" -D /tmp/pgdata -m fast -w stop
 trap - EXIT
 . /etc/os-release

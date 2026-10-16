@@ -10,7 +10,7 @@ Each extension version and platform combination has its own `.tar.gz` archive co
 
 ```text
 archive root/
-├── vector/
+├── pgvector/
 │   ├── lib/vector.so
 │   ├── share/extension/vector.control
 │   ├── share/extension/vector--<version>.sql
@@ -46,4 +46,4 @@ Tests must make the original prefix unavailable before exercising the relocated 
 
 ## Current spike evidence
 
-The pilot scripts currently build PostgreSQL and extension archives separately. Linux and macOS extension packages place modules under `lib/` and extension control and SQL files under `share/extension/`; the Windows pilot produces ZIP archives. Windows and PostGIS pilot packages include JSON manifests, while the other pilot extension packages do not yet establish a common metadata format. These are implementation observations, not changes to the required `.tar.gz` format, common metadata, or copy-based installation process above.
+The pilot scripts currently build PostgreSQL and extension archives separately. The Linux pgvector package uses the project-named payload and sibling metadata described above. The macOS pgvector package still lacks that metadata, and the Windows pilot produces ZIP archives rather than `.tar.gz`. These are implementation observations, not changes to the required archive format or copy-based installation process above.
