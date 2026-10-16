@@ -429,3 +429,34 @@ BEGIN
     END IF;
 END
 $$;
+
+CREATE EXTENSION tsm_system_time;
+CREATE TABLE builtin_system_time (value integer);
+INSERT INTO builtin_system_time SELECT generate_series(1, 20);
+DO $$
+BEGIN
+    IF (SELECT count(*) FROM builtin_system_time TABLESAMPLE SYSTEM_TIME (0)) <> 0 THEN
+        RAISE EXCEPTION 'tsm_system_time returned rows for a zero-millisecond sample';
+    END IF;
+END
+$$;
+
+CREATE EXTENSION pg_buffercache;
+CREATE TABLE builtin_buffercache (value integer);
+INSERT INTO builtin_buffercache VALUES (19);
+DO $$
+BEGIN
+    IF (SELECT count(*) FROM pg_buffercache)
+       <> pg_size_bytes(current_setting('shared_buffers'))
+          / current_setting('block_size')::bigint THEN
+        RAISE EXCEPTION 'pg_buffercache did not report every shared buffer descriptor';
+    END IF;
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_buffercache
+        WHERE relfilenode = pg_relation_filenode('builtin_buffercache'::regclass)
+          AND reldatabase = (SELECT oid FROM pg_database WHERE datname = current_database())
+    ) THEN
+        RAISE EXCEPTION 'pg_buffercache did not report a buffered table page';
+    END IF;
+END
+$$;
