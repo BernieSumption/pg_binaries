@@ -169,9 +169,10 @@ class CoverageTests(unittest.TestCase):
             policy_path.parent.mkdir(parents=True, exist_ok=True)
             policy_path.write_text("## Example — include\n", encoding="utf-8")
 
-            def run_cli():
+            def run_cli(json_output=False):
                 output = io.StringIO()
-                with patch.object(sys, "argv", ["coverage.py", "--root", str(root)]), \
+                argv = ["coverage.py", "--root", str(root)] + (["--json"] if json_output else [])
+                with patch.object(sys, "argv", argv), \
                         contextlib.redirect_stdout(output):
                     status = coverage.main()
                 return status, output.getvalue()
@@ -199,6 +200,27 @@ class CoverageTests(unittest.TestCase):
             self.assertIn("core targets: 6 (6 missing)", output)
             self.assertIn("core: 0 without download, 6 awaiting verification", output)
             self.assertIn("verification: incomplete", output)
+            self.assertIn("verification skipped: postgresql 15.9 PostgreSQL 15.9 linux-arm64", output)
+            self.assertIn("checks: case-a, case-b", output)
+            status, output = run_cli(json_output=True)
+            report = json.loads(output)
+            self.assertEqual(status, 1)
+            skipped = report["verification_records_by_outcome"]["skipped"]
+            self.assertEqual(len(skipped), 1)
+            self.assertEqual(skipped[0]["target"]["platform"], "linux-arm64")
+            self.assertEqual(skipped[0]["checks"], ["case-a", "case-b"])
+            self.assertEqual(report["core_awaiting_verification"],
+                             [["15.9", platform] for platform in sorted(platforms)])
+
+            record["outcome"] = "failed"
+            record_path.write_text(json.dumps(record), encoding="utf-8")
+            status, output = run_cli(json_output=True)
+            report = json.loads(output)
+            self.assertEqual(status, 1)
+            self.assertEqual(len(report["verification_records_by_outcome"]["failed"]), 1)
+            self.assertEqual(report["verification_records_by_outcome"]["skipped"], [])
+            self.assertEqual(report["core_awaiting_verification"],
+                             [["15.9", platform] for platform in sorted(platforms)])
 
             record["outcome"] = "passed"
             record_path.write_text(json.dumps(record), encoding="utf-8")

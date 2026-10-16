@@ -316,6 +316,7 @@ def verification_records(root, support):
         current_profile = validate_verification_record(
             data, support, root, f"verification record {path}", allow_stale=True)
         data["_profile_current"] = current_profile
+        data["_record_file"] = path.name
         required = ("outcome", "sha256", "component", "version", "platform", "postgresql_version")
         if any(key not in data for key in required):
             raise CoverageError(f"verification record {path}: missing required fields")
@@ -437,6 +438,17 @@ def main():
         extension_without_download, extension_awaiting_verification = classify_extension_targets(
             want_ext, have_ext, records)
         missing_ext = sorted(extension_without_download + extension_awaiting_verification)
+        outcome_records = {
+            outcome: [{"record": r["_record_file"],
+                      "target": {"component": r["component"], "version": r["version"],
+                                 "postgresql_version": r["postgresql_version"],
+                                 "platform": r["platform"]},
+                      "checks": r["test_cases"], "scope": r["scope"],
+                      "profile_current": r["_profile_current"],
+                      **({"reason": r["reason"]} if isinstance(r.get("reason"), str) else {})}
+                     for r in records if r["outcome"] == outcome]
+            for outcome in ("failed", "skipped")
+        }
         result = {"snapshot_as_of": snapshot["as_of"], "postgresql_releases": len(releases),
                   "required_core": len(want_core), "missing_core": [list(x) for x in missing_core],
                   "core_without_download": [list(x) for x in core_without_download],
@@ -446,6 +458,7 @@ def main():
                   "missing_extension": [list(x) for x in missing_ext],
                   "extension_without_download": [list(x) for x in extension_without_download],
                   "extension_awaiting_verification": [list(x) for x in extension_awaiting_verification],
+                  "verification_records_by_outcome": outcome_records,
                   "verification": "structural-only" if not missing_core and not missing_ext else
                   ("unverified" if not records else "incomplete"),
                   "coverage_scope": "structural coverage only; publication eligibility is not established"}
@@ -456,6 +469,12 @@ def main():
             print(f"Extension SQL targets: {len(want_ext)} ({len(missing_ext)} missing); verification: {result['verification']}")
             print(f"  core: {len(core_without_download)} without download, {len(core_awaiting_verification)} awaiting verification")
             print(f"  extensions: {len(extension_without_download)} without download, {len(extension_awaiting_verification)} awaiting verification")
+            for outcome, items in outcome_records.items():
+                for item in items:
+                    target = item["target"]
+                    label = (f"{target['component']} {target['version']} PostgreSQL "
+                             f"{target['postgresql_version']} {target['platform']}")
+                    print(f"verification {outcome}: {label}; checks: {', '.join(item['checks'])}; record: {item['record']}")
             for version, platform in missing_core[:20]:
                 print(f"missing core {version} {platform}")
             for name, version, pg, platform in missing_ext[:20]:
