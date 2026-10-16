@@ -63,9 +63,9 @@ class CoverageTests(unittest.TestCase):
         missing_target = ("example", "1.0", "15.9", "linux-arm64")
         download = {"url": "https://example.test/archive.tar.gz", "sha256": "a" * 64}
         key = ("example", "1.0", "15.0", "16.9", "linux-x86_64")
-        records = [{"schema_version": 1, "outcome": "passed", "sha256": "b" * 64, "component": "example",
+        records = [{"schema_version": 1, "scope": "publication", "outcome": "passed", "sha256": "b" * 64, "component": "example",
                     "version": "1.0", "platform": "linux-x86_64", "postgresql_version": "15.0",
-                    "environment": {"endpoint": "minimum", "os": "linux", "architecture": "x86_64"}}]
+                      "environment": {"endpoint": "minimum", "os": "linux", "architecture": "x86_64"}}]
 
         without_download, awaiting = coverage.classify_extension_targets(
             [target, missing_target], {key: download}, records)
@@ -160,11 +160,12 @@ class CoverageTests(unittest.TestCase):
 
             records_dir = root / "support" / "verification"
             records_dir.mkdir(parents=True)
-            record = {"schema_version": 1, "outcome": "skipped", "sha256": checksum, "component": "postgresql",
+            record = {"schema_version": 1, "scope": "pilot-smoke", "outcome": "skipped", "sha256": checksum, "component": "postgresql",
                       "version": "15.9", "platform": "linux-arm64", "postgresql_version": "15.9",
-                      "test_revision": "abc123", "environment": {"os": "linux", "architecture": "arm64",
+                      "test_revision": "a" * 40, "environment": {"os": "linux", "architecture": "arm64",
                       "os_version": "5.15", "clean_system": True,
-                      "endpoint": "minimum"}, "test_cases": ["smoke"]}
+                      "endpoint": "minimum", "image_id": "ubuntu@sha256:image",
+                      "dependency_check_profile": "linux-runtime-v1", "dependency_checks_passed": True}, "test_cases": ["smoke"]}
             record_path = records_dir / "postgres.json"
             record_path.write_text(json.dumps(record), encoding="utf-8")
             status, output = run_cli()
@@ -173,6 +174,7 @@ class CoverageTests(unittest.TestCase):
             self.assertIn("core: 0 without download, 6 awaiting verification", output)
             self.assertIn("verification: incomplete", output)
 
+            record["scope"] = "publication"
             record["outcome"] = "passed"
             record_path.write_text(json.dumps(record), encoding="utf-8")
             status, output = run_cli()
@@ -282,7 +284,8 @@ class CoverageTests(unittest.TestCase):
             records_dir.mkdir(parents=True)
             record = {"schema_version": 1, "outcome": "passed", "sha256": "a" * 64, "component": "postgresql",
                       "version": "15.9", "platform": "linux-arm64", "postgresql_version": "15.9",
-                      "test_revision": "abc123", "environment": "clean-linux", "test_cases": ["smoke"]}
+                      "scope": "publication", "test_revision": "a" * 40,
+                      "environment": "clean-linux", "test_cases": ["smoke"]}
             (records_dir / "invalid.json").write_text(json.dumps(record), encoding="utf-8")
             with self.assertRaises(coverage.CoverageError):
                 coverage.verification_records(Path(temporary), self.support)
@@ -294,11 +297,12 @@ class CoverageTests(unittest.TestCase):
             root = Path(temporary)
             directory = root / "support" / "verification"
             directory.mkdir(parents=True)
-            record = {"schema_version": 1, "outcome": "passed", "sha256": "a" * 64,
+            record = {"schema_version": 1, "scope": "publication", "outcome": "passed", "sha256": "a" * 64,
                       "component": "postgresql", "version": "15.9", "platform": "linux-x86_64",
-                      "postgresql_version": "15.9", "test_revision": "abc123", "test_cases": ["smoke"],
+                      "postgresql_version": "15.9", "test_revision": "a" * 40, "test_cases": ["smoke"],
                       "environment": {"os": "linux", "architecture": "x86_64", "os_version": "5.15",
-                                      "clean_system": True, "endpoint": "minimum"}}
+                                      "clean_system": True, "endpoint": "minimum", "image_id": "ubuntu@sha256:image",
+                                      "dependency_check_profile": "linux-runtime-v1", "dependency_checks_passed": True}}
             cases = [
                 ("wrong-schema", {"schema_version": 2}, {}, "5.15", "minimum"),
                 ("wrong-os", {}, {"os": "macos"}, "5.15", "minimum"),
@@ -313,6 +317,37 @@ class CoverageTests(unittest.TestCase):
                                        os_version=version, endpoint=endpoint)
                     (directory / "record.json").write_text(
                         json.dumps(dict(record, **record_changes, environment=environment)), encoding="utf-8")
+                    with self.assertRaises(coverage.CoverageError):
+                        coverage.verification_records(root, self.support)
+
+    def test_verification_contract_rejects_pilot_as_publication_and_invalid_shape(self):
+        self.support["os_support"] = {name: {"minimum_version": "5.15"}
+                                      for name in ("macos", "windows", "linux")}
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            directory = root / "support" / "verification"
+            directory.mkdir(parents=True)
+            record = {"schema_version": 1, "scope": "pilot-smoke", "outcome": "passed",
+                      "sha256": "a" * 64, "component": "postgresql", "version": "15.9",
+                      "platform": "linux-x86_64", "postgresql_version": "15.9",
+                      "test_revision": "a" * 40, "test_cases": ["smoke"],
+                      "environment": {"os": "linux", "architecture": "x86_64", "os_version": "5.15",
+                                      "clean_system": True, "endpoint": "minimum", "image_id": "ubuntu@sha256:image",
+                                      "dependency_check_profile": "linux-runtime-v1", "dependency_checks_passed": True}}
+            path = directory / "record.json"
+            path.write_text(json.dumps(record), encoding="utf-8")
+            loaded = coverage.verification_records(root, self.support)
+            download = {"sha256": "a" * 64}
+            self.assertFalse(coverage.verified(loaded, download, "postgresql", "15.9",
+                                               "linux-x86_64", "15.9", "minimum"))
+            for changes in ({"outcome": "unknown"}, {"sha256": "bad"},
+                            {"test_revision": "abc"}, {"test_cases": ["smoke", "smoke"]},
+                            {"scope": "publication", "environment": dict(record["environment"], image_id="")}):
+                with self.subTest(changes=changes):
+                    changed = dict(record, **{k: v for k, v in changes.items() if k != "environment"})
+                    if "environment" in changes:
+                        changed["environment"] = changes["environment"]
+                    path.write_text(json.dumps(changed), encoding="utf-8")
                     with self.assertRaises(coverage.CoverageError):
                         coverage.verification_records(root, self.support)
 

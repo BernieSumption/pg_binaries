@@ -38,12 +38,14 @@ class CandidateInventoryTests(unittest.TestCase):
     @staticmethod
     def evidence(url, sha, endpoint, version="15.9", platform="linux-x86_64"):
         os_name, architecture = platform.split("-")
-        return {"schema_version": 1, "outcome": "passed", "url": url, "sha256": sha,
+        return {"schema_version": 1, "scope": "publication", "outcome": "passed", "url": url, "sha256": sha,
                 "component": "postgresql", "version": version, "platform": platform,
-                "postgresql_version": version, "test_revision": "abc", "test_cases": ["smoke"],
+                "postgresql_version": version, "test_revision": "a" * 40, "test_cases": ["smoke"],
                 "environment": {"endpoint": endpoint, "os": os_name, "architecture": architecture,
                                 "os_version": "1" if endpoint == "minimum" else "2",
-                                "clean_system": True}}
+                                "clean_system": True, "image_id": "ubuntu@sha256:image",
+                                "dependency_check_profile": "linux-runtime-v1",
+                                "dependency_checks_passed": True}}
 
     def test_retains_unchanged_download_and_marks_candidate(self):
         result = candidate_inventory.merge_candidate(self.old, [self.proposal()], self.support, self.snapshot)
@@ -110,6 +112,16 @@ class CandidateInventoryTests(unittest.TestCase):
         proposal["verification"] = []
         with self.assertRaisesRegex(candidate_inventory.CandidateError, "missing passed"):
             candidate_inventory.merge_candidate(self.old, [proposal], self.support, self.snapshot)
+
+    def test_pilot_smoke_evidence_cannot_make_candidate_eligible(self):
+        proposal = self.proposal()
+        for record in proposal["verification"]:
+            record["scope"] = "pilot-smoke"
+        with self.assertRaisesRegex(candidate_inventory.CandidateError, "missing passed"):
+            candidate_inventory.merge_candidate(self.old, [proposal], self.support, self.snapshot)
+        result = candidate_inventory.merge_candidate(self.old, [self.proposal()], self.support, self.snapshot)
+        self.assertEqual(result["candidate_status"], "structural-draft")
+        self.assertNotIn("release_eligible", result)
 
 
 if __name__ == "__main__":

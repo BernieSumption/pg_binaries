@@ -150,6 +150,10 @@ def merge_candidate(base_inventory, proposed_entries, support, snapshot):
 def _evidence_matches(record, download, component, version, platform, pg, endpoint, support):
     if not isinstance(record, dict):
         return False
+    try:
+        _coverage.validate_verification_record(record, support, "candidate evidence")
+    except CoverageError:
+        return False
     environment = record.get("environment")
     os_name, _, architecture = platform.partition("-")
     if not isinstance(environment, dict):
@@ -159,7 +163,8 @@ def _evidence_matches(record, download, component, version, platform, pg, endpoi
         minimum = _coverage._os_version_parts(support["os_support"][os_name]["minimum_version"], "support")
     except (CoverageError, KeyError, TypeError):
         return False
-    return (record.get("schema_version") == 1 and record.get("outcome") == "passed"
+    return (record.get("schema_version") == 1 and record.get("scope") == "publication"
+            and record.get("outcome") == "passed"
             and str(record.get("sha256", "")).lower() == str(download["sha256"]).lower()
             and record.get("component") == component and str(record.get("version")) == str(version)
             and record.get("platform") == platform and record.get("postgresql_version") == pg

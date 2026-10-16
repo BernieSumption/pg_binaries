@@ -11,6 +11,9 @@ from pathlib import Path
 VERSION = re.compile(r"^(\d+)\.(\d+)(?:\.(\d+))?(?:[-+].*)?$")
 PRERELEASE = re.compile(r"^\d+(?:\.\d+)?(?:beta|alpha|rc|dev)\d*", re.IGNORECASE)
 SHA256 = re.compile(r"^[0-9a-fA-F]{64}$")
+REVISION = re.compile(r"^(?:[0-9a-fA-F]{40}|[0-9a-fA-F]{64})$")
+VERIFICATION_OUTCOMES = {"passed", "failed", "skipped"}
+VERIFICATION_SCOPES = {"pilot-smoke", "publication"}
 
 
 class CoverageError(Exception):
@@ -256,10 +259,7 @@ def verification_records(root, support):
         if ((endpoint == "minimum" and actual != minimum)
                 or (endpoint == "current" and actual <= minimum)):
             raise CoverageError(f"verification record {path}: OS version does not match {endpoint} endpoint")
-        if (not isinstance(data.get("test_cases"), list) or not data["test_cases"]
-                or any(not isinstance(case, str) or not case for case in data["test_cases"])
-                or not isinstance(data.get("test_revision"), str) or not data["test_revision"]):
-            raise CoverageError(f"verification record {path}: invalid test evidence")
+        validate_verification_record(data, support, f"verification record {path}")
         required = ("outcome", "sha256", "component", "version", "platform", "postgresql_version")
         if any(key not in data for key in required):
             raise CoverageError(f"verification record {path}: missing required fields")
@@ -267,8 +267,42 @@ def verification_records(root, support):
     return records
 
 
+def validate_verification_record(data, support, label="verification record"):
+    """Validate the reusable evidence contract shared by coverage and candidates."""
+    if data.get("scope") not in VERIFICATION_SCOPES:
+        raise CoverageError(f"{label}: scope must be pilot-smoke or publication")
+    if data.get("outcome") not in VERIFICATION_OUTCOMES:
+        raise CoverageError(f"{label}: outcome must be passed, failed, or skipped")
+    if not isinstance(data.get("sha256"), str) or not SHA256.fullmatch(data["sha256"]):
+        raise CoverageError(f"{label}: malformed archive SHA-256")
+    revision = data.get("test_revision")
+    if not isinstance(revision, str) or not REVISION.fullmatch(revision):
+        raise CoverageError(f"{label}: test_revision must be a full Git commit hash")
+    cases = data.get("test_cases")
+    if (not isinstance(cases, list) or not cases
+            or any(not isinstance(case, str) or not case.strip() for case in cases)
+            or len(cases) != len(set(cases))):
+        raise CoverageError(f"{label}: test_cases must be nonempty unique strings")
+    environment = data.get("environment")
+    if (not isinstance(environment, dict)
+            or not all(isinstance(environment.get(field), str) and environment[field]
+                       for field in ("image_id", "dependency_check_profile"))
+            or not isinstance(environment.get("dependency_checks_passed"), bool)):
+        raise CoverageError(f"{label}: environment must identify image and dependency checks")
+    platform = data.get("platform")
+    os_name, separator, architecture = platform.partition("-") if isinstance(platform, str) else ("", "", "")
+    if (not separator or os_name not in support["os_support"]
+            or architecture not in support["architectures"]
+            or environment.get("os") != os_name
+            or environment.get("architecture") != architecture):
+        raise CoverageError(f"{label}: environment identity does not match platform")
+    if data["outcome"] == "passed" and environment["dependency_checks_passed"] is not True:
+        raise CoverageError(f"{label}: passed outcome requires successful dependency checks")
+
+
 def verified(records, download, component, version, platform, pg_version, endpoint):
     return any(r.get("outcome") == "passed"
+               and r.get("scope") == "publication"
                and r.get("sha256", "").lower() == download["sha256"].lower()
                and r.get("component") == component and str(r.get("version")) == str(version)
                and r.get("platform") == platform and r.get("postgresql_version") == pg_version

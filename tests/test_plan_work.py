@@ -73,12 +73,14 @@ class PlanWorkTests(unittest.TestCase):
         records_dir = self.root / "support/verification"
         records_dir.mkdir(parents=True)
         for endpoint in ("minimum", "current"):
-            record = {"schema_version": 1, "outcome": "passed", "sha256": checksum, "component": "postgresql",
+            record = {"schema_version": 1, "scope": "publication", "outcome": "passed", "sha256": checksum, "component": "postgresql",
                       "version": "15.9", "platform": platform, "postgresql_version": "15.9",
-                      "test_revision": "abc", "test_cases": ["smoke"],
+                      "test_revision": "a" * 40, "test_cases": ["smoke"],
                       "environment": {"os": "linux", "architecture": "x86_64",
                                       "os_version": "1" if endpoint == "minimum" else "2", "clean_system": True,
-                                      "endpoint": endpoint}}
+                                      "endpoint": endpoint, "image_id": "ubuntu@sha256:image",
+                                      "dependency_check_profile": "linux-runtime-v1",
+                                      "dependency_checks_passed": True}}
             (records_dir / f"{endpoint}.json").write_text(json.dumps(record), encoding="utf-8")
         result = plan_work.plan(self.root)
         self.assertNotIn(["15.9", platform], result["verify_downloaded"]["core"])

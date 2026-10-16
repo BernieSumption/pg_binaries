@@ -209,3 +209,80 @@ BEGIN
     END IF;
 END
 $$;
+
+CREATE EXTENSION amcheck;
+CREATE TABLE builtin_amcheck (value integer PRIMARY KEY);
+INSERT INTO builtin_amcheck SELECT generate_series(1, 10);
+DO $$
+BEGIN
+    PERFORM bt_index_check('builtin_amcheck_pkey'::regclass);
+END
+$$;
+
+CREATE EXTENSION bloom;
+CREATE TABLE builtin_bloom (first_value integer, second_value text);
+CREATE INDEX builtin_bloom_index ON builtin_bloom USING bloom (first_value, second_value);
+INSERT INTO builtin_bloom VALUES (7, 'seven'), (11, 'eleven');
+DO $$
+BEGIN
+    IF (SELECT count(*) FROM builtin_bloom WHERE first_value = 11 AND second_value = 'eleven') <> 1
+       OR NOT EXISTS (
+           SELECT 1 FROM pg_indexes
+           WHERE indexname = 'builtin_bloom_index'
+             AND indexdef LIKE '%USING bloom%'
+       ) THEN
+        RAISE EXCEPTION 'bloom index creation or equality lookup failed';
+    END IF;
+END
+$$;
+
+CREATE EXTENSION pg_prewarm;
+CREATE TABLE builtin_prewarm (value integer);
+INSERT INTO builtin_prewarm SELECT generate_series(1, 100);
+DO $$
+BEGIN
+    IF pg_prewarm('builtin_prewarm'::regclass) < 1 THEN
+        RAISE EXCEPTION 'pg_prewarm did not load the table';
+    END IF;
+END
+$$;
+
+CREATE EXTENSION pgstattuple;
+CREATE TABLE builtin_pgstattuple (value integer);
+INSERT INTO builtin_pgstattuple VALUES (1), (2), (3);
+DO $$
+BEGIN
+    IF (SELECT tuple_count FROM pgstattuple('builtin_pgstattuple')) <> 3 THEN
+        RAISE EXCEPTION 'pgstattuple reported an unexpected live tuple count';
+    END IF;
+END
+$$;
+
+CREATE EXTENSION earthdistance;
+DO $$
+BEGIN
+    IF earth_distance(ll_to_earth(0, 0), ll_to_earth(0, 0)) <> 0 THEN
+        RAISE EXCEPTION 'earthdistance returned a nonzero distance for identical coordinates';
+    END IF;
+END
+$$;
+
+CREATE EXTENSION xml2;
+DO $$
+BEGIN
+    IF xpath_string('<root><value>expected</value></root>', '/root/value') <> 'expected' THEN
+        RAISE EXCEPTION 'xml2 xpath_string returned an unexpected value';
+    END IF;
+END
+$$;
+
+CREATE EXTENSION lo;
+CREATE TABLE builtin_lo (object_id lo);
+INSERT INTO builtin_lo VALUES (lo_from_bytea(0, decode('50475351', 'hex')));
+DO $$
+BEGIN
+    IF lo_get((SELECT object_id FROM builtin_lo)) <> decode('50475351', 'hex') THEN
+        RAISE EXCEPTION 'large object read did not return the stored bytes';
+    END IF;
+END
+$$;
