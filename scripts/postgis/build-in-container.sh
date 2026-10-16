@@ -21,10 +21,46 @@ make -j 4
 touch /work/install-marker
 make install
 
-# Identify every file installed into the exact PostgreSQL prefix.
+# Stage only the SQL extensions declared for PostGIS in support.json.
 stage=/work/stage/postgis
-find "$pgroot/lib" -maxdepth 1 -type f -newer /work/install-marker -print -exec cp -v {} "$stage/lib/" \;
-find "$pgroot/share/extension" -maxdepth 1 \( -type f -o -type l \) -newer /work/install-marker -print -exec cp -av {} "$stage/share/extension/" \;
+python3 - <<'PY'
+import json
+import pathlib
+import re
+import shutil
+
+pgroot = pathlib.Path('/opt/postgresql')
+stage = pathlib.Path('/work/stage/postgis')
+support = json.loads(pathlib.Path('/work/support.json').read_text())
+allowed = support['extensions']['PostGIS']['sql_names']
+source_share = pgroot / 'share/extension'
+source_lib = pgroot / 'lib'
+
+for name in allowed:
+    control = source_share / f'{name}.control'
+    if not control.is_file():
+        raise SystemExit(f'Missing supported extension control file: {control}')
+    shutil.copy2(control, stage / 'share/extension' / control.name)
+    sql_files = list(source_share.glob(f'{name}--*.sql'))
+    if not sql_files:
+        raise SystemExit(f'Missing SQL version files for supported extension {name}')
+    modules = set()
+    for sql in sql_files:
+        shutil.copy2(sql, stage / 'share/extension' / sql.name)
+        modules.update(re.findall(r'\$libdir/([A-Za-z0-9_.-]+)', sql.read_text()))
+
+    text = control.read_text()
+    module = re.search(r"^\s*module_pathname\s*=\s*['\"]?\$libdir/([^'\"\s]+)", text, re.M)
+    if module:
+        modules.add(module.group(1))
+    if not modules:
+        raise SystemExit(f'No $libdir module reference in SQL files or control for {name}')
+    for module_name in modules:
+        library = source_lib / f'{module_name}.so'
+        if not library.is_file():
+            raise SystemExit(f'Missing module library {library} for {name}')
+        shutil.copy2(library, stage / 'lib' / library.name)
+PY
 mkdir -p "$stage/bin"
 find "$pgroot/bin" -maxdepth 1 -type f -newer /work/install-marker -print -exec cp -v {} "$stage/bin/" \;
 find /usr/local/bin -maxdepth 1 -type f -newer /work/install-marker -print -exec cp -v {} "$stage/bin/" \;

@@ -10,5 +10,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
  && rm -rf /var/lib/apt/lists/*
 COPY scripts/postgis/build-in-container.sh /usr/local/bin/build-postgis-pilot
 COPY scripts/postgis/probe.sql /work/probe.sql
+COPY support.json /work/support.json
 RUN chmod +x /usr/local/bin/build-postgis-pilot
 ENTRYPOINT ["/usr/local/bin/build-postgis-pilot"]

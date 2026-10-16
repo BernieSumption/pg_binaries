@@ -11,10 +11,42 @@ tar -xzf "/input/$pg_archive" -C /tmp/first
 tar -xzf "/out/$postgis_archive" -C /tmp/extension
 python3 - <<'PY'
 import json
+import pathlib
+import re
+
 with open('/tmp/extension/postgis/manifest.json') as f:
     m = json.load(f)
 assert (m['schema_version'], m['component'], m['version'], m['postgresql_version'],
         m['platform'], m['architecture']) == (1, 'postgis', '3.6.4', '18.6', 'linux', 'x86_64'), m
+
+support = json.loads(pathlib.Path('/work/support.json').read_text())
+allowed = set(support['extensions']['PostGIS']['sql_names'])
+extension_dir = pathlib.Path('/tmp/extension/postgis/share/extension')
+controls = {path.stem for path in extension_dir.glob('*.control')}
+assert controls == allowed, f'PostGIS control files {sorted(controls)} != support.json {sorted(allowed)}'
+
+expected_modules = set()
+for name in allowed:
+    control = extension_dir / f'{name}.control'
+    text = control.read_text()
+    match = re.search(r"^\s*module_pathname\s*=\s*['\"]?\$libdir/([^'\"\s]+)", text, re.M)
+    scripts = list(extension_dir.glob(f'{name}--*.sql'))
+    assert scripts, f'No SQL version files for supported extension {name}'
+    modules = set()
+    for script in scripts:
+        modules.update(re.findall(r'\$libdir/([A-Za-z0-9_.-]+)', script.read_text()))
+    if match:
+        modules.add(match.group(1))
+    assert modules, f'No $libdir module references for supported extension {name}'
+    expected_modules.update(module + '.so' for module in modules)
+lib_dir = pathlib.Path('/tmp/extension/postgis/lib')
+module_libraries = {path.name for path in lib_dir.glob('*.so*')}
+assert module_libraries == expected_modules, (
+    f'PostGIS module libraries {sorted(module_libraries)} != expected {sorted(expected_modules)}')
+
+for path in extension_dir.glob('*.sql'):
+    name = path.name.split('--', 1)[0]
+    assert name in allowed, f'Unselected SQL script in archive: {path.name}'
 PY
 mv /tmp/first/postgresql /tmp/moved/postgresql
 pgroot=/tmp/moved/postgresql
