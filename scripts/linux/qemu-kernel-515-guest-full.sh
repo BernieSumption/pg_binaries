@@ -8,10 +8,10 @@ architecture=${2:?}
   exit 1
 }
 test -d /tmp/tests
-test -f /tmp/check-elf-dependencies.py
+test -f /tmp/check_elf_dependencies.py
 test -f /tmp/verify-in-container.sh
 sudo ln -s /tmp /out
 sudo ln -s /tmp/tests /tests
-sudo install -m 0755 /tmp/check-elf-dependencies.py /usr/local/bin/check-elf-dependencies
+sudo install -m 0755 /tmp/check_elf_dependencies.py /usr/local/bin/check-elf-dependencies
 sudo env PG_VERSION="$pg_version" PG_ARCHITECTURE="$architecture" \
   bash /tmp/verify-in-container.sh
