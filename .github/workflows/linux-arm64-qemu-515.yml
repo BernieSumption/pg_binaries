@@ -5,7 +5,10 @@ on:
     paths:
       - .github/workflows/linux-arm64-qemu-515.yml
       - scripts/qemu/arm64-515*
-      - scripts/linux/qemu-kernel-515-guest-smoke.sh
+      - scripts/linux/qemu-kernel-515-guest-full.sh
+      - scripts/linux/verify-in-container.sh
+      - tools/check_elf_dependencies.py
+      - tests/**
       - scripts/linux/Dockerfile
       - scripts/linux/build.sh
       - scripts/linux/build-in-container.sh
