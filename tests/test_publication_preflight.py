@@ -1,6 +1,7 @@
 import hashlib
 import importlib.util
 import io
+import json
 from pathlib import Path
 import tempfile
 import tarfile
@@ -51,6 +52,7 @@ class PublicationPreflightTests(unittest.TestCase):
             member = tarfile.TarInfo("postgresql/share/extension/example.control")
             member.size = len(payload)
             archive.addfile(member, io.BytesIO(payload))
+            self._licence_members(archive, "postgresql", "share/extension")
         payload = path.read_bytes()
         checksum = hashlib.sha256(payload).hexdigest()
         url = f"https://github.com/BernieSumption/pg_binaries/releases/download/{tag}/{filename}"
@@ -71,12 +73,123 @@ class PublicationPreflightTests(unittest.TestCase):
 
     def _stage(self, content, filename, tag="catalog-20261016-2"):
         path = self.root / filename
-        payload = content.encode("utf-8")
-        path.write_bytes(payload)
+        with tarfile.open(path, "w:gz") as archive:
+            payload = content.encode("utf-8")
+            member = tarfile.TarInfo("example/lib/example.so")
+            member.size = len(payload)
+            archive.addfile(member, io.BytesIO(payload))
+            self._licence_members(archive, "example", "lib")
+        payload = path.read_bytes()
         checksum = hashlib.sha256(payload).hexdigest()
         url = f"https://github.com/BernieSumption/pg_binaries/releases/download/{tag}/{filename}"
         self.staged[url] = {"path": str(path), "sha256": checksum}
         return url, checksum
+
+    def _licence_members(self, archive, root, payload_path):
+        inventory = {"schema_version": 1, "components": [{
+            "component": root, "version": "1.0", "payload_paths": [payload_path],
+            "license_file": "COPYING", "redistribution_review": {
+                "status": "resolved", "basis": "Fixture permissive licence reviewed",
+                "source_obligation": "none"}}]}
+        for name, data in {"inventory.json": json.dumps(inventory).encode(),
+                           "COPYING": b"Fixture licence text"}.items():
+            member = tarfile.TarInfo(f"{root}/LICENSES/{name}")
+            member.size = len(data)
+            archive.addfile(member, io.BytesIO(data))
+
+    def _rewrite_extension(self, transform):
+        url = next(url for url in self.staged if "example-linux-x86_64" in url)
+        path = Path(self.staged[url]["path"])
+        with tarfile.open(path, "r:gz") as archive:
+            contents = {m.name: archive.extractfile(m).read() for m in archive.getmembers()}
+        transform(contents)
+        with tarfile.open(path, "w:gz") as archive:
+            for name, data in contents.items():
+                member = tarfile.TarInfo(name)
+                member.size = len(data)
+                archive.addfile(member, io.BytesIO(data))
+        checksum = hashlib.sha256(path.read_bytes()).hexdigest()
+        self.staged[url]["sha256"] = checksum
+        self.candidate["extensions"]["example"]["1.0"]["downloads"]["linux-x86_64"][0]["sha256"] = checksum
+
+    def _review(self, **changes):
+        def transform(contents):
+            name = "example/LICENSES/inventory.json"
+            inventory = json.loads(contents[name])
+            inventory["components"][0]["redistribution_review"] = changes
+            contents[name] = json.dumps(inventory).encode()
+        self._rewrite_extension(transform)
+
+    def test_rejects_provenance_without_resolved_review(self):
+        self._review(status="pending", basis="Source URL known", source_obligation="none",
+                     source_urls=["https://example.test/source.tar.gz"])
+        with self.assertRaisesRegex(publication_preflight.PreflightError, "resolved redistribution_review"):
+            self.check()
+
+    def test_raw_source_provenance_does_not_satisfy_source_links(self):
+        self._review(status="resolved", basis="Review recorded", source_obligation="source-links",
+                     source_urls=["https://example.test/source.tar.gz"],
+                     source_url="https://example.test/source.tar.gz")
+        with self.assertRaisesRegex(publication_preflight.PreflightError, "requires source_links"):
+            self.check()
+
+    def test_requires_source_obligation_disposition(self):
+        self._review(status="resolved", basis="Reviewed")
+        with self.assertRaisesRegex(publication_preflight.PreflightError, "source_obligation"):
+            self.check()
+
+    def test_source_links_require_explicit_public_links(self):
+        for links in ([], ["file:///source"], ["https://user:secret@example.test/source"]):
+            with self.subTest(links=links):
+                self._review(status="resolved", basis="Reviewed source delivery", source_obligation="source-links",
+                             source_links=links)
+                with self.assertRaises(publication_preflight.PreflightError):
+                    self.check()
+        self._review(status="resolved", basis="Reviewed exact corresponding source",
+                     source_obligation="source-links", source_links=["https://example.test/source.tar.gz"])
+        self.assertEqual(self.check()["redistribution_review_status"], "declarations-checked")
+
+    def test_source_offer_requires_included_nonempty_regular_file(self):
+        self._review(status="resolved", basis="Written offer reviewed", source_obligation="source-offer",
+                     source_offer_file="offer.txt")
+        with self.assertRaisesRegex(publication_preflight.PreflightError, "licence evidence file"):
+            self.check()
+        self._rewrite_extension(lambda contents: contents.update({"example/LICENSES/offer.txt": b"Offer text"}))
+        self.check()
+
+    def test_rejects_absent_inventory_or_licence_text(self):
+        for name in ("inventory.json", "COPYING"):
+            with self.subTest(name=name):
+                self.setUp()
+                self._rewrite_extension(lambda contents: contents.pop("example/LICENSES/" + name))
+                with self.assertRaises(publication_preflight.PreflightError):
+                    self.check()
+
+    def test_rejects_invalid_component_mapping_and_inventory_schema(self):
+        mutations = [
+            lambda inventory: inventory.update(schema_version=2),
+            lambda inventory: inventory.update(components=[]),
+            lambda inventory: inventory["components"][0].pop("version"),
+            lambda inventory: inventory["components"][0].update(payload_paths=["missing/lib"]),
+            lambda inventory: inventory["components"][0].update(additional_license_files=["missing.txt"]),
+        ]
+        for mutate in mutations:
+            with self.subTest(mutate=mutate):
+                self.setUp()
+                def transform(contents):
+                    name = "example/LICENSES/inventory.json"
+                    inventory = json.loads(contents[name])
+                    mutate(inventory)
+                    contents[name] = json.dumps(inventory).encode()
+                self._rewrite_extension(transform)
+                with self.assertRaises(publication_preflight.PreflightError):
+                    self.check()
+
+    def test_rejects_traversal_in_evidence_path(self):
+        self._review(status="resolved", basis="Reviewed", source_obligation="source-offer",
+                     source_offer_file="../offer.txt")
+        with self.assertRaisesRegex(publication_preflight.PreflightError, "invalid licence inventory path"):
+            self.check()
 
     def check(self, candidate=None, base=None, staged=None):
         return publication_preflight.preflight_candidate(

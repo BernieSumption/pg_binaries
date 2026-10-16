@@ -4,15 +4,17 @@
 Passing this check is not a publication eligibility decision. It validates
 candidate structure, support coverage, retained checksums, and local staged
 archive bytes, including PostgreSQL built-in extension declarations. It does
-not validate package metadata, licensing, behavioral evidence, or public URL
-availability.
+checks declared redistribution reviews and their archive-local evidence; it does
+not establish legal correctness, behavioral evidence, or public URL availability.
 """
 
 import hashlib
 import importlib.util
-from pathlib import Path
+import json
+from pathlib import Path, PurePosixPath
 import re
 import tarfile
+from urllib.parse import urlsplit
 
 _COVERAGE_SPEC = importlib.util.spec_from_file_location(
     "preflight_coverage", Path(__file__).with_name("coverage.py"))
@@ -90,11 +92,105 @@ def _archive_builtins(path):
         raise PreflightError(f"cannot read PostgreSQL archive controls from {path}: {exc}") from exc
 
 
+
+def _archive_redistribution(path):
+    """Check declared reviews and evidence without interpreting licence terms."""
+    def relative(value):
+        if (not isinstance(value, str) or not value or "\\" in value
+                or PurePosixPath(value).is_absolute()
+                or any(part in ("", ".", "..") for part in value.split("/"))):
+            raise PreflightError(f"invalid licence inventory path: {value!r}")
+        return value
+
+    try:
+        with tarfile.open(path, "r:gz") as archive:
+            members = {}
+            for member in archive.getmembers():
+                name = member.name.rstrip("/")
+                relative(name)
+                if name in members:
+                    raise PreflightError(f"duplicate archive member: {name}")
+                members[name] = member
+            inventories = [name for name in members
+                           if len(name.split("/")) == 3
+                           and name.endswith("/LICENSES/inventory.json")]
+            if len(inventories) != 1:
+                raise PreflightError("staged archive requires one root/LICENSES/inventory.json")
+            inventory_path = inventories[0]
+            root = inventory_path.split("/")[0]
+            if any(name.split("/")[0] != root for name in members):
+                raise PreflightError("licence inventory must describe the archive single root")
+
+            def text_file(name):
+                member = members.get(name)
+                if member is None or not member.isfile() or member.size <= 0:
+                    raise PreflightError(f"missing non-empty licence evidence file: {name}")
+                if member.size > 8 * 1024 * 1024:
+                    raise PreflightError(f"licence evidence file exceeds 8 MiB: {name}")
+                return archive.extractfile(member).read().decode("utf-8")
+
+            inventory = json.loads(text_file(inventory_path))
+            if not isinstance(inventory, dict) or inventory.get("schema_version") != 1:
+                raise PreflightError("licence inventory schema_version must be 1")
+            components = inventory.get("components")
+            if not isinstance(components, list) or not components:
+                raise PreflightError("licence inventory requires components")
+            for entry in components:
+                if not isinstance(entry, dict) or not all(
+                        isinstance(entry.get(key), str) and entry[key].strip()
+                        for key in ("component", "version")):
+                    raise PreflightError("licence component requires component and version")
+                paths = entry.get("payload_paths")
+                if not isinstance(paths, list) or not paths:
+                    raise PreflightError("licence component requires payload_paths")
+                for payload in paths:
+                    prefix = root + "/" + relative(payload)
+                    if not any(name == prefix or name.startswith(prefix + "/") for name in members):
+                        raise PreflightError(f"missing mapped licence payload: {payload}")
+                files = entry.get("additional_license_files", [])
+                if not isinstance(files, list):
+                    raise PreflightError("additional_license_files must be a list")
+
+                def licence_file(value):
+                    name = relative(value)
+                    if not name.startswith("LICENSES/"):
+                        name = "LICENSES/" + name
+                    return text_file(root + "/" + name)
+
+                for filename in [entry.get("license_file"), *files]:
+                    licence_file(filename)
+                review = entry.get("redistribution_review")
+                if (not isinstance(review, dict) or review.get("status") != "resolved"
+                        or not isinstance(review.get("basis"), str) or not review["basis"].strip()):
+                    raise PreflightError("licence component requires resolved redistribution_review and basis")
+                obligation = review.get("source_obligation")
+                if obligation == "source-links":
+                    links = review.get("source_links")
+                    if not isinstance(links, list) or not links:
+                        raise PreflightError("source-links review requires source_links")
+                    for link in links:
+                        if not isinstance(link, str):
+                            raise PreflightError("source_links requires public HTTPS URLs")
+                        parsed = urlsplit(link)
+                        if (parsed.scheme != "https" or not parsed.hostname
+                                or parsed.username or parsed.password or any(c.isspace() for c in link)):
+                            raise PreflightError("source_links requires public HTTPS URLs")
+                elif obligation == "source-offer":
+                    licence_file(review.get("source_offer_file"))
+                elif obligation != "none":
+                    raise PreflightError("review requires source_obligation none, source-links or source-offer")
+    except (OSError, tarfile.TarError, UnicodeError, json.JSONDecodeError, ValueError) as exc:
+        if isinstance(exc, PreflightError):
+            raise
+        raise PreflightError(f"cannot read staged archive licence evidence: {exc}") from exc
+
+
 def preflight_candidate(base_inventory, candidate, support, snapshot, staged_assets):
     """Validate candidate references and staged bytes without contacting GitHub.
 
     ``staged_assets`` maps each new immutable download URL to an object with
-    ``path`` and ``sha256`` fields. The result describes only this local
+    ``path`` and ``sha256`` fields. Each new archive must carry the licence
+    inventory and review declarations defined in policies/releases.md. The result describes only this local
     preflight; it never represents publication eligibility.
     """
     if not isinstance(candidate, dict) or candidate.get("candidate_status") != "structural-draft":
@@ -180,9 +276,12 @@ def preflight_candidate(base_inventory, candidate, support, snapshot, staged_ass
                 raise PreflightError(
                     f"PostgreSQL {version} included_extensions do not match staged archive controls")
 
+        _archive_redistribution(path)
+
     return {
         "preflight_status": "passed",
         "new_asset_count": len(new_urls),
+        "redistribution_review_status": "declarations-checked",
         "postgresql_target_count": len(expected_core),
         "extension_target_count": len(expected_extensions),
     }
