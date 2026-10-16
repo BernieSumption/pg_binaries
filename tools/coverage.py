@@ -100,6 +100,22 @@ def validate_support(support):
                     raise CoverageError(f"support extension {project} {version}: {field} must be an integer")
 
 
+def validate_extension_policy(root, support):
+    path = root / "policies" / "extensions.md"
+    try:
+        policy = path.read_text(encoding="utf-8")
+    except (OSError, UnicodeError) as exc:
+        raise CoverageError(f"cannot read extension policy {path}: {exc}") from exc
+    included = re.findall(r"^## ([^\n]+?) — include\s*$", policy, re.MULTILINE)
+    if len(included) != len(set(included)):
+        raise CoverageError("extension policy contains duplicate include headings")
+    declared = set(support["extensions"])
+    if set(included) != declared:
+        missing = sorted(declared - set(included))
+        unlisted = sorted(set(included) - declared)
+        raise CoverageError(f"extension policy include headings differ from support.json (missing={missing}, unlisted={unlisted})")
+
+
 def expected_targets(support, releases):
     platforms = tuple(f"{os}-{arch}" for os in support["os_support"]
                       for arch in support["architectures"])
@@ -219,6 +235,7 @@ def main():
         root = args.root
         support = load_json(root / "support.json")
         validate_support(support)
+        validate_extension_policy(root, support)
         snapshot = load_json(root / "support/postgresql-releases.json")
         inventory = load_json(root / "inventory.json", required=False) or {"postgresql": {}, "extensions": {}}
         releases = release_snapshot(snapshot, support)

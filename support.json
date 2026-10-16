@@ -27,6 +27,28 @@
         "3.5.7": { "postgresql_minimum_major": 15, "postgresql_maximum_major": 18 },
         "3.6.4": { "postgresql_minimum_major": 15, "postgresql_maximum_major": 18 }
       }
+    },
+    "HypoPG": {
+      "sql_names": ["hypopg"],
+      "requires": [],
+      "versions": {
+        "1.4.3": { "postgresql_minimum_major": 15 }
+      }
+    },
+    "collection": {
+      "sql_names": ["collection"],
+      "requires": [],
+      "versions": {
+        "1.1.1": { "postgresql_minimum_major": 15 },
+        "2.1.3": { "postgresql_minimum_major": 15 }
+      }
+    },
+    "pg_cron": {
+      "sql_names": ["pg_cron"],
+      "requires": [],
+      "versions": {
+        "1.6.8": { "postgresql_minimum_major": 15 }
+      }
     }
   }
 }

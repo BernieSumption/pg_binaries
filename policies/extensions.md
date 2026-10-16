@@ -148,6 +148,48 @@ Target support: None while excluded. Google documents use only with Cloud SQL fo
 
 Sources: [Google Cloud read-only session behavior and extension instructions](https://cloud.google.com/sql/docs/postgres/read-only-sessions), [Cloud SQL extension catalogue](https://cloud.google.com/sql/docs/postgres/extensions).
 
+## HypoPG — include
+
+Description: [HypoPG](https://github.com/HypoPG/hypopg) lets PostgreSQL's planner evaluate hypothetical indexes without creating physical indexes. Its SQL extension name is `hypopg`.
+
+For inclusion: It is a mature query-tuning tool offered by Supabase and Crunchy Bridge. Upstream documents PostgreSQL 9.2 and later, and Crunchy lists it for PostgreSQL 13–18.
+
+Against inclusion: None identified. HypoPG stores no data in extension objects and has no upgrade scripts; upstream recommends dropping and recreating the extension when changing versions.
+
+Version policy: Support 1.4.3, the latest stable release on 2026-10-16. Upstream documents PostgreSQL 19 compatibility for 1.4.3, but PostgreSQL 19 is not yet a stable project target. No SQL compatibility break requiring an older release line was identified.
+
+Target support: PostgreSQL 15 and later stable releases, currently 15–18. Build and test each supported project platform and architecture before claiming verified coverage. Reassess compatibility when a new PostgreSQL major becomes stable.
+
+Sources: [upstream releases and compatibility notes](https://github.com/HypoPG/hypopg/releases), [upstream installation notes](https://github.com/HypoPG/hypopg), [Crunchy extension compatibility](https://access.crunchydata.com/documentation/postgres-operator/latest/references/components), [Crunchy Bridge extension list](https://docs.crunchybridge.com/extensions-and-languages), [Supabase HypoPG guide](https://supabase.com/docs/guides/database/extensions/hypopg).
+
+## collection — include
+
+Description: [pgcollection](https://github.com/aws/pgcollection) provides associative-array types for PL/pgSQL. Its SQL extension name is `collection`.
+
+For inclusion: It supports Oracle PL/SQL associative-array migration. AWS maintains public source under Apache-2.0, and upstream documents PostgreSQL 14 and later.
+
+Against inclusion: Adoption evidence is limited beyond AWS RDS. The extension is a native C build, with no external runtime or data-file dependency identified.
+
+Version policy: Support 2.1.3, the latest upstream release on 2026-10-16, and 1.1.1, the latest release before the 2.0 major transition. The specification treats that transition as a compatibility break even though the 2.0 notes chiefly describe additions. Both releases are after the September 2025 cutoff. The 2.x line includes fixes to type-modifier display and typed-NULL handling.
+
+Target support: PostgreSQL 15 and later stable releases, currently 15–18. Build and test each supported project platform and architecture before claiming verified coverage; upstream does not specify OS or architecture guarantees. Reassess compatibility when a new PostgreSQL major becomes stable.
+
+Sources: [upstream source, PostgreSQL requirement and license](https://github.com/aws/pgcollection), [release history](https://github.com/aws/pgcollection/releases), [AWS RDS extension catalogue](https://docs.aws.amazon.com/AmazonRDS/latest/PostgreSQLReleaseNotes/postgresql-extensions.html).
+
+## pg_cron — include
+
+Description: [pg_cron](https://github.com/citusdata/pg_cron) runs scheduled SQL jobs inside PostgreSQL as a background worker. Its SQL extension name is `pg_cron`.
+
+For inclusion: It is maintained by Citus, widely deployed and offered by AWS, Azure, Google Cloud, Neon and Supabase. It is PostgreSQL-licensed and has no separate runtime dependency.
+
+Against inclusion: It requires `shared_preload_libraries = 'pg_cron'`, a restart and `CREATE EXTENSION`. By default, job execution opens local libpq connections that must be permitted by `pg_hba.conf`; document these configuration requirements. Upstream provides Windows build instructions, but all target platforms and architectures require verification.
+
+Version policy: Support 1.6.8, the latest upstream release on 2026-10-16. Upstream supports PostgreSQL 10 and later; 1.6.6 explicitly added PostgreSQL 18. No earlier release line is needed for the project PostgreSQL range.
+
+Target support: PostgreSQL 15 and later stable releases, currently 15–18. Build and test each supported project platform and architecture before claiming verified coverage. Reassess compatibility when a new PostgreSQL major becomes stable. The extension can be installed in only one database per cluster.
+
+Sources: [upstream README, requirements and provider list](https://github.com/citusdata/pg_cron), [release history and PostgreSQL compatibility](https://github.com/citusdata/pg_cron/releases), [Supabase extension catalogue](https://github.com/supabase/postgres).
+
 ## Unreviewed projects
 
 Candidates extracted from the October 2026 research. No inclusion decision is implied. Names in the second column are SQL extension names used by `CREATE EXTENSION`. Provider documentation is linked where the research did not identify an upstream source project.
@@ -159,11 +201,9 @@ Candidates extracted from the October 2026 research. No inclusion decision is im
 | aiven-extras | `aiven_extras` | [Upstream](https://github.com/aiven/aiven-extras) |
 | Azure pg_diskann | `pg_diskann` | [Upstream](https://learn.microsoft.com/azure/postgresql/extensions/concepts-extensions-by-engine) |
 | citus | `citus`, `citus_columnar` | [Upstream](https://github.com/citusdata/citus) |
-| collection | `collection` | [Upstream](https://docs.aws.amazon.com/AmazonRDS/latest/PostgreSQLReleaseNotes/postgresql-versions.html) |
 | credcheck | `credcheck` | [Upstream](https://github.com/HexaCluster/credcheck) |
 | emaj | `emaj` | [Upstream](https://github.com/dalibo/emaj) |
 | h3-pg | `h3`, `h3_postgis` | [Upstream](https://github.com/postgis/h3-pg) |
-| hypopg | `hypopg` | [Upstream](https://github.com/HypoPG/hypopg) |
 | index_advisor | `index_advisor` | [Upstream](https://github.com/supabase/index_advisor) |
 | ip4r | `ip4r` | [Upstream](https://github.com/RhodiumToad/ip4r) |
 | lakebase_text | `lakebase_text` | [Upstream](https://docs.databricks.com/aws/en/oltp/projects/extensions) |
@@ -184,7 +224,6 @@ Candidates extracted from the October 2026 research. No inclusion decision is im
 | pg_analytics | `pg_analytics` | [Upstream](https://github.com/paradedb/pg_analytics) |
 | pg_background | `pg_background` | [Upstream](https://github.com/vibhorkum/pg_background) |
 | pg_bigm | `pg_bigm` | [Upstream](https://github.com/pgbigm/pg_bigm) |
-| pg_cron | `pg_cron` | [Upstream](https://github.com/citusdata/pg_cron) |
 | pg_duckdb | `pg_duckdb` | [Upstream](https://github.com/duckdb/pg_duckdb) |
 | pg_embedding | `embedding` | [Upstream](https://github.com/neondatabase/pg_embedding) |
 | pg_failover_slots | `pg_failover_slots` | [Upstream](https://github.com/EnterpriseDB/pg_failover_slots) |

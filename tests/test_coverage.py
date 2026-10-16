@@ -96,6 +96,9 @@ class CoverageTests(unittest.TestCase):
                 path = root / name
                 path.parent.mkdir(parents=True, exist_ok=True)
                 path.write_text(json.dumps(value), encoding="utf-8")
+            policy_path = root / "policies" / "extensions.md"
+            policy_path.parent.mkdir(parents=True, exist_ok=True)
+            policy_path.write_text("## Example — include\n", encoding="utf-8")
 
             def run_cli():
                 output = io.StringIO()
@@ -148,6 +151,25 @@ class CoverageTests(unittest.TestCase):
         incomplete["os_support"] = {"linux": {"minimum_version": "5.15"}}
         with self.assertRaises(coverage.CoverageError):
             coverage.validate_support(incomplete)
+
+    def test_extension_policy_includes_must_match_support_projects(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            policy_dir = Path(temporary) / "policies"
+            policy_dir.mkdir()
+            policy_path = policy_dir / "extensions.md"
+            policy_path.write_text(
+                "## Example — include\n## Excluded — exclude\n## Unreviewed projects\n",
+                encoding="utf-8",
+            )
+            coverage.validate_extension_policy(Path(temporary), self.support)
+
+            policy_path.write_text("## Other — include\n", encoding="utf-8")
+            with self.assertRaises(coverage.CoverageError):
+                coverage.validate_extension_policy(Path(temporary), self.support)
+
+            policy_path.unlink()
+            with self.assertRaises(coverage.CoverageError):
+                coverage.validate_extension_policy(Path(temporary), self.support)
         incomplete = dict(self.support)
         incomplete["extensions"] = {}
         with self.assertRaises(coverage.CoverageError):
