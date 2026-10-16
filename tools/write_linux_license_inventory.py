@@ -13,7 +13,7 @@ runtime_map = pathlib.Path(sys.argv[3])
 components = [{
     "component": "postgresql",
     "version": postgresql_version,
-    "payload_paths": ["bin", "include", "lib", "share"],
+    "payload_paths": ["bin", "include", "lib", "libexec", "share"],
     "license_file": "PostgreSQL.txt",
     "license_source": (
         f"https://ftp.postgresql.org/pub/source/v{postgresql_version}/"
@@ -41,14 +41,38 @@ for package, payload_paths in sorted(packages.items()):
         payload = root / payload_path
         if not payload.is_file() or not payload.stat().st_size:
             raise SystemExit(f"missing non-empty runtime payload: {payload}")
-    components.append({
+    entry = {
         "component": "runtime-package",
         "package": package,
         "version": version,
         "payload_paths": sorted(payload_paths),
         "license_file": license_file,
         "license_source": f"https://packages.ubuntu.com/jammy/{package}",
-    })
+    }
+    if package == "libc6":
+        source_version = subprocess.run(
+            ["dpkg-query", "-W", "-f=${source:Version}", package],
+            check=True, capture_output=True, text=True,
+        ).stdout.strip()
+        if source_version != version:
+            raise SystemExit(f"unexpected libc6 source version: {source_version}")
+        source_base = "https://archive.ubuntu.com/ubuntu/pool/main/g/glibc/"
+        upstream_version = version.split("-", 1)[0]
+        entry["source_package"] = "glibc"
+        entry["source_version"] = source_version
+        entry["source_urls"] = [
+            f"{source_base}glibc_{source_version}.dsc",
+            f"{source_base}glibc_{upstream_version}.orig.tar.xz",
+            f"{source_base}glibc_{source_version}.debian.tar.xz",
+        ]
+        entry["additional_license_files"] = [
+            "libc6-GFDL-1.3.txt", "libc6-GPL-2.txt", "libc6-LGPL-2.1.txt"
+        ]
+        for additional in entry["additional_license_files"]:
+            path = root / "LICENSES" / additional
+            if not path.is_file() or not path.stat().st_size:
+                raise SystemExit(f"missing glibc license text: {path}")
+    components.append(entry)
 
 postgres_license = root / "LICENSES" / "PostgreSQL.txt"
 if not postgresql_version or not postgresql_version[0].isdigit():

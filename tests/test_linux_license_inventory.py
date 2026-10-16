@@ -15,7 +15,7 @@ class LinuxLicenseInventoryTests(unittest.TestCase):
         self.temp = tempfile.TemporaryDirectory()
         self.root = Path(self.temp.name)
         self.archive = self.root / "postgresql"
-        for directory in ("bin", "include", "lib", "share", "lib/runtime", "LICENSES"):
+        for directory in ("bin", "include", "lib", "libexec", "share", "lib/runtime", "LICENSES"):
             (self.archive / directory).mkdir(parents=True, exist_ok=True)
         (self.archive / "LICENSES/PostgreSQL.txt").write_text("PostgreSQL license\n")
         (self.archive / "LICENSES/libexample1.copyright").write_text("Package copyright\n")
@@ -45,7 +45,7 @@ class LinuxLicenseInventoryTests(unittest.TestCase):
         self.assertEqual(inventory["schema_version"], 1)
         postgres, runtime = inventory["components"]
         self.assertEqual((postgres["component"], postgres["version"]), ("postgresql", "18.6"))
-        self.assertEqual(postgres["payload_paths"], ["bin", "include", "lib", "share"])
+        self.assertEqual(postgres["payload_paths"], ["bin", "include", "lib", "libexec", "share"])
         self.assertEqual(runtime["component"], "runtime-package")
         self.assertEqual(runtime["package"], "libexample1")
         self.assertEqual(runtime["version"], "1.2.3-4ubuntu5")
@@ -63,6 +63,23 @@ class LinuxLicenseInventoryTests(unittest.TestCase):
         result = self.write_inventory()
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("missing non-empty license text", result.stderr)
+
+    def test_glibc_records_exact_source_and_complete_license_texts(self):
+        (self.archive / "lib/glibc").mkdir()
+        (self.archive / "lib/glibc/libc.so.6").write_bytes(b"glibc")
+        (self.archive / "LICENSES/libc6.copyright").write_text("glibc copyright\n")
+        for name in ("GFDL-1.3", "GPL-2", "LGPL-2.1"):
+            (self.archive / f"LICENSES/libc6-{name}.txt").write_text(name)
+        self.mapping.write_text(self.mapping.read_text() + "libc6\tlib/glibc/libc.so.6\n")
+        result = self.write_inventory()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        components = json.loads((self.archive / "LICENSES/inventory.json").read_text())["components"]
+        glibc = next(entry for entry in components if entry.get("package") == "libc6")
+        self.assertEqual(glibc["source_package"], "glibc")
+        self.assertEqual(glibc["source_version"], "1.2.3-4ubuntu5")
+        self.assertEqual(len(glibc["source_urls"]), 3)
+        self.assertTrue(all("1.2.3" in url for url in glibc["source_urls"]))
+        self.assertEqual(len(glibc["additional_license_files"]), 3)
 
 
 if __name__ == "__main__":

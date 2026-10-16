@@ -42,7 +42,7 @@ postgresql = [entry for entry in components if entry['component'] == 'postgresql
 assert len(postgresql) == 1, components
 postgresql = postgresql[0]
 assert postgresql['version'] == version, postgresql
-assert postgresql['payload_paths'] == ['bin', 'include', 'lib', 'share'], postgresql
+assert postgresql['payload_paths'] == ['bin', 'include', 'lib', 'libexec', 'share'], postgresql
 assert postgresql['license_file'] == 'PostgreSQL.txt', postgresql
 assert postgresql['license_source'] == f'https://ftp.postgresql.org/pub/source/v{version}/postgresql-{version}.tar.bz2', postgresql
 assert all((root / path).is_dir() for path in postgresql['payload_paths']), postgresql
@@ -54,6 +54,12 @@ assert runtime, components
 assert len(components) == len(runtime) + 1, components
 assert all(entry['package'] and entry['version'] for entry in runtime), runtime
 assert len({entry['package'] for entry in runtime}) == len(runtime), runtime
+glibc = next(entry for entry in runtime if entry['package'] == 'libc6')
+assert m['bundled_glibc_version'] == glibc['version'], (m, glibc)
+assert glibc['source_package'] == 'glibc' and glibc['source_version'] == glibc['version'], glibc
+assert len(glibc['source_urls']) == 3 and all(url.startswith('https://archive.ubuntu.com/ubuntu/pool/main/g/glibc/') for url in glibc['source_urls']), glibc
+for filename in glibc['additional_license_files']:
+    assert (license_dir / filename).is_file() and (license_dir / filename).stat().st_size > 0, filename
 mapped = []
 for entry in runtime:
     assert entry['license_source'] == f"https://packages.ubuntu.com/jammy/{entry['package']}", entry
@@ -68,8 +74,14 @@ for entry in runtime:
         assert payload.is_file() and payload.stat().st_size > 0, (entry, relative)
         mapped.append(relative)
 actual = sorted(path.relative_to(root).as_posix()
-                for path in (root / 'lib/runtime').iterdir() if path.is_file())
+                for directory in ('lib/runtime', 'lib/glibc')
+                for path in (root / directory).iterdir() if path.is_file())
 assert sorted(mapped) == actual, {'mapped': sorted(mapped), 'actual': actual}
+wrappers = {path.name for path in (root / 'bin').iterdir()
+            if path.is_file() and not path.is_symlink()}
+payloads = {path.name for path in (root / 'libexec').iterdir()}
+assert wrappers == payloads, (wrappers, payloads)
+assert all((root / 'bin' / name).read_bytes().startswith(b'#!/bin/sh\n') for name in wrappers)
 
 with open('/tmp/vector/metadata.json') as f:
     m = json.load(f)

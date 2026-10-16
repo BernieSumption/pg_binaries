@@ -41,8 +41,8 @@ mkdir -p /work/stage/postgresql/LICENSES
 cp "/work/src/postgresql-${pg_version}/COPYRIGHT" /work/stage/postgresql/LICENSES/PostgreSQL.txt
 builtins=$(python3 /usr/local/bin/discover-builtins /work/stage/postgresql)
 
-# Copy non-glibc runtime libraries into the archive, then make every ELF file
-# look for them relative to its own position. The glibc baseline is Ubuntu 22.04.
+# Copy runtime libraries into the archive, then make every ELF file look for
+# them relative to its own position.
 root=/work/stage/postgresql
 mkdir -p "$root/lib/runtime"
 : > /work/runtime-packages.tsv
@@ -85,11 +85,13 @@ while IFS= read -r -d '' elf; do
   patchelf --set-rpath "$rpath" "$elf"
 done < <(find "$root/bin" "$root/lib" -type f -print0)
 
+bash /usr/local/bin/bundle-glibc "$root" "$architecture" /work/runtime-packages.tsv
+
 python3 /usr/local/bin/write-linux-license-inventory \
   "$root" "$pg_version" /work/runtime-packages.tsv
 
 cat > "$root/manifest.json" <<EOF
-{"schema_version":1,"component":"postgresql","version":"${pg_version}","postgresql_version":"${pg_version}","platform":"linux","architecture":"${architecture}","glibc_baseline":"2.35","included_extensions":${builtins},"capabilities":{"icu":true,"libc_collations":true,"lz4":true,"zstd":true}}
+{"schema_version":1,"component":"postgresql","version":"${pg_version}","postgresql_version":"${pg_version}","platform":"linux","architecture":"${architecture}","bundled_glibc_version":"$(dpkg-query -W -f='${Version}' libc6)","included_extensions":${builtins},"capabilities":{"icu":true,"libc_collations":true,"lz4":true,"zstd":true}}
 EOF
 
 cat > /work/stage/metadata.json <<EOF

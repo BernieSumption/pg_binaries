@@ -37,6 +37,14 @@ jobs:
         run: scripts/linux/build.sh "$RUNNER_TEMP/pilot"
       - name: Verify relocated archives on clean Ubuntu 24.04 arm64
         run: scripts/linux/verify.sh "$RUNNER_TEMP/pilot"
+      - name: Check older-glibc and no-glibc hosts
+        run: |
+          for image in ubuntu:20.04 alpine:3.22; do
+            docker run --rm --platform linux/arm64 \
+              -v "$RUNNER_TEMP/pilot:/archives:ro" -v "$GITHUB_WORKSPACE:/repo:ro" \
+              --entrypoint sh "$image" /repo/scripts/linux/verify-glibc-portability.sh \
+              /archives "$PG_VERSION" arm64
+          done
       - name: Record archive checksums and host architecture
         run: |
           cat /etc/os-release

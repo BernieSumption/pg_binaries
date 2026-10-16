@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Reject Linux archive binaries that load unbundled non-glibc libraries."""
+"""Reject Linux archive binaries that load unbundled runtime libraries."""
 
 import argparse
 from pathlib import Path
@@ -33,6 +33,13 @@ def dependencies(output):
 
 def check(prefix):
     prefix = Path(prefix).resolve(strict=True)
+    loaders = list((prefix / "lib/glibc").glob("ld-linux*.so.*"))
+    if len(loaders) > 1:
+        raise ValueError(f"multiple bundled glibc loaders: {loaders}")
+    loader = loaders[0] if loaders else None
+    library_path = ":".join(str(prefix / relative) for relative in (
+        "lib/glibc", "lib/runtime", "lib"
+    ))
     count = 0
     for path in sorted(prefix.rglob("*")):
         if not path.is_file() or path.is_symlink():
@@ -41,15 +48,17 @@ def check(prefix):
             if stream.read(4) != b"\x7fELF":
                 continue
         count += 1
-        result = subprocess.run(["ldd", str(path)], capture_output=True, text=True)
+        command = ([str(loader), "--library-path", library_path, "--list", str(path)]
+                   if loader else ["ldd", str(path)])
+        result = subprocess.run(command, capture_output=True, text=True)
         if result.returncode:
-            raise ValueError(f"ldd failed for {path}: {result.stderr.strip()}")
+            raise ValueError(f"dependency check failed for {path}: {result.stderr.strip()}")
         try:
             for library, target in dependencies(result.stdout):
                 resolved = target.resolve(strict=True)
                 if resolved.is_relative_to(prefix):
                     continue
-                if library not in SYSTEM_LIBRARIES:
+                if loader or library not in SYSTEM_LIBRARIES:
                     raise ValueError(f"unbundled dependency: {library} => {target}")
         except ValueError as exc:
             raise ValueError(f"{path}: {exc}") from exc
