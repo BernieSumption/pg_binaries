@@ -106,5 +106,7 @@ jobs:
             ${{ runner.temp }}/pilot/*.tar.gz
             ${{ runner.temp }}/pilot/*.sha256
             ${{ runner.temp }}/pilot/verification/*.json
+            ${{ runner.temp }}/pilot/debug-symbols/**
             ${{ runner.temp }}/qemu-linux-515/evidence/**
+          include-hidden-files: true
           retention-days: 3

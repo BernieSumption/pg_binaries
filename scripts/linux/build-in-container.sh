@@ -19,7 +19,7 @@ cd /work/src
 curl -fL --retry 3 -o postgresql.tar.bz2 "https://ftp.postgresql.org/pub/source/v${pg_version}/postgresql-${pg_version}.tar.bz2"
 tar -xf postgresql.tar.bz2
 cd "postgresql-${pg_version}"
-./configure --prefix=/opt/postgresql --with-icu --with-lz4 --with-zstd \
+CFLAGS='-O2 -g' ./configure --prefix=/opt/postgresql --with-icu --with-lz4 --with-zstd \
   --with-openssl --with-libxml --with-libxslt --with-zlib --with-uuid=e2fs --without-readline
 make -j "$(nproc)"
 make install
@@ -104,3 +104,5 @@ tar -czf "/out/$vector_archive" pgvector metadata.json
 cd /out
 sha256sum "$pg_archive" > "$pg_archive.sha256"
 sha256sum "$vector_archive" > "$vector_archive.sha256"
+python3 /usr/local/bin/create-linux-symbols \
+  "$pg_archive" "$vector_archive" --output-dir /out/debug-symbols

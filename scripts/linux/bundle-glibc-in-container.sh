@@ -30,7 +30,7 @@ for name in GFDL-1.3 GPL-2 LGPL-2.1; do
   cp "/usr/share/common-licenses/$name" "$root/LICENSES/libc6-$name.txt"
 done
 cp /usr/share/doc/musl/copyright "$root/LICENSES/musl.copyright"
-musl-gcc -static -O2 -s -o "$root/bin/.pg-launcher" /usr/local/src/pg-launcher.c
+musl-gcc -static -O2 -g -Wl,--build-id=sha1 -o "$root/bin/.pg-launcher" /usr/local/src/pg-launcher.c
 printf 'musl\tbin/.pg-launcher\n' >> "$runtime_map"
 
 for executable in "$root"/bin/*; do
