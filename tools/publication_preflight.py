@@ -8,11 +8,13 @@ checks declared redistribution reviews and their archive-local evidence; it does
 not establish legal correctness, behavioral evidence, or public URL availability.
 """
 
+import argparse
 import hashlib
 import importlib.util
 import json
 from pathlib import Path, PurePosixPath
 import re
+import sys
 import tarfile
 from urllib.parse import urlsplit
 
@@ -285,3 +287,30 @@ def preflight_candidate(base_inventory, candidate, support, snapshot, staged_ass
         "postgresql_target_count": len(expected_core),
         "extension_target_count": len(expected_extensions),
     }
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--base-inventory", required=True, type=Path)
+    parser.add_argument("--candidate-inventory", required=True, type=Path)
+    parser.add_argument("--support", required=True, type=Path)
+    parser.add_argument("--release-snapshot", required=True, type=Path)
+    parser.add_argument("--staged-assets", required=True, type=Path,
+                        help="JSON mapping each new download URL to path and sha256")
+    args = parser.parse_args(argv)
+
+    try:
+        documents = [json.loads(path.read_text(encoding="utf-8")) for path in (
+            args.base_inventory, args.candidate_inventory, args.support,
+            args.release_snapshot, args.staged_assets)]
+        report = preflight_candidate(*documents)
+    except (OSError, UnicodeError, json.JSONDecodeError, PreflightError) as exc:
+        print(f"publication preflight failed: {exc}", file=sys.stderr)
+        return 1
+
+    print(json.dumps(report, sort_keys=True))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

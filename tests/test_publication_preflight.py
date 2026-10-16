@@ -3,6 +3,8 @@ import importlib.util
 import io
 import json
 from pathlib import Path
+import subprocess
+import sys
 import tempfile
 import tarfile
 import unittest
@@ -197,6 +199,41 @@ class PublicationPreflightTests(unittest.TestCase):
             candidate if candidate is not None else self.candidate,
             self.support, self.snapshot,
             staged if staged is not None else self.staged)
+
+    def _run_cli(self, candidate=None):
+        documents = {
+            "base.json": self.base,
+            "candidate.json": candidate if candidate is not None else self.candidate,
+            "support.json": self.support,
+            "snapshot.json": self.snapshot,
+            "staged.json": self.staged,
+        }
+        paths = {}
+        for filename, document in documents.items():
+            path = self.root / filename
+            path.write_text(json.dumps(document), encoding="utf-8")
+            paths[filename] = path
+        script = Path(__file__).resolve().parents[1] / "tools" / "publication_preflight.py"
+        return subprocess.run(
+            [sys.executable, str(script), "--base-inventory", str(paths["base.json"]),
+             "--candidate-inventory", str(paths["candidate.json"]),
+             "--support", str(paths["support.json"]),
+             "--release-snapshot", str(paths["snapshot.json"]),
+             "--staged-assets", str(paths["staged.json"])],
+            capture_output=True, text=True, check=False)
+
+    def test_cli_outputs_json_success_report(self):
+        result = self._run_cli()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(json.loads(result.stdout), self.check())
+        self.assertEqual(result.stderr, "")
+
+    def test_cli_returns_nonzero_and_error_for_failed_preflight(self):
+        candidate = dict(self.candidate, candidate_status="pending")
+        result = self._run_cli(candidate)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertEqual(result.stdout, "")
+        self.assertIn("candidate_status 'structural-draft'", result.stderr)
 
     def test_passes_with_matching_local_files_and_complete_coverage(self):
         report = self.check()
