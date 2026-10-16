@@ -1,0 +1,2 @@
+9115fa9693bdb3d79d334a1a47185d1cba936c3181444bcf4d69f510d0047c13  pgvector-0.8.7-postgresql-18.6-macos-x86_64.tar.gz
+2fc2719fc0d56d0c7d4382a3c1e3772b0f130609ccef79d0f79f3ebca91c6781  postgresql-18.6-macos-x86_64.tar.gz
