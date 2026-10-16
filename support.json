@@ -1,0 +1,32 @@
+{
+  "schema_version": 1,
+  "postgresql": {
+    "minimum_major": 15,
+    "stable_release_cutoff": "2025-09-25",
+    "release_source": "https://www.postgresql.org/ftp/source/"
+  },
+  "os_support": {
+    "macos": { "minimum_version": "11.0" },
+    "windows": { "minimum_version": "10.0.10240.0" },
+    "linux": { "minimum_version": "5.15" }
+  },
+  "architectures": ["x86_64", "arm64"],
+  "extensions": {
+    "pgvector": {
+      "sql_names": ["vector"],
+      "requires": [],
+      "versions": {
+        "0.8.7": { "postgresql_minimum_major": 15 }
+      }
+    },
+    "PostGIS": {
+      "sql_names": ["postgis", "postgis_raster", "postgis_sfcgal", "postgis_topology"],
+      "requires": [],
+      "versions": {
+        "3.4.6": { "postgresql_minimum_major": 15, "postgresql_maximum_major": 17 },
+        "3.5.7": { "postgresql_minimum_major": 15, "postgresql_maximum_major": 18 },
+        "3.6.4": { "postgresql_minimum_major": 15, "postgresql_maximum_major": 18 }
+      }
+    }
+  }
+}

@@ -8,6 +8,146 @@ The October 2026 research identified these names across PostgreSQL 15–18; they
 
 `adminpack`, `amcheck`, `autoinc`, `bloom`, `bool_plperl`, `bool_plperlu`, `btree_gin`, `btree_gist`, `citext`, `cube`, `dblink`, `dict_int`, `dict_xsyn`, `earthdistance`, `file_fdw`, `fuzzystrmatch`, `hstore`, `hstore_plperl`, `hstore_plperlu`, `hstore_plpython3u`, `insert_username`, `intagg`, `intarray`, `isn`, `jsonb_plperl`, `jsonb_plperlu`, `jsonb_plpython3u`, `lo`, `ltree`, `ltree_plpython3u`, `moddatetime`, `old_snapshot`, `pageinspect`, `pg_buffercache`, `pg_freespacemap`, `pg_logicalinspect`, `pg_prewarm`, `pg_stat_statements`, `pg_surgery`, `pg_trgm`, `pg_visibility`, `pg_walinspect`, `pgcrypto`, `pgrowlocks`, `pgstattuple`, `plperl`, `plperlu`, `plpgsql`, `plpython3u`, `pltcl`, `pltclu`, `postgres_fdw`, `refint`, `seg`, `sslinfo`, `tablefunc`, `tcn`, `tsm_system_rows`, `tsm_system_time`, `unaccent`, `uuid-ossp`, `xml2`.
 
+## pgvector — include
+
+Description: [pgvector](https://github.com/pgvector/pgvector) adds vector types, distance operations and indexes. Its SQL extension name is `vector`.
+
+For inclusion: It is maintained, widely adopted and offered by several major PostgreSQL hosts. Vector columns and indexes occur directly in application DDL. The upstream PostgreSQL Licence permits redistribution.
+
+Against inclusion: Native code must be built and checked against each claimed PostgreSQL and platform range. No external runtime data or service is required.
+
+Version policy: Support the latest patch release of the 0.8 line, currently 0.8.7. Upstream's changelog records additions and fixes in that line, with no documented DDL break. Retain the latest release before any future documented compatibility break and assume a future major-version transition breaks compatibility. Releases before the September 2025 cutoff are not selected without a specific reason.
+
+Target support: PostgreSQL 15 and later on Linux, macOS and Windows, x86-64 and arm64, subject to upstream's documented PostgreSQL support and verified archive results. Upstream currently documents PostgreSQL 13+ and Linux, macOS and Windows build procedures; its Windows instructions are for x64, so arm64 needs separate build and test evidence before any inventory claim.
+
+Sources: [upstream build and usage guide](https://github.com/pgvector/pgvector), [changelog](https://github.com/pgvector/pgvector/blob/master/CHANGELOG.md), [licence](https://github.com/pgvector/pgvector/blob/master/LICENSE), [Supabase extension catalogue](https://supabase.com/docs/guides/database/extensions), [Neon extension catalogue](https://neon.com/docs/extensions/pg-extensions).
+
+## PostGIS — include
+
+Description: [PostGIS](https://postgis.net/) adds spatial types, indexes and functions. Its SQL extension names include `postgis`, `postgis_raster`, `postgis_sfcgal` and `postgis_topology`. `postgis_legacy` is a compatibility SQL script, not an extension selected with `CREATE EXTENSION`.
+
+For inclusion: PostGIS is mature, maintained and offered by major PostgreSQL hosts. Spatial columns, indexes, constraints and functions are used directly in application schemas. Include the project's optional SQL extensions at the project level, including SFCGAL, so the policy does not silently split one source project.
+
+Against inclusion: GEOS, PROJ and LibXML2 add native dependencies; raster support adds GDAL, and SFCGAL adds a substantial C++ dependency stack. Required runtime libraries and redistributable coordinate-system data must be bundled with their licences and source obligations. The Linux pilot demonstrates one build path, but does not establish all-platform portability or complete redistribution evidence.
+
+Version policy: Support the latest stable patch in each maintained 3.4, 3.5 and 3.6 line. PostGIS releases minor lines about annually, so this repository's compatibility rule treats each minor transition as a DDL break despite upstream's general expectation of additive minor releases. Keep the last release of each line for clients intending that line. Review older lines and new stable lines against the release cutoff and upstream maintenance status rather than carrying unsupported historical versions indefinitely.
+
+Target support: On the six required OS and architecture targets, aim to support PostgreSQL versions within each line's documented compatibility. Upstream's current compatibility data describes PostgreSQL 12–17 for 3.4 and 12–18 for 3.5 and 3.6; intersect those ranges with this repository's PostgreSQL 15+ requirement. A supported line's absence on a required target remains unmet until upstream restrictions or tested evidence justify narrowing it. Verify the exact PostgreSQL endpoints and native dependency closure before advertising any archive.
+
+Sources: [PostGIS compatibility data](https://www.postgis.net/development/compatibility/), [versioning and maintenance policy](https://postgis.net/development/versions_eol/), [installation guide](https://postgis.net/docs/manual-3.6/en/postgis_installation.html), [licensing inventory](https://github.com/postgis/postgis/blob/master/LICENSE.TXT), [Google Cloud SQL extension catalogue](https://docs.cloud.google.com/sql/docs/postgres/extensions).
+
+## oracle_fdw — exclude
+
+Description: [oracle_fdw](https://github.com/laurenz/oracle_fdw) exposes Oracle tables through PostgreSQL foreign tables. Its SQL extension name is `oracle_fdw`.
+
+For inclusion: The project is maintained and offered by major PostgreSQL hosts. Foreign tables can occur in schema DDL.
+
+Against inclusion: The upstream build and runtime requirements include Oracle client libraries. Oracle's Instant Client distribution terms require an executed licence agreement and end-user records for each recipient. That process is incompatible with this project's anonymous public downloads and common copy installation. No alternative redistributable client has been established. The required runtime dependency therefore cannot currently be bundled under the functional specification.
+
+Version policy: None while excluded. Reconsider only if a client-library path compatible with anonymous public downloads is established.
+
+Target support: None while excluded.
+
+Sources: [upstream requirements](https://github.com/laurenz/oracle_fdw/blob/master/README.oracle_fdw), [Oracle Instant Client distribution terms](https://www.oracle.com/downloads/licenses/instant-client-lic.html), [Azure extension catalogue](https://learn.microsoft.com/en-us/azure/postgresql/extensions/concepts-extensions-versions).
+
+## aws_commons — exclude
+
+Description: [aws_commons](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/PostgreSQL-Lambda.html) supplies helper composite values and functions used by AWS PostgreSQL integrations; its SQL extension name is `aws_commons`.
+
+For inclusion: It is listed by Amazon RDS, and AWS documents it as a dependency of `aws_lambda` and as a helper for S3 operations.
+
+Against inclusion: The documented role is to construct AWS-specific values consumed by other AWS extensions, rather than provide standalone PostgreSQL functionality. The reviewed provider documentation describes installation in RDS but does not provide source, a redistribution licence, or a build path for independent distributions. This makes cross-platform support cost and feasibility unclear.
+
+Version policy: No independently distributable upstream release line was identified; exclude pending evidence of source and redistribution rights.
+
+Target support: None while excluded. AWS documents the extension as part of RDS for PostgreSQL.
+
+Sources: [AWS Lambda extension installation and aws_commons dependency](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/PostgreSQL-Lambda.html), [AWS S3 function reference](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_PostgreSQL.S3Import.Reference.html), [RDS extension catalogue](https://docs.aws.amazon.com/AmazonRDS/latest/PostgreSQLReleaseNotes/postgresql-extensions.html).
+
+## aws_lambda — exclude
+
+Description: [aws_lambda](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/PostgreSQL-Lambda.html) lets SQL invoke AWS Lambda functions. Its SQL extension name is `aws_lambda`.
+
+For inclusion: Amazon RDS supports it, and calling serverless functions from SQL is a useful integration for AWS-backed applications.
+
+Against inclusion: Its purpose depends on AWS Lambda and AWS IAM configuration on an RDS instance. The reviewed provider documentation gives the managed-service procedure but no source, redistribution licence, or independent build instructions. It therefore has little portable utility and lacks an established buildable upstream for this project.
+
+Version policy: No independently distributable upstream release line was identified; exclude pending evidence of source and redistribution rights.
+
+Target support: None while excluded. AWS documents it for RDS for PostgreSQL.
+
+Sources: [AWS procedure and IAM requirements](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/PostgreSQL-Lambda.html), [RDS extension catalogue](https://docs.aws.amazon.com/AmazonRDS/latest/PostgreSQLReleaseNotes/postgresql-extensions.html).
+
+## aws_s3 — exclude
+
+Description: [aws_s3](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_PostgreSQL.S3Import.html) provides SQL functions to import data from Amazon S3 into RDS for PostgreSQL. Its SQL extension name is `aws_s3`.
+
+For inclusion: Amazon RDS supports it and documents S3 data import, a useful integration for AWS applications.
+
+Against inclusion: The documented function operates with Amazon S3 and RDS identity/permissions. AWS's instructions are specific to RDS, and the reviewed materials provide no source, redistribution licence, or independent build route. That leaves no supported basis for building a portable distribution.
+
+Version policy: No independently distributable upstream release line was identified; exclude pending evidence of source and redistribution rights.
+
+Target support: None while excluded. AWS documents the feature for RDS for PostgreSQL 10.7 and later; that service compatibility does not establish compatibility for our artifacts.
+
+Sources: [AWS S3 import and service requirements](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_PostgreSQL.S3Import.html), [AWS function reference](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_PostgreSQL.S3Import.Reference.html), [RDS extension catalogue](https://docs.aws.amazon.com/AmazonRDS/latest/PostgreSQLReleaseNotes/postgresql-extensions.html).
+
+## azure_ai — exclude
+
+Description: [azure_ai](https://learn.microsoft.com/en-us/azure/postgresql/azure-ai/generative-ai-azure-overview) adds SQL functions for calling Azure AI, Azure OpenAI, Cognitive Services and Azure Machine Learning. Its SQL extension name is `azure_ai`.
+
+For inclusion: Microsoft lists it for Azure Database for PostgreSQL and documents AI inference and embedding use cases.
+
+Against inclusion: The extension is designed to call Azure-hosted services and requires endpoint and authentication configuration. The reviewed provider documentation provides deployment guidance but no source, redistribution licence, or build instructions for an independently maintained distribution. Its preview AI functions also signal a changing interface.
+
+Version policy: No independently distributable upstream release line was identified; exclude pending evidence of source and redistribution rights and a stable production interface.
+
+Target support: None while excluded. Azure's catalogue lists it for its managed PostgreSQL service; that does not establish cross-OS or independent PostgreSQL compatibility.
+
+Sources: [Microsoft overview, configuration and preview capabilities](https://learn.microsoft.com/en-us/azure/postgresql/azure-ai/generative-ai-azure-overview), [Azure extension version catalogue](https://learn.microsoft.com/en-us/azure/postgresql/extensions/concepts-extensions-by-engine).
+
+## azure_storage — exclude
+
+Description: [azure_storage](https://learn.microsoft.com/en-us/azure/postgresql/flexible-server/concepts-storage-extension) moves data between PostgreSQL and Azure Storage using SQL and COPY-related functions. Its SQL extension name is `azure_storage`.
+
+For inclusion: Microsoft offers it for Azure Database for PostgreSQL, with blob import/export functions and several supported file formats.
+
+Against inclusion: It is tied to Azure Storage authentication, network access and Azure-managed identity or keys. Microsoft documents allowlisting and service-specific configuration, but the reviewed sources do not provide extension source, redistribution terms, or an independent build route. The service integration has little value without Azure Storage.
+
+Version policy: No independently distributable upstream release line was identified; exclude pending evidence of source and redistribution rights.
+
+Target support: None while excluded. Azure documents versions for Flexible Server and requires its server library to be enabled; those facts do not establish portability to our targets.
+
+Sources: [Microsoft feature and authentication overview](https://learn.microsoft.com/en-us/azure/postgresql/flexible-server/concepts-storage-extension), [Azure extension version catalogue](https://learn.microsoft.com/en-us/azure/postgresql/extensions/concepts-extensions-by-engine), [Microsoft troubleshooting and required storage permissions](https://learn.microsoft.com/en-us/azure/postgresql/troubleshoot/troubleshoot-azure-storage-extension).
+
+## google_ml_integration — exclude
+
+Description: [google_ml_integration](https://cloud.google.com/sql/docs/postgres/integrate-cloud-sql-with-vertex-ai) provides SQL functions to call Vertex AI and other model endpoints from Cloud SQL for PostgreSQL. Its SQL extension name is `google_ml_integration`.
+
+For inclusion: Google Cloud supports it, and SQL-accessible model predictions and embeddings are useful for applications that use Google Cloud AI.
+
+Against inclusion: The documented implementation requires Cloud SQL instance integration flags and Google service identity or Secret Manager configuration. The reviewed Google documentation describes only the managed-service implementation and does not provide extension source, redistribution terms, or an independent build route. Model endpoint management features are explicitly marked Preview.
+
+Version policy: No independently distributable upstream release line was identified; exclude pending evidence of source and redistribution rights and stable production status.
+
+Target support: None while excluded. Google documents Cloud SQL support for PostgreSQL 12 and later; those managed-service limits do not establish independent OS or PostgreSQL compatibility.
+
+Sources: [Google Cloud setup and instance requirements](https://cloud.google.com/sql/docs/postgres/integrate-cloud-sql-with-vertex-ai), [extension catalogue and supported version](https://cloud.google.com/sql/docs/postgres/extensions), [preview model endpoint management](https://cloud.google.com/sql/docs/postgres/model-endpoint-overview).
+
+## google_read_only_session — exclude
+
+Description: [google_read_only_session](https://cloud.google.com/sql/docs/postgres/read-only-sessions) applies predefined security labels to functions allowed in Cloud SQL read-only sessions. Its SQL extension name is `google_read_only_session`.
+
+For inclusion: It supports a useful database security mode, and Google Cloud documents its use with Cloud SQL read-only sessions.
+
+Against inclusion: The extension depends on Cloud SQL's `cloudsql_session_read_only` behavior and associated security-label handling. Its documented use is specific to Cloud SQL, and the reviewed provider documentation provides no source, redistribution terms, or independent build route. The underlying capability is therefore not established as portable to ordinary PostgreSQL installations.
+
+Version policy: No independently distributable upstream release line was identified; exclude pending source, redistribution and compatibility evidence.
+
+Target support: None while excluded. Google documents use only with Cloud SQL for PostgreSQL; no broader PostgreSQL or OS support is claimed.
+
+Sources: [Google Cloud read-only session behavior and extension instructions](https://cloud.google.com/sql/docs/postgres/read-only-sessions), [Cloud SQL extension catalogue](https://cloud.google.com/sql/docs/postgres/extensions).
+
 ## Unreviewed projects
 
 Candidates extracted from the October 2026 research. No inclusion decision is implied. Names in the second column are SQL extension names used by `CREATE EXTENSION`. Provider documentation is linked where the research did not identify an upstream source project.
@@ -17,18 +157,11 @@ Candidates extracted from the October 2026 research. No inclusion decision is im
 | Address Standardizer | `address_standardizer`, `address_standardizer_data_us` | [Upstream](https://github.com/postgis/address_standardizer) |
 | age | `age` | [Upstream](https://github.com/apache/age) |
 | aiven-extras | `aiven_extras` | [Upstream](https://github.com/aiven/aiven-extras) |
-| aws_commons | `aws_commons` | [Upstream](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/PostgreSQL.Concepts.General.FeatureSupport.Extensions.html) |
-| aws_lambda | `aws_lambda` | [Upstream](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/PostgreSQL-Lambda.html) |
-| aws_s3 | `aws_s3` | [Upstream](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/USER_PostgreSQL.S3Import.InstallExtension.html) |
 | Azure pg_diskann | `pg_diskann` | [Upstream](https://learn.microsoft.com/azure/postgresql/extensions/concepts-extensions-by-engine) |
-| azure_ai | `azure_ai` | [Upstream](https://learn.microsoft.com/en-us/azure/postgresql/azure-ai/generative-ai-azure-overview) |
-| azure_storage | `azure_storage` | [Upstream](https://learn.microsoft.com/en-us/azure/postgresql/flexible-server/concepts-storage-extension) |
 | citus | `citus`, `citus_columnar` | [Upstream](https://github.com/citusdata/citus) |
 | collection | `collection` | [Upstream](https://docs.aws.amazon.com/AmazonRDS/latest/PostgreSQLReleaseNotes/postgresql-versions.html) |
 | credcheck | `credcheck` | [Upstream](https://github.com/HexaCluster/credcheck) |
 | emaj | `emaj` | [Upstream](https://github.com/dalibo/emaj) |
-| google_ml_integration | `google_ml_integration` | [Upstream](https://docs.cloud.google.com/sql/docs/postgres/extensions) |
-| google_read_only_session | `google_read_only_session` | [Upstream](https://docs.cloud.google.com/sql/docs/postgres/read-only-sessions) |
 | h3-pg | `h3`, `h3_postgis` | [Upstream](https://github.com/postgis/h3-pg) |
 | hypopg | `hypopg` | [Upstream](https://github.com/HypoPG/hypopg) |
 | index_advisor | `index_advisor` | [Upstream](https://github.com/supabase/index_advisor) |
@@ -44,7 +177,6 @@ Candidates extracted from the October 2026 research. No inclusion decision is im
 | neon | `neon` | [Upstream](https://neon.com/docs/manage/endpoints/) |
 | neon_utils | `neon_utils` | [Upstream](https://neon.com/docs/extensions/pg-extensions) |
 | online_advisor | `online_advisor` | [Upstream](https://github.com/knizhnik/online_advisor) |
-| oracle_fdw | `oracle_fdw` | [Upstream](https://github.com/laurenz/oracle_fdw) |
 | orafce | `orafce` | [Upstream](https://github.com/orafce/orafce) |
 | paradedb | `pg_search` | [Upstream](https://github.com/paradedb/paradedb) |
 | pg-semver | `semver` | [Upstream](https://github.com/theory/pg-semver) |
@@ -98,7 +230,6 @@ Candidates extracted from the October 2026 research. No inclusion decision is im
 | pgtap | `pgtap` | [Upstream](https://github.com/theory/pgtap) |
 | pgtt | `pgtt` | [Upstream](https://github.com/darold/pgtt) |
 | pgvecto.rs | `vectors` | [Upstream](https://github.com/tensorchord/pgvecto.rs) |
-| pgvector | `vector` | [Upstream](https://github.com/pgvector/pgvector) |
 | pgvectorscale | `vectorscale` | [Upstream](https://github.com/timescale/pgvectorscale) |
 | pgx_ulid | `pgx_ulid`, `ulid` | [Upstream](https://github.com/pksunkara/pgx_ulid) |
 | pljava | `pljava` | [Upstream](https://github.com/tada/pljava) |
@@ -107,7 +238,6 @@ Candidates extracted from the October 2026 research. No inclusion decision is im
 | plproxy | `plproxy` | [Upstream](https://github.com/plproxy/plproxy) |
 | plrust | `plrust` | [Upstream](https://github.com/pgcentralfoundation/plrust) |
 | plv8 | `plcoffee`, `plls`, `plv8` | [Upstream](https://github.com/plv8/plv8) |
-| PostGIS | `postgis`, `postgis_legacy`, `postgis_raster`, `postgis_sfcgal`, `postgis_topology` | [Upstream](https://postgis.net/) |
 | PostGIS TIGER Geocoder | `postgis_tiger_geocoder` | [Upstream](https://gitea.osgeo.org/postgis/postgis_tiger_geocoder) |
 | postgres-protobuf | `postgres_protobuf` | [Upstream](https://github.com/mpartel/postgres-protobuf) |
 | postgresql-hll | `hll` | [Upstream](https://github.com/citusdata/postgresql-hll) |

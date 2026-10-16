@@ -1,1 +1,25 @@
-To be filled out by agents.
+# Delivering declared support
+
+Clients need every stable PostgreSQL release required by the functional specification and enough extension packages to execute their intended schemas. A support target is a PostgreSQL version, extension version, operating system, architecture and, for a reusable extension archive, PostgreSQL compatibility range. The support declaration describes intended targets. `inventory.json` describes only public downloads that passed verification.
+
+## Declare and reconcile support
+
+`support.json` at the repository root is the machine-readable source of intended platform targets and extension releases. It records the OS minima chosen in [os-support.md](os-support.md), supported PostgreSQL major range and release cutoff from the functional specification, included extension projects and SQL names, selected version lines, prerequisites, and upstream compatibility restrictions. The policies explain decisions; a target must not be silently omitted from `support.json` because it is difficult to build.
+
+For PostgreSQL, the support declaration expresses the stable-release rule, not a hand-maintained list of every minor version. A discovery step obtains the dated upstream stable-release list and expands the rule into an exact target snapshot. The snapshot, its upstream source and retrieval date are retained with each coverage report. New qualifying stable releases become unmet requirements as soon as discovery sees them. Prereleases and major versions below 15 are rejected.
+
+To add or change support, an agent edits `support.json` and the relevant decision policy, if the decision changed. For a new PostgreSQL release covered by the existing rule, the agent refreshes discovery rather than adding the version by hand. The reconciliation command compares the expanded intended targets, public inventory, candidate archives and verification records. It reports separately: required targets with no archive, archives awaiting tests, failed or skipped tests, eligible unpublished archives, and broken public downloads. The report must return failure when a required target lacks a verified public download; an incomplete run must not disappear from later reports.
+
+## Plan builds and checks
+
+The planner derives work from unmet targets and existing archive evidence. It may reuse one extension archive across PostgreSQL versions only when upstream documents the claimed range and endpoint tests pass; a known intermediate failure splits the range. It chooses the smallest defensible set of extension builds and uses standard GitHub-hosted runners for the target platforms. Workflows invoke the planner's generated jobs rather than containing independent version lists. Build outputs and test records are keyed by source inputs, archive checksum, test revision and verification environment so unchanged applicable results can be reused. The [testing policy](testing.md) defines eligibility checks.
+
+The planner must show all proposed work before expensive CI dispatch. Failed jobs retain their target and reason in coverage output. Build and verification records are retained longer than temporary Actions artifacts, with enough information to retrieve or rebuild the exact archives. Runner time, matrix size and artifact storage are monitored; if the required work cannot reasonably fit standard runners, the problem goes to `HUMAN_REVIEW_QUEUE.md`.
+
+## Publish verified downloads
+
+An archive becomes eligible for a public inventory only after the final bytes pass the required checks, including relocation, minimum and current OS testing, licensing and documented extension compatibility. The publisher generates a candidate inventory from eligible bytes plus unchanged public entries, preserving their URLs. It follows [releases.md](releases.md) to upload assets before publishing the new inventory and then runs anonymous public-download verification. Publication requires separate authorization; until then, eligible candidate archives remain visibly unpublished and `inventory.json` must contain no temporary Actions URLs.
+
+For example, when upstream publishes a qualifying PostgreSQL 18.7, discovery adds six OS and architecture targets to the expanded support snapshot. Reconciliation shows all six missing until archives exist. The planner builds and tests them on the relevant runners and checks whether existing extension archives claiming a range through 18.7 remain applicable. Verified new archives become candidate inventory entries, while unchanged extension downloads keep their older release URLs. Publication makes the new inventory current only after its referenced archives are available.
+
+The current pilot workflows hard-code PostgreSQL 18.6 and selected x86-64 extensions. `support.json` and `tools/coverage.py` now expose intended targets and missing verified public downloads. They do not yet plan builds, verify published assets, or distinguish every intermediate state described above. Reusable verification records and publication orchestration do not yet exist; the pilot success records are not coverage evidence for the declared product.

@@ -1,0 +1,30 @@
+name: Intended support coverage
+
+on:
+  push:
+    branches: [spike]
+    paths:
+      - support.json
+      - support/**
+      - tools/coverage.py
+      - tools/discover_postgresql.py
+      - tests/test_coverage.py
+      - tests/test_discover_postgresql.py
+      - .github/workflows/support-coverage.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  reconcile:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate support tooling
+        run: python3 -m unittest tests/test_coverage.py tests/test_discover_postgresql.py
+      - name: Check the PostgreSQL release snapshot against upstream
+        run: python3 tools/discover_postgresql.py --check
+      - name: Report unmet support
+        run: python3 tools/coverage.py
