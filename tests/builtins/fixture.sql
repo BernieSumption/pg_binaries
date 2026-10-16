@@ -16,7 +16,7 @@ CREATE EXTENSION file_fdw;
 CREATE SERVER builtin_file_server FOREIGN DATA WRAPPER file_fdw;
 CREATE FOREIGN TABLE builtin_file_probe (id integer, value text)
     SERVER builtin_file_server
-    OPTIONS (filename '/tests/builtins/file_fdw.csv', format 'csv');
+    OPTIONS (filename :'fixture_path', format 'csv');
 DO $$
 BEGIN
     IF (SELECT count(*) FROM builtin_file_probe) <> 1

@@ -104,8 +104,8 @@ psql=(runuser -u postgres -- "$pgroot/bin/psql" -X -v ON_ERROR_STOP=1 -h /tmp/pg
 "${psql[@]}" -Atqc 'SELECT version()' | grep -F "PostgreSQL $pg_version"
 "${psql[@]}" -f /tests/schema.sql
 "${psql[@]}" -f /tests/builtins/basic.sql
-"${psql[@]}" -f /tests/builtins/loopback.sql
-"${psql[@]}" -f /tests/builtins/fixture.sql
+"${psql[@]}" -v loopback_conninfo='host=/tmp/pgsocket port=55431 dbname=postgres' -v loopback_host=/tmp/pgsocket -v loopback_port=55431 -f /tests/builtins/loopback.sql
+"${psql[@]}" -v fixture_path=/tests/builtins/file_fdw.csv -f /tests/builtins/fixture.sql
 "${psql[@]}" -f /tests/builtins/preloaded.sql
 "${psql[@]}" -f /tests/builtins/wal.sql
 tcn_output=$("${psql[@]}" -f /tests/builtins/tcn.sql)
