@@ -150,3 +150,62 @@ BEGIN
     END IF;
 END
 $check$;
+
+CREATE EXTENSION btree_gin;
+CREATE TABLE builtin_btree_gin (value integer);
+CREATE INDEX builtin_btree_gin_index ON builtin_btree_gin USING gin (value);
+INSERT INTO builtin_btree_gin VALUES (7), (11);
+DO $$
+BEGIN
+    IF (SELECT count(*) FROM builtin_btree_gin WHERE value = 11) <> 1
+       OR NOT EXISTS (
+           SELECT 1 FROM pg_indexes
+           WHERE indexname = 'builtin_btree_gin_index'
+             AND indexdef LIKE '%USING gin%'
+       ) THEN
+        RAISE EXCEPTION 'btree_gin equality index failed';
+    END IF;
+END
+$$;
+
+CREATE EXTENSION fuzzystrmatch;
+DO $$
+BEGIN
+    IF levenshtein('kitten', 'sitting') <> 3
+       OR soundex('Anne') <> 'A500' THEN
+        RAISE EXCEPTION 'fuzzystrmatch edit distance or soundex failed';
+    END IF;
+END
+$$;
+
+CREATE EXTENSION tsm_system_rows;
+CREATE TABLE builtin_system_rows (value integer);
+INSERT INTO builtin_system_rows SELECT generate_series(1, 20);
+DO $$
+BEGIN
+    IF (SELECT count(*) FROM builtin_system_rows TABLESAMPLE SYSTEM_ROWS (4)) <> 4 THEN
+        RAISE EXCEPTION 'tsm_system_rows did not return the requested row count';
+    END IF;
+END
+$$;
+
+CREATE EXTENSION seg;
+CREATE TABLE builtin_seg (value seg);
+INSERT INTO builtin_seg VALUES ('1..3'), ('5..7');
+DO $$
+BEGIN
+    IF (SELECT count(*) FROM builtin_seg WHERE value @> '2'::seg) <> 1
+       OR (SELECT count(*) FROM builtin_seg WHERE value && '3..5'::seg) <> 2 THEN
+        RAISE EXCEPTION 'seg containment or overlap failed';
+    END IF;
+END
+$$;
+
+CREATE EXTENSION dict_int;
+DO $$
+BEGIN
+    IF ts_lexize('intdict', '123') <> ARRAY['123']::text[] THEN
+        RAISE EXCEPTION 'dict_int failed to lexize an integer';
+    END IF;
+END
+$$;
