@@ -19,7 +19,7 @@ These decisions apply to PostgreSQL majors 15 and later on supported platforms. 
 
 | Feature | Decision and reason | Platform notes |
 | --- | --- | --- |
-| Readline or libedit (`--with-readline`, Meson `-Dreadline`) | Exclude. It adds interactive command editing and history to `psql`, but does not affect SQL execution, schema creation or inspection, and the standard tool remains usable without it. Avoid an extra runtime dependency and differing license choices. | macOS explicitly uses `--without-readline`; Linux and Windows currently do not make the decision explicit. Set build configuration consistently. |
+| Readline or libedit (`--with-readline`, Meson `-Dreadline`) | Exclude. It adds interactive command editing and history to `psql`, but does not affect SQL execution, schema creation or inspection, and the standard tool remains usable without it. Avoid an extra runtime dependency and differing license choices. | Linux and macOS use `--without-readline`; Windows selects `-Dreadline=disabled`. |
 | libcurl (`--with-libcurl`) | Exclude. It adds libcurl support for OAuth client flows, a connection-authentication feature rather than schema functionality or a required standard-tool capability. The added runtime dependency is not justified by the current supported use case. | Available in PostgreSQL 18's build system; confirm option availability before applying this decision to any earlier supported major. |
 | GSSAPI/Kerberos, LDAP, PAM and Bonjour support | Exclude. These options integrate server authentication or service discovery with host infrastructure. They require platform-specific libraries or operating-system configuration and do not enable schema operations. | Availability and names vary by platform and build system. Do not enable implicitly through builder dependencies. |
 | NUMA and io_uring (`--with-libnuma`, `--with-liburing`) | Exclude. These are host-specific runtime performance integrations, not schema capabilities; io_uring also varies with Linux kernel support. | Linux-only or platform-limited. |
@@ -30,7 +30,7 @@ These decisions apply to PostgreSQL majors 15 and later on supported platforms. 
 
 PostgreSQL's configure options and Meson option names evolve. The decisions above describe capabilities, not a promise that an identical switch exists in every major. Build scripts must use the option supported by each major's source and verify the resulting capability. PostgreSQL 15 is the minimum supported major; PostgreSQL 18 documentation is the current source for Meson option names and newer facilities.
 
-The current pilot scripts request ICU, LZ4, Zstandard, OpenSSL, libxml2, libxslt and zlib on all three operating systems. Linux and macOS explicitly disable readline; Windows does not yet make that choice explicit. Linux and macOS select e2fs UUID support; Windows does not select a UUID library. Current build coverage is x86-64 only, so this policy does not establish arm64 build or runtime verification.
+The current pilot scripts request ICU, LZ4, Zstandard, OpenSSL, libxml2, libxslt and zlib on all three operating systems. All three explicitly disable readline. Linux and macOS select e2fs UUID support; Windows does not select a UUID library. Current build coverage is x86-64 only, so this policy does not establish arm64 build or runtime verification.
 
 ## Sources
 

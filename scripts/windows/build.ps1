@@ -33,6 +33,7 @@ $mesonArgs = @(
   "--prefix=$pgInstall", '--buildtype=release',
   '-Dicu=enabled', '-Dlz4=enabled', '-Dzstd=enabled',
   '-Dzlib=enabled', '-Dssl=openssl', '-Dlibxml=enabled', '-Dlibxslt=enabled',
+  '-Dreadline=disabled',
   "-Dextra_include_dirs=$(Join-Path $vcpkg 'include')",
   "-Dextra_lib_dirs=$(Join-Path $vcpkg 'lib')"
 )
