@@ -87,7 +87,7 @@ pgroot=/tmp/moved/postgresql
 mkdir -p /tmp/pgdata /tmp/pgsocket
 chown postgres:postgres /tmp/pgdata /tmp/pgsocket
 runuser -u postgres -- "$pgroot/bin/initdb" -D /tmp/pgdata --encoding=UTF8 --locale=C --no-instructions
-runuser -u postgres -- "$pgroot/bin/pg_ctl" -D /tmp/pgdata -o '-k /tmp/pgsocket -p 55431 -h ""' -w start
+runuser -u postgres -- "$pgroot/bin/pg_ctl" -D /tmp/pgdata -o '-k /tmp/pgsocket -p 55431 -h "" -c shared_preload_libraries=pg_stat_statements' -w start
 trap 'runuser -u postgres -- "$pgroot/bin/pg_ctl" -D /tmp/pgdata -m immediate stop >/dev/null 2>&1 || true' EXIT
 psql=(runuser -u postgres -- "$pgroot/bin/psql" -X -v ON_ERROR_STOP=1 -h /tmp/pgsocket -p 55431 -d postgres)
 "${psql[@]}" -Atqc 'SELECT version()' | grep -F "PostgreSQL $pg_version"
@@ -95,6 +95,11 @@ psql=(runuser -u postgres -- "$pgroot/bin/psql" -X -v ON_ERROR_STOP=1 -h /tmp/pg
 "${psql[@]}" -f /tests/builtins/basic.sql
 "${psql[@]}" -f /tests/builtins/loopback.sql
 "${psql[@]}" -f /tests/builtins/fixture.sql
+"${psql[@]}" -f /tests/builtins/preloaded.sql
+"${psql[@]}" -f /tests/builtins/wal.sql
+tcn_output=$("${psql[@]}" -f /tests/builtins/tcn.sql)
+printf '%s\n' "$tcn_output"
+grep -F "Asynchronous notification \"tcn\" with payload \"\"builtin_tcn\",I,\"id\"='91'\"" <<< "$tcn_output"
 "${psql[@]}" <<'SQL'
 CREATE COLLATION pilot_icu (provider = icu, locale = 'en-US-u-kn-true', deterministic = false);
 CREATE COLLATION pilot_libc (provider = libc, locale = 'C');
