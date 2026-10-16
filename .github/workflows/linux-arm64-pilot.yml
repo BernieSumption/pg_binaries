@@ -20,8 +20,11 @@ on:
       - 'scripts/linux/verify-in-container.sh'
       - 'scripts/linux/verify-glibc-portability.sh'
       - 'scripts/linux/verify-no-host-userspace.sh'
+      - 'scripts/linux/diagnostics-in-container.sh'
+      - 'scripts/linux/diagnostics.Dockerfile'
       - 'scripts/linux/qemu-kernel-515-guest-full.sh'
       - 'scripts/qemu/arm64-515*'
+      - 'tools/create_linux_symbols.py'
       - 'tools/check_elf_dependencies.py'
       - 'tools/discover_builtins.py'
       - 'tools/write_linux_license_inventory.py'
@@ -32,6 +35,7 @@ on:
       - 'tests/builtins/**'
       - 'tests/test_plan_work.py'
       - 'tests/test_emit_linux_minimum_pilot_records.py'
+      - 'tests/test_create_linux_symbols.py'
       - '.github/workflows/linux-arm64-pilot.yml'
 jobs:
   linux-arm64:
@@ -67,6 +71,16 @@ jobs:
           cat /etc/os-release
           test "$(uname -m)" = aarch64
           cat "$RUNNER_TEMP/pilot/"*.sha256
+      - name: Capture controlled Linux diagnostic failures
+        run: |
+          docker build --platform linux/arm64 -f scripts/linux/diagnostics.Dockerfile \
+            -t pg-binaries-linux-diagnostics .
+          docker run --rm --platform linux/arm64 \
+            -v "$RUNNER_TEMP/pilot:/archives" \
+            -v "$GITHUB_WORKSPACE:/repo:ro" \
+            -e GITHUB_RUN_ID -e GITHUB_REPOSITORY -e GITHUB_SERVER_URL -e GITHUB_SHA \
+            --entrypoint bash pg-binaries-linux-diagnostics \
+            /repo/scripts/linux/diagnostics-in-container.sh /archives "$PG_VERSION" arm64
       - name: Emit pilot verification records
         env:
           GITHUB_SHA: ${{ github.sha }}
@@ -111,6 +125,7 @@ jobs:
             ${{ runner.temp }}/pilot/*.sha256
             ${{ runner.temp }}/pilot/verification/*.json
             ${{ runner.temp }}/pilot/debug-symbols/**
+            ${{ runner.temp }}/pilot/diagnostics/**
             ${{ runner.temp }}/qemu-linux-arm64-515/evidence/**
           include-hidden-files: true
           retention-days: 3
