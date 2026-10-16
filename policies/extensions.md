@@ -190,6 +190,118 @@ Target support: PostgreSQL 15 and later stable releases, currently 15–18. Buil
 
 Sources: [upstream README, requirements and provider list](https://github.com/citusdata/pg_cron), [release history and PostgreSQL compatibility](https://github.com/citusdata/pg_cron/releases), [Supabase extension catalogue](https://github.com/supabase/postgres).
 
+## lakebase_text — exclude
+
+Description: [lakebase_text](https://docs.databricks.com/aws/en/oltp/projects/lakebase-text) adds BM25 ranking and the `lakebase_bm25` index access method; its SQL extension name is `lakebase_text`.
+
+For inclusion: Databricks supports it in Lakebase Search alongside its tokenizer and vector extensions. It provides BM25 ranking, compatible with PostgreSQL `tsvector` and query operators, and offers a useful full-text search capability.
+
+Against inclusion: The current primary material reviewed describes enabling and installing it only in Databricks Lakebase. It identifies no source repository, independent release artifacts, license or redistribution terms, or build route. This is missing evidence, not evidence that redistribution is legally prohibited. Standard PostgreSQL full-text search is an available alternative, though it does not supply the same BM25 index behavior.
+
+Version policy: No independently buildable release line is established. Exclude unless upstream source and redistribution/build evidence become available; Databricks's Lakebase versions (0.1.3 as listed 2026-09-30) do not establish portable release artifacts.
+
+Target support: None while excluded. Databricks lists Lakebase PostgreSQL 16–18 only; those managed service claims establish no independent OS, architecture or general PostgreSQL support.
+
+Sources: [Databricks extension catalogue](https://docs.databricks.com/aws/en/oltp/projects/extensions), [lakebase_text reference](https://docs.databricks.com/aws/en/oltp/projects/lakebase-text), [Lakebase Search overview](https://docs.databricks.com/aws/en/oltp/projects/lakebase-search).
+
+## lakebase_tokenizer — exclude
+
+Description: [lakebase_tokenizer](https://docs.databricks.com/aws/en/oltp/projects/lakebase-tokenizer) adds a configurable whole-word text-search dictionary template, `tokenizer_wholeword`; its SQL extension name is `lakebase_tokenizer`.
+
+For inclusion: Databricks supports it in Lakebase Search. It exposes configurable normalization, accent removal, stemming, stop words and synonyms through PostgreSQL's text-search interfaces, and can feed both standard GIN and Lakebase BM25 indexes.
+
+Against inclusion: Reviewed primary material documents it as a Lakebase feature and supplies no source repository, independent package, license/redistribution terms or build instructions. The Snowball stemmer is identified as bundled, but its presence does not clarify the extension's source or redistribution rights. Evidence is unavailable; redistribution is not established to be legally impossible.
+
+Version policy: No independently buildable release line is established. Exclude pending source, redistribution and independent build evidence; Lakebase's listed version 0.1.1 is a managed-service version, not a portable release line.
+
+Target support: None while excluded. Databricks lists Lakebase PostgreSQL 16–18 only and makes no independent OS or architecture compatibility claim.
+
+Sources: [Databricks extension catalogue](https://docs.databricks.com/aws/en/oltp/projects/extensions), [lakebase_tokenizer reference](https://docs.databricks.com/aws/en/oltp/projects/lakebase-tokenizer), [Lakebase Search overview](https://docs.databricks.com/aws/en/oltp/projects/lakebase-search).
+
+## lakebase_vector — exclude
+
+Description: [lakebase_vector](https://docs.databricks.com/aws/en/oltp/projects/lakebase-vector) adds approximate nearest-neighbor search through the `lakebase_ann` index type; its SQL extension name is `lakebase_vector`. It depends on `pgvector` for its vector types and query interface.
+
+For inclusion: Databricks supports it in Lakebase Search. It provides ANN search as a companion to pgvector and could provide a useful search capability to PostgreSQL users.
+
+Against inclusion: The reviewed primary material documents only the Databricks Lakebase implementation and exposes no source repository, independent package, license/redistribution terms or build route. The dependency on pgvector does not establish that the separate Lakebase extension can be redistributed. These are evidence gaps, not proof of a legal prohibition. Standalone pgvector remains an independently available alternative but does not establish equivalent `lakebase_ann` behavior.
+
+Version policy: No independently buildable release line is established. Exclude pending upstream source and redistribution/build evidence; Lakebase's listed version 1.1.1 is not evidence of a portable release.
+
+Target support: None while excluded. Databricks lists Lakebase PostgreSQL 16–18 only; no independent OS or architecture support is documented.
+
+Sources: [Databricks extension catalogue](https://docs.databricks.com/aws/en/oltp/projects/extensions), [lakebase_vector reference](https://docs.databricks.com/aws/en/oltp/projects/lakebase-vector), [Lakebase Search overview](https://docs.databricks.com/aws/en/oltp/projects/lakebase-search).
+
+## neon — exclude
+
+Description: [neon](https://neon.com/docs/extensions/neon) provides views and functions for inspecting Neon compute-specific facilities, including local file cache statistics. Its SQL extension name is `neon`.
+
+For inclusion: Neon documents the extension for monitoring its Local File Cache, and the Neon platform makes it available to customers.
+
+Against inclusion: The documented behavior reports Neon-specific compute state and has no equivalent meaning on ordinary PostgreSQL. Neon documentation reviewed provides usage and API details but no independently distributable extension source, package, license/redistribution terms or standalone build instructions. That leaves source and redistribution evidence unavailable; it does not prove redistribution is legally forbidden. Its core functionality is also specific to Neon's compute/storage implementation, limiting usefulness in this distribution.
+
+Version policy: No independently buildable release line is identified. Exclude unless portable source and redistribution/build evidence is published; Neon service availability is not a portable release policy.
+
+Target support: None while excluded. Neon documents this for its managed Neon Postgres service; no generic PostgreSQL, OS or architecture compatibility claim is established.
+
+Sources: [Neon extension reference](https://neon.com/docs/extensions/neon), [Neon compute management and Local File Cache](https://neon.com/docs/manage/endpoints/), [Neon extension catalogue](https://neon.com/docs/extensions).
+
+## neon_utils — exclude
+
+Description: [neon_utils](https://neon.com/docs/extensions/neon-utils) exposes `num_cpus()` to inspect compute allocation for Neon autoscaling. Its SQL extension name is `neon_utils`.
+
+For inclusion: Neon documents it for observing autoscaling resource allocation, a practical operational question for Neon users.
+
+Against inclusion: The documented function reports Neon-managed compute allocation and is tied to Neon's autoscaling service. It has no comparable meaning on a general PostgreSQL installation. The reviewed Neon documentation establishes service availability but not a public source repository, independent package, redistribution terms or standalone build path. This is unavailable evidence, not a finding that the law prohibits redistribution.
+
+Version policy: No independently buildable release line is identified. Exclude pending public source and redistribution/build evidence; service-side versions cannot support this project's release policy.
+
+Target support: None while excluded. Neon documents the capability for Neon Postgres only; no generic PostgreSQL, OS or architecture support is established.
+
+Sources: [Neon neon_utils reference](https://neon.com/docs/extensions/neon-utils), [Neon autoscaling guide](https://neon.com/docs/guides/autoscaling-guide), [Neon extension catalogue](https://neon.com/docs/extensions).
+
+## pg_analytics — exclude
+
+Description: [pg_analytics](https://github.com/paradedb/pg_analytics) embeds DuckDB in PostgreSQL to query object stores and table formats through foreign data wrappers and query pushdown. Its SQL extension name is `pg_analytics`.
+
+For inclusion: It addressed a useful analytics use case by querying S3, Parquet, Iceberg and Delta Lake from PostgreSQL. Its public code is under the PostgreSQL License, and its repository had substantial community interest (538 stars when checked).
+
+Against inclusion: Upstream explicitly discontinued and archived the project on 2025-03-19, stating that it is no longer maintained and directing users to its primary `pg_search` project. It embeds DuckDB, requires Rust/pgrx and substantial native dependencies, and explicitly does not support Windows because pgrx does not support it. The functional spec permits an explicitly bounded platform subset, but the maintenance and build burden weigh against adding an archived, broad-dependency extension when the project targets all platforms.
+
+Version policy: Exclude; no forward-maintained release line. PGXN records 0.3.7 as the latest stable version (2025-03-19), before the project's 2025-09-25 release cutoff, and upstream says the project is discontinued.
+
+Target support: None while excluded. Upstream documents PostgreSQL 13+ and prebuilt Linux/macOS artifacts, but explicitly excludes Windows; no complete target OS/architecture matrix is claimed.
+
+Sources: [upstream repository and discontinuation notice](https://github.com/paradedb/pg_analytics), [upstream installation and platform notes](https://github.com/paradedb/pg_analytics#installation), [release history](https://github.com/paradedb/pg_analytics/releases), [PGXN release record](https://pgxn.org/dist/pg_analytics/).
+
+## pg_embedding — exclude
+
+Description: [pg_embedding](https://github.com/neondatabase/pg_embedding) provided HNSW vector similarity search for PostgreSQL; its SQL extension name is `embedding`.
+
+For inclusion: It was a public Apache-2.0 project with a useful vector search feature and a documented PostgreSQL extension interface.
+
+Against inclusion: Neon explicitly stopped committing to the project in September 2023 and recommended migration to pgvector; the repository was archived on 2024-11-21. The project is therefore abandoned, and pgvector is the maintained alternative for this use case.
+
+Version policy: Exclude; upstream's final 0.3.6 release predates the project's September 2025 cutoff, and upstream has ended maintenance.
+
+Target support: None while excluded. The archived project does not establish current compatibility across PostgreSQL 15+ or the project's OS and architecture targets.
+
+Sources: [upstream repository, archive notice and migration recommendation](https://github.com/neondatabase/pg_embedding), [Neon's sunset announcement](https://neon.com/blog/sunset-pgembedding), [archived 0.3.6 build metadata](https://github.com/neondatabase/pg_embedding/blob/main/Makefile).
+
+## pg_jobmon — exclude
+
+Description: [pg_jobmon](https://github.com/omniti-labs/pg_jobmon) provides persistent, non-transactional logging for PostgreSQL transactions and functions. Its SQL extension name is `pg_jobmon`.
+
+For inclusion: It supplies durable job and function progress/error logs that survive transaction rollback, and the PostgreSQL License permits redistribution. Its upstream README documents PostgreSQL 9.2+ and integration with `dblink`; `pg_partman` documents it as an optional way to audit and monitor partition maintenance.
+
+Against inclusion: PGXN's latest stable release is 1.4.1 from 2021-08-09, and no recent upstream maintenance or current major-host support was identified. Although upstream documents PostgreSQL 9.2+, current test evidence is absent. The extension also requires `dblink` and a local connection path; non-superuser setup stores credentials in an extension table and requires `pg_hba.conf` configuration. This is a meaningful setup and security cost for a narrow logging utility.
+
+Version policy: Exclude. No release after the project cutoff (2025-09-25) or current compatibility evidence was identified; 1.4.1 is the latest PGXN stable version.
+
+Target support: None while excluded. Upstream declares PostgreSQL 9.2+, which includes the project's PostgreSQL range, but current test evidence is absent; upstream documents no OS or architecture matrix. `dblink` must also be available.
+
+Sources: [upstream README, requirements, setup and license](https://github.com/omniti-labs/pg_jobmon), [PGXN release record](https://pgxn.org/dist/pg_jobmon/), [pg_partman documentation describing optional integration](https://github.com/pgpartman/pg_partman), [AWS extension support overview](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/PostgreSQL.Concepts.General.FeatureSupport.Extensions.html), [Supabase extension catalogue](https://supabase.com/docs/guides/database/extensions).
+
 ## Unreviewed projects
 
 Candidates extracted from the October 2026 research. No inclusion decision is implied. Names in the second column are SQL extension names used by `CREATE EXTENSION`. Provider documentation is linked where the research did not identify an upstream source project.
@@ -206,32 +318,24 @@ Candidates extracted from the October 2026 research. No inclusion decision is im
 | h3-pg | `h3`, `h3_postgis` | [Upstream](https://github.com/postgis/h3-pg) |
 | index_advisor | `index_advisor` | [Upstream](https://github.com/supabase/index_advisor) |
 | ip4r | `ip4r` | [Upstream](https://github.com/RhodiumToad/ip4r) |
-| lakebase_text | `lakebase_text` | [Upstream](https://docs.databricks.com/aws/en/oltp/projects/extensions) |
-| lakebase_tokenizer | `lakebase_tokenizer` | [Upstream](https://docs.databricks.com/aws/en/oltp/projects/extensions) |
-| lakebase_vector | `lakebase_vector` | [Upstream](https://docs.databricks.com/aws/en/oltp/projects/extensions) |
 | lantern | `lantern` | [Upstream](https://github.com/lanterndata/lantern) |
 | lantern_extras | `lantern_extras` | [Upstream](https://github.com/lanterndata/lantern_extras) |
 | login_hook | `login_hook` | [Upstream](https://github.com/splendiddata/login_hook) |
 | MobilityDB | `mobilitydb` | [Upstream](https://github.com/MobilityDB/MobilityDB) |
 | mysql_fdw | `mysql_fdw` | [Upstream](https://github.com/EnterpriseDB/mysql_fdw) |
-| neon | `neon` | [Upstream](https://neon.com/docs/manage/endpoints/) |
-| neon_utils | `neon_utils` | [Upstream](https://neon.com/docs/extensions/pg-extensions) |
 | online_advisor | `online_advisor` | [Upstream](https://github.com/knizhnik/online_advisor) |
 | orafce | `orafce` | [Upstream](https://github.com/orafce/orafce) |
 | paradedb | `pg_search` | [Upstream](https://github.com/paradedb/paradedb) |
 | pg-semver | `semver` | [Upstream](https://github.com/theory/pg-semver) |
 | pg-strom | `pg_strom` | [Upstream](https://github.com/heterodb/pg-strom) |
-| pg_analytics | `pg_analytics` | [Upstream](https://github.com/paradedb/pg_analytics) |
 | pg_background | `pg_background` | [Upstream](https://github.com/vibhorkum/pg_background) |
 | pg_bigm | `pg_bigm` | [Upstream](https://github.com/pgbigm/pg_bigm) |
 | pg_duckdb | `pg_duckdb` | [Upstream](https://github.com/duckdb/pg_duckdb) |
-| pg_embedding | `embedding` | [Upstream](https://github.com/neondatabase/pg_embedding) |
 | pg_failover_slots | `pg_failover_slots` | [Upstream](https://github.com/EnterpriseDB/pg_failover_slots) |
 | pg_graphql | `pg_graphql` | [Upstream](https://github.com/supabase/pg_graphql) |
 | pg_hashids | `pg_hashids` | [Upstream](https://github.com/iCyberon/pg_hashids) |
 | pg_hint_plan | `pg_hint_plan` | [Upstream](https://github.com/ossc-db/pg_hint_plan) |
 | pg_ivm | `pg_ivm` | [Upstream](https://github.com/sraoss/pg_ivm) |
-| pg_jobmon | `pg_jobmon` | [Upstream](https://github.com/omniti-labs/pg_jobmon) |
 | pg_jsonschema | `pg_jsonschema` | [Upstream](https://github.com/supabase/pg_jsonschema) |
 | pg_mooncake | `pg_mooncake` | [Upstream](https://github.com/Mooncake-Labs/pg_mooncake) |
 | pg_net | `pg_net` | [Upstream](https://github.com/supabase/pg_net) |
