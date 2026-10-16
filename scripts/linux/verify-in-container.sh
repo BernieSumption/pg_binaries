@@ -33,6 +33,44 @@ controls = {path.stem for path in Path('/tmp/first/postgresql/share/extension').
 assert controls and m['included_extensions'] == sorted(controls), m
 assert 'vector' not in controls, controls
 
+root = Path('/tmp/first/postgresql')
+license_dir = root / 'LICENSES'
+inventory = json.loads((license_dir / 'inventory.json').read_text())
+assert inventory['schema_version'] == 1, inventory
+components = inventory['components']
+postgresql = [entry for entry in components if entry['component'] == 'postgresql']
+assert len(postgresql) == 1, components
+postgresql = postgresql[0]
+assert postgresql['version'] == version, postgresql
+assert postgresql['payload_paths'] == ['bin', 'include', 'lib', 'share'], postgresql
+assert postgresql['license_file'] == 'PostgreSQL.txt', postgresql
+assert postgresql['license_source'] == f'https://ftp.postgresql.org/pub/source/v{version}/postgresql-{version}.tar.bz2', postgresql
+assert all((root / path).is_dir() for path in postgresql['payload_paths']), postgresql
+postgres_license = license_dir / postgresql['license_file']
+assert postgres_license.is_file() and postgres_license.stat().st_size > 0, postgresql
+
+runtime = [entry for entry in components if entry['component'] == 'runtime-package']
+assert runtime, components
+assert len(components) == len(runtime) + 1, components
+assert all(entry['package'] and entry['version'] for entry in runtime), runtime
+assert len({entry['package'] for entry in runtime}) == len(runtime), runtime
+mapped = []
+for entry in runtime:
+    assert entry['license_source'] == f"https://packages.ubuntu.com/jammy/{entry['package']}", entry
+    assert Path(entry['license_file']).name == entry['license_file'], entry
+    license_path = license_dir / entry['license_file']
+    assert license_path.is_file() and license_path.stat().st_size > 0, entry
+    assert entry['payload_paths'], entry
+    for relative in entry['payload_paths']:
+        relative_path = Path(relative)
+        assert not relative_path.is_absolute() and '..' not in relative_path.parts, (entry, relative)
+        payload = root / relative
+        assert payload.is_file() and payload.stat().st_size > 0, (entry, relative)
+        mapped.append(relative)
+actual = sorted(path.relative_to(root).as_posix()
+                for path in (root / 'lib/runtime').iterdir() if path.is_file())
+assert sorted(mapped) == actual, {'mapped': sorted(mapped), 'actual': actual}
+
 with open('/tmp/vector/metadata.json') as f:
     m = json.load(f)
 assert m == {
@@ -44,11 +82,7 @@ assert m == {
     'runtime_prerequisites': [],
 }, m
 PY
-test -s /tmp/first/postgresql/LICENSES/PostgreSQL.txt
 test -s /tmp/vector/pgvector/LICENSES/pgvector.txt
-for package in libicu70 libssl3 liblz4-1 libzstd1 libxml2 libxslt1.1; do
-  test -s "/tmp/first/postgresql/LICENSES/$package.copyright"
-done
 pgroot=/tmp/first/postgresql
 extroot=/tmp/vector/pgvector
 while IFS= read -r -d '' source; do

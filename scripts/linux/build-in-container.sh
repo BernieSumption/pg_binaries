@@ -45,6 +45,7 @@ builtins=$(python3 /usr/local/bin/discover-builtins /work/stage/postgresql)
 # look for them relative to its own position. The glibc baseline is Ubuntu 22.04.
 root=/work/stage/postgresql
 mkdir -p "$root/lib/runtime"
+: > /work/runtime-packages.tsv
 for pass in 1 2 3; do
   while IFS= read -r -d '' elf; do
     if ! file -b "$elf" | grep -q ELF; then continue; fi
@@ -68,6 +69,7 @@ for pass in 1 2 3; do
           exit 1
         fi
         cp "/usr/share/doc/$package/copyright" "$root/LICENSES/${package}.copyright"
+        printf '%s\t%s\n' "$package" "lib/runtime/$library" >> /work/runtime-packages.tsv
       fi
     done < <(ldd "$elf" 2>/dev/null | awk '$2 == "=>" && $3 ~ /^\// {print $1, $3}')
   done < <(find "$root/bin" "$root/lib" -type f -print0)
@@ -82,6 +84,9 @@ while IFS= read -r -d '' elf; do
   esac
   patchelf --set-rpath "$rpath" "$elf"
 done < <(find "$root/bin" "$root/lib" -type f -print0)
+
+python3 /usr/local/bin/write-linux-license-inventory \
+  "$root" "$pg_version" /work/runtime-packages.tsv
 
 cat > "$root/manifest.json" <<EOF
 {"schema_version":1,"component":"postgresql","version":"${pg_version}","postgresql_version":"${pg_version}","platform":"linux","architecture":"${architecture}","glibc_baseline":"2.35","included_extensions":${builtins},"capabilities":{"icu":true,"libc_collations":true,"lz4":true,"zstd":true}}
