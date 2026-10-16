@@ -22,6 +22,8 @@ def run(*args):
 
 
 def macho_dependencies(path):
+    if run("lipo", "-archs", str(path)).returncode:
+        return None
     result = run("otool", "-L", str(path))
     if result.returncode:
         return None
