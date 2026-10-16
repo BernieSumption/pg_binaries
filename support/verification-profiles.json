@@ -17,7 +17,7 @@
       "scope": "pilot-smoke",
       "platforms": ["macos-x86_64"],
       "case_ids": ["archive-assembly", "built-in-extension-smoke", "core-schema-smoke", "relocation"],
-      "sources": [".github/workflows/macos-pilot.yml", "scripts/macos/bundle.py", "scripts/macos/verify.sh", "tests/builtins/basic.sql", "tests/builtins/file_fdw.csv", "tests/builtins/fixture.sql", "tests/builtins/loopback.sql", "tests/schema.sql"]
+      "sources": [".github/workflows/macos-pilot.yml", "scripts/macos/bundle.py", "scripts/macos/verify.sh", "tests/builtins/basic.sql", "tests/builtins/coverage.sql", "tests/builtins/file_fdw.csv", "tests/builtins/fixture.sql", "tests/builtins/logical.sql", "tests/builtins/loopback.sql", "tests/builtins/preloaded.sql", "tests/builtins/ssl.sql", "tests/builtins/surgery.sql", "tests/builtins/tcn.sql", "tests/builtins/wal.sql", "tests/schema.sql"]
     },
     "windows-pilot-x86_64": {
       "scope": "pilot-smoke",

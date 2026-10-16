@@ -57,7 +57,20 @@ start_server() {
   pg_ctl="$pg_root/bin/pg_ctl"
   data_dir="$work/$run_name-data"
   "$pg_root/bin/initdb" -D "$data_dir" --encoding=UTF8 --no-instructions >/dev/null
-  "$pg_ctl" -D "$data_dir" -o "-k $work/socket -p 54329 -c listen_addresses=''" -l "$work/$run_name.log" -w start
+  local server_options="-k $work/socket -p 54329 -c listen_addresses=''"
+  if [[ $run_name == moved ]]; then
+    mkdir -p "$work/tls"
+    openssl req -x509 -newkey rsa:2048 -sha256 -days 1 -nodes -subj '/CN=pilot-ca' -keyout "$work/tls/ca.key" -out "$work/tls/ca.crt" >/dev/null 2>&1
+    for peer in server client; do
+      if [[ $peer == server ]]; then cn=localhost; else cn=$(id -un); fi
+      openssl req -newkey rsa:2048 -sha256 -nodes -subj "/CN=$cn" -keyout "$work/tls/$peer.key" -out "$work/tls/$peer.csr" >/dev/null 2>&1
+      openssl x509 -req -in "$work/tls/$peer.csr" -CA "$work/tls/ca.crt" -CAkey "$work/tls/ca.key" -CAcreateserial -days 1 -sha256 -out "$work/tls/$peer.crt" >/dev/null 2>&1
+    done
+    chmod 600 "$work/tls"/*.key
+    printf 'local all all trust\nhostssl all all 127.0.0.1/32 cert\n' > "$data_dir/pg_hba.conf"
+    server_options="-k $work/socket -p 54329 -h 127.0.0.1 -c shared_preload_libraries=pg_stat_statements -c wal_level=logical -c ssl=on -c ssl_cert_file=$work/tls/server.crt -c ssl_key_file=$work/tls/server.key -c ssl_ca_file=$work/tls/ca.crt"
+  fi
+  "$pg_ctl" -D "$data_dir" -o "$server_options" -l "$work/$run_name.log" -w start
   "$pg_root/bin/psql" -h "$work/socket" -p 54329 -d postgres -XAt -c 'SHOW server_version' | grep -Fx '18.6'
 }
 stop_server() {
@@ -84,6 +97,14 @@ psql=("$pg/bin/psql" -h "$work/socket" -p 54329 -d postgres -X -v ON_ERROR_STOP=
 "${psql[@]}" -f "$repo/tests/builtins/basic.sql"
 "${psql[@]}" -v loopback_conninfo="host=$work/socket port=54329 dbname=postgres" -v loopback_host="$work/socket" -v loopback_port=54329 -f "$repo/tests/builtins/loopback.sql"
 "${psql[@]}" -v fixture_path="$repo/tests/builtins/file_fdw.csv" -f "$repo/tests/builtins/fixture.sql"
+"${psql[@]}" -f "$repo/tests/builtins/preloaded.sql"
+"${psql[@]}" -f "$repo/tests/builtins/wal.sql"
+tcn_output=$("${psql[@]}" -f "$repo/tests/builtins/tcn.sql")
+printf '%s\n' "$tcn_output"
+grep -F "Asynchronous notification \"tcn\" with payload \"\"builtin_tcn\",I,\"id\"='91'\"" <<< "$tcn_output"
+PGSSLMODE=verify-ca PGSSLROOTCERT="$work/tls/ca.crt" PGSSLCERT="$work/tls/client.crt" PGSSLKEY="$work/tls/client.key" \
+  "$pg/bin/psql" -h 127.0.0.1 -p 54329 -d postgres -X -v ON_ERROR_STOP=1 -f "$repo/tests/builtins/ssl.sql"
+"${psql[@]}" -f "$repo/tests/builtins/logical.sql"
 "${psql[@]}" -c "CREATE COLLATION pilot_icu (provider = icu, locale = 'und-u-ks-level2', deterministic = false)"
 "${psql[@]}" -c "SELECT name FROM (VALUES ('a'), ('A')) AS names(name) ORDER BY name COLLATE pilot_icu"
 locale_name=$(locale -a | awk '/UTF-8|utf8/ && !found {print; found=1}')
@@ -107,12 +128,16 @@ printf "CREATE COLLATION pilot_libc (provider = libc, locale = '%s');\n" "$local
 "${psql[@]}" -c "INSERT INTO pilot_vectors VALUES (1, '[1,2,3]'), (2, '[2,3,4]')"
 "${psql[@]}" -c "CREATE INDEX ON pilot_vectors USING hnsw (embedding vector_l2_ops)"
 "${psql[@]}" -At -c "SELECT id FROM pilot_vectors ORDER BY embedding <-> '[1,2,3]' LIMIT 1" | grep -Fx 1
+"${psql[@]}" -f "$repo/tests/builtins/coverage.sql"
 "$pg/bin/pg_dump" -h "$work/socket" -p 54329 -Fc -Z zstd:1 -f "$work/pilot.dump" postgres
 "${psql[@]}" -c 'CREATE DATABASE restored'
 "$pg/bin/pg_restore" --exit-on-error -h "$work/socket" -p 54329 -d restored "$work/pilot.dump"
 restored=("$pg/bin/psql" -h "$work/socket" -p 54329 -d restored -X -v ON_ERROR_STOP=1)
 "${restored[@]}" -At -c 'SELECT pilot.active_item_count(1)' | grep -Fx 1
 "${restored[@]}" -At -c "SELECT id FROM pilot_vectors ORDER BY embedding <-> '[1,2,3]' LIMIT 1" | grep -Fx 1
+"${psql[@]}" -c 'CREATE DATABASE surgery_check'
+surgery=("$pg/bin/psql" -h "$work/socket" -p 54329 -d surgery_check -X -v ON_ERROR_STOP=1)
+"${surgery[@]}" -f "$repo/tests/builtins/surgery.sql"
 stop_server
 
 python3 - "$pg" <<'PY'
