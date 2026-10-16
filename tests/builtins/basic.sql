@@ -365,3 +365,67 @@ BEGIN
     END IF;
 END
 $$;
+
+CREATE EXTENSION insert_username;
+CREATE TABLE builtin_insert_username (value text, changed_by text);
+CREATE TRIGGER builtin_insert_username_trigger
+    BEFORE INSERT OR UPDATE ON builtin_insert_username
+    FOR EACH ROW EXECUTE FUNCTION insert_username(changed_by);
+INSERT INTO builtin_insert_username VALUES ('insert', NULL);
+UPDATE builtin_insert_username SET changed_by = 'overridden' WHERE value = 'insert';
+DO $$
+BEGIN
+    IF (SELECT changed_by FROM builtin_insert_username WHERE value = 'insert') <> current_user THEN
+        RAISE EXCEPTION 'insert_username did not record the current user';
+    END IF;
+END
+$$;
+
+CREATE EXTENSION refint;
+CREATE TABLE builtin_refint_parent (id integer NOT NULL UNIQUE);
+CREATE TABLE builtin_refint_child (parent_id integer);
+CREATE TRIGGER builtin_refint_child_check
+    AFTER INSERT OR UPDATE ON builtin_refint_child
+    FOR EACH ROW EXECUTE FUNCTION check_primary_key(
+        'parent_id', 'builtin_refint_parent', 'id');
+CREATE TRIGGER builtin_refint_parent_cascade
+    AFTER DELETE OR UPDATE ON builtin_refint_parent
+    FOR EACH ROW EXECUTE FUNCTION check_foreign_key(
+        1, 'cascade', 'id', 'builtin_refint_child', 'parent_id');
+INSERT INTO builtin_refint_parent VALUES (1);
+INSERT INTO builtin_refint_child VALUES (1);
+DELETE FROM builtin_refint_parent WHERE id = 1;
+DO $$
+BEGIN
+    IF EXISTS (SELECT FROM builtin_refint_child) THEN
+        RAISE EXCEPTION 'refint cascade left a referencing row';
+    END IF;
+END
+$$;
+
+CREATE EXTENSION pg_visibility;
+CREATE TABLE builtin_pg_visibility (value integer);
+INSERT INTO builtin_pg_visibility SELECT generate_series(1, 100);
+VACUUM builtin_pg_visibility;
+DO $$
+BEGIN
+    IF (SELECT all_visible FROM pg_visibility_map('builtin_pg_visibility'::regclass, 0))
+       IS DISTINCT FROM TRUE THEN
+        RAISE EXCEPTION 'pg_visibility did not report the vacuumed page as all-visible';
+    END IF;
+END
+$$;
+
+CREATE EXTENSION pg_freespacemap;
+CREATE TABLE builtin_pg_freespacemap (value integer);
+INSERT INTO builtin_pg_freespacemap VALUES (1);
+DO $$
+BEGIN
+    IF pg_freespace('builtin_pg_freespacemap'::regclass, 0) IS NULL
+       OR pg_freespace('builtin_pg_freespacemap'::regclass, 0) < 0
+       OR pg_freespace('builtin_pg_freespacemap'::regclass, 0)
+          > current_setting('block_size')::integer THEN
+        RAISE EXCEPTION 'pg_freespacemap returned an invalid free-space value';
+    END IF;
+END
+$$;
