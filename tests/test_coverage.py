@@ -58,6 +58,21 @@ class CoverageTests(unittest.TestCase):
                              <= coverage.version_parts(hi, "test")
                              for name, _, lo, hi, _ in have_extensions))
 
+    def test_extension_target_classification_uses_download_range_and_final_archive_sha(self):
+        target = ("example", "1.0", "15.9", "linux-x86_64")
+        missing_target = ("example", "1.0", "15.9", "linux-arm64")
+        download = {"url": "https://example.test/archive.tar.gz", "sha256": "a" * 64}
+        key = ("example", "1.0", "15.0", "16.9", "linux-x86_64")
+        records = [{"outcome": "passed", "sha256": "b" * 64, "component": "example",
+                    "version": "1.0", "platform": "linux-x86_64", "postgresql_version": "15.0",
+                    "environment": {"endpoint": "minimum"}}]
+
+        without_download, awaiting = coverage.classify_extension_targets(
+            [target, missing_target], {key: download}, records)
+
+        self.assertEqual(without_download, [missing_target])
+        self.assertEqual(awaiting, [target])
+
     def test_extension_os_subset_keeps_both_architectures_and_pg_range(self):
         self.support["extensions"]["Example"]["versions"]["1.0"] = {
             "postgresql_minimum_major": 16,
@@ -140,6 +155,7 @@ class CoverageTests(unittest.TestCase):
             status, output = run_cli()
             self.assertEqual(status, 1)
             self.assertIn("core targets: 6 (6 missing)", output)
+            self.assertIn("core: 0 without download, 6 awaiting verification", output)
             self.assertIn("verification: unverified", output)
 
             records_dir = root / "support" / "verification"
@@ -153,6 +169,7 @@ class CoverageTests(unittest.TestCase):
             status, output = run_cli()
             self.assertEqual(status, 1)
             self.assertIn("core targets: 6 (6 missing)", output)
+            self.assertIn("core: 0 without download, 6 awaiting verification", output)
             self.assertIn("verification: incomplete", output)
 
             record["outcome"] = "passed"
@@ -173,6 +190,20 @@ class CoverageTests(unittest.TestCase):
             self.assertEqual(status, 0)
             self.assertIn("core targets: 6 (0 missing)", output)
             self.assertIn("verification: structural-only", output)
+
+            inventory["postgresql"]["15.9"]["downloads"].pop("linux-arm64")
+            (root / "inventory.json").write_text(json.dumps(inventory), encoding="utf-8")
+            output = io.StringIO()
+            with patch.object(sys, "argv", ["coverage.py", "--root", str(root), "--json"]), \
+                    contextlib.redirect_stdout(output):
+                status = coverage.main()
+            report = json.loads(output.getvalue())
+            self.assertEqual(status, 1)
+            self.assertEqual(report["core_without_download"], [["15.9", "linux-arm64"]])
+            self.assertEqual(report["core_awaiting_verification"], [])
+            self.assertEqual(report["missing_core"], report["core_without_download"])
+            self.assertEqual(report["extension_without_download"], [])
+            self.assertEqual(report["extension_awaiting_verification"], [])
 
     def test_support_schema_requires_all_platforms_and_extensions(self):
         with self.assertRaises(coverage.CoverageError):

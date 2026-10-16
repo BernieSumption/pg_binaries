@@ -233,6 +233,26 @@ def verified(records, download, component, version, platform, pg_version, endpoi
                for r in records)
 
 
+def classify_extension_targets(targets, downloads, records):
+    without_download, awaiting_verification = [], []
+    for name, version, pg, platform in sorted(targets):
+        matching = [(key, download) for key, download in downloads.items()
+                    if key[0] == name and key[1] == version and key[4] == platform
+                    and version_parts(key[2], "inventory range") <= version_parts(pg, "target")
+                    <= version_parts(key[3], "inventory range")]
+        if not matching:
+            without_download.append((name, version, pg, platform))
+            continue
+        (_, _, low, high, _), download = matching[0]
+        endpoints = {low, high}
+        verified_endpoints = [(pg_endpoint, os_endpoint) for pg_endpoint in endpoints
+                              for os_endpoint in ("minimum", "current") if verified(
+            records, download, name, version, platform, pg_endpoint, os_endpoint)]
+        if len(verified_endpoints) != len(endpoints) * 2:
+            awaiting_verification.append((name, version, pg, platform))
+    return without_download, awaiting_verification
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[1])
@@ -249,29 +269,23 @@ def main():
         want_core, want_ext = expected_targets(support, releases)
         have_core, have_ext = inventory_targets(inventory)
         records = verification_records(root)
-        missing_core = sorted(t for t in want_core if t not in have_core or any(not verified(
-            records, have_core[t], "postgresql", t[0], t[1], t[0], endpoint)
-            for endpoint in ("minimum", "current")))
-        missing_ext = []
-        for target in sorted(want_ext):
-            name, version, pg, platform = target
-            matching = [(key, download) for key, download in have_ext.items()
-                        if key[0] == name and key[1] == version and key[4] == platform
-                        and version_parts(key[2], "inventory range") <= version_parts(pg, "target")
-                        <= version_parts(key[3], "inventory range")]
-            endpoint_records = []
-            if matching:
-                (_, _, low, high, _), download = matching[0]
-                endpoints = {low, high}
-                endpoint_records = [(pg_endpoint, os_endpoint) for pg_endpoint in endpoints
-                                    for os_endpoint in ("minimum", "current") if verified(
-                    records, download, name, version, platform, pg_endpoint, os_endpoint)]
-            if not matching or len(endpoint_records) != len(endpoints) * 2:
-                missing_ext.append(target)
+        core_without_download = sorted(t for t in want_core if t not in have_core)
+        core_awaiting_verification = sorted(
+            t for t in want_core if t in have_core and any(not verified(
+                records, have_core[t], "postgresql", t[0], t[1], t[0], endpoint)
+                for endpoint in ("minimum", "current")))
+        missing_core = sorted(core_without_download + core_awaiting_verification)
+        extension_without_download, extension_awaiting_verification = classify_extension_targets(
+            want_ext, have_ext, records)
+        missing_ext = sorted(extension_without_download + extension_awaiting_verification)
         result = {"snapshot_as_of": snapshot["as_of"], "postgresql_releases": len(releases),
                   "required_core": len(want_core), "missing_core": [list(x) for x in missing_core],
+                  "core_without_download": [list(x) for x in core_without_download],
+                  "core_awaiting_verification": [list(x) for x in core_awaiting_verification],
                   "required_extension_targets": len(want_ext),
                   "missing_extension": [list(x) for x in missing_ext],
+                  "extension_without_download": [list(x) for x in extension_without_download],
+                  "extension_awaiting_verification": [list(x) for x in extension_awaiting_verification],
                   "verification": "structural-only" if not missing_core and not missing_ext else
                   ("unverified" if not records else "incomplete"),
                   "coverage_scope": "structural coverage only; publication eligibility is not established"}
@@ -280,6 +294,8 @@ def main():
         else:
             print(f"PostgreSQL releases: {len(releases)}; core targets: {len(want_core)} ({len(missing_core)} missing)")
             print(f"Extension SQL targets: {len(want_ext)} ({len(missing_ext)} missing); verification: {result['verification']}")
+            print(f"  core: {len(core_without_download)} without download, {len(core_awaiting_verification)} awaiting verification")
+            print(f"  extensions: {len(extension_without_download)} without download, {len(extension_awaiting_verification)} awaiting verification")
             for version, platform in missing_core[:20]:
                 print(f"missing core {version} {platform}")
             for name, version, pg, platform in missing_ext[:20]:
