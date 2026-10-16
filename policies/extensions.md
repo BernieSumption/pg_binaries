@@ -176,6 +176,20 @@ Target support: PostgreSQL 15 and later stable releases, currently 15–18. Buil
 
 Sources: [upstream source, PostgreSQL requirement and license](https://github.com/aws/pgcollection), [release history](https://github.com/aws/pgcollection/releases), [AWS RDS extension catalogue](https://docs.aws.amazon.com/AmazonRDS/latest/PostgreSQLReleaseNotes/postgresql-extensions.html).
 
+## pg_background — exclude
+
+Description: [pg_background](https://github.com/vibhorkum/pg_background) runs SQL asynchronously in PostgreSQL background worker processes. Its SQL extension name is `pg_background`.
+
+For inclusion: It supports independent transactions and asynchronous SQL execution from server-side code.
+
+Against inclusion: Background execution is an operational capability for application code, not a feature required to define or inspect schema objects. PostgreSQL already exposes its background worker API to extensions. Its latest 2.0 release also changes the SQL API and removes pre-1.8 upgrade support, adding version-specific migration considerations without meeting a required schema use case.
+
+Version policy: Exclude. Reassess if a schema-level requirement depends on this extension.
+
+Target support: None while excluded. Upstream reports PostgreSQL 14–18 fully tested and PostgreSQL 19 beta validated.
+
+Sources: [upstream project, PostgreSQL compatibility and license](https://github.com/vibhorkum/pg_background), [release history and 2.0 migration notes](https://github.com/vibhorkum/pg_background/releases).
+
 ## pg_cron — include
 
 Description: [pg_cron](https://github.com/citusdata/pg_cron) runs scheduled SQL jobs inside PostgreSQL as a background worker. Its SQL extension name is `pg_cron`.
@@ -189,6 +203,48 @@ Version policy: Support 1.6.8, the latest upstream release on 2026-10-16. Upstre
 Target support: PostgreSQL 15 and later stable releases, currently 15–18. Build and test each supported project platform and architecture before claiming verified coverage. Reassess compatibility when a new PostgreSQL major becomes stable. The extension can be installed in only one database per cluster.
 
 Sources: [upstream README, requirements and provider list](https://github.com/citusdata/pg_cron), [release history and PostgreSQL compatibility](https://github.com/citusdata/pg_cron/releases), [Supabase extension catalogue](https://github.com/supabase/postgres).
+
+## pg_duckdb — exclude
+
+Description: [pg_duckdb](https://github.com/duckdb/pg_duckdb) integrates DuckDB's query engine with PostgreSQL and supports analytics and data-lake access. Its SQL extension name is `pg_duckdb`.
+
+For inclusion: It can run analytical queries over PostgreSQL tables and query external Parquet, CSV, JSON and lakehouse data.
+
+Against inclusion: These are query execution and data-lake capabilities, not requirements for defining or inspecting PostgreSQL schemas. The project would also need to redistribute DuckDB and support community DuckDB extensions and cloud integrations. Upstream currently documents Ubuntu and macOS only, which does not establish the required platform matrix.
+
+Version policy: Exclude while the project has no required analytics or data-lake use case.
+
+Target support: None while excluded. Upstream lists PostgreSQL 14–18 and Ubuntu 22.04–24.04 and macOS.
+
+Sources: [upstream project, supported systems and license](https://github.com/duckdb/pg_duckdb), [upstream releases](https://github.com/duckdb/pg_duckdb/releases).
+
+## pg_hint_plan — exclude
+
+Description: [pg_hint_plan](https://github.com/ossc-db/pg_hint_plan) lets SQL comments or a hint table direct PostgreSQL's query planner. Its SQL extension name is `pg_hint_plan`.
+
+For inclusion: It provides query plan control through SQL comments and stored hints.
+
+Against inclusion: Planner tuning affects query execution plans, not schema creation or inspection. Its supported release is PostgreSQL-major-specific and requires its own build for every supported major, without serving a functional requirement in this project.
+
+Version policy: Exclude while planner control is outside the project use case.
+
+Target support: None while excluded. Upstream publishes separate lines for individual PostgreSQL majors; release 1.8.0 supports PostgreSQL 18 only.
+
+Sources: [upstream project and hint features](https://github.com/ossc-db/pg_hint_plan), [release history and PostgreSQL-major-specific releases](https://github.com/ossc-db/pg_hint_plan/releases).
+
+## pg_ivm — include
+
+Description: [pg_ivm](https://github.com/sraoss/pg_ivm) adds incremental maintenance for materialized views, applying changes from base tables without recomputing the full view. Its SQL extension name is `pg_ivm`.
+
+For inclusion: Materialized views are schema objects used by applications, and incremental maintenance changes their behavior when base tables change. Supporting their definitions and use falls within the project's schema functionality. Upstream is maintained, PostgreSQL-licensed and documents PostgreSQL 13–19 support.
+
+Against inclusion: The extension must be loaded through `shared_preload_libraries` or `session_preload_libraries` for correct maintenance. This requires documenting basic PostgreSQL configuration and a restart when using shared preload. Version 1.15 added a utility for restoring view-maintenance metadata after `pg_dump` or `pg_upgrade`; packaging must include it. Its native code and platform coverage require build verification.
+
+Version policy: Support 1.16, the latest upstream release on 2026-10-16. It fixes maintenance and concurrency errors and documents PostgreSQL 19 support. No prior SQL compatibility line is required by the project.
+
+Target support: PostgreSQL 15–18 initially, intersecting upstream's declared 13–19 range with the project's stable targets. Build and test all required OS and architecture targets before claiming coverage.
+
+Sources: [upstream description, compatibility and configuration](https://github.com/sraoss/pg_ivm), [release history and 1.16 fixes](https://github.com/sraoss/pg_ivm/releases), [upstream license](https://github.com/sraoss/pg_ivm/blob/main/LICENSE).
 
 ## lakebase_text — exclude
 
@@ -408,14 +464,10 @@ Candidates extracted from the October 2026 research. No inclusion decision is im
 | orafce | `orafce` | [Upstream](https://github.com/orafce/orafce) |
 | paradedb | `pg_search` | [Upstream](https://github.com/paradedb/paradedb) |
 | pg-semver | `semver` | [Upstream](https://github.com/theory/pg-semver) |
-| pg_background | `pg_background` | [Upstream](https://github.com/vibhorkum/pg_background) |
 | pg_bigm | `pg_bigm` | [Upstream](https://github.com/pgbigm/pg_bigm) |
-| pg_duckdb | `pg_duckdb` | [Upstream](https://github.com/duckdb/pg_duckdb) |
 | pg_failover_slots | `pg_failover_slots` | [Upstream](https://github.com/EnterpriseDB/pg_failover_slots) |
 | pg_graphql | `pg_graphql` | [Upstream](https://github.com/supabase/pg_graphql) |
 | pg_hashids | `pg_hashids` | [Upstream](https://github.com/iCyberon/pg_hashids) |
-| pg_hint_plan | `pg_hint_plan` | [Upstream](https://github.com/ossc-db/pg_hint_plan) |
-| pg_ivm | `pg_ivm` | [Upstream](https://github.com/sraoss/pg_ivm) |
 | pg_jsonschema | `pg_jsonschema` | [Upstream](https://github.com/supabase/pg_jsonschema) |
 | pg_mooncake | `pg_mooncake` | [Upstream](https://github.com/Mooncake-Labs/pg_mooncake) |
 | pg_net | `pg_net` | [Upstream](https://github.com/supabase/pg_net) |

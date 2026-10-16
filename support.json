@@ -49,6 +49,13 @@
       "versions": {
         "1.6.8": { "postgresql_minimum_major": 15 }
       }
+    },
+    "pg_ivm": {
+      "sql_names": ["pg_ivm"],
+      "requires": [],
+      "versions": {
+        "1.16": { "postgresql_minimum_major": 15, "postgresql_maximum_major": 18 }
+      }
     }
   }
 }
