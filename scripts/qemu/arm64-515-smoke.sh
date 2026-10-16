@@ -71,7 +71,7 @@ qemu-system-aarch64 \
   -drive "file=$image,if=virtio,format=$image_format" \
   -drive "file=$work/seed.iso,media=cdrom,readonly=on" \
   -netdev user,id=net0,hostfwd=tcp::2222-:22 \
-  -device virtio-net-pci,netdev=net0 \
+  -device virtio-net-device,netdev=net0 \
   > "$work/qemu.log" 2>&1 &
 qemu_pid=$!
 
