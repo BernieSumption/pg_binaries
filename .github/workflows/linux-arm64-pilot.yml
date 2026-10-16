@@ -30,6 +30,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: Preview one declared Linux arm64 build target
         run: python3 tools/plan_work.py --select-linux-pilot "$PG_VERSION" --architecture arm64
+      - name: Confirm native arm64 runner
+        run: test "$(uname -m)" = aarch64
       - name: Build exact PostgreSQL and pgvector archives
         run: scripts/linux/build.sh "$RUNNER_TEMP/pilot"
       - name: Verify relocated archives on clean Ubuntu 24.04 arm64
