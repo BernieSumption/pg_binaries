@@ -246,6 +246,48 @@ Target support: PostgreSQL 15–18 initially, intersecting upstream's declared 1
 
 Sources: [upstream description, compatibility and configuration](https://github.com/sraoss/pg_ivm), [release history and 1.16 fixes](https://github.com/sraoss/pg_ivm/releases), [upstream license](https://github.com/sraoss/pg_ivm/blob/main/LICENSE).
 
+## pgaudit — include
+
+Description: [pgAudit](https://github.com/pgaudit/pgaudit) adds session and object audit logging through the `pgaudit` SQL extension and PostgreSQL's normal logs.
+
+For inclusion: It is maintained, offered by Amazon RDS and Google Cloud SQL, and provides application and compliance audit records. Its PostgreSQL License allows redistribution, and it has no external runtime data. The current PostgreSQL 15 branch release predates the general cutoff, but the specification permits an exception for an extension's current release.
+
+Against inclusion: It requires `shared_preload_libraries` and a restart; full DDL audit detail also depends on creating the SQL extension before setting its log classes. Logging is best-effort rather than transactional. Upstream describes builds for most Unix-like systems and does not document native Windows support. The preload and log behavior must be represented in package metadata and tests.
+
+Version policy: Support the latest release in each upstream PostgreSQL-major branch: pgAudit 1.7.1 for PostgreSQL 15, 16.1 for 16, 17.1 for 17, and 18.0 for 18. Upstream maps these separate release lines to the server majors and maintains stable branches for bug fixes. Retain all four while the corresponding PostgreSQL majors are required; recheck branch releases for updates.
+
+Target support: PostgreSQL 15–18 on Linux and macOS, x86-64 and arm64, with each pgAudit line restricted to its matching PostgreSQL major. Both architectures require build and test evidence. No Windows target is declared without documented support or a demonstrated port.
+
+Sources: [upstream compatibility, build and preload guidance](https://github.com/pgaudit/pgaudit#postgresql-version-compatibility), [release history](https://github.com/pgaudit/pgaudit/releases), [licence](https://github.com/pgaudit/pgaudit/blob/main/LICENSE), [logging caveats](https://github.com/pgaudit/pgaudit#caveats), [Amazon RDS guide](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/Appendix.PostgreSQL.CommonDBATasks.pgaudit.html), [Google Cloud SQL catalogue](https://docs.cloud.google.com/sql/docs/postgres/extensions).
+
+## pgtap — include
+
+Description: [pgTAP](https://github.com/theory/pgtap) adds database assertion functions for testing SQL schemas and migrations. Its SQL extension names are `pgtap`, `pgtap-core` and `pgtap-schema`.
+
+For inclusion: Database-level tests are a common application development need. The project is maintained and available in Debian packages. Its installed functions use SQL and PL/pgSQL, so they add no independent native library or architecture-specific runtime. The PostgreSQL License permits redistribution.
+
+Against inclusion: The upstream source build uses Perl to generate installation SQL, and the optional `pg_prove` harness has a separate Perl dependency. Neither is required to execute the installed SQL functions. Packaging must keep all three SQL extension identities and their upgrade files consistent; each requires a representative schema test.
+
+Version policy: Support 1.3.4, the latest published release as of 2026-10-16. Upstream's 1.3.5 changelog entry is marked unreleased. Release 1.3.4 restores extension upgrade-path testing; no documented SQL compatibility break requires an older published line. Recheck that conclusion and retain required update scripts when moving to a newer release.
+
+Target support: PostgreSQL 15–18 on Linux, macOS and Windows, x86-64 and arm64. Upstream reports testing through PostgreSQL 18. The installed SQL payload is architecture-independent, but archive assembly and behavior still require checks on each target before publication.
+
+Sources: [PGXN release and metadata](https://pgxn.org/dist/pgtap/), [1.3.4 source, release notes and compatibility](https://api.pgxn.org/src/pgtap/pgtap-1.3.4/), [upstream build and release process](https://github.com/theory/pgtap), [Debian package](https://packages.debian.org/sid/source/pgtap).
+
+## pg_jsonschema — include
+
+Description: [pg_jsonschema](https://github.com/supabase/pg_jsonschema) validates `json` and `jsonb` against JSON Schema through SQL functions. Its SQL extension name is `pg_jsonschema`.
+
+For inclusion: Applications can use its functions in CHECK constraints to enforce JSON document shapes. Supabase maintains and offers it, and upstream publishes PostgreSQL 18 and Linux arm64 builds. Its Apache-2.0 licence permits redistribution with applicable notices.
+
+Against inclusion: The Rust/pgrx toolchain adds native build and dependency cost for each PostgreSQL major. Upstream's release workflow builds Linux x86-64 and arm64, but does not establish macOS or Windows packages. Expansion to those systems needs separate feasibility and testing. No external data or service is required for schema use.
+
+Version policy: Support 0.3.4, the latest published release as of 2026-10-16. It adds PostgreSQL 18 support and fixes JSON numeric validation. Reviewed release notes do not identify an SQL API break requiring an older version; revisit that decision if a removed or changed object is found.
+
+Target support: PostgreSQL 15–18 on Linux x86-64 and arm64, matching the relevant upstream release jobs and Cargo features. Each build and archive still requires verification before publication. Mac and Windows remain outside this extension's declared OS subset until upstream compatibility or project build evidence supports both required architectures on an added OS.
+
+Sources: [upstream releases](https://github.com/supabase/pg_jsonschema/releases), [0.3.4 source and release workflow](https://github.com/supabase/pg_jsonschema/tree/v0.3.4), [Supabase documentation](https://supabase.com/docs/guides/database/extensions/pg_jsonschema), [pgrx platform guidance](https://github.com/pgcentralfoundation/pgrx), [licence](https://github.com/supabase/pg_jsonschema/blob/master/LICENSE).
+
 ## lakebase_text — exclude
 
 Description: [lakebase_text](https://docs.databricks.com/aws/en/oltp/projects/lakebase-text) adds BM25 ranking and the `lakebase_bm25` index access method; its SQL extension name is `lakebase_text`.
@@ -468,7 +510,6 @@ Candidates extracted from the October 2026 research. No inclusion decision is im
 | pg_failover_slots | `pg_failover_slots` | [Upstream](https://github.com/EnterpriseDB/pg_failover_slots) |
 | pg_graphql | `pg_graphql` | [Upstream](https://github.com/supabase/pg_graphql) |
 | pg_hashids | `pg_hashids` | [Upstream](https://github.com/iCyberon/pg_hashids) |
-| pg_jsonschema | `pg_jsonschema` | [Upstream](https://github.com/supabase/pg_jsonschema) |
 | pg_mooncake | `pg_mooncake` | [Upstream](https://github.com/Mooncake-Labs/pg_mooncake) |
 | pg_net | `pg_net` | [Upstream](https://github.com/supabase/pg_net) |
 | pg_partman | `pg_partman` | [Upstream](https://github.com/pgpartman/pg_partman) |
@@ -490,7 +531,6 @@ Candidates extracted from the October 2026 research. No inclusion decision is im
 | pg_wait_sampling | `pg_wait_sampling` | [Upstream](https://github.com/postgrespro/pg_wait_sampling) |
 | pgactive | `pgactive` | [Upstream](https://github.com/aws/pgactive) |
 | pgagent | `pgagent` | [Upstream](https://github.com/pgadmin-org/pgagent) |
-| pgaudit | `pgaudit` | [Upstream](https://github.com/pgaudit/pgaudit) |
 | pgfincore | `pgfincore` | [Upstream](https://github.com/klando/pgfincore) |
 | pgjwt | `pgjwt` | [Upstream](https://github.com/michelp/pgjwt) |
 | pglogical | `pglogical` | [Upstream](https://github.com/2ndQuadrant/pglogical) |
@@ -501,7 +541,6 @@ Candidates extracted from the October 2026 research. No inclusion decision is im
 | pgrouting | `pgrouting` | [Upstream](https://github.com/pgRouting/pgrouting) |
 | pgsodium | `pgsodium` | [Upstream](https://github.com/michelp/pgsodium) |
 | pgsql-http | `http` | [Upstream](https://github.com/pramsey/pgsql-http) |
-| pgtap | `pgtap` | [Upstream](https://github.com/theory/pgtap) |
 | pgtt | `pgtt` | [Upstream](https://github.com/darold/pgtt) |
 | pgvecto.rs | `vectors` | [Upstream](https://github.com/tensorchord/pgvecto.rs) |
 | pgvectorscale | `vectorscale` | [Upstream](https://github.com/timescale/pgvectorscale) |
