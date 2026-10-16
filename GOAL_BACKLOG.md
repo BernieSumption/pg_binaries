@@ -37,5 +37,5 @@ This backlog records work for the current development goal. The specifications d
 
 ## Publication readiness
 
-- [ ] Implement and test candidate inventory and publication logic without creating a GitHub Release. It must retain unchanged URLs and place verified assets before a new inventory becomes public.
+- [ ] Implement and test candidate inventory and publication logic without creating a GitHub Release. Local candidate generation and preflight now have CLI entry points and tests for retained URLs, staged bytes, and explicit redistribution declarations; publication ordering, uploaded asset checks, and anonymous retrieval still need a dry run. The eventual publication flow must place verified assets before a new inventory becomes public.
 - [ ] Reassess the release restriction after each substantial milestone. Stop this goal when enabling releases becomes the appropriate next step, with a concrete proposed release action, evidence, remaining gaps, and the checks that require actual publication.
