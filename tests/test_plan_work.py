@@ -73,10 +73,11 @@ class PlanWorkTests(unittest.TestCase):
         records_dir = self.root / "support/verification"
         records_dir.mkdir(parents=True)
         for endpoint in ("minimum", "current"):
-            record = {"outcome": "passed", "sha256": checksum, "component": "postgresql",
+            record = {"schema_version": 1, "outcome": "passed", "sha256": checksum, "component": "postgresql",
                       "version": "15.9", "platform": platform, "postgresql_version": "15.9",
                       "test_revision": "abc", "test_cases": ["smoke"],
-                      "environment": {"os_version": "1", "clean_system": True,
+                      "environment": {"os": "linux", "architecture": "x86_64",
+                                      "os_version": "1" if endpoint == "minimum" else "2", "clean_system": True,
                                       "endpoint": endpoint}}
             (records_dir / f"{endpoint}.json").write_text(json.dumps(record), encoding="utf-8")
         result = plan_work.plan(self.root)

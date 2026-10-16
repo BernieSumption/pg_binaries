@@ -36,7 +36,7 @@ def plan(root):
     releases = coverage.release_snapshot(snapshot, support)
     required_core, required_extensions = coverage.expected_targets(support, releases)
     available_core, available_extensions = coverage.inventory_targets(inventory)
-    records = coverage.verification_records(root)
+    records = coverage.verification_records(root, support)
 
     core_build, core_verify = [], []
     for version, platform in sorted(required_core):

@@ -216,7 +216,16 @@ def inventory_targets(inventory):
     return core, extensions
 
 
-def verification_records(root):
+def _os_version_parts(value, label):
+    if not isinstance(value, str) or not re.fullmatch(r"\d+(?:\.\d+)*", value):
+        raise CoverageError(f"{label}: OS version must be numeric dotted version")
+    parts = [int(part) for part in value.split(".")]
+    while len(parts) > 1 and parts[-1] == 0:
+        parts.pop()
+    return tuple(parts)
+
+
+def verification_records(root, support):
     records = []
     directory = root / "support" / "verification"
     if not directory.exists():
@@ -225,12 +234,28 @@ def verification_records(root):
         data = load_json(path)
         if not isinstance(data, dict):
             raise CoverageError(f"verification record {path} must be an object")
+        if data.get("schema_version") != 1:
+            raise CoverageError(f"verification record {path}: schema_version must be 1")
+        platform = data.get("platform")
+        os_name, separator, architecture = platform.partition("-") if isinstance(platform, str) else ("", "", "")
+        if (not separator or os_name not in support["os_support"]
+                or architecture not in support["architectures"]):
+            raise CoverageError(f"verification record {path}: invalid platform")
         environment = data.get("environment")
         if (not isinstance(environment, dict)
                 or not isinstance(environment.get("os_version"), str) or not environment["os_version"]
+                or environment.get("os") != os_name
+                or environment.get("architecture") != architecture
                 or environment.get("clean_system") is not True
                 or environment.get("endpoint") not in {"minimum", "current"}):
             raise CoverageError(f"verification record {path}: invalid environment")
+        actual = _os_version_parts(environment["os_version"], f"verification record {path}")
+        minimum = _os_version_parts(support["os_support"][os_name]["minimum_version"],
+                                    f"support {os_name} minimum_version")
+        endpoint = environment["endpoint"]
+        if ((endpoint == "minimum" and actual != minimum)
+                or (endpoint == "current" and actual <= minimum)):
+            raise CoverageError(f"verification record {path}: OS version does not match {endpoint} endpoint")
         if (not isinstance(data.get("test_cases"), list) or not data["test_cases"]
                 or any(not isinstance(case, str) or not case for case in data["test_cases"])
                 or not isinstance(data.get("test_revision"), str) or not data["test_revision"]):
@@ -286,7 +311,7 @@ def main():
         releases = release_snapshot(snapshot, support)
         want_core, want_ext = expected_targets(support, releases)
         have_core, have_ext = inventory_targets(inventory)
-        records = verification_records(root)
+        records = verification_records(root, support)
         core_without_download = sorted(t for t in want_core if t not in have_core)
         core_awaiting_verification = sorted(
             t for t in want_core if t in have_core and any(not verified(

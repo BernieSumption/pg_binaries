@@ -63,9 +63,9 @@ class CoverageTests(unittest.TestCase):
         missing_target = ("example", "1.0", "15.9", "linux-arm64")
         download = {"url": "https://example.test/archive.tar.gz", "sha256": "a" * 64}
         key = ("example", "1.0", "15.0", "16.9", "linux-x86_64")
-        records = [{"outcome": "passed", "sha256": "b" * 64, "component": "example",
+        records = [{"schema_version": 1, "outcome": "passed", "sha256": "b" * 64, "component": "example",
                     "version": "1.0", "platform": "linux-x86_64", "postgresql_version": "15.0",
-                    "environment": {"endpoint": "minimum"}}]
+                    "environment": {"endpoint": "minimum", "os": "linux", "architecture": "x86_64"}}]
 
         without_download, awaiting = coverage.classify_extension_targets(
             [target, missing_target], {key: download}, records)
@@ -160,9 +160,10 @@ class CoverageTests(unittest.TestCase):
 
             records_dir = root / "support" / "verification"
             records_dir.mkdir(parents=True)
-            record = {"outcome": "skipped", "sha256": checksum, "component": "postgresql",
+            record = {"schema_version": 1, "outcome": "skipped", "sha256": checksum, "component": "postgresql",
                       "version": "15.9", "platform": "linux-arm64", "postgresql_version": "15.9",
-                      "test_revision": "abc123", "environment": {"os_version": "5.15", "clean_system": True,
+                      "test_revision": "abc123", "environment": {"os": "linux", "architecture": "arm64",
+                      "os_version": "5.15", "clean_system": True,
                       "endpoint": "minimum"}, "test_cases": ["smoke"]}
             record_path = records_dir / "postgres.json"
             record_path.write_text(json.dumps(record), encoding="utf-8")
@@ -181,9 +182,15 @@ class CoverageTests(unittest.TestCase):
 
             record["environment"]["endpoint"] = "current"
             for platform in platforms:
+                os_name, architecture = platform.split("-", 1)
+                minimum = support["os_support"][os_name]["minimum_version"]
+                current = {"macos": "12", "windows": "11", "linux": "6"}[os_name]
                 for endpoint in ("minimum", "current"):
+                    os_version = minimum if endpoint == "minimum" else current
                     copy = dict(record, platform=platform,
-                                environment=dict(record["environment"], endpoint=endpoint))
+                                environment=dict(record["environment"], os=os_name,
+                                                 architecture=architecture, os_version=os_version,
+                                                 endpoint=endpoint))
                     path = records_dir / f"{platform}-{endpoint}.json"
                     path.write_text(json.dumps(copy), encoding="utf-8")
             status, output = run_cli()
@@ -273,12 +280,41 @@ class CoverageTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             records_dir = Path(temporary) / "support" / "verification"
             records_dir.mkdir(parents=True)
-            record = {"outcome": "passed", "sha256": "a" * 64, "component": "postgresql",
+            record = {"schema_version": 1, "outcome": "passed", "sha256": "a" * 64, "component": "postgresql",
                       "version": "15.9", "platform": "linux-arm64", "postgresql_version": "15.9",
                       "test_revision": "abc123", "environment": "clean-linux", "test_cases": ["smoke"]}
             (records_dir / "invalid.json").write_text(json.dumps(record), encoding="utf-8")
             with self.assertRaises(coverage.CoverageError):
-                coverage.verification_records(Path(temporary))
+                coverage.verification_records(Path(temporary), self.support)
+
+    def test_verification_record_binds_os_architecture_and_endpoint_version(self):
+        self.support["os_support"] = {name: {"minimum_version": version} for name, version in
+                                       (("macos", "11.0"), ("windows", "10.0"), ("linux", "5.15"))}
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            directory = root / "support" / "verification"
+            directory.mkdir(parents=True)
+            record = {"schema_version": 1, "outcome": "passed", "sha256": "a" * 64,
+                      "component": "postgresql", "version": "15.9", "platform": "linux-x86_64",
+                      "postgresql_version": "15.9", "test_revision": "abc123", "test_cases": ["smoke"],
+                      "environment": {"os": "linux", "architecture": "x86_64", "os_version": "5.15",
+                                      "clean_system": True, "endpoint": "minimum"}}
+            cases = [
+                ("wrong-schema", {"schema_version": 2}, {}, "5.15", "minimum"),
+                ("wrong-os", {}, {"os": "macos"}, "5.15", "minimum"),
+                ("wrong-architecture", {}, {"architecture": "arm64"}, "5.15", "minimum"),
+                ("minimum-too-new", {}, {}, "5.16", "minimum"),
+                ("current-equal", {}, {}, "5.15", "current"),
+                ("current-older", {}, {}, "5.14", "current"),
+            ]
+            for name, record_changes, environment_changes, version, endpoint in cases:
+                with self.subTest(name=name):
+                    environment = dict(record["environment"], **environment_changes,
+                                       os_version=version, endpoint=endpoint)
+                    (directory / "record.json").write_text(
+                        json.dumps(dict(record, **record_changes, environment=environment)), encoding="utf-8")
+                    with self.assertRaises(coverage.CoverageError):
+                        coverage.verification_records(root, self.support)
 
 
 if __name__ == "__main__":
