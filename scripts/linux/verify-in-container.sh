@@ -9,15 +9,22 @@ tar -xzf "$pg" -C /tmp/first
 tar -xzf "$vector" -C /tmp/vector
 python3 - <<'PY'
 import json
-for path, component, version in [
-    ('/tmp/first/postgresql/manifest.json', 'postgresql', '18.6'),
-    ('/tmp/vector/pgvector/manifest.json', 'pgvector', '0.8.7'),
-]:
-    with open(path) as f:
-        m = json.load(f)
-    assert (m['schema_version'], m['component'], m['version'],
-            m['postgresql_version'], m['platform'], m['architecture']) == (
-                1, component, version, '18.6', 'linux', 'x86_64'), m
+with open('/tmp/first/postgresql/manifest.json') as f:
+    m = json.load(f)
+assert (m['schema_version'], m['component'], m['version'],
+        m['postgresql_version'], m['platform'], m['architecture']) == (
+            1, 'postgresql', '18.6', '18.6', 'linux', 'x86_64'), m
+
+with open('/tmp/vector/metadata.json') as f:
+    m = json.load(f)
+assert m == {
+    'project': 'pgvector',
+    'version': '0.8.7',
+    'sql_names': ['vector'],
+    'requires': [],
+    'configuration_prerequisites': [],
+    'runtime_prerequisites': [],
+}, m
 PY
 test -s /tmp/first/postgresql/LICENSES/PostgreSQL.txt
 test -s /tmp/vector/pgvector/LICENSES/pgvector.txt
@@ -36,8 +43,20 @@ runuser -u postgres -- /tmp/first/postgresql/bin/pg_ctl -D /tmp/first-data -m fa
 trap - EXIT
 mv /tmp/first/postgresql /tmp/moved/postgresql
 pgroot=/tmp/moved/postgresql
-cp /tmp/vector/pgvector/lib/* "$pgroot/lib/"
-cp /tmp/vector/pgvector/share/extension/* "$pgroot/share/extension/"
+extroot=/tmp/vector/pgvector
+while IFS= read -r -d '' source; do
+  relative=${source#"$extroot/"}
+  destination="$pgroot/$relative"
+  if [[ -e "$destination" || -L "$destination" ]]; then
+    if [[ -d "$source" && ! -L "$source" && -d "$destination" && ! -L "$destination" ]]; then
+      continue
+    fi
+    echo "Extension payload collision: $relative" >&2
+    exit 1
+  fi
+done < <(find "$extroot" -mindepth 1 -print0)
+cp -a "$extroot/." "$pgroot/"
+test -s "$pgroot/LICENSES/pgvector.txt"
 mkdir -p /tmp/pgdata /tmp/pgsocket
 chown postgres:postgres /tmp/pgdata /tmp/pgsocket
 runuser -u postgres -- "$pgroot/bin/initdb" -D /tmp/pgdata --encoding=UTF8 --locale=C --no-instructions

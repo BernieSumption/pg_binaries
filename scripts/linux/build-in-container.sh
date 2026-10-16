@@ -75,12 +75,12 @@ cat > "$root/manifest.json" <<EOF
 {"schema_version":1,"component":"postgresql","version":"${pg_version}","postgresql_version":"${pg_version}","platform":"linux","architecture":"x86_64","glibc_baseline":"2.35","capabilities":{"icu":true,"libc_collations":true,"lz4":true,"zstd":true}}
 EOF
 
-cat > /work/stage/pgvector/manifest.json <<EOF
-{"schema_version":1,"component":"pgvector","version":"${vector_version}","postgresql_version":"${pg_version}","platform":"linux","architecture":"x86_64"}
+cat > /work/stage/metadata.json <<EOF
+{"project":"pgvector","version":"${vector_version}","sql_names":["vector"],"requires":[],"configuration_prerequisites":[],"runtime_prerequisites":[]}
 EOF
 cd /work/stage
 tar -czf "/out/$pg_archive" postgresql
-tar -czf "/out/$vector_archive" pgvector
+tar -czf "/out/$vector_archive" pgvector metadata.json
 cd /out
 sha256sum "$pg_archive" > "$pg_archive.sha256"
 sha256sum "$vector_archive" > "$vector_archive.sha256"
