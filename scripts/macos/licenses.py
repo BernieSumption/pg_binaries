@@ -43,7 +43,12 @@ for (name, version), libraries in sorted(formulas.items()):
         and len(p.relative_to(prefix).parts) <= 5
     )
     target = licenses / f"{name.replace('@', '-')}-{version}.txt"
-    if candidates:
+    if name == "e2fsprogs":
+        if not all(library.startswith("libuuid") for library in libraries):
+            raise SystemExit(f"e2fsprogs libraries need separate license review: {libraries}")
+        origin = f"https://raw.githubusercontent.com/tytso/e2fsprogs/v{version}/lib/uuid/COPYING"
+        urllib.request.urlretrieve(origin, target)
+    elif candidates:
         shutil.copyfile(candidates[0], target)
         origin = str(candidates[0])
     elif name in known_urls:
