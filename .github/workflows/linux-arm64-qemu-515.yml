@@ -1,0 +1,56 @@
+name: Linux arm64 kernel 5.15 QEMU feasibility
+on:
+  push:
+    branches: [spike]
+    paths:
+      - .github/workflows/linux-arm64-qemu-515.yml
+      - scripts/qemu/arm64-515*
+      - scripts/linux/qemu-kernel-515-guest-smoke.sh
+      - scripts/linux/Dockerfile
+      - scripts/linux/build.sh
+      - scripts/linux/build-in-container.sh
+      - scripts/linux/bundle-glibc-in-container.sh
+      - scripts/linux/launcher.c
+  workflow_dispatch:
+    inputs:
+      postgresql_version:
+        description: One declared PostgreSQL 15 through 18 minor version
+        required: true
+        default: '18.6'
+        type: string
+jobs:
+  qemu-linux-arm64-515:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    env:
+      PG_VERSION: ${{ inputs.postgresql_version || '18.6' }}
+      PG_ARCHITECTURE: arm64
+    steps:
+      - uses: actions/checkout@v4
+      - name: Confirm native arm64 runner
+        run: test "$(uname -m)" = aarch64
+      - name: Build disposable QEMU test environment
+        run: docker build -f scripts/qemu/arm64-515.Dockerfile -t pg-binaries-linux-qemu-arm64 .
+      - name: Build the arm64 pilot archives
+        run: scripts/linux/build.sh "$RUNNER_TEMP/archives"
+      - name: Boot pinned Ubuntu 22.04 image and test in Linux 5.15 guest
+        run: |
+          mkdir -p "$RUNNER_TEMP/qemu-linux-arm64-515"
+          chmod 0777 "$RUNNER_TEMP/qemu-linux-arm64-515"
+          docker run --rm --network bridge --cap-drop=ALL --security-opt no-new-privileges \
+            -v "$GITHUB_WORKSPACE:/repo:ro" \
+            -v "$RUNNER_TEMP/archives:/archives:ro" \
+            -v "$RUNNER_TEMP/qemu-linux-arm64-515:/work" \
+            -e PG_VERSION="$PG_VERSION" \
+            -e GITHUB_SHA="$GITHUB_SHA" \
+            pg-binaries-linux-qemu-arm64 \
+            bash /repo/scripts/qemu/arm64-515-smoke.sh /archives "$PG_VERSION" /work
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: linux-arm64-qemu-515-evidence
+          path: ${{ runner.temp }}/qemu-linux-arm64-515/evidence
+          if-no-files-found: ignore
+          retention-days: 3
