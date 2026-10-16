@@ -1,5 +1,17 @@
 # Human review queue
 
+## Native Windows arm64 PostgreSQL server
+
+The [functional specification](specs/functional.md) requires PostgreSQL on Windows arm64. A standard [Windows 11 arm64 GitHub-hosted runner](https://github.com/actions/runner-images) is available for development, but [PostgreSQL 18's Windows notes](https://www.postgresql.org/docs/18/installation-platform-notes.html#WIN64) describe only x64 builds. The [upstream Windows port notes](https://wiki.postgresql.org/wiki/Windows) say arm64 has not been reported working. A current [psqlODBC arm64 CI job](https://github.com/postgresql-interfaces/psqlodbc/blob/main/.github/workflows/main.yml) builds libpq only and records a full-server `msvc_gendef.pl` failure on arm64. Our Windows pilot also selects an x64 compiler and dependency tree.
+
+Please decide whether a PostgreSQL Windows arm64 port is within this project's intended scope and development budget, or revise the Windows architecture requirement. The current specification remains in force: no Windows arm64 download may be advertised before a native server build and archive tests pass. The standard arm64 runner can support bounded feasibility work meanwhile. The separate minimum-Windows endpoint problem below remains even if the server port succeeds.
+
+## Linux user-space compatibility floor
+
+The [functional specification](specs/functional.md) requires one Linux archive per architecture to work across supported machines without non-universal external dependencies. The [OS policy](policies/os-support.md) states only a kernel 5.15 minimum. A kernel version does not identify the C library or dynamic loader. The current [Linux build](scripts/linux/build-in-container.sh) uses Ubuntu 22.04, records glibc 2.35, and deliberately leaves glibc and the ELF loader outside the archive. A clean machine with kernel 5.15 and an older or different libc can fail before PostgreSQL starts; the passing Ubuntu 24.04 pilot does not test that case.
+
+Please decide whether to keep the kernel-only Linux support claim and invest in a relocatable bundled or static user-space runtime, or amend the specification to state a supported user-space ABI floor and its test environments. Until the decision is implemented and tested, Linux archives must not be advertised as universal across distributions. A cheap older-libc container probe can measure the current gap, but it cannot establish the required kernel endpoint or universal compatibility.
+
 ## Address Standardizer US data redistribution
 
 The [Address Standardizer project](https://github.com/postgis/address_standardizer) provides `address_standardizer` and `address_standardizer_data_us`. Its source says the latter includes city-name files derived from USPS data. The repository licence covers project code, but the reviewed upstream material does not establish redistribution rights for those data files. [USPS AIS resources](https://postalpro.usps.com/resources/address-quality/ais-viewer) refer to a separate data licence; its applicability to these particular files is unresolved.
