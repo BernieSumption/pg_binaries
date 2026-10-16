@@ -9,11 +9,15 @@ tar -xzf "$pg" -C /tmp/first
 tar -xzf "$vector" -C /tmp/vector
 python3 - <<'PY'
 import json
+from pathlib import Path
 with open('/tmp/first/postgresql/manifest.json') as f:
     m = json.load(f)
 assert (m['schema_version'], m['component'], m['version'],
         m['postgresql_version'], m['platform'], m['architecture']) == (
             1, 'postgresql', '18.6', '18.6', 'linux', 'x86_64'), m
+controls = {path.stem for path in Path('/tmp/first/postgresql/share/extension').glob('*.control')}
+assert controls and m['included_extensions'] == sorted(controls), m
+assert 'vector' not in controls, controls
 
 with open('/tmp/vector/metadata.json') as f:
     m = json.load(f)

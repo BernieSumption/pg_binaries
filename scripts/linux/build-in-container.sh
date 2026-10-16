@@ -29,6 +29,7 @@ mv /work/stage/postgresql/share/extension/vector* /work/stage/pgvector/share/ext
 cp LICENSE /work/stage/pgvector/LICENSES/pgvector.txt
 mkdir -p /work/stage/postgresql/LICENSES
 cp "/work/src/postgresql-${pg_version}/COPYRIGHT" /work/stage/postgresql/LICENSES/PostgreSQL.txt
+builtins=$(python3 /usr/local/bin/discover-builtins /work/stage/postgresql)
 
 # Copy non-glibc runtime libraries into the archive, then make every ELF file
 # look for them relative to its own position. The glibc baseline is Ubuntu 22.04.
@@ -72,7 +73,7 @@ while IFS= read -r -d '' elf; do
 done < <(find "$root/bin" "$root/lib" -type f -print0)
 
 cat > "$root/manifest.json" <<EOF
-{"schema_version":1,"component":"postgresql","version":"${pg_version}","postgresql_version":"${pg_version}","platform":"linux","architecture":"x86_64","glibc_baseline":"2.35","capabilities":{"icu":true,"libc_collations":true,"lz4":true,"zstd":true}}
+{"schema_version":1,"component":"postgresql","version":"${pg_version}","postgresql_version":"${pg_version}","platform":"linux","architecture":"x86_64","glibc_baseline":"2.35","included_extensions":${builtins},"capabilities":{"icu":true,"libc_collations":true,"lz4":true,"zstd":true}}
 EOF
 
 cat > /work/stage/metadata.json <<EOF
