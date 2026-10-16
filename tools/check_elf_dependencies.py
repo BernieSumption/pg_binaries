@@ -4,6 +4,7 @@
 import argparse
 from pathlib import Path
 import re
+import struct
 import subprocess
 import sys
 
@@ -15,6 +16,24 @@ SYSTEM_LIBRARIES = {
 }
 DEPENDENCY = re.compile(r"^\s*(\S+)\s+=>\s+(/\S+)")
 LOADER = re.compile(r"^\s*(/\S+)\s+\(")
+
+
+def static_executable(path):
+    with path.open("rb") as stream:
+        header = stream.read(64)
+        if len(header) < 64 or header[:6] != b"\x7fELF\x02\x01":
+            return False
+        if struct.unpack_from("<H", header, 16)[0] != 2:
+            return False
+        program_offset = struct.unpack_from("<Q", header, 32)[0]
+        entry_size, entry_count = struct.unpack_from("<HH", header, 54)
+        if entry_size < 4 or entry_count == 0:
+            return False
+        for index in range(entry_count):
+            stream.seek(program_offset + index * entry_size)
+            if struct.unpack("<I", stream.read(4))[0] == 3:
+                return False
+        return True
 
 
 def dependencies(output):
@@ -38,7 +57,7 @@ def check(prefix):
         raise ValueError(f"multiple bundled glibc loaders: {loaders}")
     loader = loaders[0] if loaders else None
     library_path = ":".join(str(prefix / relative) for relative in (
-        "lib/glibc", "lib/runtime", "lib"
+        "lib/glibc", "lib", "lib/runtime"
     ))
     count = 0
     for path in sorted(prefix.rglob("*")):
@@ -48,6 +67,8 @@ def check(prefix):
             if stream.read(4) != b"\x7fELF":
                 continue
         count += 1
+        if static_executable(path):
+            continue
         command = ([str(loader), "--library-path", library_path, "--list", str(path)]
                    if loader else ["ldd", str(path)])
         result = subprocess.run(command, capture_output=True, text=True)

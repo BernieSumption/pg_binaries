@@ -29,6 +29,9 @@ cp /usr/share/doc/libc6/copyright "$root/LICENSES/libc6.copyright"
 for name in GFDL-1.3 GPL-2 LGPL-2.1; do
   cp "/usr/share/common-licenses/$name" "$root/LICENSES/libc6-$name.txt"
 done
+cp /usr/share/doc/musl/copyright "$root/LICENSES/musl.copyright"
+musl-gcc -static -O2 -s -o "$root/bin/.pg-launcher" /usr/local/src/pg-launcher.c
+printf 'musl\tbin/.pg-launcher\n' >> "$runtime_map"
 
 for executable in "$root"/bin/*; do
   [[ -f $executable && ! -L $executable ]] || continue
@@ -37,16 +40,5 @@ for executable in "$root"/bin/*; do
   fi
   name=${executable##*/}
   mv "$executable" "$root/libexec/$name"
-  cat > "$executable" <<EOF
-#!/bin/sh
-set -eu
-entry=\$0
-case \$entry in */*) ;; *) entry=\$(command -v "\$entry") ;; esac
-bin=\${entry%/*}
-root=\$(CDPATH= cd "\$bin/.." && pwd -P)
-exec "\$root/lib/glibc/$loader" --argv0 "\$root/bin/\${entry##*/}" \\
-  --library-path "\$root/lib/glibc:\$root/lib/runtime:\$root/lib" \\
-  "\$root/libexec/\${entry##*/}" "\$@"
-EOF
-  chmod 755 "$executable"
+  ln "$root/bin/.pg-launcher" "$executable"
 done

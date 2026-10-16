@@ -37,6 +37,8 @@ jobs:
         run: scripts/linux/build.sh "$RUNNER_TEMP/pilot"
       - name: Verify relocated archives on clean Ubuntu 24.04 arm64
         run: scripts/linux/verify.sh "$RUNNER_TEMP/pilot"
+      - name: Check launch without host shell or C library
+        run: bash scripts/linux/verify-no-host-userspace.sh "$RUNNER_TEMP/pilot" "$PG_VERSION" arm64
       - name: Check older-glibc and no-glibc hosts
         run: |
           for image in ubuntu:20.04 alpine:3.22; do

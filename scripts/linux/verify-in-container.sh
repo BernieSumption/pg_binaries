@@ -60,6 +60,9 @@ assert glibc['source_package'] == 'glibc' and glibc['source_version'] == glibc['
 assert len(glibc['source_urls']) == 3 and all(url.startswith('https://archive.ubuntu.com/ubuntu/pool/main/g/glibc/') for url in glibc['source_urls']), glibc
 for filename in glibc['additional_license_files']:
     assert (license_dir / filename).is_file() and (license_dir / filename).stat().st_size > 0, filename
+musl = next(entry for entry in runtime if entry['package'] == 'musl')
+assert musl['source_package'] == 'musl' and musl['source_version'] == musl['version'], musl
+assert len(musl['source_urls']) == 3 and all(url.startswith('https://archive.ubuntu.com/ubuntu/pool/universe/m/musl/') for url in musl['source_urls']), musl
 mapped = []
 for entry in runtime:
     assert entry['license_source'] == f"https://packages.ubuntu.com/jammy/{entry['package']}", entry
@@ -76,12 +79,15 @@ for entry in runtime:
 actual = sorted(path.relative_to(root).as_posix()
                 for directory in ('lib/runtime', 'lib/glibc')
                 for path in (root / directory).iterdir() if path.is_file())
-assert sorted(mapped) == actual, {'mapped': sorted(mapped), 'actual': actual}
+actual.append('bin/.pg-launcher')
+assert sorted(mapped) == sorted(actual), {'mapped': sorted(mapped), 'actual': sorted(actual)}
 wrappers = {path.name for path in (root / 'bin').iterdir()
-            if path.is_file() and not path.is_symlink()}
+            if path.is_file() and not path.is_symlink() and path.name != '.pg-launcher'}
 payloads = {path.name for path in (root / 'libexec').iterdir()}
 assert wrappers == payloads, (wrappers, payloads)
-assert all((root / 'bin' / name).read_bytes().startswith(b'#!/bin/sh\n') for name in wrappers)
+launcher = root / 'bin/.pg-launcher'
+assert launcher.read_bytes().startswith(b'\x7fELF'), launcher
+assert all((root / 'bin' / name).stat().st_ino == launcher.stat().st_ino for name in wrappers)
 
 with open('/tmp/vector/metadata.json') as f:
     m = json.load(f)

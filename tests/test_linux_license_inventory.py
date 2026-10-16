@@ -81,6 +81,19 @@ class LinuxLicenseInventoryTests(unittest.TestCase):
         self.assertTrue(all("1.2.3" in url for url in glibc["source_urls"]))
         self.assertEqual(len(glibc["additional_license_files"]), 3)
 
+    def test_static_launcher_records_musl_source_and_license(self):
+        (self.archive / "bin/.pg-launcher").write_bytes(b"launcher")
+        (self.archive / "LICENSES/musl.copyright").write_text("musl copyright\n")
+        self.mapping.write_text(self.mapping.read_text() + "musl\tbin/.pg-launcher\n")
+        result = self.write_inventory()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        components = json.loads((self.archive / "LICENSES/inventory.json").read_text())["components"]
+        musl = next(entry for entry in components if entry.get("package") == "musl")
+        self.assertEqual(musl["source_package"], "musl")
+        self.assertEqual(musl["source_version"], "1.2.3-4ubuntu5")
+        self.assertEqual(musl["payload_paths"], ["bin/.pg-launcher"])
+        self.assertEqual(len(musl["source_urls"]), 3)
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -72,6 +72,22 @@ for package, payload_paths in sorted(packages.items()):
             path = root / "LICENSES" / additional
             if not path.is_file() or not path.stat().st_size:
                 raise SystemExit(f"missing glibc license text: {path}")
+    elif package == "musl":
+        source_version = subprocess.run(
+            ["dpkg-query", "-W", "-f=${source:Version}", package],
+            check=True, capture_output=True, text=True,
+        ).stdout.strip()
+        if source_version != version:
+            raise SystemExit(f"unexpected musl source version: {source_version}")
+        source_base = "https://archive.ubuntu.com/ubuntu/pool/universe/m/musl/"
+        upstream_version = version.split("-", 1)[0]
+        entry["source_package"] = "musl"
+        entry["source_version"] = source_version
+        entry["source_urls"] = [
+            f"{source_base}musl_{source_version}.dsc",
+            f"{source_base}musl_{upstream_version}.orig.tar.gz",
+            f"{source_base}musl_{source_version}.debian.tar.xz",
+        ]
     components.append(entry)
 
 postgres_license = root / "LICENSES" / "PostgreSQL.txt"

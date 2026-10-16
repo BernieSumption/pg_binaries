@@ -9,6 +9,7 @@ on:
       - 'scripts/linux/build.sh'
       - 'scripts/linux/build-in-container.sh'
       - 'scripts/linux/bundle-glibc-in-container.sh'
+      - 'scripts/linux/launcher.c'
       - 'tools/write_linux_license_inventory.py'
       - 'tools/discover_builtins.py'
       - 'support.json'

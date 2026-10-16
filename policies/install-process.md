@@ -4,7 +4,7 @@ Clients download a PostgreSQL archive and any required extension archives, unpac
 
 ## Archive layout
 
-Each platform and architecture has a PostgreSQL `.tar.gz` archive containing one top-level `postgresql/` directory. Its contents use PostgreSQL's normal installation layout: commands in `bin/`, shared libraries in `lib/`, and support files in `share/`, including `share/extension/` and `share/locale/` where provided. The Linux pilot keeps native executable payloads in `libexec/` and places launchers in `bin/` so commands use the bundled C library after relocation. Include all runtime libraries and other files needed by the packaged programs, along with applicable licence and notice files.
+Each platform and architecture has a PostgreSQL `.tar.gz` archive containing one top-level `postgresql/` directory. Its contents use PostgreSQL's normal installation layout: commands in `bin/`, shared libraries in `lib/`, and support files in `share/`, including `share/extension/` and `share/locale/` where provided. The Linux pilot keeps native executable payloads in `libexec/` and places statically linked launchers in `bin/` so commands use the bundled C library after relocation without invoking a host shell. Include all runtime libraries and other files needed by the packaged programs, along with applicable licence and notice files.
 
 Each extension version and platform combination has its own `.tar.gz` archive containing a payload directory named for the extension project and a sibling `metadata.json` file:
 

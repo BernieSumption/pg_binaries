@@ -5,6 +5,11 @@ on:
     paths:
       - .github/workflows/linux-qemu-515.yml
       - scripts/linux/qemu-kernel-515*
+      - scripts/linux/Dockerfile
+      - scripts/linux/build.sh
+      - scripts/linux/build-in-container.sh
+      - scripts/linux/bundle-glibc-in-container.sh
+      - scripts/linux/launcher.c
   workflow_dispatch:
     inputs:
       postgresql_version:
