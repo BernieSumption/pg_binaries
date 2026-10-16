@@ -10,7 +10,7 @@ curl -fL --retry 3 -o postgresql.tar.bz2 "https://ftp.postgresql.org/pub/source/
 tar -xf postgresql.tar.bz2
 cd "postgresql-${pg_version}"
 ./configure --prefix=/opt/postgresql --with-icu --with-lz4 --with-zstd \
-  --with-openssl --with-libxml --with-libxslt --with-uuid=e2fs
+  --with-openssl --with-libxml --with-libxslt --with-zlib --with-uuid=e2fs --without-readline
 make -j "$(nproc)"
 make install
 make -C contrib -j "$(nproc)"

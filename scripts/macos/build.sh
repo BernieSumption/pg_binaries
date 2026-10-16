@@ -37,7 +37,7 @@ tar -xzf "$work_dir/pgvector.tar.gz" -C "$work_dir"
 
 install_dir="$work_dir/install/postgresql"
 cd "$work_dir/postgresql-${pg_version}"
-./configure --prefix="$install_dir" --with-icu --with-ssl=openssl --with-lz4 --with-zstd --with-libxml --with-libxslt --without-readline
+./configure --prefix="$install_dir" --with-icu --with-ssl=openssl --with-lz4 --with-zstd --with-libxml --with-libxslt --with-zlib --without-readline
 make -j "$(sysctl -n hw.ncpu)"
 make -C contrib -j "$(sysctl -n hw.ncpu)"
 make install
