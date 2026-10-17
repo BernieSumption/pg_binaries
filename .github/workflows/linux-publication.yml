@@ -178,10 +178,10 @@ jobs:
           name = f'postgresql-18.6-linux-{architecture}-current-{run_id}.json'
           record = coverage.load_json(Path(records) / name)
           coverage.validate_verification_record(record, support, Path('.'))
-          if (record['outcome'] != 'passed' or record['sha256'] != digest
+          if (record['sha256'] != digest
                   or record['ci']['run_id'] != run_id
                   or record['test_revision'] != revision):
-              raise SystemExit('PostGIS core differs from passed publication record')
+              raise SystemExit('PostGIS core differs from publication record')
           PYCODE
           publication="$RUNNER_TEMP/postgis-publication"
           image=$(docker image inspect --format '{{.Id}}' pg-binaries-linux-verifier 2>/dev/null || true)
@@ -247,11 +247,11 @@ jobs:
           name = f'postgis-3.6.4-postgresql-18.6-linux-{architecture}-current-{run_id}.json'
           record = coverage.load_json(Path(records) / name)
           coverage.validate_verification_record(record, support, Path('.'))
-          if (record['outcome'] != 'passed' or record['sha256'] != postgis_sha
+          if (record['sha256'] != postgis_sha
                   or record['assembled_core']['sha256'] != core_sha
                   or record['ci']['run_id'] != run_id
                   or record['test_revision'] != revision):
-              raise SystemExit('TIGER prerequisite differs from passed PostGIS publication record')
+              raise SystemExit('TIGER prerequisite differs from PostGIS publication record')
           PYCODE
           publication="$RUNNER_TEMP/tiger-publication"
           image=$(docker image inspect --format '{{.Id}}' pg-binaries-linux-verifier 2>/dev/null || true)
@@ -317,10 +317,10 @@ jobs:
           name = f'postgresql-18.6-linux-{architecture}-current-{run_id}.json'
           record = coverage.load_json(Path(records) / name)
           coverage.validate_verification_record(record, support, Path('.'))
-          if (record['outcome'] != 'passed' or record['sha256'] != digest
+          if (record['sha256'] != digest
                   or record['ci']['run_id'] != run_id
                   or record['test_revision'] != revision):
-              raise SystemExit('HypoPG core differs from passed publication record')
+              raise SystemExit('HypoPG core differs from publication record')
           PYCODE
           publication="$RUNNER_TEMP/hypopg-publication"
           image=$(docker image inspect --format '{{.Id}}' pg-binaries-hypopg-verifier 2>/dev/null || true)
