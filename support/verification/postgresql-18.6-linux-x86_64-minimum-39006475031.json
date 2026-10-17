@@ -1,0 +1,40 @@
+{
+  "case_results": {
+    "archive-suite": "passed"
+  },
+  "ci": {
+    "build_revision": "8296e69b201e8f16830e5d1a210f37f711bad0c3",
+    "provider": "github-actions",
+    "run_id": "39006475031",
+    "run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/39006475031",
+    "source_revision": "8296e69b201e8f16830e5d1a210f37f711bad0c3",
+    "test_revision": "8296e69b201e8f16830e5d1a210f37f711bad0c3"
+  },
+  "component": "postgresql",
+  "environment": {
+    "architecture": "x86_64",
+    "clean_system": true,
+    "dependency_check_profile": "linux-runtime-v1",
+    "dependency_checks_passed": true,
+    "distribution": "Ubuntu 22.04.5 LTS",
+    "distribution_version": "22.04",
+    "endpoint": "minimum",
+    "image_id": "sha256:e3297e0aa6c408ac90d854348465d3991c65159b444c4ef9016f52f6807290e3",
+    "kernel_release": "5.15.0-1109-kvm",
+    "os": "linux",
+    "os_version": "5.15.0"
+  },
+  "outcome": "passed",
+  "platform": "linux-x86_64",
+  "postgresql_version": "18.6",
+  "profile_id": "linux-publication-minimum-x86_64",
+  "profile_revision": "ca0d4033895bfc32f7ec65295f493a2c0ae5b514548bca09ce5430de2bd552fc",
+  "schema_version": 2,
+  "scope": "publication",
+  "sha256": "bd14d1022ebe307cfe85a0541e0b300f66a08ffed72169f01163d52c56e2f2cb",
+  "test_cases": [
+    "archive-suite"
+  ],
+  "test_revision": "8296e69b201e8f16830e5d1a210f37f711bad0c3",
+  "version": "18.6"
+}

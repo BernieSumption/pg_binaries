@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "record_id": "github-39006475031-1-linux-arm64",
+  "build_id": "github-39006475031-1",
+  "source_revision": "8296e69b201e8f16830e5d1a210f37f711bad0c3",
+  "build_configuration": "postgresql-18.6;pgvector-0.8.7;builder=ubuntu-22.04;configure=icu,lz4,zstd,openssl,libxml,libxslt,zlib,uuid-e2fs,no-readline;cflags=-O2,-g;pgvector-optflags=empty;runtime=bundled-glibc-static-musl-launcher",
+  "platform": "linux",
+  "architecture": "arm64",
+  "builder_image_id": "sha256:ae805ac633e90736e51942161467cde5be2693e9ef75926eb3cfccffdb678844",
+  "packages": {
+    "postgresql": {
+      "archive": "postgresql-18.6-linux-arm64.tar.gz",
+      "sha256": "4ef5cfa6f8ec38fe93cc04ff9d7388dc4d39934e124aa0dc43bb729dbf8af025"
+    },
+    "pgvector": {
+      "archive": "pgvector-0.8.7-postgresql-18.6-linux-arm64.tar.gz",
+      "sha256": "ca967beda5bc00187d9641db4364c19ccdb9f17701880a187d46158cafd1436d"
+    }
+  },
+  "symbol_index": {
+    "path": "index.json",
+    "sha256": "e678adb62be42e42dc7d6ce27e33bf8e4af357d300eeac066a281e6b001542a8"
+  }
+}
