@@ -51,6 +51,11 @@ class ProfileChangeGateTests(unittest.TestCase):
         self.assertTrue(profile_change_gate.should_run(
             self.before, self.current, PROFILE_ID))
 
+    def test_changed_profile_source_runs_platform_work(self):
+        (self.current / "profile-source.txt").write_text("changed source\n", encoding="utf-8")
+        self.assertTrue(profile_change_gate.should_run(
+            self.before, self.current, PROFILE_ID))
+
     def test_unrelated_registry_profile_change_skips_platform_work(self):
         registry_path = self.current / "support/verification-profiles.json"
         registry = json.loads(registry_path.read_text(encoding="utf-8"))
