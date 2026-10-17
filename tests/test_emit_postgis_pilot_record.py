@@ -19,10 +19,11 @@ OS_RELEASE = 'PRETTY_NAME="Ubuntu 24.04"\nVERSION_ID="24.04"\n'
 
 class PostgisRecordTests(unittest.TestCase):
     def emit(self, directory, architecture, corrupt_core=False, minimum=False, bad_log=False,
-             bad_digest=False, outcome='passed'):
+             bad_digest=False, outcome='passed', postgresql_version='18.6',
+             evidence_version=None):
         root = Path(directory)
-        for name in (f'postgresql-18.6-linux-{architecture}.tar.gz',
-                     f'postgis-3.6.4-postgresql-18.6-linux-{architecture}.tar.gz'):
+        for name in (f'postgresql-{postgresql_version}-linux-{architecture}.tar.gz',
+                     f'postgis-3.6.4-postgresql-{postgresql_version}-linux-{architecture}.tar.gz'):
             data = name.encode()
             (root / name).write_bytes(data)
             digest = hashlib.sha256(data).hexdigest()
@@ -35,7 +36,8 @@ class PostgisRecordTests(unittest.TestCase):
             evidence.mkdir()
             pinned = emitter.ARCHITECTURES[architecture]['image_sha256']
             (evidence / 'environment.txt').write_text(
-                f"test_revision={ENV['GITHUB_SHA']}\npostgresql_version=18.6\nimage_sha256={pinned}\n")
+                f"test_revision={ENV['GITHUB_SHA']}\npostgresql_version={evidence_version or postgresql_version}\n"
+                f"image_sha256={pinned}\n")
             success = ('PASS: PostGIS 3.6.4 minimum-kernel archive verification\n'
                        if outcome == 'passed' else '')
             (evidence / 'full-verifier.log').write_text(
@@ -52,7 +54,7 @@ class PostgisRecordTests(unittest.TestCase):
         with patch.dict(os.environ, ENV), patch.object(Path, 'read_text', read):
             return emitter.emit(ROOT, root, root, root / 'records',
                                 'sha256:' + '1' * 64, '6.11.0-ubuntu', architecture,
-                                evidence, outcome)
+                                evidence, outcome, postgresql_version)
 
     def test_records_bind_both_archives_and_matching_profile(self):
         for architecture, machine in (('x86_64', 'x86_64'), ('arm64', 'aarch64')):
@@ -69,6 +71,36 @@ class PostgisRecordTests(unittest.TestCase):
                                      f'postgresql-18.6-linux-{architecture}.tar.gz')
                     self.assertEqual(record['scope'], 'pilot-smoke')
                     self.assertIn(architecture, path.name)
+
+    def test_non_default_postgresql_minor_binds_guest_archives_and_records(self):
+        with tempfile.TemporaryDirectory() as directory:
+            with patch.object(emitter.platform, 'machine', return_value='x86_64'):
+                paths = self.emit(directory, 'x86_64', minimum=True,
+                                  postgresql_version='18.7')
+            self.assertEqual(len(paths), 4)
+            for path in paths:
+                record = json.loads(path.read_text())
+                self.assertEqual(record['postgresql_version'], '18.7')
+                self.assertEqual(record['assembled_core']['version'], '18.7')
+                self.assertEqual(record['assembled_core']['archive'],
+                                 'postgresql-18.7-linux-x86_64.tar.gz')
+                self.assertIn('postgresql-18.7-linux-x86_64', path.name)
+
+    def test_minimum_rejects_evidence_for_another_postgresql_minor(self):
+        with tempfile.TemporaryDirectory() as directory:
+            with patch.object(emitter.platform, 'machine', return_value='x86_64'):
+                with self.assertRaisesRegex(coverage.CoverageError,
+                                            'minimum-kernel evidence provenance mismatch'):
+                    self.emit(directory, 'x86_64', minimum=True,
+                              postgresql_version='18.7', evidence_version='18.6')
+            self.assertFalse((Path(directory) / 'records').exists())
+
+    def test_rejects_malformed_postgresql_version_before_archive_lookup(self):
+        with tempfile.TemporaryDirectory() as directory:
+            with patch.object(emitter.platform, 'machine', return_value='x86_64'):
+                with self.assertRaisesRegex(coverage.CoverageError,
+                                            'numeric major.minor'):
+                    self.emit(directory, 'x86_64', postgresql_version='18.6x')
 
     def test_minimum_records_bind_guest_and_both_archives(self):
         for architecture, machine in (('x86_64', 'x86_64'), ('arm64', 'aarch64')):

@@ -12,8 +12,8 @@ case "$architecture" in
  arm64) machine=aarch64; image_name=ubuntu-22.04-server-cloudimg-arm64.img; image_sha256=86e13258765945ad792dac75fac7f02f4db9fa73a4a535ffa472266e7041fa19 ;;
  *) exit 2 ;;
 esac
-if [[ ! $pg_version =~ ^18\.6$ ]]; then
-  echo "Unsupported PostgreSQL pilot version: $pg_version" >&2
+if [[ ! $pg_version =~ ^[0-9]+\.[0-9]+$ ]]; then
+  echo "Unsupported PostgreSQL version format: $pg_version" >&2
   exit 2
 fi
 test_revision=${GITHUB_SHA:-}
@@ -131,7 +131,7 @@ if [[ -n $tiger_archives ]]; then
 else
   scp "${scp_args[@]}" /repo/scripts/postgis/verify-in-container.sh /repo/scripts/postgis/probe.sql /repo/scripts/postgis/qemu-kernel-515-guest.sh /repo/tools/check_elf_dependencies.py /repo/tools/check_postgis_license_inventory.py /repo/support.json smoke@127.0.0.1:/tmp/
 fi
-ssh "${ssh_args[@]}" smoke@127.0.0.1 "bash /tmp/qemu-kernel-515-guest.sh '$architecture'" | tee "$evidence/full-verifier.log"
+ssh "${ssh_args[@]}" smoke@127.0.0.1 "bash /tmp/qemu-kernel-515-guest.sh '$architecture' '$pg_version'" | tee "$evidence/full-verifier.log"
 
 ssh "${ssh_args[@]}" smoke@127.0.0.1 'sudo shutdown -h now' || true
 for attempt in $(seq 1 5); do

@@ -2,8 +2,13 @@
 set -euo pipefail
 architecture=${PG_ARCHITECTURE:-x86_64}
 case "$architecture" in x86_64|arm64) ;; *) echo "Unsupported Linux architecture: $architecture" >&2; exit 2 ;; esac
-pg_archive="postgresql-18.6-linux-${architecture}.tar.gz"
-postgis_archive="postgis-3.6.4-postgresql-18.6-linux-${architecture}.tar.gz"
+pg_version=${PG_VERSION:-18.6}
+if [[ ! "$pg_version" =~ ^[0-9]+\.[0-9]+$ ]]; then
+  echo "Unsupported PostgreSQL version format: $pg_version" >&2
+  exit 2
+fi
+pg_archive="postgresql-${pg_version}-linux-${architecture}.tar.gz"
+postgis_archive="postgis-3.6.4-postgresql-${pg_version}-linux-${architecture}.tar.gz"
 cd /input
 sha256sum -c "$pg_archive.sha256"
 cd /out
@@ -37,7 +42,7 @@ assert metadata == {
             ('GDAL_DATA', 'share/gdal'),
         )
     ],
-    'postgresql_version': '18.6',
+    'postgresql_version': os.environ.get('PG_VERSION', '18.6'),
     'platform': 'linux',
     'architecture': os.environ.get('PG_ARCHITECTURE', 'x86_64'),
     'source': {

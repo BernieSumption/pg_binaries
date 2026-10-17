@@ -2,11 +2,15 @@
 set -eu
 architecture=${PG_ARCHITECTURE:-x86_64}
 case "$architecture" in x86_64|arm64) ;; *) echo "Unsupported Linux architecture: $architecture" >&2; exit 2 ;; esac
+pg_version=${PG_VERSION:-18.6}
+case "$pg_version" in *[!0-9.]*|.*|*.) echo "Unsupported PostgreSQL version format: $pg_version" >&2; exit 2 ;; esac
+case "$pg_version" in *.*) ;; *) echo "Unsupported PostgreSQL version format: $pg_version" >&2; exit 2 ;; esac
+case "$pg_version" in *.*.*) echo "Unsupported PostgreSQL version format: $pg_version" >&2; exit 2 ;; esac
 
 core=${1:?usage: verify-portability.sh CORE_ARCHIVES POSTGIS_ARCHIVES}
 extension=${2:?}
-pg_archive="postgresql-18.6-linux-${architecture}.tar.gz"
-postgis_archive="postgis-3.6.4-postgresql-18.6-linux-${architecture}.tar.gz"
+pg_archive="postgresql-${pg_version}-linux-${architecture}.tar.gz"
+postgis_archive="postgis-3.6.4-postgresql-${pg_version}-linux-${architecture}.tar.gz"
 cd "$core"
 sha256sum -c "$pg_archive.sha256"
 cd "$extension"
@@ -18,7 +22,7 @@ cp -a /tmp/postgis/postgis/. /tmp/first/postgresql/
 mv /tmp/first/postgresql /tmp/moved/postgresql
 root=/tmp/moved/postgresql
 test ! -e /tmp/first/postgresql
-test "$("$root/bin/postgres" --version)" = 'postgres (PostgreSQL) 18.6'
+test "$("$root/bin/postgres" --version)" = "postgres (PostgreSQL) $pg_version"
 export PROJ_LIB="$root/share/proj" PROJ_DATA="$root/share/proj" GDAL_DATA="$root/share/gdal"
 chown nobody /tmp/data /tmp/socket
 su -s /bin/sh nobody -c "$root/bin/initdb -D /tmp/data --encoding=UTF8 --locale=C --no-instructions"

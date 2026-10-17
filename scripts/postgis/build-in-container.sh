@@ -2,7 +2,11 @@
 set -euo pipefail
 architecture=${PG_ARCHITECTURE:-x86_64}
 case "$architecture" in x86_64|arm64) ;; *) echo "Unsupported Linux architecture: $architecture" >&2; exit 2 ;; esac
-pg_version=18.6
+pg_version=${PG_VERSION:-18.6}
+if [[ ! "$pg_version" =~ ^[0-9]+\.[0-9]+$ ]]; then
+  echo "Unsupported PostgreSQL version format: $pg_version" >&2
+  exit 2
+fi
 postgis_version=3.6.4
 pg_archive="postgresql-${pg_version}-linux-${architecture}.tar.gz"
 postgis_archive="postgis-${postgis_version}-postgresql-${pg_version}-linux-${architecture}.tar.gz"
@@ -12,7 +16,7 @@ mkdir -p /work/prefix /work/source /work/stage/postgis/{lib,share/extension,LICE
 tar -xzf "$pg_archive" -C /work/prefix
 mv /work/prefix/postgresql /opt/postgresql
 pgroot=/opt/postgresql
-test "$("$pgroot/bin/pg_config" --version)" = 'PostgreSQL 18.6'
+test "$("$pgroot/bin/pg_config" --version)" = "PostgreSQL $pg_version"
 export PATH="$pgroot/bin:$PATH"
 cd /work/source
 curl -fL --retry 3 -o postgis.tar.gz "https://download.osgeo.org/postgis/source/postgis-${postgis_version}.tar.gz"
@@ -152,7 +156,7 @@ metadata = {
             ('GDAL_DATA', 'share/gdal'),
         )
     ],
-    'postgresql_version': '18.6',
+    'postgresql_version': os.environ.get('PG_VERSION', '18.6'),
     'platform': 'linux',
     'architecture': sys.argv[1],
     'source': {

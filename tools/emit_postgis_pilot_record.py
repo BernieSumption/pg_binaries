@@ -23,14 +23,16 @@ def sha256_file(path):
 
 
 def emit(root, archives, core_archives, output, image_id, kernel, architecture="x86_64",
-         evidence=None, outcome="passed"):
+         evidence=None, outcome="passed", postgresql_version="18.6"):
     if outcome not in {"passed", "failed", "skipped"}:
         raise coverage.CoverageError("outcome must be passed, failed, or skipped")
+    if not re.fullmatch(r"[0-9]+\.[0-9]+", postgresql_version):
+        raise coverage.CoverageError("PostgreSQL version must be a numeric major.minor")
     machines = {"x86_64": "x86_64", "arm64": "aarch64"}
     if architecture not in machines or platform.machine() != machines[architecture]:
         raise coverage.CoverageError("PostGIS pilot requires a matching native runner")
     platform_id = f"linux-{architecture}"
-    archive_name = f"postgis-3.6.4-postgresql-18.6-{platform_id}.tar.gz"
+    archive_name = f"postgis-3.6.4-postgresql-{postgresql_version}-{platform_id}.tar.gz"
     revision = os.environ.get("GITHUB_SHA", "")
     run_id = os.environ.get("GITHUB_RUN_ID", "")
     repository = os.environ.get("GITHUB_REPOSITORY", "")
@@ -57,7 +59,8 @@ def emit(root, archives, core_archives, output, image_id, kernel, architecture="
     if evidence is not None:
         env = parse_key_values(evidence / "environment.txt")
         pinned = ARCHITECTURES[architecture]["image_sha256"]
-        if (env.get("test_revision") != revision or env.get("postgresql_version") != "18.6"
+        if (env.get("test_revision") != revision
+                or env.get("postgresql_version") != postgresql_version
                 or env.get("image_sha256") != pinned):
             raise coverage.CoverageError("minimum-kernel evidence provenance mismatch")
         log = (evidence / "full-verifier.log").read_text()
@@ -88,7 +91,7 @@ def emit(root, archives, core_archives, output, image_id, kernel, architecture="
     digest = sha256_file(archive)
     if digest.lower() != fields[0].lower():
         raise coverage.CoverageError("PostGIS archive checksum mismatch")
-    core_name = f"postgresql-18.6-{platform_id}.tar.gz"
+    core_name = f"postgresql-{postgresql_version}-{platform_id}.tar.gz"
     core_fields = (core_archives / f"{core_name}.sha256").read_text(encoding="utf-8").split()
     if len(core_fields) != 2 or core_fields[1] != core_name:
         raise coverage.CoverageError("PostgreSQL core checksum file is malformed")
@@ -117,10 +120,11 @@ def emit(root, archives, core_archives, output, image_id, kernel, architecture="
         },
         "outcome": outcome,
         "sha256": digest,
-        "assembled_core": {"archive": core_name, "sha256": core_digest, "version": "18.6"},
+        "assembled_core": {"archive": core_name, "sha256": core_digest,
+                           "version": postgresql_version},
         "version": "3.6.4",
         "platform": platform_id,
-        "postgresql_version": "18.6",
+        "postgresql_version": postgresql_version,
         "environment": {
             "os": "linux",
             "os_version": kernel_match.group(1),
@@ -145,7 +149,8 @@ def emit(root, archives, core_archives, output, image_id, kernel, architecture="
         extension_record = {**record, "component": name, "project": "PostGIS"}
         coverage.validate_verification_record(extension_record, support, root)
         suffix = "-minimum" if evidence is not None else ""
-        path = output / f"{name}-3.6.4-postgresql-18.6-{platform_id}{suffix}-{run_id}.json"
+        path = output / (f"{name}-3.6.4-postgresql-{postgresql_version}-"
+                         f"{platform_id}{suffix}-{run_id}.json")
         path.write_text(json.dumps(extension_record, indent=2, sort_keys=True) + "\n",
                         encoding="utf-8")
         paths.append(path)
@@ -155,6 +160,7 @@ def emit(root, archives, core_archives, output, image_id, kernel, architecture="
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--architecture", choices=["x86_64", "arm64"], default="x86_64")
+    parser.add_argument("--postgresql-version", default="18.6")
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[1])
     parser.add_argument("--archives", type=Path, required=True)
     parser.add_argument("--core-archives", type=Path, required=True)
@@ -167,7 +173,7 @@ def main():
     try:
         for path in emit(args.root, args.archives, args.core_archives, args.output,
                          args.image_id, args.kernel, args.architecture, args.evidence,
-                         args.outcome):
+                         args.outcome, args.postgresql_version):
             print(path)
         return 0
     except (coverage.CoverageError, OSError, ValueError) as exc:

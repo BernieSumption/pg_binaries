@@ -5,53 +5,89 @@ on:
     branches: [spike]
     paths:
       - 'scripts/postgis/**'
-      - 'scripts/tiger/**'
       - 'scripts/linux/qemu-kernel-515.Dockerfile'
       - 'scripts/qemu/arm64-515.Dockerfile'
-      - 'tools/emit_linux_minimum_pilot_records.py'
       - 'scripts/linux/Dockerfile'
       - 'scripts/linux/build.sh'
       - 'scripts/linux/build-in-container.sh'
       - 'scripts/linux/bundle-glibc-in-container.sh'
       - 'scripts/linux/launcher.c'
+      - 'tools/emit_linux_minimum_pilot_records.py'
       - 'tools/write_linux_license_inventory.py'
       - 'tools/discover_builtins.py'
-      - 'support.json'
       - 'tools/check_elf_dependencies.py'
       - 'tools/check_postgis_license_inventory.py'
       - 'tools/emit_postgis_pilot_record.py'
       - 'tools/write_postgis_license_inventory.py'
       - 'tools/reuse_linux_core_artifact.py'
       - 'tools/create_linux_symbols.py'
+      - 'tools/select_extension_work.py'
+      - 'tools/extension_work_queue.py'
+      - 'tools/extension_archive_plan.py'
+      - 'tools/coverage.py'
+      - 'tools/plan_work.py'
+      - 'support/selected-extension-work.json'
+      - 'support.json'
+      - 'support/postgresql-releases.json'
+      - 'inventory.json'
+      - 'policies/extensions.md'
       - 'tests/test_reuse_linux_core_artifact.py'
       - 'tests/test_create_linux_symbols.py'
       - 'tests/test_emit_postgis_pilot_record.py'
+      - 'tests/test_select_extension_work.py'
       - '.github/workflows/postgis-pilot.yml'
 jobs:
+  plan:
+    runs-on: ubuntu-24.04
+    outputs:
+      project: ${{ steps.select.outputs.project }}
+      version: ${{ steps.select.outputs.version }}
+      architecture: ${{ steps.select.outputs.architecture }}
+      runner: ${{ steps.select.outputs.runner }}
+      group_id: ${{ steps.select.outputs.group_id }}
+      postgresql_major: ${{ steps.select.outputs.postgresql_major }}
+      build_postgresql_version: ${{ steps.select.outputs.build_postgresql_version }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Assert the selected PostGIS version
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          selected = json.loads(Path('support/selected-extension-work.json').read_text())
+          assert selected['project'] == 'PostGIS', selected
+          assert selected['version'] == '3.6.4', selected
+          PY
+      - name: Resolve one selected work group
+        id: select
+        run: python3 tools/select_extension_work.py --selection support/selected-extension-work.json --github-output "$GITHUB_OUTPUT"
+
   linux-postgis:
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - architecture: x86_64
-            runner: ubuntu-24.04
-            docker-platform: linux/amd64
-          - architecture: arm64
-            runner: ubuntu-24.04-arm
-            docker-platform: linux/arm64
-    runs-on: ${{ matrix.runner }}
+    needs: plan
+    runs-on: ${{ needs.plan.outputs.runner }}
     env:
-      PG_ARCHITECTURE: ${{ matrix.architecture }}
+      PG_ARCHITECTURE: ${{ needs.plan.outputs.architecture }}
+      PG_VERSION: ${{ needs.plan.outputs.build_postgresql_version }}
     timeout-minutes: 70
     permissions:
       actions: read
       contents: read
     steps:
-      - name: Confirm native architecture
+      - name: Confirm selected work group and native architecture
+        env:
+          SELECTED_PROJECT: ${{ needs.plan.outputs.project }}
+          SELECTED_VERSION: ${{ needs.plan.outputs.version }}
+          SELECTED_GROUP: ${{ needs.plan.outputs.group_id }}
+          SELECTED_PG_MAJOR: ${{ needs.plan.outputs.postgresql_major }}
         run: |
+          test "$SELECTED_PROJECT" = PostGIS
+          test "$SELECTED_VERSION" = 3.6.4
+          test "$SELECTED_PG_MAJOR" = "${PG_VERSION%%.*}"
+          test -n "$SELECTED_GROUP"
           case "$PG_ARCHITECTURE" in
             x86_64) test "$(uname -m)" = x86_64 ;;
             arm64) test "$(uname -m)" = aarch64 ;;
+            *) echo "Unsupported selected architecture: $PG_ARCHITECTURE" >&2; exit 2 ;;
           esac
       - uses: actions/checkout@v4
       - name: Check core archive reuse
@@ -59,31 +95,25 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          python3 -m unittest tests/test_reuse_linux_core_artifact.py tests/test_emit_postgis_pilot_record.py tests/test_create_linux_symbols.py
+          python3 -m unittest tests/test_reuse_linux_core_artifact.py tests/test_emit_postgis_pilot_record.py tests/test_create_linux_symbols.py tests/test_select_extension_work.py
           python3 tools/reuse_linux_core_artifact.py \
-            --postgresql-version 18.6 --architecture "$PG_ARCHITECTURE" \
+            --postgresql-version "$PG_VERSION" --architecture "$PG_ARCHITECTURE" \
             --output "$RUNNER_TEMP/core" \
             --github-output "$GITHUB_OUTPUT"
-      - name: Build exact PostgreSQL 18.6 Linux core archive
+      - name: Build selected PostgreSQL Linux core archive
         if: steps.core.outputs.reused != 'true'
         run: bash scripts/linux/build.sh "$RUNNER_TEMP/core"
-      - name: Build and probe PostGIS 3.6.4 against PostgreSQL 18.6
+      - name: Build and probe selected PostGIS version
         run: bash scripts/postgis/build.sh "$RUNNER_TEMP/core" "$RUNNER_TEMP/postgis"
       - name: Verify relocated archives on clean Ubuntu 24.04
         id: current_verify
         run: bash scripts/postgis/verify.sh "$RUNNER_TEMP/core" "$RUNNER_TEMP/postgis"
-      - name: Build TIGER Geocoder 2025.2 SQL archive
-        run: bash scripts/tiger/build.sh "$RUNNER_TEMP/core" "$RUNNER_TEMP/tiger"
-      - name: Verify TIGER Geocoder with exact PostgreSQL and PostGIS archives
-        run: |
-          set -o pipefail
-          bash scripts/tiger/verify.sh "$RUNNER_TEMP/core" "$RUNNER_TEMP/postgis" "$RUNNER_TEMP/tiger" \
-            2>&1 | tee "$RUNNER_TEMP/tiger-current.log"
       - name: Check PostGIS with older or absent host glibc
         id: portability
         run: |
           for image in ubuntu:20.04 alpine:3.22; do
-            docker run --rm --platform "${{ matrix.docker-platform }}" -e PG_ARCHITECTURE \
+            docker run --rm --platform "$( [[ "$PG_ARCHITECTURE" = arm64 ]] && echo linux/arm64 || echo linux/amd64 )" \
+              -e PG_ARCHITECTURE -e PG_VERSION \
               -v "$RUNNER_TEMP/core:/core:ro" -v "$RUNNER_TEMP/postgis:/ext:ro" \
               -v "$GITHUB_WORKSPACE:/repo:ro" \
               --entrypoint sh "$image" /repo/scripts/postgis/verify-portability.sh /core /ext
@@ -92,8 +122,8 @@ jobs:
         id: minimum_verify
         if: ${{ always() }}
         run: |
-          core="$RUNNER_TEMP/core/postgresql-18.6-linux-$PG_ARCHITECTURE.tar.gz"
-          extension="$RUNNER_TEMP/postgis/postgis-3.6.4-postgresql-18.6-linux-$PG_ARCHITECTURE.tar.gz"
+          core="$RUNNER_TEMP/core/postgresql-$PG_VERSION-linux-$PG_ARCHITECTURE.tar.gz"
+          extension="$RUNNER_TEMP/postgis/postgis-3.6.4-postgresql-$PG_VERSION-linux-$PG_ARCHITECTURE.tar.gz"
           if [[ ! -f "$core" || ! -f "$core.sha256" || ! -f "$extension" || ! -f "$extension.sha256" ]]; then
             echo 'No minimum-kernel verification: archive bytes or checksum sidecars are unavailable'
             exit 0
@@ -102,10 +132,10 @@ jobs:
           if [[ "$PG_ARCHITECTURE" = arm64 ]]; then dockerfile=scripts/qemu/arm64-515.Dockerfile; fi
           docker build -f "$dockerfile" -t pg-binaries-postgis-qemu .
           mkdir -p "$RUNNER_TEMP/postgis-qemu"
-          docker run --rm -e PG_ARCHITECTURE -e GITHUB_SHA \
+          docker run --rm -e PG_ARCHITECTURE -e PG_VERSION -e GITHUB_SHA \
             -v "$GITHUB_WORKSPACE:/repo:ro" -v "$RUNNER_TEMP/core:/core:ro" \
             -v "$RUNNER_TEMP/postgis:/ext:ro" -v "$RUNNER_TEMP/postgis-qemu:/work" \
-            pg-binaries-postgis-qemu bash /repo/scripts/postgis/qemu-kernel-515.sh /core 18.6 /work /ext
+            pg-binaries-postgis-qemu bash /repo/scripts/postgis/qemu-kernel-515.sh /core "$PG_VERSION" /work /ext
       - name: Finalize PostGIS verification records
         if: ${{ always() }}
         env:
@@ -114,8 +144,8 @@ jobs:
           PORTABILITY_OUTCOME: ${{ steps.portability.outcome }}
           MINIMUM_VERIFY_OUTCOME: ${{ steps.minimum_verify.outcome }}
         run: |
-          core="$RUNNER_TEMP/core/postgresql-18.6-linux-$PG_ARCHITECTURE.tar.gz"
-          extension="$RUNNER_TEMP/postgis/postgis-3.6.4-postgresql-18.6-linux-$PG_ARCHITECTURE.tar.gz"
+          core="$RUNNER_TEMP/core/postgresql-$PG_VERSION-linux-$PG_ARCHITECTURE.tar.gz"
+          extension="$RUNNER_TEMP/postgis/postgis-3.6.4-postgresql-$PG_VERSION-linux-$PG_ARCHITECTURE.tar.gz"
           if [[ ! -f "$core" || ! -f "$core.sha256" || ! -f "$extension" || ! -f "$extension.sha256" ]]; then
             echo 'No PostGIS verification records: archive bytes or checksum sidecars are unavailable'
             exit 0
@@ -131,8 +161,9 @@ jobs:
               current_outcome=passed
             fi
             python3 tools/emit_postgis_pilot_record.py \
-              --architecture "$PG_ARCHITECTURE" --archives "$RUNNER_TEMP/postgis" \
-              --core-archives "$RUNNER_TEMP/core" --output "$RUNNER_TEMP/postgis-records" \
+              --architecture "$PG_ARCHITECTURE" --postgresql-version "$PG_VERSION" \
+              --archives "$RUNNER_TEMP/postgis" --core-archives "$RUNNER_TEMP/core" \
+              --output "$RUNNER_TEMP/postgis-records" \
               --image-id "$image_id" --kernel "$(uname -r)" --outcome "$current_outcome" || record_status=$?
           else
             echo 'No current-OS PostGIS record: verifier did not establish its clean image'
@@ -146,10 +177,10 @@ jobs:
             qemu_image=$(docker image inspect --format '{{.Id}}' pg-binaries-postgis-qemu 2>/dev/null || true)
             if [[ "$qemu_image" =~ ^sha256:[0-9a-f]{64}$ ]]; then
               python3 tools/emit_postgis_pilot_record.py \
-                --architecture "$PG_ARCHITECTURE" --archives "$RUNNER_TEMP/postgis" \
-                --core-archives "$RUNNER_TEMP/core" --output "$RUNNER_TEMP/postgis-records" \
-                --evidence "$evidence" --image-id "$qemu_image" \
-                --kernel "$(uname -r)" --outcome "$minimum_outcome" || record_status=$?
+                --architecture "$PG_ARCHITECTURE" --postgresql-version "$PG_VERSION" \
+                --archives "$RUNNER_TEMP/postgis" --core-archives "$RUNNER_TEMP/core" \
+                --output "$RUNNER_TEMP/postgis-records" --evidence "$evidence" \
+                --image-id "$qemu_image" --kernel "$(uname -r)" --outcome "$minimum_outcome" || record_status=$?
             else
               echo 'No minimum-kernel PostGIS record: QEMU image identity is unavailable'
             fi
@@ -160,13 +191,14 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: postgis-${{ matrix.architecture }}-minimum-kernel-evidence
+          name: postgis-${{ needs.plan.outputs.architecture }}-minimum-kernel-evidence
           path: ${{ runner.temp }}/postgis-qemu/evidence/**
+          if-no-files-found: ignore
           retention-days: 3
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: postgis-linux-${{ matrix.architecture }}-feasibility
+          name: postgis-linux-${{ needs.plan.outputs.architecture }}-feasibility
           path: |
             ${{ runner.temp }}/postgis/*.tar.gz
             ${{ runner.temp }}/postgis/*.sha256
@@ -176,17 +208,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: tiger-${{ matrix.architecture }}-feasibility
-          path: |
-            ${{ runner.temp }}/tiger/*.tar.gz
-            ${{ runner.temp }}/tiger/*.sha256
-            ${{ runner.temp }}/tiger-current.log
-          if-no-files-found: ignore
-          retention-days: 3
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: postgis-${{ matrix.architecture }}-pilot-verification
+          name: postgis-${{ needs.plan.outputs.architecture }}-pilot-verification
           path: ${{ runner.temp }}/postgis-records/*.json
           if-no-files-found: ignore
           retention-days: 3

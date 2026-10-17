@@ -13,4 +13,4 @@ input=$(cd "$input" && pwd)
 mkdir -p "$output"
 output=$(cd "$output" && pwd)
 docker build --platform "$docker_platform" -f "$repo/scripts/postgis/Dockerfile" -t pg-binaries-postgis-pilot "$repo"
-docker run --rm -e PG_ARCHITECTURE="$architecture" --platform "$docker_platform" -v "$input:/input:ro" -v "$output:/out" pg-binaries-postgis-pilot
+docker run --rm -e PG_ARCHITECTURE="$architecture" -e PG_VERSION="${PG_VERSION:-18.6}" --platform "$docker_platform" -v "$input:/input:ro" -v "$output:/out" pg-binaries-postgis-pilot
