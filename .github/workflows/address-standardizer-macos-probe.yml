@@ -1,0 +1,37 @@
+name: Address Standardizer macOS feasibility probe
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [spike]
+    paths:
+      - '.github/workflows/address-standardizer-macos-probe.yml'
+      - 'scripts/address_standardizer/macos-build-and-probe.sh'
+      - 'scripts/address_standardizer/probe.sql'
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - architecture: arm64
+            runner: macos-15
+          - architecture: x86_64
+            runner: macos-15-intel
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build upstream sources and run SQL probe
+        run: bash scripts/address_standardizer/macos-build-and-probe.sh "${{ matrix.architecture }}" "$RUNNER_TEMP/results"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: address-standardizer-macos-${{ matrix.architecture }}-probe
+          path: ${{ runner.temp }}/results/**
+          if-no-files-found: warn
+          retention-days: 3
