@@ -31,7 +31,12 @@ class LinuxLicenseInventoryTests(unittest.TestCase):
         fake_bin = self.root / "bin"
         fake_bin.mkdir()
         dpkg_query = fake_bin / "dpkg-query"
-        dpkg_query.write_text("#!/bin/sh\nprintf '1.2.3-4ubuntu5\\n'\n")
+        dpkg_query.write_text(
+            "#!/bin/sh\ncase \"$3\" in\n"
+            "  libc6) source=glibc ;;\n  musl) source=musl ;;\n"
+            "  *) source=libexample ;;\nesac\n"
+            "printf '1.2.3-4ubuntu5\\t%s\\t1.2.3-4ubuntu5\\n' \"$source\"\n"
+        )
         dpkg_query.chmod(0o755)
         self.env = {**os.environ, "PATH": f"{fake_bin}:{os.environ['PATH']}"}
 
@@ -72,8 +77,22 @@ class LinuxLicenseInventoryTests(unittest.TestCase):
         self.assertEqual(runtime["component"], "runtime-package")
         self.assertEqual(runtime["package"], "libexample1")
         self.assertEqual(runtime["version"], "1.2.3-4ubuntu5")
+        self.assertEqual(runtime["source_package"], "libexample")
+        self.assertEqual(runtime["source_version"], "1.2.3-4ubuntu5")
         self.assertEqual(runtime["payload_paths"], ["lib/runtime/libexample.so"])
         self.assertTrue(runtime["license_source"].startswith("https://"))
+        self.assertNotIn("source_urls", runtime)
+
+    def test_rejects_missing_source_package_or_source_version(self):
+        dpkg_query = self.root / "bin/dpkg-query"
+        for output, message in (
+                ("1.2.3-4ubuntu5\\t\\t1.2.3-4ubuntu5\\n", "missing source package name"),
+                ("1.2.3-4ubuntu5\\tlibexample\\t\\n", "missing source package version")):
+            with self.subTest(message=message):
+                dpkg_query.write_text(f"#!/bin/sh\nprintf '{output}'\n")
+                result = self.write_inventory()
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn(message, result.stderr)
 
     def test_attaches_only_explicit_complete_redistribution_reviews(self):
         result = self.write_inventory(self.reviewed_components())
@@ -131,6 +150,18 @@ class LinuxLicenseInventoryTests(unittest.TestCase):
         self.assertEqual(len(glibc["source_urls"]), 3)
         self.assertTrue(all("1.2.3" in url for url in glibc["source_urls"]))
         self.assertEqual(len(glibc["additional_license_files"]), 3)
+
+    def test_rejects_unexpected_glibc_source_package(self):
+        (self.archive / "lib/glibc").mkdir()
+        (self.archive / "lib/glibc/libc.so.6").write_bytes(b"glibc")
+        (self.archive / "LICENSES/libc6.copyright").write_text("glibc copyright\n")
+        self.mapping.write_text(self.mapping.read_text() + "libc6\tlib/glibc/libc.so.6\n")
+        (self.root / "bin/dpkg-query").write_text(
+            "#!/bin/sh\nprintf '1.2.3-4ubuntu5\\tunexpected\\t1.2.3-4ubuntu5\\n'\n"
+        )
+        result = self.write_inventory()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("unexpected libc6 source package", result.stderr)
 
     def test_static_launcher_records_musl_source_and_license(self):
         (self.archive / "bin/.pg-launcher").write_bytes(b"launcher")

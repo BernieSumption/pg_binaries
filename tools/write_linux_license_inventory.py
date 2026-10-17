@@ -35,12 +35,19 @@ for line in runtime_map.read_text(encoding="utf-8").splitlines():
     packages.setdefault(package, set()).add(payload_path)
 
 for package, payload_paths in sorted(packages.items()):
-    version = subprocess.run(
-        ["dpkg-query", "-W", "-f=${Version}", package],
+    package_metadata = subprocess.run(
+        ["dpkg-query", "-W", "-f=${Version}\t${source:Package}\t${source:Version}", package],
         check=True, capture_output=True, text=True,
-    ).stdout.strip()
+    ).stdout.rstrip("\n").split("\t")
+    if len(package_metadata) != 3:
+        raise SystemExit(f"incomplete installed package metadata: {package}")
+    version, source_package, source_version = package_metadata
     if not version:
         raise SystemExit(f"missing installed package version: {package}")
+    if not source_package:
+        raise SystemExit(f"missing source package name: {package}")
+    if not source_version:
+        raise SystemExit(f"missing source package version: {package}")
     license_file = f"{package}.copyright"
     license_path = root / "LICENSES" / license_file
     if not license_path.is_file() or not license_path.stat().st_size:
@@ -53,21 +60,19 @@ for package, payload_paths in sorted(packages.items()):
         "component": "runtime-package",
         "package": package,
         "version": version,
+        "source_package": source_package,
+        "source_version": source_version,
         "payload_paths": sorted(payload_paths),
         "license_file": license_file,
         "license_source": f"https://packages.ubuntu.com/jammy/{package}",
     }
     if package == "libc6":
-        source_version = subprocess.run(
-            ["dpkg-query", "-W", "-f=${source:Version}", package],
-            check=True, capture_output=True, text=True,
-        ).stdout.strip()
+        if source_package != "glibc":
+            raise SystemExit(f"unexpected libc6 source package: {source_package}")
         if source_version != version:
             raise SystemExit(f"unexpected libc6 source version: {source_version}")
         source_base = "https://archive.ubuntu.com/ubuntu/pool/main/g/glibc/"
         upstream_version = version.split("-", 1)[0]
-        entry["source_package"] = "glibc"
-        entry["source_version"] = source_version
         entry["source_urls"] = [
             f"{source_base}glibc_{source_version}.dsc",
             f"{source_base}glibc_{upstream_version}.orig.tar.xz",
@@ -81,16 +86,12 @@ for package, payload_paths in sorted(packages.items()):
             if not path.is_file() or not path.stat().st_size:
                 raise SystemExit(f"missing glibc license text: {path}")
     elif package == "musl":
-        source_version = subprocess.run(
-            ["dpkg-query", "-W", "-f=${source:Version}", package],
-            check=True, capture_output=True, text=True,
-        ).stdout.strip()
+        if source_package != "musl":
+            raise SystemExit(f"unexpected musl source package: {source_package}")
         if source_version != version:
             raise SystemExit(f"unexpected musl source version: {source_version}")
         source_base = "https://archive.ubuntu.com/ubuntu/pool/universe/m/musl/"
         upstream_version = version.split("-", 1)[0]
-        entry["source_package"] = "musl"
-        entry["source_version"] = source_version
         entry["source_urls"] = [
             f"{source_base}musl_{source_version}.dsc",
             f"{source_base}musl_{upstream_version}.orig.tar.gz",
