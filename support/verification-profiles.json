@@ -157,6 +157,12 @@
       "case_ids": ["archive-suite", "diagnostics", "symbols"],
       "sources": [".github/workflows/pgaudit-macos-arm64-feasibility.yml", "scripts/macos/build-source-dependencies.sh", "scripts/macos/static_analysis.py", "scripts/pgaudit/macos-diagnostics.sh", "scripts/pgaudit/macos-feasibility.sh", "scripts/pgaudit/probe.sql", "support.json", "support/postgresql-releases.json", "tests/test_create_macos_symbols.py", "tests/test_emit_pgaudit_macos_publication.py", "tests/test_import_pgaudit_macos_publication.py", "tools/coverage.py", "tools/create_macos_symbols.py", "tools/emit_pgaudit_macos_publication.py", "tools/import_pgaudit_macos_publication.py"]
     },
+    "pgtap-publication-macos-arm64-18.6": {
+      "scope": "publication",
+      "platforms": ["macos-arm64"],
+      "case_ids": ["archive-suite", "static-analysis"],
+      "sources": [".github/workflows/pgtap-macos-arm64-publication.yml", "scripts/macos/static_analysis.py", "scripts/pgtap/macos-feasibility.sh", "scripts/pgtap/probe.sql", "support.json", "support/postgresql-releases.json", "tests/test_emit_pgtap_macos_publication.py", "tests/test_import_pgtap_macos_publication.py", "tools/coverage.py", "tools/emit_pgtap_macos_publication.py", "tools/import_pgtap_macos_publication.py"]
+    },
     "macos-publication-current-x86_64": {
       "scope": "publication",
       "platforms": ["macos-x86_64"],
