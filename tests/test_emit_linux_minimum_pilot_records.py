@@ -83,9 +83,9 @@ class EmitLinuxMinimumPilotRecordsTests(unittest.TestCase):
     def tearDown(self):
         self.temp.cleanup()
 
-    def emit(self):
+    def emit(self, outcome="passed"):
         return records.emit(self.root, self.archives, self.evidence, self.output,
-                            "18.6", self.architecture, "a" * 40)
+                            "18.6", self.architecture, "a" * 40, outcome)
 
     def test_emits_two_minimum_endpoint_records_bound_to_archive_bytes(self):
         paths = self.emit()
@@ -126,6 +126,27 @@ class EmitLinuxMinimumPilotRecordsTests(unittest.TestCase):
         path.write_text(path.read_text().replace("PASS:", "FAIL:"))
         with self.assertRaisesRegex(records.coverage.CoverageError, "no successful archive"):
             self.emit()
+
+    def test_failed_and_skipped_outcomes_are_bound_to_existing_archive_bytes(self):
+        for outcome in ("failed", "skipped"):
+            with self.subTest(outcome=outcome):
+                self.output = self.root / outcome
+                paths = records.emit(self.root, self.archives, None, self.output,
+                                     "18.6", self.architecture, "a" * 40, outcome)
+                self.assertEqual(len(paths), 2)
+                for path in paths:
+                    record = json.loads(path.read_text(encoding="utf-8"))
+                    self.assertEqual(record["outcome"], outcome)
+                    self.assertEqual(record["environment"]["dependency_checks_passed"], False)
+                    self.assertEqual(record["environment"]["clean_system"], False)
+                    self.assertEqual(record["environment"]["image_id"],
+                                     "sha256:" + records.ARCHITECTURES[self.architecture]["image_sha256"])
+                    self.assertNotIn("kernel_release", record["environment"])
+
+    def test_passed_outcome_requires_success_evidence(self):
+        with self.assertRaisesRegex(records.coverage.CoverageError, "requires QEMU evidence"):
+            records.emit(self.root, self.archives, None, self.output,
+                         "18.6", self.architecture, "a" * 40, "passed")
 
 
 if __name__ == "__main__":

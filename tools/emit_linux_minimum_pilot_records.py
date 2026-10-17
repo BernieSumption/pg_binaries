@@ -66,44 +66,53 @@ def parse_archive_checksums(path):
     return checksums
 
 
-def emit(root, archives, evidence, output, pg_version, architecture, revision):
+def emit(root, archives, evidence, output, pg_version, architecture, revision,
+         outcome="passed"):
     if architecture not in ARCHITECTURES:
         raise coverage.CoverageError("architecture must be x86_64 or arm64")
     if not re.fullmatch(r"(?:[0-9a-fA-F]{40}|[0-9a-fA-F]{64})", revision):
         raise coverage.CoverageError("test revision must be a full Git commit hash")
     if not re.fullmatch(r"(?:15|16|17|18)\.\d+", pg_version):
         raise coverage.CoverageError("unsupported PostgreSQL pilot version")
+    if outcome not in {"passed", "failed", "skipped"}:
+        raise coverage.CoverageError("outcome must be passed, failed, or skipped")
 
     arch = ARCHITECTURES[architecture]
-    env = parse_key_values(evidence / "environment.txt")
-    if env.get("postgresql_version") != pg_version:
-        raise coverage.CoverageError("QEMU evidence PostgreSQL version does not match request")
-    if env.get("test_revision", "").lower() != revision.lower():
-        raise coverage.CoverageError("QEMU evidence revision does not match GitHub revision")
-    if env.get("image_sha256", "").lower() != arch["image_sha256"]:
-        raise coverage.CoverageError("QEMU evidence does not identify the pinned guest image")
     script = (Path(root) / arch["script"]).read_text(encoding="utf-8")
     if not re.search(rf"(?m)^image_sha256={arch['image_sha256']}$", script):
         raise coverage.CoverageError("pinned guest image hash does not match QEMU script")
-
-    log = (evidence / "full-verifier.log").read_text(encoding="utf-8")
-    kernel_match = re.search(r"(?m)^guest_kernel=(\S+)$", log)
-    if not kernel_match or not kernel_match.group(1).startswith("5.15."):
-        raise coverage.CoverageError("full verifier log does not establish a Linux 5.15 guest kernel")
-    kernel_release = kernel_match.group(1)
-    if not re.search(rf"(?m)^PASS: moved PostgreSQL {re.escape(pg_version)} archive and pgvector 0\.8\.7 archive on Ubuntu ", log):
-        raise coverage.CoverageError("full verifier log has no successful archive verification")
-    guest_os = re.search(r"(?m)^guest_os=(.+)$", log)
-    if not guest_os or "Ubuntu 22.04" not in guest_os.group(1):
-        raise coverage.CoverageError("full verifier log does not identify the expected Ubuntu guest")
+    kernel_release = None
+    guest_distribution = "Ubuntu 22.04"
+    if outcome == "passed":
+        if evidence is None:
+            raise coverage.CoverageError("passed outcome requires QEMU evidence")
+        env = parse_key_values(evidence / "environment.txt")
+        if env.get("postgresql_version") != pg_version:
+            raise coverage.CoverageError("QEMU evidence PostgreSQL version does not match request")
+        if env.get("test_revision", "").lower() != revision.lower():
+            raise coverage.CoverageError("QEMU evidence revision does not match GitHub revision")
+        if env.get("image_sha256", "").lower() != arch["image_sha256"]:
+            raise coverage.CoverageError("QEMU evidence does not identify the pinned guest image")
+        log = (evidence / "full-verifier.log").read_text(encoding="utf-8")
+        kernel_match = re.search(r"(?m)^guest_kernel=(\S+)$", log)
+        if not kernel_match or not kernel_match.group(1).startswith("5.15."):
+            raise coverage.CoverageError("full verifier log does not establish a Linux 5.15 guest kernel")
+        kernel_release = kernel_match.group(1)
+        if not re.search(rf"(?m)^PASS: moved PostgreSQL {re.escape(pg_version)} archive and pgvector 0\.8\.7 archive on Ubuntu ", log):
+            raise coverage.CoverageError("full verifier log has no successful archive verification")
+        guest_os = re.search(r"(?m)^guest_os=(.+)$", log)
+        if not guest_os or "Ubuntu 22.04" not in guest_os.group(1):
+            raise coverage.CoverageError("full verifier log does not identify the expected Ubuntu guest")
+        guest_distribution = guest_os.group(1)
     names = (
         (f"postgresql-{pg_version}-linux-{architecture}.tar.gz", "postgresql", pg_version),
         (f"pgvector-0.8.7-postgresql-{pg_version}-linux-{architecture}.tar.gz", "vector", "0.8.7"),
     )
-    checksums = parse_archive_checksums(evidence / "archive-checksums.sha256")
-    expected_names = {name for name, _, _ in names}
-    if set(checksums) != expected_names:
-        raise coverage.CoverageError("archive-checksums.sha256 does not identify exactly the PostgreSQL and pgvector archives")
+    if outcome == "passed":
+        checksums = parse_archive_checksums(evidence / "archive-checksums.sha256")
+        expected_names = {name for name, _, _ in names}
+        if set(checksums) != expected_names:
+            raise coverage.CoverageError("archive-checksums.sha256 does not identify exactly the PostgreSQL and pgvector archives")
 
     profile = coverage.verification_profile(root, arch["profile"])
     if profile["scope"] != "pilot-smoke" or f"linux-{architecture}" not in profile["platforms"]:
@@ -129,7 +138,7 @@ def emit(root, archives, evidence, output, pg_version, architecture, revision):
             raise coverage.CoverageError(f"malformed checksum sidecar for {filename}")
         sidecar_sha = sidecar_fields[0].lower()
         actual_sha = sha256_file(archive)
-        if sidecar_sha != actual_sha or checksums[filename] != actual_sha:
+        if sidecar_sha != actual_sha or (outcome == "passed" and checksums[filename] != actual_sha):
             raise coverage.CoverageError(f"archive checksum does not match {filename}")
         record = {
             "schema_version": 2,
@@ -146,7 +155,7 @@ def emit(root, archives, evidence, output, pg_version, architecture, revision):
                 "build_revision": revision,
                 "test_revision": revision,
             },
-            "outcome": "passed",
+            "outcome": outcome,
             "sha256": actual_sha,
             "component": component,
             "version": version,
@@ -155,15 +164,15 @@ def emit(root, archives, evidence, output, pg_version, architecture, revision):
             "environment": {
                 "os": "linux",
                 "os_version": "5.15",
-                "kernel_release": kernel_release,
-                "distribution": guest_os.group(1),
+                **({"kernel_release": kernel_release} if kernel_release else {}),
+                "distribution": guest_distribution,
                 "distribution_version": "22.04",
                 "architecture": architecture,
-                "clean_system": True,
+                "clean_system": outcome == "passed",
                 "endpoint": "minimum",
                 "image_id": f"sha256:{arch['image_sha256']}",
                 "dependency_check_profile": DEPENDENCY_PROFILE,
-                "dependency_checks_passed": True,
+                "dependency_checks_passed": outcome == "passed",
             },
         }
         coverage.validate_verification_record(record, support, root)
@@ -179,15 +188,16 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[1])
     parser.add_argument("--archives", type=Path, required=True)
-    parser.add_argument("--evidence", type=Path, required=True)
+    parser.add_argument("--evidence", type=Path)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--postgresql-version", required=True)
     parser.add_argument("--architecture", choices=sorted(ARCHITECTURES), required=True)
+    parser.add_argument("--outcome", choices=("passed", "failed", "skipped"), default="passed")
     args = parser.parse_args()
     try:
         paths = emit(args.root, args.archives, args.evidence, args.output,
                      args.postgresql_version, args.architecture,
-                     os.environ.get("GITHUB_SHA", ""))
+                     os.environ.get("GITHUB_SHA", ""), args.outcome)
         for path in paths:
             print(path)
         return 0

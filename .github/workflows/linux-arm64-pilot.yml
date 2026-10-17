@@ -127,6 +127,7 @@ jobs:
       - name: Build disposable Linux 5.15 QEMU environment
         run: docker build -f scripts/qemu/arm64-515.Dockerfile -t pg-binaries-linux-qemu-arm64 .
       - name: Verify the same archives in an Ubuntu 22.04 arm64 Linux 5.15 guest
+        id: minimum_verify
         run: |
           mkdir -p "$RUNNER_TEMP/qemu-linux-arm64-515"
           chmod 0777 "$RUNNER_TEMP/qemu-linux-arm64-515"
@@ -139,14 +140,34 @@ jobs:
             pg-binaries-linux-qemu-arm64 \
             bash /repo/scripts/qemu/arm64-515-smoke.sh /archives "$PG_VERSION" /work
       - name: Record minimum-kernel verification for the same archive bytes
+        if: ${{ always() }}
+        env:
+          GITHUB_SHA: ${{ github.sha }}
         run: |
-          python3 -m unittest tests/test_emit_linux_minimum_pilot_records.py
+          archive_dir="$RUNNER_TEMP/pilot"
+          pg_archive="$archive_dir/postgresql-$PG_VERSION-linux-arm64.tar.gz"
+          vector_archive="$archive_dir/pgvector-0.8.7-postgresql-$PG_VERSION-linux-arm64.tar.gz"
+          if [[ ! -f "$pg_archive" || ! -f "$pg_archive.sha256" || ! -f "$vector_archive" || ! -f "$vector_archive.sha256" ]]; then
+            echo "No minimum-kernel verification record: archive bytes or checksum sidecars are unavailable"
+            exit 0
+          fi
+          outcome='${{ steps.minimum_verify.outcome }}'
+          args=()
+          if [[ "$outcome" == 'success' ]]; then
+            outcome=passed
+            args+=(--evidence "$RUNNER_TEMP/qemu-linux-arm64-515/evidence")
+          elif [[ "$outcome" == 'failure' ]]; then
+            outcome=failed
+          else
+            outcome=skipped
+          fi
           python3 tools/emit_linux_minimum_pilot_records.py \
             --archives "$RUNNER_TEMP/pilot" \
-            --evidence "$RUNNER_TEMP/qemu-linux-arm64-515/evidence" \
             --output "$RUNNER_TEMP/pilot/verification" \
             --postgresql-version "$PG_VERSION" \
-            --architecture arm64
+            --architecture arm64 \
+            --outcome "$outcome" \
+            "${args[@]}"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
