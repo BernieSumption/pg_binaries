@@ -104,8 +104,10 @@ openssl_prefix="$work/openssl-install"
 cd "$openssl_source"
 ./Configure darwin64-arm64-cc no-tests \
   --prefix="$openssl_prefix" --openssldir="$openssl_prefix/ssl" --libdir=lib
+make build_generated -j "$(sysctl -n hw.ncpu)"
 test -s include/openssl/opensslconf.h
 test -s include/openssl/configuration.h
+test -s include/openssl/ssl.h
 
 # PostgreSQL's archived build flags retain this runner-local include path.
 # Recreate only the pinned OpenSSL public headers needed by PGXS compilation;
