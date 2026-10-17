@@ -1,0 +1,14 @@
+{
+  "architecture": "arm64",
+  "pgaudit_version": "18.0",
+  "postgresql_version": "18.6",
+  "run_id": "39073599766",
+  "schema_version": 1,
+  "source_revision": "d088739f808018f914b1ff9f9de3cd4aa2449e0d",
+  "steps": {
+    "archive_identity": "skipped",
+    "core_build": "success",
+    "pgaudit_build": "failure",
+    "pgaudit_verify": "skipped"
+  }
+}
