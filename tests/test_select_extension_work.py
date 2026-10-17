@@ -18,6 +18,7 @@ class SelectExtensionWorkTests(unittest.TestCase):
         self.assertEqual(result["group_id"], "build-extension:39e3af8b0d80a70e")
         self.assertEqual(result["build_postgresql_version"], "17.11")
         self.assertEqual(result["candidate_range"], {"from": "17.7", "to": "17.11"})
+        self.assertEqual((result["range_from"], result["range_to"]), ("17.7", "17.11"))
         self.assertEqual(result["architecture"], "x86_64")
         self.assertEqual(result["runner"], "ubuntu-24.04")
         self.assertEqual(result["range_status"], "unverified")

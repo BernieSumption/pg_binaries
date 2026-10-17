@@ -55,6 +55,8 @@ def resolve(root, selection):
         "closure_ids": [entry["id"] for entry in closure],
         "build_postgresql_version": item["build_postgresql_version"],
         "candidate_range": item["postgresql_range"],
+        "range_from": item["postgresql_range"]["from"],
+        "range_to": item["postgresql_range"]["to"],
         "range_status": "unverified",
     }
 

@@ -12,4 +12,4 @@ esac
 input=$(cd "$input" && pwd)
 output=$(cd "$output" && pwd)
 docker build --platform "$docker_platform" -f "$repo/scripts/postgis/verify.Dockerfile" -t pg-binaries-postgis-verifier "$repo"
-docker run --rm -e PG_ARCHITECTURE="$architecture" -e PG_VERSION="${PG_VERSION:-18.6}" --platform "$docker_platform" -v "$input:/input:ro" -v "$output:/out:ro" pg-binaries-postgis-verifier
+docker run --rm -e PG_ARCHITECTURE="$architecture" -e PG_VERSION="${PG_VERSION:-18.6}" -e POSTGIS_BUILD_PG_VERSION="${POSTGIS_BUILD_PG_VERSION:-${PG_VERSION:-18.6}}" -e POSTGIS_ARCHIVE_NAME="${POSTGIS_ARCHIVE_NAME:-}" --platform "$docker_platform" -v "$input:/input:ro" -v "$output:/out:ro" pg-binaries-postgis-verifier

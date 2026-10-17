@@ -47,6 +47,8 @@ jobs:
       group_id: ${{ steps.select.outputs.group_id }}
       postgresql_major: ${{ steps.select.outputs.postgresql_major }}
       build_postgresql_version: ${{ steps.select.outputs.build_postgresql_version }}
+      range_from: ${{ steps.select.outputs.range_from }}
+      range_to: ${{ steps.select.outputs.range_to }}
     steps:
       - uses: actions/checkout@v4
       - name: Assert the selected PostGIS version
@@ -67,8 +69,11 @@ jobs:
     runs-on: ${{ needs.plan.outputs.runner }}
     env:
       PG_ARCHITECTURE: ${{ needs.plan.outputs.architecture }}
-      PG_VERSION: ${{ needs.plan.outputs.build_postgresql_version }}
-    timeout-minutes: 70
+      BUILD_PG_VERSION: ${{ needs.plan.outputs.build_postgresql_version }}
+      RANGE_FROM: ${{ needs.plan.outputs.range_from }}
+      RANGE_TO: ${{ needs.plan.outputs.range_to }}
+      POSTGIS_ARCHIVE_NAME: postgis-3.6.4-postgresql-${{ needs.plan.outputs.range_from }}-to-${{ needs.plan.outputs.build_postgresql_version }}-linux-${{ needs.plan.outputs.architecture }}.tar.gz
+    timeout-minutes: 110
     permissions:
       actions: read
       contents: read
@@ -82,117 +87,185 @@ jobs:
         run: |
           test "$SELECTED_PROJECT" = PostGIS
           test "$SELECTED_VERSION" = 3.6.4
-          test "$SELECTED_PG_MAJOR" = "${PG_VERSION%%.*}"
+          test "$SELECTED_PG_MAJOR" = "${BUILD_PG_VERSION%%.*}"
           test -n "$SELECTED_GROUP"
+          test -n "$RANGE_FROM"
+          test -n "$RANGE_TO"
           case "$PG_ARCHITECTURE" in
             x86_64) test "$(uname -m)" = x86_64 ;;
             arm64) test "$(uname -m)" = aarch64 ;;
             *) echo "Unsupported selected architecture: $PG_ARCHITECTURE" >&2; exit 2 ;;
           esac
       - uses: actions/checkout@v4
-      - name: Check core archive reuse
-        id: core
+      - name: Check pilot interfaces
+        run: python3 -m unittest tests/test_reuse_linux_core_artifact.py tests/test_emit_postgis_pilot_record.py tests/test_create_linux_symbols.py tests/test_select_extension_work.py
+      - name: Build or reuse exact PostgreSQL core archives
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          python3 -m unittest tests/test_reuse_linux_core_artifact.py tests/test_emit_postgis_pilot_record.py tests/test_create_linux_symbols.py tests/test_select_extension_work.py
-          python3 tools/reuse_linux_core_artifact.py \
-            --postgresql-version "$PG_VERSION" --architecture "$PG_ARCHITECTURE" \
-            --output "$RUNNER_TEMP/core" \
-            --github-output "$GITHUB_OUTPUT"
-      - name: Build selected PostgreSQL Linux core archive
-        if: steps.core.outputs.reused != 'true'
-        run: bash scripts/linux/build.sh "$RUNNER_TEMP/core"
-      - name: Build and probe selected PostGIS version
+          mkdir -p "$RUNNER_TEMP/core"
+          versions=("$BUILD_PG_VERSION")
+          if [[ "$RANGE_FROM" != "$BUILD_PG_VERSION" ]]; then versions+=("$RANGE_FROM"); fi
+          for version in "${versions[@]}"; do
+            reused_output="$RUNNER_TEMP/reuse-$version.out"
+            python3 tools/reuse_linux_core_artifact.py \
+              --postgresql-version "$version" --architecture "$PG_ARCHITECTURE" \
+              --output "$RUNNER_TEMP/core" --github-output "$reused_output"
+            if ! grep -qx 'reused=true' "$reused_output"; then
+              PG_VERSION="$version" bash scripts/linux/build.sh "$RUNNER_TEMP/core"
+            fi
+            archive="postgresql-$version-linux-$PG_ARCHITECTURE.tar.gz"
+            test -s "$RUNNER_TEMP/core/$archive"
+            test -s "$RUNNER_TEMP/core/$archive.sha256"
+          done
+      - name: Build PostGIS once against the selected high PostgreSQL version
+        env:
+          PG_VERSION: ${{ needs.plan.outputs.build_postgresql_version }}
+          POSTGIS_PG_RANGE_FROM: ${{ needs.plan.outputs.range_from }}
         run: bash scripts/postgis/build.sh "$RUNNER_TEMP/core" "$RUNNER_TEMP/postgis"
-      - name: Verify relocated archives on clean Ubuntu 24.04
-        id: current_verify
+      - name: Verify range archive on clean Ubuntu 24.04 with range low PostgreSQL
+        id: low_current
+        env:
+          PG_VERSION: ${{ needs.plan.outputs.range_from }}
+          POSTGIS_BUILD_PG_VERSION: ${{ needs.plan.outputs.build_postgresql_version }}
         run: bash scripts/postgis/verify.sh "$RUNNER_TEMP/core" "$RUNNER_TEMP/postgis"
-      - name: Check PostGIS with older or absent host glibc
-        id: portability
+      - name: Verify range archive on clean Ubuntu 24.04 with build PostgreSQL
+        id: high_current
+        env:
+          PG_VERSION: ${{ needs.plan.outputs.build_postgresql_version }}
+          POSTGIS_BUILD_PG_VERSION: ${{ needs.plan.outputs.build_postgresql_version }}
+        if: ${{ needs.plan.outputs.range_from != needs.plan.outputs.build_postgresql_version }}
+        run: bash scripts/postgis/verify.sh "$RUNNER_TEMP/core" "$RUNNER_TEMP/postgis"
+      - name: Check older or absent host glibc with range low PostgreSQL
+        id: low_portability
+        env:
+          PG_VERSION: ${{ needs.plan.outputs.range_from }}
+          POSTGIS_BUILD_PG_VERSION: ${{ needs.plan.outputs.build_postgresql_version }}
         run: |
           for image in ubuntu:20.04 alpine:3.22; do
             docker run --rm --platform "$( [[ "$PG_ARCHITECTURE" = arm64 ]] && echo linux/arm64 || echo linux/amd64 )" \
-              -e PG_ARCHITECTURE -e PG_VERSION \
+              -e PG_ARCHITECTURE -e PG_VERSION -e POSTGIS_BUILD_PG_VERSION -e POSTGIS_ARCHIVE_NAME \
               -v "$RUNNER_TEMP/core:/core:ro" -v "$RUNNER_TEMP/postgis:/ext:ro" \
               -v "$GITHUB_WORKSPACE:/repo:ro" \
               --entrypoint sh "$image" /repo/scripts/postgis/verify-portability.sh /core /ext
           done
-      - name: Verify exact archives on Linux 5.15 in QEMU
-        id: minimum_verify
+      - name: Check older or absent host glibc with build PostgreSQL
+        id: high_portability
+        env:
+          PG_VERSION: ${{ needs.plan.outputs.build_postgresql_version }}
+          POSTGIS_BUILD_PG_VERSION: ${{ needs.plan.outputs.build_postgresql_version }}
+        if: ${{ needs.plan.outputs.range_from != needs.plan.outputs.build_postgresql_version }}
+        run: |
+          for image in ubuntu:20.04 alpine:3.22; do
+            docker run --rm --platform "$( [[ "$PG_ARCHITECTURE" = arm64 ]] && echo linux/arm64 || echo linux/amd64 )" \
+              -e PG_ARCHITECTURE -e PG_VERSION -e POSTGIS_BUILD_PG_VERSION -e POSTGIS_ARCHIVE_NAME \
+              -v "$RUNNER_TEMP/core:/core:ro" -v "$RUNNER_TEMP/postgis:/ext:ro" \
+              -v "$GITHUB_WORKSPACE:/repo:ro" \
+              --entrypoint sh "$image" /repo/scripts/postgis/verify-portability.sh /core /ext
+          done
+      - name: Verify range archive on Linux 5.15 with range low PostgreSQL
+        id: low_minimum
+        env:
+          PG_VERSION: ${{ needs.plan.outputs.range_from }}
+          POSTGIS_BUILD_PG_VERSION: ${{ needs.plan.outputs.build_postgresql_version }}
         if: ${{ always() }}
         run: |
           core="$RUNNER_TEMP/core/postgresql-$PG_VERSION-linux-$PG_ARCHITECTURE.tar.gz"
-          extension="$RUNNER_TEMP/postgis/postgis-3.6.4-postgresql-$PG_VERSION-linux-$PG_ARCHITECTURE.tar.gz"
-          if [[ ! -f "$core" || ! -f "$core.sha256" || ! -f "$extension" || ! -f "$extension.sha256" ]]; then
-            echo 'No minimum-kernel verification: archive bytes or checksum sidecars are unavailable'
+          if [[ ! -s "$core" || ! -s "$core.sha256" || ! -s "$RUNNER_TEMP/postgis/$POSTGIS_ARCHIVE_NAME" || ! -s "$RUNNER_TEMP/postgis/$POSTGIS_ARCHIVE_NAME.sha256" ]]; then
+            echo 'Range-low minimum-kernel verification skipped: archive bytes or checksum sidecars are unavailable'
             exit 0
           fi
           dockerfile=scripts/linux/qemu-kernel-515.Dockerfile
           if [[ "$PG_ARCHITECTURE" = arm64 ]]; then dockerfile=scripts/qemu/arm64-515.Dockerfile; fi
           docker build -f "$dockerfile" -t pg-binaries-postgis-qemu .
-          mkdir -p "$RUNNER_TEMP/postgis-qemu"
-          docker run --rm -e PG_ARCHITECTURE -e PG_VERSION -e GITHUB_SHA \
+          mkdir -p "$RUNNER_TEMP/postgis-qemu-low"
+          docker run --rm -e PG_ARCHITECTURE -e PG_VERSION -e GITHUB_SHA -e POSTGIS_BUILD_PG_VERSION -e POSTGIS_ARCHIVE_NAME \
             -v "$GITHUB_WORKSPACE:/repo:ro" -v "$RUNNER_TEMP/core:/core:ro" \
-            -v "$RUNNER_TEMP/postgis:/ext:ro" -v "$RUNNER_TEMP/postgis-qemu:/work" \
+            -v "$RUNNER_TEMP/postgis:/ext:ro" -v "$RUNNER_TEMP/postgis-qemu-low:/work" \
+            pg-binaries-postgis-qemu bash /repo/scripts/postgis/qemu-kernel-515.sh /core "$PG_VERSION" /work /ext
+      - name: Verify range archive on Linux 5.15 with build PostgreSQL
+        id: high_minimum
+        env:
+          PG_VERSION: ${{ needs.plan.outputs.build_postgresql_version }}
+          POSTGIS_BUILD_PG_VERSION: ${{ needs.plan.outputs.build_postgresql_version }}
+        if: ${{ always() && needs.plan.outputs.range_from != needs.plan.outputs.build_postgresql_version }}
+        run: |
+          core="$RUNNER_TEMP/core/postgresql-$PG_VERSION-linux-$PG_ARCHITECTURE.tar.gz"
+          if [[ ! -s "$core" || ! -s "$core.sha256" || ! -s "$RUNNER_TEMP/postgis/$POSTGIS_ARCHIVE_NAME" || ! -s "$RUNNER_TEMP/postgis/$POSTGIS_ARCHIVE_NAME.sha256" ]]; then
+            echo 'Build-version minimum-kernel verification skipped: archive bytes or checksum sidecars are unavailable'
+            exit 0
+          fi
+          dockerfile=scripts/linux/qemu-kernel-515.Dockerfile
+          if [[ "$PG_ARCHITECTURE" = arm64 ]]; then dockerfile=scripts/qemu/arm64-515.Dockerfile; fi
+          docker build -f "$dockerfile" -t pg-binaries-postgis-qemu .
+          mkdir -p "$RUNNER_TEMP/postgis-qemu-high"
+          docker run --rm -e PG_ARCHITECTURE -e PG_VERSION -e GITHUB_SHA -e POSTGIS_BUILD_PG_VERSION -e POSTGIS_ARCHIVE_NAME \
+            -v "$GITHUB_WORKSPACE:/repo:ro" -v "$RUNNER_TEMP/core:/core:ro" \
+            -v "$RUNNER_TEMP/postgis:/ext:ro" -v "$RUNNER_TEMP/postgis-qemu-high:/work" \
             pg-binaries-postgis-qemu bash /repo/scripts/postgis/qemu-kernel-515.sh /core "$PG_VERSION" /work /ext
       - name: Finalize PostGIS verification records
         if: ${{ always() }}
         env:
           GITHUB_SHA: ${{ github.sha }}
-          CURRENT_VERIFY_OUTCOME: ${{ steps.current_verify.outcome }}
-          PORTABILITY_OUTCOME: ${{ steps.portability.outcome }}
-          MINIMUM_VERIFY_OUTCOME: ${{ steps.minimum_verify.outcome }}
+          LOW_CURRENT_OUTCOME: ${{ steps.low_current.outcome }}
+          HIGH_CURRENT_OUTCOME: ${{ steps.high_current.outcome }}
+          LOW_PORTABILITY_OUTCOME: ${{ steps.low_portability.outcome }}
+          HIGH_PORTABILITY_OUTCOME: ${{ steps.high_portability.outcome }}
+          LOW_MINIMUM_OUTCOME: ${{ steps.low_minimum.outcome }}
+          HIGH_MINIMUM_OUTCOME: ${{ steps.high_minimum.outcome }}
         run: |
-          core="$RUNNER_TEMP/core/postgresql-$PG_VERSION-linux-$PG_ARCHITECTURE.tar.gz"
-          extension="$RUNNER_TEMP/postgis/postgis-3.6.4-postgresql-$PG_VERSION-linux-$PG_ARCHITECTURE.tar.gz"
-          if [[ ! -f "$core" || ! -f "$core.sha256" || ! -f "$extension" || ! -f "$extension.sha256" ]]; then
-            echo 'No PostGIS verification records: archive bytes or checksum sidecars are unavailable'
-            exit 0
-          fi
           mkdir -p "$RUNNER_TEMP/postgis-records"
           record_status=0
-          image_id=$(docker image inspect --format '{{.Id}}' pg-binaries-postgis-verifier 2>/dev/null || true)
-          if [[ "$CURRENT_VERIFY_OUTCOME" != 'skipped' && "$image_id" =~ ^sha256:[0-9a-f]{64}$ ]]; then
-            current_outcome=skipped
-            if [[ "$CURRENT_VERIFY_OUTCOME" == 'failure' || "$PORTABILITY_OUTCOME" == 'failure' ]]; then
-              current_outcome=failed
-            elif [[ "$CURRENT_VERIFY_OUTCOME" == 'success' && "$PORTABILITY_OUTCOME" == 'success' ]]; then
-              current_outcome=passed
-            fi
-            python3 tools/emit_postgis_pilot_record.py \
-              --architecture "$PG_ARCHITECTURE" --postgresql-version "$PG_VERSION" \
-              --archives "$RUNNER_TEMP/postgis" --core-archives "$RUNNER_TEMP/core" \
-              --output "$RUNNER_TEMP/postgis-records" \
-              --image-id "$image_id" --kernel "$(uname -r)" --outcome "$current_outcome" || record_status=$?
-          else
-            echo 'No current-OS PostGIS record: verifier did not establish its clean image'
-          fi
-          evidence="$RUNNER_TEMP/postgis-qemu/evidence"
-          log="$evidence/full-verifier.log"
-          if [[ -f "$log" ]] && grep -q '^guest_os=Ubuntu 22.04' "$log" && grep -q '^guest_kernel=5\.15\.' "$log" && grep -q "^guest_architecture=$PG_ARCHITECTURE$" "$log"; then
-            minimum_outcome=skipped
-            if [[ "$MINIMUM_VERIFY_OUTCOME" == 'failure' ]]; then minimum_outcome=failed; fi
-            if [[ "$MINIMUM_VERIFY_OUTCOME" == 'success' ]]; then minimum_outcome=passed; fi
-            qemu_image=$(docker image inspect --format '{{.Id}}' pg-binaries-postgis-qemu 2>/dev/null || true)
-            if [[ "$qemu_image" =~ ^sha256:[0-9a-f]{64}$ ]]; then
-              python3 tools/emit_postgis_pilot_record.py \
-                --architecture "$PG_ARCHITECTURE" --postgresql-version "$PG_VERSION" \
-                --archives "$RUNNER_TEMP/postgis" --core-archives "$RUNNER_TEMP/core" \
-                --output "$RUNNER_TEMP/postgis-records" --evidence "$evidence" \
-                --image-id "$qemu_image" --kernel "$(uname -r)" --outcome "$minimum_outcome" || record_status=$?
+          current_image=$(docker image inspect --format '{{.Id}}' pg-binaries-postgis-verifier 2>/dev/null || true)
+          qemu_image=$(docker image inspect --format '{{.Id}}' pg-binaries-postgis-qemu 2>/dev/null || true)
+          for endpoint in low high; do
+            if [[ "$endpoint" == low ]]; then
+              version="$RANGE_FROM"; current="$LOW_CURRENT_OUTCOME"; portable="$LOW_PORTABILITY_OUTCOME"; minimum="$LOW_MINIMUM_OUTCOME"; evidence="$RUNNER_TEMP/postgis-qemu-low/evidence"
             else
-              echo 'No minimum-kernel PostGIS record: QEMU image identity is unavailable'
+              version="$BUILD_PG_VERSION"; current="$HIGH_CURRENT_OUTCOME"; portable="$HIGH_PORTABILITY_OUTCOME"; minimum="$HIGH_MINIMUM_OUTCOME"; evidence="$RUNNER_TEMP/postgis-qemu-high/evidence"
             fi
-          else
-            echo 'No minimum-kernel PostGIS record: clean guest identity was not established'
-          fi
+            if [[ "$endpoint" == high && "$RANGE_FROM" == "$RANGE_TO" ]]; then continue; fi
+            core="$RUNNER_TEMP/core/postgresql-$version-linux-$PG_ARCHITECTURE.tar.gz"
+            extension="$RUNNER_TEMP/postgis/$POSTGIS_ARCHIVE_NAME"
+            if [[ ! -s "$core" || ! -s "$core.sha256" || ! -s "$extension" || ! -s "$extension.sha256" ]]; then
+              echo "No $endpoint PostGIS records: archive bytes or checksum sidecars are unavailable"
+              continue
+            fi
+            if [[ "$current_image" =~ ^sha256:[0-9a-f]{64}$ ]]; then
+              current_outcome=skipped
+              if [[ "$current" == failure || "$portable" == failure ]]; then current_outcome=failed; fi
+              if [[ "$current" == success && "$portable" == success ]]; then current_outcome=passed; fi
+              python3 tools/emit_postgis_pilot_record.py --architecture "$PG_ARCHITECTURE" \
+                --postgresql-version "$version" --build-postgresql-version "$BUILD_PG_VERSION" \
+                --archive-name "$POSTGIS_ARCHIVE_NAME" --archives "$RUNNER_TEMP/postgis" \
+                --core-archives "$RUNNER_TEMP/core" --output "$RUNNER_TEMP/postgis-records" \
+                --image-id "$current_image" --kernel "$(uname -r)" --outcome "$current_outcome" || record_status=$?
+            else
+              echo "No $endpoint current-OS record: verifier image identity is unavailable or verification was skipped"
+            fi
+            log="$evidence/full-verifier.log"
+            if [[ -f "$log" ]] && grep -q '^guest_os=Ubuntu 22.04' "$log" && grep -q '^guest_kernel=5\.15\.' "$log" && grep -q "^guest_architecture=$PG_ARCHITECTURE$" "$log" && [[ "$qemu_image" =~ ^sha256:[0-9a-f]{64}$ ]]; then
+              minimum_outcome=skipped
+              if [[ "$minimum" == failure ]]; then minimum_outcome=failed; fi
+              if [[ "$minimum" == success ]]; then minimum_outcome=passed; fi
+              python3 tools/emit_postgis_pilot_record.py --architecture "$PG_ARCHITECTURE" \
+                --postgresql-version "$version" --build-postgresql-version "$BUILD_PG_VERSION" \
+                --archive-name "$POSTGIS_ARCHIVE_NAME" --archives "$RUNNER_TEMP/postgis" \
+                --core-archives "$RUNNER_TEMP/core" --output "$RUNNER_TEMP/postgis-records" \
+                --evidence "$evidence" --image-id "$qemu_image" --kernel "$(uname -r)" \
+                --outcome "$minimum_outcome" || record_status=$?
+            else
+              echo "No $endpoint minimum-kernel record: clean guest identity or QEMU image identity is unavailable"
+            fi
+          done
           exit "$record_status"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: postgis-${{ needs.plan.outputs.architecture }}-minimum-kernel-evidence
-          path: ${{ runner.temp }}/postgis-qemu/evidence/**
+          path: |
+            ${{ runner.temp }}/postgis-qemu-low/evidence/**
+            ${{ runner.temp }}/postgis-qemu-high/evidence/**
           if-no-files-found: ignore
           retention-days: 3
       - uses: actions/upload-artifact@v4

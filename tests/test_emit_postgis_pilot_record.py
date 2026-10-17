@@ -12,6 +12,7 @@ import coverage
 import emit_postgis_pilot_record as emitter
 
 ROOT = Path(__file__).resolve().parents[1]
+READ_TEXT = Path.read_text
 ENV = {'GITHUB_SHA': 'a' * 40, 'GITHUB_RUN_ID': '123',
        'GITHUB_REPOSITORY': 'owner/repo', 'GITHUB_SERVER_URL': 'https://github.com'}
 OS_RELEASE = 'PRETTY_NAME="Ubuntu 24.04"\nVERSION_ID="24.04"\n'
@@ -85,6 +86,67 @@ class PostgisRecordTests(unittest.TestCase):
                 self.assertEqual(record['assembled_core']['archive'],
                                  'postgresql-18.7-linux-x86_64.tar.gz')
                 self.assertIn('postgresql-18.7-linux-x86_64', path.name)
+
+    def test_range_archive_can_be_tested_with_separate_core_minors(self):
+        archive_name = 'postgis-3.6.4-postgresql-17.7-to-17.11-linux-x86_64.tar.gz'
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            archive_data = b'identical PostGIS range archive built against PostgreSQL 17.11'
+            (root / archive_name).write_bytes(archive_data)
+            extension_sha = hashlib.sha256(archive_data).hexdigest()
+            (root / (archive_name + '.sha256')).write_text(f'{extension_sha}  {archive_name}\n')
+            records = {}
+            for version in ('17.7', '17.11'):
+                core_name = f'postgresql-{version}-linux-x86_64.tar.gz'
+                core_data = f'PostgreSQL core {version}'.encode()
+                (root / core_name).write_bytes(core_data)
+                core_sha = hashlib.sha256(core_data).hexdigest()
+                (root / (core_name + '.sha256')).write_text(f'{core_sha}  {core_name}\n')
+                with patch.dict(os.environ, ENV), \
+                     patch.object(emitter.platform, 'machine', return_value='x86_64'), \
+                     patch.object(Path, 'read_text', self.read_os_release):
+                    paths = emitter.emit(ROOT, root, root, root / f'records-{version}',
+                                         'sha256:' + '1' * 64, '6.11.0-ubuntu',
+                                         postgresql_version=version,
+                                         archive_name=archive_name,
+                                         build_postgresql_version='17.11')
+                records[version] = [json.loads(path.read_text()) for path in paths]
+                for record in records[version]:
+                    self.assertEqual(record['postgresql_version'], version)
+                    self.assertEqual(record['assembled_core']['version'], version)
+                    self.assertEqual(record['assembled_core']['archive'], core_name)
+                    self.assertEqual(record['assembled_core']['sha256'], core_sha)
+                    self.assertEqual(record['archive'], archive_name)
+                    self.assertEqual(record['sha256'], extension_sha)
+            self.assertEqual({r['sha256'] for group in records.values() for r in group},
+                             {extension_sha})
+            self.assertNotEqual(records['17.7'][0]['assembled_core']['sha256'],
+                                records['17.11'][0]['assembled_core']['sha256'])
+
+    @staticmethod
+    def read_os_release(path, *args, **kwargs):
+        return OS_RELEASE if str(path) == '/etc/os-release' else READ_TEXT(path, *args, **kwargs)
+
+    def test_range_archive_rejects_version_or_name_mismatches(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            for archive_name, tested, build in (
+                ('postgis-3.6.4-postgresql-17.7-to-17.11-linux-x86_64.tar.gz', '17.12', '17.11'),
+                ('postgis-3.6.4-postgresql-17.11-to-17.7-linux-x86_64.tar.gz', '17.7', '17.11'),
+                ('postgis-3.6.4-postgresql-17.7-to-17.11-linux-x86_64.tar.gz', '17.7', '17.12'),
+                ('postgis-3.6.4-postgresql-16.15-to-17.11-linux-x86_64.tar.gz', '17.7', '17.11'),
+                ('../postgis-3.6.4-postgresql-17.7-to-17.11-linux-x86_64.tar.gz', '17.7', '17.11'),
+                ('postgis-3.6.4-postgresql-17.7-to-17.11-linux-x86_64.tar.gz', '17.7', '17.x'),
+            ):
+                with self.subTest(archive_name=archive_name, tested=tested, build=build), \
+                     patch.dict(os.environ, ENV), \
+                     patch.object(emitter.platform, 'machine', return_value='x86_64'), \
+                     patch.object(Path, 'read_text', self.read_os_release):
+                    with self.assertRaises(coverage.CoverageError):
+                        emitter.emit(ROOT, root, root, root / 'records',
+                                     'sha256:' + '1' * 64, '6.11.0-ubuntu',
+                                     postgresql_version=tested, archive_name=archive_name,
+                                     build_postgresql_version=build)
 
     def test_minimum_rejects_evidence_for_another_postgresql_minor(self):
         with tempfile.TemporaryDirectory() as directory:

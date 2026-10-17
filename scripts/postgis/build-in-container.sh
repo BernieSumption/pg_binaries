@@ -9,7 +9,30 @@ if [[ ! "$pg_version" =~ ^[0-9]+\.[0-9]+$ ]]; then
 fi
 postgis_version=3.6.4
 pg_archive="postgresql-${pg_version}-linux-${architecture}.tar.gz"
-postgis_archive="postgis-${postgis_version}-postgresql-${pg_version}-linux-${architecture}.tar.gz"
+range_from=${POSTGIS_PG_RANGE_FROM:-}
+postgis_range=""
+if [[ -n $range_from ]]; then
+  if [[ ! $range_from =~ ^([0-9]+)\.([0-9]+)$ ]]; then
+    echo "Unsupported PostGIS PostgreSQL range start: $range_from" >&2
+    exit 2
+  fi
+  range_major=${BASH_REMATCH[1]}
+  range_minor=${BASH_REMATCH[2]}
+  if [[ ! $pg_version =~ ^([0-9]+)\.([0-9]+)$ ]]; then
+    echo "Unsupported PostgreSQL version format: $pg_version" >&2
+    exit 2
+  fi
+  build_major=${BASH_REMATCH[1]}
+  build_minor=${BASH_REMATCH[2]}
+  if (( 10#$range_major != 10#$build_major || 10#$range_minor > 10#$build_minor )); then
+    echo "PostGIS range start must use the build major and be no newer than $pg_version" >&2
+    exit 2
+  fi
+  postgis_range="${range_from}-to-${pg_version}"
+else
+  postgis_range=$pg_version
+fi
+postgis_archive="postgis-${postgis_version}-postgresql-${postgis_range}-linux-${architecture}.tar.gz"
 cd /input
 sha256sum -c "$pg_archive.sha256"
 mkdir -p /work/prefix /work/source /work/stage/postgis/{lib,share/extension,LICENSES/postgis} /out

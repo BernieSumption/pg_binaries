@@ -10,7 +10,8 @@ case "$pg_version" in *.*.*) echo "Unsupported PostgreSQL version format: $pg_ve
 core=${1:?usage: verify-portability.sh CORE_ARCHIVES POSTGIS_ARCHIVES}
 extension=${2:?}
 pg_archive="postgresql-${pg_version}-linux-${architecture}.tar.gz"
-postgis_archive="postgis-3.6.4-postgresql-${pg_version}-linux-${architecture}.tar.gz"
+postgis_archive=${POSTGIS_ARCHIVE_NAME:-postgis-3.6.4-postgresql-${pg_version}-linux-${architecture}.tar.gz}
+case "$postgis_archive" in */*|*\\*|.|..|*[!A-Za-z0-9._-]*) echo "POSTGIS_ARCHIVE_NAME must be a basename without path separators: $postgis_archive" >&2; exit 2 ;; esac
 cd "$core"
 sha256sum -c "$pg_archive.sha256"
 cd "$extension"

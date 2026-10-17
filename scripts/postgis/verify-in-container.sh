@@ -8,7 +8,16 @@ if [[ ! "$pg_version" =~ ^[0-9]+\.[0-9]+$ ]]; then
   exit 2
 fi
 pg_archive="postgresql-${pg_version}-linux-${architecture}.tar.gz"
-postgis_archive="postgis-3.6.4-postgresql-${pg_version}-linux-${architecture}.tar.gz"
+build_version=${POSTGIS_BUILD_PG_VERSION:-$pg_version}
+if [[ ! $build_version =~ ^[0-9]+\.[0-9]+$ ]]; then
+  echo "Unsupported PostGIS build PostgreSQL version format: $build_version" >&2
+  exit 2
+fi
+postgis_archive=${POSTGIS_ARCHIVE_NAME:-postgis-3.6.4-postgresql-${pg_version}-linux-${architecture}.tar.gz}
+if [[ $postgis_archive != "$(basename -- "$postgis_archive")" || $postgis_archive == . || $postgis_archive == .. || ! $postgis_archive =~ ^[A-Za-z0-9._-]+$ ]]; then
+  echo "POSTGIS_ARCHIVE_NAME must be a basename without path separators: $postgis_archive" >&2
+  exit 2
+fi
 cd /input
 sha256sum -c "$pg_archive.sha256"
 cd /out
@@ -42,7 +51,7 @@ assert metadata == {
             ('GDAL_DATA', 'share/gdal'),
         )
     ],
-    'postgresql_version': os.environ.get('PG_VERSION', '18.6'),
+    'postgresql_version': os.environ.get('POSTGIS_BUILD_PG_VERSION', os.environ.get('PG_VERSION', '18.6')),
     'platform': 'linux',
     'architecture': os.environ.get('PG_ARCHITECTURE', 'x86_64'),
     'source': {

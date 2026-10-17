@@ -116,7 +116,13 @@ fi
 printf 'guest_root_filesystem_bytes=%s\n' "$guest_root_bytes" >> "$evidence/environment.txt"
 
 pg_archive="postgresql-${pg_version}-linux-${architecture}.tar.gz"
-postgis_archive="postgis-3.6.4-postgresql-${pg_version}-linux-${architecture}.tar.gz"
+build_version=${POSTGIS_BUILD_PG_VERSION:-$pg_version}
+postgis_archive=${POSTGIS_ARCHIVE_NAME:-postgis-3.6.4-postgresql-${pg_version}-linux-${architecture}.tar.gz}
+case "$postgis_archive" in */*|*\\*|.|..|*[!A-Za-z0-9._-]*) echo "POSTGIS_ARCHIVE_NAME must be a basename without path separators: $postgis_archive" >&2; exit 2 ;; esac
+if [[ ! $build_version =~ ^[0-9]+\.[0-9]+$ ]]; then
+  echo "Unsupported PostGIS build PostgreSQL version format: $build_version" >&2
+  exit 2
+fi
 archive_paths=("$archives/$pg_archive" "$ext_archives/$postgis_archive")
 transfer_paths=("$archives/$pg_archive" "$archives/$pg_archive.sha256" "$ext_archives/$postgis_archive" "$ext_archives/$postgis_archive.sha256")
 if [[ -n $tiger_archives ]]; then
@@ -131,7 +137,7 @@ if [[ -n $tiger_archives ]]; then
 else
   scp "${scp_args[@]}" /repo/scripts/postgis/verify-in-container.sh /repo/scripts/postgis/probe.sql /repo/scripts/postgis/qemu-kernel-515-guest.sh /repo/tools/check_elf_dependencies.py /repo/tools/check_postgis_license_inventory.py /repo/support.json smoke@127.0.0.1:/tmp/
 fi
-ssh "${ssh_args[@]}" smoke@127.0.0.1 "bash /tmp/qemu-kernel-515-guest.sh '$architecture' '$pg_version'" | tee "$evidence/full-verifier.log"
+ssh "${ssh_args[@]}" smoke@127.0.0.1 "bash /tmp/qemu-kernel-515-guest.sh '$architecture' '$pg_version' '$build_version' '$postgis_archive'" | tee "$evidence/full-verifier.log"
 
 ssh "${ssh_args[@]}" smoke@127.0.0.1 'sudo shutdown -h now' || true
 for attempt in $(seq 1 5); do
