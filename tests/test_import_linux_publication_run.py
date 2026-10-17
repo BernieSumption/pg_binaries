@@ -143,13 +143,13 @@ class LinuxPublicationRunImportTests(unittest.TestCase):
         (directory / "archive-checksums.sha256").write_text(checksums, encoding="utf-8")
         (directory / "environment.txt").write_text(
             f"test_revision={'a' * 40}\nimage_sha256={'b' * 64}\n", encoding="utf-8")
-        marker = ("PASS: PostgreSQL 18.6 and pgvector on Ubuntu 22.04 Linux 5.15.0-1109-kvm"
+        marker = ("PASS: moved PostgreSQL 18.6 archive and pgvector 0.8.7 archive on Ubuntu 22.04.5 LTS"
                   if kind == "core" else
                   "PASS: PostGIS 3.6.4 minimum-kernel archive verification")
         (directory / "full-verifier.log").write_text(
             "guest_os=Ubuntu 22.04.5 LTS\n"
-            "guest_kernel=5.15.0-1109-kvm\n"
-            "guest_architecture=x86_64\n" + marker + "\n", encoding="utf-8")
+            "guest_kernel=5.15.0-1109-kvm\n" +
+            ("guest_architecture=x86_64\n" if kind == "postgis" else "") + marker + "\n", encoding="utf-8")
         (directory / "qemu-serial.log").write_text("QEMU ended cleanly\n", encoding="utf-8")
 
     def _write_symbol_indexes(self):

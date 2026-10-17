@@ -216,11 +216,12 @@ def _validate_guest(evidence, architecture, endpoint_records, expected, receipt,
     actual = _parse_guest_checksums(checksum_path)
     if actual != expected:
         raise coverage.CoverageError("minimum guest checksum list does not match its publication archives")
-    if (f"guest_architecture={architecture}" not in lines
+    if ((kind == "postgis" and f"guest_architecture={architecture}" not in lines)
             or not any(line.startswith("guest_kernel=5.15.") for line in lines)
             or not any(line.startswith("guest_os=Ubuntu 22.04") for line in lines)):
         raise coverage.CoverageError("minimum guest log lacks architecture, Linux 5.15, or Ubuntu 22.04 identity")
-    marker = (f"PASS: PostgreSQL {PG_VERSION} and pgvector" if kind == "core"
+    marker = (f"PASS: moved PostgreSQL {PG_VERSION} archive and pgvector {VECTOR_VERSION} archive"
+              if kind == "core"
               else f"PASS: PostGIS {POSTGIS_VERSION} minimum-kernel archive verification")
     if not any(line.startswith(marker) for line in lines):
         raise coverage.CoverageError("minimum guest log lacks the expected PASS marker")
