@@ -139,6 +139,20 @@ class CreateWindowsSymbolsTests(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, "PDB SHA-256 mismatch"):
                 symbols.verify([archive], output)
 
+    def test_verify_rejects_module_digest_not_matching_archive(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            archive = self.make_archive(root, {"postgresql/bin/postgres.exe": make_pe()})
+            staged = root / "staged"
+            staged.mkdir()
+            (staged / "postgres.pdb").write_bytes(make_pdb())
+            output = root / "symbols"
+            index = symbols.extract([archive], [staged], output)
+            index["files"][0]["module_sha256"] = "0" * 64
+            (output / "index.json").write_text(json.dumps(index))
+            with self.assertRaisesRegex(RuntimeError, "Module SHA-256 mismatch"):
+                symbols.verify([archive], output)
+
     def test_ignores_non_pe_and_rejects_unsafe_tar_members(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)

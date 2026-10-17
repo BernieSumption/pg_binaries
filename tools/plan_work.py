@@ -119,21 +119,82 @@ def _has_paired_linux_pilot_records(records, version, platform):
     return bool(by_endpoint.get("minimum", set()) & by_endpoint.get("current", set()))
 
 
+def select_pilot(root, version, platform):
+    """Select one missing core target declared by the support snapshot."""
+    work = plan(root)
+    target = [version, platform]
+    if target not in work["build_missing"]["core"]:
+        raise coverage.CoverageError(f"{target} is not a missing declared core build")
+    return {"postgresql_version": version, "platform": platform,
+            "work": "build_missing", "snapshot_as_of": work["snapshot_as_of"]}
+
+
+def select_next_pilot(root, platform):
+    """Select the highest missing core target without reusable pilot evidence."""
+    work = plan(root)
+    support = coverage.load_json(Path(root) / "support.json")
+    declared_platforms = {f"{os_name}-{architecture}"
+                          for os_name, architectures in support["platform_architectures"].items()
+                          for architecture in architectures}
+    if platform not in declared_platforms:
+        raise coverage.CoverageError(f"undeclared pilot platform: {platform}")
+    records = coverage.verification_records(Path(root), support)
+    candidates = [version for version, candidate_platform in work["build_missing"]["core"]
+                  if candidate_platform == platform]
+    if platform.startswith("linux-"):
+        candidates = [version for version in candidates
+                      if not _has_paired_linux_pilot_records(records, version, platform)]
+    else:
+        candidates = [version for version in candidates
+                      if not _has_current_pilot_record(records, version, platform)]
+    if not candidates:
+        raise coverage.CoverageError(f"no missing declared core build for {platform}")
+    version = max(candidates, key=lambda item: coverage.version_parts(item, "PostgreSQL version"))
+    return {"postgresql_version": version, "platform": platform,
+            "work": "build_missing", "snapshot_as_of": work["snapshot_as_of"]}
+
+
+def _has_current_pilot_record(records, version, platform):
+    return any(record.get("scope") == "pilot-smoke"
+               and record.get("_profile_current") is True
+               and record.get("outcome") == "passed"
+               and record.get("component") == "postgresql"
+               and record.get("version") == version
+               and record.get("postgresql_version") == version
+               and record.get("platform") == platform
+               and record.get("environment", {}).get("endpoint") == "current"
+               for record in records)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[1])
     parser.add_argument("--select-linux-pilot", metavar="VERSION")
     parser.add_argument("--select-next-linux-pilot", action="store_true")
+    parser.add_argument("--select-pilot", metavar="VERSION")
+    parser.add_argument("--select-next-pilot", action="store_true")
+    parser.add_argument("--platform", help="declared OS and architecture, for a generic pilot selector")
     parser.add_argument("--architecture", choices=("x86_64", "arm64"), default="x86_64")
     args = parser.parse_args()
     try:
-        selectors = int(args.select_linux_pilot is not None) + int(args.select_next_linux_pilot)
+        selectors = (int(args.select_linux_pilot is not None)
+                     + int(args.select_next_linux_pilot)
+                     + int(args.select_pilot is not None)
+                     + int(args.select_next_pilot))
         if selectors > 1:
-            raise coverage.CoverageError("choose only one Linux pilot selector")
+            raise coverage.CoverageError("choose only one pilot selector")
         if args.select_linux_pilot is not None:
             result = select_linux_pilot(args.root, args.select_linux_pilot, args.architecture)
         elif args.select_next_linux_pilot:
             result = select_next_linux_pilot(args.root, args.architecture)
+        elif args.select_pilot is not None:
+            if not args.platform:
+                raise coverage.CoverageError("--platform is required for generic pilot selection")
+            result = select_pilot(args.root, args.select_pilot, args.platform)
+        elif args.select_next_pilot:
+            if not args.platform:
+                raise coverage.CoverageError("--platform is required for generic pilot selection")
+            result = select_next_pilot(args.root, args.platform)
         else:
             result = plan(args.root)
         print(json.dumps(result, indent=2, sort_keys=True))

@@ -1,7 +1,8 @@
 $ErrorActionPreference = 'Stop'
 $PSNativeCommandUseErrorActionPreference = $true
 
-$pgVersion = '18.6'
+$pgVersion = $env:PG_VERSION
+if (-not $pgVersion -or $pgVersion -notmatch '^\d+\.\d+$') { throw 'PG_VERSION must be set to a PostgreSQL minor version selected by tools/plan_work.py' }
 $vectorVersion = '0.8.7'
 $repo = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
 $work = Join-Path $env:RUNNER_TEMP 'pg-binaries-windows-build'

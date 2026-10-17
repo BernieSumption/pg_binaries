@@ -6,7 +6,7 @@ Clients download a PostgreSQL archive and any required extension archives, unpac
 
 Each platform and architecture has a PostgreSQL `.tar.gz` archive containing one top-level `postgresql/` directory. Its contents use PostgreSQL's normal installation layout: commands in `bin/`, shared libraries in `lib/`, and support files in `share/`, including `share/extension/` and `share/locale/` where provided. The Linux pilot keeps native executable payloads in `libexec/` and places statically linked launchers in `bin/` so commands use the bundled C library after relocation without invoking a host shell. Include all runtime libraries and other files needed by the packaged programs, along with applicable licence and notice files.
 
-Each extension version and platform combination has its own `.tar.gz` archive containing a payload directory named for the extension project and a sibling `metadata.json` file:
+Each extension archive identifies its project, selected extension version, platform and compatible PostgreSQL range. Native modules may need separate archives for different PostgreSQL majors; a range must be tested before the inventory claims it. The `.tar.gz` contains a payload directory named for the extension project and a sibling `metadata.json` file:
 
 ```text
 archive root/
@@ -46,4 +46,4 @@ Tests must make the original prefix unavailable before exercising the relocated 
 
 ## Current spike evidence
 
-The pilot scripts currently build PostgreSQL and extension archives separately. All three x86-64 pgvector pilots now use the project-named payload and sibling metadata described above. This format check does not establish every operating system or dependency claim required for publication.
+The pilot scripts currently build PostgreSQL and extension archives separately. All three x86-64 pgvector pilots use the project-named payload and sibling metadata described above. The HypoPG 1.4.3 Linux feasibility pilot builds the same layout for PostgreSQL 18.6 on x86-64 and arm64, then checks file collisions and relocated installation on a clean current Ubuntu container; its runtime CI result is pending. These format checks do not establish every operating system or dependency claim required for publication.

@@ -1,16 +1,28 @@
-name: Intel macOS PostgreSQL 18.6 pilot
+name: Intel macOS PostgreSQL pilot
 
 on:
   workflow_dispatch:
+    inputs:
+      postgresql_version:
+        description: A missing supported PostgreSQL version; leave blank to select the next one
+        required: false
+        type: string
   push:
     branches: [spike]
     paths:
       - scripts/macos/**
+      - support.json
+      - support/postgresql-releases.json
+      - inventory.json
+      - support/verification-profiles.json
+      - tools/plan_work.py
+      - tools/coverage.py
       - tools/discover_builtins.py
       - tools/create_macos_symbols.py
       - tools/emit_macos_pilot_records.py
       - tests/schema.sql
       - tests/builtins/**
+      - tests/extensions/**
       - tests/test_create_macos_symbols.py
       - .github/workflows/macos-pilot.yml
 
@@ -23,14 +35,29 @@ concurrency:
 
 jobs:
   build:
+    outputs:
+      postgresql_version: ${{ steps.select.outputs.postgresql_version }}
     runs-on: macos-15-intel
     timeout-minutes: 100
     steps:
       - uses: actions/checkout@v4
+      - name: Select supported macOS build version
+        id: select
+        env:
+          PG_VERSION_INPUT: ${{ inputs.postgresql_version }}
+        run: |
+          if [[ -n "$PG_VERSION_INPUT" ]]; then
+            selection=(--select-pilot "$PG_VERSION_INPUT")
+          else
+            selection=(--select-next-pilot)
+          fi
+          python3 tools/plan_work.py "${selection[@]}" --platform macos-x86_64 > "$RUNNER_TEMP/selection.json"
+          version=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["postgresql_version"])' "$RUNNER_TEMP/selection.json")
+          echo "postgresql_version=$version" >> "$GITHUB_OUTPUT"
       - name: Check macOS symbol-index helper
         run: python3 -m unittest tests/test_create_macos_symbols.py
       - name: Build and package PostgreSQL and pgvector
-        run: bash scripts/macos/build.sh "$RUNNER_TEMP/archives"
+        run: bash scripts/macos/build.sh "$RUNNER_TEMP/archives" x86_64 "${{ steps.select.outputs.postgresql_version }}"
       - uses: actions/upload-artifact@v4
         with:
           name: macos-pilot-archives
@@ -52,12 +79,12 @@ jobs:
           name: macos-pilot-archives
           path: ${{ runner.temp }}/archives
       - name: Check downloaded archives on a fresh runner
-        run: bash scripts/macos/verify.sh "$RUNNER_TEMP/archives"
+        run: bash scripts/macos/verify.sh "$RUNNER_TEMP/archives" x86_64 "${{ needs.build.outputs.postgresql_version }}"
       - name: Verify symbols against downloaded archive bytes
         run: |
           python3 tools/create_macos_symbols.py \
-            "$RUNNER_TEMP/archives/postgresql-18.6-macos-x86_64.tar.gz" \
-            "$RUNNER_TEMP/archives/pgvector-0.8.7-postgresql-18.6-macos-x86_64.tar.gz" \
+            "$RUNNER_TEMP/archives/postgresql-${{ needs.build.outputs.postgresql_version }}-macos-x86_64.tar.gz" \
+            "$RUNNER_TEMP/archives/pgvector-0.8.7-postgresql-${{ needs.build.outputs.postgresql_version }}-macos-x86_64.tar.gz" \
             --output-dir "$RUNNER_TEMP/archives/debug-symbols" --verify-only
       - name: Check pilot record emitter
         run: python3 -m unittest tests/test_emit_macos_pilot_records.py
@@ -67,7 +94,7 @@ jobs:
           python3 tools/emit_macos_pilot_records.py \
             --archives "$RUNNER_TEMP/archives" \
             --output "$RUNNER_TEMP/verification-records" \
-            --postgresql-version 18.6 \
+            --postgresql-version "${{ needs.build.outputs.postgresql_version }}" \
             --os-version "$(sw_vers -productVersion)" \
             --architecture "$(uname -m)" \
             --image-id "$image_id"

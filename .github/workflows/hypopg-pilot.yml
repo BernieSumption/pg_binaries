@@ -1,0 +1,51 @@
+name: HypoPG Linux feasibility pilot
+on:
+  workflow_dispatch:
+  push:
+    branches: [spike]
+    paths:
+      - 'scripts/hypopg/**'
+      - 'tools/reuse_linux_core_artifact.py'
+      - '.github/workflows/hypopg-pilot.yml'
+jobs:
+  linux-hypopg:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - architecture: x86_64
+            runner: ubuntu-24.04
+          - architecture: arm64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 60
+    permissions:
+      actions: read
+      contents: read
+    env:
+      PG_ARCHITECTURE: ${{ matrix.architecture }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Reuse a verified PostgreSQL 18.6 core archive when available
+        id: core
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 tools/reuse_linux_core_artifact.py \
+            --postgresql-version 18.6 --architecture "$PG_ARCHITECTURE" \
+            --output "$RUNNER_TEMP/core" --github-output "$GITHUB_OUTPUT"
+      - name: Build PostgreSQL 18.6 core archive when reuse is unavailable
+        if: steps.core.outputs.reused != 'true'
+        run: scripts/linux/build.sh "$RUNNER_TEMP/core"
+      - name: Build and probe HypoPG 1.4.3 in Docker
+        run: scripts/hypopg/build.sh "$RUNNER_TEMP/core" "$RUNNER_TEMP/hypopg"
+      - name: Verify relocated HypoPG archive on clean Ubuntu
+        run: scripts/hypopg/verify.sh "$RUNNER_TEMP/core" "$RUNNER_TEMP/hypopg"
+      - uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: hypopg-linux-${{ matrix.architecture }}-feasibility
+          path: |
+            ${{ runner.temp }}/hypopg/*.tar.gz
+            ${{ runner.temp }}/hypopg/*.sha256
+          retention-days: 1

@@ -154,7 +154,7 @@ Description: [HypoPG](https://github.com/HypoPG/hypopg) lets PostgreSQL's planne
 
 For inclusion: It is a mature query-tuning tool offered by Supabase and Crunchy Bridge. Upstream documents PostgreSQL 9.2 and later, and Crunchy lists it for PostgreSQL 13–18.
 
-Against inclusion: None identified. HypoPG stores no data in extension objects and has no upgrade scripts; upstream recommends dropping and recreating the extension when changing versions.
+Against inclusion: None identified. Hypothetical indexes are session-local and do not store persistent table data. The 1.4.3 source archive contains SQL upgrade scripts from 1.3.1 through 1.4.3, although its README still recommends dropping and recreating the extension and says it has no upgrade scripts. Test an upgrade path before promising one; this project's selected support currently includes only 1.4.3.
 
 Version policy: Support 1.4.3, the latest stable release on 2026-10-16. Upstream documents PostgreSQL 19 compatibility for 1.4.3, but PostgreSQL 19 is not yet a stable project target. No SQL compatibility break requiring an older release line was identified.
 

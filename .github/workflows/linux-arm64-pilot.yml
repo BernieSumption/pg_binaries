@@ -33,6 +33,7 @@ on:
       - 'tools/emit_linux_minimum_pilot_records.py'
       - 'tests/schema.sql'
       - 'tests/builtins/**'
+      - 'tests/extensions/**'
       - 'tests/test_plan_work.py'
       - 'tests/test_emit_linux_minimum_pilot_records.py'
       - 'tests/test_create_linux_symbols.py'

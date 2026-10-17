@@ -186,14 +186,8 @@ DO $$ BEGIN IF (SELECT pg_column_compression(lz) FROM compression_probe) <> 'lz4
   RAISE EXCEPTION 'LZ4 compression not used'; END IF; END $$;
 SET wal_compression = zstd;
 SHOW wal_compression;
-CREATE EXTENSION vector;
-DO $$ BEGIN IF (SELECT extversion FROM pg_extension WHERE extname='vector') <> '0.8.7' THEN
-  RAISE EXCEPTION 'wrong pgvector version'; END IF; END $$;
-CREATE TABLE embedding (id integer PRIMARY KEY, embedding vector(3));
-INSERT INTO embedding VALUES (1, '[1,0,0]'), (2, '[0,1,0]'), (3, '[0,0,1]');
-CREATE INDEX embedding_hnsw ON embedding USING hnsw (embedding vector_l2_ops);
-SELECT id, embedding <-> '[1,0,0]'::vector AS distance FROM embedding ORDER BY distance LIMIT 2;
 SQL
+"${psql[@]}" -f /tests/extensions/pgvector.sql
 "${psql[@]}" -f /tests/builtins/coverage.sql
 if [[ $pg_version == 15.* ]]; then
   dump_compression=(-Z 1)
@@ -210,7 +204,7 @@ DO $$ BEGIN
   IF (SELECT count(*) FROM pilot.events_2026) <> 1 THEN RAISE EXCEPTION 'restored partition data missing'; END IF;
   IF (SELECT extversion FROM pg_extension WHERE extname = 'vector') <> '0.8.7' THEN
     RAISE EXCEPTION 'restored pgvector missing'; END IF;
-  IF (SELECT embedding <-> '[1,0,0]'::vector FROM embedding WHERE id = 1) <> 0 THEN
+  IF (SELECT embedding <-> '[1,0,0]'::vector FROM pilot_vectors WHERE id = 1) <> 0 THEN
     RAISE EXCEPTION 'restored vector data missing'; END IF;
 END $$;
 SQL

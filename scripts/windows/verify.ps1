@@ -3,14 +3,15 @@ $PSNativeCommandUseErrorActionPreference = $true
 
 $repo = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
 $dist = Join-Path $repo 'dist/windows'
-$pgVersion = '18.6'
+$pgVersion = $env:PG_VERSION
+if (-not $pgVersion -or $pgVersion -notmatch '^\d+\.\d+$') { throw 'PG_VERSION must be set to the selected PostgreSQL minor version' }
 $vectorVersion = '0.8.7'
 $pgArchive = Join-Path $dist "postgresql-$pgVersion-windows-x86_64.tar.gz"
 $vectorArchive = Join-Path $dist "pgvector-$vectorVersion-postgresql-$pgVersion-windows-x86_64.tar.gz"
 $work = Join-Path $env:RUNNER_TEMP 'pg-binaries-windows-verify'
 $pgExtract = Join-Path $work 'postgresql archive'
 $vectorExtract = Join-Path $work 'pgvector archive'
-$moved = Join-Path $work 'relocated install/PostgreSQL 18.6'
+$moved = Join-Path $work "relocated install/PostgreSQL $pgVersion"
 $data = Join-Path $work 'database cluster'
 
 function Assert-ArchiveHash([string]$archive) {
@@ -152,7 +153,10 @@ try {
   & $psql -X -v ON_ERROR_STOP=1 -v "loopback_conninfo=host=127.0.0.1 port=$env:PGPORT dbname=postgres sslmode=disable" -v loopback_host=127.0.0.1 -v "loopback_port=$env:PGPORT" -f (Join-Path $repo 'tests/builtins/loopback.sql')
   $fixturePath = (Join-Path $repo 'tests/builtins/file_fdw.csv').Replace('\', '/')
   & $psql -X -v ON_ERROR_STOP=1 -v "fixture_path=$fixturePath" -f (Join-Path $repo 'tests/builtins/fixture.sql')
-  foreach ($suite in @('preloaded', 'wal', 'logical')) {
+  $builtInSuites = @('preloaded', 'wal')
+  if ($pgVersion.StartsWith('18.')) { $builtInSuites += 'logical' }
+  if ($pgVersion.StartsWith('15.') -or $pgVersion.StartsWith('16.')) { $builtInSuites += 'legacy' }
+  foreach ($suite in $builtInSuites) {
     & $psql -X -v ON_ERROR_STOP=1 -f (Join-Path $repo "tests/builtins/$suite.sql")
   }
   $notifications = (& $psql -X -v ON_ERROR_STOP=1 -f (Join-Path $repo 'tests/builtins/tcn.sql')) -join "`n"
@@ -200,25 +204,22 @@ SHOW wal_compression;
   & $psql -X -v ON_ERROR_STOP=1 -c $compressionSql
   $method = (& $psql -At -c 'SELECT pg_column_compression(payload) FROM pilot_compression').Trim()
   if ($method -ne 'lz4') { throw "TOAST compression returned $method, expected lz4" }
-  foreach ($method in @('gzip', 'lz4', 'zstd')) {
+  $dumpMethods = @('gzip', 'lz4', 'zstd')
+  if ($pgVersion.StartsWith('15.')) { $dumpMethods = @('6') }
+  foreach ($method in $dumpMethods) {
     $dump = Join-Path $work "pilot-$method.dump"
     & $pgDump -Fc -Z $method -f $dump postgres
     & $pgRestore -l $dump | Out-Null
   }
 
-  $vectorSql = @'
-CREATE EXTENSION vector;
-CREATE TABLE pilot_vectors (id integer PRIMARY KEY, embedding vector(3));
-INSERT INTO pilot_vectors VALUES (1, '[1,0,0]'), (2, '[0,1,0]'), (3, '[0,0,1]');
-CREATE INDEX pilot_vectors_hnsw ON pilot_vectors USING hnsw (embedding vector_l2_ops);
-SELECT id, embedding <-> '[1,0,0]'::vector AS distance FROM pilot_vectors ORDER BY embedding <-> '[1,0,0]'::vector LIMIT 2;
-'@
-  & $psql -X -v ON_ERROR_STOP=1 -c $vectorSql
+  & $psql -X -v ON_ERROR_STOP=1 -f (Join-Path $repo 'tests/extensions/pgvector.sql')
   $installed = (& $psql -At -c "SELECT extversion FROM pg_extension WHERE extname = 'vector'").Trim()
   if ($installed -ne $vectorVersion) { throw "pgvector reports $installed, expected $vectorVersion" }
   & $psql -X -v ON_ERROR_STOP=1 -f (Join-Path $repo 'tests/builtins/coverage.sql')
   $restoreDump = Join-Path $work 'restorable.dump'
-  & $pgDump -Fc -Z zstd -f $restoreDump postgres
+  $restoreCompression = 'zstd'
+  if ($pgVersion.StartsWith('15.')) { $restoreCompression = '6' }
+  & $pgDump -Fc -Z $restoreCompression -f $restoreDump postgres
   & $psql -X -v ON_ERROR_STOP=1 -c 'CREATE DATABASE restored'
   & $pgRestore --exit-on-error -d restored $restoreDump
   $restoredCount = (& $psql -X -At -d restored -c 'SELECT pilot.active_item_count(1)').Trim()

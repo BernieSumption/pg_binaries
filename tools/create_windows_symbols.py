@@ -241,6 +241,7 @@ def verify(archives: list[Path], output_dir: Path) -> dict:
     by_name = {archive.name: archive for archive in archives}
     digests = {name: sha256(path) for name, path in by_name.items()}
     checked, expected = set(), set()
+    modules = {}
     with tempfile.TemporaryDirectory() as temp:
         module = Path(temp) / "module"
         for archive in archives:
@@ -258,6 +259,7 @@ def verify(archives: list[Path], output_dir: Path) -> dict:
                     if identity is None:
                         raise RuntimeError(f"Packaged module is not a PE image: {archive.name}:{member.name}")
                     expected.add((archive.name, member.name, identity[0], identity[1]))
+                    modules[(archive.name, member.name)] = (identity, sha256(module))
         for entry in index["files"]:
             archive = by_name.get(entry.get("archive"))
             if archive is None:
@@ -265,19 +267,14 @@ def verify(archives: list[Path], output_dir: Path) -> dict:
             if entry.get("archive_sha256") != digests[archive.name]:
                 raise RuntimeError(f"Archive SHA-256 mismatch: {archive.name}")
             key = (archive.name, entry.get("module_path"), entry.get("rsds_guid"), entry.get("rsds_age"))
-            with tarfile.open(archive, "r:gz") as bundle:
-                member = next((m for m in bundle.getmembers() if m.name == entry.get("module_path") and m.isfile()), None)
-                if member is None:
-                    raise RuntimeError(f"Indexed archive member missing: {archive.name}:{entry.get('module_path')}")
-                stream = bundle.extractfile(member)
-                if stream is None:
-                    raise RuntimeError(f"Cannot read archive member: {member.name}")
-                module.write_bytes(stream.read())
-            identity = pe_codeview(module)
+            member_path = entry.get("module_path")
+            if (archive.name, member_path) not in modules:
+                raise RuntimeError(f"Indexed archive member missing: {archive.name}:{member_path}")
+            identity, module_sha256 = modules[(archive.name, member_path)]
             if identity != (entry.get("rsds_guid"), entry.get("rsds_age")):
-                raise RuntimeError(f"Module RSDS mismatch: {archive.name}:{member.name}")
-            if sha256(module) != entry.get("module_sha256"):
-                raise RuntimeError(f"Module SHA-256 mismatch: {archive.name}:{member.name}")
+                raise RuntimeError(f"Module RSDS mismatch: {archive.name}:{member_path}")
+            if module_sha256 != entry.get("module_sha256"):
+                raise RuntimeError(f"Module SHA-256 mismatch: {archive.name}:{member_path}")
             relative = PurePosixPath(entry.get("pdb_path", ""))
             if relative.is_absolute() or ".." in relative.parts or not relative.parts:
                 raise RuntimeError(f"Unsafe indexed PDB path: {entry.get('pdb_path')!r}")

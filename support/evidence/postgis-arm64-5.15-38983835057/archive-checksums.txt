@@ -1,0 +1,2 @@
+d199156cae2b2d112a49b2291b77aadc5cef7f249af7afe0a5bde554c70ba092  /core/postgresql-18.6-linux-arm64.tar.gz
+5554f86c2ecd07d6c5f9c1e1e27dcf2d524bab72e77784a20ff85a0dcfbb2ace  /ext/postgis-3.6.4-postgresql-18.6-linux-arm64.tar.gz

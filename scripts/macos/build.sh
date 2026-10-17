@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-pg_version=18.6
+pg_version=${3:-18.6}
 vector_version=0.8.7
 architecture=${2:-$(uname -m)}
 script_dir=$(cd "$(dirname "$0")" && pwd)

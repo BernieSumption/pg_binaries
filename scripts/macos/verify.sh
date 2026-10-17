@@ -3,14 +3,15 @@ set -euo pipefail
 
 archives=$(cd "${1:?archive directory required}" && pwd)
 architecture=${2:-$(uname -m)}
+pg_version=${3:-18.6}
 case "$architecture" in x86_64|arm64) ;; *) echo "Unsupported macOS architecture: $architecture" >&2; exit 1 ;; esac
 repo=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 if [[ $(uname -s) != Darwin || $(uname -m) != "$architecture" ]]; then
   echo "Verification requires native macOS $architecture" >&2
   exit 1
 fi
-pg_name="postgresql-18.6-macos-${architecture}.tar.gz"
-vector_name="pgvector-0.8.7-postgresql-18.6-macos-${architecture}.tar.gz"
+pg_name="postgresql-${pg_version}-macos-${architecture}.tar.gz"
+vector_name="pgvector-0.8.7-postgresql-${pg_version}-macos-${architecture}.tar.gz"
 work=$(mktemp -d /tmp/pgv.XXXXXX)
 data_dir=
 pg_ctl=
@@ -28,16 +29,16 @@ mkdir -p "$work/first" "$work/extension" "$work/moved" "$work/socket"
 tar -xzf "$archives/$pg_name" -C "$work/first"
 tar -xzf "$archives/$vector_name" -C "$work/extension"
 
-python3 - "$work/first/postgresql" "$work/extension" "$architecture" <<'PY'
+python3 - "$work/first/postgresql" "$work/extension" "$architecture" "$pg_version" <<'PY'
 import json, pathlib, sys
 core, extension = map(pathlib.Path, sys.argv[1:3])
 pg = json.loads((core / 'manifest.json').read_text())
 vector = json.loads((extension / 'metadata.json').read_text())
-expected = {"schema_version": 1, "postgresql_version": "18.6", "platform": "macos", "architecture": sys.argv[3]}
+expected = {"schema_version": 1, "postgresql_version": sys.argv[4], "platform": "macos", "architecture": sys.argv[3]}
 for key, value in expected.items():
     if pg.get(key) != value:
         raise SystemExit(f"PostgreSQL manifest mismatch: {key}: {pg.get(key)!r} != {value!r}")
-if pg.get("component") != "postgresql" or pg.get("version") != "18.6":
+if pg.get("component") != "postgresql" or pg.get("version") != sys.argv[4]:
     raise SystemExit("PostgreSQL manifest mismatch")
 controls = {path.stem for path in (core / 'share/extension').glob('*.control')}
 if not controls or pg.get('included_extensions') != sorted(controls) or 'vector' in controls or 'uuid-ossp' not in controls:
@@ -77,7 +78,7 @@ start_server() {
     server_options="-k $work/socket -p 54329 -h 127.0.0.1 -c shared_preload_libraries=pg_stat_statements -c wal_level=logical -c ssl=on -c ssl_cert_file=$work/tls/server.crt -c ssl_key_file=$work/tls/server.key -c ssl_ca_file=$work/tls/ca.crt"
   fi
   "$pg_ctl" -D "$data_dir" -o "$server_options" -l "$work/$run_name.log" -w start
-  "$pg_root/bin/psql" -h "$work/socket" -p 54329 -d postgres -XAt -c 'SHOW server_version' | grep -Fx '18.6'
+  "$pg_root/bin/psql" -h "$work/socket" -p 54329 -d postgres -XAt -c 'SHOW server_version' | grep -Fx "$pg_version"
 }
 stop_server() {
   "$pg_ctl" -D "$data_dir" -m fast -w stop
@@ -110,7 +111,12 @@ printf '%s\n' "$tcn_output"
 grep -F "Asynchronous notification \"tcn\" with payload \"\"builtin_tcn\",I,\"id\"='91'\"" <<< "$tcn_output"
 PGSSLMODE=verify-ca PGSSLROOTCERT="$work/tls/ca.crt" PGSSLCERT="$work/tls/client.crt" PGSSLKEY="$work/tls/client.key" \
   "$pg/bin/psql" -h 127.0.0.1 -p 54329 -d postgres -X -v ON_ERROR_STOP=1 -f "$repo/tests/builtins/ssl.sql"
-"${psql[@]}" -f "$repo/tests/builtins/logical.sql"
+if [[ $pg_version == 18.* ]]; then
+  "${psql[@]}" -f "$repo/tests/builtins/logical.sql"
+fi
+if [[ $pg_version == 15.* || $pg_version == 16.* ]]; then
+  "${psql[@]}" -f "$repo/tests/builtins/legacy.sql"
+fi
 "${psql[@]}" -c "CREATE COLLATION pilot_icu (provider = icu, locale = 'und-u-ks-level2', deterministic = false)"
 "${psql[@]}" -c "SELECT name FROM (VALUES ('a'), ('A')) AS names(name) ORDER BY name COLLATE pilot_icu"
 locale_name=$(locale -a | awk '/UTF-8|utf8/ && !found {print; found=1}')
@@ -127,15 +133,11 @@ printf "CREATE COLLATION pilot_libc (provider = libc, locale = '%s');\n" "$local
 "${psql[@]}" -c "SELECT pg_reload_conf()"
 "${psql[@]}" -At -c "SHOW wal_compression" | grep -Fx zstd
 
-"${psql[@]}" -c 'CREATE EXTENSION vector'
-"${psql[@]}" -At -c "SELECT extversion FROM pg_extension WHERE extname = 'vector'" | grep -Fx '0.8.7'
-"${psql[@]}" -At -c "SELECT '[1,2,3]'::vector <-> '[2,3,4]'::vector" | grep -Fx '1.7320508075688772'
-"${psql[@]}" -c "CREATE TABLE pilot_vectors (id int PRIMARY KEY, embedding vector(3))"
-"${psql[@]}" -c "INSERT INTO pilot_vectors VALUES (1, '[1,2,3]'), (2, '[2,3,4]')"
-"${psql[@]}" -c "CREATE INDEX ON pilot_vectors USING hnsw (embedding vector_l2_ops)"
-"${psql[@]}" -At -c "SELECT id FROM pilot_vectors ORDER BY embedding <-> '[1,2,3]' LIMIT 1" | grep -Fx 1
+"${psql[@]}" -f "$repo/tests/extensions/pgvector.sql"
 "${psql[@]}" -f "$repo/tests/builtins/coverage.sql"
-"$pg/bin/pg_dump" -h "$work/socket" -p 54329 -Fc -Z zstd:1 -f "$work/pilot.dump" postgres
+dump_compression=(-Z zstd:1)
+if [[ $pg_version == 15.* ]]; then dump_compression=(-Z 1); fi
+"$pg/bin/pg_dump" -h "$work/socket" -p 54329 -Fc "${dump_compression[@]}" -f "$work/pilot.dump" postgres
 "${psql[@]}" -c 'CREATE DATABASE restored'
 "$pg/bin/pg_restore" --exit-on-error -h "$work/socket" -p 54329 -d restored "$work/pilot.dump"
 restored=("$pg/bin/psql" -h "$work/socket" -p 54329 -d restored -X -v ON_ERROR_STOP=1)

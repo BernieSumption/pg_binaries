@@ -259,6 +259,39 @@ class PlanWorkTests(unittest.TestCase):
         self.write_pilot_records(arm_pair, architecture="arm64")
         self.assertEqual(plan_work.select_next_linux_pilot(self.root, "arm64")["postgresql_version"], "15.9")
 
+    def test_generic_pilot_selector_uses_declared_platform_and_current_macos_record(self):
+        snapshot = {"as_of": "2026-01-01", "source": "https://example.test/releases",
+                    "releases": [{"version": "15.9", "release_date": "2025-09-25"},
+                                 {"version": "18.2", "release_date": "2025-09-25"}]}
+        self.write("support/postgresql-releases.json", snapshot)
+        self.assertEqual(plan_work.select_pilot(self.root, "18.2", "macos-arm64"), {
+            "postgresql_version": "18.2", "platform": "macos-arm64",
+            "work": "build_missing", "snapshot_as_of": "2026-01-01"})
+        self.assertEqual(plan_work.select_next_pilot(self.root, "macos-arm64")["postgresql_version"], "18.2")
+
+        source = self.root / "tests/fixture.sh"
+        source.parent.mkdir(parents=True, exist_ok=True)
+        source.write_text("suite", encoding="utf-8")
+        self.write("support/verification-profiles.json", {"schema_version": 1, "profiles": {
+            "fixture-macos": {"scope": "pilot-smoke", "platforms": ["macos-arm64"],
+                              "case_ids": ["case-a"], "sources": ["tests/fixture.sh"]}}})
+        profile = plan_work.coverage.verification_profile(self.root, "fixture-macos")
+        record = {"schema_version": 2, "scope": "pilot-smoke", "profile_id": "fixture-macos",
+                  "profile_revision": profile["profile_revision"], "outcome": "passed",
+                  "sha256": "c" * 64, "component": "postgresql", "version": "18.2",
+                  "platform": "macos-arm64", "postgresql_version": "18.2",
+                  "test_revision": "a" * 40, "test_cases": profile["case_ids"],
+                  "environment": {"os": "macos", "architecture": "arm64", "os_version": "15",
+                                  "clean_system": True, "endpoint": "current", "image_id": "runner-image",
+                                  "dependency_check_profile": "macho-system-dependencies-v1",
+                                  "dependency_checks_passed": True}}
+        self.write("support/verification/record.json", record)
+        self.assertEqual(plan_work.select_next_pilot(self.root, "macos-arm64")["postgresql_version"], "15.9")
+        source.write_text("changed suite", encoding="utf-8")
+        self.assertEqual(plan_work.select_next_pilot(self.root, "macos-arm64")["postgresql_version"], "18.2")
+        with self.assertRaisesRegex(plan_work.coverage.CoverageError, "undeclared pilot platform"):
+            plan_work.select_next_pilot(self.root, "windows-arm64")
+
 
 if __name__ == "__main__":
     unittest.main()
