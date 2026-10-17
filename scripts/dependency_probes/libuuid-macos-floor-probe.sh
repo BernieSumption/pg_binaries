@@ -30,7 +30,7 @@ archive_path="$work_dir/$archive"
   echo "source_url=$base_url/$archive"
   echo "source_sha256=$expected_sha256"
   echo "source_digest_authority=SourceForge project download page"
-  echo "configure_scope=upstream libuuid, libblkid and filesystem utilities disabled"
+  echo "configure_scope=upstream libuuid with private blkid; filesystem utilities not built"
 } > "$inspection"
 
 curl --fail --location --retry 3 "$base_url/$archive" --output "$archive_path"
@@ -47,10 +47,10 @@ tar -xzf "$archive_path" -C "$work_dir/source" --strip-components=1
 export MACOSX_DEPLOYMENT_TARGET=11.0
 (
   cd "$work_dir/source"
-  ./configure --prefix="$work_dir/prefix" --enable-elf-shlibs \
-    --disable-libblkid --disable-fsck --disable-uuidd --disable-e2initrd-helper
-  make -C lib/uuid -j"$(sysctl -n hw.ncpu)"
-  make -C lib/uuid install
+  ./configure --prefix="$work_dir/prefix" --enable-bsd-shlibs \
+    --disable-fsck --disable-uuidd --disable-e2initrd-helper &&
+    make -C lib/uuid -j"$(sysctl -n hw.ncpu)" &&
+    make -C lib/uuid install
 ) > "$build_log" 2>&1 || {
   tail -n 100 "$build_log" >&2
   echo "outcome=unmodified upstream libuuid build failed on Darwin" >> "$inspection"
