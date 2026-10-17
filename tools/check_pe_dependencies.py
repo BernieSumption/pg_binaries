@@ -58,36 +58,77 @@ def parse_headers(output):
             "os_version": os_match.group(1), "subsystem_version": subsystem_match.group(1)}
 
 
-def parse_imports(output):
-    """Parse DLL headings from dumpbin /imports normal and delay-load sections.
+def parse_import_details(output):
+    """Parse DLL headings and named/ordinal imports from dumpbin output.
 
-    Import names are bare indented DLL headings; function/address rows have other
-    syntax. Any heading-like DLL outside a recognized imports section is ambiguous.
+    Function rows are retained separately for normal and delay-load imports. A
+    function identified only by ordinal is recorded as ``#<ordinal>``. Any
+    heading-like DLL outside a recognized imports section is ambiguous.
     """
-    names, sections = [], 0
+    imports, by_name, sections = [], {}, 0
     in_import_section = False
+    current = None
+    delay_section = False
     for line in output.splitlines():
         lowered = line.lower()
-        if re.search(r"\bsection contains the following (?:delay load )?imports:\s*$", lowered):
+        heading = re.search(r"\bsection contains the following (delay load )?imports:\s*$", lowered)
+        if heading:
             sections += 1
             in_import_section = True
+            delay_section = bool(heading.group(1))
+            current = None
             continue
         if in_import_section:
             if re.match(r"^\s{2,}[A-Za-z0-9_.+-]+\.(?:dll|drv)\s*$", line, re.I):
                 name = line.strip()
                 if not DLL_NAME.fullmatch(name):
                     raise ValueError(f"unrecognized import DLL name: {line.strip()}")
-                names.append(name)
+                key = name.lower()
+                current = by_name.get(key)
+                if current is None:
+                    current = {"name": name, "functions": [], "delay_functions": []}
+                    by_name[key] = current
+                    imports.append(current)
+                elif current["name"] != name:
+                    raise ValueError(f"inconsistent DLL import spelling: {name}")
             elif line.strip() and not line[:1].isspace():
                 in_import_section = False
+                current = None
+            elif current is not None:
+                # dumpbin emits IAT/INT address rows as well as one function row
+                # per import. Ignore the table labels and keep symbol rows only.
+                ordinal_only = re.match(r"^\s*(?:0x)?([0-9]+)\s*$", line)
+                if ordinal_only:
+                    target = "delay_functions" if delay_section else "functions"
+                    value = f"#{ordinal_only.group(1)}"
+                    if value not in current[target]:
+                        current[target].append(value)
+                    continue
+                match = re.match(
+                    r"^\s*(?:(?:0x)?[0-9A-F]{8,16}\s+)?(?:(?:0x)?[0-9]+\s+)?(\S+)\s*$",
+                    line, re.I)
+                if match:
+                    symbol = match.group(1)
+                    if symbol.lower() not in {
+                            "import", "address", "table", "name", "time", "date",
+                            "stamp", "forwarder", "chain", "bound", "unload"}:
+                        target = "delay_functions" if delay_section else "functions"
+                        value = symbol
+                        if value not in current[target]:
+                            current[target].append(value)
     no_imports = re.search(r"\bno (?:normal |delay[- ]load )?imports?\b", output, re.I)
     if sections == 0 and not no_imports:
         raise ImportSectionsMissing("dumpbin /imports contains no recognized import sections")
     if sections == 0 and no_imports:
         return []
-    if not names and not no_imports:
+    if not imports and not no_imports:
         raise ValueError("recognized import sections contained no parseable DLL headings")
-    return list(dict.fromkeys(names))
+    return imports
+
+
+def parse_imports(output):
+    """Compatibility wrapper returning imported DLL names only."""
+    return [entry["name"] for entry in parse_import_details(output)]
 
 
 def pe_import_directories(path):
@@ -180,26 +221,33 @@ def inspect(prefix, dumpbin, report):
         header = parse_headers(run("/headers"))
         import_output = run("/imports")
         try:
-            imports = parse_imports(import_output)
+            import_details = parse_import_details(import_output)
+            imports = [entry["name"] for entry in import_details]
         except ImportSectionsMissing:
             import_directory, delay_directory = pe_import_directories(path)
             if import_directory != (0, 0) or delay_directory != (0, 0):
                 raise
+            import_details = []
             imports = []
         if not imports:
             import_directory, delay_directory = pe_import_directories(path)
             if import_directory != (0, 0) or delay_directory != (0, 0):
                 raise ValueError(f"dumpbin listed no imports for PE file with import directories: {relative}")
         resolved = []
+        detail_by_name = {entry["name"].lower(): entry for entry in import_details} if imports else {}
         for name in imports:
             candidate = by_name.get(name.lower())
             if candidate:
-                resolved.append({"name": name, "resolution": "package",
-                                 "path": candidate.relative_to(prefix).as_posix()})
+                resolution = {"name": name, "resolution": "package",
+                              "path": candidate.relative_to(prefix).as_posix()}
             elif is_system_dll(name):
-                resolved.append({"name": name, "resolution": "windows-system-allowlist"})
+                resolution = {"name": name, "resolution": "windows-system-allowlist"}
             else:
                 raise ValueError(f"unresolved non-system import {name} in {relative}")
+            detail = detail_by_name[name.lower()]
+            resolution["functions"] = detail["functions"]
+            resolution["delay_functions"] = detail["delay_functions"]
+            resolved.append(resolution)
         report["files"].append({"path": relative, **header, "imports": resolved})
     return len(by_name)
 
@@ -214,13 +262,15 @@ def main():
     parser.add_argument("--report", type=Path, required=True, help="JSON report output path")
     args = parser.parse_args()
     report = {"schema_version": 1, "platform": "windows", "architecture": "x86_64",
-              "minimum_os": "10.0.10240", "dumpbin_version": None, "archives": [],
+              "minimum_os": "10.0.10240", "api_floor_status": "unresolved",
+              "dumpbin_version": None, "archives": [],
               "inspected_files": [], "files": [], "findings": [], "outcome": "failed",
               "limits": [
                   "Imports loaded dynamically by application code and data-file accesses are not detected.",
                   "DLL resolution checks package basename closure and the stated Windows system allowlist; it does not emulate all Windows loader search-order rules.",
                   "PE OS and subsystem header versions do not encode the Windows 10 build number; the check enforces the 10.0 major/minor floor only.",
                   "API-set families allowed are api-ms-win-core, api-ms-win-crt, ext-ms-win-kernel32, and ext-ms-win-ntuser.",
+                  "Imported function names are recorded for review but are not checked against Windows 10 build 10240 availability.",
               ]}
     try:
         report["archives"] = archive_evidence(args.archive)

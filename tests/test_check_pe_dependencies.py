@@ -65,6 +65,25 @@ class DumpbinParserTests(unittest.TestCase):
         """
         self.assertEqual(checker.parse_imports(output),
                          ["KERNEL32.dll", "VCRUNTIME140.dll", "pgvector.dll"])
+        details = checker.parse_import_details(output)
+        self.assertEqual(details, [
+            {"name": "KERNEL32.dll", "functions": ["GetProcAddress"], "delay_functions": []},
+            {"name": "VCRUNTIME140.dll", "functions": ["memcpy"], "delay_functions": []},
+            {"name": "pgvector.dll", "functions": [], "delay_functions": ["vector_from_text"]},
+        ])
+
+    def test_records_address_prefixed_and_ordinal_only_imports(self):
+        output = """
+          Section contains the following imports:
+            kernel32.dll
+                     0000000180001000 Import Address Table
+                     0000000180002000 Import Name Table
+                     0000000000000000     0 GetProcAddress
+                     0000000180003000     #17
+        """
+        self.assertEqual(checker.parse_import_details(output), [{
+            "name": "kernel32.dll", "functions": ["GetProcAddress", "#17"],
+            "delay_functions": []}])
 
     def test_rejects_unrecognized_or_empty_import_output(self):
         for output in ("mystery dumpbin format", "Section contains the following imports:\n  Summary\n"):
@@ -155,12 +174,16 @@ class PackageInspectionTests(unittest.TestCase):
             def run(command, **kwargs):
                 return subprocess.CompletedProcess(command, 0,
                     header if command[1] == "/headers" else
-                    "Section contains the following imports:\n    local.dll\n    KERNEL32.dll\n", "")
+                    "Section contains the following imports:\n    local.dll\n      0 local_func\n    KERNEL32.dll\n      0 GetProcAddress\n"
+                    "Section contains the following delay load imports:\n    KERNEL32.dll\n      0 Sleep\n", "")
             with patch.object(checker.subprocess, "run", side_effect=run):
                 self.assertEqual(checker.inspect(root, dumpbin, report), 2)
             imports = report["files"][0]["imports"]
             self.assertEqual(imports[0]["resolution"], "package")
+            self.assertEqual(imports[0]["functions"], ["local_func"])
             self.assertEqual(imports[1]["resolution"], "windows-system-allowlist")
+            self.assertEqual(imports[1]["functions"], ["GetProcAddress"])
+            self.assertEqual(imports[1]["delay_functions"], ["Sleep"])
 
             def unknown(command, **kwargs):
                 return subprocess.CompletedProcess(command, 0,
@@ -191,6 +214,9 @@ class PackageInspectionTests(unittest.TestCase):
                 self.assertEqual(checker.main(), 1)
             report = json.loads(report_path.read_text(encoding="utf-8"))
             self.assertEqual(report["outcome"], "failed")
+            self.assertEqual(report["api_floor_status"], "unresolved")
+            self.assertTrue(any("not checked against Windows 10 build 10240" in limit
+                                for limit in report["limits"]))
             self.assertIn("cannot identify Visual Studio dumpbin version", report["findings"][0])
 
 
