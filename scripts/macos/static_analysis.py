@@ -110,12 +110,24 @@ def inspect(root, architecture):
     root = pathlib.Path(root).resolve()
     report = {"schema_version": 1, "architecture": architecture, "minimum_os": "11.0",
               "tools": {tool: tool_version(tool) for tool in ("file", "lipo", "otool")},
-              "inspected_files": [], "findings": [],
+              "inspected_files": [], "installation_links": [], "findings": [],
               "limits": ["Static load-command analysis cannot detect dependencies selected dynamically by application code or data-file accesses.",
                          "@rpath resolution uses declared run paths without modeling dyld run-path stack inheritance; unresolved paths fail verification."]}
     machos = []
     for path in sorted(root.rglob("*")):
-        if path.is_symlink() or not path.is_file():
+        if path.is_symlink():
+            relative = str(path.relative_to(root))
+            try:
+                target = path.resolve(strict=True)
+                valid = within(root, target)
+            except (OSError, RuntimeError):
+                target = None
+                valid = False
+            report["installation_links"].append({"file": relative, "target": str(target) if target else None})
+            if not valid:
+                report["findings"].append({"file": relative, "error": "installation link leaves archive or is unresolved"})
+            continue
+        if not path.is_file():
             continue
         file_result = run("file", "-b", str(path))
         if file_result.returncode:
