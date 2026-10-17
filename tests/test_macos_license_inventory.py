@@ -68,6 +68,13 @@ class MacOSLicenseInventoryTests(unittest.TestCase):
         with self.assertRaisesRegex(InventoryError, "missing or empty declared licence text"):
             check_archive(self.archive_path)
 
+    def test_rejects_symlinked_license_text(self):
+        del self.files["postgresql/LICENSES/lz4-notice.txt"]
+        self.links["postgresql/LICENSES/lz4-notice.txt"] = "lz4.txt"
+        self.write_archive()
+        with self.assertRaisesRegex(InventoryError, "missing or empty declared licence text"):
+            check_archive(self.archive_path)
+
     def test_rejects_payload_path_traversal(self):
         inventory = json.loads(self.files["postgresql/LICENSES/inventory.json"])
         inventory["components"][0]["payload_paths"][0] = "../outside"

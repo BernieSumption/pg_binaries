@@ -121,10 +121,8 @@ def check_archive(archive_path):
                     else:
                         license_relative = "LICENSES/" + relative
                     member = members.get(prefix + license_relative)
-                    if member is None or not (member.isfile() or member.issym()):
+                    if member is None or not member.isfile():
                         raise InventoryError(f"missing or empty declared licence text: {license_relative}")
-                    if member.issym():
-                        member = require_regular(prefix + license_relative, license_relative)
                     if member.size == 0:
                         raise InventoryError(f"missing or empty declared licence text: {license_relative}")
 
