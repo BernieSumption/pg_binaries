@@ -1,0 +1,371 @@
+guest_os=Ubuntu 22.04.5 LTS
+guest_kernel=5.15.0-1109-kvm
+postgresql-18.6-linux-x86_64.tar.gz: OK
+pgvector-0.8.7-postgresql-18.6-linux-x86_64.tar.gz: OK
+Checked dependencies of 185 ELF files
+The files belonging to this database system will be owned by user "postgres".
+This user must also own the server process.
+
+The database cluster will be initialized with locale "C".
+The default text search configuration will be set to "english".
+
+Data page checksums are enabled.
+
+fixing permissions on existing directory /tmp/first-data ... ok
+creating subdirectories ... ok
+selecting dynamic shared memory implementation ... posix
+selecting default "max_connections" ... 100
+selecting default "shared_buffers" ... 128MB
+selecting default time zone ... Etc/UTC
+creating configuration files ... ok
+running bootstrap script ... ok
+performing post-bootstrap initialization ... ok
+syncing data to disk ... ok
+
+waiting for server to start....2026-10-17 04:41:16.369 UTC [1719] LOG:  starting PostgreSQL 18.6 on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 11.4.0-1ubuntu1~22.04.3) 11.4.0, 64-bit
+2026-10-17 04:41:16.557 UTC [1719] LOG:  listening on Unix socket "/tmp/first-socket/.s.PGSQL.55430"
+2026-10-17 04:41:16.595 UTC [1725] LOG:  database system was shut down at 2026-10-17 04:41:14 UTC
+2026-10-17 04:41:16.632 UTC [1719] LOG:  database system is ready to accept connections
+ done
+server started
+18.6
+CREATE EXTENSION
+CREATE TABLE
+INSERT 0 1
+DO
+waiting for server to shut down...2026-10-17 04:41:17.684 UTC [1719] LOG:  received fast shutdown request
+.2026-10-17 04:41:17.741 UTC [1719] LOG:  aborting any active transactions
+2026-10-17 04:41:17.761 UTC [1719] LOG:  background worker "logical replication launcher" (PID 1728) exited with exit code 1
+2026-10-17 04:41:17.762 UTC [1723] LOG:  shutting down
+2026-10-17 04:41:18.036 UTC [1723] LOG:  checkpoint starting: shutdown immediate
+2026-10-17 04:41:18.120 UTC [1723] LOG:  checkpoint complete: wrote 178 buffers (1.1%), wrote 3 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=0.032 s, sync=0.036 s, total=0.356 s; sync files=77, longest=0.026 s, average=0.001 s; distance=1364 kB, estimate=1364 kB; lsn=0/18ABAF8, redo lsn=0/18ABAF8
+2026-10-17 04:41:18.173 UTC [1719] LOG:  database system is shut down
+ done
+server stopped
+The files belonging to this database system will be owned by user "postgres".
+This user must also own the server process.
+
+The database cluster will be initialized with locale "C".
+The default text search configuration will be set to "english".
+
+Data page checksums are enabled.
+
+fixing permissions on existing directory /tmp/pgdata ... ok
+creating subdirectories ... ok
+selecting dynamic shared memory implementation ... posix
+selecting default "max_connections" ... 100
+selecting default "shared_buffers" ... 128MB
+selecting default time zone ... Etc/UTC
+creating configuration files ... ok
+running bootstrap script ... ok
+performing post-bootstrap initialization ... ok
+syncing data to disk ... ok
+
+waiting for server to start....2026-10-17 04:41:32.598 UTC [1771] LOG:  starting PostgreSQL 18.6 on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 11.4.0-1ubuntu1~22.04.3) 11.4.0, 64-bit
+2026-10-17 04:41:32.603 UTC [1771] LOG:  listening on IPv4 address "127.0.0.1", port 55431
+2026-10-17 04:41:32.615 UTC [1771] LOG:  listening on Unix socket "/tmp/pgsocket/.s.PGSQL.55431"
+2026-10-17 04:41:32.642 UTC [1777] LOG:  database system was shut down at 2026-10-17 04:41:24 UTC
+2026-10-17 04:41:32.683 UTC [1771] LOG:  database system is ready to accept connections
+ done
+server started
+PostgreSQL 18.6 on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 11.4.0-1ubuntu1~22.04.3) 11.4.0, 64-bit
+CREATE SCHEMA
+CREATE TYPE
+CREATE DOMAIN
+CREATE TABLE
+CREATE TABLE
+CREATE INDEX
+CREATE INDEX
+CREATE TABLE
+CREATE TABLE
+CREATE FUNCTION
+CREATE VIEW
+INSERT 0 1
+INSERT 0 1
+INSERT 0 1
+DO
+CREATE EXTENSION
+CREATE TABLE
+INSERT 0 1
+DO
+CREATE EXTENSION
+CREATE TABLE
+INSERT 0 1
+DO
+CREATE EXTENSION
+CREATE TABLE
+INSERT 0 1
+DO
+CREATE EXTENSION
+CREATE TABLE
+INSERT 0 1
+CREATE INDEX
+DO
+CREATE EXTENSION
+CREATE TABLE
+INSERT 0 1
+DO
+CREATE EXTENSION
+CREATE TABLE
+INSERT 0 1
+DO
+CREATE EXTENSION
+CREATE TABLE
+INSERT 0 1
+DO
+CREATE EXTENSION
+CREATE TABLE
+INSERT 0 1
+DO
+CREATE EXTENSION
+CREATE TABLE
+INSERT 0 1
+DO
+CREATE EXTENSION
+CREATE TABLE
+INSERT 0 1
+DO
+CREATE EXTENSION
+DO
+CREATE EXTENSION
+CREATE TABLE
+CREATE INDEX
+INSERT 0 2
+DO
+CREATE EXTENSION
+DO
+CREATE EXTENSION
+CREATE TABLE
+INSERT 0 20
+DO
+CREATE EXTENSION
+CREATE TABLE
+INSERT 0 2
+DO
+CREATE EXTENSION
+DO
+CREATE EXTENSION
+CREATE TABLE
+INSERT 0 10
+DO
+CREATE EXTENSION
+CREATE TABLE
+CREATE INDEX
+INSERT 0 2
+DO
+CREATE EXTENSION
+CREATE TABLE
+INSERT 0 100
+DO
+CREATE EXTENSION
+CREATE TABLE
+INSERT 0 3
+DO
+CREATE EXTENSION
+DO
+CREATE EXTENSION
+DO
+CREATE EXTENSION
+CREATE TABLE
+INSERT 0 1
+DO
+CREATE EXTENSION
+DO
+CREATE EXTENSION
+CREATE TABLE
+INSERT 0 1
+DO
+CREATE EXTENSION
+CREATE SEQUENCE
+CREATE TABLE
+CREATE TRIGGER
+INSERT 0 2
+DO
+CREATE EXTENSION
+CREATE TABLE
+CREATE TRIGGER
+INSERT 0 1
+UPDATE 1
+DO
+CREATE EXTENSION
+CREATE TABLE
+INSERT 0 1
+CREATE INDEX
+DO
+CREATE EXTENSION
+CREATE FUNCTION
+DO
+CREATE EXTENSION
+CREATE TABLE
+CREATE TRIGGER
+INSERT 0 1
+UPDATE 1
+DO
+CREATE EXTENSION
+CREATE TABLE
+CREATE TABLE
+CREATE TRIGGER
+CREATE TRIGGER
+INSERT 0 1
+INSERT 0 1
+DELETE 1
+DO
+CREATE EXTENSION
+CREATE TABLE
+INSERT 0 100
+VACUUM
+DO
+CREATE EXTENSION
+CREATE TABLE
+INSERT 0 1
+DO
+CREATE EXTENSION
+CREATE TABLE
+INSERT 0 20
+DO
+CREATE EXTENSION
+CREATE TABLE
+INSERT 0 1
+DO
+CREATE EXTENSION
+ dblink_connect 
+----------------
+ OK
+(1 row)
+
+DO
+CREATE EXTENSION
+CREATE TABLE
+INSERT 0 1
+ dblink_connect 
+----------------
+ OK
+(1 row)
+
+DO
+CREATE EXTENSION
+CREATE TABLE
+INSERT 0 1
+CREATE SERVER
+CREATE USER MAPPING
+CREATE FOREIGN TABLE
+DO
+CREATE EXTENSION
+CREATE TEXT SEARCH DICTIONARY
+DO
+CREATE EXTENSION
+CREATE SERVER
+CREATE FOREIGN TABLE
+DO
+CREATE EXTENSION
+CREATE TABLE
+INSERT 0 1
+ value 
+-------
+  4321
+(1 row)
+
+DO
+CREATE EXTENSION
+SELECT 1
+CREATE TABLE
+INSERT 0 1
+DO
+CREATE EXTENSION
+CREATE TABLE
+CREATE TRIGGER
+LISTEN
+INSERT 0 1
+Asynchronous notification "tcn" with payload ""builtin_tcn",I,"id"='91'" received from server process with PID 1808.
+Asynchronous notification "tcn" with payload ""builtin_tcn",I,"id"='91'" received from server process with PID 1808.
+CREATE EXTENSION
+DO
+CREATE EXTENSION
+CREATE TABLE
+CREATE PUBLICATION
+2026-10-17 04:41:38.657 UTC [1815] LOG:  logical decoding found consistent point at 0/1E4E500
+2026-10-17 04:41:38.657 UTC [1815] DETAIL:  There are no running transactions.
+2026-10-17 04:41:38.657 UTC [1815] STATEMENT:  SELECT * FROM pg_create_logical_replication_slot('builtin_logical_slot', 'pgoutput');
+      slot_name       |    lsn    
+----------------------+-----------
+ builtin_logical_slot | 0/1E4E538
+(1 row)
+
+INSERT 0 1
+2026-10-17 04:41:38.676 UTC [1775] LOG:  checkpoint starting: immediate force wait
+2026-10-17 04:41:39.244 UTC [1775] LOG:  checkpoint complete: wrote 663 buffers (4.0%), wrote 3 SLRU buffers; 1 WAL file(s) added, 0 removed, 0 recycled; write=0.085 s, sync=0.095 s, total=0.569 s; sync files=242, longest=0.031 s, average=0.001 s; distance=7135 kB, estimate=7135 kB; lsn=0/1E4E6A0, redo lsn=0/1E4E648
+CHECKPOINT
+INSERT 0 1
+2026-10-17 04:41:39.254 UTC [1815] LOG:  starting logical decoding for slot "builtin_logical_slot"
+2026-10-17 04:41:39.254 UTC [1815] DETAIL:  Streaming transactions committing after 0/1E4E538, reading WAL from 0/1E4E500.
+2026-10-17 04:41:39.254 UTC [1815] STATEMENT:  SELECT count(*) FROM pg_logical_slot_get_binary_changes(
+	    'builtin_logical_slot', NULL, NULL,
+	    'proto_version', '1', 'publication_names', 'builtin_logical_pub'
+	);
+2026-10-17 04:41:39.257 UTC [1815] LOG:  logical decoding found consistent point at 0/1E4E500
+2026-10-17 04:41:39.257 UTC [1815] DETAIL:  There are no running transactions.
+2026-10-17 04:41:39.257 UTC [1815] STATEMENT:  SELECT count(*) FROM pg_logical_slot_get_binary_changes(
+	    'builtin_logical_slot', NULL, NULL,
+	    'proto_version', '1', 'publication_names', 'builtin_logical_pub'
+	);
+ count 
+-------
+     7
+(1 row)
+
+DO
+ pg_drop_replication_slot 
+--------------------------
+ 
+(1 row)
+
+CREATE COLLATION
+CREATE COLLATION
+ ?column? 
+----------
+ t
+(1 row)
+
+ ?column? 
+----------
+ t
+(1 row)
+
+CREATE TABLE
+INSERT 0 1
+DO
+SET
+ wal_compression 
+-----------------
+ zstd
+(1 row)
+
+CREATE EXTENSION
+CREATE TABLE
+INSERT 0 3
+CREATE INDEX
+DO
+CREATE EXTENSION
+DO
+CREATE DATABASE
+DO
+CREATE DATABASE
+CREATE EXTENSION
+CREATE TABLE
+INSERT 0 1
+ heap_force_kill 
+-----------------
+ 
+(1 row)
+
+DO
+waiting for server to shut down...2026-10-17 04:41:47.675 UTC [1771] LOG:  received fast shutdown request
+.2026-10-17 04:41:47.679 UTC [1771] LOG:  aborting any active transactions
+2026-10-17 04:41:47.705 UTC [1771] LOG:  background worker "logical replication launcher" (PID 1780) exited with exit code 1
+2026-10-17 04:41:47.716 UTC [1775] LOG:  shutting down
+2026-10-17 04:41:47.720 UTC [1775] LOG:  checkpoint starting: shutdown immediate
+2026-10-17 04:41:48.344 UTC [1775] LOG:  checkpoint complete: wrote 2599 buffers (15.9%), wrote 1 SLRU buffers; 0 WAL file(s) added, 0 removed, 1 recycled; write=0.380 s, sync=0.232 s, total=0.628 s; sync files=792, longest=0.031 s, average=0.001 s; distance=17289 kB, estimate=17289 kB; lsn=0/2F30D48, redo lsn=0/2F30D48
+2026-10-17 04:41:48.468 UTC [1771] LOG:  database system is shut down
+ done
+server stopped
+PASS: moved PostgreSQL 18.6 archive and pgvector 0.8.7 archive on Ubuntu 22.04.5 LTS
