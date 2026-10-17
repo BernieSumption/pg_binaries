@@ -1,5 +1,11 @@
 # Human review queue
 
+## Address Standardizer 3.7.0 on Windows
+
+The selected [standalone 3.7.0 source](https://github.com/postgis/address_standardizer/tree/v3.7.0) documents a PGXS build and tests PostgreSQL 14–19 on Linux, but has no Windows build instructions or CI target. Our [native Windows probe](https://github.com/BernieSumption/pg_binaries/actions/runs/39062327837) built unmodified PCRE2 and compiled eight of 13 Address Standardizer C files with `clang-cl` against the PostgreSQL 18.6 pilot. It then failed because `pagc_tools.c` calls POSIX `getcwd`, which is undeclared under that Windows toolchain. MSVC also rejected GNU-style macro syntax and an exported-function declaration earlier in the source. A source edit or build-time API substitution could work around these errors, but the functional specification prohibits porting upstream packages.
+
+Decision needed: Should we treat Windows as unsupported by this upstream release and remove both SQL names from the intended Windows support matrix, or is there an upstream-supported, unmodified-source Windows build method we should try? If Windows support is required despite the source issues, that would need an explicit specification change. Until resolved, retain the declared Windows targets as unverified and continue Linux/macOS work.
+
 ## Scope of the upstream-only source rule for packaged dependencies
 
 The [functional specification](specs/functional.md#never-patch-or-modify-extensions-or-dependencies) requires straightforward upstream builds without modifying dependencies. The macOS 11 dependency-floor probe built suitable Mach-O targets with vcpkg, but its port recipes applied source patches to libxml2, LZ4 and OpenSSL. The Windows pilot also obtains PostgreSQL dependencies through vcpkg. Linux archives copy runtime libraries from Ubuntu packages; the retained source identities include Ubuntu packaging source, but we have not audited each package's applied patch series. Existing Linux packaging also changes ELF RPATHs after compilation, and macOS packaging rewrites Mach-O load paths for relocation.
