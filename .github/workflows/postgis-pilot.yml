@@ -5,6 +5,7 @@ on:
     branches: [spike]
     paths:
       - 'scripts/postgis/**'
+      - 'scripts/tiger/**'
       - 'scripts/linux/qemu-kernel-515.Dockerfile'
       - 'scripts/qemu/arm64-515.Dockerfile'
       - 'tools/emit_linux_minimum_pilot_records.py'
@@ -72,6 +73,13 @@ jobs:
       - name: Verify relocated archives on clean Ubuntu 24.04
         id: current_verify
         run: bash scripts/postgis/verify.sh "$RUNNER_TEMP/core" "$RUNNER_TEMP/postgis"
+      - name: Build TIGER Geocoder 2025.2 SQL archive
+        run: bash scripts/tiger/build.sh "$RUNNER_TEMP/core" "$RUNNER_TEMP/tiger"
+      - name: Verify TIGER Geocoder with exact PostgreSQL and PostGIS archives
+        run: |
+          set -o pipefail
+          bash scripts/tiger/verify.sh "$RUNNER_TEMP/core" "$RUNNER_TEMP/postgis" "$RUNNER_TEMP/tiger" \
+            2>&1 | tee "$RUNNER_TEMP/tiger-current.log"
       - name: Check PostGIS with older or absent host glibc
         id: portability
         run: |
@@ -166,6 +174,16 @@ jobs:
             ${{ runner.temp }}/postgis/debug-symbols/**
           if-no-files-found: ignore
           retention-days: 1
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: tiger-${{ matrix.architecture }}-feasibility
+          path: |
+            ${{ runner.temp }}/tiger/*.tar.gz
+            ${{ runner.temp }}/tiger/*.sha256
+            ${{ runner.temp }}/tiger-current.log
+          if-no-files-found: ignore
+          retention-days: 3
       - uses: actions/upload-artifact@v4
         if: always()
         with:
