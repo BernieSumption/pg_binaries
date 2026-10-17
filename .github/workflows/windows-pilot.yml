@@ -147,6 +147,9 @@ jobs:
       - name: Verify PDBs against downloaded archive bytes
         id: symbols
         run: python tools/create_windows_symbols.py "dist/windows/postgresql-${env:PG_VERSION}-windows-x86_64.tar.gz" "dist/windows/pgvector-0.8.7-postgresql-${env:PG_VERSION}-windows-x86_64.tar.gz" --output-dir dist/windows/debug-symbols --verify-only
+      - name: Verify representative Windows failure diagnostics
+        id: diagnostics
+        run: ./scripts/windows/diagnostics.ps1 -ArchiveDirectory dist/windows -PostgreSQLVersion $env:PG_VERSION -PgvectorVersion 0.8.7 -ReportPath (Join-Path $env:RUNNER_TEMP 'verification-records/diagnostics.json')
       - name: Check Windows pilot record emitter
         id: emitter_tests
         run: python -m unittest tests/test_emit_windows_pilot_records.py
@@ -154,7 +157,7 @@ jobs:
         if: ${{ always() }}
         env:
           GITHUB_SHA: ${{ github.sha }}
-          CHECK_OUTCOMES: ${{ steps.archive_verify.outcome }},${{ steps.symbols.outcome }},${{ steps.emitter_tests.outcome }}
+          CHECK_OUTCOMES: ${{ steps.archive_verify.outcome }},${{ steps.symbols.outcome }},${{ steps.diagnostics.outcome }},${{ steps.emitter_tests.outcome }}
           DEPENDENCY_CHECKS_PASSED: ${{ steps.archive_verify.outcome == 'success' }}
         run: |
           if (-not $env:PG_VERSION) {
@@ -189,6 +192,6 @@ jobs:
           name: windows-postgresql-${{ needs.select.outputs.postgresql_version }}-pilot-verification
           path: |
             dist/windows/verification/*.json
-            ${{ runner.temp }}/verification-records/static-analysis.json
+            ${{ runner.temp }}/verification-records/*.json
           retention-days: 1
           if-no-files-found: warn
