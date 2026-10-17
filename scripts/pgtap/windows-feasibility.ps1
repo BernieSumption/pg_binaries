@@ -105,7 +105,7 @@ $sourcePackage = Join-Path $SourcePackageDirectory $sourcePackageName
   tar.exe -czf $packagePath -C $stage pgtap metadata.json
   if ($LASTEXITCODE -ne 0) { throw 'Could not create pgTAP archive' }
   $packageHash = (Get-FileHash $packagePath -Algorithm SHA256).Hash.ToLowerInvariant()
-  "$packageHash  $archiveName" | Set-Content -Encoding ascii ("$packagePath.sha256")
+  [IO.File]::WriteAllText("$packagePath.sha256", "$packageHash  $archiveName`n", [Text.UTF8Encoding]::new($false))
   tar.exe -xzf $packagePath -C $packageUnpacked
   if ($LASTEXITCODE -ne 0) { throw 'Could not reopen pgTAP package archive' }
   $packagedMetadata = Get-Content (Join-Path $packageUnpacked 'metadata.json') -Raw | ConvertFrom-Json
