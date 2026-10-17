@@ -17,6 +17,7 @@ test "$(/tmp/first/postgresql/bin/pg_config --version)" = 'PostgreSQL 18.6'
 test -s "$extroot/LICENSES/HypoPG.txt"
 python3 - <<'PY'
 import json
+import os
 from pathlib import Path
 
 root = Path('/tmp/extension')
@@ -29,6 +30,8 @@ expected = {
     'configuration_prerequisites': [],
     'runtime_prerequisites': [],
     'postgresql_version': '18.6',
+    'platform': 'linux',
+    'architecture': os.environ['PG_ARCHITECTURE'],
     'source': {
         'url': 'https://github.com/HypoPG/hypopg/archive/refs/tags/1.4.3.tar.gz',
         'sha256': '498a961d88cf37057fd9e98027d06fe805c8959d51895c3d9b94c9eb4e14f706',
