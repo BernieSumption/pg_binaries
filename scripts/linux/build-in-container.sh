@@ -85,9 +85,8 @@ for pass in 1 2 3; do
         fi
         cp "/usr/share/doc/$package/copyright" "$root/LICENSES/${package}.copyright"
         if [[ "$package" == libicu70 ]]; then
-          read -r package_version source_package source_version < <(
-            dpkg-query -W -f='${Version} ${source:Package} ${source:Version}' libicu70
-          )
+          package_identity=$(dpkg-query -W -f='${Version} ${source:Package} ${source:Version}' libicu70)
+          read -r package_version source_package source_version <<< "$package_identity"
           if [[ "$package_version" != 70.1-2 || "$source_package" != icu || "$source_version" != 70.1-2 ]]; then
             echo "Unexpected libicu70 source identity: $package_version $source_package $source_version" >&2
             exit 1
