@@ -18,7 +18,10 @@ on:
     branches: [spike]
     paths:
       - '.github/workflows/pgaudit-linux-pilot.yml'
-      - 'scripts/pgaudit/**'
+      - 'scripts/pgaudit/build*'
+      - 'scripts/pgaudit/verify*'
+      - 'scripts/pgaudit/Dockerfile'
+      - 'scripts/pgaudit/probe.sql'
       - 'scripts/linux/**'
       - 'tools/check_elf_dependencies.py'
       - 'tools/source_archive.py'
