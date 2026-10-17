@@ -10,6 +10,7 @@ import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
 import coverage
+import create_extension_publication_receipt as receipt_creator
 import emit_extension_publication_records as emitter
 
 
@@ -182,6 +183,35 @@ class ExtensionPublicationRecordTests(unittest.TestCase):
         self._write_checksums()
         with self.assertRaisesRegex(coverage.CoverageError, "outside the extension archive range"):
             self.emit()
+
+    def test_creates_receipt_from_ci_step_results(self):
+        steps = self.root / "step-results.json"
+        steps.write_text(json.dumps({"archive-assembly": "success",
+                                     "tiger-normalize": "success"}))
+        environment = {"GITHUB_SHA": "a" * 40, "GITHUB_RUN_ID": "987",
+                       "GITHUB_REPOSITORY": "o/r", "GITHUB_SERVER_URL": "https://github.com"}
+        receipt_creator.create(
+            self.root, self.archives, self.core_archives, self.receipt_path,
+            self.profile_id, "PostGIS TIGER Geocoder", "2025.2", "18.6", "18.6",
+            "x86_64", "minimum", "5.15.0-1109-kvm", "Ubuntu 22.04.5 LTS",
+            "22.04", "sha256:" + "b" * 64, "success", True, steps, environment)
+        receipt = json.loads(self.receipt_path.read_text())
+        self.assertEqual(receipt["case_results"], self.receipt["case_results"])
+        self.assertEqual(receipt["archives"], self.receipt["archives"])
+        self.assertEqual(len(emitter.emit(self.root, self.archives, self.core_archives,
+                                          self.receipt_path, self.output)), 1)
+
+    def test_receipt_creator_requires_complete_steps(self):
+        steps = self.root / "step-results.json"
+        steps.write_text(json.dumps({"archive-assembly": "success"}))
+        environment = {"GITHUB_SHA": "a" * 40, "GITHUB_RUN_ID": "987",
+                       "GITHUB_REPOSITORY": "o/r", "GITHUB_SERVER_URL": "https://github.com"}
+        with self.assertRaisesRegex(coverage.CoverageError, "exactly every registered"):
+            receipt_creator.create(
+                self.root, self.archives, self.core_archives, self.receipt_path,
+                self.profile_id, "PostGIS TIGER Geocoder", "2025.2", "18.6", "18.6",
+                "x86_64", "minimum", "5.15.0-1109-kvm", "Ubuntu 22.04.5 LTS",
+                "22.04", "sha256:" + "b" * 64, "success", True, steps, environment)
 
 
 if __name__ == "__main__":

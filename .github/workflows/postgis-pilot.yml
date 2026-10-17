@@ -20,12 +20,15 @@ on:
       - 'tools/check_elf_dependencies.py'
       - 'tools/check_postgis_license_inventory.py'
       - 'tools/emit_postgis_pilot_record.py'
+      - 'tools/create_extension_publication_receipt.py'
+      - 'tools/emit_extension_publication_records.py'
       - 'tools/write_postgis_license_inventory.py'
       - 'tools/reuse_linux_core_artifact.py'
       - 'tools/create_linux_symbols.py'
       - 'tests/test_reuse_linux_core_artifact.py'
       - 'tests/test_create_linux_symbols.py'
       - 'tests/test_emit_postgis_pilot_record.py'
+      - 'tests/test_emit_extension_publication_records.py'
       - 'support/verification-profiles.json'
       - '.github/workflows/postgis-pilot.yml'
 jobs:
@@ -158,6 +161,105 @@ jobs:
             echo 'No minimum-kernel PostGIS record: clean guest identity was not established'
           fi
           exit "$record_status"
+      - name: Record PostGIS publication step outcomes
+        if: ${{ always() }}
+        env:
+          CURRENT_VERIFY_OUTCOME: ${{ steps.current_verify.outcome }}
+          PORTABILITY_OUTCOME: ${{ steps.portability.outcome }}
+          MINIMUM_VERIFY_OUTCOME: ${{ steps.minimum_verify.outcome }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/postgis-publication"
+          printf '{"archive-suite":"%s","portability":"%s"}\n' \
+            "$CURRENT_VERIFY_OUTCOME" "$PORTABILITY_OUTCOME" \
+            > "$RUNNER_TEMP/postgis-publication/current-steps.json"
+          printf '{"archive-suite":"%s"}\n' "$MINIMUM_VERIFY_OUTCOME" \
+            > "$RUNNER_TEMP/postgis-publication/minimum-steps.json"
+      - name: Emit PostGIS publication records for verified endpoints
+        if: ${{ always() }}
+        run: |
+          set -euo pipefail
+          core="$RUNNER_TEMP/core/postgresql-18.6-linux-$PG_ARCHITECTURE.tar.gz"
+          extension="$RUNNER_TEMP/postgis/postgis-3.6.4-postgresql-18.6-linux-$PG_ARCHITECTURE.tar.gz"
+          if [[ ! -f "$core" || ! -f "$core.sha256" || ! -f "$extension" || ! -f "$extension.sha256" ]]; then
+            echo 'No publication record: assembled archive bytes or sidecars are unavailable'
+            exit 0
+          fi
+          publication="$RUNNER_TEMP/postgis-publication"
+          current_image=$(docker image inspect --format '{{.Id}}' pg-binaries-postgis-verifier 2>/dev/null || true)
+          if [[ "$current_image" =~ ^sha256:[0-9a-f]{64}$ ]]; then
+            clean=false
+            dependencies=failure
+            if [[ "$(python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); print(all(v == "success" for v in d.values()))' "$publication/current-steps.json")" = True ]]; then
+              clean=true
+              dependencies=success
+            fi
+            . /etc/os-release
+            python3 tools/create_extension_publication_receipt.py \
+              --archives "$RUNNER_TEMP/postgis" --core-archives "$RUNNER_TEMP/core" \
+              --receipt "$publication/current-receipt.json" \
+              --profile-id "postgis-publication-current-$PG_ARCHITECTURE" \
+              --project PostGIS --version 3.6.4 --postgresql-version 18.6 \
+              --architecture "$PG_ARCHITECTURE" --endpoint current \
+              --kernel-release "$(uname -r)" --distribution "$PRETTY_NAME" \
+              --distribution-version "$VERSION_ID" --image-id "$current_image" \
+              --dependency-check-result "$dependencies" --clean-system "$clean" \
+              --step-results "$publication/current-steps.json"
+            python3 tools/emit_extension_publication_records.py \
+              --archives "$RUNNER_TEMP/postgis" --core-archives "$RUNNER_TEMP/core" \
+              --receipt "$publication/current-receipt.json" --output "$publication/records"
+          else
+            echo 'No current-OS publication record: clean verifier image identity is unavailable'
+          fi
+          evidence="$RUNNER_TEMP/postgis-qemu/evidence"
+          log="$evidence/full-verifier.log"
+          if [[ ! -f "$log" || ! -f "$evidence/environment.txt" || ! -f "$evidence/archive-checksums.sha256" ]]; then
+            echo 'No minimum-OS publication record: guest evidence is unavailable'
+            exit 0
+          fi
+          kernel=$(sed -n 's/^guest_kernel=//p' "$log" | head -1)
+          distribution=$(sed -n 's/^guest_os=//p' "$log" | head -1)
+          grep -Eq '^5\.15\.' <<< "$kernel"
+          grep -q '^Ubuntu 22\.04' <<< "$distribution"
+          grep -Fx "guest_architecture=$PG_ARCHITECTURE" "$log"
+          grep -Fx "test_revision=$GITHUB_SHA" "$evidence/environment.txt"
+          case "$PG_ARCHITECTURE" in
+            x86_64) image_sha=e3297e0aa6c408ac90d854348465d3991c65159b444c4ef9016f52f6807290e3 ;;
+            arm64) image_sha=86e13258765945ad792dac75fac7f02f4db9fa73a4a535ffa472266e7041fa19 ;;
+          esac
+          grep -Fx "image_sha256=$image_sha" "$evidence/environment.txt"
+          python3 - "$evidence/archive-checksums.sha256" "$core" "$extension" <<'PY'
+          import hashlib
+          from pathlib import Path
+          import sys
+          sys.path.insert(0, 'tools')
+          from emit_linux_minimum_pilot_records import parse_archive_checksums
+          actual = parse_archive_checksums(Path(sys.argv[1]))
+          expected = {Path(path).name: hashlib.sha256(Path(path).read_bytes()).hexdigest()
+                      for path in sys.argv[2:]}
+          if actual != expected:
+              raise SystemExit('guest archive checksums differ from publication archives')
+          PY
+          clean=false
+          dependencies=failure
+          if [[ "$(python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); print(all(v == "success" for v in d.values()))' "$publication/minimum-steps.json")" = True ]]; then
+            grep -Fx 'PASS: PostGIS 3.6.4 minimum-kernel archive verification' "$log"
+            clean=true
+            dependencies=success
+          fi
+          python3 tools/create_extension_publication_receipt.py \
+            --archives "$RUNNER_TEMP/postgis" --core-archives "$RUNNER_TEMP/core" \
+            --receipt "$publication/minimum-receipt.json" \
+            --profile-id "postgis-publication-minimum-$PG_ARCHITECTURE" \
+            --project PostGIS --version 3.6.4 --postgresql-version 18.6 \
+            --architecture "$PG_ARCHITECTURE" --endpoint minimum \
+            --kernel-release "$kernel" --distribution "$distribution" \
+            --distribution-version 22.04 --image-id "sha256:$image_sha" \
+            --dependency-check-result "$dependencies" --clean-system "$clean" \
+            --step-results "$publication/minimum-steps.json"
+          python3 tools/emit_extension_publication_records.py \
+            --archives "$RUNNER_TEMP/postgis" --core-archives "$RUNNER_TEMP/core" \
+            --receipt "$publication/minimum-receipt.json" --output "$publication/records"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -189,5 +291,12 @@ jobs:
         with:
           name: postgis-${{ matrix.architecture }}-pilot-verification
           path: ${{ runner.temp }}/postgis-records/*.json
+          if-no-files-found: ignore
+          retention-days: 3
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: postgis-${{ matrix.architecture }}-publication-verification
+          path: ${{ runner.temp }}/postgis-publication/**
           if-no-files-found: ignore
           retention-days: 3
