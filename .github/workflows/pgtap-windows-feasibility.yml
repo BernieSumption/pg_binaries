@@ -1,0 +1,51 @@
+name: pgTAP Windows x86-64 feasibility
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [spike]
+    paths:
+      - '.github/workflows/pgtap-windows-feasibility.yml'
+      - 'scripts/pgtap/windows-*'
+      - 'scripts/pgtap/probe.sql'
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  probe:
+    runs-on: windows-2022
+    timeout-minutes: 25
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download the passed PostgreSQL 18.6 Windows x86-64 artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-postgresql-18.6-pilot
+          run-id: 39077749917
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/core-archives
+      - name: Download the passed pgTAP 1.3.4 SQL payload generated from exact upstream source
+        uses: actions/download-artifact@v4
+        with:
+          name: pgtap-macos-arm64-publication-39079496000
+          run-id: 39079496000
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/pgtap-source-package
+      - name: Build, relocate and verify pgTAP
+        run: ./scripts/pgtap/windows-feasibility.ps1 -CoreArchiveDirectory "$env:RUNNER_TEMP/core-archives" -SourcePackageDirectory "$env:RUNNER_TEMP/pgtap-source-package" -OutputDirectory "$env:RUNNER_TEMP/pgtap-windows-feasibility"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pgtap-windows-x86-64-feasibility-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/pgtap-windows-feasibility/*.tar.gz
+            ${{ runner.temp }}/pgtap-windows-feasibility/*.sha256
+            ${{ runner.temp }}/pgtap-windows-feasibility/*.json
+            ${{ runner.temp }}/pgtap-windows-feasibility/*.txt
+          if-no-files-found: warn
+          retention-days: 7
