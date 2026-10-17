@@ -6,6 +6,9 @@ on:
     paths:
       - 'scripts/hypopg/**'
       - 'tools/reuse_linux_core_artifact.py'
+      - 'tools/source_archive.py'
+      - 'support.json'
+      - 'support/postgresql-releases.json'
       - '.github/workflows/hypopg-pilot.yml'
 jobs:
   linux-hypopg:

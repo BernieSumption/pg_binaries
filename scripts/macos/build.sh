@@ -51,8 +51,14 @@ export LDFLAGS="-Wl,-headerpad_max_install_names -L$source_prefix/lib${LDFLAGS:+
 export DYLD_LIBRARY_PATH="$source_prefix/lib${DYLD_LIBRARY_PATH:+:$DYLD_LIBRARY_PATH}"
 export MACOSX_DEPLOYMENT_TARGET=11.0
 
-curl -fL --retry 3 "https://ftp.postgresql.org/pub/source/v${pg_version}/postgresql-${pg_version}.tar.bz2" -o "$work_dir/postgresql.tar.bz2"
-curl -fL --retry 3 "https://github.com/pgvector/pgvector/archive/refs/tags/v${vector_version}.tar.gz" -o "$work_dir/pgvector.tar.gz"
+pg_source_url=$(python3 "$repo/tools/source_archive.py" postgresql "$pg_version" tar.bz2 --field url)
+pg_source_sha256=$(python3 "$repo/tools/source_archive.py" postgresql "$pg_version" tar.bz2 --field sha256)
+vector_source_url=$(python3 "$repo/tools/source_archive.py" pgvector "$vector_version" tar.gz --field url)
+vector_source_sha256=$(python3 "$repo/tools/source_archive.py" pgvector "$vector_version" tar.gz --field sha256)
+curl -fL --retry 3 "$pg_source_url" -o "$work_dir/postgresql.tar.bz2"
+curl -fL --retry 3 "$vector_source_url" -o "$work_dir/pgvector.tar.gz"
+printf '%s  %s\n' "$pg_source_sha256" "$work_dir/postgresql.tar.bz2" | shasum -a 256 -c -
+printf '%s  %s\n' "$vector_source_sha256" "$work_dir/pgvector.tar.gz" | shasum -a 256 -c -
 tar -xjf "$work_dir/postgresql.tar.bz2" -C "$work_dir"
 tar -xzf "$work_dir/pgvector.tar.gz" -C "$work_dir"
 
@@ -72,7 +78,7 @@ mkdir -p "$package_dir/postgresql/LICENSES" "$package_dir/pgvector/lib" "$packag
 cp -R "$install_dir"/. "$package_dir/postgresql/"
 cp "$work_dir/postgresql-${pg_version}/COPYRIGHT" "$package_dir/postgresql/LICENSES/PostgreSQL.txt"
 python3 "$script_dir/bundle.py" "$package_dir/postgresql" "$architecture"
-python3 "$script_dir/licenses.py" "$package_dir/postgresql" "$source_prefix/share/pg_binaries/source-dependencies.json" --component postgresql --version "$pg_version" --source-url "https://ftp.postgresql.org/pub/source/v${pg_version}/postgresql-${pg_version}.tar.bz2"
+python3 "$script_dir/licenses.py" "$package_dir/postgresql" "$source_prefix/share/pg_binaries/source-dependencies.json" --component postgresql --version "$pg_version" --source-url "$pg_source_url"
 builtins=$(python3 "$script_dir/../../tools/discover_builtins.py" "$package_dir/postgresql")
 
 cat > "$package_dir/postgresql/manifest.json" <<EOF
@@ -85,6 +91,7 @@ cat > "$package_dir/postgresql/manifest.json" <<EOF
   "architecture": "$platform_arch",
   "build_id": "$build_id",
   "source_revision": "$source_revision",
+  "source_archive": {"url": "$pg_source_url", "sha256": "$pg_source_sha256"},
   "build_configuration": "$build_configuration",
   "included_extensions": $builtins,
   "capabilities": ["icu", "libc_collations", "lz4", "zstd_wal"]
@@ -98,11 +105,11 @@ cp "$install_dir/lib/vector.dylib" "$package_dir/pgvector/lib/"
 cp "$install_dir/share/extension/vector"* "$package_dir/pgvector/share/extension/"
 cp LICENSE "$package_dir/pgvector/LICENSES/pgvector.txt"
 python3 "$script_dir/bundle.py" "$package_dir/pgvector" "$architecture"
-python3 "$script_dir/licenses.py" "$package_dir/pgvector" "$source_prefix/share/pg_binaries/source-dependencies.json" --component pgvector --version "$vector_version" --source-url "https://github.com/pgvector/pgvector/archive/refs/tags/v${vector_version}.tar.gz"
+python3 "$script_dir/licenses.py" "$package_dir/pgvector" "$source_prefix/share/pg_binaries/source-dependencies.json" --component pgvector --version "$vector_version" --source-url "$vector_source_url"
 mv "$package_dir/pgvector/bundled-dependencies.json" "$package_dir/pgvector/LICENSES/pgvector-bundled-dependencies.json"
 
 cat > "$package_dir/metadata.json" <<EOF
-{"project":"pgvector","version":"${vector_version}","sql_names":["vector"],"requires":[],"configuration_prerequisites":[],"runtime_prerequisites":[],"build_id":"${build_id}","source_revision":"${source_revision}","build_configuration":"${build_configuration}","platform":"macos","architecture":"${platform_arch}"}
+{"project":"pgvector","version":"${vector_version}","sql_names":["vector"],"requires":[],"configuration_prerequisites":[],"runtime_prerequisites":[],"build_id":"${build_id}","source_revision":"${source_revision}","source_archive":{"url":"${vector_source_url}","sha256":"${vector_source_sha256}"},"build_configuration":"${build_configuration}","platform":"macos","architecture":"${platform_arch}"}
 EOF
 
 python3 - "$package_dir" > "$work_dir/macho-paths.bin" <<'PY'

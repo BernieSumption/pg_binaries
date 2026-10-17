@@ -39,8 +39,19 @@ $vectorPackage = Join-Path $work 'pgvector'
 $vectorArchiveRoot = Join-Path $work 'pgvector-archive'
 
 New-Item -ItemType Directory -Force $work, $dist | Out-Null
-Invoke-WebRequest "https://ftp.postgresql.org/pub/source/v$pgVersion/postgresql-$pgVersion.tar.gz" -OutFile $pgSourceArchive
-Invoke-WebRequest "https://github.com/pgvector/pgvector/archive/refs/tags/v$vectorVersion.tar.gz" -OutFile $vectorSourceArchive
+$sourceTool = Join-Path $repo 'tools/source_archive.py'
+$pgSourceUrl = (& python $sourceTool postgresql $pgVersion tar.gz --field url).Trim()
+$pgSourceSha256 = (& python $sourceTool postgresql $pgVersion tar.gz --field sha256).Trim()
+$vectorSourceUrl = (& python $sourceTool pgvector $vectorVersion tar.gz --field url).Trim()
+$vectorSourceSha256 = (& python $sourceTool pgvector $vectorVersion tar.gz --field sha256).Trim()
+Invoke-WebRequest $pgSourceUrl -OutFile $pgSourceArchive
+Invoke-WebRequest $vectorSourceUrl -OutFile $vectorSourceArchive
+if ((Get-FileHash $pgSourceArchive -Algorithm SHA256).Hash.ToLowerInvariant() -ne $pgSourceSha256) {
+  throw 'PostgreSQL source archive SHA-256 differs from selected source identity'
+}
+if ((Get-FileHash $vectorSourceArchive -Algorithm SHA256).Hash.ToLowerInvariant() -ne $vectorSourceSha256) {
+  throw 'pgvector source archive SHA-256 differs from selected source identity'
+}
 tar -xzf $pgSourceArchive -C $work
 tar -xzf $vectorSourceArchive -C $work
 
@@ -89,9 +100,10 @@ $pgManifest = [ordered]@{
   architecture = 'x86_64'
   build_id = $buildId
   source_revision = $sourceRevision
+  source_archive = [ordered]@{ url = $pgSourceUrl; sha256 = $pgSourceSha256 }
   build_configuration = $buildConfiguration
   included_extensions = $builtins
-  source_sha256 = (Get-FileHash $pgSourceArchive -Algorithm SHA256).Hash.ToLowerInvariant()
+  source_sha256 = $pgSourceSha256
   runtime_dependencies = @('ICU', 'LZ4', 'Zstandard', 'zlib', 'OpenSSL')
   bundled_runtime_dlls = $bundledRuntimeDlls
   os_prerequisites = @()
@@ -99,20 +111,22 @@ $pgManifest = [ordered]@{
 
 $env:PGROOT = $pgInstall
 $vectorMakefile = Join-Path $vectorSource 'Makefile.win'
-$makefileText = Get-Content $vectorMakefile -Raw
-$compileRule = 'CFLAGS = $(CFLAGS) $(PG_CFLAGS)'
-$linkRule = '$(CC) $(CFLAGS) $(OBJS) $(LIBS) /link /DLL /OUT:$(SHLIB)'
-if (-not $makefileText.Contains($compileRule) -or -not $makefileText.Contains($linkRule)) {
-  throw 'pgvector Makefile.win debug build rules have changed'
-}
-$makefileText = $makefileText.Replace($compileRule, "$compileRule /Z7")
-$makefileText = $makefileText.Replace($linkRule, $linkRule.Replace('/link /DLL', '/link /DEBUG /DLL'))
-Set-Content -Path $vectorMakefile -Value $makefileText -Encoding ascii -NoNewline
+$vectorMakefileHash = (Get-FileHash $vectorMakefile -Algorithm SHA256).Hash
+$previousLink = $env:LINK
+$env:LINK = if ($previousLink) { "$previousLink /DEBUG" } else { '/DEBUG' }
 Push-Location $vectorSource
 try {
-  nmake /F Makefile.win
+  nmake /F Makefile.win 'PG_CFLAGS=/Z7 /O2 /fp:fast'
+  if ($LASTEXITCODE -ne 0) { throw 'pgvector upstream Makefile.win build failed' }
 } finally {
   Pop-Location
+  $env:LINK = $previousLink
+}
+if ((Get-FileHash $vectorMakefile -Algorithm SHA256).Hash -ne $vectorMakefileHash) {
+  throw 'pgvector upstream Makefile.win changed during the build'
+}
+if (-not (Test-Path (Join-Path $vectorSource 'vector.pdb'))) {
+  throw 'pgvector build produced no vector.pdb'
 }
 New-Item -ItemType Directory -Force (Join-Path $vectorPackage 'lib'), (Join-Path $vectorPackage 'share/extension'), (Join-Path $vectorPackage 'LICENSES') | Out-Null
 Copy-Item (Join-Path $vectorSource 'vector.dll') (Join-Path $vectorPackage 'lib/vector.dll')
@@ -128,6 +142,7 @@ $vectorMetadata = [ordered]@{
   runtime_prerequisites = @()
   build_id = $buildId
   source_revision = $sourceRevision
+  source_archive = [ordered]@{ url = $vectorSourceUrl; sha256 = $vectorSourceSha256 }
   build_configuration = $buildConfiguration
   platform = 'windows'
   architecture = 'x86_64'

@@ -27,6 +27,27 @@ mkdir -p /work/package/hypopg/{lib,share/extension,LICENSES}
 cp "$install_root/lib/hypopg.so" /work/package/hypopg/lib/
 cp "$install_root/share/extension/"* /work/package/hypopg/share/extension/
 cp LICENSE /work/package/hypopg/LICENSES/HypoPG.txt
+cat > /work/package/hypopg/LICENSES/inventory.json <<EOF
+{
+  "schema_version": 1,
+  "components": [
+    {
+      "component": "hypopg",
+      "version": "${hypopg_version}",
+      "payload_paths": ["lib/hypopg.so", "share/extension"],
+      "license_file": "HypoPG.txt",
+      "license_source": "https://github.com/HypoPG/hypopg/tree/1.4.3/LICENSE",
+      "source_url": "https://github.com/HypoPG/hypopg/archive/refs/tags/1.4.3.tar.gz",
+      "source_sha256": "498a961d88cf37057fd9e98027d06fe805c8959d51895c3d9b94c9eb4e14f706",
+      "redistribution_review": {
+        "status": "resolved",
+        "basis": "The unmodified HypoPG 1.4.3 source archive includes this PostgreSQL License text for the project. It permits redistribution for any purpose provided the copyright notice, permission paragraph and disclaimer paragraphs remain in copies; this archive retains the complete upstream LICENSE text.",
+        "source_obligation": "none"
+      }
+    }
+  ]
+}
+EOF
 cat > /work/package/metadata.json <<EOF
 {"project":"hypopg","version":"${hypopg_version}","sql_names":["hypopg"],"requires":[],"configuration_prerequisites":[],"runtime_prerequisites":[],"postgresql_version":"${pg_version}","platform":"linux","architecture":"${architecture}","source":{"url":"https://github.com/HypoPG/hypopg/archive/refs/tags/1.4.3.tar.gz","sha256":"498a961d88cf37057fd9e98027d06fe805c8959d51895c3d9b94c9eb4e14f706"}}
 EOF

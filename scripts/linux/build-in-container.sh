@@ -12,6 +12,10 @@ if [[ ! $pg_version =~ ^(15|16|17|18)\.[0-9]+$ ]]; then
   exit 2
 fi
 vector_version=0.8.7
+pg_source_url=${PG_SOURCE_URL:?PG_SOURCE_URL is required}
+pg_source_sha256=${PG_SOURCE_SHA256:?PG_SOURCE_SHA256 is required}
+vector_source_url=${VECTOR_SOURCE_URL:?VECTOR_SOURCE_URL is required}
+vector_source_sha256=${VECTOR_SOURCE_SHA256:?VECTOR_SOURCE_SHA256 is required}
 build_id=${BUILD_ID:?BUILD_ID is required}
 source_revision=${SOURCE_REVISION:?SOURCE_REVISION is required}
 builder_image_id=${BUILDER_IMAGE_ID:?BUILDER_IMAGE_ID is required}
@@ -24,7 +28,8 @@ pg_archive="postgresql-${pg_version}-linux-${architecture}.tar.gz"
 vector_archive="pgvector-${vector_version}-postgresql-${pg_version}-linux-${architecture}.tar.gz"
 mkdir -p /work/src /work/stage/postgresql /work/stage/pgvector /out
 cd /work/src
-curl -fL --retry 3 -o postgresql.tar.bz2 "https://ftp.postgresql.org/pub/source/v${pg_version}/postgresql-${pg_version}.tar.bz2"
+curl -fL --retry 3 -o postgresql.tar.bz2 "$pg_source_url"
+printf '%s  %s\n' "$pg_source_sha256" postgresql.tar.bz2 | sha256sum -c -
 tar -xf postgresql.tar.bz2
 cd "postgresql-${pg_version}"
 CFLAGS='-O2 -g' ./configure --prefix=/opt/postgresql --disable-rpath --with-icu --with-lz4 --with-zstd \
@@ -34,7 +39,8 @@ make install
 make -C contrib -j "$(nproc)"
 make -C contrib install
 cd /work/src
-curl -fL --retry 3 -o pgvector.tar.gz "https://github.com/pgvector/pgvector/archive/refs/tags/v${vector_version}.tar.gz"
+curl -fL --retry 3 -o pgvector.tar.gz "$vector_source_url"
+printf '%s  %s\n' "$vector_source_sha256" pgvector.tar.gz | sha256sum -c -
 tar -xf pgvector.tar.gz
 cd "pgvector-${vector_version}"
 make -j "$(nproc)" PG_CONFIG=/opt/postgresql/bin/pg_config OPTFLAGS=
@@ -100,11 +106,11 @@ python3 /usr/local/bin/write-linux-license-inventory \
   "$root" "$pg_version" /work/runtime-packages.tsv
 
 cat > "$root/manifest.json" <<EOF
-{"schema_version":1,"component":"postgresql","version":"${pg_version}","postgresql_version":"${pg_version}","platform":"linux","architecture":"${architecture}","build_id":"${build_id}","source_revision":"${source_revision}","build_configuration":"${build_configuration}","builder_image_id":"${builder_image_id}","bundled_glibc_version":"$(dpkg-query -W -f='${Version}' libc6)","included_extensions":${builtins},"capabilities":{"icu":true,"libc_collations":true,"lz4":true,"zstd":true}}
+{"schema_version":1,"component":"postgresql","version":"${pg_version}","postgresql_version":"${pg_version}","platform":"linux","architecture":"${architecture}","build_id":"${build_id}","source_revision":"${source_revision}","source_archive":{"url":"${pg_source_url}","sha256":"${pg_source_sha256}"},"build_configuration":"${build_configuration}","builder_image_id":"${builder_image_id}","bundled_glibc_version":"$(dpkg-query -W -f='${Version}' libc6)","included_extensions":${builtins},"capabilities":{"icu":true,"libc_collations":true,"lz4":true,"zstd":true}}
 EOF
 
 cat > /work/stage/metadata.json <<EOF
-{"project":"pgvector","version":"${vector_version}","sql_names":["vector"],"requires":[],"configuration_prerequisites":[],"runtime_prerequisites":[],"build_id":"${build_id}","source_revision":"${source_revision}","build_configuration":"${build_configuration}","builder_image_id":"${builder_image_id}","platform":"linux","architecture":"${architecture}"}
+{"project":"pgvector","version":"${vector_version}","sql_names":["vector"],"requires":[],"configuration_prerequisites":[],"runtime_prerequisites":[],"build_id":"${build_id}","source_revision":"${source_revision}","source_archive":{"url":"${vector_source_url}","sha256":"${vector_source_sha256}"},"build_configuration":"${build_configuration}","builder_image_id":"${builder_image_id}","platform":"linux","architecture":"${architecture}"}
 EOF
 cd /work/stage
 tar -czf "/out/$pg_archive" postgresql

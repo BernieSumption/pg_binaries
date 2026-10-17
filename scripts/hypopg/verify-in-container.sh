@@ -40,6 +40,32 @@ expected = {
 }
 if metadata != expected:
     raise SystemExit(f'HypoPG package metadata mismatch: {metadata!r}')
+inventory = json.loads((root / 'hypopg/LICENSES/inventory.json').read_text())
+if inventory.get('schema_version') != 1 or len(inventory.get('components', [])) != 1:
+    raise SystemExit('HypoPG licence inventory must contain one component')
+component = inventory['components'][0]
+for key, value in {
+    'component': 'hypopg',
+    'version': '1.4.3',
+    'payload_paths': ['lib/hypopg.so', 'share/extension'],
+    'license_file': 'HypoPG.txt',
+    'source_url': expected['source']['url'],
+    'source_sha256': expected['source']['sha256'],
+}.items():
+    if component.get(key) != value:
+        raise SystemExit(f'HypoPG licence inventory {key} mismatch')
+review = component.get('redistribution_review', {})
+if (review.get('status') != 'resolved' or not review.get('basis')
+        or review.get('source_obligation') != 'none'):
+    raise SystemExit('HypoPG redistribution review is incomplete')
+license_text = (root / 'hypopg/LICENSES/HypoPG.txt').read_text()
+for fragment in (
+    'Permission to use, copy, modify, and distribute this software',
+    'provided that the above copyright notice and this paragraph and',
+    'THE UNIVERSITY OF CALIFORNIA SPECIFICALLY DISCLAIMS ANY WARRANTIES',
+):
+    if fragment not in license_text:
+        raise SystemExit(f'HypoPG upstream licence text is incomplete: {fragment}')
 if {p.stem for p in (root / 'hypopg/share/extension').glob('*.control')} != {'hypopg'}:
     raise SystemExit('HypoPG payload must contain exactly the hypopg SQL extension')
 if not (root / 'hypopg/lib/hypopg.so').is_file():
@@ -47,6 +73,14 @@ if not (root / 'hypopg/lib/hypopg.so').is_file():
 if {p.name for p in root.iterdir()} != {'hypopg', 'metadata.json'}:
     raise SystemExit('HypoPG archive must contain payload and sibling metadata.json only')
 PY
+
+if [[ -e "$pgroot/LICENSES/hypopg" || -L "$pgroot/LICENSES/hypopg" ]]; then
+  echo 'HypoPG licence destination already exists in PostgreSQL archive' >&2
+  exit 1
+fi
+mkdir -p "$pgroot/LICENSES/hypopg"
+mv "$extroot/LICENSES/"* "$pgroot/LICENSES/hypopg/"
+rmdir "$extroot/LICENSES"
 
 while IFS= read -r -d '' source; do
   relative=${source#"$extroot/"}

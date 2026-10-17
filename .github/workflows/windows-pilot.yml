@@ -18,6 +18,7 @@ on:
       - 'inventory.json'
       - 'support/verification-profiles.json'
       - 'tools/plan_work.py'
+      - 'tools/source_archive.py'
       - 'tools/discover_builtins.py'
       - 'tools/create_windows_symbols.py'
       - 'tools/emit_windows_pilot_records.py'
