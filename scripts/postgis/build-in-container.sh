@@ -138,6 +138,7 @@ python3 /usr/local/bin/write-postgis-license-inventory \
   "$stage" /work/runtime-map.tsv "$postgis_source_sha256"
 python3 - "$architecture" "$postgis_source_sha256" <<'PY'
 import json
+import os
 from pathlib import Path
 import sys
 
