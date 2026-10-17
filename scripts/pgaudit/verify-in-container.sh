@@ -41,7 +41,7 @@ expected = {
 }
 if metadata != expected:
     raise SystemExit(f'pgAudit package metadata mismatch: {metadata!r}')
-inventory = json.loads((root / 'pgaudit/LICENSES/inventory.json').read_text())
+inventory = json.loads((root / 'pgaudit/LICENSES/pgaudit-inventory.json').read_text())
 if inventory.get('schema_version') != 1 or len(inventory.get('components', [])) != 1:
     raise SystemExit('pgAudit licence inventory must contain one component')
 component = inventory['components'][0]
@@ -69,13 +69,6 @@ if not (root / 'pgaudit/lib/pgaudit.so').is_file():
 if {p.name for p in root.iterdir()} != {'pgaudit', 'metadata.json'}:
     raise SystemExit('pgAudit archive must contain payload and sibling metadata.json only')
 PY
-if [[ -e "$pgroot/LICENSES/pgaudit" || -L "$pgroot/LICENSES/pgaudit" ]]; then
-  echo 'pgAudit licence destination already exists in PostgreSQL archive' >&2
-  exit 1
-fi
-mkdir -p "$pgroot/LICENSES/pgaudit"
-mv "$extroot/LICENSES/"* "$pgroot/LICENSES/pgaudit/"
-rmdir "$extroot/LICENSES"
 while IFS= read -r -d '' source; do
   relative=${source#"$extroot/"}
   destination="$pgroot/$relative"

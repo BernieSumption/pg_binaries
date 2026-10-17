@@ -244,9 +244,10 @@ def _archive_redistribution(path, *, metadata_sibling=False):
                 members[name] = member
             inventories = [name for name in members
                            if len(name.split("/")) == 3
-                           and (name.endswith("/LICENSES/inventory.json")
-                                or (metadata_sibling and name.split("/")[2] ==
-                                    name.split("/")[0] + "-inventory.json"))]
+                           and name.split("/")[1] == "LICENSES"
+                           and name.split("/")[2] == (
+                               name.split("/")[0] + "-inventory.json" if metadata_sibling
+                               else "inventory.json")]
             if len(inventories) != 1:
                 raise PreflightError("staged archive requires one component licence inventory")
             inventory_path = inventories[0]

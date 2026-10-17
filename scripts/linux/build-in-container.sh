@@ -112,6 +112,9 @@ EOF
 cat > /work/stage/metadata.json <<EOF
 {"project":"pgvector","version":"${vector_version}","sql_names":["vector"],"requires":[],"configuration_prerequisites":[],"runtime_prerequisites":[],"build_id":"${build_id}","source_revision":"${source_revision}","source_archive":{"url":"${vector_source_url}","sha256":"${vector_source_sha256}"},"build_configuration":"${build_configuration}","builder_image_id":"${builder_image_id}","platform":"linux","architecture":"${architecture}"}
 EOF
+cat > /work/stage/pgvector/LICENSES/pgvector-inventory.json <<EOF
+{"schema_version":1,"components":[{"component":"pgvector","version":"${vector_version}","payload_paths":["lib/vector.so","share/extension"],"license_file":"pgvector.txt","license_source":"${vector_source_url}","source_url":"${vector_source_url}","source_sha256":"${vector_source_sha256}","redistribution_review":{"status":"resolved","basis":"The unmodified pgvector ${vector_version} source includes its PostgreSQL-style licence, permitting binary redistribution with its notice, permission and disclaimer text retained.","source_obligation":"none"}}]}
+EOF
 cd /work/stage
 tar -czf "/out/$pg_archive" postgresql
 tar -czf "/out/$vector_archive" pgvector metadata.json

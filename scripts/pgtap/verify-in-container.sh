@@ -43,7 +43,7 @@ expected = {
 }
 if metadata != expected:
     raise SystemExit(f'pgTAP package metadata mismatch: {metadata!r}')
-inventory = json.loads((root / 'pgtap/LICENSES/inventory.json').read_text())
+inventory = json.loads((root / 'pgtap/LICENSES/pgtap-inventory.json').read_text())
 if inventory.get('schema_version') != 1 or len(inventory.get('components', [])) != 1:
     raise SystemExit('pgTAP licence inventory must contain one component')
 component = inventory['components'][0]
@@ -62,10 +62,6 @@ if not (root / 'pgtap/share/doc/extension/pgtap.mmd').is_file():
 if {p.name for p in root.iterdir()} != {'pgtap', 'metadata.json'}:
     raise SystemExit('pgTAP archive must contain the project payload and sibling metadata.json only')
 PY
-mv "$extroot/LICENSES" "$extroot/extension-licenses"
-mkdir -p "$extroot/LICENSES/pgtap"
-mv "$extroot/extension-licenses/"* "$extroot/LICENSES/pgtap/"
-rmdir "$extroot/extension-licenses"
 while IFS= read -r -d '' source; do
   relative=${source#"$extroot/"}
   destination="$pgroot/$relative"

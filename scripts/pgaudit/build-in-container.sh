@@ -31,7 +31,7 @@ cp "$install_root/share/extension/"* /work/package/pgaudit/share/extension/
 cat LICENSE "$pgroot/LICENSES/PostgreSQL.txt" > /work/package/pgaudit/LICENSES/pgAudit.txt
 grep -Fq 'This code is released under the PostgreSQL licence' /work/package/pgaudit/LICENSES/pgAudit.txt
 grep -Fq 'Permission to use, copy, modify, and distribute this software' /work/package/pgaudit/LICENSES/pgAudit.txt
-cat > /work/package/pgaudit/LICENSES/inventory.json <<EOF
+cat > /work/package/pgaudit/LICENSES/pgaudit-inventory.json <<EOF
 {
   "schema_version": 1,
   "components": [{

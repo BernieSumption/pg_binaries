@@ -40,7 +40,7 @@ expected = {
 }
 if metadata != expected:
     raise SystemExit(f'HypoPG package metadata mismatch: {metadata!r}')
-inventory = json.loads((root / 'hypopg/LICENSES/inventory.json').read_text())
+inventory = json.loads((root / 'hypopg/LICENSES/hypopg-inventory.json').read_text())
 if inventory.get('schema_version') != 1 or len(inventory.get('components', [])) != 1:
     raise SystemExit('HypoPG licence inventory must contain one component')
 component = inventory['components'][0]
@@ -73,14 +73,6 @@ if not (root / 'hypopg/lib/hypopg.so').is_file():
 if {p.name for p in root.iterdir()} != {'hypopg', 'metadata.json'}:
     raise SystemExit('HypoPG archive must contain payload and sibling metadata.json only')
 PY
-
-if [[ -e "$pgroot/LICENSES/hypopg" || -L "$pgroot/LICENSES/hypopg" ]]; then
-  echo 'HypoPG licence destination already exists in PostgreSQL archive' >&2
-  exit 1
-fi
-mkdir -p "$pgroot/LICENSES/hypopg"
-mv "$extroot/LICENSES/"* "$pgroot/LICENSES/hypopg/"
-rmdir "$extroot/LICENSES"
 
 while IFS= read -r -d '' source; do
   relative=${source#"$extroot/"}

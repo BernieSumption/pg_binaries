@@ -113,6 +113,18 @@ expected_vector = {
 }
 assert all(m.get(key) == value for key, value in expected_vector.items()), m
 assert {field: m[field] for field in provenance_fields} == provenance, m
+vector_root = Path('/tmp/vector/pgvector')
+inventory = json.loads((vector_root / 'LICENSES/pgvector-inventory.json').read_text())
+assert inventory.get('schema_version') == 1 and len(inventory.get('components', [])) == 1, inventory
+vector = inventory['components'][0]
+assert all(vector.get(key) == value for key, value in {
+    'component': 'pgvector', 'version': '0.8.7',
+    'payload_paths': ['lib/vector.so', 'share/extension'],
+    'license_file': 'pgvector.txt',
+    'source_url': m['source_archive']['url'],
+    'source_sha256': m['source_archive']['sha256'],
+}.items()), vector
+assert vector.get('redistribution_review', {}).get('status') == 'resolved', vector
 PY
 python3 /verification/tools/check_source_identity.py --root /verification --platform linux \
   --postgresql-version "$pg_version" \

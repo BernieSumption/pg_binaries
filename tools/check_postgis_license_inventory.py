@@ -9,7 +9,7 @@ from urllib.parse import quote
 
 
 root = Path(sys.argv[1]).resolve()
-inventory = json.loads((root / "LICENSES/postgis/inventory.json").read_text(encoding="utf-8"))
+inventory = json.loads((root / "LICENSES/postgis-inventory.json").read_text(encoding="utf-8"))
 if inventory.get("schema_version") != 1:
     raise SystemExit("unsupported PostGIS licence inventory schema")
 components = inventory.get("components")

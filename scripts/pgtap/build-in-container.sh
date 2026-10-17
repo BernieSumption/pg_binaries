@@ -35,7 +35,7 @@ cp "$install_root/share/extension/"* /work/package/pgtap/share/extension/
 cp -a "$install_root/share/doc/extension/." /work/package/pgtap/share/doc/extension/
 sed -n '/^Copyright and License$/,$p' README.md | sed '1,2d' > /work/package/pgtap/LICENSES/pgTAP.txt
 grep -Fxq 'Copyright (c) 2008-2025 David E. Wheeler. Some rights reserved.' /work/package/pgtap/LICENSES/pgTAP.txt
-cat > /work/package/pgtap/LICENSES/inventory.json <<EOF
+cat > /work/package/pgtap/LICENSES/pgtap-inventory.json <<EOF
 {
   "schema_version": 1,
   "components": [

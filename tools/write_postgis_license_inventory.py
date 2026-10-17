@@ -95,6 +95,6 @@ for package, relative in (("proj-data", "share/proj"), ("gdal-data", "share/gdal
     components.append(package_entry(package, [relative]))
 
 inventory = {"schema_version": 1, "components": components}
-(root / "LICENSES/postgis/inventory.json").write_text(
+(root / "LICENSES/postgis-inventory.json").write_text(
     json.dumps(inventory, indent=2, sort_keys=True) + "\n", encoding="utf-8"
 )

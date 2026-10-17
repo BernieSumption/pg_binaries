@@ -27,7 +27,7 @@ mkdir -p /work/package/hypopg/{lib,share/extension,LICENSES}
 cp "$install_root/lib/hypopg.so" /work/package/hypopg/lib/
 cp "$install_root/share/extension/"* /work/package/hypopg/share/extension/
 cp LICENSE /work/package/hypopg/LICENSES/HypoPG.txt
-cat > /work/package/hypopg/LICENSES/inventory.json <<EOF
+cat > /work/package/hypopg/LICENSES/hypopg-inventory.json <<EOF
 {
   "schema_version": 1,
   "components": [

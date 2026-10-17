@@ -42,7 +42,7 @@ payload = root / 'postgis_tiger_geocoder'
 assert (payload / 'share/extension/postgis_tiger_geocoder.control').is_file()
 assert (payload / 'share/extension/postgis_tiger_geocoder--2025.2.sql').is_file()
 assert (payload / 'LICENSES/postgis_tiger_geocoder/COPYING').is_file()
-inventory = json.loads((payload / 'LICENSES/postgis_tiger_geocoder/inventory.json').read_text())
+inventory = json.loads((payload / 'LICENSES/postgis_tiger_geocoder-inventory.json').read_text())
 assert inventory['components'][0]['source_sha256'] == metadata['source']['sha256']
 
 prefix = Path('/tmp/install/postgresql')

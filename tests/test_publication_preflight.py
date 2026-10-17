@@ -160,7 +160,8 @@ class PublicationPreflightTests(unittest.TestCase):
             "license_file": "COPYING", "redistribution_review": {
                 "status": "resolved", "basis": "Fixture permissive licence reviewed",
                 "source_obligation": "none"}}]}
-        for name, data in {"inventory.json": json.dumps(inventory).encode(),
+        inventory_name = "inventory.json" if root == "postgresql" else f"{root}-inventory.json"
+        for name, data in {inventory_name: json.dumps(inventory).encode(),
                            "COPYING": b"Fixture licence text"}.items():
             member = tarfile.TarInfo(f"{root}/LICENSES/{name}")
             member.size = len(data)
@@ -214,7 +215,7 @@ class PublicationPreflightTests(unittest.TestCase):
 
     def _review(self, **changes):
         def transform(contents):
-            name = "example/LICENSES/inventory.json"
+            name = "example/LICENSES/example-inventory.json"
             inventory = json.loads(contents[name])
             inventory["components"][0]["redistribution_review"] = changes
             contents[name] = json.dumps(inventory).encode()
@@ -259,16 +260,17 @@ class PublicationPreflightTests(unittest.TestCase):
 
     def test_rejects_absent_inventory_or_licence_text(self):
         url = next(url for url in self.staged if "example-1.0-postgresql-15.9-macos-x86_64" in url)
-        self._rewrite_extension(lambda contents: contents.pop("example/LICENSES/inventory.json"), url)
+        self._rewrite_extension(lambda contents: contents.pop("example/LICENSES/example-inventory.json"), url)
         with self.assertRaises(publication_preflight.PreflightError):
             self.check()
 
-    def test_accepts_component_named_extension_inventory(self):
+    def test_rejects_colliding_flat_extension_inventory(self):
         def rename(contents):
-            contents["example/LICENSES/example-inventory.json"] = contents.pop(
-                "example/LICENSES/inventory.json")
+            contents["example/LICENSES/inventory.json"] = contents.pop(
+                "example/LICENSES/example-inventory.json")
         self._rewrite_extension(rename)
-        self.assertEqual(self.check()["redistribution_review_status"], "declarations-checked")
+        with self.assertRaisesRegex(publication_preflight.PreflightError, "component licence inventory"):
+            self.check()
 
     def test_rejects_absent_licence_text(self):
         url = next(url for url in self.staged if "example-1.0-postgresql-15.9-macos-arm64" in url)
@@ -278,7 +280,7 @@ class PublicationPreflightTests(unittest.TestCase):
 
     def _assert_invalid_licence_inventory(self, mutate):
         def transform(contents):
-            name = "example/LICENSES/inventory.json"
+            name = "example/LICENSES/example-inventory.json"
             inventory = json.loads(contents[name])
             mutate(inventory)
             contents[name] = json.dumps(inventory).encode()
@@ -436,6 +438,8 @@ class PublicationPreflightTests(unittest.TestCase):
             for name in list(contents):
                 if name.startswith("example/"):
                     contents["example_project/" + name[len("example/"):]] = contents.pop(name)
+            contents["example_project/LICENSES/example_project-inventory.json"] = contents.pop(
+                "example_project/LICENSES/example-inventory.json")
             metadata = json.loads(contents["metadata.json"])
             metadata["project"] = "example_project"
             contents["metadata.json"] = json.dumps(metadata).encode()

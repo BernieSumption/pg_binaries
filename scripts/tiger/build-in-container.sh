@@ -54,12 +54,12 @@ inventory = {
         'component': 'PostGIS TIGER Geocoder',
         'version': version,
         'payload_paths': ['share/extension'],
-        'license_file': 'COPYING',
+        'license_file': 'postgis_tiger_geocoder/COPYING',
         'source_url': f'https://download.osgeo.org/postgis/source/postgis_tiger_geocoder/postgis_tiger_geocoder-{version}.tar.gz',
         'source_sha256': source_sha256,
     }],
 }
-(stage / 'LICENSES/postgis_tiger_geocoder/inventory.json').write_text(json.dumps(inventory, indent=2, sort_keys=True) + '\n')
+(stage / 'LICENSES/postgis_tiger_geocoder-inventory.json').write_text(json.dumps(inventory, indent=2, sort_keys=True) + '\n')
 metadata = {
     'project': 'postgis_tiger_geocoder',
     'version': version,
