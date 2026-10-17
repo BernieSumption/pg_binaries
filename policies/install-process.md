@@ -6,7 +6,7 @@ Clients download a PostgreSQL archive and any required extension archives, unpac
 
 Each platform and architecture has a PostgreSQL `.tar.gz` archive containing one top-level `postgresql/` directory. Its contents use PostgreSQL's normal installation layout: commands in `bin/`, shared libraries in `lib/`, and support files in `share/`, including `share/extension/` and `share/locale/` where provided. The Linux pilot keeps native executable payloads in `libexec/` and places statically linked launchers in `bin/` so commands use the bundled C library after relocation without invoking a host shell. Include all runtime libraries and other files needed by the packaged programs, along with applicable licence and notice files.
 
-Each extension archive identifies its project, selected extension version, platform and compatible PostgreSQL range. Native modules may need separate archives for different PostgreSQL majors; a range must be tested before the inventory claims it. The `.tar.gz` contains a payload directory named for the extension project and a sibling `metadata.json` file:
+Each extension archive name identifies its project, selected extension version, platform and PostgreSQL build version or verified support range. Native modules may need separate archives for different PostgreSQL majors; the inventory alone advertises which PostgreSQL versions can use an archive, after those versions pass the required tests. The `.tar.gz` contains a payload directory named for the extension project and a sibling `metadata.json` file:
 
 ```text
 archive root/

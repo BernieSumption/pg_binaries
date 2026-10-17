@@ -81,8 +81,18 @@ def merge_candidate(base_inventory, proposed_entries, support, snapshot, root=No
             raise CandidateError("tag must be an immutable catalog-YYYYMMDD-N release tag")
         if not isinstance(filename, str) or not FILENAME.fullmatch(filename):
             raise CandidateError("filename must be a simple .tar.gz asset name")
-        if platform not in filename:
-            raise CandidateError("filename must identify its operating system and architecture")
+        if component == "postgresql":
+            expected = f"postgresql-{version}-{platform}.tar.gz"
+            if filename != expected:
+                raise CandidateError(f"PostgreSQL filename must be {expected}")
+        else:
+            suffix = f"-{version}-postgresql-"
+            marker = filename.find(suffix)
+            if marker <= 0 or not filename.endswith(f"-{platform}.tar.gz"):
+                raise CandidateError("extension filename must identify project, version, PostgreSQL target and platform")
+            pg_target = filename[marker + len(suffix):-len(f"-{platform}.tar.gz")]
+            if not re.fullmatch(r"\d+\.\d+(?:-to-\d+\.\d+)?", pg_target):
+                raise CandidateError("extension filename must identify a PostgreSQL build version or support range")
         url = f"https://github.com/BernieSumption/pg_binaries/releases/download/{tag}/{filename}"
         download = {"url": url, "sha256": item.get("sha256")}
         try:
@@ -109,11 +119,14 @@ def merge_candidate(base_inventory, proposed_entries, support, snapshot, root=No
             target = None
             ext_versions = support.get("extensions", {})
             sql_name = component
-            policy = next((policy for ext in ext_versions.values()
-                          for name in ext.get("sql_names", []) if name == sql_name
-                          for policy in [ext.get("versions", {}).get(version)] if policy), None)
-            if policy is None:
+            selected = next(((project, policy) for project, ext in ext_versions.items()
+                             for name in ext.get("sql_names", []) if name == sql_name
+                             for policy in [ext.get("versions", {}).get(version)] if policy), None)
+            if selected is None:
                 raise CandidateError(f"unsupported extension target {component} {version}")
+            project, policy = selected
+            if filename[:marker] != project.lower():
+                raise CandidateError("extension filename must identify the declared project")
             pg_range = item.get("postgresql_support")
             try:
                 low, high = pg_range["from"], pg_range["to"]
@@ -121,6 +134,13 @@ def merge_candidate(base_inventory, proposed_entries, support, snapshot, root=No
                     raise CandidateError("PostgreSQL support range is reversed")
             except (TypeError, KeyError, CoverageError) as exc:
                 raise CandidateError("malformed PostgreSQL support range") from exc
+            if "-to-" in pg_target:
+                if pg_target != f"{low}-to-{high}":
+                    raise CandidateError("filename support range differs from the inventory claim")
+            elif not (version_parts(low, "candidate range")
+                      <= version_parts(pg_target, "filename PostgreSQL build version")
+                      <= version_parts(high, "candidate range")):
+                raise CandidateError("filename PostgreSQL build version falls outside the inventory claim")
             target_key = ("extension", component, version, platform, low, high)
             minimum_major = policy.get("postgresql_minimum_major", support["postgresql"]["minimum_major"])
             maximum_major = policy.get("postgresql_maximum_major")
