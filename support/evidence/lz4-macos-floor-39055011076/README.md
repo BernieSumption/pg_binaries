@@ -1,0 +1,5 @@
+# Unmodified LZ4 source at the macOS 11 target
+
+[Run 39055011076](https://github.com/BernieSumption/pg_binaries/actions/runs/39055011076) built LZ4 1.10.0 from the upstream release tarball on standard macOS 15 Apple Silicon and Intel runners. Both jobs verified the upstream SHA-256 sidecar against `537512904744b35e232912055ccf8ec66d768639ff3abe5788d90d792ec5f48b`. Their installed `liblz4.1.10.0.dylib` files had the expected architecture and declared macOS 11.0 as their minimum. The retained inspection and source-checksum files came from the respective CI artifacts.
+
+This establishes minimum-target source-build feasibility for LZ4 alone. The dylib's install name is `/usr/local/lib/liblz4.1.dylib`, so relocation remains unresolved. The probe's `host_path_reference` lines also matched the temporary filename printed as the first line of `otool` output; that line is not an embedded load path. The inspection script now omits `otool` filename headers and reports the actual install name. No PostgreSQL archive or final-byte verification was produced by this run.

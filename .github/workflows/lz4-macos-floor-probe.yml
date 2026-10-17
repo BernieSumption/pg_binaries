@@ -6,7 +6,7 @@ on:
     branches: [spike]
     paths:
       - '.github/workflows/lz4-macos-floor-probe.yml'
-      - 'scripts/macos/lz4-floor-probe.sh'
+      - 'scripts/dependency_probes/lz4-macos-floor-probe.sh'
 
 permissions:
   contents: read
@@ -26,7 +26,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Build unmodified upstream LZ4 and inspect macOS floor
-        run: bash scripts/macos/lz4-floor-probe.sh "${{ matrix.architecture }}" "$RUNNER_TEMP/results"
+        run: bash scripts/dependency_probes/lz4-macos-floor-probe.sh "${{ matrix.architecture }}" "$RUNNER_TEMP/results"
       - uses: actions/upload-artifact@v4
         if: always()
         with:

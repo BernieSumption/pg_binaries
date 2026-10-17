@@ -89,10 +89,10 @@ for dylib in "${dylibs[@]}"; do
   elif ! awk -v version="$minos" 'BEGIN { split(version, parts, "."); exit !((parts[1] + 0) < 11 || ((parts[1] + 0) == 11 && (parts[2] + 0) <= 0)) }'; then
     inspection_failed=1
   fi
-  linked=$(otool -L "$dylib")
-  load_commands=$(otool -l "$dylib")
+  linked=$(otool -L "$dylib" | tail -n +2)
+  load_commands=$(otool -l "$dylib" | tail -n +2)
   echo "$linked" | sed 's/^/linked=/' >> "$inspection"
-  if host_paths=$(grep -E '(/Users/runner|/private/var/folders|/opt/homebrew|/usr/local/(Cellar|opt)|lz4-floor\.)' <<< "$linked
+  if host_paths=$(grep -E '(/Users/runner|/private/var/folders|/opt/homebrew|/usr/local/lib|lz4-floor\.)' <<< "$linked
 $load_commands"); then
     echo "host_path_reference=found" >> "$inspection"
     echo "$host_paths" | sed 's/^/host_path=/' >> "$inspection"
