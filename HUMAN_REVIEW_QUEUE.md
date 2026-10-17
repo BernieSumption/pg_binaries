@@ -1,5 +1,11 @@
 # Human review queue
 
+## Scope of the upstream-only source rule for packaged dependencies
+
+The [functional specification](specs/functional.md#never-patch-or-modify-extensions-or-dependencies) requires straightforward upstream builds without modifying dependencies. The macOS 11 dependency-floor probe built suitable Mach-O targets with vcpkg, but its port recipes applied source patches to libxml2, LZ4 and OpenSSL. The Windows pilot also obtains PostgreSQL dependencies through vcpkg. Linux archives copy runtime libraries from Ubuntu packages; the retained source identities include Ubuntu packaging source, but we have not audited each package's applied patch series. Existing Linux packaging also changes ELF RPATHs after compilation, and macOS packaging rewrites Mach-O load paths for relocation.
+
+Decision needed: Does the prohibition include source patches applied by a standard package manager or distribution before we receive its packages, and does it include post-build changes to binary load paths needed for relocation? Pending an answer, treat patched-source dependencies as ineligible for release evidence. Continue independent implementation and tests; do not claim the current platform archives meet the upstream-only rule.
+
 ## Backlog ideas
 
 From Bernie: Adding this here so that we don't forget it. Don't start work on this yet. I'd like to discuss the viability of these and specify them properly before we go ahead. If indeed we decide to go ahead at all.
