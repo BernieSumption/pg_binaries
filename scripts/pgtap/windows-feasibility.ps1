@@ -129,20 +129,20 @@ $sourcePackage = Join-Path $SourcePackageDirectory $sourcePackageName
   $initdb = Join-Path $pgRoot 'bin/initdb.exe'
   $psql = Join-Path $pgRoot 'bin/psql.exe'
   $env:PATH = "$(Join-Path $pgRoot 'bin');$env:SystemRoot\System32;$env:SystemRoot"
-  & $initdb -D $data --encoding=UTF8 --locale=C --no-instructions
+  & $initdb -D $data -U postgres -A trust --encoding=UTF8 --locale=C --no-instructions
   if ($LASTEXITCODE -ne 0) { throw 'initdb failed for relocated PostgreSQL' }
   & $pgCtl -D $data -l (Join-Path $work 'server.log') -o '-p 55432 -h 127.0.0.1' -w start
   if ($LASTEXITCODE -ne 0) { throw 'PostgreSQL failed to start after relocation' }
   $serverStarted = $true
   $probeOutput = Join-Path $OutputDirectory 'probe-output.txt'
-  & $psql -X -A -t -v ON_ERROR_STOP=1 -h 127.0.0.1 -p 55432 -d postgres -c 'CREATE EXTENSION IF NOT EXISTS plpgsql' | Tee-Object -FilePath (Join-Path $OutputDirectory 'prerequisite-output.txt')
+  & $psql -X -A -t -v ON_ERROR_STOP=1 -h 127.0.0.1 -p 55432 -U postgres -d postgres -c 'CREATE EXTENSION IF NOT EXISTS plpgsql' | Tee-Object -FilePath (Join-Path $OutputDirectory 'prerequisite-output.txt')
   if ($LASTEXITCODE -ne 0) { throw 'Could not create pgTAP configuration prerequisite plpgsql' }
-  & $psql -X -A -t -v ON_ERROR_STOP=1 -h 127.0.0.1 -p 55432 -d postgres -f (Join-Path $repo 'scripts/pgtap/probe.sql') 2>&1 | Tee-Object -FilePath $probeOutput
+  & $psql -X -A -t -v ON_ERROR_STOP=1 -h 127.0.0.1 -p 55432 -U postgres -d postgres -f (Join-Path $repo 'scripts/pgtap/probe.sql') 2>&1 | Tee-Object -FilePath $probeOutput
   if ($LASTEXITCODE -ne 0) { throw 'pgTAP SQL assertions failed' }
   if (-not (Select-String -Path $probeOutput -SimpleMatch '1..4' -Quiet)) { throw 'pgTAP plan output missing' }
   $okCount = @(Select-String -Path $probeOutput -Pattern '^ok [1-4]( -|$)').Count
   if ($okCount -ne 4) { throw "Expected four passing pgTAP assertions; found $okCount" }
-  & $psql -X -A -t -v ON_ERROR_STOP=1 -h 127.0.0.1 -p 55432 -d postgres -c "SELECT extname FROM pg_extension WHERE extname IN ('pgtap','plpgsql') ORDER BY extname; SELECT count(*) FROM pg_depend d JOIN pg_extension e ON e.oid=d.refobjid WHERE e.extname='pgtap' AND d.deptype='e';" | Tee-Object -FilePath (Join-Path $OutputDirectory 'extension-closure.txt')
+  & $psql -X -A -t -v ON_ERROR_STOP=1 -h 127.0.0.1 -p 55432 -U postgres -d postgres -c "SELECT extname FROM pg_extension WHERE extname IN ('pgtap','plpgsql') ORDER BY extname; SELECT count(*) FROM pg_depend d JOIN pg_extension e ON e.oid=d.refobjid WHERE e.extname='pgtap' AND d.deptype='e';" | Tee-Object -FilePath (Join-Path $OutputDirectory 'extension-closure.txt')
   if ($LASTEXITCODE -ne 0) { throw 'Could not inspect installed extension dependency closure' }
   $closure = Get-Content (Join-Path $OutputDirectory 'extension-closure.txt')
   if (-not ($closure -contains 'pgtap') -or -not ($closure | Where-Object { $_ -match '^[1-9][0-9]*$' })) { throw 'Installed pgTAP extension or its owned-object closure is missing' }
