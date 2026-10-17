@@ -16,6 +16,13 @@
     "linux": ["x86_64", "arm64"]
   },
   "extensions": {
+    "Address Standardizer": {
+      "sql_names": ["address_standardizer", "address_standardizer_data_us"],
+      "requires": [],
+      "versions": {
+        "3.7.0": { "postgresql_minimum_major": 15 }
+      }
+    },
     "pgvector": {
       "sql_names": ["vector"],
       "requires": [],

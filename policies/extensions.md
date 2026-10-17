@@ -52,19 +52,19 @@ Target support: PostgreSQL 16–18 on Linux and macOS x86-64 and arm64 and Windo
 
 Sources: [2025.2 announcement](https://postgis.net/2026/08/PostGIS-Tiger-Geocoder-2025.2/), [upstream 2025.2 source archive](https://download.osgeo.org/postgis/source/postgis_tiger_geocoder/postgis_tiger_geocoder-2025.2.tar.gz) (`README.md`, `META.json` and `COPYING`), [PostGIS installation guide](https://postgis.net/docs/postgis_installation.html).
 
-## Address Standardizer — support selection pending
+## Address Standardizer — include
 
 Description: [Address Standardizer](https://github.com/postgis/address_standardizer) provides address parsing and rule-based standardization. Its SQL extension names are `address_standardizer` and `address_standardizer_data_us`.
 
 For inclusion: Its parsing functions can appear in schema DDL, and major PostgreSQL hosts offer both SQL extensions. The upstream repository contains the USPS-derived city file used to generate `parseaddress-stcities.h` and states an MIT-style licence in `COPYING`. No separate terms were identified for that US file. Under the [repository-data licence assumption](releases.md#redistribution-review-before-publication), the city file and compiled output use the repository licence; do not investigate whether upstream had authority to license the earlier USPS source.
 
-Against inclusion: The native library needs PCRE2, which must be bundled on platforms where it is not universal. Upstream moved the project out of PostGIS after the 3.6 line, so release selection, documented PostgreSQL support and platform builds need research before intended support can be declared. Any newer data file with explicit separate terms needs its own review.
+Against inclusion: The native library needs PCRE2, which must be bundled on platforms where it is not universal. Upstream tests the standalone project on Linux, but its macOS and Windows builds still need verification. Any newer data file with explicit separate terms needs its own redistribution review.
 
-Version policy: Apply the shared version support rule after establishing how the bundled and standalone releases map to this project. A source-repository split does not by itself require retaining both packages.
+Version policy: Select standalone 3.7.0 under the shared version rule. It is the latest tagged release as reviewed on 2026-10-17; the source-repository split does not require retaining a 3.6 PostGIS-bundled copy. Recheck the release list and data terms at each inventory refresh.
 
-Target support: Not yet declared in `support.json`. Research each selected release's PostgreSQL and OS support, then add both SQL names at the project level for the supported targets. The resolved US-data assumption alone is not build, compatibility or publication evidence.
+Target support: PostgreSQL 15 and later on all five required OS and architecture targets, subject to unmodified upstream builds and archive verification. The v3.7.0 tag's Linux CI exercises PostgreSQL 14–19, including the currently selected 15–18, and its README requires PCRE2 but not PostGIS. There is no tagged macOS or Windows CI evidence; intended support is not verified coverage. The v3.7.0 tag provides `address_standardizer` and `address_standardizer_data_us`. A Brazil data extension exists on the later development branch but not in this tag; its explicit OpenStreetMap ODbL attribution must be reviewed if a future selected release includes it.
 
-Sources: [upstream project and data-generation description](https://github.com/postgis/address_standardizer), [repository licence](https://github.com/postgis/address_standardizer/blob/main/COPYING), [PostGIS 3.6 build rules](https://github.com/postgis/postgis/blob/stable-3.6/extensions/address_standardizer/Makefile.in), [PostGIS installation guide](https://postgis.net/docs/postgis_installation.html).
+Sources: [v3.7.0 release](https://github.com/postgis/address_standardizer/releases/tag/v3.7.0), [tagged build instructions](https://github.com/postgis/address_standardizer/blob/v3.7.0/README.md), [tagged PostgreSQL CI matrix](https://github.com/postgis/address_standardizer/blob/v3.7.0/.github/workflows/ci.yml), [tagged repository licence](https://github.com/postgis/address_standardizer/blob/v3.7.0/COPYING), [later Brazil data terms](https://github.com/postgis/address_standardizer/blob/main/README.md#open-data-provenance-for-brazil-dataset-address_standardizer_data_br), [PostGIS 3.6 build rules](https://github.com/postgis/postgis/blob/stable-3.6/extensions/address_standardizer/Makefile.in).
 
 ## oracle_fdw — exclude
 
