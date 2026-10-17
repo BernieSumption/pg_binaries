@@ -44,10 +44,7 @@ def plan(support, snapshot):
                         "postgresql_major": major,
                         "postgresql_version": pg_versions[0],
                         "sql_names": sql_names,
-                        "postgresql_endpoint_versions": {"from": pg_versions[0], "to": pg_versions[-1]},
-                        "covered_postgresql_versions": pg_versions,
                         "covered_target_tuple_count": len(major_targets),
-                        "os_endpoint_labels": ["minimum", "current"],
                         "status": "candidate-unverified",
                         "publication_eligibility": "not-established",
                     }
@@ -55,11 +52,10 @@ def plan(support, snapshot):
         "status": "candidate-plan-unverified",
         "source": "support.json plus support/postgresql-releases.json",
         "grouping": "project + selected extension version + PostgreSQL major + platform",
-        "range_semantics": "legacy range fields have identical endpoints for the one selected PostgreSQL minor",
+        "target_semantics": "each candidate archive targets one selected PostgreSQL minor and platform",
         "candidate_archives": [grouped[key] for key in sorted(grouped)],
         "limitations": [
             "No build, archive, runtime, verification-record, or publication-eligibility claim is made.",
-            "OS endpoint labels follow declared verification endpoint names; the plan contains no passing evidence.",
             "Known PostgreSQL and operating-system restrictions are applied from support.json before grouping.",
             "PostgreSQL major boundaries are kept separate because extension binaries generally target a major-version ABI.",
         ],

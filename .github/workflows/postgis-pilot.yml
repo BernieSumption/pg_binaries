@@ -1,41 +1,6 @@
 name: PostGIS Linux feasibility pilot
 on:
   workflow_dispatch:
-  push:
-    branches: [spike]
-    paths:
-      - 'scripts/postgis/**'
-      - 'scripts/linux/qemu-kernel-515.Dockerfile'
-      - 'scripts/qemu/arm64-515.Dockerfile'
-      - 'scripts/linux/Dockerfile'
-      - 'scripts/linux/build.sh'
-      - 'scripts/linux/build-in-container.sh'
-      - 'scripts/linux/bundle-glibc-in-container.sh'
-      - 'scripts/linux/launcher.c'
-      - 'tools/emit_linux_minimum_pilot_records.py'
-      - 'tools/write_linux_license_inventory.py'
-      - 'tools/discover_builtins.py'
-      - 'tools/check_elf_dependencies.py'
-      - 'tools/check_postgis_license_inventory.py'
-      - 'tools/emit_postgis_pilot_record.py'
-      - 'tools/write_postgis_license_inventory.py'
-      - 'tools/reuse_linux_core_artifact.py'
-      - 'tools/create_linux_symbols.py'
-      - 'tools/select_extension_work.py'
-      - 'tools/extension_work_queue.py'
-      - 'tools/extension_archive_plan.py'
-      - 'tools/coverage.py'
-      - 'tools/plan_work.py'
-      - 'support/selected-extension-work.json'
-      - 'support.json'
-      - 'support/postgresql-releases.json'
-      - 'inventory.json'
-      - 'policies/extensions.md'
-      - 'tests/test_reuse_linux_core_artifact.py'
-      - 'tests/test_create_linux_symbols.py'
-      - 'tests/test_emit_postgis_pilot_record.py'
-      - 'tests/test_select_extension_work.py'
-      - '.github/workflows/postgis-pilot.yml'
 jobs:
   plan:
     runs-on: ubuntu-24.04

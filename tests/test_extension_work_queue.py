@@ -61,7 +61,7 @@ class ExtensionWorkQueueTests(unittest.TestCase):
         self.assertTrue(all(dep in known for item in first["work_items"] for dep in item["depends_on"]))
         self.assertEqual(len({item["id"] for item in first["work_items"]}), len(first["work_items"]))
 
-    def test_project_archive_group_has_one_build_and_all_named_endpoint_checks(self):
+    def test_project_archive_group_has_one_exact_build_and_current_checks(self):
         items = queue_tool.build_queue(self.root)["work_items"]
         postgis = [item for item in items if item.get("project") == "PostGIS" and
                    item.get("version") == "3.6.4" and item.get("platform") == "linux-x86_64" and
@@ -70,7 +70,9 @@ class ExtensionWorkQueueTests(unittest.TestCase):
         checks = [item for item in postgis if item["kind"] == "verify-extension"]
         self.assertEqual(len(builds), 1)
         self.assertEqual(builds[0]["sql_names"], ["postgis", "postgis_raster"])
-        self.assertEqual(len(checks), 4)
+        self.assertEqual(builds[0]["postgresql_version"], "18.6")
+        self.assertEqual({item["endpoint"] for item in checks}, {"current"})
+        self.assertEqual(len(checks), 2)
         self.assertEqual(builds[0]["range_status"], "unverified")
 
     def test_candidate_build_uses_latest_minor_and_other_endpoint_is_verified_separately(self):
@@ -81,11 +83,13 @@ class ExtensionWorkQueueTests(unittest.TestCase):
                      and item.get("version") == "3.6.4" and item.get("postgresql_major") == 18
                      and item.get("platform") == "linux-x86_64" and item["kind"] == "build-extension")
         self.assertEqual(group["build_postgresql_version"], "18.6")
+        self.assertEqual(group["postgresql_version"], "18.6")
         self.assertEqual(group["depends_on"], [queue_tool._id("build-core", "18.6", "linux-x86_64")])
         checks = [item for item in queue["work_items"] if item.get("project") == "PostGIS"
                   and item.get("version") == "3.6.4" and item.get("postgresql_major") == 18
                   and item.get("platform") == "linux-x86_64" and item["kind"] == "verify-extension"]
         self.assertEqual({item["postgresql_version"] for item in checks}, {"18.6"})
+        self.assertEqual({item["endpoint"] for item in checks}, {"current"})
 
     def test_inventory_archive_binding_does_not_claim_endpoint_coverage(self):
         checksum = "d" * 64
@@ -114,6 +118,7 @@ class ExtensionWorkQueueTests(unittest.TestCase):
         queue = queue_tool.build_queue(self.root)
         self.assertFalse(any(row["item_id"] == tiger_id for row in queue["unresolved_prerequisites"]))
         self.assertEqual(tiger["postgresql_range"], {"from": "18.6", "to": "18.6"})
+        self.assertEqual(tiger["postgresql_version"], "18.6")
         selected = queue_tool.select_batch(queue, 100, "PostGIS TIGER Geocoder", "linux-x86_64")["selected_items"]
         selected_ids = [item["id"] for item in selected]
         self.assertIn(tiger_id, selected_ids)

@@ -35,7 +35,7 @@ class ExtensionArchivePlanTests(unittest.TestCase):
             {"version": "17.2", "release_date": "2025-10-01"},
         ]}
 
-    def test_compact_group_contains_one_selected_minor_and_its_sql_names(self):
+    def test_group_targets_exact_selected_minor_and_its_sql_names(self):
         result = extension_archive_plan.plan(self.support, self.snapshot)
         groups = [item for item in result["candidate_archives"]
                   if item["project"] == "RangeProject" and item["platform"] == "linux-x86_64"]
@@ -43,13 +43,13 @@ class ExtensionArchivePlanTests(unittest.TestCase):
         self.assertEqual(set(by_major), {15, 16})
         group = by_major[15]
         self.assertEqual(group["postgresql_version"], "15.10")
-        self.assertEqual(group["postgresql_endpoint_versions"], {"from": "15.10", "to": "15.10"})
-        self.assertEqual(group["covered_postgresql_versions"], ["15.10"])
+        self.assertEqual(group["postgresql_version"], "15.10")
         self.assertEqual(group["sql_names"], ["range_a", "range_b"])
         self.assertEqual(group["covered_target_tuple_count"], 2)
-        self.assertEqual(by_major[16]["postgresql_endpoint_versions"], {"from": "16.6", "to": "16.6"})
+        self.assertEqual(by_major[16]["postgresql_version"], "16.6")
         self.assertEqual(by_major[16]["covered_target_tuple_count"], 2)
-        self.assertEqual(group["os_endpoint_labels"], ["minimum", "current"])
+        self.assertNotIn("postgresql_endpoint_versions", group)
+        self.assertNotIn("covered_postgresql_versions", group)
         self.assertEqual(group["status"], "candidate-unverified")
         self.assertEqual(group["publication_eligibility"], "not-established")
 
@@ -58,7 +58,7 @@ class ExtensionArchivePlanTests(unittest.TestCase):
         restricted = [item for item in result["candidate_archives"]
                       if item["project"] == "RestrictedProject"]
         self.assertEqual({item["platform"] for item in restricted}, {"linux-x86_64", "linux-arm64"})
-        self.assertTrue(all(item["covered_postgresql_versions"] == ["15.10"]
+        self.assertTrue(all(item["postgresql_version"] == "15.10"
                             for item in restricted))
         self.assertFalse(any("17." in str(item) for item in result["candidate_archives"]))
 

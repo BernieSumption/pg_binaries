@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Plan a bounded, deterministic batch of archive and endpoint verification work."""
+"""Plan a bounded, deterministic batch of archive and current-OS verification work."""
 
 import argparse
 import hashlib
@@ -51,40 +51,38 @@ def build_queue(root):
                 and row.get("postgresql_version") == pg and row.get("platform") == platform
                 and row.get("environment", {}).get("endpoint") == endpoint]
 
-    # Core work exists only for PostgreSQL versions tested at candidate range boundaries.
+    # Core work exists for each exact selected PostgreSQL target used by an extension group.
     core_verify_ids = {}
     for group in groups:
-        bounds = group["postgresql_endpoint_versions"]
-        for pg in sorted(set(bounds.values()), key=lambda v: coverage.version_parts(v, "endpoint")):
-            key = (pg, group["platform"])
-            if key not in core_targets:
-                continue
-            download = core_downloads.get(key)
-            build_id = _id("build-core", pg, group["platform"])
-            if build_id not in items:
-                add({"id": build_id, "kind": "build-core", "component": "postgresql", "version": pg,
-                     "postgresql_version": pg, "platform": group["platform"], "status": "complete" if download else "needed",
-                     "evidence": "inventory" if download else None, "depends_on": []})
-            for os_endpoint in ("minimum", "current"):
-                verify_id = _id("verify-core", pg, group["platform"], os_endpoint)
-                core_verify_ids[(pg, group["platform"], os_endpoint)] = verify_id
-                verified = bool(download and coverage.verified(records, download, "postgresql", pg,
-                                                                 group["platform"], pg, os_endpoint))
-                seen = observed("postgresql", pg, pg, group["platform"], os_endpoint)
-                if verify_id not in items:
-                    add({"id": verify_id, "kind": "verify-core", "component": "postgresql", "version": pg,
-                         "postgresql_version": pg, "platform": group["platform"], "endpoint": os_endpoint,
-                         "status": "complete" if verified else "needed",
-                         "evidence": "current-passing-record" if verified else
-                         ("retained-record-unbound-to-inventory" if seen else None),
-                         "observed_records": [] if verified else seen, "depends_on": [build_id]})
+        pg = group["postgresql_version"]
+        key = (pg, group["platform"])
+        if key not in core_targets:
+            continue
+        download = core_downloads.get(key)
+        build_id = _id("build-core", pg, group["platform"])
+        if build_id not in items:
+            add({"id": build_id, "kind": "build-core", "component": "postgresql", "version": pg,
+                 "postgresql_version": pg, "platform": group["platform"], "status": "complete" if download else "needed",
+                 "evidence": "inventory" if download else None, "depends_on": []})
+        os_endpoint = "current"
+        verify_id = _id("verify-core", pg, group["platform"], os_endpoint)
+        core_verify_ids[(pg, group["platform"], os_endpoint)] = verify_id
+        verified = bool(download and coverage.verified(records, download, "postgresql", pg,
+                                                         group["platform"], pg, os_endpoint))
+        seen = observed("postgresql", pg, pg, group["platform"], os_endpoint)
+        if verify_id not in items:
+            add({"id": verify_id, "kind": "verify-core", "component": "postgresql", "version": pg,
+                 "postgresql_version": pg, "platform": group["platform"], "endpoint": os_endpoint,
+                 "status": "complete" if verified else "needed",
+                 "evidence": "current-passing-record" if verified else
+                 ("retained-record-unbound-to-inventory" if seen else None),
+                 "observed_records": [] if verified else seen, "depends_on": [build_id]})
 
     for group in groups:
         project, version = group["project"], group["selected_version"]
         platform = group["platform"]
-        pg_versions = group["covered_postgresql_versions"]
-        endpoints = sorted(set(group["postgresql_endpoint_versions"].values()),
-                           key=lambda v: coverage.version_parts(v, "endpoint"))
+        pg = group["postgresql_version"]
+        pg_versions = [pg]
         sql_names = group["sql_names"]
         # Bind one project archive only when every declared SQL name maps to the same exact download.
         downloads_by_name = {}
@@ -100,13 +98,14 @@ def build_queue(root):
                          and len(signatures) == 1)
         archive_download = next(iter(next(iter(downloads_by_name.values()))))[1] if archive_bound else None
         group_id = _id("build-extension", project, version, platform, group["postgresql_major"])
-        build_pg = endpoints[-1]
+        build_pg = pg
         core_deps = [_id("build-core", build_pg, platform)]
         add({"id": group_id, "kind": "build-extension", "component": project, "project": project,
              "version": version, "platform": platform, "postgresql_major": group["postgresql_major"],
-             "postgresql_range": group["postgresql_endpoint_versions"],
+             "postgresql_version": pg,
+             "postgresql_range": {"from": pg, "to": pg},
              "build_postgresql_version": build_pg,
-             "covered_postgresql_versions": pg_versions, "sql_names": sql_names,
+             "sql_names": sql_names,
              "status": "complete" if archive_bound else "needed",
              "evidence": "inventory-project-archive-bound" if archive_bound else None,
              "range_status": "unverified",
@@ -114,28 +113,25 @@ def build_queue(root):
 
         # Each SQL name is checked at each distinct PostgreSQL boundary and OS endpoint.
         for name in sql_names:
-            for pg in endpoints:
-                exact_download = None
-                if archive_bound:
-                    exact_download = downloads_by_name[name][0][1]
-                for os_endpoint in ("minimum", "current"):
-                    verify_id = _id("verify-extension", project, version, platform, group["postgresql_major"],
-                                    name, pg, os_endpoint)
-                    core_dl = core_downloads.get((pg, platform))
-                    prereqs = coverage.expected_prerequisite_archives(
-                        support, extension_downloads, project, pg, platform)
-                    verified = bool(exact_download and core_dl and prereqs is not None and coverage.verified(
-                        records, exact_download, name, version, platform, pg, os_endpoint,
-                        assembled_core_sha256=core_dl["sha256"], prerequisite_archives=prereqs))
-                    seen = observed(name, version, pg, platform, os_endpoint)
-                    deps = [group_id, core_verify_ids[(pg, platform, os_endpoint)]]
-                    add({"id": verify_id, "kind": "verify-extension", "component": name, "project": project,
-                         "version": version, "postgresql_version": pg, "platform": platform,
-                         "postgresql_major": group["postgresql_major"], "endpoint": os_endpoint,
-                         "status": "complete" if verified else "needed",
-                         "evidence": "current-passing-record" if verified else
-                         ("retained-record-unbound-to-inventory" if seen else None),
-                         "observed_records": [] if verified else seen, "depends_on": deps})
+            exact_download = downloads_by_name[name][0][1] if archive_bound else None
+            os_endpoint = "current"
+            verify_id = _id("verify-extension", project, version, platform, group["postgresql_major"],
+                            name, pg, os_endpoint)
+            core_dl = core_downloads.get((pg, platform))
+            prereqs = coverage.expected_prerequisite_archives(
+                support, extension_downloads, project, pg, platform)
+            verified = bool(exact_download and core_dl and prereqs is not None and coverage.verified(
+                records, exact_download, name, version, platform, pg, os_endpoint,
+                assembled_core_sha256=core_dl["sha256"], prerequisite_archives=prereqs))
+            seen = observed(name, version, pg, platform, os_endpoint)
+            deps = [group_id, core_verify_ids[(pg, platform, os_endpoint)]]
+            add({"id": verify_id, "kind": "verify-extension", "component": name, "project": project,
+                 "version": version, "postgresql_version": pg, "platform": platform,
+                 "postgresql_major": group["postgresql_major"], "endpoint": os_endpoint,
+                 "status": "complete" if verified else "needed",
+                 "evidence": "current-passing-record" if verified else
+                 ("retained-record-unbound-to-inventory" if seen else None),
+                 "observed_records": [] if verified else seen, "depends_on": deps})
 
         prerequisite_groups = []
         prerequisite_ambiguous = False
@@ -174,18 +170,18 @@ def build_queue(root):
             candidate_group = next(row for row in groups
                                    if _id("build-extension", row["project"], row["selected_version"],
                                           row["platform"], row["postgresql_major"]) == candidate_id)
+            pg = candidate_group["postgresql_version"]
+            os_endpoint = "current"
             for name in candidate_group["sql_names"]:
-                for pg in set(candidate_group["postgresql_endpoint_versions"].values()):
-                    for os_endpoint in ("minimum", "current"):
-                        prerequisite_verify = _id("verify-extension", candidate_group["project"],
-                                                  candidate_group["selected_version"], candidate_group["platform"],
-                                                  candidate_group["postgresql_major"], name, pg, os_endpoint)
-                        for item in items.values():
-                            if (item.get("kind") == "verify-extension" and item.get("project") == project
-                                    and item.get("version") == version and item.get("platform") == platform
-                                    and item.get("postgresql_major") == group["postgresql_major"]
-                                    and item.get("postgresql_version") == pg and item.get("endpoint") == os_endpoint):
-                                item["depends_on"] = sorted(set(item["depends_on"] + [prerequisite_verify]))
+                prerequisite_verify = _id("verify-extension", candidate_group["project"],
+                                          candidate_group["selected_version"], candidate_group["platform"],
+                                          candidate_group["postgresql_major"], name, pg, os_endpoint)
+                for item in items.values():
+                    if (item.get("kind") == "verify-extension" and item.get("project") == project
+                            and item.get("version") == version and item.get("platform") == platform
+                            and item.get("postgresql_major") == group["postgresql_major"]
+                            and item.get("postgresql_version") == pg and item.get("endpoint") == os_endpoint):
+                        item["depends_on"] = sorted(set(item["depends_on"] + [prerequisite_verify]))
 
         checks = [item for item in items.values() if item.get("project") == project
                   and item.get("version") == version and item.get("platform") == platform
@@ -204,7 +200,7 @@ def build_queue(root):
         item.get("endpoint", ""), item["id"]))
     return {"snapshot_as_of": snapshot["as_of"], "work_items": ordered,
             "unresolved_prerequisites": unresolved,
-            "scope": "project archive groups by PostgreSQL major; verification covers exact PostgreSQL and OS endpoints"}
+            "scope": "project archive groups target exact selected PostgreSQL minors; routine verification uses the current OS endpoint"}
 
 
 def select_batch(queue, limit, project=None, platform=None, postgresql_major=None):
