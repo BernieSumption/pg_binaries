@@ -112,6 +112,21 @@ for package, payload_paths in sorted(packages.items()):
         if not path.is_file() or not path.stat().st_size:
             raise SystemExit(f"missing OpenSSL Apache-2.0 license text: {path}")
         entry["additional_license_files"] = [additional]
+    elif package == "libxml2":
+        if (version, source_package, source_version) != (
+                "2.9.13+dfsg-1ubuntu0.14", "libxml2", "2.9.13+dfsg-1ubuntu0.14"):
+            raise SystemExit(
+                "unexpected libxml2 source identity: "
+                f"{version} {source_package} {source_version}"
+            )
+        additional = "libxml2-2.9.13-dict-notice.txt"
+        path = root / "LICENSES" / additional
+        if not path.is_file() or not path.stat().st_size:
+            raise SystemExit(f"missing libxml2 dict.c notice: {path}")
+        digest = hashlib.sha256(path.read_bytes()).hexdigest()
+        if digest != "5e67dfcf4fbeb9e1a224e1001ad7cd4cab6cadb7383cc173ccd09315f89b0d9a":
+            raise SystemExit(f"unexpected libxml2 dict.c notice: {path}")
+        entry["additional_license_files"] = [additional]
     elif package == "musl":
         if source_package != "musl":
             raise SystemExit(f"unexpected musl source package: {source_package}")

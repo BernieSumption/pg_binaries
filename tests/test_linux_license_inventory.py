@@ -36,6 +36,7 @@ class LinuxLicenseInventoryTests(unittest.TestCase):
             "#!/bin/sh\ncase \"$3\" in\n"
             "  libc6) source=glibc ;;\n  musl) source=musl ;;\n"
             "  libicu70) printf '70.1-2\\ticu\\t70.1-2\\n'; exit 0 ;;\n"
+            "  libxml2) printf '2.9.13+dfsg-1ubuntu0.14\\tlibxml2\\t2.9.13+dfsg-1ubuntu0.14\\n'; exit 0 ;;\n"
             "  libssl3) printf '3.0.2-0ubuntu1.30\\topenssl\\t3.0.2-0ubuntu1.30\\n'; exit 0 ;;\n"
             "  *) source=libexample ;;\nesac\n"
             "printf '1.2.3-4ubuntu5\\t%s\\t1.2.3-4ubuntu5\\n' \"$source\"\n"
@@ -215,6 +216,52 @@ class LinuxLicenseInventoryTests(unittest.TestCase):
         result = self.write_inventory()
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("unexpected ICU third-party notices", result.stderr)
+
+    def add_libxml2(self, metadata="2.9.13+dfsg-1ubuntu0.14\tlibxml2\t2.9.13+dfsg-1ubuntu0.14"):
+        (self.archive / "lib/runtime/libxml2.so.2").write_bytes(b"libxml2")
+        (self.archive / "LICENSES/libxml2.copyright").write_text("Ubuntu libxml2 copyright\n")
+        notice = REPO / "support/licences/libxml2-2.9.13-dict-notice.txt"
+        (self.archive / "LICENSES" / notice.name).write_bytes(notice.read_bytes())
+        self.mapping.write_text(
+            self.mapping.read_text() + "libxml2\tlib/runtime/libxml2.so.2\n"
+        )
+        (self.root / "bin/dpkg-query").write_text(
+            "#!/bin/sh\ncase \"$3\" in\n"
+            f"  libxml2) printf '{metadata}\n'; exit 0 ;;\n"
+            "  libc6) source=glibc ;;\n  musl) source=musl ;;\n"
+            "  *) source=libexample ;;\nesac\n"
+            "printf '1.2.3-4ubuntu5\t%s\t1.2.3-4ubuntu5\n' \"$source\"\n"
+        )
+        (self.root / "bin/dpkg-query").chmod(0o755)
+
+    def test_libxml2_inventory_includes_hash_checked_dict_notice_for_exact_package(self):
+        self.add_libxml2()
+        result = self.write_inventory()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        components = json.loads((self.archive / "LICENSES/inventory.json").read_text())["components"]
+        xml = next(entry for entry in components if entry.get("package") == "libxml2")
+        notice = "libxml2-2.9.13-dict-notice.txt"
+        self.assertEqual((xml["version"], xml["source_package"], xml["source_version"]),
+                         ("2.9.13+dfsg-1ubuntu0.14", "libxml2", "2.9.13+dfsg-1ubuntu0.14"))
+        self.assertEqual(xml["additional_license_files"], [notice])
+        self.assertEqual(
+            hashlib.sha256((self.archive / "LICENSES" / notice).read_bytes()).hexdigest(),
+            "5e67dfcf4fbeb9e1a224e1001ad7cd4cab6cadb7383cc173ccd09315f89b0d9a",
+        )
+
+    def test_libxml2_notice_requires_exact_identity_and_text(self):
+        for metadata, changed_notice in (
+                ("2.9.13+dfsg-1ubuntu0.15\tlibxml2\t2.9.13+dfsg-1ubuntu0.14", False),
+                ("2.9.13+dfsg-1ubuntu0.14\tother\t2.9.13+dfsg-1ubuntu0.14", False),
+                ("2.9.13+dfsg-1ubuntu0.14\tlibxml2\t2.9.13+dfsg-1ubuntu0.14", True)):
+            with self.subTest(metadata=metadata, changed_notice=changed_notice):
+                self.add_libxml2(metadata)
+                if changed_notice:
+                    (self.archive / "LICENSES/libxml2-2.9.13-dict-notice.txt").write_text("stale")
+                result = self.write_inventory()
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn("unexpected libxml2 dict.c notice" if changed_notice
+                              else "unexpected libxml2 source identity", result.stderr)
 
     def add_openssl(self, metadata="3.0.2-0ubuntu1.30\topenssl\t3.0.2-0ubuntu1.30"):
         (self.archive / "lib/runtime/libssl.so.3").write_bytes(b"openssl")

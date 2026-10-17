@@ -93,6 +93,16 @@ for pass in 1 2 3; do
           fi
           cp /usr/local/share/pg-binaries/icu-70.1-LICENSE.txt \
             "$root/LICENSES/libicu70-icu-70.1-LICENSE.txt"
+        elif [[ "$package" == libxml2 ]]; then
+          package_identity=$(dpkg-query -W -f='${Version} ${source:Package} ${source:Version}' libxml2)
+          read -r package_version source_package source_version <<< "$package_identity"
+          if [[ "$package_version" != 2.9.13+dfsg-1ubuntu0.14 || \
+                "$source_package" != libxml2 || "$source_version" != 2.9.13+dfsg-1ubuntu0.14 ]]; then
+            echo "Unexpected libxml2 source identity: $package_version $source_package $source_version" >&2
+            exit 1
+          fi
+          cp /usr/local/share/pg-binaries/libxml2-2.9.13-dict-notice.txt \
+            "$root/LICENSES/libxml2-2.9.13-dict-notice.txt"
         fi
         printf '%s\t%s\n' "$package" "lib/runtime/$library" >> /work/runtime-packages.tsv
       fi
