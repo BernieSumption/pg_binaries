@@ -1,0 +1,30 @@
+{
+  "architecture": "arm64",
+  "configuration_prerequisites": [
+    {
+      "name": "search_path",
+      "type": "postgresql_setting",
+      "value": "\"$user\",public,tiger"
+    },
+    {
+      "name": "fuzzystrmatch",
+      "type": "sql_extension",
+      "value": "CREATE EXTENSION fuzzystrmatch"
+    }
+  ],
+  "platform": "linux",
+  "postgresql_version": "18.6",
+  "project": "postgis_tiger_geocoder",
+  "requires": [
+    "PostGIS"
+  ],
+  "runtime_prerequisites": [],
+  "source": {
+    "sha256": "c33cfbfb40785db8754a36be66060e8d023773e7e1be8fb8a622bb3c48db9f54",
+    "url": "https://download.osgeo.org/postgis/source/postgis_tiger_geocoder/postgis_tiger_geocoder-2025.2.tar.gz"
+  },
+  "sql_names": [
+    "postgis_tiger_geocoder"
+  ],
+  "version": "2025.2"
+}
