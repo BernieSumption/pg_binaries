@@ -5,6 +5,25 @@ $pgVersion = $env:PG_VERSION
 if (-not $pgVersion -or $pgVersion -notmatch '^\d+\.\d+$') { throw 'PG_VERSION must be set to a PostgreSQL minor version selected by tools/plan_work.py' }
 $vectorVersion = '0.8.7'
 $repo = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
+$sourceRevision = $env:SOURCE_REVISION
+if (-not $sourceRevision) { $sourceRevision = $env:GITHUB_SHA }
+if (-not $sourceRevision) { $sourceRevision = (& git -C $repo rev-parse HEAD).Trim() }
+if ($sourceRevision -notmatch '^([0-9a-fA-F]{40}|[0-9a-fA-F]{64})$') {
+  throw "SOURCE_REVISION must be a full Git object ID: $sourceRevision"
+}
+$buildId = $env:BUILD_ID
+if (-not $buildId) {
+  if ($env:GITHUB_RUN_ID) {
+    $runAttempt = if ($env:GITHUB_RUN_ATTEMPT) { $env:GITHUB_RUN_ATTEMPT } else { '1' }
+    $buildId = "github-$($env:GITHUB_RUN_ID)-$runAttempt"
+  } else {
+    $buildId = "local-$([guid]::NewGuid().ToString('N'))"
+  }
+}
+if ($buildId -notmatch '^[A-Za-z0-9][A-Za-z0-9._-]*$') {
+  throw 'BUILD_ID may contain only letters, digits, dot, underscore and hyphen'
+}
+$buildConfiguration = "postgresql-$pgVersion;pgvector-$vectorVersion;builder=windows-runner;meson=debugoptimized;postgresql=icu,lz4,zstd,zlib,openssl,libxml,libxslt,no-readline;compiler=MSVC;pgvector=debug-symbols;runtime=vcpkg-dlls"
 $work = Join-Path $env:RUNNER_TEMP 'pg-binaries-windows-build'
 $dist = Join-Path $repo 'dist/windows'
 $vcpkgRoot = $env:VCPKG_INSTALLATION_ROOT
@@ -68,6 +87,9 @@ $pgManifest = [ordered]@{
   postgresql_version = $pgVersion
   platform = 'windows'
   architecture = 'x86_64'
+  build_id = $buildId
+  source_revision = $sourceRevision
+  build_configuration = $buildConfiguration
   included_extensions = $builtins
   source_sha256 = (Get-FileHash $pgSourceArchive -Algorithm SHA256).Hash.ToLowerInvariant()
   runtime_dependencies = @('ICU', 'LZ4', 'Zstandard', 'zlib', 'OpenSSL')
@@ -105,6 +127,11 @@ $vectorMetadata = [ordered]@{
   requires = @()
   configuration_prerequisites = @()
   runtime_prerequisites = @()
+  build_id = $buildId
+  source_revision = $sourceRevision
+  build_configuration = $buildConfiguration
+  platform = 'windows'
+  architecture = 'x86_64'
 }
 $vectorMetadata | ConvertTo-Json -Depth 5 | Set-Content -Encoding utf8 (Join-Path $work 'metadata.json')
 New-Item -ItemType Directory -Force $vectorArchiveRoot | Out-Null

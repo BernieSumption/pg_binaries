@@ -30,7 +30,7 @@ tar -xzf "$archives/$pg_name" -C "$work/first"
 tar -xzf "$archives/$vector_name" -C "$work/extension"
 
 python3 - "$work/first/postgresql" "$work/extension" "$architecture" "$pg_version" <<'PY'
-import json, pathlib, sys
+import json, pathlib, re, sys
 core, extension = map(pathlib.Path, sys.argv[1:3])
 pg = json.loads((core / 'manifest.json').read_text())
 vector = json.loads((extension / 'metadata.json').read_text())
@@ -40,12 +40,23 @@ for key, value in expected.items():
         raise SystemExit(f"PostgreSQL manifest mismatch: {key}: {pg.get(key)!r} != {value!r}")
 if pg.get("component") != "postgresql" or pg.get("version") != sys.argv[4]:
     raise SystemExit("PostgreSQL manifest mismatch")
+provenance_fields = ('build_id', 'source_revision', 'build_configuration', 'platform', 'architecture')
+provenance = {field: pg.get(field) for field in provenance_fields}
+if not isinstance(provenance['build_id'], str) or not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9._-]*', provenance['build_id']):
+    raise SystemExit('PostgreSQL build identifier is missing or invalid')
+if not isinstance(provenance['source_revision'], str) or not re.fullmatch(r'[0-9a-fA-F]{40}|[0-9a-fA-F]{64}', provenance['source_revision']):
+    raise SystemExit('PostgreSQL source revision is missing or invalid')
+if not isinstance(provenance['build_configuration'], str) or not provenance['build_configuration']:
+    raise SystemExit('PostgreSQL build configuration is missing')
 controls = {path.stem for path in (core / 'share/extension').glob('*.control')}
 if not controls or pg.get('included_extensions') != sorted(controls) or 'vector' in controls or 'uuid-ossp' not in controls:
     raise SystemExit('built-in extension inventory mismatch')
-if vector != {'project': 'pgvector', 'version': '0.8.7', 'sql_names': ['vector'],
-              'requires': [], 'configuration_prerequisites': [], 'runtime_prerequisites': []}:
+expected_vector = {'project': 'pgvector', 'version': '0.8.7', 'sql_names': ['vector'],
+                   'requires': [], 'configuration_prerequisites': [], 'runtime_prerequisites': []}
+if any(vector.get(key) != value for key, value in expected_vector.items()):
     raise SystemExit('pgvector metadata mismatch')
+if any(vector.get(field) != value for field, value in provenance.items()):
+    raise SystemExit('pgvector build provenance differs from PostgreSQL')
 for source in (extension / 'pgvector').rglob('*'):
     destination = core / source.relative_to(extension / 'pgvector')
     if destination.exists() or destination.is_symlink():

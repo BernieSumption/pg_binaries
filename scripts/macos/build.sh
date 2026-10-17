@@ -5,9 +5,31 @@ pg_version=${3:-18.6}
 vector_version=0.8.7
 architecture=${2:-$(uname -m)}
 script_dir=$(cd "$(dirname "$0")" && pwd)
+repo=$(cd "$script_dir/../.." && pwd)
 output_dir=$(mkdir -p "${1:?output directory required}" && cd "$1" && pwd)
 work_dir=$(mktemp -d "${RUNNER_TEMP:-/tmp}/pg-macos-pilot.XXXXXX")
 trap 'rm -rf "$work_dir"' EXIT
+
+source_revision=${SOURCE_REVISION:-${GITHUB_SHA:-}}
+if [[ -z $source_revision ]]; then
+  source_revision=$(git -C "$repo" rev-parse HEAD 2>/dev/null || true)
+fi
+if [[ ! $source_revision =~ ^([0-9a-fA-F]{40}|[0-9a-fA-F]{64})$ ]]; then
+  echo "SOURCE_REVISION must be a full Git object ID: $source_revision" >&2
+  exit 2
+fi
+build_id=${BUILD_ID:-}
+if [[ -z $build_id ]]; then
+  if [[ -n ${GITHUB_RUN_ID:-} ]]; then
+    build_id="github-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT:-1}"
+  else
+    build_id="local-$(python3 -c 'import uuid; print(uuid.uuid4())')"
+  fi
+fi
+if [[ ! $build_id =~ ^[A-Za-z0-9][A-Za-z0-9._-]*$ ]]; then
+  echo "BUILD_ID may contain only letters, digits, dot, underscore and hyphen" >&2
+  exit 2
+fi
 
 if [[ $(uname -s) != Darwin || $(uname -m) != "$architecture" ]]; then
   echo "This build requires native macOS $architecture" >&2
@@ -18,6 +40,7 @@ case "$architecture" in
   arm64) platform_arch=arm64 ;;
   *) echo "Unsupported macOS architecture: $architecture" >&2; exit 1 ;;
 esac
+build_configuration="postgresql-${pg_version};pgvector-${vector_version};builder=native-macos;deployment-target=11.0;configure=icu,openssl,lz4,zstd,libxml,libxslt,zlib,uuid-e2fs,no-readline;cflags=-O2,-g;pgvector-optflags=-O2,-g;runtime=bundled-dylibs"
 
 brew install icu4c openssl@3 lz4 zstd libxml2 libxslt e2fsprogs
 brew_prefixes=()
@@ -66,6 +89,9 @@ cat > "$package_dir/postgresql/manifest.json" <<EOF
   "postgresql_version": "$pg_version",
   "platform": "macos",
   "architecture": "$platform_arch",
+  "build_id": "$build_id",
+  "source_revision": "$source_revision",
+  "build_configuration": "$build_configuration",
   "included_extensions": $builtins,
   "capabilities": ["icu", "libc_collations", "lz4", "zstd_wal"]
 }
@@ -83,7 +109,7 @@ mv "$package_dir/pgvector/bundled-dependencies.json" "$package_dir/pgvector/LICE
 mv "$package_dir/pgvector/LICENSES/inventory.json" "$package_dir/pgvector/LICENSES/pgvector-dependency-inventory.json"
 
 cat > "$package_dir/metadata.json" <<EOF
-{"project":"pgvector","version":"${vector_version}","sql_names":["vector"],"requires":[],"configuration_prerequisites":[],"runtime_prerequisites":[]}
+{"project":"pgvector","version":"${vector_version}","sql_names":["vector"],"requires":[],"configuration_prerequisites":[],"runtime_prerequisites":[],"build_id":"${build_id}","source_revision":"${source_revision}","build_configuration":"${build_configuration}","platform":"macos","architecture":"${platform_arch}"}
 EOF
 
 python3 - "$package_dir" > "$work_dir/macho-paths.bin" <<'PY'

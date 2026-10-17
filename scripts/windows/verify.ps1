@@ -64,6 +64,12 @@ foreach ($field in @('sql_names', 'requires', 'configuration_prerequisites', 'ru
 if (@($vectorMetadata.sql_names).Count -ne 1 -or @($vectorMetadata.requires).Count -ne 0 -or
     @($vectorMetadata.configuration_prerequisites).Count -ne 0 -or
     @($vectorMetadata.runtime_prerequisites).Count -ne 0) { throw 'pgvector metadata prerequisites or SQL names are unexpected' }
+if ($pgManifest.build_id -notmatch '^[A-Za-z0-9][A-Za-z0-9._-]*$' -or
+    $pgManifest.source_revision -notmatch '^([0-9a-fA-F]{40}|[0-9a-fA-F]{64})$' -or
+    -not $pgManifest.build_configuration) { throw 'PostgreSQL build provenance is missing or invalid' }
+foreach ($field in @('build_id', 'source_revision', 'build_configuration', 'platform', 'architecture')) {
+  if ($vectorMetadata.$field -cne $pgManifest.$field) { throw "pgvector build provenance differs from PostgreSQL: $field" }
+}
 if (-not (Test-Path (Join-Path $pgRoot 'manifest.json')) -or
     -not (Test-Path (Join-Path $pgRoot 'LICENSES/PostgreSQL.txt')) -or
     -not (Test-Path (Join-Path $vectorRoot 'LICENSES/pgvector.txt')) -or
