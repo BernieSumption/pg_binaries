@@ -90,10 +90,11 @@ while IFS= read -r dylib; do
   fi
 
   echo "install_id=$(otool -D "$dylib" | sed -n '2p')" >> "$inspection"
-  otool -L "$dylib" | tail -n +2 | sed 's/^/linked=/' >> "$inspection"
+  linked=$(otool -L "$dylib" | tail -n +2)
+  echo "$linked" | sed 's/^/linked=/' >> "$inspection"
   awk '/cmd LC_RPATH/ { rpath=1; next } rpath && /path / { print "rpath=" $2; rpath=0 }' <<< "$load_commands" >> "$inspection"
-  if host_paths=$(grep -E '(/Users/runner|/private/var/folders|/opt/homebrew|/usr/local/lib|geos-floor\.)' <<< "$(otool -L "$dylib")
-$load_commands"); then
+  if host_paths=$(grep -E '(/Users/runner|/private/var/folders|/opt/homebrew|/usr/local/lib|geos-floor\.)' <<< "$linked
+$(tail -n +2 <<< "$load_commands")"); then
     echo "temporary_or_host_path_reference=found" >> "$inspection"
     echo "$host_paths" | sed 's/^/path_reference=/' >> "$inspection"
   else
