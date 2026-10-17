@@ -80,6 +80,7 @@ class LinuxTigerPublicationImportTests(unittest.TestCase):
             "guest_kernel=5.15.0-1109-kvm\n"
             "guest_architecture=x86_64\n"
             "PASS: TIGER Geocoder 2025.2 minimum-kernel archive verification\n")
+        (qemu / "qemu-serial.log").write_text("guest booted\n")
 
     def tearDown(self):
         self.temporary.cleanup()
@@ -156,7 +157,7 @@ class LinuxTigerPublicationImportTests(unittest.TestCase):
     def test_imports_records_and_compact_evidence_after_checksum_validation(self):
         retained = importer.import_run(self.root, self.core_artifact, self.postgis_artifact,
                                        self.tiger_artifact, self.run_id, self.architecture)
-        self.assertEqual(len(retained), 9)
+        self.assertEqual(len(retained), 10)
         record = self.root / "support/verification" / (
             f"postgis_tiger_geocoder-2025.2-postgresql-18.6-{self.platform}-current-{self.run_id}.json")
         self.assertEqual(json.loads(record.read_text())["outcome"], "passed")
@@ -166,6 +167,8 @@ class LinuxTigerPublicationImportTests(unittest.TestCase):
         compressed = steps.parent / "qemu/full-verifier.log.gz"
         self.assertEqual(importer.gzip.decompress(compressed.read_bytes()),
                          (self.tiger_artifact / "tiger-qemu/evidence/full-verifier.log").read_bytes())
+        serial = steps.parent / "qemu/qemu-serial.log.gz"
+        self.assertEqual(importer.gzip.decompress(serial.read_bytes()), b"guest booted\n")
         first_bytes = compressed.read_bytes()
         importer.import_run(self.root, self.core_artifact, self.postgis_artifact,
                             self.tiger_artifact, self.run_id, self.architecture)

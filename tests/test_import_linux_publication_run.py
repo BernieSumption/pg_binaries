@@ -1,0 +1,237 @@
+import hashlib
+import json
+from pathlib import Path
+import shutil
+import sys
+import tarfile
+import tempfile
+import unittest
+
+REPO = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(REPO / "tools"))
+import coverage
+import create_extension_publication_receipt as extension_receipts
+import create_linux_publication_receipt as core_receipts
+import emit_extension_publication_records as extension_emitter
+import emit_linux_publication_records as core_emitter
+import import_linux_publication_run as importer
+
+
+class LinuxPublicationRunImportTests(unittest.TestCase):
+    def setUp(self):
+        self.temporary = tempfile.TemporaryDirectory()
+        base = Path(self.temporary.name)
+        self.root = base / "root"
+        (self.root / "support").mkdir(parents=True)
+        for source in ("support.json", "support/verification-profiles.json",
+                       "support/postgresql-releases.json"):
+            destination = self.root / source
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(REPO / source, destination)
+        registry = coverage.load_json(self.root / "support/verification-profiles.json")
+        source_paths = set()
+        for profile_id, profile in registry["profiles"].items():
+            if profile_id.startswith(("linux-publication-", "postgis-publication-")):
+                source_paths.update(profile["sources"])
+        for source in source_paths:
+            source_path = source.partition("#profile-section=")[0]
+            destination = self.root / source_path
+            if not destination.exists():
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copyfile(REPO / source_path, destination)
+
+        self.core_artifact = base / "core-artifact"
+        self.postgis_artifact = base / "postgis-artifact"
+        self.core_dir = self.core_artifact / "pilot"
+        self.core_publication = self.core_dir / "publication"
+        self.postgis_dir = self.postgis_artifact / "postgis"
+        self.postgis_publication = self.postgis_artifact / "postgis-publication"
+        self.core_records = self.core_publication / "records"
+        self.postgis_records = self.postgis_publication / "records"
+        for directory in (self.core_records, self.postgis_records, self.postgis_dir):
+            directory.mkdir(parents=True, exist_ok=True)
+        self.run_id = "7654321"
+        self.architecture = "x86_64"
+        self.platform = "linux-x86_64"
+        self.core_name = f"postgresql-18.6-{self.platform}.tar.gz"
+        self.vector_name = f"pgvector-0.8.7-postgresql-18.6-{self.platform}.tar.gz"
+        self.postgis_name = f"postgis-3.6.4-postgresql-18.6-{self.platform}.tar.gz"
+        self.core_archive = self.core_dir / self.core_name
+        self.vector_archive = self.core_dir / self.vector_name
+        self.postgis_archive = self.postgis_dir / self.postgis_name
+        self.core_archive.write_bytes(b"postgresql archive fixture")
+        self.vector_archive.write_bytes(b"pgvector archive fixture")
+        self._metadata_archive(self.postgis_archive, {
+            "project": "postgis", "version": "3.6.4", "postgresql_version": "18.6",
+            "platform": "linux", "architecture": "x86_64",
+            "sql_names": coverage.load_json(self.root / "support.json")["extensions"]["PostGIS"]["sql_names"],
+            "requires": [],
+        })
+        for archive in (self.core_archive, self.vector_archive, self.postgis_archive):
+            self._write_sidecar(archive)
+        self._make_records()
+        self._make_guest_evidence(self.core_artifact / "qemu-linux-515" / "evidence",
+                                  [self.core_archive, self.vector_archive], "core")
+        self._make_guest_evidence(self.postgis_artifact / "postgis-qemu" / "evidence",
+                                  [self.core_archive, self.postgis_archive], "postgis")
+        self._write_symbol_indexes()
+        diagnostic = self.core_dir / "diagnostics/postgresql-error"
+        diagnostic.mkdir(parents=True)
+        (diagnostic / "server.log").write_text("controlled server diagnostic\n")
+
+    def tearDown(self):
+        self.temporary.cleanup()
+
+    @staticmethod
+    def _sha(path):
+        return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+
+    @classmethod
+    def _write_sidecar(cls, archive):
+        archive = Path(archive)
+        archive.with_name(archive.name + ".sha256").write_text(
+            f"{cls._sha(archive)}  {archive.name}\n", encoding="utf-8")
+
+    @staticmethod
+    def _metadata_archive(path, metadata):
+        temporary = Path(path).with_suffix(".json")
+        temporary.write_text(json.dumps(metadata), encoding="utf-8")
+        with tarfile.open(path, "w:gz") as archive:
+            archive.add(temporary, arcname="metadata.json")
+        temporary.unlink()
+
+    def _make_records(self):
+        revision = "a" * 40
+        environ = {
+            "GITHUB_SHA": revision, "GITHUB_RUN_ID": self.run_id,
+            "GITHUB_REPOSITORY": "example/repo", "GITHUB_SERVER_URL": "https://github.com",
+        }
+        for endpoint in ("current", "minimum"):
+            kernel = "6.8.0" if endpoint == "current" else "5.15.0-1109-kvm"
+            distribution = "Ubuntu 24.04" if endpoint == "current" else "Ubuntu 22.04.5 LTS"
+            image = "sha256:" + "b" * 64
+            core_profile = f"linux-publication-{endpoint}-{self.architecture}"
+            core_steps = self.core_publication / f"{endpoint}-steps.json"
+            core_steps.write_text(json.dumps({case: "success" for case in
+                coverage.verification_profile(self.root, core_profile)["case_ids"]}), encoding="utf-8")
+            core_receipt_path = self.core_publication / f"{endpoint}-receipt.json"
+            core_receipts.create(
+                self.root, self.core_dir, core_receipt_path, core_profile, "18.6",
+                self.architecture, endpoint, kernel, distribution,
+                "24.04" if endpoint == "current" else "22.04", image,
+                "linux-runtime-v1", "success", True, core_steps, environ=environ)
+            core_emitter.emit(self.root, self.core_dir, core_receipt_path, self.core_records)
+
+            postgis_profile = f"postgis-publication-{endpoint}-{self.architecture}"
+            postgis_steps = self.postgis_publication / f"{endpoint}-steps.json"
+            postgis_steps.write_text(json.dumps({case: "success" for case in
+                coverage.verification_profile(self.root, postgis_profile)["case_ids"]}), encoding="utf-8")
+            postgis_receipt_path = self.postgis_publication / f"{endpoint}-receipt.json"
+            extension_receipts.create(
+                self.root, self.postgis_dir, self.core_dir, postgis_receipt_path,
+                postgis_profile, "PostGIS", "3.6.4", "18.6", "18.6",
+                self.architecture, endpoint, kernel, distribution,
+                "24.04" if endpoint == "current" else "22.04", image,
+                "success", True, postgis_steps, environ=environ,
+                prerequisite_archives={})
+            extension_emitter.emit(self.root, self.postgis_dir, self.core_dir,
+                                    postgis_receipt_path, self.postgis_records, {})
+
+    def _make_guest_evidence(self, directory, archives, kind):
+        directory.mkdir(parents=True)
+        checksums = "".join(f"{self._sha(path)}  {path.name}\n" for path in archives)
+        (directory / "archive-checksums.sha256").write_text(checksums, encoding="utf-8")
+        (directory / "environment.txt").write_text(
+            f"test_revision={'a' * 40}\nimage_sha256={'b' * 64}\n", encoding="utf-8")
+        marker = ("PASS: PostgreSQL 18.6 and pgvector on Ubuntu 22.04 Linux 5.15.0-1109-kvm"
+                  if kind == "core" else
+                  "PASS: PostGIS 3.6.4 minimum-kernel archive verification")
+        (directory / "full-verifier.log").write_text(
+            "guest_os=Ubuntu 22.04.5 LTS\n"
+            "guest_kernel=5.15.0-1109-kvm\n"
+            "guest_architecture=x86_64\n" + marker + "\n", encoding="utf-8")
+        (directory / "qemu-serial.log").write_text("QEMU ended cleanly\n", encoding="utf-8")
+
+    def _write_symbol_indexes(self):
+        for directory in (self.core_dir / "debug-symbols", self.postgis_dir / "debug-symbols"):
+            directory.mkdir(parents=True)
+            (directory / "index.json").write_text("{\"symbols\": []}\n", encoding="utf-8")
+
+    def test_imports_current_profile_records_and_compact_evidence_idempotently(self):
+        retained = importer.import_run(self.root, self.core_artifact, self.postgis_artifact,
+                                       self.run_id, self.architecture)
+        self.assertEqual(len(list((self.root / "support/verification").glob(f"*-{self.run_id}.json"))), 12)
+        core_evidence = self.root / "support/evidence" / f"linux-publication-{self.run_id}/x86_64"
+        postgis_evidence = self.root / "support/evidence" / f"postgis-publication-{self.run_id}/x86_64"
+        self.assertTrue((core_evidence / "debug-symbols-index.json").is_file())
+        self.assertTrue((core_evidence / "diagnostics/postgresql-error/server.log").is_file())
+        self.assertTrue((postgis_evidence / "full-verifier.log.gz").is_file())
+        self.assertFalse(any(".tar.gz" in path for path in retained))
+        first = (core_evidence / "full-verifier.log.gz").read_bytes()
+        importer.import_run(self.root, self.core_artifact, self.postgis_artifact,
+                            self.run_id, self.architecture)
+        self.assertEqual((core_evidence / "full-verifier.log.gz").read_bytes(), first)
+
+    def test_retains_raw_step_outcomes_when_archives_and_receipts_are_absent(self):
+        for path in (*self.core_records.glob("*.json"), *self.postgis_records.glob("*.json")):
+            path.unlink()
+        for publication in (self.core_publication, self.postgis_publication):
+            for endpoint in ("current", "minimum"):
+                (publication / f"{endpoint}-receipt.json").unlink()
+        for archive in (self.core_archive, self.vector_archive, self.postgis_archive):
+            archive.unlink()
+            archive.with_name(archive.name + ".sha256").unlink()
+        retained = importer.import_run(self.root, self.core_artifact, self.postgis_artifact,
+                                       self.run_id, self.architecture)
+        self.assertEqual(len(retained), 4)
+        self.assertTrue((self.root / "support/evidence" / f"linux-publication-{self.run_id}/x86_64/current-steps.json").is_file())
+        self.assertTrue((self.root / "support/evidence" / f"postgis-publication-{self.run_id}/x86_64/minimum-steps.json").is_file())
+
+    def test_rejects_sidecar_record_and_guest_checksum_mismatches(self):
+        sidecar = self.core_archive.with_name(self.core_name + ".sha256")
+        sidecar.write_text(f"{'0' * 64}  {self.core_name}\n", encoding="utf-8")
+        with self.assertRaisesRegex(coverage.CoverageError, "checksum does not match"):
+            importer.import_run(self.root, self.core_artifact, self.postgis_artifact,
+                                self.run_id, self.architecture)
+        self._write_sidecar(self.core_archive)
+        guest = self.postgis_artifact / "postgis-qemu/evidence/archive-checksums.sha256"
+        guest.write_text(guest.read_text().replace(self._sha(self.postgis_archive), "0" * 64))
+        with self.assertRaisesRegex(coverage.CoverageError, "checksum list"):
+            importer.import_run(self.root, self.core_artifact, self.postgis_artifact,
+                                self.run_id, self.architecture)
+
+    def test_rejects_step_receipt_disagreement_and_differing_retained_evidence(self):
+        steps = self.core_publication / "current-steps.json"
+        data = json.loads(steps.read_text())
+        data["diagnostics"] = "failure"
+        steps.write_text(json.dumps(data), encoding="utf-8")
+        with self.assertRaisesRegex(coverage.CoverageError, "receipt identity or outcomes"):
+            importer.import_run(self.root, self.core_artifact, self.postgis_artifact,
+                                self.run_id, self.architecture)
+        steps.write_text(json.dumps({case: "success" for case in
+            coverage.verification_profile(self.root, "linux-publication-current-x86_64")["case_ids"]}), encoding="utf-8")
+        target = self.root / "support/evidence" / f"linux-publication-{self.run_id}/x86_64/current-steps.json"
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text("different evidence\n", encoding="utf-8")
+        with self.assertRaisesRegex(coverage.CoverageError, "refusing to replace"):
+            importer.import_run(self.root, self.core_artifact, self.postgis_artifact,
+                                self.run_id, self.architecture)
+
+    def test_rejects_invalid_run_identity_and_record_checksum(self):
+        with self.assertRaisesRegex(coverage.CoverageError, "run_id"):
+            importer.import_run(self.root, self.core_artifact, self.postgis_artifact,
+                                "bad-run", self.architecture)
+        with self.assertRaisesRegex(coverage.CoverageError, "architecture"):
+            importer.import_run(self.root, self.core_artifact, self.postgis_artifact,
+                                self.run_id, "riscv64")
+        record_path = next(self.core_records.glob(f"*-current-{self.run_id}.json"))
+        record = json.loads(record_path.read_text())
+        record["sha256"] = "0" * 64
+        record_path.write_text(json.dumps(record), encoding="utf-8")
+        with self.assertRaisesRegex(coverage.CoverageError, "archive checksum does not match"):
+            importer.import_run(self.root, self.core_artifact, self.postgis_artifact,
+                                self.run_id, self.architecture)
+
+
+if __name__ == "__main__":
+    unittest.main()

@@ -244,7 +244,6 @@ def import_run(root, core_artifact, postgis_artifact, tiger_artifact, run_id, ar
         source = evidence_dir / relative
         if source.is_file():
             copies.append((source, evidence_target / "qemu" / relative))
-    full_log = evidence_dir / "full-verifier.log"
     for source in record_sources:
         copies.append((source, verification_target / source.name))
     for source, destination in copies:
@@ -252,16 +251,18 @@ def import_run(root, core_artifact, postgis_artifact, tiger_artifact, run_id, ar
             raise coverage.CoverageError(f"refusing to replace retained evidence {destination}")
     for source, destination in copies:
         _copy(source, destination)
-    compressed_log = evidence_target / "qemu/full-verifier.log.gz"
-    if full_log.is_file():
-        evidence_target.mkdir(parents=True, exist_ok=True)
-        if compressed_log.exists():
-            with gzip.open(compressed_log, "rb") as stream:
-                if stream.read() != full_log.read_bytes():
-                    raise coverage.CoverageError(f"refusing to replace retained evidence {compressed_log}")
-        else:
-            _gzip_copy(full_log, compressed_log)
-        copies.append((full_log, compressed_log))
+    for name in ("full-verifier.log", "qemu-serial.log"):
+        log = evidence_dir / name
+        compressed_log = evidence_target / "qemu" / f"{name}.gz"
+        if log.is_file():
+            evidence_target.mkdir(parents=True, exist_ok=True)
+            if compressed_log.exists():
+                with gzip.open(compressed_log, "rb") as stream:
+                    if stream.read() != log.read_bytes():
+                        raise coverage.CoverageError(f"refusing to replace retained evidence {compressed_log}")
+            else:
+                _gzip_copy(log, compressed_log)
+            copies.append((log, compressed_log))
     return [str(destination.relative_to(root)) for _, destination in copies]
 
 
