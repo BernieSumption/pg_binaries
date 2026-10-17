@@ -152,7 +152,7 @@ DO $$ BEGIN IF (SELECT embedding <-> '[1,0,0]'::vector FROM relocation_probe) <>
 SQL
 runuser -u postgres -- /tmp/first/postgresql/bin/pg_ctl -D /tmp/first-data -m fast -w stop
 trap - EXIT
-mv /tmp/first/postgresql /tmp/moved/postgresql
+runuser -u postgres -- mv /tmp/first/postgresql /tmp/moved/postgresql
 pgroot=/tmp/moved/postgresql
 mkdir -p /tmp/pgdata /tmp/pgsocket
 chown postgres:postgres /tmp/pgdata /tmp/pgsocket
