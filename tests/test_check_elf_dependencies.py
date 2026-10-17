@@ -53,6 +53,87 @@ class ElfInspectionTests(unittest.TestCase):
                     checker.validate_paths(binary, prefix, "x86_64", None, [search_path])
 
 
+VERSION_NEEDS = """Version needs section '.gnu.version_r' contains 1 entry:
+ Addr: 0x0000000000000800  Offset: 0x000800  Link: 7 (.dynstr)
+  0x000000: Version: 1  File: libc.so.6  Cnt: 2
+  0x0010:   Name: GLIBC_2.34  Flags: none  Version: 3
+  0x0020:   Name: GLIBC_2.2.5  Flags: WEAK  Version: 2
+"""
+
+
+class SymbolVersionTests(unittest.TestCase):
+    def inspect(self, output, stderr=""):
+        result = subprocess.CompletedProcess([], 0, output, stderr)
+        with patch.object(checker.subprocess, "run", return_value=result) as run:
+            parsed = checker.symbol_version_requirements(Path("fixture"))
+        self.assertEqual(run.call_args.args[0], ["readelf", "-VW", "fixture"])
+        self.assertEqual(run.call_args.kwargs["env"]["LC_ALL"], "C")
+        return parsed
+
+    def test_records_library_versions_and_weak_flags(self):
+        self.assertEqual(self.inspect(VERSION_NEEDS), [{"library": "libc.so.6", "versions": [
+            {"name": "GLIBC_2.34", "flags": "none", "index": 3},
+            {"name": "GLIBC_2.2.5", "flags": "WEAK", "index": 2},
+        ]}])
+
+    def test_accepts_explicit_absence_of_versions(self):
+        self.assertEqual(self.inspect("No version information found in this file.\n"), [])
+
+    def test_rejects_malformed_and_incomplete_output(self):
+        for output in ("", "unrecognized", VERSION_NEEDS.replace("Cnt: 2", "Cnt: 3"),
+                       VERSION_NEEDS.replace("contains 1 entry", "contains 2 entries"),
+                       VERSION_NEEDS.replace("Name: GLIBC_2.34", "Broken: GLIBC_2.34")):
+            with self.subTest(output=output), self.assertRaises(ValueError):
+                self.inspect(output)
+        with self.assertRaisesRegex(ValueError, "diagnostics"):
+            self.inspect(VERSION_NEEDS, "readelf: corrupt version table")
+
+    def test_unavailable_version_inspection_fails(self):
+        with patch.object(checker.subprocess, "run", side_effect=FileNotFoundError("readelf")):
+            with self.assertRaises(FileNotFoundError):
+                checker.symbol_version_requirements(Path("fixture"))
+
+
+class DependencyClosureTests(unittest.TestCase):
+    def check_fixture(self, bundled_loader, external_library):
+        with tempfile.TemporaryDirectory() as temp:
+            prefix = Path(temp).resolve()
+            binary = prefix / "tool"
+            binary.write_bytes(b"\x7fELFfixture")
+            if bundled_loader:
+                loader = prefix / "lib/glibc/ld-linux-x86-64.so.2"
+                loader.parent.mkdir(parents=True)
+                loader.write_bytes(b"\x7fELFfixture")
+            external = prefix.parent / (prefix.name + "-external.so")
+            external.write_bytes(b"fixture")
+            try:
+                output = (f"libdirect.so => {prefix}/libdirect.so (0x123)\n"
+                          f"{external_library} => {external} (0x456)\n")
+                (prefix / "libdirect.so").write_bytes(b"fixture")
+                report = {"inspected_files": [], "files": []}
+                with patch.object(checker, "inspect_elf", return_value=("x86_64", None, [])), \
+                        patch.object(checker, "symbol_version_requirements", return_value=[{"library": "libc.so.6", "versions": []}]), \
+                        patch.object(checker, "static_executable", return_value=False), \
+                        patch.object(checker.subprocess, "run", return_value=subprocess.CompletedProcess([], 0, output, "")):
+                    checker.check(prefix, "x86_64", report)
+                return report
+            finally:
+                external.unlink()
+
+    def test_rejects_transitive_unbundled_dependency(self):
+        with self.assertRaisesRegex(ValueError, "unbundled dependency: libtransitive.so"):
+            self.check_fixture(True, "libtransitive.so")
+
+    def test_bundled_loader_rejects_external_libc(self):
+        with self.assertRaisesRegex(ValueError, "unbundled dependency: libc.so.6"):
+            self.check_fixture(True, "libc.so.6")
+
+    def test_system_libc_boundary_without_bundled_loader(self):
+        report = self.check_fixture(False, "libc.so.6")
+        self.assertEqual(report["files"][0]["symbol_version_requirements"],
+                         [{"library": "libc.so.6", "versions": []}])
+
+
 class ArchiveReportTests(unittest.TestCase):
     def test_archive_evidence_binds_basename_and_exact_bytes(self):
         with tempfile.TemporaryDirectory() as temp:

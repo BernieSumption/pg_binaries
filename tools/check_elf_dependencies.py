@@ -4,6 +4,7 @@
 import argparse
 import hashlib
 import json
+import os
 from pathlib import Path
 import re
 import struct
@@ -79,6 +80,48 @@ def inspect_elf(path):
     return architecture, interpreter, search_paths
 
 
+def symbol_version_requirements(path):
+    result = subprocess.run(["readelf", "-VW", str(path)], check=True,
+                            capture_output=True, text=True, env={**os.environ, "LC_ALL": "C"})
+    if result.stderr.strip():
+        raise ValueError(f"ELF version inspection diagnostics: {result.stderr.strip()}")
+    output = result.stdout.strip()
+    if output == "No version information found in this file.":
+        return []
+    if not re.search(r"^Version (?:symbols|definition|needs) section ", output, re.M):
+        raise ValueError("unrecognized ELF version information")
+    requirements = []
+    for section in re.split(r"(?=^Version )", output, flags=re.M):
+        if not section.startswith("Version needs section "):
+            continue
+        lines = section.strip().splitlines()
+        header = re.fullmatch(r"Version needs section '.+' contains (\d+) entr(?:y|ies):", lines[0])
+        if not header or len(lines) < 2 or not re.fullmatch(
+                r"\s*Addr: 0x[0-9a-fA-F]+\s+Offset: 0x[0-9a-fA-F]+\s+Link: \d+ \(.+\)", lines[1]):
+            raise ValueError("malformed ELF version-needs header")
+        files = 0
+        remaining = 0
+        current = None
+        for line in lines[2:]:
+            file_match = re.fullmatch(r"\s*(?:0x)?[0-9a-fA-F]+:\s+Version: 1\s+File: (\S+)\s+Cnt: (\d+)", line)
+            version_match = re.fullmatch(r"\s*(?:0x)?[0-9a-fA-F]+:\s+Name: (\S+)\s+Flags: (.+?)\s+Version: (\d+)", line)
+            if file_match and not remaining:
+                files += 1
+                remaining = int(file_match.group(2))
+                current = {"library": file_match.group(1), "versions": []}
+                requirements.append(current)
+            elif version_match and remaining:
+                current["versions"].append({"name": version_match.group(1),
+                                            "flags": version_match.group(2),
+                                            "index": int(version_match.group(3))})
+                remaining -= 1
+            else:
+                raise ValueError(f"malformed ELF version-needs entry: {line.strip()}")
+        if remaining or files != int(header.group(1)):
+            raise ValueError("incomplete ELF version-needs entries")
+    return requirements
+
+
 def validate_paths(path, prefix, architecture, interpreter, search_paths):
     if interpreter:
         if interpreter not in INTERPRETERS[architecture]:
@@ -137,12 +180,14 @@ def check(prefix, expected_architecture=None, report=None):
             report["inspected_files"].append(path.relative_to(prefix).as_posix())
         try:
             file_architecture, interpreter, search_paths = inspect_elf(path)
+            version_requirements = symbol_version_requirements(path)
             if report is not None:
                 report["files"].append({
                     "path": path.relative_to(prefix).as_posix(),
                     "architecture": file_architecture,
                     "interpreter": interpreter,
                     "runtime_search_paths": search_paths,
+                    "symbol_version_requirements": version_requirements,
                 })
             if file_architecture != architecture:
                 raise ValueError(f"ELF architecture is {file_architecture}; expected {architecture}")
@@ -211,6 +256,7 @@ def main():
             "Static ELF inspection does not find libraries loaded dynamically by application code.",
             "It does not inspect data-file access or absolute paths in non-runtime metadata.",
             "Dependency closure reflects the bundled loader --list result for the inspected files.",
+            "Symbol versions are recorded as evidence; bundled runtime versions do not define a host glibc floor.",
         ],
     }
     try:
