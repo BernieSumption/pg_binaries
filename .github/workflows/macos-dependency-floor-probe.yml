@@ -1,0 +1,64 @@
+name: macOS dependency floor probe
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: macos-15
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: microsoft/vcpkg
+          ref: bf19794383e8fb95eba5aa553235bc8ec2271688
+          path: vcpkg
+      - name: Build dependencies for macOS 11
+        run: |
+          mkdir -p "$RUNNER_TEMP/triplets" "$RUNNER_TEMP/results"
+          cat > "$RUNNER_TEMP/triplets/arm64-macos11.cmake" <<'EOF'
+          set(VCPKG_TARGET_ARCHITECTURE arm64)
+          set(VCPKG_CRT_LINKAGE dynamic)
+          set(VCPKG_LIBRARY_LINKAGE dynamic)
+          set(VCPKG_CMAKE_SYSTEM_NAME Darwin)
+          set(VCPKG_OSX_DEPLOYMENT_TARGET "11.0")
+          EOF
+          ./vcpkg/bootstrap-vcpkg.sh -disableMetrics
+          VCPKG_BINARY_SOURCES=clear ./vcpkg/vcpkg install \
+            icu openssl lz4 zstd 'libxml2[icu]' libxslt \
+            --triplet=arm64-macos11 --overlay-triplets="$RUNNER_TEMP/triplets" \
+            --x-install-root="$RUNNER_TEMP/installed"
+      - name: Inspect compiled library targets
+        if: ${{ always() }}
+        run: |
+          python3 - "$RUNNER_TEMP/installed/arm64-macos11" "$RUNNER_TEMP/results/floors.json" <<'PY'
+          import json, pathlib, re, subprocess, sys
+          root, output = map(pathlib.Path, sys.argv[1:])
+          entries = []
+          for path in sorted(root.rglob('*.dylib')):
+              result = subprocess.run(['otool', '-l', str(path)], capture_output=True, text=True)
+              if result.returncode:
+                  continue
+              versions = re.findall(r'^\s*minos (\d+(?:\.\d+)+)', result.stdout, re.MULTILINE)
+              if not versions:
+                  versions = re.findall(r'^\s*version (\d+(?:\.\d+)+)', result.stdout, re.MULTILINE)
+              entries.append({'file': str(path.relative_to(root)), 'minimum_os': versions})
+          output.write_text(json.dumps(entries, indent=2) + '\n')
+          print(f'Inspected {len(entries)} dylibs')
+          for entry in entries:
+              if not entry['minimum_os'] or any(tuple(map(int, v.split('.'))) > (11, 0) for v in entry['minimum_os']):
+                  print(entry)
+          if not entries or any(not entry['minimum_os'] or any(tuple(map(int, v.split('.'))) > (11, 0) for v in entry['minimum_os']) for entry in entries):
+              raise SystemExit('One or more dependency libraries do not target macOS 11.0')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: ${{ always() }}
+        with:
+          name: macos-dependency-floor-results
+          path: ${{ runner.temp }}/results/*.json
+          if-no-files-found: warn
+          retention-days: 3
