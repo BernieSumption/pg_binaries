@@ -28,7 +28,7 @@ class PublicationPreflightTests(unittest.TestCase):
                            for name in ("macos", "windows", "linux")},
             "architectures": ["x86_64", "arm64"],
             "platform_architectures": {"macos": ["x86_64", "arm64"], "windows": ["x86_64"], "linux": ["x86_64", "arm64"]},
-            "extensions": {"Example": {"sql_names": ["example"], "versions": {
+            "extensions": {"Example": {"sql_names": ["example"], "requires": [], "versions": {
                 "1.0": {"postgresql_minimum_major": 15}}}},
         }
         self.snapshot = {
@@ -69,7 +69,7 @@ class PublicationPreflightTests(unittest.TestCase):
     def _add_extension(self, platform, content):
         url, checksum = self._stage(content, f"example-{platform}-1.0.tar.gz")
         self.candidate["extensions"].setdefault("example", {}).setdefault("1.0", {
-            "downloads": {}})["downloads"][platform] = [{
+            "requires": [], "downloads": {}})["downloads"][platform] = [{
                 "postgresql_support": {"from": "15.0", "to": "15.9"},
                 "url": url, "sha256": checksum,
             }]
@@ -81,6 +81,13 @@ class PublicationPreflightTests(unittest.TestCase):
             member = tarfile.TarInfo("example/lib/example.so")
             member.size = len(payload)
             archive.addfile(member, io.BytesIO(payload))
+            metadata = json.dumps({"project": "example", "version": "1.0",
+                                   "sql_names": ["example"], "requires": [],
+                                   "configuration_prerequisites": [],
+                                   "runtime_prerequisites": []}).encode()
+            member = tarfile.TarInfo("metadata.json")
+            member.size = len(metadata)
+            archive.addfile(member, io.BytesIO(metadata))
             self._licence_members(archive, "example", "lib")
         payload = path.read_bytes()
         checksum = hashlib.sha256(payload).hexdigest()
@@ -101,8 +108,9 @@ class PublicationPreflightTests(unittest.TestCase):
             member.size = len(data)
             archive.addfile(member, io.BytesIO(data))
 
-    def _rewrite_extension(self, transform):
-        url = next(url for url in self.staged if "example-linux-x86_64" in url)
+    def _rewrite_extension(self, transform, url=None):
+        if url is None:
+            url = next(url for url in self.staged if "example-linux-x86_64" in url)
         path = Path(self.staged[url]["path"])
         with tarfile.open(path, "r:gz") as archive:
             contents = {m.name: archive.extractfile(m).read() for m in archive.getmembers()}
@@ -163,32 +171,43 @@ class PublicationPreflightTests(unittest.TestCase):
         self.check()
 
     def test_rejects_absent_inventory_or_licence_text(self):
-        for name in ("inventory.json", "COPYING"):
-            with self.subTest(name=name):
-                self.setUp()
-                self._rewrite_extension(lambda contents: contents.pop("example/LICENSES/" + name))
-                with self.assertRaises(publication_preflight.PreflightError):
-                    self.check()
+        url = next(url for url in self.staged if "example-macos-x86_64" in url)
+        self._rewrite_extension(lambda contents: contents.pop("example/LICENSES/inventory.json"), url)
+        with self.assertRaises(publication_preflight.PreflightError):
+            self.check()
 
-    def test_rejects_invalid_component_mapping_and_inventory_schema(self):
-        mutations = [
-            lambda inventory: inventory.update(schema_version=2),
-            lambda inventory: inventory.update(components=[]),
-            lambda inventory: inventory["components"][0].pop("version"),
-            lambda inventory: inventory["components"][0].update(payload_paths=["missing/lib"]),
-            lambda inventory: inventory["components"][0].update(additional_license_files=["missing.txt"]),
-        ]
-        for mutate in mutations:
-            with self.subTest(mutate=mutate):
-                self.setUp()
-                def transform(contents):
-                    name = "example/LICENSES/inventory.json"
-                    inventory = json.loads(contents[name])
-                    mutate(inventory)
-                    contents[name] = json.dumps(inventory).encode()
-                self._rewrite_extension(transform)
-                with self.assertRaises(publication_preflight.PreflightError):
-                    self.check()
+    def test_rejects_absent_licence_text(self):
+        url = next(url for url in self.staged if "example-macos-arm64" in url)
+        self._rewrite_extension(lambda contents: contents.pop("example/LICENSES/COPYING"), url)
+        with self.assertRaises(publication_preflight.PreflightError):
+            self.check()
+
+    def _assert_invalid_licence_inventory(self, mutate):
+        def transform(contents):
+            name = "example/LICENSES/inventory.json"
+            inventory = json.loads(contents[name])
+            mutate(inventory)
+            contents[name] = json.dumps(inventory).encode()
+        self._rewrite_extension(transform)
+        with self.assertRaises(publication_preflight.PreflightError):
+            self.check()
+
+    def test_rejects_invalid_licence_inventory_schema_version(self):
+        self._assert_invalid_licence_inventory(lambda inventory: inventory.update(schema_version=2))
+
+    def test_rejects_empty_licence_inventory_components(self):
+        self._assert_invalid_licence_inventory(lambda inventory: inventory.update(components=[]))
+
+    def test_rejects_licence_component_without_version(self):
+        self._assert_invalid_licence_inventory(lambda inventory: inventory["components"][0].pop("version"))
+
+    def test_rejects_unmapped_licence_payload(self):
+        self._assert_invalid_licence_inventory(
+            lambda inventory: inventory["components"][0].update(payload_paths=["missing/lib"]))
+
+    def test_rejects_missing_additional_licence_file(self):
+        self._assert_invalid_licence_inventory(
+            lambda inventory: inventory["components"][0].update(additional_license_files=["missing.txt"]))
 
     def test_rejects_traversal_in_evidence_path(self):
         self._review(status="resolved", basis="Reviewed", source_obligation="source-offer",
@@ -246,14 +265,100 @@ class PublicationPreflightTests(unittest.TestCase):
         self.assertEqual(report["extension_target_count"], 5)
         self.assertNotIn("release_eligible", report)
 
+    def test_accepts_one_project_archive_for_multiple_sql_names(self):
+        self.support["extensions"]["Example"]["sql_names"].append("example_aux")
+        for platform, records in self.candidate["extensions"]["example"]["1.0"]["downloads"].items():
+            for record in records:
+                self.candidate["extensions"].setdefault("example_aux", {}).setdefault("1.0", {
+                    "requires": [], "downloads": {}})["downloads"][platform] = [dict(record)]
+        for url, asset in self.staged.items():
+            if "example-" not in url:
+                continue
+            with tarfile.open(asset["path"], "r:gz") as archive:
+                contents = {m.name: archive.extractfile(m).read() for m in archive.getmembers()}
+            metadata = json.loads(contents["metadata.json"])
+            metadata["sql_names"] = ["example", "example_aux"]
+            contents["metadata.json"] = json.dumps(metadata).encode()
+            with tarfile.open(asset["path"], "w:gz") as archive:
+                for name, data in contents.items():
+                    member = tarfile.TarInfo(name)
+                    member.size = len(data)
+                    archive.addfile(member, io.BytesIO(data))
+            checksum = hashlib.sha256(Path(asset["path"]).read_bytes()).hexdigest()
+            asset["sha256"] = checksum
+            self.candidate["verification_evidence"][url][0]["sha256"] = checksum
+            for sql_name in ("example", "example_aux"):
+                for records in self.candidate["extensions"][sql_name]["1.0"]["downloads"].values():
+                    for record in records:
+                        if record["url"] == url:
+                            record["sha256"] = checksum
+        self.assertEqual(self.check()["extension_target_count"], 10)
+
+    def _rewrite_metadata(self, transform):
+        def rewrite(contents):
+            metadata = json.loads(contents["metadata.json"])
+            transform(metadata)
+            contents["metadata.json"] = json.dumps(metadata).encode()
+        self._rewrite_extension(rewrite)
+
+    def test_rejects_missing_extension_metadata(self):
+        self._rewrite_extension(lambda contents: contents.pop("metadata.json"))
+        with self.assertRaisesRegex(publication_preflight.PreflightError, "requires a regular metadata.json"):
+            self.check()
+
+    def test_rejects_malformed_extension_metadata_json(self):
+        self._rewrite_extension(lambda contents: contents.update({"metadata.json": b"{"}))
+        with self.assertRaisesRegex(publication_preflight.PreflightError, "cannot read staged extension metadata"):
+            self.check()
+
+    def test_rejects_wrong_extension_metadata_sql_names(self):
+        self._rewrite_metadata(lambda metadata: metadata.update(sql_names=["other"]))
+        with self.assertRaisesRegex(publication_preflight.PreflightError, "sql_names do not match support"):
+            self.check()
+
+    def test_rejects_wrong_extension_metadata_requires(self):
+        self._rewrite_metadata(lambda metadata: metadata.update(requires=["other-project"]))
+        with self.assertRaisesRegex(publication_preflight.PreflightError, "requires does not match candidate"):
+            self.check()
+
+    def test_requires_configuration_prerequisites_array(self):
+        self._rewrite_metadata(lambda metadata: metadata.pop("configuration_prerequisites"))
+        with self.assertRaisesRegex(publication_preflight.PreflightError, "requires configuration_prerequisites list"):
+            self.check()
+
+    def test_configuration_prerequisites_must_be_array(self):
+        self._rewrite_metadata(lambda metadata: metadata.update(configuration_prerequisites={}))
+        with self.assertRaisesRegex(publication_preflight.PreflightError, "requires configuration_prerequisites list"):
+            self.check()
+
+    def test_requires_runtime_prerequisites_array(self):
+        self._rewrite_metadata(lambda metadata: metadata.pop("runtime_prerequisites"))
+        with self.assertRaisesRegex(publication_preflight.PreflightError, "requires runtime_prerequisites list"):
+            self.check()
+
+    def test_runtime_prerequisites_must_be_array(self):
+        self._rewrite_metadata(lambda metadata: metadata.update(runtime_prerequisites="none"))
+        with self.assertRaisesRegex(publication_preflight.PreflightError, "requires runtime_prerequisites list"):
+            self.check()
+
+    def test_rejects_extension_metadata_version_mismatch(self):
+        self._rewrite_metadata(lambda metadata: metadata.update(version="2.0"))
+        with self.assertRaisesRegex(publication_preflight.PreflightError, "project or version"):
+            self.check()
+
+    def test_rejects_extension_archive_extra_root(self):
+        self._rewrite_extension(lambda contents: contents.update({"other/file": b"unsafe root"}))
+        with self.assertRaisesRegex(publication_preflight.PreflightError, "only the project payload root"):
+            self.check()
+
     def test_verification_evidence_is_required_and_bound_to_candidate_checksum(self):
         url = next(iter(self.candidate["verification_evidence"]))
+        original_evidence = self.candidate["verification_evidence"][url]
         del self.candidate["verification_evidence"][url]
         with self.assertRaisesRegex(publication_preflight.PreflightError, "no verification evidence"):
             self.check()
 
-        self.setUp()
-        url = next(iter(self.candidate["verification_evidence"]))
+        self.candidate["verification_evidence"][url] = original_evidence
         self.candidate["verification_evidence"][url][0]["sha256"] = "0" * 64
         with self.assertRaisesRegex(publication_preflight.PreflightError, "verification record checksum"):
             self.check()

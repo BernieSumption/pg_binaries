@@ -40,7 +40,8 @@ FILENAME = re.compile(r"^[A-Za-z0-9._+-]+\.tar\.gz$")
 def merge_candidate(base_inventory, proposed_entries, support, snapshot, root=None):
     """Return an unpublished structural draft containing base entries and proposals.
 
-    Each proposal has ``component`` (``postgresql`` or an inventory SQL name),
+    Each proposal has ``component`` (``postgresql``, an inventory SQL name, or
+    a declared extension project name),
     ``version``, ``platform``, ``tag``, ``filename``, ``sha256``, and
     ``verification``. Extension proposals also have ``postgresql_support``.
     Verification is a list of coverage-style records, with passed evidence for
@@ -61,6 +62,10 @@ def merge_candidate(base_inventory, proposed_entries, support, snapshot, root=No
     candidate.setdefault("schema_version", 1)
     candidate.setdefault("postgresql", {})
     candidate.setdefault("extensions", {})
+    if ("os_support" in candidate
+            and candidate["os_support"] != support.get("os_support")):
+        raise CandidateError("base inventory os_support differs from declared support")
+    candidate["os_support"] = deepcopy(support["os_support"])
     candidate["candidate_status"] = "structural-draft"
     candidate_evidence = candidate["verification_evidence"] = {}
     seen_targets, seen_urls = set(), set()
@@ -118,13 +123,21 @@ def merge_candidate(base_inventory, proposed_entries, support, snapshot, root=No
         else:
             target = None
             ext_versions = support.get("extensions", {})
-            sql_name = component
-            selected = next(((project, policy) for project, ext in ext_versions.items()
-                             for name in ext.get("sql_names", []) if name == sql_name
-                             for policy in [ext.get("versions", {}).get(version)] if policy), None)
-            if selected is None:
+            if component in ext_versions:
+                project = component
+                extension = ext_versions[project]
+                sql_names = extension.get("sql_names", [])
+                policy = extension.get("versions", {}).get(version)
+            else:
+                selected = next(((project_name, ext, policy) for project_name, ext in ext_versions.items()
+                                 for name in ext.get("sql_names", []) if name == component
+                                 for policy in [ext.get("versions", {}).get(version)] if policy), None)
+                if selected is None:
+                    raise CandidateError(f"unsupported extension target {component} {version}")
+                project, extension, policy = selected
+                sql_names = [component]
+            if not policy:
                 raise CandidateError(f"unsupported extension target {component} {version}")
-            project, policy = selected
             if filename[:marker] != project.lower():
                 raise CandidateError("extension filename must identify the declared project")
             pg_range = item.get("postgresql_support")
@@ -141,7 +154,6 @@ def merge_candidate(base_inventory, proposed_entries, support, snapshot, root=No
                       <= version_parts(pg_target, "filename PostgreSQL build version")
                       <= version_parts(high, "candidate range")):
                 raise CandidateError("filename PostgreSQL build version falls outside the inventory claim")
-            target_key = ("extension", component, version, platform, low, high)
             minimum_major = policy.get("postgresql_minimum_major", support["postgresql"]["minimum_major"])
             maximum_major = policy.get("postgresql_maximum_major")
             if (version_parts(low, "candidate range")[0] < minimum_major
@@ -151,26 +163,36 @@ def merge_candidate(base_inventory, proposed_entries, support, snapshot, root=No
             relevant = [pg for pg in releases
                         if version_parts(low, "candidate range") <= version_parts(pg, "candidate range")
                         <= version_parts(high, "candidate range")]
-            if not relevant or any((component, version, pg, platform) not in expected_extensions for pg in relevant):
+            if (not relevant or any((sql_name, version, pg, platform) not in expected_extensions
+                                    for sql_name in sql_names for pg in relevant)):
                 raise CandidateError("extension range includes unsupported PostgreSQL targets")
+            target_keys = [("extension", sql_name, version, platform, low, high)
+                           for sql_name in sql_names]
         if url in base_urls:
             raise CandidateError("candidate asset URL must be new")
         if url in seen_urls:
             raise CandidateError("candidate asset URL is reused")
-        if target_key in seen_targets:
-            raise CandidateError(f"duplicate target {target_key}")
-        seen_targets.add(target_key)
+        if component == "postgresql":
+            target_keys = [target_key]
+        for target_key in target_keys:
+            if target_key in seen_targets:
+                raise CandidateError(f"duplicate target {target_key}")
+            seen_targets.add(target_key)
         seen_urls.add(url)
 
         required_pg = [version] if component == "postgresql" else [low, high]
         records = item.get("verification")
         if not isinstance(records, list):
             raise CandidateError("missing verification evidence")
-        for pg in required_pg:
-            for endpoint in ("minimum", "current"):
-                if not any(_evidence_matches(r, download, component, version, platform, pg, endpoint, support, root)
-                           for r in records):
-                    raise CandidateError(f"missing passed {endpoint} verification for {component} {version} {pg} {platform}")
+        evidence_components = [component] if component == "postgresql" else sql_names
+        for evidence_component in evidence_components:
+            for pg in required_pg:
+                for endpoint in ("minimum", "current"):
+                    if not any(_evidence_matches(r, download, evidence_component, version, platform, pg,
+                                                 endpoint, support, root)
+                               for r in records):
+                        raise CandidateError(
+                            f"missing passed {endpoint} verification for {evidence_component} {version} {pg} {platform}")
 
         candidate_evidence[url] = deepcopy(records)
 
@@ -180,14 +202,20 @@ def merge_candidate(base_inventory, proposed_entries, support, snapshot, root=No
             downloads = version_entry.setdefault("downloads", {})
             downloads[platform] = download
         else:
-            downloads = (candidate["extensions"].setdefault(component, {})
-                         .setdefault(version, {}).setdefault("downloads", {}))
-            ranges = downloads.setdefault(platform, [])
-            for existing in ranges:
-                a, b = existing["postgresql_support"]["from"], existing["postgresql_support"]["to"]
-                if version_parts(low, "candidate range") <= version_parts(b, "candidate range") and version_parts(a, "candidate range") <= version_parts(high, "candidate range"):
-                    raise CandidateError(f"overlapping extension range for {component} {version} {platform}")
-            ranges.append(download)
+            for sql_name in sql_names:
+                extension_entry = candidate["extensions"].setdefault(sql_name, {}).setdefault(version, {})
+                requires = extension.get("requires", [])
+                if "requires" in extension_entry and extension_entry["requires"] != requires:
+                    raise CandidateError(f"inconsistent extension requirements for {sql_name} {version}")
+                extension_entry["requires"] = deepcopy(requires)
+                downloads = extension_entry.setdefault("downloads", {})
+                ranges = downloads.setdefault(platform, [])
+                for existing in ranges:
+                    a, b = existing["postgresql_support"]["from"], existing["postgresql_support"]["to"]
+                    if (version_parts(low, "candidate range") <= version_parts(b, "candidate range")
+                            and version_parts(a, "candidate range") <= version_parts(high, "candidate range")):
+                        raise CandidateError(f"overlapping extension range for {sql_name} {version} {platform}")
+                ranges.append(download)
     return candidate
 
 
