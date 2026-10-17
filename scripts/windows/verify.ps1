@@ -54,6 +54,8 @@ if ($controls.Count -eq 0 -or @($pgManifest.included_extensions).Count -ne $cont
   throw 'Built-in extension inventory does not match the extracted archive'
 }
 $vectorMetadata = Get-Content $metadataPath -Raw | ConvertFrom-Json
+& $python (Join-Path $repo 'tools/check_source_identity.py') --platform windows --postgresql-version $pgVersion --core-manifest (Join-Path $pgRoot 'manifest.json') --vector-metadata $metadataPath
+if ($LASTEXITCODE -ne 0) { throw 'Packaged source identity differs from the selected archives' }
 foreach ($field in @('project', 'version', 'sql_names', 'requires', 'configuration_prerequisites', 'runtime_prerequisites')) {
   if ($null -eq $vectorMetadata.$field) { throw "pgvector metadata is missing $field" }
 }

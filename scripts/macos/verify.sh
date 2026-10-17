@@ -30,6 +30,10 @@ python3 "$repo/tools/check_macos_license_inventory.py" "$archives/$vector_name"
 mkdir -p "$work/first" "$work/extension" "$work/moved" "$work/socket"
 tar -xzf "$archives/$pg_name" -C "$work/first"
 tar -xzf "$archives/$vector_name" -C "$work/extension"
+python3 "$repo/tools/check_source_identity.py" --platform macos \
+  --postgresql-version "$pg_version" \
+  --core-manifest "$work/first/postgresql/manifest.json" \
+  --vector-metadata "$work/extension/metadata.json"
 
 python3 - "$work/first/postgresql" "$work/extension" "$architecture" "$pg_version" <<'PY'
 import json, pathlib, re, sys

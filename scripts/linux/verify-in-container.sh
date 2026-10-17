@@ -114,6 +114,9 @@ expected_vector = {
 assert all(m.get(key) == value for key, value in expected_vector.items()), m
 assert {field: m[field] for field in provenance_fields} == provenance, m
 PY
+python3 /verification/tools/check_source_identity.py --root /verification --platform linux \
+  --postgresql-version "$pg_version" \
+  --core-manifest /tmp/first/postgresql/manifest.json --vector-metadata /tmp/vector/metadata.json
 test -s /tmp/vector/pgvector/LICENSES/pgvector.txt
 pgroot=/tmp/first/postgresql
 extroot=/tmp/vector/pgvector
