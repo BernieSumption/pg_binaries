@@ -19,7 +19,7 @@ if [[ ! $build_id =~ ^[A-Za-z0-9][A-Za-z0-9._-]*$ || ! $source_revision =~ ^([0-
   echo "Invalid Linux build provenance" >&2
   exit 2
 fi
-build_configuration="postgresql-${pg_version};pgvector-${vector_version};builder=ubuntu-22.04;configure=icu,lz4,zstd,openssl,libxml,libxslt,zlib,uuid-e2fs,no-readline;cflags=-O2,-g;pgvector-optflags=empty;runtime=bundled-glibc-static-musl-launcher"
+build_configuration="postgresql-${pg_version};pgvector-${vector_version};builder=ubuntu-22.04;configure=icu,lz4,zstd,openssl,libxml,libxslt,zlib,uuid-e2fs,no-readline,no-rpath;cflags=-O2,-g;pgvector-optflags=empty;runtime=bundled-glibc-static-musl-launcher"
 pg_archive="postgresql-${pg_version}-linux-${architecture}.tar.gz"
 vector_archive="pgvector-${vector_version}-postgresql-${pg_version}-linux-${architecture}.tar.gz"
 mkdir -p /work/src /work/stage/postgresql /work/stage/pgvector /out
@@ -27,7 +27,7 @@ cd /work/src
 curl -fL --retry 3 -o postgresql.tar.bz2 "https://ftp.postgresql.org/pub/source/v${pg_version}/postgresql-${pg_version}.tar.bz2"
 tar -xf postgresql.tar.bz2
 cd "postgresql-${pg_version}"
-CFLAGS='-O2 -g' ./configure --prefix=/opt/postgresql --with-icu --with-lz4 --with-zstd \
+CFLAGS='-O2 -g' ./configure --prefix=/opt/postgresql --disable-rpath --with-icu --with-lz4 --with-zstd \
   --with-openssl --with-libxml --with-libxslt --with-zlib --with-uuid=e2fs --without-readline
 make -j "$(nproc)"
 make install
