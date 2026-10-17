@@ -19,6 +19,7 @@ on:
       - tools/coverage.py
       - tools/discover_builtins.py
       - tools/create_macos_symbols.py
+      - tools/check_macos_license_inventory.py
       - tools/emit_macos_pilot_records.py
       - tests/schema.sql
       - tests/builtins/**
@@ -26,6 +27,7 @@ on:
       - tests/test_emit_macos_pilot_records.py
       - tests/test_macos_static_analysis.py
       - tests/test_create_macos_symbols.py
+      - tests/test_macos_license_inventory.py
       - .github/workflows/macos-pilot.yml
 
 permissions:

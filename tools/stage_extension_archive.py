@@ -119,6 +119,33 @@ def merge_payload(payload, prefix):
     merge(payload, prefix)
 
 
+def _relocate_licenses(payload, project):
+    """Place extension licence evidence below LICENSES/<project>."""
+    licenses = payload / "LICENSES"
+    if not licenses.exists() and not licenses.is_symlink():
+        raise StagingError("extension payload is missing LICENSES/inventory.json")
+    if licenses.is_symlink() or not licenses.is_dir():
+        raise StagingError("extension LICENSES path must be a directory")
+
+    destination = licenses / project
+    if destination.exists() and (destination.is_symlink() or not destination.is_dir()):
+        raise StagingError(f"extension licence path collision: LICENSES/{project}")
+    destination.mkdir(exist_ok=True)
+    for entry in list(licenses.iterdir()):
+        if entry == destination:
+            continue
+        target = destination / entry.name
+        if target.exists() or target.is_symlink():
+            raise StagingError(f"extension licence path collision: LICENSES/{project}/{entry.name}")
+    for entry in list(licenses.iterdir()):
+        if entry == destination:
+            continue
+        entry.rename(destination / entry.name)
+    inventory = destination / "inventory.json"
+    if inventory.is_symlink() or not inventory.is_file():
+        raise StagingError("extension payload is missing LICENSES/inventory.json")
+
+
 def select_and_stage(inventory, support, postgresql_version, platform_key,
                      project, extension_version, sql_name, archive_directory,
                      prefix, staging_root):
@@ -154,6 +181,7 @@ def select_and_stage(inventory, support, postgresql_version, platform_key,
     _extract_checked(archive_path, stage_path)
     payload = _metadata(stage_path, project.lower().replace(" ", "_"),
                         extension_version, platform, architecture, sql_name)
+    _relocate_licenses(payload, project.lower().replace(" ", "_"))
     merge_payload(payload, prefix)
     return download
 

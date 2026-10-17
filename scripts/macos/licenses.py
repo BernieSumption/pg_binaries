@@ -2,6 +2,7 @@
 """Collect licence texts for libraries embedded in a pilot archive."""
 
 import argparse
+import hashlib
 import json
 import pathlib
 import re
@@ -118,6 +119,38 @@ known_urls = {
 }
 pending_review = {"status": "pending", "basis": "Redistribution terms and source obligations require review.",
                   "source_obligation": "unknown"}
+reviewed_source = {
+    ("icu4c", "78.3"): (
+        "3a2e7a47604ba702f345878308e6fefeca612ee895cf4a5f222e7955fabfe0c0",
+        "e55522d81edc687a341a4411e0776e54ca654e90147f354a90458aaced4116af",
+        {"libicudata.78.3.dylib", "libicui18n.78.3.dylib", "libicuuc.78.3.dylib"},
+        "ICU 78.3 release LICENSE contains the Unicode License v3 and third-party notices for its binary libraries and data; retaining that text permits redistribution without source delivery. https://unicode-org.github.io/icu/userguide/icu/release.html",
+    ),
+    ("libxslt", "1.1.45"): (
+        "9acfe68419c4d06a45c550321b3212762d92f41465062ca4ea19e632ee5d216e",
+        "7e48e290b6bfccc2ec1b297023a1d77f2fd87417f71fbb9f50aabef40a851819",
+        {"libxslt.1.dylib"},
+        "libxslt 1.1.45 Copyright contains the permission and copyright notice for its bundled library; retaining that text permits binary redistribution without source delivery. https://gitlab.gnome.org/GNOME/libxslt/-/tags/v1.1.45",
+    ),
+    ("lz4", "1.10.0"): (
+        "537512904744b35e232912055ccf8ec66d768639ff3abe5788d90d792ec5f48b",
+        "8b58c446121a109ccf32edc094bba3010a3d85e4ee3702950db55e4d3e87736c",
+        {"liblz4.1.10.0.dylib"},
+        "LZ4 1.10.0 lib/LICENSE applies BSD-2-Clause to this library-only payload; retaining its notice permits binary redistribution without source delivery. https://github.com/lz4/lz4/blob/v1.10.0/lib/LICENSE",
+    ),
+    ("openssl", "3.5.8"): (
+        "a8f84a39918ec6415ce765d9b429d313ba97b8143169c172e734b9514464f5b2",
+        "7d5450cb2d142651b8afa315b5f238efc805dad827d91ba367d8516bc9d49e7a",
+        {"libcrypto.3.dylib", "libssl.3.dylib"},
+        "OpenSSL 3.5.8 LICENSE.txt grants Apache-2.0 redistribution of these libraries with the included licence; the source tag has no root NOTICE file and imposes no source-delivery condition. https://github.com/openssl/openssl/blob/openssl-3.5.8/LICENSE.txt",
+    ),
+    ("zstd", "1.5.7"): (
+        "eb33e51f49a15e023950cd7825ca74a4a2b43db8354825ac24fc1b7ee09e6fa3",
+        "7055266497633c9025b777c78eb7235af13922117480ed5c674677adc381c9d8",
+        {"libzstd.1.5.7.dylib"},
+        "Zstandard 1.5.7 LICENSE permits BSD-3-Clause redistribution of this library-only payload with the included notice and no source delivery. https://github.com/facebook/zstd/blob/v1.5.7/LICENSE",
+    ),
+}
 inventory = []
 
 def payload_paths(libraries):
@@ -143,6 +176,14 @@ for (origin_kind, name, version), libraries in sorted(formulas.items()):
         origin = source_component["license_source"]
         entry = dependency_entry(name, version, libraries, target, origin)
         entry.update({key: source_component[key] for key in ("source_url", "source_sha256")})
+        reviewed = reviewed_source.get((name, version))
+        if reviewed is not None:
+            source_digest, licence_digest, expected_libraries, basis = reviewed
+            if (source_component["source_sha256"] == source_digest
+                    and hashlib.sha256(target.read_bytes()).hexdigest() == licence_digest
+                    and set(libraries) == expected_libraries):
+                entry["redistribution_review"] = {
+                    "status": "resolved", "basis": basis, "source_obligation": "none"}
         additional = source_component.get("additional_license_files", [])
         if not isinstance(additional, list):
             raise SystemExit(f"additional_license_files must be a list for {name}")

@@ -292,11 +292,11 @@ Sources: [upstream compatibility, build and preload guidance](https://github.com
 
 ## pgtap — include
 
-Description: [pgTAP](https://github.com/theory/pgtap) adds database assertion functions for testing SQL schemas and migrations. Its SQL extension names are `pgtap`, `pgtap-core` and `pgtap-schema`.
+Description: [pgTAP](https://github.com/theory/pgtap) adds database assertion functions for testing SQL schemas and migrations. Its SQL extension name is `pgtap`. The upstream 1.3.4 release also generates `pgtap-core` and `pgtap-schema` SQL files, but has no control files for those names, so they are not separate `CREATE EXTENSION` identities.
 
 For inclusion: Database-level tests are a common application development need. The project is maintained and available in Debian packages. Its installed functions use SQL and PL/pgSQL, so they add no independent native library or architecture-specific runtime. The PostgreSQL License permits redistribution.
 
-Against inclusion: The upstream source build uses Perl to generate installation SQL, and the optional `pg_prove` harness has a separate Perl dependency. Neither is required to execute the installed SQL functions. Packaging must keep all three SQL extension identities and their upgrade files consistent; each requires a representative schema test.
+Against inclusion: The upstream source build uses Perl to generate installation SQL, and the optional `pg_prove` harness has a separate Perl dependency. Neither is required to execute the installed SQL functions. Packaging must preserve the upstream installed SQL and upgrade files; test `CREATE EXTENSION pgtap` and representative assertions.
 
 Version policy: Apply the shared version support rule to published compatible releases; exclude unreleased changelog entries.
 

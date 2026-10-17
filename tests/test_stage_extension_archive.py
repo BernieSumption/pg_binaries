@@ -39,7 +39,7 @@ class StageExtensionArchiveTests(unittest.TestCase):
             for version, download in self.downloads.items()
         }
 
-    def write_archive(self, path, version, file_name):
+    def write_archive(self, path, version, file_name, nested_licenses=False):
         metadata = ("{\"project\":\"example_project\","
                     f"\"version\":\"{version}\",\"platform\":\"linux\","
                     "\"architecture\":\"x86_64\",\"sql_names\":[\"example\"],"
@@ -47,6 +47,11 @@ class StageExtensionArchiveTests(unittest.TestCase):
                     "\"runtime_prerequisites\":[]}").encode()
         with tarfile.open(path, "w:gz") as archive:
             self.add_file(archive, "example_project/" + file_name, b"module")
+            license_root = "example_project/LICENSES"
+            if nested_licenses:
+                license_root += "/example_project"
+            self.add_file(archive, license_root + "/inventory.json", b'{"schema_version":1,"components":[{}]}')
+            self.add_file(archive, license_root + "/COPYING", b"licence text")
             self.add_file(archive, "metadata.json", metadata)
 
     @staticmethod
@@ -68,6 +73,8 @@ class StageExtensionArchiveTests(unittest.TestCase):
         self.stage("2.1", new_prefix)
         self.assertEqual(selected["url"], self.downloads["2.0"]["url"])
         self.assertTrue((old_prefix / "lib/old.so").is_file())
+        self.assertTrue((old_prefix / "LICENSES/example_project/inventory.json").is_file())
+        self.assertEqual((old_prefix / "LICENSES/example_project/COPYING").read_bytes(), b"licence text")
         self.assertFalse((old_prefix / "lib/new.so").exists())
         self.assertTrue((new_prefix / "lib/new.so").is_file())
         self.assertFalse((new_prefix / "lib/old.so").exists())
@@ -79,6 +86,35 @@ class StageExtensionArchiveTests(unittest.TestCase):
         self.assertFalse((old_stage / "example_project/lib/new.so").exists())
         self.assertTrue((new_stage / "example_project/lib/new.so").is_file())
         self.assertFalse((new_stage / "example_project/lib/old.so").exists())
+
+    def test_stages_legacy_nested_license_layout_without_extra_nesting(self):
+        archive_path = self.archives / "example-2.0-linux-x86_64.tar.gz"
+        self.write_archive(archive_path, "2.0", "lib/old.so", nested_licenses=True)
+        download = self.downloads["2.0"]
+        download["sha256"] = hashlib.sha256(archive_path.read_bytes()).hexdigest()
+        prefix = self.root / "prefix"
+        self.stage("2.0", prefix)
+        self.assertTrue((prefix / "LICENSES/example_project/inventory.json").is_file())
+        self.assertFalse((prefix / "LICENSES/example_project/example_project").exists())
+
+    def test_preserves_core_license_inventory_when_staging_extension(self):
+        prefix = self.root / "prefix"
+        (prefix / "LICENSES").mkdir(parents=True)
+        (prefix / "LICENSES/inventory.json").write_text("core inventory")
+        self.stage("2.0", prefix)
+        self.assertEqual((prefix / "LICENSES/inventory.json").read_text(), "core inventory")
+        self.assertTrue((prefix / "LICENSES/example_project/inventory.json").is_file())
+
+    def test_rejects_missing_extension_license_inventory(self):
+        archive_path = self.archives / "example-2.0-linux-x86_64.tar.gz"
+        self.write_archive(archive_path, "2.0", "lib/old.so")
+        # Keep only the module and metadata in this archive.
+        with tarfile.open(archive_path, "w:gz") as archive:
+            self.add_file(archive, "example_project/lib/old.so", b"module")
+            self.add_file(archive, "metadata.json", b'{"project":"example_project","version":"2.0","platform":"linux","architecture":"x86_64","sql_names":["example"],"requires":[],"configuration_prerequisites":[],"runtime_prerequisites":[]}')
+        self.downloads["2.0"]["sha256"] = hashlib.sha256(archive_path.read_bytes()).hexdigest()
+        with self.assertRaisesRegex(staging.StagingError, "LICENSES/inventory.json"):
+            self.stage("2.0", self.root / "prefix")
 
     def test_rejects_archive_whose_inventory_range_excludes_selected_core(self):
         self.inventory["extensions"]["example"]["2.0"]["downloads"]["linux-x86_64"][0][

@@ -40,7 +40,7 @@ case "$architecture" in
   arm64) platform_arch=arm64 ;;
   *) echo "Unsupported macOS architecture: $architecture" >&2; exit 1 ;;
 esac
-build_configuration="postgresql-${pg_version};pgvector-${vector_version};builder=native-macos;deployment-target=11.0;configure=icu,openssl,lz4,zstd,libxml,libxslt,zlib,uuid-e2fs,no-readline;dependencies=pinned-upstream-source;cflags=-O2,-g;pgvector-optflags=-O2,-g;runtime=bundled-dylibs"
+build_configuration="postgresql-${pg_version};pgvector-${vector_version};builder=native-macos;deployment-target=11.0;configure=icu,openssl,lz4,zstd,libxml,libxslt,zlib,uuid-e2fs-interface-apple-system,no-readline;dependencies=pinned-upstream-source;cflags=-O2,-g;pgvector-optflags=-O2,-g;runtime=bundled-dylibs"
 
 source_prefix="$work_dir/dependencies"
 bash "$script_dir/build-source-dependencies.sh" "$architecture" "$source_prefix"

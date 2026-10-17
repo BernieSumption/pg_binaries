@@ -25,6 +25,8 @@ trap cleanup EXIT
 
 cd "$archives"
 shasum -a 256 -c "$pg_name.sha256" "$vector_name.sha256"
+python3 "$repo/tools/check_macos_license_inventory.py" "$archives/$pg_name"
+python3 "$repo/tools/check_macos_license_inventory.py" "$archives/$vector_name"
 mkdir -p "$work/first" "$work/extension" "$work/moved" "$work/socket"
 tar -xzf "$archives/$pg_name" -C "$work/first"
 tar -xzf "$archives/$vector_name" -C "$work/extension"

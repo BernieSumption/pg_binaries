@@ -1,0 +1,48 @@
+name: pgTAP Linux archive pilot
+on:
+  workflow_dispatch:
+    inputs:
+      postgresql_version:
+        description: Selected PostgreSQL minor
+        required: true
+        default: '18.6'
+        type: choice
+        options: ['15.19', '16.15', '17.11', '18.6']
+      architecture:
+        description: Native runner architecture
+        required: true
+        default: x86_64
+        type: choice
+        options: [x86_64, arm64]
+
+jobs:
+  verify:
+    runs-on: ${{ inputs.architecture == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-24.04' }}
+    timeout-minutes: 70
+    permissions:
+      contents: read
+    env:
+      PG_VERSION: ${{ inputs.postgresql_version }}
+      PG_ARCHITECTURE: ${{ inputs.architecture }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build exact PostgreSQL archive
+        run: scripts/linux/build.sh "$RUNNER_TEMP/core"
+      - name: Build pgTAP from upstream source
+        run: bash scripts/pgtap/build.sh "$RUNNER_TEMP/core" "$RUNNER_TEMP/pgtap"
+      - name: Verify final archives in Alpine 3.22
+        run: bash scripts/pgtap/verify.sh "$RUNNER_TEMP/core" "$RUNNER_TEMP/pgtap"
+      - name: Record archive identities
+        run: |
+          set -euo pipefail
+          cp "$RUNNER_TEMP/core/postgresql-$PG_VERSION-linux-$PG_ARCHITECTURE.tar.gz.sha256" "$RUNNER_TEMP/pgtap/"
+          test -s "$RUNNER_TEMP/pgtap/static-analysis/pgtap.json"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pgtap-linux-${{ inputs.postgresql_version }}-${{ inputs.architecture }}-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/pgtap/*.sha256
+            ${{ runner.temp }}/pgtap/static-analysis/*.json
+          if-no-files-found: warn
+          retention-days: 3

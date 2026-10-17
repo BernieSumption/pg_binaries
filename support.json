@@ -89,7 +89,7 @@
       }
     },
     "pgtap": {
-      "sql_names": ["pgtap", "pgtap-core", "pgtap-schema"],
+      "sql_names": ["pgtap"],
       "requires": [],
       "versions": {
         "1.3.4": { "postgresql_minimum_major": 15, "postgresql_maximum_major": 18 }

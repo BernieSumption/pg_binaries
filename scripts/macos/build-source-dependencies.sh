@@ -72,10 +72,6 @@ record_component() {
     echo "$package source archive must contain one top-level $license_suffix licence file" >&2
     return 1
   fi
-  if [[ $package == e2fsprogs && ${archive_path#*/} != lib/uuid/COPYING ]]; then
-    echo "e2fsprogs licence must be at archive path <source-root>/lib/uuid/COPYING; found $archive_path" >&2
-    return 1
-  fi
   license_file="licenses/${package}-${version}.txt"
   target="$manifest_dir/$license_file"
   case "$archive" in
@@ -159,6 +155,20 @@ unpack "$xml_archive" "$work_dir/libxml2" xz
 run_build libxml2 bash -c 'cd "$1" && ./configure --prefix="$2" --with-iconv --without-zlib --without-lzma --without-icu --without-python --without-readline --without-history --without-docs && make -j"$3" && make install' _ \
   "$work_dir/libxml2" "$prefix" "$jobs"
 record_component libxml2 2.15.4 "$xml_url" 98087fd181d9070724f3fbc65c7377db03038eb92bd882374daff44940138821 "$xml_archive" Copyright "$xml_before"
+python3 - "$work_dir/libxml2" "$license_dir" <<'PY'
+from pathlib import Path
+import sys
+
+source, destination = map(Path, sys.argv[1:])
+for name in ("dict", "list"):
+    contents = (source / f"{name}.c").read_text()
+    if not contents.startswith("/*") or "*/" not in contents:
+        raise SystemExit(f"libxml2 {name}.c has no initial licence notice")
+    notice = contents[:contents.index("*/") + 2] + "\n"
+    if "Copyright" not in notice or "Permission to use, copy, modify, and distribute" not in notice:
+        raise SystemExit(f"libxml2 {name}.c licence notice changed")
+    (destination / f"libxml2-2.15.4-{name}.txt").write_text(notice)
+PY
 
 xslt_archive=$(fetch_source libxslt-1.1.45.tar.xz \
   https://download.gnome.org/sources/libxslt/1.1/libxslt-1.1.45.tar.xz \
@@ -174,18 +184,6 @@ run_build libxslt bash -c 'cd "$1" && ./configure --prefix="$2" --without-python
   "$work_dir/libxslt" "$prefix" "$jobs"
 
 record_component libxslt 1.1.45 "$xslt_url" 9acfe68419c4d06a45c550321b3212762d92f41465062ca4ea19e632ee5d216e "$xslt_archive" Copyright "$xslt_before"
-
-uuid_archive=$(fetch_source e2fsprogs-1.47.3.tar.gz \
-  https://downloads.sourceforge.net/project/e2fsprogs/e2fsprogs/v1.47.3/e2fsprogs-1.47.3.tar.gz \
-  2f5164e64dd7d91eadd1e0e8a77d92c06dd7837bb19f1d9189ce1939b363d2b4)
-uuid_url=https://downloads.sourceforge.net/project/e2fsprogs/e2fsprogs/v1.47.3/e2fsprogs-1.47.3.tar.gz
-uuid_before="$work_dir/libuuid-before.txt"
-snapshot_dylibs > "$uuid_before"
-unpack "$uuid_archive" "$work_dir/e2fsprogs" gz
-mkdir -p "$prefix/lib"
-run_build libuuid bash -c 'cd "$1" && ./configure --prefix="$2" --enable-bsd-shlibs --disable-fsck --disable-uuidd --disable-e2initrd-helper && make -C lib/uuid && make -C lib/uuid install' _ \
-  "$work_dir/e2fsprogs" "$prefix"
-record_component e2fsprogs 1.47.3 "$uuid_url" 2f5164e64dd7d91eadd1e0e8a77d92c06dd7837bb19f1d9189ce1939b363d2b4 "$uuid_archive" lib/uuid/COPYING "$uuid_before"
 
 python3 - "$component_records" "$manifest_dir/source-dependencies.json" <<'PY'
 import json
@@ -205,6 +203,11 @@ for line in records.read_text().splitlines():
         "source_url": source_url,
         "source_sha256": source_sha256,
     })
+    if package == "libxml2" and version == "2.15.4":
+        components[-1]["additional_license_files"] = [
+            "licenses/libxml2-2.15.4-dict.txt",
+            "licenses/libxml2-2.15.4-list.txt",
+        ]
 output.write_text(json.dumps({"schema_version": 1, "components": components}, indent=2) + "\n")
 PY
 
