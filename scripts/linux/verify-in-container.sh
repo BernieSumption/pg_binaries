@@ -15,9 +15,10 @@ pg="postgresql-${pg_version}-linux-${architecture}.tar.gz"
 vector="pgvector-0.8.7-postgresql-${pg_version}-linux-${architecture}.tar.gz"
 cd /out
 sha256sum -c "$pg.sha256" "$vector.sha256"
-mkdir -p /tmp/first /tmp/moved /tmp/vector
-tar -xzf "$pg" -C /tmp/first
-tar -xzf "$vector" -C /tmp/vector
+useradd -m postgres
+install -d -o postgres -g postgres /tmp/first /tmp/moved /tmp/vector
+runuser -u postgres -- tar -xzf "$pg" -C /tmp/first
+runuser -u postgres -- tar -xzf "$vector" -C /tmp/vector
 python3 - "$pg_version" "$architecture" <<'PY'
 import json
 from pathlib import Path
@@ -108,7 +109,11 @@ PY
 test -s /tmp/vector/pgvector/LICENSES/pgvector.txt
 pgroot=/tmp/first/postgresql
 extroot=/tmp/vector/pgvector
-while IFS= read -r -d '' source; do
+runuser -u postgres -- bash -c '
+set -euo pipefail
+pgroot=$1
+extroot=$2
+while IFS= read -r -d "" source; do
   relative=${source#"$extroot/"}
   destination="$pgroot/$relative"
   if [[ -e "$destination" || -L "$destination" ]]; then
@@ -120,10 +125,10 @@ while IFS= read -r -d '' source; do
   fi
 done < <(find "$extroot" -mindepth 1 -print0)
 cp -a "$extroot/." "$pgroot/"
+' _ "$pgroot" "$extroot"
 test -s "$pgroot/LICENSES/pgvector.txt"
 python3 /usr/local/bin/check-elf-dependencies "$pgroot"
 test "$(/tmp/first/postgresql/bin/postgres --version)" = "postgres (PostgreSQL) $pg_version"
-useradd -m postgres
 mkdir -p /tmp/first-data /tmp/first-socket
 chown postgres:postgres /tmp/first-data /tmp/first-socket
 runuser -u postgres -- /tmp/first/postgresql/bin/initdb -D /tmp/first-data --encoding=UTF8 --locale=C --no-instructions
