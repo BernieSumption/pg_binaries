@@ -161,12 +161,6 @@ reviewed_source = {
     ),
 }
 reviewed_primary = {
-    ("postgresql", "18.6"): (
-        "https://ftp.postgresql.org/pub/source/v18.6/postgresql-18.6.tar.bz2",
-        "555610c24d53e4316da5b7d3fc25c279d96856d5e0e23ee308c328c5fa881d9f",
-        "3d6af92ff8a4c2cdf69afb1cf44edea727922f5cd0cf8b5f72b11cdecac8fdfd",
-        "PostgreSQL 18.6 COPYRIGHT permits binary redistribution when its copyright, permission and disclaimer paragraphs accompany copies; the complete source text is retained here. It does not require source delivery. https://github.com/postgres/postgres/blob/REL_18_6/COPYRIGHT",
-    ),
     ("pgvector", "0.8.7"): (
         "https://github.com/pgvector/pgvector/archive/refs/tags/v0.8.7.tar.gz",
         "cac0b10c360f05b2d521200105ba3697e773d4cd3731f5a915a7e37ebe0bea85",
@@ -174,6 +168,21 @@ reviewed_primary = {
         "pgvector 0.8.7 LICENSE permits binary redistribution when its copyright, permission and disclaimer paragraphs accompany copies; the complete source text is retained here. It does not require source delivery. https://github.com/pgvector/pgvector/blob/v0.8.7/LICENSE",
     ),
 }
+for pg_version, source_digest in {
+    "15.19": "e1a64a87a46b825b88c082e4518161a47aab53c45694964f8ba1df28f7859f89",
+    "16.15": "c1575341fa7bd40f5274ea465b34390f4dc64cdd0770af327005caaeb9f6b7ed",
+    "17.11": "dd27f2b3c59e73ed14aa3324901242bf69a032a6347805f274e6260322d42979",
+    "18.6": "555610c24d53e4316da5b7d3fc25c279d96856d5e0e23ee308c328c5fa881d9f",
+}.items():
+    reviewed_primary[("postgresql", pg_version)] = (
+        f"https://ftp.postgresql.org/pub/source/v{pg_version}/postgresql-{pg_version}.tar.bz2",
+        source_digest,
+        "3d6af92ff8a4c2cdf69afb1cf44edea727922f5cd0cf8b5f72b11cdecac8fdfd",
+        f"PostgreSQL {pg_version} COPYRIGHT permits binary redistribution when its copyright, "
+        "permission and disclaimer paragraphs accompany copies; the complete source text is "
+        "retained here. It does not require source delivery. "
+        f"https://ftp.postgresql.org/pub/source/v{pg_version}/",
+    )
 inventory = []
 
 def payload_paths(libraries):

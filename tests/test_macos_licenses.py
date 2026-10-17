@@ -8,6 +8,7 @@ import unittest
 
 SCRIPT = pathlib.Path(__file__).resolve().parents[1] / "scripts/macos/licenses.py"
 LIBXML2_NOTICES = pathlib.Path(__file__).resolve().parent / "fixtures/libxml2-2.15.4"
+POSTGRESQL_COPYRIGHT = pathlib.Path(__file__).resolve().parent / "fixtures/postgresql-COPYRIGHT"
 
 
 class MacOSLicenseTests(unittest.TestCase):
@@ -192,6 +193,31 @@ class MacOSLicenseTests(unittest.TestCase):
                                  "--source-sha256", "not-a-digest"], capture_output=True, text=True)
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("primary source_sha256", result.stderr)
+
+    def test_selected_postgresql_reviews_require_exact_source_and_licence(self):
+        (self.root / "bundled-dependencies.json").write_text("{}")
+        (self.root / "LICENSES/PostgreSQL.txt").write_bytes(POSTGRESQL_COPYRIGHT.read_bytes())
+        digests = {
+            "15.19": "e1a64a87a46b825b88c082e4518161a47aab53c45694964f8ba1df28f7859f89",
+            "16.15": "c1575341fa7bd40f5274ea465b34390f4dc64cdd0770af327005caaeb9f6b7ed",
+            "17.11": "dd27f2b3c59e73ed14aa3324901242bf69a032a6347805f274e6260322d42979",
+            "18.6": "555610c24d53e4316da5b7d3fc25c279d96856d5e0e23ee308c328c5fa881d9f",
+        }
+        for version, digest in digests.items():
+            with self.subTest(version=version):
+                command = [sys.executable, str(SCRIPT), str(self.root), "--component", "postgresql",
+                           "--version", version, "--source-url",
+                           f"https://ftp.postgresql.org/pub/source/v{version}/postgresql-{version}.tar.bz2",
+                           "--source-sha256", digest]
+                result = subprocess.run(command, capture_output=True, text=True)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                entry = json.loads((self.root / "LICENSES/inventory.json").read_text())["components"][0]
+                self.assertEqual(entry["redistribution_review"]["status"], "resolved")
+                command[-1] = "0" * 64
+                result = subprocess.run(command, capture_output=True, text=True)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                entry = json.loads((self.root / "LICENSES/inventory.json").read_text())["components"][0]
+                self.assertEqual(entry["redistribution_review"]["status"], "pending")
 
 
 if __name__ == "__main__":
