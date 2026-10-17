@@ -9,6 +9,7 @@ import unittest
 SCRIPT = pathlib.Path(__file__).resolve().parents[1] / "scripts/macos/licenses.py"
 LIBXML2_NOTICES = pathlib.Path(__file__).resolve().parent / "fixtures/libxml2-2.15.4"
 POSTGRESQL_COPYRIGHT = pathlib.Path(__file__).resolve().parent / "fixtures/postgresql-COPYRIGHT"
+PGVECTOR_LICENSE = pathlib.Path(__file__).resolve().parent / "fixtures/pgvector-LICENSE"
 
 
 class MacOSLicenseTests(unittest.TestCase):
@@ -157,6 +158,24 @@ class MacOSLicenseTests(unittest.TestCase):
         inventory = json.loads((self.root / "LICENSES/inventory.json").read_text())
         self.assertEqual(len(inventory["components"]), 1)
         self.assertEqual(inventory["components"][0]["component"], "pgvector")
+
+    def test_pgvector_review_requires_exact_source_and_licence(self):
+        (self.root / "bundled-dependencies.json").write_text("{}")
+        licence = self.root / "LICENSES/pgvector.txt"
+        licence.write_bytes(PGVECTOR_LICENSE.read_bytes())
+        command = [sys.executable, str(SCRIPT), str(self.root), "--component", "pgvector",
+                   "--version", "0.8.7", "--source-url",
+                   "https://github.com/pgvector/pgvector/archive/refs/tags/v0.8.7.tar.gz",
+                   "--source-sha256", "cac0b10c360f05b2d521200105ba3697e773d4cd3731f5a915a7e37ebe0bea85"]
+        result = subprocess.run(command, capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        entry = json.loads((self.root / "LICENSES/inventory.json").read_text())["components"][0]
+        self.assertEqual(entry["redistribution_review"]["status"], "resolved")
+        licence.write_text("changed licence")
+        result = subprocess.run(command, capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        entry = json.loads((self.root / "LICENSES/inventory.json").read_text())["components"][0]
+        self.assertEqual(entry["redistribution_review"]["status"], "pending")
 
     def test_rejects_homebrew_dependency_in_source_bundle(self):
         bundled = json.loads((self.root / "bundled-dependencies.json").read_text())
