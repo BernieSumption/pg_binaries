@@ -1,0 +1,173 @@
+#!/usr/bin/env python3
+"""Select, validate and stage one extension archive into a PostgreSQL prefix."""
+
+import argparse
+import hashlib
+import importlib.util
+import json
+from pathlib import Path
+import shutil
+import tarfile
+from urllib.parse import urlparse
+
+class StagingError(ValueError):
+    pass
+
+
+class SelectionError(StagingError):
+    pass
+
+
+def _digest(path):
+    digest = hashlib.sha256()
+    with path.open("rb") as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _archive_member_path(member):
+    path = Path(member.name)
+    if path.is_absolute() or not path.parts or ".." in path.parts:
+        raise StagingError(f"unsafe archive path: {member.name!r}")
+    if member.issym() or member.islnk():
+        target = Path(member.linkname)
+        if target.is_absolute():
+            raise StagingError(f"absolute archive link: {member.name!r}")
+        resolved = (path.parent / target) if member.issym() else target
+        depth = 0
+        for part in resolved.parts:
+            if part == "..":
+                depth -= 1
+            elif part not in ("", "."):
+                depth += 1
+            if depth < 0:
+                raise StagingError(f"archive link escapes its root: {member.name!r}")
+    return path
+
+
+def _extract_checked(archive_path, destination):
+    destination.mkdir(parents=True, exist_ok=True)
+    with tarfile.open(archive_path, "r:gz") as archive:
+        members = archive.getmembers()
+        names = set()
+        for member in members:
+            path = _archive_member_path(member)
+            if path in names:
+                raise StagingError(f"duplicate archive path: {member.name!r}")
+            names.add(path)
+            if not (member.isfile() or member.isdir() or member.issym() or member.islnk()):
+                raise StagingError(f"unsupported archive member type: {member.name!r}")
+        archive.extractall(destination, members=members)
+
+
+def _metadata(archive_root, project, version, platform, architecture, sql_name):
+    entries = {path.name for path in archive_root.iterdir()}
+    if entries != {project, "metadata.json"} or not (archive_root / project).is_dir():
+        raise StagingError("extension archive must contain its project payload and metadata.json")
+    try:
+        metadata = json.loads((archive_root / "metadata.json").read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise StagingError("extension metadata is missing or invalid JSON") from exc
+    expected = {"project": project, "version": version, "platform": platform,
+                "architecture": architecture}
+    for key, value in expected.items():
+        if metadata.get(key) != value:
+            raise StagingError(f"extension metadata mismatch for {key}")
+    if sql_name not in metadata.get("sql_names", []):
+        raise StagingError(f"extension metadata does not provide SQL name {sql_name!r}")
+    for key in ("requires", "configuration_prerequisites", "runtime_prerequisites"):
+        if not isinstance(metadata.get(key), list):
+            raise StagingError(f"extension metadata field {key} must be an array")
+    return archive_root / project
+
+
+def merge_payload(payload, prefix):
+    """Merge a payload into a prefix, allowing directory merges only."""
+    payload = Path(payload)
+    prefix = Path(prefix)
+    if not payload.is_dir():
+        raise StagingError(f"extension payload directory is missing: {payload}")
+    prefix.mkdir(parents=True, exist_ok=True)
+
+    def check_collisions(source, destination):
+        for entry in source.iterdir():
+            target = destination / entry.name
+            if entry.is_dir() and not entry.is_symlink():
+                if target.exists() or target.is_symlink():
+                    if target.is_symlink() or not target.is_dir():
+                        raise StagingError(f"extension payload collision: {target.relative_to(prefix)}")
+                check_collisions(entry, target)
+            elif target.exists() or target.is_symlink():
+                raise StagingError(f"extension payload collision: {target.relative_to(prefix)}")
+
+    def merge(source, destination):
+        for entry in source.iterdir():
+            target = destination / entry.name
+            if entry.is_dir() and not entry.is_symlink():
+                if not target.exists():
+                    target.mkdir(mode=entry.stat().st_mode & 0o7777)
+                merge(entry, target)
+                shutil.copystat(entry, target, follow_symlinks=False)
+            else:
+                if entry.is_symlink():
+                    target.symlink_to(entry.readlink())
+                else:
+                    shutil.copy2(entry, target)
+
+    check_collisions(payload, prefix)
+    merge(payload, prefix)
+
+
+def select_and_stage(inventory, support, postgresql_version, platform_key,
+                     project, extension_version, sql_name, archive_directory,
+                     prefix, staging_root):
+    """Resolve a selected archive from inventory, verify it, then merge it."""
+    selector_spec = importlib.util.spec_from_file_location(
+        "staging_archive_selector", Path(__file__).with_name("select_extension_archive.py"))
+    selector = importlib.util.module_from_spec(selector_spec)
+    selector_spec.loader.exec_module(selector)
+    try:
+        download = selector.select_archive(inventory, support, postgresql_version,
+                                           platform_key, project, extension_version, sql_name)
+    except selector.SelectionError as exc:
+        raise SelectionError(str(exc)) from exc
+    url = download.get("url")
+    filename = Path(urlparse(url).path).name if isinstance(url, str) else ""
+    if not filename or filename in (".", ".."):
+        raise StagingError("selected inventory download has no archive filename")
+    archive_path = Path(archive_directory) / filename
+    if not archive_path.is_file():
+        raise StagingError(f"selected extension archive is missing: {filename}")
+    expected_digest = download.get("sha256")
+    if not isinstance(expected_digest, str) or _digest(archive_path) != expected_digest.lower():
+        raise StagingError(f"selected extension archive checksum mismatch: {filename}")
+
+    platform, separator, architecture = platform_key.partition("-")
+    if not separator or not architecture:
+        raise StagingError(f"invalid platform key: {platform_key!r}")
+    if len(expected_digest) != 64 or any(char not in "0123456789abcdefABCDEF" for char in expected_digest):
+        raise StagingError("selected inventory download has an invalid SHA-256")
+    stage_path = Path(staging_root) / f"{project}-{extension_version}-{expected_digest[:12]}"
+    if stage_path.exists():
+        shutil.rmtree(stage_path)
+    _extract_checked(archive_path, stage_path)
+    payload = _metadata(stage_path, project.lower().replace(" ", "_"),
+                        extension_version, platform, architecture, sql_name)
+    merge_payload(payload, prefix)
+    return download
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--merge-payload", type=Path, required=True)
+    parser.add_argument("--prefix", type=Path, required=True)
+    args = parser.parse_args()
+    try:
+        merge_payload(args.merge_payload, args.prefix)
+    except StagingError as exc:
+        parser.error(str(exc))
+
+
+if __name__ == "__main__":
+    main()

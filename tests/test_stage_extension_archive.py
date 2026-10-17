@@ -1,0 +1,110 @@
+import hashlib
+import importlib.util
+import io
+from pathlib import Path
+import tarfile
+import tempfile
+import unittest
+
+
+SPEC = importlib.util.spec_from_file_location(
+    "stage_extension_archive", Path(__file__).resolve().parents[1] / "tools" / "stage_extension_archive.py")
+staging = importlib.util.module_from_spec(SPEC)
+SPEC.loader.exec_module(staging)
+
+
+class StageExtensionArchiveTests(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name)
+        self.archives = self.root / "archives"
+        self.archives.mkdir()
+        self.staging = self.root / "staging"
+        self.support = {"extensions": {"Example Project": {
+            "sql_names": ["example"], "versions": {"2.0": {}, "2.1": {}}}}}
+        self.inventory = {"schema_version": 1, "extensions": {"example": {}}}
+        self.downloads = {}
+        for version, member_name in (("2.0", "lib/old.so"), ("2.1", "lib/new.so")):
+            archive_name = f"example-{version}-linux-x86_64.tar.gz"
+            archive_path = self.archives / archive_name
+            self.write_archive(archive_path, version, member_name)
+            digest = hashlib.sha256(archive_path.read_bytes()).hexdigest()
+            self.downloads[version] = {
+                "postgresql_support": {"from": "15.10", "to": "15.10"},
+                "url": f"https://example.test/{archive_name}", "sha256": digest,
+            }
+        self.inventory["extensions"]["example"] = {
+            version: {"downloads": {"linux-x86_64": [download]}}
+            for version, download in self.downloads.items()
+        }
+
+    def write_archive(self, path, version, file_name):
+        metadata = ("{\"project\":\"example_project\","
+                    f"\"version\":\"{version}\",\"platform\":\"linux\","
+                    "\"architecture\":\"x86_64\",\"sql_names\":[\"example\"],"
+                    "\"requires\":[],\"configuration_prerequisites\":[],"
+                    "\"runtime_prerequisites\":[]}").encode()
+        with tarfile.open(path, "w:gz") as archive:
+            self.add_file(archive, "example_project/" + file_name, b"module")
+            self.add_file(archive, "metadata.json", metadata)
+
+    @staticmethod
+    def add_file(archive, name, contents):
+        member = tarfile.TarInfo(name)
+        member.size = len(contents)
+        member.mode = 0o755
+        archive.addfile(member, io.BytesIO(contents))
+
+    def stage(self, version, prefix):
+        return staging.select_and_stage(
+            self.inventory, self.support, "15.10", "linux-x86_64",
+            "Example Project", version, "example", self.archives, prefix, self.staging)
+
+    def test_selects_exact_core_archive_and_stages_only_its_version(self):
+        old_prefix = self.root / "old-prefix"
+        new_prefix = self.root / "new-prefix"
+        selected = self.stage("2.0", old_prefix)
+        self.stage("2.1", new_prefix)
+        self.assertEqual(selected["url"], self.downloads["2.0"]["url"])
+        self.assertTrue((old_prefix / "lib/old.so").is_file())
+        self.assertFalse((old_prefix / "lib/new.so").exists())
+        self.assertTrue((new_prefix / "lib/new.so").is_file())
+        self.assertFalse((new_prefix / "lib/old.so").exists())
+        old_stage = self.staging / (
+            f"Example Project-2.0-{self.downloads['2.0']['sha256'][:12]}")
+        new_stage = self.staging / (
+            f"Example Project-2.1-{self.downloads['2.1']['sha256'][:12]}")
+        self.assertTrue((old_stage / "example_project/lib/old.so").is_file())
+        self.assertFalse((old_stage / "example_project/lib/new.so").exists())
+        self.assertTrue((new_stage / "example_project/lib/new.so").is_file())
+        self.assertFalse((new_stage / "example_project/lib/old.so").exists())
+
+    def test_rejects_archive_whose_inventory_range_excludes_selected_core(self):
+        self.inventory["extensions"]["example"]["2.0"]["downloads"]["linux-x86_64"][0][
+            "postgresql_support"] = {"from": "16.0", "to": "16.5"}
+        with self.assertRaisesRegex(staging.SelectionError, "no archive covering"):
+            self.stage("2.0", self.root / "prefix")
+
+    def test_rejects_checksum_mismatch_before_staging(self):
+        archive_path = self.archives / "example-2.0-linux-x86_64.tar.gz"
+        archive_path.write_bytes(archive_path.read_bytes() + b"changed")
+        with self.assertRaisesRegex(staging.StagingError, "checksum mismatch"):
+            self.stage("2.0", self.root / "prefix")
+
+    def test_collision_rejects_file_and_directory_type_conflicts(self):
+        payload = self.root / "payload"
+        (payload / "share").mkdir(parents=True)
+        (payload / "share/a-new.control").write_text("new", encoding="utf-8")
+        (payload / "share/control.control").write_text("new", encoding="utf-8")
+        prefix = self.root / "prefix"
+        (prefix / "share").mkdir(parents=True)
+        (prefix / "share/control.control").write_text("old", encoding="utf-8")
+        with self.assertRaisesRegex(staging.StagingError, "payload collision"):
+            staging.merge_payload(payload, prefix)
+        self.assertEqual((prefix / "share/control.control").read_text(encoding="utf-8"), "old")
+        self.assertFalse((prefix / "share/a-new.control").exists())
+
+
+if __name__ == "__main__":
+    unittest.main()

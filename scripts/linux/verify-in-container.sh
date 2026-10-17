@@ -117,23 +117,8 @@ PY
 test -s /tmp/vector/pgvector/LICENSES/pgvector.txt
 pgroot=/tmp/first/postgresql
 extroot=/tmp/vector/pgvector
-runuser -u postgres -- bash -c '
-set -euo pipefail
-pgroot=$1
-extroot=$2
-while IFS= read -r -d "" source; do
-  relative=${source#"$extroot/"}
-  destination="$pgroot/$relative"
-  if [[ -e "$destination" || -L "$destination" ]]; then
-    if [[ -d "$source" && ! -L "$source" && -d "$destination" && ! -L "$destination" ]]; then
-      continue
-    fi
-    echo "Extension payload collision: $relative" >&2
-    exit 1
-  fi
-done < <(find "$extroot" -mindepth 1 -print0)
-cp -a "$extroot/." "$pgroot/"
-' _ "$pgroot" "$extroot"
+runuser -u postgres -- python3 /usr/local/bin/stage-extension-archive \
+  --merge-payload "$extroot" --prefix "$pgroot"
 test -s "$pgroot/LICENSES/pgvector.txt"
 python3 /usr/local/bin/check-elf-dependencies "$pgroot" --architecture "$architecture" \
   --archive "/out/$pg" --archive "/out/$vector" --report /analysis/core-pgvector.json

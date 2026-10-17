@@ -95,7 +95,7 @@ class SymbolVersionTests(unittest.TestCase):
 
 
 class DependencyClosureTests(unittest.TestCase):
-    def check_fixture(self, bundled_loader, external_library):
+    def check_fixture(self, bundled_loader, external_library, search_paths=None):
         with tempfile.TemporaryDirectory() as temp:
             prefix = Path(temp).resolve()
             binary = prefix / "tool"
@@ -107,11 +107,12 @@ class DependencyClosureTests(unittest.TestCase):
             external = prefix.parent / (prefix.name + "-external.so")
             external.write_bytes(b"fixture")
             try:
-                output = (f"libdirect.so => {prefix}/libdirect.so (0x123)\n"
-                          f"{external_library} => {external} (0x456)\n")
+                dependency_output = (f"{external_library}\n" if external_library.endswith("=> not found")
+                                     else f"{external_library} => {external} (0x456)\n")
+                output = f"libdirect.so => {prefix}/libdirect.so (0x123)\n{dependency_output}"
                 (prefix / "libdirect.so").write_bytes(b"fixture")
                 report = {"inspected_files": [], "files": []}
-                with patch.object(checker, "inspect_elf", return_value=("x86_64", None, [])), \
+                with patch.object(checker, "inspect_elf", return_value=("x86_64", None, search_paths or [])), \
                         patch.object(checker, "symbol_version_requirements", return_value=[{"library": "libc.so.6", "versions": []}]), \
                         patch.object(checker, "static_executable", return_value=False), \
                         patch.object(checker.subprocess, "run", return_value=subprocess.CompletedProcess([], 0, output, "")):
@@ -127,6 +128,14 @@ class DependencyClosureTests(unittest.TestCase):
     def test_bundled_loader_rejects_external_libc(self):
         with self.assertRaisesRegex(ValueError, "unbundled dependency: libc.so.6"):
             self.check_fixture(True, "libc.so.6")
+
+    def test_rejects_dependency_missing_from_bundled_runtime(self):
+        with self.assertRaisesRegex(ValueError, "libtransitive.so => not found"):
+            self.check_fixture(True, "libtransitive.so => not found")
+
+    def test_rejects_nonrelocatable_search_path_during_archive_check(self):
+        with self.assertRaisesRegex(ValueError, "non-relocatable ELF runtime search path"):
+            self.check_fixture(False, "libc.so.6", ["/opt/build/lib"])
 
     def test_system_libc_boundary_without_bundled_loader(self):
         report = self.check_fixture(False, "libc.so.6")

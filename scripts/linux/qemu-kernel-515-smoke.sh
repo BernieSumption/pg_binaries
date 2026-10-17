@@ -103,7 +103,7 @@ scp "${scp_args[@]}" "$archives/$pg_archive.sha256" "$archives/$vector_archive.s
 scp -r "${scp_args[@]}" /repo/tests smoke@127.0.0.1:/tmp/
 scp "${scp_args[@]}" /repo/scripts/linux/verify-in-container.sh \
   /repo/scripts/linux/qemu-kernel-515-guest-full.sh \
-  /repo/tools/check_elf_dependencies.py smoke@127.0.0.1:/tmp/
+  /repo/tools/check_elf_dependencies.py /repo/tools/stage_extension_archive.py smoke@127.0.0.1:/tmp/
 ssh "${ssh_args[@]}" smoke@127.0.0.1 \
   "bash /tmp/qemu-kernel-515-guest-full.sh '$pg_version' x86_64" \
   | tee "$evidence/full-verifier.log"

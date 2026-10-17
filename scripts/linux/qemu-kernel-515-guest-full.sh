@@ -11,9 +11,11 @@ printf 'guest_os='; . /etc/os-release; printf '%s\n' "$PRETTY_NAME"
 printf 'guest_kernel=%s\n' "$(uname -r)"
 test -d /tmp/tests
 test -f /tmp/check_elf_dependencies.py
+test -f /tmp/stage_extension_archive.py
 test -f /tmp/verify-in-container.sh
 sudo ln -s /tmp /out
 sudo ln -s /tmp/tests /tests
 sudo install -m 0755 /tmp/check_elf_dependencies.py /usr/local/bin/check-elf-dependencies
+sudo install -m 0755 /tmp/stage_extension_archive.py /usr/local/bin/stage-extension-archive
 sudo env PG_VERSION="$pg_version" PG_ARCHITECTURE="$architecture" \
   bash /tmp/verify-in-container.sh
