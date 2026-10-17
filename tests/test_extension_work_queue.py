@@ -71,6 +71,21 @@ class ExtensionWorkQueueTests(unittest.TestCase):
         self.assertEqual(len(checks), 4)
         self.assertEqual(builds[0]["range_status"], "unverified")
 
+    def test_candidate_build_uses_latest_minor_and_other_endpoint_is_verified_separately(self):
+        snapshot = json.loads((self.root / "support/postgresql-releases.json").read_text())
+        snapshot["releases"].append({"version": "18.0", "release_date": "2025-09-25"})
+        self.write("support/postgresql-releases.json", snapshot)
+        queue = queue_tool.build_queue(self.root)
+        group = next(item for item in queue["work_items"] if item.get("project") == "PostGIS"
+                     and item.get("version") == "3.6.4" and item.get("postgresql_major") == 18
+                     and item.get("platform") == "linux-x86_64" and item["kind"] == "build-extension")
+        self.assertEqual(group["build_postgresql_version"], "18.6")
+        self.assertEqual(group["depends_on"], [queue_tool._id("build-core", "18.6", "linux-x86_64")])
+        checks = [item for item in queue["work_items"] if item.get("project") == "PostGIS"
+                  and item.get("version") == "3.6.4" and item.get("postgresql_major") == 18
+                  and item.get("platform") == "linux-x86_64" and item["kind"] == "verify-extension"]
+        self.assertEqual({item["postgresql_version"] for item in checks}, {"18.0", "18.6"})
+
     def test_inventory_archive_binding_does_not_claim_endpoint_coverage(self):
         checksum = "d" * 64
         self.write("inventory.json", {"postgresql": {}, "extensions": {
@@ -162,6 +177,22 @@ class ExtensionWorkQueueTests(unittest.TestCase):
         self.assertTrue(any(item.get("project") == "PostGIS" for item in selected))
         with self.assertRaisesRegex(ValueError, "matches no declared"):
             queue_tool.select_batch(queue, 8, "unknown project")
+
+    def test_exact_item_selection_is_atomic_and_bounded(self):
+        queue = queue_tool.build_queue(self.root)
+        item_id = queue_tool._id("verify-extension", "PostGIS TIGER Geocoder", "2025.2",
+                                 "linux-x86_64", 18, "postgis_tiger_geocoder", "18.6", "current")
+        closure = queue_tool.select_item_closure(queue, item_id, 16)
+        ids = [item["id"] for item in closure]
+        self.assertEqual(ids[-1], item_id)
+        self.assertEqual(len(ids), len(set(ids)))
+        self.assertTrue(all(set(item["depends_on"]) <= set(ids[:index])
+                            for index, item in enumerate(closure)))
+        self.assertTrue(any(item.get("project") == "PostGIS" for item in closure))
+        with self.assertRaisesRegex(ValueError, "exceeding limit"):
+            queue_tool.select_item_closure(queue, item_id, len(closure) - 1)
+        with self.assertRaisesRegex(ValueError, "unknown work item"):
+            queue_tool.select_item_closure(queue, "missing", 16)
 
     def test_ambiguous_prerequisite_versions_are_reported_without_selecting_one(self):
         del self.support["extensions"]["PostGIS TIGER Geocoder"]["requires_versions"]

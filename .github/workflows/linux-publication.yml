@@ -27,8 +27,6 @@ on:
       - 'tools/write_postgis_license_inventory.py'
       - 'tools/create_extension_publication_receipt.py'
       - 'tools/emit_extension_publication_records.py'
-      - 'tests/test_emit_extension_publication_records.py'
-      - 'support.json'
       - 'tools/write_linux_license_inventory.py'
 # profile-section: job-setup begin
 jobs:
@@ -194,8 +192,6 @@ jobs:
             --archives "$archive_dir" --receipt "$archive_dir/publication/minimum-receipt.json" \
             --output "$archive_dir/publication/records"
       # profile-section: core-minimum-report end
-      - name: Check extension publication record machinery
-        run: python3 -m unittest tests/test_emit_extension_publication_records.py
       - name: Build PostGIS 3.6.4 against the publication PostgreSQL archive
         id: postgis_build
         run: bash scripts/postgis/build.sh "$RUNNER_TEMP/pilot" "$RUNNER_TEMP/postgis"

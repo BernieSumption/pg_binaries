@@ -100,10 +100,12 @@ def build_queue(root):
                          and len(signatures) == 1)
         archive_download = next(iter(next(iter(downloads_by_name.values()))))[1] if archive_bound else None
         group_id = _id("build-extension", project, version, platform, group["postgresql_major"])
-        core_deps = [_id("build-core", pg, platform) for pg in endpoints]
+        build_pg = endpoints[-1]
+        core_deps = [_id("build-core", build_pg, platform)]
         add({"id": group_id, "kind": "build-extension", "component": project, "project": project,
              "version": version, "platform": platform, "postgresql_major": group["postgresql_major"],
              "postgresql_range": group["postgresql_endpoint_versions"],
+             "build_postgresql_version": build_pg,
              "covered_postgresql_versions": pg_versions, "sql_names": sql_names,
              "status": "complete" if archive_bound else "needed",
              "evidence": "inventory-project-archive-bound" if archive_bound else None,
@@ -250,6 +252,41 @@ def select_batch(queue, limit, project=None, platform=None, postgresql_major=Non
             "omitted_dependency_count": len(pending)}
 
 
+def select_item_closure(queue, item_id, limit):
+    """Return one exact work item and all of its prerequisites, or fail on the cap."""
+    if limit < 1:
+        raise ValueError("closure limit must be positive")
+    items = {item["id"]: item for item in queue["work_items"]}
+    if item_id not in items:
+        raise ValueError(f"unknown work item: {item_id}")
+    ordered = []
+    visiting = set()
+    visited = set()
+
+    def visit(key):
+        if key in visiting:
+            raise ValueError(f"dependency cycle at {key}")
+        if key in visited:
+            return
+        visiting.add(key)
+        for dependency in sorted(items[key].get("depends_on", [])):
+            if dependency not in items:
+                raise ValueError(f"missing dependency {dependency} for {key}")
+            visit(dependency)
+        visiting.remove(key)
+        visited.add(key)
+        ordered.append(items[key])
+
+    visit(item_id)
+    if len(ordered) > limit:
+        raise ValueError(f"work item closure has {len(ordered)} items, exceeding limit {limit}")
+    unresolved = [entry for entry in queue.get("unresolved_prerequisites", [])
+                  if entry["item_id"] in visited]
+    if unresolved or any(item.get("blocked_by_unresolved_prerequisite") for item in ordered):
+        raise ValueError(f"work item closure has unresolved prerequisite versions: {item_id}")
+    return ordered
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[1])
@@ -257,19 +294,27 @@ def main(argv=None):
     parser.add_argument("--project", help="focus on one declared extension project or SQL name")
     parser.add_argument("--platform", help="focus on one declared platform, such as linux-x86_64")
     parser.add_argument("--postgresql-major", type=int, help="focus on one declared PostgreSQL major")
+    parser.add_argument("--item-id", help="select one exact work item with its complete dependency closure")
     parser.add_argument("--all", action="store_true", help="display the full graph")
     args = parser.parse_args(argv)
     try:
         queue = build_queue(args.root)
-        batch = select_batch(queue, args.limit, args.project, args.platform, args.postgresql_major)
-        result = queue if args.all else {"snapshot_as_of": queue["snapshot_as_of"],
-                                         "planned_batch": batch["selected_items"],
-                                         "unresolved_prerequisites": batch["unresolved_prerequisites"],
-                                         "omitted_dependency_count": batch["omitted_dependency_count"],
-                                         "limit": args.limit, "scope": queue["scope"],
-                                         "status": ("planned; unresolved prerequisites require review"
-                                                    if batch["unresolved_prerequisites"]
-                                                    else "planned; prerequisite selections satisfy support constraints")}
+        if args.item_id and (args.all or args.project or args.platform or args.postgresql_major):
+            raise ValueError("--item-id cannot be combined with --all or target filters")
+        if args.item_id:
+            result = {"snapshot_as_of": queue["snapshot_as_of"], "item_id": args.item_id,
+                      "planned_closure": select_item_closure(queue, args.item_id, args.limit),
+                      "status": "planned; complete dependency closure within limit"}
+        elif args.all:
+            result = queue
+        else:
+            batch = select_batch(queue, args.limit, args.project, args.platform, args.postgresql_major)
+            result = {"snapshot_as_of": queue["snapshot_as_of"],
+                      "planned_batch": batch["selected_items"],
+                      "unresolved_prerequisites": batch["unresolved_prerequisites"],
+                      "omitted_dependency_count": batch["omitted_dependency_count"],
+                      "limit": args.limit, "scope": queue["scope"],
+                      "status": "preview; batch may omit later work items"}
         print(json.dumps(result, indent=2, sort_keys=True))
         return 0
     except (coverage.CoverageError, OSError, KeyError, TypeError, ValueError) as exc:
