@@ -128,7 +128,8 @@ class PublicationPreflightTests(unittest.TestCase):
             record["assembled_core"] = assembled_core
         return record
 
-    def _stage(self, content, filename, tag="catalog-20261016-2", platform="linux-x86_64"):
+    def _stage(self, content, filename, tag="catalog-20261016-2", platform="linux-x86_64",
+               pg_version="15.9"):
         path = self.root / filename
         with tarfile.open(path, "w:gz") as archive:
             payload = content.encode("utf-8")
@@ -138,7 +139,7 @@ class PublicationPreflightTests(unittest.TestCase):
             os_name, architecture = platform.split("-", 1)
             metadata = json.dumps({"project": "example", "version": "1.0",
                                    "platform": os_name, "architecture": architecture,
-                                   "postgresql_version": "15.9",
+                                   "postgresql_version": pg_version,
                                    "sql_names": ["example"], "requires": [],
                                    "configuration_prerequisites": [],
                                    "runtime_prerequisites": []}).encode()
@@ -733,6 +734,51 @@ class PublicationPreflightTests(unittest.TestCase):
         with self.assertRaisesRegex(publication_preflight.PreflightError,
                                     "missing extension target example 1.0 PostgreSQL 15.9 linux-x86_64"):
             self.check()
+
+    def test_exact_core_replacement_preserves_historical_url_for_other_selected_core(self):
+        self.snapshot["support_status"]["supported_majors"].append(16)
+        self.snapshot["releases"].append({"version": "16.6", "release_date": "2025-11-01"})
+        historical_url = ("https://github.com/example/releases/download/old/"
+                          "example-1.0-postgresql-15.9-to-16.6-linux-x86_64.tar.gz")
+        self.base["extensions"]["example"] = {"1.0": {"requires": [], "downloads": {
+            "linux-x86_64": [{"postgresql_support": {"from": "15.9", "to": "16.6"},
+                              "url": historical_url, "sha256": "a" * 64}]}}}
+
+        def add_exact_extension(pg_version, platform):
+            filename = f"example-1.0-postgresql-{pg_version}-{platform}.tar.gz"
+            url, checksum = self._stage(
+                f"example-{pg_version}-{platform}", filename,
+                tag="catalog-20261016-3", platform=platform, pg_version=pg_version)
+            core = self.candidate["postgresql"][pg_version]["downloads"][platform]
+            self.candidate["verification_evidence"][url] = [self._verification_record(
+                "example", "1.0", platform, pg_version, checksum, "current",
+                assembled_core={"archive": f"postgresql-{pg_version}-{platform}.tar.gz",
+                                "version": pg_version, "sha256": core["sha256"]})]
+            ranges = self.candidate["extensions"]["example"]["1.0"]["downloads"].setdefault(platform, [])
+            ranges.append({"postgresql_support": {"from": pg_version, "to": pg_version},
+                           "url": url, "sha256": checksum})
+
+        for platform in ("macos-x86_64", "macos-arm64", "windows-x86_64",
+                         "linux-x86_64", "linux-arm64"):
+            self._add_core(self.candidate, "16.6", platform, f"core-16.6-{platform}")
+            if platform != "linux-x86_64":
+                add_exact_extension("16.6", platform)
+
+        linux_ranges = self.candidate["extensions"]["example"]["1.0"]["downloads"]["linux-x86_64"]
+        linux_ranges.append({"postgresql_support": {"from": "16.6", "to": "16.6"},
+                             "url": historical_url, "sha256": "a" * 64})
+
+        result = self.check()
+        self.assertEqual(result["preflight_status"], "passed")
+
+        incomplete = json.loads(json.dumps(self.candidate))
+        incomplete["extensions"]["example"]["1.0"]["downloads"]["linux-x86_64"] = [
+            entry for entry in incomplete["extensions"]["example"]["1.0"]["downloads"]["linux-x86_64"]
+            if entry["url"] == historical_url]
+        with self.assertRaisesRegex(
+                publication_preflight.PreflightError,
+                "missing extension target example 1.0 PostgreSQL 15.9 linux-x86_64"):
+            self.check(candidate=incomplete)
 
     def test_rejects_candidate_reference_without_staged_or_base_asset(self):
         url, checksum = self._stage("untracked", "untracked.tar.gz")
