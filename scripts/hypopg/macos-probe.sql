@@ -19,7 +19,7 @@ BEGIN
   END IF;
 END
 $$;
-SELECT indexrelid, indexname FROM hypopg_list_indexes
+SELECT indexrelid, index_name FROM hypopg_list_indexes
 WHERE schema_name = 'public' AND table_name = 'hypo_probe';
 EXPLAIN SELECT payload FROM hypo_probe WHERE id = 4242;
 SELECT hypopg_reset();
