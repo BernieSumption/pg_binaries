@@ -78,6 +78,10 @@ def parse_import_details(output):
             delay_section = bool(heading.group(1))
             current = None
             continue
+        if in_import_section and line.strip().lower() == "summary":
+            in_import_section = False
+            current = None
+            continue
         if in_import_section:
             if re.match(r"^\s{2,}[A-Za-z0-9_.+-]+\.(?:dll|drv)\s*$", line, re.I):
                 name = line.strip()

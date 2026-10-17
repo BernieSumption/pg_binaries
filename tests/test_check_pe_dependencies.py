@@ -85,6 +85,20 @@ class DumpbinParserTests(unittest.TestCase):
             "name": "kernel32.dll", "functions": ["GetProcAddress", "#17"],
             "delay_functions": []}])
 
+    def test_stops_at_dumpbin_section_summary(self):
+        output = """
+          Section contains the following imports:
+            KERNEL32.dll
+                 0 GetProcAddress
+          Summary
+                 1000 .data
+                 2000 .rdata
+                 3000 .text
+        """
+        self.assertEqual(checker.parse_import_details(output), [{
+            "name": "KERNEL32.dll", "functions": ["GetProcAddress"],
+            "delay_functions": []}])
+
     def test_rejects_unrecognized_or_empty_import_output(self):
         for output in ("mystery dumpbin format", "Section contains the following imports:\n  Summary\n"):
             with self.subTest(output=output), self.assertRaises(ValueError):
