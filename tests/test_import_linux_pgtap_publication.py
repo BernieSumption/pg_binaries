@@ -165,6 +165,17 @@ class LinuxPgtapPublicationImportTests(unittest.TestCase):
             self.assertEqual(source.read_bytes(), destination.read_bytes())
         self.assertEqual(self._import(), retained)
 
+    def test_imports_workflow_artifact_with_nested_pgtap_files(self):
+        nested = self.pgtap_artifact / "pgtap"
+        nested.mkdir()
+        for name in (self.pgtap_name, f"{self.pgtap_name}.sha256"):
+            shutil.move(self.pgtap_artifact / name, nested / name)
+        shutil.move(self.pgtap_artifact / "static-analysis", nested / "static-analysis")
+        self._import()
+        record = coverage.load_json(self.root / "support/verification" /
+            f"pgtap-1.3.4-postgresql-18.6-{self.platform}-current-{self.run_id}.json")
+        self.assertEqual(record["outcome"], "passed")
+
     def test_rejects_receipt_archive_mismatch_without_writing(self):
         path = self.publication / "current-receipt.json"
         receipt = json.loads(path.read_text())

@@ -31,7 +31,9 @@ def import_run(root, core_artifact, pgtap_artifact, run_id, architecture, postgr
     if profile["scope"] != "publication" or platform not in profile["platforms"]:
         raise coverage.CoverageError("profile does not match publication platform")
     publication = pgtap_artifact / "pgtap-publication"
-    extension_dir = pgtap_artifact
+    extension_dir = pgtap_artifact / "pgtap"
+    if not extension_dir.is_dir():
+        extension_dir = pgtap_artifact
     target = root / "support/evidence" / f"pgtap-publication-{run_id}" / architecture
     steps_path = publication / "current-steps.json"
     steps = _steps(steps_path, profile)
