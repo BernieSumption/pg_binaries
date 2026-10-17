@@ -119,7 +119,11 @@ foreach ($inventorySpec in $licenseInventories) {
         $component.redistribution_review.status -notin @('resolved', 'pending')) {
       throw "Licence component has incomplete identity or review: $($component.component)"
     }
-    foreach ($licensePath in @($component.license_file) + @($component.additional_license_files)) {
+    $licensePaths = @($component.license_file)
+    if ($null -ne $component.additional_license_files) {
+      $licensePaths += @($component.additional_license_files)
+    }
+    foreach ($licensePath in $licensePaths) {
       $relativeLicense = $licensePath -replace '^LICENSES/', ''
       $fullLicense = Join-Path $inventorySpec.root "LICENSES/$relativeLicense"
       if (-not (Test-Path $fullLicense -PathType Leaf) -or (Get-Item $fullLicense).Length -eq 0) {
