@@ -1,0 +1,156 @@
+{
+  "architecture": "arm64",
+  "archive_urls": null,
+  "archives": {
+    "pgvector-0.8.7-postgresql-18.6-linux-arm64.tar.gz": "e42abcbf554b2bc2a54528667b9275d9f76a63664b1f3488bc6ef0e0939b694c",
+    "postgresql-18.6-linux-arm64.tar.gz": "05694016919866e213853b1d74b8d3b7ebb092798512048e20ce40d1fc094f34"
+  },
+  "ci_run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/39074014194",
+  "command": "/tmp/pg-binaries-diagnostics.ANCpDx/postgresql/bin/postgres --version",
+  "cwd": "/tmp/pg-binaries-diagnostics.ANCpDx/postgresql",
+  "executable_paths": {
+    "postgres": "/tmp/pg-binaries-diagnostics.ANCpDx/postgresql/bin/postgres",
+    "postgres_payload": "/tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/postgres",
+    "removed_loader": "/tmp/pg-binaries-diagnostics.ANCpDx/postgresql/lib/glibc/ld-linux-aarch64.so.1"
+  },
+  "exit_code": 127,
+  "failure": "missing-bundled-loader",
+  "finished_at_utc": "2026-10-17T22:16:06Z",
+  "gnu_build_ids_and_index_entries": [
+    {
+      "archive": "postgresql-18.6-linux-arm64.tar.gz",
+      "archive_sha256": "05694016919866e213853b1d74b8d3b7ebb092798512048e20ce40d1fc094f34",
+      "debug_file_path": "postgresql-18.6-linux-arm64/postgresql/bin/.pg-launcher.debug",
+      "debug_file_sha256": "09aa18b0550a13626e1184215ea2b75b172c8f8864e0d0f3579266effde10c38",
+      "gnu_build_id": "68334039395a44f2448f40ad58b4092b940018ae",
+      "module_path": "postgresql/bin/.pg-launcher",
+      "module_sha256": "ee8273da07ac4599030281ec6f414d0a306d123c1d3b6e82bc95714c75c2afcb"
+    },
+    {
+      "archive": "pgvector-0.8.7-postgresql-18.6-linux-arm64.tar.gz",
+      "archive_sha256": "e42abcbf554b2bc2a54528667b9275d9f76a63664b1f3488bc6ef0e0939b694c",
+      "debug_file_path": "pgvector-0.8.7-postgresql-18.6-linux-arm64/pgvector/lib/vector.so.debug",
+      "debug_file_sha256": "7c4fb5d42411d49f82549587be3d5b8687cfdf324649ef900d3df07d545ef50d",
+      "gnu_build_id": "4ab7bc8aa331feb873811f8703086069b4bd2fd0",
+      "module_path": "pgvector/lib/vector.so",
+      "module_sha256": "6c367e6445d4ec827b91e1a7d65371460f18f93c136ac332a88d857773c38a74"
+    }
+  ],
+  "inspection_tool_versions": {
+    "ldd": "musl libc (aarch64)",
+    "readelf": "GNU readelf (GNU Binutils) 2.44"
+  },
+  "inventory_revision": null,
+  "kernel_release": "6.17.0-1022-azure",
+  "ldd_libexec_postgres": "\t/lib/ld-linux-aarch64.so.1 (0xffeee5320000)\n\tlibzstd.so.1 => /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/../lib/runtime/libzstd.so.1 (0xffeee2210000)\n\tliblz4.so.1 => /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/../lib/runtime/liblz4.so.1 (0xffeee21df000)\n\tlibxml2.so.2 => /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/../lib/runtime/libxml2.so.2 (0xffeee1fe2000)\n\tlibssl.so.3 => /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/../lib/runtime/libssl.so.3 (0xffeee1f2b000)\n\tlibcrypto.so.3 => /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/../lib/runtime/libcrypto.so.3 (0xffeee1af5000)\n\tlibz.so.1 => /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/../lib/runtime/libz.so.1 (0xffeee1ac4000)\n\tlibm.so.6 => /lib/ld-linux-aarch64.so.1 (0xffeee5320000)\n\tlibicui18n.so.70 => /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/../lib/runtime/libicui18n.so.70 (0xffeee171e000)\n\tlibicuuc.so.70 => /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/../lib/runtime/libicuuc.so.70 (0xffeee14e3000)\n\tlibc.so.6 => /lib/ld-linux-aarch64.so.1 (0xffeee5320000)\nError loading shared library ld-linux-aarch64.so.1: No such file or directory (needed by /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/postgres)\nError loading shared library ld-linux-aarch64.so.1: No such file or directory (needed by /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/../lib/runtime/libzstd.so.1)\nError loading shared library ld-linux-aarch64.so.1: No such file or directory (needed by /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/../lib/runtime/liblz4.so.1)\n\tliblzma.so.5 => /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/../lib/runtime/liblzma.so.5 (0xffeee14a1000)\nError loading shared library ld-linux-aarch64.so.1: No such file or directory (needed by /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/../lib/runtime/libxml2.so.2)\nError loading shared library ld-linux-aarch64.so.1: No such file or directory (needed by /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/../lib/runtime/libssl.so.3)\nError loading shared library ld-linux-aarch64.so.1: No such file or directory (needed by /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/../lib/runtime/libcrypto.so.3)\nError loading shared library ld-linux-aarch64.so.1: No such file or directory (needed by /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/../lib/runtime/libz.so.1)\n\tlibstdc++.so.6 => /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/../lib/runtime/libstdc++.so.6 (0xffeee121e000)\n\tlibgcc_s.so.1 => /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/../lib/runtime/libgcc_s.so.1 (0xffeee11ed000)\nError loading shared library ld-linux-aarch64.so.1: No such file or directory (needed by /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/../lib/runtime/libicui18n.so.70)\n\tlibicudata.so.70 => /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/../lib/runtime/libicudata.so.70 (0xffeedf5bc000)\nError loading shared library ld-linux-aarch64.so.1: No such file or directory (needed by /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/../lib/runtime/libicuuc.so.70)\nError loading shared library ld-linux-aarch64.so.1: No such file or directory (needed by /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/../lib/runtime/liblzma.so.5)\nError loading shared library ld-linux-aarch64.so.1: No such file or directory (needed by /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/../lib/runtime/libstdc++.so.6)\nError relocating /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/../lib/runtime/libzstd.so.1: __fprintf_chk: symbol not found\nError relocating /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/../lib/runtime/libxml2.so.2: __vsnprintf_chk: symbol not found\nError relocating /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/../lib/runtime/libxml2.so.2: __memmove_chk: symbol not found\nError relocating /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/../lib/runtime/libxml2.so.2: __fdelt_chk: symbol not found\nError relocating /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/../lib/runtime/libxml2.so.2: __fprintf_chk: symbol not found\nError relocating /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/../lib/runtime/libxml2.so.2: __memset_chk: symbol not found\nError relocating /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/../lib/runtime/libxml2.so.2: __vfprintf_chk: symbol not found\nError relocating /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/../lib/runtime/libxml2.so.2: fcntl64: symbol not found\nError relocating /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/../lib/runtime/libxml2.so.2: __memcpy_chk: symbol not found\nError relocating /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/../lib/runtime/libxml2.so.2: __strcat_chk: symbol not found\nError relocating /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/../lib/runtime/libxml2.so.2: __sprintf_chk: symbol not found\nError relocating /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/../lib/runtime/libxml2.so.2: __snprintf_chk: symbol not found\nError relocating /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/../lib/runtime/libssl.so.3: __sprintf_chk: symbol not found\nError relocating /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/../lib/runtime/libssl.so.3: __getauxval: symbol not found\nError relocating /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/../lib/runtime/libssl.so.3: __memcpy_chk: symbol not found\nError relocating /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/../lib/runtime/libcrypto.so.3: __fgets_chk: symbol not found\nError relocating /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/../lib/runtime/libcrypto.so.3: __syslog_chk: symbol not found\nError relocating /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/../lib/runtime/libcrypto.so.3: getcontext: symbol not found\nError relocating /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/../lib/runtime/libcrypto.so.3: __fdelt_chk: symbol not found\nError relocating /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/../lib/runtime/libcrypto.so.3: __fprintf_chk: symbol not found\nError relocating /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/../lib/runtime/libcrypto.so.3: __memset_chk: symbol not found\nError relocating /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/../lib/runtime/libcrypto.so.3: __vfprintf_chk: symbol not found\nError relocating /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/../lib/runtime/libcrypto.so.3: __longjmp_chk: symbol not found\nError relocating /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/../lib/runtime/libcrypto.so.3: __getauxval: symbol not found\nError relocating /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/../lib/runtime/libcrypto.so.3: __memcpy_chk: symbol not found\nError relocating /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/../lib/runtime/libcrypto.so.3: makecontext: symbol not found\nError relocating /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/../lib/runtime/libcrypto.so.3: setcontext: symbol not found\nError relocating /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/../lib/runtime/libcrypto.so.3: __strcat_chk: symbol not found\nError relocating /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/../lib/runtime/libcrypto.so.3: __sprintf_chk: symbol not found\nError relocating /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/../lib/runtime/libz.so.1: __snprintf_chk: symbol not found\nError relocating /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/../lib/runtime/libz.so.1: __vsnprintf_chk: symbol not found\nError relocating /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/../lib/runtime/libz.so.1: crc32_z: symbol not found\nError relocating /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/../lib/runtime/libicui18n.so.70: __strcpy_chk: symbol not found\nError relocating /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/../lib/runtime/libicui18n.so.70: __sprintf_chk: symbol not found\nError relocating /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/../lib/runtime/libicui18n.so.70: __snprintf_chk: symbol not found\nError relocating /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/../lib/runtime/libicui18n.so.70: __memmove_chk: symbol not found\nError relocating /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/../lib/runtime/libicui18n.so.70: __getauxval: symbol not found\nError relocating /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/../lib/runtime/libicui18n.so.70: __memcpy_chk: symbol not found\nError relocating /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/../lib/runtime/libicuuc.so.70: __strcpy_chk: symbol not found\nError relocating /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/../lib/runtime/libicuuc.so.70: __strcat_chk: symbol not found\nError relocating /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/../lib/runtime/libicuuc.so.70: __memmove_chk: symbol not found\nError relocating /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/../lib/runtime/libicuuc.so.70: __strncpy_chk: symbol not found\nError relocating /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/../lib/runtime/libicuuc.so.70: __getauxval: symbol not found\nError relocating /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/../lib/runtime/libicuuc.so.70: __memcpy_chk: symbol not found\nError relocating /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/../lib/runtime/libstdc++.so.6: __wmemset_chk: symbol not found\nError relocating /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/../lib/runtime/libstdc++.so.6: __wmemcpy_chk: symbol not found\nError relocating /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/../lib/runtime/libstdc++.so.6: __openat_2: symbol not found\nError relocating /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/../lib/runtime/libstdc++.so.6: __mbsnrtowcs_chk: symbol not found\nError relocating /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/../lib/runtime/libstdc++.so.6: __cxa_thread_atexit_impl: symbol not found\nError relocating /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/../lib/runtime/libstdc++.so.6: __fprintf_chk: symbol not found\nError relocating /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/../lib/runtime/libstdc++.so.6: __mbsrtowcs_chk: symbol not found\nError relocating /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/../lib/runtime/libstdc++.so.6: __getauxval: symbol not found\nError relocating /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/../lib/runtime/libstdc++.so.6: __strftime_l: symbol not found\nError relocating /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/../lib/runtime/libstdc++.so.6: __sprintf_chk: symbol not found\nError relocating /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/../lib/runtime/libstdc++.so.6: __wmemmove_chk: symbol not found\nError relocating /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/../lib/runtime/libstdc++.so.6: __libc_single_threaded: symbol not found\nError relocating /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/../lib/runtime/libgcc_s.so.1: _dl_find_object: symbol not found\nError relocating /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/postgres: __getauxval: symbol not found\nError relocating /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/postgres: __syslog_chk: symbol not found\nError relocating /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/postgres: __strcpy_chk: symbol not found\nError relocating /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/postgres: __strncpy_chk: symbol not found\nError relocating /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/postgres: __strcat_chk: symbol not found\nError relocating /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/postgres: __memset_chk: symbol not found\nError relocating /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/postgres: __read_chk: symbol not found\nError relocating /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/postgres: backtrace: symbol not found\nError relocating /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/postgres: __memmove_chk: symbol not found\nError relocating /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/postgres: __fgets_chk: symbol not found\nError relocating /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/postgres: __fdelt_chk: symbol not found\nError relocating /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/postgres: __mbstowcs_chk: symbol not found\nError relocating /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/postgres: __snprintf_chk: symbol not found\nError relocating /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/postgres: backtrace_symbols: symbol not found\nError relocating /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/postgres: gnu_get_libc_version: symbol not found\nError relocating /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/postgres: __memcpy_chk: symbol not found\nError relocating /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/postgres: __longjmp_chk: symbol not found\nError relocating /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/postgres: backtrace_symbols_fd: symbol not found\nError relocating /tmp/pg-binaries-diagnostics.ANCpDx/postgresql/libexec/postgres: __explicit_bzero_chk: symbol not found",
+  "lookup_environment": {
+    "LD_LIBRARY_PATH": null,
+    "LD_PRELOAD": null,
+    "PATH": "/usr/local/libexec/combined:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+    "PGDATA": null,
+    "PGHOST": null,
+    "PGPORT": null,
+    "PG_CONFIG": null
+  },
+  "machine": "aarch64",
+  "os_release": "NAME=\"Alpine Linux\"\nID=alpine\nVERSION_ID=3.22.6\nPRETTY_NAME=\"Alpine Linux v3.22\"\nHOME_URL=\"https://alpinelinux.org/\"\nBUG_REPORT_URL=\"https://gitlab.alpinelinux.org/alpine/aports/-/issues\"\n",
+  "output_file": "system-failure/output.txt",
+  "package_metadata": {
+    "pgvector": {
+      "architecture": "arm64",
+      "build_configuration": "postgresql-18.6;pgvector-0.8.7;builder=ubuntu-22.04;configure=icu,lz4,zstd,openssl,libxml,libxslt,zlib,uuid-e2fs,no-readline,no-rpath;cflags=-O2,-g;pgvector-optflags=empty;runtime=bundled-glibc-static-musl-launcher",
+      "build_id": "github-39074014194-1",
+      "builder_image_id": "sha256:8f228bad992283310ffcc7ae726d822cc7f5ae24f0ee546150abce17ee11ca95",
+      "configuration_prerequisites": [],
+      "platform": "linux",
+      "project": "pgvector",
+      "requires": [],
+      "runtime_prerequisites": [],
+      "source_archive": {
+        "sha256": "cac0b10c360f05b2d521200105ba3697e773d4cd3731f5a915a7e37ebe0bea85",
+        "url": "https://github.com/pgvector/pgvector/archive/refs/tags/v0.8.7.tar.gz"
+      },
+      "source_revision": "486c0b07ef4cad4b7dafcaaee352fefa5e12a5e8",
+      "sql_names": [
+        "vector"
+      ],
+      "version": "0.8.7"
+    },
+    "postgresql": {
+      "architecture": "arm64",
+      "build_configuration": "postgresql-18.6;pgvector-0.8.7;builder=ubuntu-22.04;configure=icu,lz4,zstd,openssl,libxml,libxslt,zlib,uuid-e2fs,no-readline,no-rpath;cflags=-O2,-g;pgvector-optflags=empty;runtime=bundled-glibc-static-musl-launcher",
+      "build_id": "github-39074014194-1",
+      "builder_image_id": "sha256:8f228bad992283310ffcc7ae726d822cc7f5ae24f0ee546150abce17ee11ca95",
+      "bundled_glibc_version": "2.35-0ubuntu3.15",
+      "capabilities": {
+        "icu": true,
+        "libc_collations": true,
+        "lz4": true,
+        "zstd": true
+      },
+      "component": "postgresql",
+      "included_extensions": [
+        "amcheck",
+        "autoinc",
+        "bloom",
+        "btree_gin",
+        "btree_gist",
+        "citext",
+        "cube",
+        "dblink",
+        "dict_int",
+        "dict_xsyn",
+        "earthdistance",
+        "file_fdw",
+        "fuzzystrmatch",
+        "hstore",
+        "insert_username",
+        "intagg",
+        "intarray",
+        "isn",
+        "lo",
+        "ltree",
+        "moddatetime",
+        "pageinspect",
+        "pg_buffercache",
+        "pg_freespacemap",
+        "pg_logicalinspect",
+        "pg_prewarm",
+        "pg_stat_statements",
+        "pg_surgery",
+        "pg_trgm",
+        "pg_visibility",
+        "pg_walinspect",
+        "pgcrypto",
+        "pgrowlocks",
+        "pgstattuple",
+        "plpgsql",
+        "postgres_fdw",
+        "refint",
+        "seg",
+        "sslinfo",
+        "tablefunc",
+        "tcn",
+        "tsm_system_rows",
+        "tsm_system_time",
+        "unaccent",
+        "uuid-ossp",
+        "xml2"
+      ],
+      "platform": "linux",
+      "postgresql_version": "18.6",
+      "schema_version": 1,
+      "source_archive": {
+        "sha256": "555610c24d53e4316da5b7d3fc25c279d96856d5e0e23ee308c328c5fa881d9f",
+        "url": "https://ftp.postgresql.org/pub/source/v18.6/postgresql-18.6.tar.bz2"
+      },
+      "source_revision": "486c0b07ef4cad4b7dafcaaee352fefa5e12a5e8",
+      "version": "18.6"
+    }
+  },
+  "postgresql_version": "18.6",
+  "run_as_user": "diagnostic-postgres",
+  "schema_version": 1,
+  "source_revision": "486c0b07ef4cad4b7dafcaaee352fefa5e12a5e8",
+  "started_at_utc": "2026-10-17T22:16:06Z"
+}
