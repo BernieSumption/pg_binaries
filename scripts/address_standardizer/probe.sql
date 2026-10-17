@@ -10,8 +10,8 @@ DECLARE
 BEGIN
     SELECT * INTO parsed
       FROM parse_address('385 Landgrove Rd  Landgrove VT 05148');
-    IF parsed.house_num <> '385' OR parsed.city <> 'Landgrove'
-       OR parsed.state <> 'VT' OR parsed.postcode <> '05148' THEN
+    IF parsed.num <> '385' OR parsed.city <> 'Landgrove'
+       OR parsed.state <> 'VT' OR parsed.zip <> '05148' THEN
         RAISE EXCEPTION 'unexpected parse_address result: %', row_to_json(parsed);
     END IF;
 
