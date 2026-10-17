@@ -12,6 +12,14 @@ if [[ ! $pg_version =~ ^(15|16|17|18)\.[0-9]+$ ]]; then
   exit 2
 fi
 vector_version=0.8.7
+build_id=${BUILD_ID:?BUILD_ID is required}
+source_revision=${SOURCE_REVISION:?SOURCE_REVISION is required}
+builder_image_id=${BUILDER_IMAGE_ID:?BUILDER_IMAGE_ID is required}
+if [[ ! $build_id =~ ^[A-Za-z0-9][A-Za-z0-9._-]*$ || ! $source_revision =~ ^([0-9a-fA-F]{40}|[0-9a-fA-F]{64})$ || ! $builder_image_id =~ ^sha256:[0-9a-f]{64}$ ]]; then
+  echo "Invalid Linux build provenance" >&2
+  exit 2
+fi
+build_configuration="postgresql-${pg_version};pgvector-${vector_version};builder=ubuntu-22.04;configure=icu,lz4,zstd,openssl,libxml,libxslt,zlib,uuid-e2fs,no-readline;cflags=-O2,-g;pgvector-optflags=empty;runtime=bundled-glibc-static-musl-launcher"
 pg_archive="postgresql-${pg_version}-linux-${architecture}.tar.gz"
 vector_archive="pgvector-${vector_version}-postgresql-${pg_version}-linux-${architecture}.tar.gz"
 mkdir -p /work/src /work/stage/postgresql /work/stage/pgvector /out
@@ -92,11 +100,11 @@ python3 /usr/local/bin/write-linux-license-inventory \
   "$root" "$pg_version" /work/runtime-packages.tsv
 
 cat > "$root/manifest.json" <<EOF
-{"schema_version":1,"component":"postgresql","version":"${pg_version}","postgresql_version":"${pg_version}","platform":"linux","architecture":"${architecture}","bundled_glibc_version":"$(dpkg-query -W -f='${Version}' libc6)","included_extensions":${builtins},"capabilities":{"icu":true,"libc_collations":true,"lz4":true,"zstd":true}}
+{"schema_version":1,"component":"postgresql","version":"${pg_version}","postgresql_version":"${pg_version}","platform":"linux","architecture":"${architecture}","build_id":"${build_id}","source_revision":"${source_revision}","build_configuration":"${build_configuration}","builder_image_id":"${builder_image_id}","bundled_glibc_version":"$(dpkg-query -W -f='${Version}' libc6)","included_extensions":${builtins},"capabilities":{"icu":true,"libc_collations":true,"lz4":true,"zstd":true}}
 EOF
 
 cat > /work/stage/metadata.json <<EOF
-{"project":"pgvector","version":"${vector_version}","sql_names":["vector"],"requires":[],"configuration_prerequisites":[],"runtime_prerequisites":[]}
+{"project":"pgvector","version":"${vector_version}","sql_names":["vector"],"requires":[],"configuration_prerequisites":[],"runtime_prerequisites":[],"build_id":"${build_id}","source_revision":"${source_revision}","build_configuration":"${build_configuration}","builder_image_id":"${builder_image_id}","platform":"linux","architecture":"${architecture}"}
 EOF
 cd /work/stage
 tar -czf "/out/$pg_archive" postgresql

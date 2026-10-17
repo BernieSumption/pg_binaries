@@ -31,6 +31,12 @@ with open('/tmp/first/postgresql/manifest.json') as f:
 assert (m['schema_version'], m['component'], m['version'],
         m['postgresql_version'], m['platform'], m['architecture']) == (
             1, 'postgresql', version, version, 'linux', architecture), m
+provenance_fields = ('build_id', 'source_revision', 'build_configuration', 'builder_image_id', 'platform', 'architecture')
+provenance = {field: m[field] for field in provenance_fields}
+assert re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9._-]*', provenance['build_id']), provenance
+assert re.fullmatch(r'[0-9a-fA-F]{40}|[0-9a-fA-F]{64}', provenance['source_revision']), provenance
+assert re.fullmatch(r'sha256:[0-9a-f]{64}', provenance['builder_image_id']), provenance
+assert provenance['build_configuration'] and provenance['platform'] == 'linux' and provenance['architecture'] == architecture, provenance
 controls = {path.stem for path in Path('/tmp/first/postgresql/share/extension').glob('*.control')}
 assert controls and m['included_extensions'] == sorted(controls), m
 assert 'vector' not in controls, controls
@@ -97,14 +103,16 @@ assert all((root / 'bin' / name).stat().st_ino == launcher.stat().st_ino for nam
 
 with open('/tmp/vector/metadata.json') as f:
     m = json.load(f)
-assert m == {
+expected_vector = {
     'project': 'pgvector',
     'version': '0.8.7',
     'sql_names': ['vector'],
     'requires': [],
     'configuration_prerequisites': [],
     'runtime_prerequisites': [],
-}, m
+}
+assert all(m.get(key) == value for key, value in expected_vector.items()), m
+assert {field: m[field] for field in provenance_fields} == provenance, m
 PY
 test -s /tmp/vector/pgvector/LICENSES/pgvector.txt
 pgroot=/tmp/first/postgresql
