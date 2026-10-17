@@ -17,6 +17,7 @@ tar -xzf "/tiger/$tiger_archive" -C /tmp/tiger
 python3 - "$architecture" <<'PY'
 import json
 from pathlib import Path
+import shutil
 import sys
 
 architecture = sys.argv[1]
@@ -46,16 +47,20 @@ for project, source in (
     for path in source.rglob('*'):
         relative = path.relative_to(source)
         target = prefix / relative
-        if path.is_dir():
+        if path.is_symlink():
+            if target.exists() or target.is_symlink():
+                raise SystemExit(f'{project} payload collision: {relative}')
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.symlink_to(path.readlink())
+        elif path.is_dir():
             if target.exists() and not target.is_dir():
                 raise SystemExit(f'{project} payload collision: {relative}')
             target.mkdir(parents=True, exist_ok=True)
         else:
-            if target.exists():
+            if target.exists() or target.is_symlink():
                 raise SystemExit(f'{project} payload collision: {relative}')
             target.parent.mkdir(parents=True, exist_ok=True)
-            target.write_bytes(path.read_bytes())
-            target.chmod(path.stat().st_mode & 0o777)
+            shutil.copy2(path, target)
 PY
 pgroot=/tmp/install/postgresql
 test -s "$pgroot/share/extension/postgis_tiger_geocoder.control"
