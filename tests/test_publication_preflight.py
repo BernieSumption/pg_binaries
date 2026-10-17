@@ -66,6 +66,15 @@ class PublicationPreflightTests(unittest.TestCase):
             member = tarfile.TarInfo("postgresql/share/extension/example.control")
             member.size = len(payload)
             archive.addfile(member, io.BytesIO(payload))
+            os_name, architecture = platform.split("-", 1)
+            manifest = json.dumps({
+                "schema_version": 1, "component": "postgresql", "version": version,
+                "postgresql_version": version, "platform": os_name,
+                "architecture": architecture, "included_extensions": ["example"],
+            }).encode()
+            member = tarfile.TarInfo("postgresql/manifest.json")
+            member.size = len(manifest)
+            archive.addfile(member, io.BytesIO(manifest))
             self._licence_members(archive, "postgresql", "share/extension")
         payload = path.read_bytes()
         checksum = hashlib.sha256(payload).hexdigest()
@@ -171,6 +180,34 @@ class PublicationPreflightTests(unittest.TestCase):
         for record in self.candidate["verification_evidence"][url]:
             record["sha256"] = checksum
         self.candidate["extensions"]["example"]["1.0"]["downloads"]["linux-x86_64"][0]["sha256"] = checksum
+
+    def _rewrite_core(self, transform):
+        url = next(url for url in self.staged if "postgresql-15.9-linux-x86_64" in url)
+        path = Path(self.staged[url]["path"])
+        with tarfile.open(path, "r:gz") as archive:
+            contents = {m.name: archive.extractfile(m).read() for m in archive.getmembers() if m.isfile()}
+        transform(contents)
+        with tarfile.open(path, "w:gz") as archive:
+            for name, data in contents.items():
+                member = tarfile.TarInfo(name)
+                member.size = len(data)
+                archive.addfile(member, io.BytesIO(data))
+        checksum = hashlib.sha256(path.read_bytes()).hexdigest()
+        self.staged[url]["sha256"] = checksum
+        self.candidate["postgresql"]["15.9"]["downloads"]["linux-x86_64"]["sha256"] = checksum
+        for record in self.candidate["verification_evidence"][url]:
+            record["sha256"] = checksum
+        extension_url = next(url for url in self.staged if "example-linux-x86_64" in url)
+        for record in self.candidate["verification_evidence"][extension_url]:
+            record["assembled_core"]["sha256"] = checksum
+
+    def _rewrite_core_manifest(self, transform):
+        def rewrite(contents):
+            name = "postgresql/manifest.json"
+            manifest = json.loads(contents[name])
+            transform(manifest)
+            contents[name] = json.dumps(manifest).encode()
+        self._rewrite_core(rewrite)
 
     def _review(self, **changes):
         def transform(contents):
@@ -472,6 +509,21 @@ class PublicationPreflightTests(unittest.TestCase):
         self.candidate["postgresql"]["15.9"]["included_extensions"] = ["wrong"]
         with self.assertRaisesRegex(publication_preflight.PreflightError,
                                     "do not match staged archive controls"):
+            self.check()
+
+    def test_rejects_postgresql_archive_without_manifest(self):
+        self._rewrite_core(lambda contents: contents.pop("postgresql/manifest.json"))
+        with self.assertRaisesRegex(publication_preflight.PreflightError, "requires a regular manifest.json"):
+            self.check()
+
+    def test_rejects_postgresql_manifest_target_mismatch(self):
+        self._rewrite_core_manifest(lambda manifest: manifest.update(architecture="arm64"))
+        with self.assertRaisesRegex(publication_preflight.PreflightError, "manifest target does not match candidate"):
+            self.check()
+
+    def test_rejects_postgresql_manifest_builtin_mismatch(self):
+        self._rewrite_core_manifest(lambda manifest: manifest.update(included_extensions=["other"]))
+        with self.assertRaisesRegex(publication_preflight.PreflightError, "manifest included_extensions"):
             self.check()
 
     def test_rejects_postgresql_archive_without_control_files(self):
