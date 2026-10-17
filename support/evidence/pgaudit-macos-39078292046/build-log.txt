@@ -1,0 +1,192 @@
+probe	Set up job	﻿2026-10-17T23:15:17.7755530Z Current runner version: '2.337.0'
+probe	Set up job	2026-10-17T23:15:17.7770890Z ##[group]Runner Image Provisioner
+probe	Set up job	2026-10-17T23:15:17.7771500Z Hosted Compute Agent
+probe	Set up job	2026-10-17T23:15:17.7771900Z Version: 20260828.587
+probe	Set up job	2026-10-17T23:15:17.7772320Z Commit: abac92662cab4cc7352de4f9f9d2e2419aad9c29
+probe	Set up job	2026-10-17T23:15:17.7772810Z Build Date: 2026-08-28T16:44:25Z
+probe	Set up job	2026-10-17T23:15:17.7773250Z Worker ID: {9cb1d4cb-e268-42ec-9528-110aacce50ac}
+probe	Set up job	2026-10-17T23:15:17.7773720Z Azure Region: westus
+probe	Set up job	2026-10-17T23:15:17.7774090Z ##[endgroup]
+probe	Set up job	2026-10-17T23:15:17.7775110Z ##[group]Operating System
+probe	Set up job	2026-10-17T23:15:17.7775550Z macOS
+probe	Set up job	2026-10-17T23:15:17.7775890Z 15.7.9
+probe	Set up job	2026-10-17T23:15:17.7776220Z 24G830
+probe	Set up job	2026-10-17T23:15:17.7776570Z ##[endgroup]
+probe	Set up job	2026-10-17T23:15:17.7776940Z ##[group]Runner Image
+probe	Set up job	2026-10-17T23:15:17.7777400Z Image: macos-15-arm64
+probe	Set up job	2026-10-17T23:15:17.7777860Z Version: 20260907.0337.1
+probe	Set up job	2026-10-17T23:15:17.7778670Z Included Software: https://github.com/actions/runner-images/blob/macos-15-arm64/20260907.0337/images/macos/macos-15-arm64-Readme.md
+probe	Set up job	2026-10-17T23:15:17.7779850Z Image Release: https://github.com/actions/runner-images/releases/tag/macos-15-arm64%2F20260907.0337
+probe	Set up job	2026-10-17T23:15:17.7780550Z ##[endgroup]
+probe	Set up job	2026-10-17T23:15:17.7781390Z ##[group]GITHUB_TOKEN Permissions
+probe	Set up job	2026-10-17T23:15:17.7782610Z Actions: read
+probe	Set up job	2026-10-17T23:15:17.7782980Z Contents: read
+probe	Set up job	2026-10-17T23:15:17.7783360Z Metadata: read
+probe	Set up job	2026-10-17T23:15:17.7783820Z ##[endgroup]
+probe	Set up job	2026-10-17T23:15:17.7785920Z Secret source: Actions
+probe	Set up job	2026-10-17T23:15:17.7786560Z Cache mode: write
+probe	Set up job	2026-10-17T23:15:17.7787030Z Prepare workflow directory
+probe	Set up job	2026-10-17T23:15:17.8075280Z Prepare all required actions
+probe	Set up job	2026-10-17T23:15:17.8112960Z Getting action download info
+probe	Set up job	2026-10-17T23:15:17.9474290Z Download action repository 'actions/checkout@v4' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+probe	Set up job	2026-10-17T23:15:18.1754120Z Download action repository 'actions/download-artifact@v4' (SHA:d3f86a106a0bac45b974a628896c90dbdf5c8093)
+probe	Set up job	2026-10-17T23:15:18.9305570Z Download action repository 'actions/upload-artifact@v4' (SHA:ea165f8d65b6e75b540449e92b4886f43607fa02)
+probe	Set up job	2026-10-17T23:15:19.1775350Z Complete job name: probe
+probe	Run actions/checkout@v4	﻿2026-10-17T23:15:19.2377930Z ##[group]Run actions/checkout@v4
+probe	Run actions/checkout@v4	2026-10-17T23:15:19.2378620Z with:
+probe	Run actions/checkout@v4	2026-10-17T23:15:19.2379050Z   repository: BernieSumption/pg_binaries
+probe	Run actions/checkout@v4	2026-10-17T23:15:19.2382360Z   token: ***
+probe	Run actions/checkout@v4	2026-10-17T23:15:19.2382780Z   ssh-strict: true
+probe	Run actions/checkout@v4	2026-10-17T23:15:19.2383140Z   ssh-user: git
+probe	Run actions/checkout@v4	2026-10-17T23:15:19.2383540Z   persist-credentials: true
+probe	Run actions/checkout@v4	2026-10-17T23:15:19.2383980Z   clean: true
+probe	Run actions/checkout@v4	2026-10-17T23:15:19.2384350Z   sparse-checkout-cone-mode: true
+probe	Run actions/checkout@v4	2026-10-17T23:15:19.2384870Z   fetch-depth: 1
+probe	Run actions/checkout@v4	2026-10-17T23:15:19.2385250Z   fetch-tags: false
+probe	Run actions/checkout@v4	2026-10-17T23:15:19.2385710Z   show-progress: true
+probe	Run actions/checkout@v4	2026-10-17T23:15:19.2386170Z   lfs: false
+probe	Run actions/checkout@v4	2026-10-17T23:15:19.2386580Z   submodules: false
+probe	Run actions/checkout@v4	2026-10-17T23:15:19.2387000Z   set-safe-directory: true
+probe	Run actions/checkout@v4	2026-10-17T23:15:19.2387510Z   allow-unsafe-pr-checkout: false
+probe	Run actions/checkout@v4	2026-10-17T23:15:19.2388350Z ##[endgroup]
+probe	Run actions/checkout@v4	2026-10-17T23:15:19.5891520Z Syncing repository: BernieSumption/pg_binaries
+probe	Run actions/checkout@v4	2026-10-17T23:15:19.5894150Z ##[group]Getting Git version info
+probe	Run actions/checkout@v4	2026-10-17T23:15:19.5895230Z Working directory is '/Users/runner/work/pg_binaries/pg_binaries'
+probe	Run actions/checkout@v4	2026-10-17T23:15:19.5896400Z [command]/opt/homebrew/bin/git version
+probe	Run actions/checkout@v4	2026-10-17T23:15:19.6337150Z git version 2.55.0
+probe	Run actions/checkout@v4	2026-10-17T23:15:19.6351970Z ##[endgroup]
+probe	Run actions/checkout@v4	2026-10-17T23:15:19.6358730Z Copying '/Users/runner/.gitconfig' to '/Users/runner/work/_temp/75055be8-41c7-4ab1-b0fa-44b14f5baa92/.gitconfig'
+probe	Run actions/checkout@v4	2026-10-17T23:15:19.6364940Z Temporarily overriding HOME='/Users/runner/work/_temp/75055be8-41c7-4ab1-b0fa-44b14f5baa92' before making global git config changes
+probe	Run actions/checkout@v4	2026-10-17T23:15:19.6366130Z Adding repository directory to the temporary git global config as a safe directory
+probe	Run actions/checkout@v4	2026-10-17T23:15:19.6368270Z [command]/opt/homebrew/bin/git config --global --add safe.directory /Users/runner/work/pg_binaries/pg_binaries
+probe	Run actions/checkout@v4	2026-10-17T23:15:19.6848210Z Deleting the contents of '/Users/runner/work/pg_binaries/pg_binaries'
+probe	Run actions/checkout@v4	2026-10-17T23:15:19.6851660Z ##[group]Initializing the repository
+probe	Run actions/checkout@v4	2026-10-17T23:15:19.6853900Z [command]/opt/homebrew/bin/git init /Users/runner/work/pg_binaries/pg_binaries
+probe	Run actions/checkout@v4	2026-10-17T23:15:19.7026050Z hint: Using 'master' as the name for the initial branch. This default branch name
+probe	Run actions/checkout@v4	2026-10-17T23:15:19.7027160Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+probe	Run actions/checkout@v4	2026-10-17T23:15:19.7027980Z hint: to use in all of your new repositories, which will suppress this warning,
+probe	Run actions/checkout@v4	2026-10-17T23:15:19.7028650Z hint: call:
+probe	Run actions/checkout@v4	2026-10-17T23:15:19.7029010Z hint:
+probe	Run actions/checkout@v4	2026-10-17T23:15:19.7029520Z hint: 	git config --global init.defaultBranch <name>
+probe	Run actions/checkout@v4	2026-10-17T23:15:19.7030040Z hint:
+probe	Run actions/checkout@v4	2026-10-17T23:15:19.7030620Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+probe	Run actions/checkout@v4	2026-10-17T23:15:19.7031470Z hint: 'development'. The just-created branch can be renamed via this command:
+probe	Run actions/checkout@v4	2026-10-17T23:15:19.7032120Z hint:
+probe	Run actions/checkout@v4	2026-10-17T23:15:19.7032680Z hint: 	git branch -m <name>
+probe	Run actions/checkout@v4	2026-10-17T23:15:19.7033130Z hint:
+probe	Run actions/checkout@v4	2026-10-17T23:15:19.7033650Z hint: Disable this message with "git config set advice.defaultBranchName false"
+probe	Run actions/checkout@v4	2026-10-17T23:15:19.7034690Z Initialized empty Git repository in /Users/runner/work/pg_binaries/pg_binaries/.git/
+probe	Run actions/checkout@v4	2026-10-17T23:15:19.7043130Z [command]/opt/homebrew/bin/git remote add origin https://github.com/BernieSumption/pg_binaries
+probe	Run actions/checkout@v4	2026-10-17T23:15:19.7118430Z ##[endgroup]
+probe	Run actions/checkout@v4	2026-10-17T23:15:19.7119970Z ##[group]Disabling automatic garbage collection
+probe	Run actions/checkout@v4	2026-10-17T23:15:19.7120620Z [command]/opt/homebrew/bin/git config --local gc.auto 0
+probe	Run actions/checkout@v4	2026-10-17T23:15:19.7188570Z ##[endgroup]
+probe	Run actions/checkout@v4	2026-10-17T23:15:19.7189300Z ##[group]Setting up auth
+probe	Run actions/checkout@v4	2026-10-17T23:15:19.7192730Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp core\.sshCommand
+probe	Run actions/checkout@v4	2026-10-17T23:15:19.7250750Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+probe	Run actions/checkout@v4	2026-10-17T23:15:19.8509260Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+probe	Run actions/checkout@v4	2026-10-17T23:15:19.8517720Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+probe	Run actions/checkout@v4	2026-10-17T23:15:19.9529800Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+probe	Run actions/checkout@v4	2026-10-17T23:15:19.9599250Z [command]/opt/homebrew/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+probe	Run actions/checkout@v4	2026-10-17T23:15:20.0662300Z [command]/opt/homebrew/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+probe	Run actions/checkout@v4	2026-10-17T23:15:20.0846180Z ##[endgroup]
+probe	Run actions/checkout@v4	2026-10-17T23:15:20.0847000Z ##[group]Fetching the repository
+probe	Run actions/checkout@v4	2026-10-17T23:15:20.0852230Z [command]/opt/homebrew/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +6d27fc2790a03a5eb49273f7813a3c86bb59c573:refs/remotes/origin/spike
+probe	Run actions/checkout@v4	2026-10-17T23:15:21.3054310Z From https://github.com/BernieSumption/pg_binaries
+probe	Run actions/checkout@v4	2026-10-17T23:15:21.3057030Z  * [new ref]         6d27fc2790a03a5eb49273f7813a3c86bb59c573 -> origin/spike
+probe	Run actions/checkout@v4	2026-10-17T23:15:21.3067900Z ##[endgroup]
+probe	Run actions/checkout@v4	2026-10-17T23:15:21.3069050Z ##[group]Determining the checkout info
+probe	Run actions/checkout@v4	2026-10-17T23:15:21.3070380Z ##[endgroup]
+probe	Run actions/checkout@v4	2026-10-17T23:15:21.3074610Z [command]/opt/homebrew/bin/git sparse-checkout disable
+probe	Run actions/checkout@v4	2026-10-17T23:15:21.3197280Z [command]/opt/homebrew/bin/git config --local --unset-all extensions.worktreeConfig
+probe	Run actions/checkout@v4	2026-10-17T23:15:21.3261190Z ##[group]Checking out the ref
+probe	Run actions/checkout@v4	2026-10-17T23:15:21.3263110Z [command]/opt/homebrew/bin/git checkout --progress --force -B spike refs/remotes/origin/spike
+probe	Run actions/checkout@v4	2026-10-17T23:15:21.9704620Z Switched to a new branch 'spike'
+probe	Run actions/checkout@v4	2026-10-17T23:15:21.9753910Z branch 'spike' set up to track 'origin/spike'.
+probe	Run actions/checkout@v4	2026-10-17T23:15:21.9808480Z ##[endgroup]
+probe	Run actions/checkout@v4	2026-10-17T23:15:21.9854720Z [command]/opt/homebrew/bin/git log -1 --format=%H
+probe	Run actions/checkout@v4	2026-10-17T23:15:21.9928650Z 6d27fc2790a03a5eb49273f7813a3c86bb59c573
+probe	Download the successful PostgreSQL 18.6 Apple Silicon artifact	﻿2026-10-17T23:15:22.0243200Z ##[group]Run actions/download-artifact@v4
+probe	Download the successful PostgreSQL 18.6 Apple Silicon artifact	2026-10-17T23:15:22.0243520Z with:
+probe	Download the successful PostgreSQL 18.6 Apple Silicon artifact	2026-10-17T23:15:22.0243700Z   name: macos-arm64-pilot-archives
+probe	Download the successful PostgreSQL 18.6 Apple Silicon artifact	2026-10-17T23:15:22.0243970Z   run-id: 39075939632
+probe	Download the successful PostgreSQL 18.6 Apple Silicon artifact	2026-10-17T23:15:22.0246360Z   github-token: ***
+probe	Download the successful PostgreSQL 18.6 Apple Silicon artifact	2026-10-17T23:15:22.0246690Z   path: /Users/runner/work/_temp/core-archives
+probe	Download the successful PostgreSQL 18.6 Apple Silicon artifact	2026-10-17T23:15:22.0246970Z   merge-multiple: false
+probe	Download the successful PostgreSQL 18.6 Apple Silicon artifact	2026-10-17T23:15:22.0247200Z   repository: BernieSumption/pg_binaries
+probe	Download the successful PostgreSQL 18.6 Apple Silicon artifact	2026-10-17T23:15:22.0247420Z ##[endgroup]
+probe	Download the successful PostgreSQL 18.6 Apple Silicon artifact	2026-10-17T23:15:22.2081370Z (node:1133) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+probe	Download the successful PostgreSQL 18.6 Apple Silicon artifact	2026-10-17T23:15:22.2082000Z Downloading single artifact
+probe	Download the successful PostgreSQL 18.6 Apple Silicon artifact	2026-10-17T23:15:22.2082500Z (Use `node --trace-deprecation ...` to show where the warning was created)
+probe	Download the successful PostgreSQL 18.6 Apple Silicon artifact	2026-10-17T23:15:22.2402180Z (node:1133) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+probe	Download the successful PostgreSQL 18.6 Apple Silicon artifact	2026-10-17T23:15:22.6074020Z Preparing to download the following artifacts:
+probe	Download the successful PostgreSQL 18.6 Apple Silicon artifact	2026-10-17T23:15:22.6084480Z - macos-arm64-pilot-archives (ID: 12117129814, Size: 54682138, Expected Digest: sha256:0802c1026b74f9f8672e127e001ac81e411596f4e8a35eb14d01ebc19a20fc75)
+probe	Download the successful PostgreSQL 18.6 Apple Silicon artifact	2026-10-17T23:15:22.6097370Z Downloading artifact '12117129814' from 'BernieSumption/pg_binaries'
+probe	Download the successful PostgreSQL 18.6 Apple Silicon artifact	2026-10-17T23:15:22.8549450Z Redirecting to blob download url: https://productionresultssa10.blob.core.windows.net/actions-results/8eae53d0-2c70-8290-b923-c06434bbaa9a/workflow-job-run-9e8e85f2-92e6-5cd1-82aa-dd91adb25564/artifacts/ac02c6bcd2dcff03255971c8a46d7451d402d27069f936c2637a52af04f7d2f5.zip
+probe	Download the successful PostgreSQL 18.6 Apple Silicon artifact	2026-10-17T23:15:22.8550720Z Starting download of artifact to: /Users/runner/work/_temp/core-archives
+probe	Download the successful PostgreSQL 18.6 Apple Silicon artifact	2026-10-17T23:15:22.9280550Z (node:1133) [DEP0005] DeprecationWarning: Buffer() is deprecated due to security and usability issues. Please use the Buffer.alloc(), Buffer.allocUnsafe(), or Buffer.from() methods instead.
+probe	Download the successful PostgreSQL 18.6 Apple Silicon artifact	2026-10-17T23:15:23.9044360Z SHA256 digest of downloaded artifact is 0802c1026b74f9f8672e127e001ac81e411596f4e8a35eb14d01ebc19a20fc75
+probe	Download the successful PostgreSQL 18.6 Apple Silicon artifact	2026-10-17T23:15:23.9075060Z Artifact download completed successfully.
+probe	Download the successful PostgreSQL 18.6 Apple Silicon artifact	2026-10-17T23:15:23.9075640Z Total of 1 artifact(s) downloaded
+probe	Download the successful PostgreSQL 18.6 Apple Silicon artifact	2026-10-17T23:15:23.9076300Z Download artifact has finished successfully
+probe	Build and verify pgAudit against the archived core	﻿2026-10-17T23:15:23.9211440Z ##[group]Run bash scripts/pgaudit/macos-feasibility.sh "$RUNNER_TEMP/core-archives" "$RUNNER_TEMP/pgAudit-feasibility"
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:15:23.9213380Z [36;1mbash scripts/pgaudit/macos-feasibility.sh "$RUNNER_TEMP/core-archives" "$RUNNER_TEMP/pgAudit-feasibility"[0m
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:15:23.9289350Z shell: /bin/bash -e {0}
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:15:23.9289580Z ##[endgroup]
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:15:24.2744730Z postgresql-18.6-macos-arm64.tar.gz: OK
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:15:24.4250110Z postgresql-18.6-macos-arm64.tar.gz: OK
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:15:25.1533590Z   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:15:25.1544770Z                                  Dload  Upload   Total   Spent    Left  Speed
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:15:25.1545240Z 
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:15:25.4771010Z   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:15:25.4772010Z   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:15:25.4788520Z   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:15:25.8176130Z 
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:15:25.8176890Z 100 47346    0 47346    0     0  71275      0 --:--:-- --:--:-- --:--:-- 71275
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:15:25.8340930Z pgaudit.tar.gz: OK
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:15:27.2250380Z gcc -Wall -Wmissing-prototypes -Wpointer-arith -Wdeclaration-after-statement -Werror=vla -Werror=unguarded-availability-new -Wendif-labels -Wmissing-format-attribute -Wcast-function-type -Wformat-security -Wmissing-variable-declarations -fno-strict-aliasing -fwrapv -fexcess-precision=standard -Wno-unused-command-line-argument -Wno-compound-token-split-by-macro -Wno-format-truncation -Wno-cast-function-type-strict -O2 -g  -fvisibility=hidden -I. -I./ -I/private/tmp/pgaudit-macos.vpUiOt/first/postgresql/include/server -I/private/tmp/pgaudit-macos.vpUiOt/first/postgresql/include/internal -isysroot /Applications/Xcode_16.4.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.5.sdk -I/Users/runner/work/_temp/pg-macos-pilot.bcLP8u/dependencies/include  -I/Users/runner/work/_temp/pg-macos-pilot.bcLP8u/dependencies/include/libxml2 -I/usr/local/include -I/Users/runner/work/_temp/pg-macos-pilot.bcLP8u/dependencies/include -I/Users/runner/work/_temp/pg-macos-pilot.bcLP8u/dependencies/include    -c -o pgaudit.o pgaudit.c
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:15:28.6234230Z In file included from pgaudit.c:29:
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:15:28.6235150Z In file included from /private/tmp/pgaudit-macos.vpUiOt/first/postgresql/include/server/libpq/auth.h:17:
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:15:28.6236120Z /private/tmp/pgaudit-macos.vpUiOt/first/postgresql/include/server/libpq/libpq-be.h:25:10: fatal error: 'openssl/ssl.h' file not found
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:15:28.6237100Z    25 | #include <openssl/ssl.h>
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:15:28.6237530Z       |          ^~~~~~~~~~~~~~~
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:15:28.6505240Z 1 error generated.
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:15:28.6560900Z make: *** [pgaudit.o] Error 1
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:15:28.7480260Z ##[error]Process completed with exit code 2.
+probe	Run actions/upload-artifact@v4	﻿2026-10-17T23:15:28.7560070Z ##[group]Run actions/upload-artifact@v4
+probe	Run actions/upload-artifact@v4	2026-10-17T23:15:28.7560380Z with:
+probe	Run actions/upload-artifact@v4	2026-10-17T23:15:28.7560700Z   name: pgaudit-macos-arm64-feasibility-39078292046
+probe	Run actions/upload-artifact@v4	2026-10-17T23:15:28.7561530Z   path: /Users/runner/work/_temp/pgAudit-feasibility/*.tar.gz
+probe	Run actions/upload-artifact@v4	/Users/runner/work/_temp/pgAudit-feasibility/*.sha256
+probe	Run actions/upload-artifact@v4	/Users/runner/work/_temp/pgAudit-feasibility/*.json
+probe	Run actions/upload-artifact@v4	/Users/runner/work/_temp/pgAudit-feasibility/*.txt
+probe	Run actions/upload-artifact@v4	
+probe	Run actions/upload-artifact@v4	2026-10-17T23:15:28.7562290Z   if-no-files-found: warn
+probe	Run actions/upload-artifact@v4	2026-10-17T23:15:28.7562580Z   retention-days: 7
+probe	Run actions/upload-artifact@v4	2026-10-17T23:15:28.7562750Z   compression-level: 6
+probe	Run actions/upload-artifact@v4	2026-10-17T23:15:28.7563010Z   overwrite: false
+probe	Run actions/upload-artifact@v4	2026-10-17T23:15:28.7563210Z   include-hidden-files: false
+probe	Run actions/upload-artifact@v4	2026-10-17T23:15:28.7563490Z ##[endgroup]
+probe	Run actions/upload-artifact@v4	2026-10-17T23:15:28.9574360Z (node:1210) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+probe	Run actions/upload-artifact@v4	2026-10-17T23:15:28.9575110Z (Use `node --trace-deprecation ...` to show where the warning was created)
+probe	Run actions/upload-artifact@v4	2026-10-17T23:15:28.9623110Z ##[warning]No files were found with the provided path: /Users/runner/work/_temp/pgAudit-feasibility/*.tar.gz
+probe	Run actions/upload-artifact@v4	/Users/runner/work/_temp/pgAudit-feasibility/*.sha256
+probe	Run actions/upload-artifact@v4	/Users/runner/work/_temp/pgAudit-feasibility/*.json
+probe	Run actions/upload-artifact@v4	/Users/runner/work/_temp/pgAudit-feasibility/*.txt. No artifacts will be uploaded.
+probe	Post Run actions/checkout@v4	﻿2026-10-17T23:15:28.9744340Z Post job cleanup.
+probe	Post Run actions/checkout@v4	2026-10-17T23:15:29.0622440Z [command]/opt/homebrew/bin/git version
+probe	Post Run actions/checkout@v4	2026-10-17T23:15:29.0706130Z git version 2.55.0
+probe	Post Run actions/checkout@v4	2026-10-17T23:15:29.0724850Z Copying '/Users/runner/.gitconfig' to '/Users/runner/work/_temp/94b59e38-5772-4ba6-890d-21561f2ed004/.gitconfig'
+probe	Post Run actions/checkout@v4	2026-10-17T23:15:29.0731290Z Temporarily overriding HOME='/Users/runner/work/_temp/94b59e38-5772-4ba6-890d-21561f2ed004' before making global git config changes
+probe	Post Run actions/checkout@v4	2026-10-17T23:15:29.0732090Z Adding repository directory to the temporary git global config as a safe directory
+probe	Post Run actions/checkout@v4	2026-10-17T23:15:29.0735370Z [command]/opt/homebrew/bin/git config --global --add safe.directory /Users/runner/work/pg_binaries/pg_binaries
+probe	Post Run actions/checkout@v4	2026-10-17T23:15:29.0798370Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp core\.sshCommand
+probe	Post Run actions/checkout@v4	2026-10-17T23:15:29.0857190Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+probe	Post Run actions/checkout@v4	2026-10-17T23:15:29.1663410Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+probe	Post Run actions/checkout@v4	2026-10-17T23:15:29.1749460Z http.https://github.com/.extraheader
+probe	Post Run actions/checkout@v4	2026-10-17T23:15:29.1768290Z [command]/opt/homebrew/bin/git config --local --unset-all http.https://github.com/.extraheader
+probe	Post Run actions/checkout@v4	2026-10-17T23:15:29.1858560Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+probe	Post Run actions/checkout@v4	2026-10-17T23:15:29.2622750Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+probe	Post Run actions/checkout@v4	2026-10-17T23:15:29.2683970Z [command]/opt/homebrew/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+probe	Complete job	﻿2026-10-17T23:15:29.3662530Z Cleaning up orphan processes
+probe	Complete job	2026-10-17T23:15:29.4132440Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/download-artifact@v4, actions/upload-artifact@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/

@@ -8,6 +8,8 @@ pg_version=18.6
 pgaudit_version=18.0
 source_url='https://github.com/pgaudit/pgaudit/archive/refs/tags/18.0.tar.gz'
 source_sha256=988e8afeda320ebe0a3e632ef6b6bce5d3a08346c2e100a173a585c9521d1fa5
+openssl_url='https://github.com/openssl/openssl/releases/download/openssl-3.5.8/openssl-3.5.8.tar.gz'
+openssl_sha256=a8f84a39918ec6415ce765d9b429d313ba97b8143169c172e734b9514464f5b2
 core_sha256=853e0eafb3570378225d2ea16247c9de31770f85df5230509885df2ca5e89d67
 repo=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 core_archives=$(cd "$core_archives" && pwd)
@@ -27,12 +29,17 @@ shasum -a 256 -c "$core_name.sha256"
 printf '%s  %s\n' "$core_sha256" "$core_name" | shasum -a 256 -c -
 
 work=$(mktemp -d /tmp/pgaudit-macos.XXXXXX)
+prefix_link_created=false
+dependencies_created=false
 cleanup() {
   if [[ -n ${pg_ctl:-} && -n ${data_dir:-} ]]; then
     "$pg_ctl" -D "$data_dir" -m immediate stop >/dev/null 2>&1 || true
   fi
-  if [[ -n ${prefix_link:-} && -L $prefix_link ]]; then
+  if [[ $prefix_link_created == true && -n ${prefix_link:-} && -L $prefix_link ]]; then
     rm "$prefix_link"
+  fi
+  if [[ $dependencies_created == true && -n ${dependencies_root:-} && -d $dependencies_root ]]; then
+    rm -rf "$dependencies_root"
   fi
   rm -rf "$work"
 }
@@ -82,9 +89,35 @@ if [[ -e "$prefix_link" || -L "$prefix_link" ]]; then
 fi
 mkdir -p "$(dirname "$prefix_link")"
 ln -s "$pgroot" "$prefix_link"
+prefix_link_created=true
 pg_config="$prefix_link/bin/pg_config"
 test "$("$pg_config" --version)" = "PostgreSQL $pg_version"
 export MACOSX_DEPLOYMENT_TARGET=11.0
+
+cd "$work/source"
+curl -fL --retry 3 -o openssl.tar.gz "$openssl_url"
+printf '%s  %s\n' "$openssl_sha256" openssl.tar.gz | shasum -a 256 -c -
+test "$(tar -tzf openssl.tar.gz | cut -d/ -f1 | sort -u)" = openssl-3.5.8
+tar -xzf openssl.tar.gz
+openssl_source="$work/source/openssl-3.5.8"
+openssl_prefix="$work/openssl-install"
+cd "$openssl_source"
+./Configure darwin64-arm64-cc no-tests \
+  --prefix="$openssl_prefix" --openssldir="$openssl_prefix/ssl" --libdir=lib
+test -s include/openssl/opensslconf.h
+test -s include/openssl/configuration.h
+
+# PostgreSQL's archived build flags retain this runner-local include path.
+# Recreate only the pinned OpenSSL public headers needed by PGXS compilation;
+# the archive already supplies PostgreSQL's bundled runtime libraries.
+dependencies_root="$(dirname "$(dirname "$prefix")")/dependencies"
+if [[ -e "$dependencies_root" || -L "$dependencies_root" ]]; then
+  echo "Refusing to replace existing PostgreSQL dependency path: $dependencies_root" >&2
+  exit 1
+fi
+mkdir -p "$dependencies_root/include"
+dependencies_created=true
+cp -R include/openssl "$dependencies_root/include/"
 
 cd "$work/source"
 curl -fL --retry 3 -o pgaudit.tar.gz "$source_url"

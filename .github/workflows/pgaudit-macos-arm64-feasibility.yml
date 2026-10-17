@@ -6,7 +6,10 @@ on:
     branches: [spike]
     paths:
       - .github/workflows/pgaudit-macos-arm64-feasibility.yml
-
+      - scripts/pgaudit/macos-feasibility.sh
+      - scripts/pgaudit/probe.sql
+      - scripts/macos/build-source-dependencies.sh
+      - scripts/macos/static_analysis.py
 permissions:
   actions: read
   contents: read
