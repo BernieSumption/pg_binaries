@@ -6,6 +6,7 @@ pg_archive="postgresql-${pg_version}-linux-x86_64.tar.gz"
 cd /core
 sha256sum -c "$pg_archive.sha256"
 mkdir -p /opt /work/source /work/run /out
+trap 'chmod -R a+rX /out' EXIT
 tar -xzf "$pg_archive" -C /opt
 pgroot=/opt/postgresql
 test "$("$pgroot/bin/pg_config" --version)" = "PostgreSQL $pg_version"
@@ -40,7 +41,7 @@ for version in 3.4.6 3.5.7 3.6.4; do
   runuser -u postgres -- "$pgroot/bin/pg_ctl" -D "$data" \
     -l "$data/server.log" \
     -o "-k $socket -p 55437 -h ''" -w start
-  trap 'runuser -u postgres -- "$pgroot/bin/pg_ctl" -D "$data" -m immediate stop >/dev/null 2>&1 || true' EXIT
+  trap 'runuser -u postgres -- "$pgroot/bin/pg_ctl" -D "$data" -m immediate stop >/dev/null 2>&1 || true; chmod -R a+rX /out' EXIT
 
   case "$version" in
     3.4.6) fixtures=(3.4.6) ;;
@@ -60,7 +61,7 @@ for version in 3.4.6 3.5.7 3.6.4; do
   done
   runuser -u postgres -- "$pgroot/bin/pg_ctl" -D "$data" -m fast -w stop
   cp "$data/server.log" "/out/server-${version}.log"
-  trap - EXIT
+  trap 'chmod -R a+rX /out' EXIT
 done
 
 sha256sum /core/"$pg_archive" /repo/scripts/postgis/ddl-3.4.6.sql \

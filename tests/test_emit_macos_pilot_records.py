@@ -62,9 +62,11 @@ class EmitMacOSPilotRecordsTests(unittest.TestCase):
     def tearDown(self):
         self.temp.cleanup()
 
-    def emit(self):
+    def emit(self, architecture="x86_64", **kwargs):
         return records.emit(self.root, self.archives, self.output, "18.6", "a" * 40,
-                            "15.7", "x86_64", "macos-15-intel/ImageVersion=2026.01")
+                            "15.7", architecture,
+                            "macos-15-intel/ImageVersion=2026.01" if architecture == "x86_64"
+                            else "macos-15/ImageVersion=2026.01", **kwargs)
 
     def test_emits_two_bound_pilot_records(self):
         paths = self.emit()
@@ -113,8 +115,7 @@ class EmitMacOSPilotRecordsTests(unittest.TestCase):
             (self.archives / name).write_bytes(data)
             (self.archives / f"{name}.sha256").write_text(
                 f"{hashlib.sha256(data).hexdigest()}  {name}\n", encoding="utf-8")
-        paths = records.emit(self.root, self.archives, self.output, "18.6", "b" * 40,
-                              "15.7", "arm64", "macos-15/ImageVersion=2026.01")
+        paths = self.emit(architecture="arm64")
         self.assertEqual({path.name for path in paths}, {
             "postgresql-18.6-macos-arm64-12345.json",
             "vector-18.6-macos-arm64-12345.json",
@@ -135,6 +136,33 @@ class EmitMacOSPilotRecordsTests(unittest.TestCase):
         with self.assertRaisesRegex(records.coverage.CoverageError, "checksum does not match"):
             self.emit()
         self.assertFalse(self.output.exists())
+
+    def test_emits_failed_or_skipped_records_with_actual_dependency_result(self):
+        for outcome, dependency_result in (("failed", False), ("skipped", True)):
+            with self.subTest(outcome=outcome):
+                paths = records.emit(
+                    self.root, self.archives, self.output, "18.6", "a" * 40,
+                    "15.7", "x86_64", "macos-15-intel/ImageVersion=2026.01",
+                    outcome, dependency_result,
+                )
+                for path in paths:
+                    record = json.loads(path.read_text(encoding="utf-8"))
+                    self.assertEqual(record["outcome"], outcome)
+                    self.assertEqual(record["environment"]["dependency_checks_passed"],
+                                     dependency_result)
+                    archive = self.archives / (
+                        "postgresql-18.6-macos-x86_64.tar.gz"
+                        if record["component"] == "postgresql"
+                        else "pgvector-0.8.7-postgresql-18.6-macos-x86_64.tar.gz")
+                    self.assertEqual(record["sha256"], hashlib.sha256(archive.read_bytes()).hexdigest())
+                for path in paths:
+                    path.unlink()
+
+    def test_rejects_invalid_outcome_and_dependency_status(self):
+        with self.assertRaisesRegex(records.coverage.CoverageError, "outcome must be"):
+            self.emit(outcome="unknown")
+        with self.assertRaisesRegex(records.coverage.CoverageError, "dependency check result"):
+            self.emit(dependency_checks_passed="false")
 
 
 if __name__ == "__main__":

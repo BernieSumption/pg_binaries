@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Write schema-v2 verification records for successful Windows pilot archives."""
+"""Write schema-v2 verification records for Windows pilot archives."""
 
 import argparse
 import hashlib
@@ -24,13 +24,18 @@ def sha256_file(path):
     return digest.hexdigest()
 
 
-def emit(root, archive_dir, output_dir, pg_version, revision, os_version, image_id):
+def emit(root, archive_dir, output_dir, pg_version, revision, os_version, image_id,
+         outcome="passed", dependency_checks_passed=True):
     if not re.fullmatch(r"(?:[0-9a-fA-F]{40}|[0-9a-fA-F]{64})", revision):
         raise coverage.CoverageError("test revision must be a full Git commit hash")
     if not re.fullmatch(r"\d+(?:\.\d+)*", os_version):
         raise coverage.CoverageError("Windows version must be numeric dotted version")
     if not image_id:
         raise coverage.CoverageError("runner image identifier is required")
+    if outcome not in {"passed", "failed", "skipped"}:
+        raise coverage.CoverageError("outcome must be passed, failed, or skipped")
+    if not isinstance(dependency_checks_passed, bool):
+        raise coverage.CoverageError("dependency check result must be boolean")
     profile = coverage.verification_profile(root, "windows-pilot-x86_64")
     if profile["scope"] != "pilot-smoke" or "windows-x86_64" not in profile["platforms"]:
         raise coverage.CoverageError("registered profile is not the expected Windows pilot")
@@ -74,7 +79,7 @@ def emit(root, archive_dir, output_dir, pg_version, revision, os_version, image_
                 "build_revision": revision,
                 "test_revision": revision,
             },
-            "outcome": "passed",
+            "outcome": outcome,
             "sha256": actual_sha,
             "component": component,
             "version": version,
@@ -88,7 +93,7 @@ def emit(root, archive_dir, output_dir, pg_version, revision, os_version, image_
                 "endpoint": "current",
                 "image_id": image_id,
                 "dependency_check_profile": DEPENDENCY_PROFILE,
-                "dependency_checks_passed": True,
+                "dependency_checks_passed": dependency_checks_passed,
             },
         }
         coverage.validate_verification_record(record, support, root)
@@ -108,10 +113,13 @@ def main():
     parser.add_argument("--postgresql-version", required=True)
     parser.add_argument("--os-version", required=True)
     parser.add_argument("--image-id", required=True)
+    parser.add_argument("--outcome", choices=("passed", "failed", "skipped"), default="passed")
+    parser.add_argument("--dependency-checks-passed", choices=("true", "false"), default="true")
     args = parser.parse_args()
     try:
         paths = emit(args.root, args.archives, args.output, args.postgresql_version,
-                     os.environ.get("GITHUB_SHA", ""), args.os_version, args.image_id)
+                     os.environ.get("GITHUB_SHA", ""), args.os_version, args.image_id,
+                     args.outcome, args.dependency_checks_passed == "true")
         for path in paths:
             print(path)
         return 0

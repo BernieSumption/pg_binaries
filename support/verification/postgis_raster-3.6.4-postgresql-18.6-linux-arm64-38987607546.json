@@ -1,0 +1,65 @@
+{
+  "assembled_core": {
+    "archive": "postgresql-18.6-linux-arm64.tar.gz",
+    "sha256": "d5b761f87d2ac11f392c5b26d0a4f8b4e0c2976820b1fb6ac53f110a8116587f",
+    "version": "18.6"
+  },
+  "ci": {
+    "build_revision": "5ebc640583ff4ad39230647e003c418a8c9e6590",
+    "provider": "github-actions",
+    "run_id": "38987607546",
+    "run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/38987607546",
+    "source_revision": "5ebc640583ff4ad39230647e003c418a8c9e6590",
+    "test_revision": "5ebc640583ff4ad39230647e003c418a8c9e6590"
+  },
+  "component": "postgis_raster",
+  "environment": {
+    "architecture": "arm64",
+    "clean_system": true,
+    "dependency_check_profile": "postgis-runtime-v1",
+    "dependency_checks_passed": true,
+    "distribution": "Ubuntu 24.04.5 LTS",
+    "distribution_version": "24.04",
+    "endpoint": "current",
+    "image_id": "sha256:66e935a3857577914e56a6ec43ad6c4fe6dd36c263c29f0df31d4f083766e4e3",
+    "kernel_release": "6.17.0-1022-azure",
+    "os": "linux",
+    "os_version": "6.17.0"
+  },
+  "outcome": "passed",
+  "platform": "linux-arm64",
+  "postgresql_version": "18.6",
+  "profile_id": "postgis-pilot-linux-arm64",
+  "profile_revision": "d3c158df815e467c8fa2ea40e20388d9c1f726a405a8dea4bd3ebc497a3862a4",
+  "project": "PostGIS",
+  "schema_version": 2,
+  "scope": "pilot-smoke",
+  "sha256": "28b19809177e1d4e4e62df9425b790b7f1cb88767f8879558116f75d502f95d4",
+  "test_cases": [
+    "postgis-alpine",
+    "postgis-extension-smoke",
+    "postgis-license-mapping",
+    "postgis-relocation",
+    "postgis-runtime-closure",
+    "postgis-ubuntu20"
+  ],
+  "test_revision": "5ebc640583ff4ad39230647e003c418a8c9e6590",
+  "verification_profile": {
+    "case_ids": [
+      "postgis-alpine",
+      "postgis-extension-smoke",
+      "postgis-license-mapping",
+      "postgis-relocation",
+      "postgis-runtime-closure",
+      "postgis-ubuntu20"
+    ],
+    "platforms": [
+      "linux-arm64"
+    ],
+    "profile_id": "postgis-pilot-linux-arm64",
+    "profile_revision": "d3c158df815e467c8fa2ea40e20388d9c1f726a405a8dea4bd3ebc497a3862a4",
+    "scope": "pilot-smoke",
+    "sources_available": true
+  },
+  "version": "3.6.4"
+}

@@ -56,10 +56,12 @@ class EmitLinuxPilotRecordsTests(unittest.TestCase):
     def tearDown(self):
         self.temp.cleanup()
 
-    def emit(self):
+    def emit(self, **kwargs):
+        image_id = kwargs.pop("image_id", "sha256:" + "b" * 64)
         return records.emit(
             self.root, self.archives, self.output, "18.6", "x86_64", "a" * 40,
-            "sha256:" + "b" * 64, self.release, "x86_64", "6.8.0-1012-azure",
+            image_id, self.release, "x86_64", "6.8.0-1012-azure",
+            **kwargs,
         )
 
     def test_emits_two_bound_pilot_records(self):
@@ -94,6 +96,23 @@ class EmitLinuxPilotRecordsTests(unittest.TestCase):
         (self.archives / "postgresql-18.6-linux-x86_64.tar.gz").write_bytes(b"changed")
         with self.assertRaisesRegex(records.coverage.CoverageError, "checksum does not match"):
             self.emit()
+
+    def test_emits_checksum_bound_failed_record_with_dependency_result(self):
+        paths = self.emit(outcome="failed", dependency_checks_passed=False,
+                          image_id="runner:ubuntu-24.04/20261001")
+        for path in paths:
+            data = json.loads(path.read_text(encoding="utf-8"))
+            self.assertEqual(data["outcome"], "failed")
+            self.assertFalse(data["environment"]["dependency_checks_passed"])
+            archive_name = ("postgresql-18.6-linux-x86_64.tar.gz"
+                            if data["component"] == "postgresql"
+                            else "pgvector-0.8.7-postgresql-18.6-linux-x86_64.tar.gz")
+            self.assertEqual(data["sha256"], hashlib.sha256(
+                (self.archives / archive_name).read_bytes()).hexdigest())
+
+    def test_rejects_passed_record_without_concrete_verifier_image(self):
+        with self.assertRaisesRegex(records.coverage.CoverageError, "passed records require"):
+            self.emit(image_id="runner:ubuntu-24.04/20261001")
 
     def test_does_not_leave_a_partial_pass_record(self):
         (self.archives / "pgvector-0.8.7-postgresql-18.6-linux-x86_64.tar.gz").write_bytes(b"changed")

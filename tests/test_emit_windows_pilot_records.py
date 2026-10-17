@@ -95,6 +95,25 @@ class EmitWindowsPilotRecordsTests(unittest.TestCase):
             records.emit(self.root, self.archives, self.output, "18.6", "a" * 40,
                          "Server 2022", "win22/2026.01")
 
+    def test_emits_failed_or_skipped_records_with_dependency_status(self):
+        for outcome in ("failed", "skipped"):
+            with self.subTest(outcome=outcome):
+                paths = records.emit(self.root, self.archives, self.output, "18.6", "a" * 40,
+                                     "10.0.20348.2402", "win22/2026.01", outcome, False)
+                for path in paths:
+                    data = json.loads(path.read_text(encoding="utf-8"))
+                    self.assertEqual(data["outcome"], outcome)
+                    self.assertFalse(data["environment"]["dependency_checks_passed"])
+                for path in paths:
+                    path.unlink()
+
+    def test_rejects_passed_records_when_dependency_check_failed(self):
+        with self.assertRaisesRegex(records.coverage.CoverageError,
+                                    "passed outcome requires successful dependency checks"):
+            records.emit(self.root, self.archives, self.output, "18.6", "a" * 40,
+                         "10.0.20348.2402", "win22/2026.01", "passed", False)
+        self.assertFalse(self.output.exists())
+
 
 if __name__ == "__main__":
     unittest.main()

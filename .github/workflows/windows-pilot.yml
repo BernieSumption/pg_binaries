@@ -133,22 +133,51 @@ jobs:
           name: windows-postgresql-${{ needs.select.outputs.postgresql_version }}-pilot
           path: dist/windows
       - name: Verify packaged archives after relocation
+        id: archive_verify
         run: ./scripts/windows/verify.ps1
       - name: Verify PDBs against downloaded archive bytes
+        id: symbols
         run: python tools/create_windows_symbols.py "dist/windows/postgresql-${env:PG_VERSION}-windows-x86_64.tar.gz" "dist/windows/pgvector-0.8.7-postgresql-${env:PG_VERSION}-windows-x86_64.tar.gz" --output-dir dist/windows/debug-symbols --verify-only
       - name: Check Windows pilot record emitter
+        id: emitter_tests
         run: python -m unittest tests/test_emit_windows_pilot_records.py
-      - name: Emit checksum-bound current Windows records
+      - name: Finalize checksum-bound current Windows records
+        if: ${{ always() }}
+        env:
+          GITHUB_SHA: ${{ github.sha }}
+          CHECK_OUTCOMES: ${{ steps.archive_verify.outcome }},${{ steps.symbols.outcome }},${{ steps.emitter_tests.outcome }}
+          DEPENDENCY_CHECKS_PASSED: ${{ steps.archive_verify.outcome == 'success' }}
         run: |
+          if (-not $env:PG_VERSION) {
+            Write-Host 'No current-OS verification record: PostgreSQL version was not selected'
+            exit 0
+          }
+          $archiveDir = 'dist/windows'
+          $pgArchive = Join-Path $archiveDir "postgresql-$env:PG_VERSION-windows-x86_64.tar.gz"
+          $vectorArchive = Join-Path $archiveDir "pgvector-0.8.7-postgresql-$env:PG_VERSION-windows-x86_64.tar.gz"
+          $required = @($pgArchive, "$pgArchive.sha256", $vectorArchive, "$vectorArchive.sha256")
+          if (@($required | Where-Object { -not (Test-Path $_ -PathType Leaf) }).Count -gt 0) {
+            Write-Host 'No current-OS verification record: archive bytes or checksum sidecars are unavailable'
+            exit 0
+          }
           $osVersion = [System.Environment]::OSVersion.Version.ToString()
           $imageOS = [Environment]::GetEnvironmentVariable('ImageOS')
           $imageVersion = [Environment]::GetEnvironmentVariable('ImageVersion')
-          if (-not $imageOS -or -not $imageVersion) { throw 'GitHub-hosted runner image identity is missing' }
+          if (-not $osVersion -or -not $imageOS -or -not $imageVersion) {
+            Write-Host 'No current-OS verification record: concrete runner environment identity is unavailable'
+            exit 0
+          }
           $imageId = "$imageOS/$imageVersion"
-          python tools/emit_windows_pilot_records.py --archives dist/windows --output dist/windows/verification --postgresql-version $env:PG_VERSION --os-version $osVersion --image-id $imageId
+          $outcomes = $env:CHECK_OUTCOMES -split ','
+          if ($outcomes -contains 'failure') { $outcome = 'failed' }
+          elseif (@($outcomes | Where-Object { $_ -ne 'success' }).Count -eq 0) { $outcome = 'passed' }
+          else { $outcome = 'skipped' }
+          python tools/emit_windows_pilot_records.py --archives $archiveDir --output (Join-Path $archiveDir 'verification') --postgresql-version $env:PG_VERSION --os-version $osVersion --image-id $imageId --outcome $outcome --dependency-checks-passed $env:DEPENDENCY_CHECKS_PASSED.ToLowerInvariant()
+          if ($LASTEXITCODE -ne 0) { throw 'Windows pilot record finalization failed' }
       - uses: actions/upload-artifact@v4
+        if: ${{ always() }}
         with:
           name: windows-postgresql-${{ needs.select.outputs.postgresql_version }}-pilot-verification
           path: dist/windows/verification/*.json
           retention-days: 1
-          if-no-files-found: error
+          if-no-files-found: warn

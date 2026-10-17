@@ -23,6 +23,7 @@ on:
       - tests/schema.sql
       - tests/builtins/**
       - tests/extensions/**
+      - tests/test_emit_macos_pilot_records.py
       - tests/test_create_macos_symbols.py
       - .github/workflows/macos-pilot.yml
 
@@ -79,28 +80,47 @@ jobs:
           name: macos-pilot-archives
           path: ${{ runner.temp }}/archives
       - name: Check downloaded archives on a fresh runner
+        id: archive_verify
         run: bash scripts/macos/verify.sh "$RUNNER_TEMP/archives" x86_64 "${{ needs.build.outputs.postgresql_version }}"
       - name: Verify symbols against downloaded archive bytes
+        id: symbols
         run: |
           python3 tools/create_macos_symbols.py \
             "$RUNNER_TEMP/archives/postgresql-${{ needs.build.outputs.postgresql_version }}-macos-x86_64.tar.gz" \
             "$RUNNER_TEMP/archives/pgvector-0.8.7-postgresql-${{ needs.build.outputs.postgresql_version }}-macos-x86_64.tar.gz" \
             --output-dir "$RUNNER_TEMP/archives/debug-symbols" --verify-only
       - name: Check pilot record emitter
+        if: ${{ always() }}
         run: python3 -m unittest tests/test_emit_macos_pilot_records.py
-      - name: Emit pilot-smoke verification records
+      - name: Finalize current-OS pilot verification records
+        if: ${{ always() }}
+        env:
+          GITHUB_SHA: ${{ github.sha }}
+          CHECK_OUTCOMES: ${{ steps.archive_verify.outcome }},${{ steps.symbols.outcome }}
+          DEPENDENCY_CHECKS_PASSED: ${{ steps.archive_verify.outcome == 'success' }}
         run: |
           image_id="${ImageOS:?runner image OS missing}/${ImageVersion:?runner image version missing}"
+          archive_dir="$RUNNER_TEMP/archives"
+          pg_archive="$archive_dir/postgresql-${{ needs.build.outputs.postgresql_version }}-macos-x86_64.tar.gz"
+          vector_archive="$archive_dir/pgvector-0.8.7-postgresql-${{ needs.build.outputs.postgresql_version }}-macos-x86_64.tar.gz"
+          if [[ ! -f "$pg_archive" || ! -f "$pg_archive.sha256" || ! -f "$vector_archive" || ! -f "$vector_archive.sha256" ]]; then
+            echo "No current-OS verification record: archive bytes or checksum sidecars are unavailable"
+            exit 0
+          fi
+          outcome=$(python3 -c 'import os; s=os.environ["CHECK_OUTCOMES"].split(","); print("failed" if "failure" in s else "passed" if all(x == "success" for x in s) else "skipped")')
           python3 tools/emit_macos_pilot_records.py \
-            --archives "$RUNNER_TEMP/archives" \
+            --archives "$archive_dir" \
             --output "$RUNNER_TEMP/verification-records" \
             --postgresql-version "${{ needs.build.outputs.postgresql_version }}" \
             --os-version "$(sw_vers -productVersion)" \
             --architecture "$(uname -m)" \
-            --image-id "$image_id"
+            --image-id "$image_id" \
+            --outcome "$outcome" \
+            --dependency-checks-passed "$DEPENDENCY_CHECKS_PASSED"
       - uses: actions/upload-artifact@v4
+        if: ${{ always() }}
         with:
           name: macos-pilot-verification-records
           path: ${{ runner.temp }}/verification-records/*.json
-          if-no-files-found: error
+          if-no-files-found: warn
           retention-days: 7

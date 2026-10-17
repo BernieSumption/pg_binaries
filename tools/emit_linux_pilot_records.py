@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Write schema-v2 verification records for successful Linux pilot archives."""
+"""Write checksum-bound current-OS Linux pilot verification records."""
 
 import argparse
 import hashlib
@@ -39,13 +39,20 @@ def os_release(path=Path("/etc/os-release")):
 
 
 def emit(root, archive_dir, output_dir, pg_version, architecture, revision,
-         image_id, release, machine, kernel_version):
+         image_id, release, machine, kernel_version, outcome="passed",
+         dependency_checks_passed=True):
     if architecture not in PILOTS:
         raise coverage.CoverageError("architecture must be x86_64 or arm64")
     if not re.fullmatch(r"(?:[0-9a-fA-F]{40}|[0-9a-fA-F]{64})", revision):
         raise coverage.CoverageError("test revision must be a full Git commit hash")
-    if not image_id.startswith("sha256:") or len(image_id) != 71:
-        raise coverage.CoverageError("verifier image ID must be a concrete sha256 image ID")
+    if not isinstance(image_id, str) or not image_id:
+        raise coverage.CoverageError("verification environment image ID is required")
+    if outcome not in {"passed", "failed", "skipped"}:
+        raise coverage.CoverageError("outcome must be passed, failed, or skipped")
+    if not isinstance(dependency_checks_passed, bool):
+        raise coverage.CoverageError("dependency check result must be boolean")
+    if outcome == "passed" and (not image_id.startswith("sha256:") or len(image_id) != 71):
+        raise coverage.CoverageError("passed records require a concrete verifier image ID")
     expected_machine = {"x86_64": "x86_64", "arm64": "aarch64"}[architecture]
     if machine != expected_machine:
         raise coverage.CoverageError(f"runner architecture {machine!r} does not match {architecture}")
@@ -100,7 +107,7 @@ def emit(root, archive_dir, output_dir, pg_version, architecture, revision,
                 "build_revision": revision,
                 "test_revision": revision,
             },
-            "outcome": "passed",
+            "outcome": outcome,
             "sha256": actual_sha,
             "component": component,
             "version": version,
@@ -117,7 +124,7 @@ def emit(root, archive_dir, output_dir, pg_version, architecture, revision,
                 "endpoint": "current",
                 "image_id": image_id,
                 "dependency_check_profile": DEPENDENCY_PROFILE,
-                "dependency_checks_passed": True,
+                "dependency_checks_passed": dependency_checks_passed,
             },
         }
         coverage.validate_verification_record(record, support, root)
@@ -138,12 +145,15 @@ def main():
     parser.add_argument("--architecture", choices=sorted(PILOTS), required=True)
     parser.add_argument("--image-id", required=True)
     parser.add_argument("--kernel-version", required=True)
+    parser.add_argument("--outcome", choices=("passed", "failed", "skipped"), default="passed")
+    parser.add_argument("--dependency-checks-passed", choices=("true", "false"), default="true")
     args = parser.parse_args()
     try:
         release = os_release()
         paths = emit(args.root, args.archives, args.output, args.postgresql_version,
                      args.architecture, os.environ.get("GITHUB_SHA", ""), args.image_id,
-                     release, host_platform.machine(), args.kernel_version)
+                     release, host_platform.machine(), args.kernel_version, args.outcome,
+                     args.dependency_checks_passed == "true")
         for path in paths:
             print(path)
         return 0

@@ -1,0 +1,61 @@
+{
+  "assembled_core": {
+    "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+    "sha256": "54d423909527541e7a86dde5b00a58c0d7a9edb14c6b9ebcc325c9781a72720b",
+    "version": "18.6"
+  },
+  "ci": {
+    "build_revision": "5ebc640583ff4ad39230647e003c418a8c9e6590",
+    "provider": "github-actions",
+    "run_id": "38987607546",
+    "run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/38987607546",
+    "source_revision": "5ebc640583ff4ad39230647e003c418a8c9e6590",
+    "test_revision": "5ebc640583ff4ad39230647e003c418a8c9e6590"
+  },
+  "component": "postgis_raster",
+  "environment": {
+    "architecture": "x86_64",
+    "clean_system": true,
+    "dependency_check_profile": "postgis-runtime-v1",
+    "dependency_checks_passed": true,
+    "distribution": "Ubuntu 22.04",
+    "distribution_version": "22.04",
+    "endpoint": "minimum",
+    "image_id": "sha256:e3297e0aa6c408ac90d854348465d3991c65159b444c4ef9016f52f6807290e3",
+    "kernel_release": "5.15.0-1109-kvm",
+    "os": "linux",
+    "os_version": "5.15.0"
+  },
+  "outcome": "passed",
+  "platform": "linux-x86_64",
+  "postgresql_version": "18.6",
+  "profile_id": "postgis-minimum-kernel-x86_64",
+  "profile_revision": "0c7c38c90d1986a167fa1cbef466a55e9eb3f552b8cc0327b530f530b10fa34d",
+  "project": "PostGIS",
+  "schema_version": 2,
+  "scope": "pilot-smoke",
+  "sha256": "2030bddb633988a32e7322dfc78defc81d3471abe6ba37247d456917b603fca9",
+  "test_cases": [
+    "postgis-extension-smoke",
+    "postgis-license-mapping",
+    "postgis-relocation",
+    "postgis-runtime-closure"
+  ],
+  "test_revision": "5ebc640583ff4ad39230647e003c418a8c9e6590",
+  "verification_profile": {
+    "case_ids": [
+      "postgis-extension-smoke",
+      "postgis-license-mapping",
+      "postgis-relocation",
+      "postgis-runtime-closure"
+    ],
+    "platforms": [
+      "linux-x86_64"
+    ],
+    "profile_id": "postgis-minimum-kernel-x86_64",
+    "profile_revision": "0c7c38c90d1986a167fa1cbef466a55e9eb3f552b8cc0327b530f530b10fa34d",
+    "scope": "pilot-smoke",
+    "sources_available": true
+  },
+  "version": "3.6.4"
+}

@@ -64,10 +64,13 @@ jobs:
       - name: Build exact PostgreSQL and pgvector archives
         run: scripts/linux/build.sh "$RUNNER_TEMP/pilot"
       - name: Verify relocated archives on clean Ubuntu 24.04 arm64
+        id: archive_verify
         run: scripts/linux/verify.sh "$RUNNER_TEMP/pilot"
       - name: Check launch without host shell or C library
+        id: nohost
         run: bash scripts/linux/verify-no-host-userspace.sh "$RUNNER_TEMP/pilot" "$PG_VERSION" arm64
       - name: Check older-glibc and no-glibc hosts
+        id: portability
         run: |
           for image in ubuntu:20.04 alpine:3.22; do
             docker run --rm --platform linux/arm64 \
@@ -81,6 +84,7 @@ jobs:
           test "$(uname -m)" = aarch64
           cat "$RUNNER_TEMP/pilot/"*.sha256
       - name: Capture controlled Linux diagnostic failures
+        id: diagnostics
         run: |
           docker build --platform linux/arm64 -f scripts/linux/diagnostics.Dockerfile \
             -t pg-binaries-linux-diagnostics .
@@ -90,18 +94,36 @@ jobs:
             -e GITHUB_RUN_ID -e GITHUB_REPOSITORY -e GITHUB_SERVER_URL -e GITHUB_SHA \
             --entrypoint bash pg-binaries-linux-diagnostics \
             /repo/scripts/linux/diagnostics-in-container.sh /archives "$PG_VERSION" arm64
-      - name: Emit pilot verification records
+      - name: Finalize current-OS pilot verification records
+        if: ${{ always() }}
         env:
           GITHUB_SHA: ${{ github.sha }}
+          CHECK_OUTCOMES: ${{ steps.archive_verify.outcome }},${{ steps.nohost.outcome }},${{ steps.portability.outcome }},${{ steps.diagnostics.outcome }}
+          DEPENDENCY_CHECKS_PASSED: ${{ steps.archive_verify.outcome == 'success' }}
         run: |
-          image_id=$(docker image inspect pg-binaries-linux-verifier --format '{{.Id}}')
+          if [[ -z "${PG_VERSION:-}" ]]; then
+            echo "No current-OS verification record: PostgreSQL version was not selected"
+            exit 0
+          fi
+          archive_dir="$RUNNER_TEMP/pilot"
+          pg_archive="$archive_dir/postgresql-$PG_VERSION-linux-arm64.tar.gz"
+          vector_archive="$archive_dir/pgvector-0.8.7-postgresql-$PG_VERSION-linux-arm64.tar.gz"
+          if [[ ! -f "$pg_archive" || ! -f "$pg_archive.sha256" || ! -f "$vector_archive" || ! -f "$vector_archive.sha256" ]]; then
+            echo "No current-OS verification record: archive bytes or checksum sidecars are unavailable"
+            exit 0
+          fi
+          outcome=$(python3 -c 'import os; s=os.environ["CHECK_OUTCOMES"].split(","); print("failed" if "failure" in s else "passed" if all(x == "success" for x in s) else "skipped")')
+          image_id=$(docker image inspect pg-binaries-linux-verifier --format '{{.Id}}' 2>/dev/null || true)
+          if [[ -z "$image_id" ]]; then image_id="runner:${ImageOS:-ubuntu-24.04}/${ImageVersion:-unknown}"; fi
           python3 tools/emit_linux_pilot_records.py \
             --archives "$RUNNER_TEMP/pilot" \
             --output "$RUNNER_TEMP/pilot/verification" \
             --postgresql-version "$PG_VERSION" \
             --architecture arm64 \
             --image-id "$image_id" \
-            --kernel-version "$(uname -r)"
+            --kernel-version "$(uname -r)" \
+            --outcome "$outcome" \
+            --dependency-checks-passed "$DEPENDENCY_CHECKS_PASSED"
       - name: Build disposable Linux 5.15 QEMU environment
         run: docker build -f scripts/qemu/arm64-515.Dockerfile -t pg-binaries-linux-qemu-arm64 .
       - name: Verify the same archives in an Ubuntu 22.04 arm64 Linux 5.15 guest
