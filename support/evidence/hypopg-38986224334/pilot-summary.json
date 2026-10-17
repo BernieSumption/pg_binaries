@@ -1,0 +1,31 @@
+{
+  "scope": "feasibility-pilot",
+  "run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/38986224334",
+  "run_id": "38986224334",
+  "revision": "f40303006cbbf9b510c68eae726565cb73424516",
+  "outcome": "passed",
+  "postgresql_version": "18.6",
+  "hypopg_version": "1.4.3",
+  "source_sha256": "498a961d88cf37057fd9e98027d06fe805c8959d51895c3d9b94c9eb4e14f706",
+  "checks": [
+    "Build and SQL probe in Docker using the packaged PostgreSQL core",
+    "Verify archive checksum and sibling metadata",
+    "Reject payload file collisions and copy into a relocated core prefix",
+    "Run a hypothetical-index planner query in a clean Ubuntu 24.04 container"
+  ],
+  "archives": {
+    "linux-x86_64": {
+      "name": "hypopg-1.4.3-postgresql-18.6-linux-x86_64.tar.gz",
+      "sha256": "3081c3b808aed683d94b2955bf2c1abbe19cbfed05401c13dcf7a84f6d56c2ce"
+    },
+    "linux-arm64": {
+      "name": "hypopg-1.4.3-postgresql-18.6-linux-arm64.tar.gz",
+      "sha256": "0949335a6ca4809f5b92d67a2014b0d1b9c437e745e60e03e3e923ca7bee2d3d"
+    }
+  },
+  "limitations": [
+    "The core archive checksums were verified in CI but were not retained by this workflow.",
+    "The Ubuntu 22.04 Linux 5.15 minimum endpoint was not tested.",
+    "This is not a registered publication verification profile."
+  ]
+}

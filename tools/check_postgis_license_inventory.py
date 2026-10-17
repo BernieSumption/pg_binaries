@@ -9,7 +9,7 @@ from urllib.parse import quote
 
 
 root = Path(sys.argv[1]).resolve()
-inventory = json.loads((root / "LICENSES/inventory.json").read_text(encoding="utf-8"))
+inventory = json.loads((root / "LICENSES/postgis/inventory.json").read_text(encoding="utf-8"))
 if inventory.get("schema_version") != 1:
     raise SystemExit("unsupported PostGIS licence inventory schema")
 components = inventory.get("components")
@@ -26,13 +26,13 @@ for entry in components:
     if not isinstance(paths, list) or not paths:
         raise SystemExit("component has no payload paths")
     license_path = entry.get("license_file", "")
-    if not license_path.startswith("LICENSES/") or not (root / license_path).is_file():
+    if not license_path.startswith("LICENSES/postgis/") or not (root / license_path).is_file():
         raise SystemExit(f"component lacks licence text: {entry}")
     if not (root / license_path).stat().st_size:
         raise SystemExit(f"empty licence text: {license_path}")
     copyright_text = (root / license_path).read_text(encoding="utf-8", errors="replace")
     for name in re.findall(r"/usr/share/common-licenses/([A-Za-z0-9.+-]+)", copyright_text):
-        common_license = root / "LICENSES/common-licenses" / name.rstrip(".,;:")
+        common_license = root / "LICENSES/postgis/common-licenses" / name.rstrip(".,;:")
         if not common_license.is_file() or not common_license.stat().st_size:
             raise SystemExit(f"missing referenced licence text: {common_license}")
     for relative in paths:

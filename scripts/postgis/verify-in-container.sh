@@ -17,13 +17,35 @@ import os
 import pathlib
 import re
 
-with open('/tmp/extension/postgis/manifest.json') as f:
-    m = json.load(f)
-assert (m['schema_version'], m['component'], m['version'], m['postgresql_version'],
-        m['platform'], m['architecture']) == (1, 'postgis', '3.6.4', '18.6', 'linux', os.environ.get('PG_ARCHITECTURE', 'x86_64')), m
-
 support = json.loads(pathlib.Path('/work/support.json').read_text())
 allowed = set(support['extensions']['PostGIS']['sql_names'])
+archive_root = pathlib.Path('/tmp/extension')
+assert {path.name for path in archive_root.iterdir()} == {'postgis', 'metadata.json'}
+with (archive_root / 'metadata.json').open() as stream:
+    metadata = json.load(stream)
+assert metadata == {
+    'project': 'postgis',
+    'version': '3.6.4',
+    'sql_names': support['extensions']['PostGIS']['sql_names'],
+    'requires': [],
+    'configuration_prerequisites': [],
+    'runtime_prerequisites': [
+        {'type': 'environment_variable', 'name': name, 'value_relative_to_prefix': value}
+        for name, value in (
+            ('PROJ_LIB', 'share/proj'),
+            ('PROJ_DATA', 'share/proj'),
+            ('GDAL_DATA', 'share/gdal'),
+        )
+    ],
+    'postgresql_version': '18.6',
+    'platform': 'linux',
+    'architecture': os.environ.get('PG_ARCHITECTURE', 'x86_64'),
+    'source': {
+        'url': 'https://download.osgeo.org/postgis/source/postgis-3.6.4.tar.gz',
+        'sha256': 'ed8dc6679f1e06f7b113592b04cde2a7e00f1b1e681294c8ca2204058990cec6',
+    },
+}, metadata
+assert not (archive_root / 'postgis/manifest.json').exists()
 extension_dir = pathlib.Path('/tmp/extension/postgis/share/extension')
 controls = {path.stem for path in extension_dir.glob('*.control')}
 assert controls == allowed, f'PostGIS control files {sorted(controls)} != support.json {sorted(allowed)}'
@@ -56,18 +78,20 @@ python3 /usr/local/bin/check-postgis-license-inventory /tmp/extension/postgis
 mv /tmp/first/postgresql /tmp/moved/postgresql
 pgroot=/tmp/moved/postgresql
 extroot=/tmp/extension/postgis
-while IFS= read -r -d '' library; do
-  existing="$pgroot/lib/${library#"$extroot/lib/"}"
-  if [[ -e "$existing" ]] && ! cmp -s "$library" "$existing"; then
-    echo "Library collision with different bytes: ${library#"$extroot/lib/"}" >&2
+while IFS= read -r -d '' source; do
+  relative=${source#"$extroot/"}
+  destination="$pgroot/$relative"
+  if [[ -e "$destination" || -L "$destination" ]]; then
+    if [[ -d "$source" && ! -L "$source" && -d "$destination" && ! -L "$destination" ]]; then
+      continue
+    fi
+    echo "PostGIS payload collision: $relative" >&2
     exit 1
   fi
-done < <(find "$extroot/lib" -type f -print0)
-cp -an "$extroot/lib/." "$pgroot/lib/"
-cp -a "$extroot/share/extension/." "$pgroot/share/extension/"
-cp -a "$extroot/share/proj" "$extroot/share/gdal" "$pgroot/share/"
-test -s "$extroot/LICENSES/proj-data.copyright"
-test -s "$extroot/LICENSES/gdal-data.copyright"
+done < <(find "$extroot" -mindepth 1 -print0)
+cp -a "$extroot/." "$pgroot/"
+test -s "$extroot/LICENSES/postgis/proj-data.copyright"
+test -s "$extroot/LICENSES/postgis/gdal-data.copyright"
 python3 /usr/local/bin/check-elf-dependencies "$pgroot"
 export PROJ_LIB="$pgroot/share/proj" PROJ_DATA="$pgroot/share/proj" GDAL_DATA="$pgroot/share/gdal"
 useradd -m postgres

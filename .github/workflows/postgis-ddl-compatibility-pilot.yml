@@ -1,0 +1,62 @@
+name: PostGIS adjacent-version DDL pilot
+on:
+  workflow_dispatch:
+  push:
+    branches: [spike]
+    paths:
+      - '.github/workflows/postgis-ddl-compatibility-pilot.yml'
+      - 'scripts/postgis/ddl-compatibility-in-container.sh'
+      - 'scripts/postgis/ddl-3.4.6.sql'
+      - 'scripts/postgis/ddl-3.5.7.sql'
+      - 'scripts/postgis/Dockerfile'
+      - 'scripts/linux/build.sh'
+      - 'scripts/linux/Dockerfile'
+      - 'scripts/linux/build-in-container.sh'
+      - 'scripts/linux/bundle-glibc-in-container.sh'
+      - 'scripts/linux/launcher.c'
+      - 'tools/discover_builtins.py'
+      - 'tools/write_linux_license_inventory.py'
+      - 'tools/create_linux_symbols.py'
+      - 'tools/reuse_linux_core_artifact.py'
+      - 'tools/plan_work.py'
+      - 'support.json'
+jobs:
+  postgis-ddl-linux-x86_64:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 70
+    permissions:
+      actions: read
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check same-revision PostgreSQL 17.11 archive reuse
+        id: core
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 tools/reuse_linux_core_artifact.py \
+            --postgresql-version 17.11 --architecture x86_64 \
+            --output "$RUNNER_TEMP/core" --github-output "$GITHUB_OUTPUT"
+      - name: Build PostgreSQL 17.11 archive if unavailable
+        if: steps.core.outputs.reused != 'true'
+        env:
+          PG_VERSION: 17.11
+          PG_ARCHITECTURE: x86_64
+        run: bash scripts/linux/build.sh "$RUNNER_TEMP/core"
+      - name: Test adjacent PostGIS DDL versions
+        run: |
+          mkdir -p "$RUNNER_TEMP/postgis-ddl"
+          docker build --platform linux/amd64 -f scripts/postgis/Dockerfile \
+            -t pg-binaries-postgis-ddl .
+          docker run --rm --platform linux/amd64 \
+            -v "$GITHUB_WORKSPACE:/repo:ro" \
+            -v "$RUNNER_TEMP/core:/core:ro" \
+            -v "$RUNNER_TEMP/postgis-ddl:/out" \
+            --entrypoint bash pg-binaries-postgis-ddl \
+            /repo/scripts/postgis/ddl-compatibility-in-container.sh
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: postgis-adjacent-ddl-pilot
+          path: ${{ runner.temp }}/postgis-ddl/**
+          retention-days: 3

@@ -142,7 +142,7 @@ if [[ $pg_version == 15.* ]]; then dump_compression=(-Z 1); fi
 "$pg/bin/pg_restore" --exit-on-error -h "$work/socket" -p 54329 -d restored "$work/pilot.dump"
 restored=("$pg/bin/psql" -h "$work/socket" -p 54329 -d restored -X -v ON_ERROR_STOP=1)
 "${restored[@]}" -At -c 'SELECT pilot.active_item_count(1)' | grep -Fx 1
-"${restored[@]}" -At -c "SELECT id FROM pilot_vectors ORDER BY embedding <-> '[1,2,3]' LIMIT 1" | grep -Fx 1
+"${restored[@]}" -At -c "SELECT id FROM pilot_vectors ORDER BY embedding <-> '[1,0,0]'::vector LIMIT 1" | grep -Fx 1
 "${psql[@]}" -c 'CREATE DATABASE surgery_check'
 surgery=("$pg/bin/psql" -h "$work/socket" -p 54329 -d surgery_check -X -v ON_ERROR_STOP=1)
 "${surgery[@]}" -f "$repo/tests/builtins/surgery.sql"

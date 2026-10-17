@@ -8,7 +8,7 @@ pg_archive="postgresql-${pg_version}-linux-${architecture}.tar.gz"
 postgis_archive="postgis-${postgis_version}-postgresql-${pg_version}-linux-${architecture}.tar.gz"
 cd /input
 sha256sum -c "$pg_archive.sha256"
-mkdir -p /work/prefix /work/source /work/stage/postgis/{lib,share/extension,LICENSES} /out
+mkdir -p /work/prefix /work/source /work/stage/postgis/{lib,share/extension,LICENSES/postgis} /out
 tar -xzf "$pg_archive" -C /work/prefix
 mv /work/prefix/postgresql /opt/postgresql
 pgroot=/opt/postgresql
@@ -16,6 +16,7 @@ test "$("$pgroot/bin/pg_config" --version)" = 'PostgreSQL 18.6'
 export PATH="$pgroot/bin:$PATH"
 cd /work/source
 curl -fL --retry 3 -o postgis.tar.gz "https://download.osgeo.org/postgis/source/postgis-${postgis_version}.tar.gz"
+printf '%s  %s\n' 'ed8dc6679f1e06f7b113592b04cde2a7e00f1b1e681294c8ca2204058990cec6' postgis.tar.gz | sha256sum -c -
 postgis_source_sha256=$(sha256sum postgis.tar.gz | cut -d' ' -f1)
 tar -xzf postgis.tar.gz
 cd "postgis-${postgis_version}"
@@ -64,14 +65,14 @@ for name in allowed:
             raise SystemExit(f'Missing module library {library} for {name}')
         shutil.copy2(library, stage / 'lib' / library.name)
 PY
-cp COPYING "$stage/LICENSES/PostGIS.txt"
-cp -a /usr/share/common-licenses "$stage/LICENSES/common-licenses"
+cp COPYING "$stage/LICENSES/postgis/PostGIS.txt"
+cp -a /usr/share/common-licenses "$stage/LICENSES/postgis/common-licenses"
 mkdir -p "$stage/lib/runtime" "$stage/share"
 : > /work/runtime-map.tsv
 cp -a /usr/share/proj "$stage/share/proj"
 cp -a /usr/share/gdal "$stage/share/gdal"
-cp /usr/share/doc/proj-data/copyright "$stage/LICENSES/proj-data.copyright"
-cp /usr/share/doc/gdal-data/copyright "$stage/LICENSES/gdal-data.copyright"
+cp /usr/share/doc/proj-data/copyright "$stage/LICENSES/postgis/proj-data.copyright"
+cp /usr/share/doc/gdal-data/copyright "$stage/LICENSES/postgis/gdal-data.copyright"
 # Bundle the ELF dependency closure for the selected SQL modules. The
 # PostgreSQL archive supplies glibc and libpq; SFCGAL and GDAL add C++ libraries.
 for pass in 1 2 3 4; do
@@ -95,7 +96,7 @@ for pass in 1 2 3 4; do
           echo "No package copyright found for $library ($path)" >&2
           exit 1
         fi
-        cp "/usr/share/doc/$package/copyright" "$stage/LICENSES/${package}.copyright"
+        cp "/usr/share/doc/$package/copyright" "$stage/LICENSES/postgis/${package}.copyright"
         printf '%s\t%s\n' "$package" "lib/runtime/$library" >> /work/runtime-map.tsv
       fi
     done < <(ldd "$elf" 2>/dev/null | awk '$2 == "=>" && $3 ~ /^\// {print $1, $3}')
@@ -109,11 +110,58 @@ while IFS= read -r -d '' elf; do
   esac
   patchelf --set-rpath "$rpath" "$elf"
 done < <(find "$stage/lib" -type f -print0)
+python3 - <<'PY'
+from pathlib import Path
+import filecmp
+
+stage = Path('/work/stage/postgis')
+core_runtime = Path('/opt/postgresql/lib/runtime')
+for library in (stage / 'lib/runtime').iterdir():
+    supplied = core_runtime / library.name
+    if not supplied.exists():
+        continue
+    if not filecmp.cmp(library, supplied, shallow=False):
+        raise SystemExit(f'PostGIS runtime library differs from PostgreSQL archive: {library.name}')
+    library.unlink()
+
+runtime_map = Path('/work/runtime-map.tsv')
+runtime_map.write_text(''.join(
+    line for line in runtime_map.read_text().splitlines(keepends=True)
+    if (stage / line.rstrip('\n').split('\t', 1)[1]).exists()
+))
+PY
 python3 /usr/local/bin/write-postgis-license-inventory \
   "$stage" /work/runtime-map.tsv "$postgis_source_sha256"
-cat > "$stage/manifest.json" <<EOF
-{"schema_version":1,"component":"postgis","version":"${postgis_version}","postgresql_version":"${pg_version}","platform":"linux","architecture":"${architecture}","pilot":true,"runtime_environment":{"PROJ_LIB":"share/proj","PROJ_DATA":"share/proj","GDAL_DATA":"share/gdal"}}
-EOF
+python3 - "$architecture" "$postgis_source_sha256" <<'PY'
+import json
+from pathlib import Path
+import sys
+
+sql_names = json.loads(Path('/work/support.json').read_text())['extensions']['PostGIS']['sql_names']
+metadata = {
+    'project': 'postgis',
+    'version': '3.6.4',
+    'sql_names': sql_names,
+    'requires': [],
+    'configuration_prerequisites': [],
+    'runtime_prerequisites': [
+        {'type': 'environment_variable', 'name': name, 'value_relative_to_prefix': value}
+        for name, value in (
+            ('PROJ_LIB', 'share/proj'),
+            ('PROJ_DATA', 'share/proj'),
+            ('GDAL_DATA', 'share/gdal'),
+        )
+    ],
+    'postgresql_version': '18.6',
+    'platform': 'linux',
+    'architecture': sys.argv[1],
+    'source': {
+        'url': 'https://download.osgeo.org/postgis/source/postgis-3.6.4.tar.gz',
+        'sha256': sys.argv[2],
+    },
+}
+Path('/work/stage/metadata.json').write_text(json.dumps(metadata, indent=2, sort_keys=True) + '\n')
+PY
 
 # Test installed extensions against the extracted PostgreSQL archive. Runtime
 # library and data closure is recorded separately; this phase tests function.
@@ -127,7 +175,7 @@ runuser -u postgres -- "$pgroot/bin/psql" -X -v ON_ERROR_STOP=1 -h /work/socket 
 runuser -u postgres -- "$pgroot/bin/pg_ctl" -D /work/data -m fast -w stop
 trap - EXIT
 cd /work/stage
-tar -czf "/out/$postgis_archive" postgis
+tar -czf "/out/$postgis_archive" postgis metadata.json
 cd /out
 sha256sum "$postgis_archive" > "$postgis_archive.sha256"
 python3 /usr/local/bin/create-linux-symbols "$postgis_archive" --output-dir /out/debug-symbols
