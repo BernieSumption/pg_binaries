@@ -79,7 +79,7 @@ jobs:
       # profile-section: archive-builds end
       # profile-section: pgtap-build begin
       - name: Build pgTAP 1.3.4 against the publication PostgreSQL archive
-        if: ${{ always() && env.PG_VERSION == '18.6' && steps.build.outcome == 'success' }}
+        if: ${{ always() && steps.build.outcome == 'success' }}
         id: pgtap_build
         run: bash scripts/pgtap/build.sh "$RUNNER_TEMP/pilot" "$RUNNER_TEMP/pgtap"
       # profile-section: pgtap-build end
@@ -120,7 +120,7 @@ jobs:
       # profile-section: hypopg-verify end
       # profile-section: pgtap-verify begin
       - name: Verify relocated pgTAP archive and runtime closure in Alpine 3.22
-        if: ${{ always() && env.PG_VERSION == '18.6' && steps.pgtap_build.outcome == 'success' }}
+        if: ${{ always() && steps.pgtap_build.outcome == 'success' }}
         id: pgtap_verify
         run: bash scripts/pgtap/verify.sh "$RUNNER_TEMP/pilot" "$RUNNER_TEMP/pgtap"
       # profile-section: pgtap-verify end
@@ -372,7 +372,7 @@ jobs:
       # profile-section: hypopg-report end
       # profile-section: pgtap-report begin
       - name: Record pgTAP publication outcomes and emit archive-bound evidence
-        if: ${{ always() && env.PG_VERSION == '18.6' }}
+        if: ${{ always() }}
         env:
           CORE_BUILD_OUTCOME: ${{ steps.build.outcome }}
           PGTAP_BUILD_OUTCOME: ${{ steps.pgtap_build.outcome }}
