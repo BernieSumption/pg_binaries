@@ -1,0 +1,19 @@
+ postgres_version
+------------------
+ 18.6
+(1 row)
+
+CREATE EXTENSION
+CREATE TABLE
+INSERT 0 1
+DO
+    extname    | extversion
+---------------+------------
+ pg_jsonschema | 0.3.4
+(1 row)
+
+             conname             |                                                                 definition
+---------------------------------+--------------------------------------------------------------------------------------------------------------------------------------------
+ payload_matches_schema          | CHECK (jsonb_matches_schema('{"type":"object","properties":{"name":{"type":"string","maxLength":8}},"required":["name"]}'::json, payload))
+ schema_checked_payload_not_null | NOT NULL payload
+(2 rows)
