@@ -1,0 +1,5 @@
+# pgAudit Linux feasibility pilot
+
+[Run 39074277900](https://github.com/BernieSumption/pg_binaries/actions/runs/39074277900) passed on x86-64 and arm64 at revision `9fb5c62ae020cb555a676d6d4cbff1310f9b1c5e`. It built pgAudit 18.0 against PostgreSQL 18.6, then verified relocated archives on clean Alpine 3.22: preload configuration, extension metadata and licence inventory, DDL/write/read audit records, and ELF dependency closure. Both raw `step-outcomes.json` files record successful core build, pgAudit build, archive verification and archive identity.
+
+For each architecture, this directory retains the pgAudit archive, its checksum sidecar, the PostgreSQL core checksum sidecar, and the static ELF report. The reports identify the same core and pgAudit digests as the sidecars and passed dependency inspection. The core archive itself was not included in this CI artifact; the retained core sidecar and report identify the exact tested bytes. This is feasibility evidence for PostgreSQL 18.6 on two Linux architectures, not archive-bound publication verification or evidence for other selected PostgreSQL versions or macOS.
