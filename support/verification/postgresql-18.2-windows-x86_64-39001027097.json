@@ -1,0 +1,60 @@
+{
+  "ci": {
+    "build_revision": "fd67f3681107c1fced4b804879117206485597cc",
+    "provider": "github-actions",
+    "run_id": "39001027097",
+    "run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/39001027097",
+    "source_revision": "fd67f3681107c1fced4b804879117206485597cc",
+    "test_revision": "fd67f3681107c1fced4b804879117206485597cc"
+  },
+  "component": "postgresql",
+  "environment": {
+    "architecture": "x86_64",
+    "clean_system": true,
+    "dependency_check_profile": "windows-runtime-v1",
+    "dependency_checks_passed": true,
+    "endpoint": "current",
+    "image_id": "win22/20261012.333.1",
+    "os": "windows",
+    "os_version": "10.0.20348.0"
+  },
+  "outcome": "passed",
+  "platform": "windows-x86_64",
+  "postgresql_version": "18.2",
+  "profile_id": "windows-pilot-x86_64",
+  "profile_revision": "cda4e33962049e5b5bedec66dd4c2c6eb47c84843f0dd8891091a8395519fc08",
+  "schema_version": 2,
+  "scope": "pilot-smoke",
+  "sha256": "491c771a0e81ec19b34d3c5f30f2106c920e3a49889123a5fad4a45b7f67342d",
+  "test_cases": [
+    "archive-assembly",
+    "built-in-extension-smoke",
+    "core-schema-smoke",
+    "debug-symbol-linkage",
+    "pgvector-ddl-smoke",
+    "relocation"
+  ],
+  "test_revision": "fd67f3681107c1fced4b804879117206485597cc",
+  "verification_profile": {
+    "case_ids": [
+      "archive-assembly",
+      "built-in-extension-smoke",
+      "core-schema-smoke",
+      "debug-symbol-linkage",
+      "pgvector-ddl-smoke",
+      "relocation"
+    ],
+    "compatible_profile_revisions": [
+      "2868cc1e632795ea46e80879600cf2f63d7381d7b45ec25962db27e52e53bdf4",
+      "cda4e33962049e5b5bedec66dd4c2c6eb47c84843f0dd8891091a8395519fc08"
+    ],
+    "platforms": [
+      "windows-x86_64"
+    ],
+    "profile_id": "windows-pilot-x86_64",
+    "profile_revision": "cda4e33962049e5b5bedec66dd4c2c6eb47c84843f0dd8891091a8395519fc08",
+    "scope": "pilot-smoke",
+    "sources_available": true
+  },
+  "version": "18.2"
+}
