@@ -150,9 +150,9 @@ jobs:
       - name: Verify representative Windows failure diagnostics
         id: diagnostics
         run: ./scripts/windows/diagnostics.ps1 -ArchiveDirectory dist/windows -PostgreSQLVersion $env:PG_VERSION -PgvectorVersion 0.8.7 -ReportPath (Join-Path $env:RUNNER_TEMP 'verification-records/diagnostics.json')
-      - name: Check Windows pilot record emitter
+      - name: Check Windows record emitters
         id: emitter_tests
-        run: python -m unittest tests/test_emit_windows_pilot_records.py
+        run: python -m unittest tests/test_emit_windows_pilot_records.py tests/test_emit_windows_publication_records.py
       - name: Finalize checksum-bound current Windows records
         if: ${{ always() }}
         env:
@@ -186,6 +186,46 @@ jobs:
           else { $outcome = 'skipped' }
           python tools/emit_windows_pilot_records.py --archives $archiveDir --output (Join-Path $archiveDir 'verification') --postgresql-version $env:PG_VERSION --os-version $osVersion --image-id $imageId --outcome $outcome --dependency-checks-passed $env:DEPENDENCY_CHECKS_PASSED.ToLowerInvariant() --static-report (Join-Path $env:RUNNER_TEMP 'verification-records/static-analysis.json')
           if ($LASTEXITCODE -ne 0) { throw 'Windows pilot record finalization failed' }
+      - name: Finalize archive-bound Windows publication case records
+        if: ${{ always() }}
+        env:
+          ARCHIVE_SUITE_OUTCOME: ${{ steps.archive_verify.outcome }}
+          SYMBOLS_OUTCOME: ${{ steps.symbols.outcome }}
+          DIAGNOSTICS_OUTCOME: ${{ steps.diagnostics.outcome }}
+        run: |
+          $recordDir = Join-Path $env:RUNNER_TEMP 'verification-records'
+          New-Item -ItemType Directory -Force $recordDir | Out-Null
+          $raw = [ordered]@{
+            run_id = $env:GITHUB_RUN_ID
+            source_revision = $env:GITHUB_SHA
+            steps = [ordered]@{
+              'archive-suite' = $env:ARCHIVE_SUITE_OUTCOME
+              symbols = $env:SYMBOLS_OUTCOME
+              diagnostics = $env:DIAGNOSTICS_OUTCOME
+            }
+          }
+          $raw | ConvertTo-Json -Depth 4 | Set-Content -Encoding utf8 (Join-Path $recordDir 'publication-attempt.json')
+          $results = [ordered]@{}
+          foreach ($case in $raw.steps.Keys) {
+            $results[$case] = switch ($raw.steps[$case]) {
+              'success' { 'passed' }
+              'failure' { 'failed' }
+              default { 'skipped' }
+            }
+          }
+          $results | ConvertTo-Json -Depth 2 | Set-Content -Encoding utf8 (Join-Path $recordDir 'publication-steps.json')
+          $archiveDir = 'dist/windows'
+          $pgArchive = Join-Path $archiveDir "postgresql-$env:PG_VERSION-windows-x86_64.tar.gz"
+          $vectorArchive = Join-Path $archiveDir "pgvector-0.8.7-postgresql-$env:PG_VERSION-windows-x86_64.tar.gz"
+          if (-not (Test-Path $pgArchive -PathType Leaf) -or -not (Test-Path $vectorArchive -PathType Leaf)) {
+            Write-Host 'No archive-bound publication record: final archive bytes are unavailable'
+            exit 0
+          }
+          $imageId = "$([Environment]::GetEnvironmentVariable('ImageOS'))/$([Environment]::GetEnvironmentVariable('ImageVersion'))"
+          $osVersion = [System.Environment]::OSVersion.Version.ToString()
+          $dependencyChecksPassed = ($env:ARCHIVE_SUITE_OUTCOME -eq 'success').ToString().ToLowerInvariant()
+          python tools/emit_windows_publication_records.py --archives $archiveDir --output (Join-Path $recordDir 'publication') --postgresql-version $env:PG_VERSION --revision $env:GITHUB_SHA --os-version $osVersion --image-id $imageId --step-results (Join-Path $recordDir 'publication-steps.json') --static-report (Join-Path $recordDir 'static-analysis.json') --symbol-report (Join-Path $archiveDir 'debug-symbols/index.json') --diagnostic-report (Join-Path $recordDir 'diagnostics.json') --dependency-checks-passed $dependencyChecksPassed
+          if ($LASTEXITCODE -ne 0) { throw 'Windows publication record finalization failed' }
       - uses: actions/upload-artifact@v4
         if: ${{ always() }}
         with:
@@ -193,5 +233,6 @@ jobs:
           path: |
             dist/windows/verification/*.json
             ${{ runner.temp }}/verification-records/*.json
+            ${{ runner.temp }}/verification-records/publication/*.json
           retention-days: 1
           if-no-files-found: warn

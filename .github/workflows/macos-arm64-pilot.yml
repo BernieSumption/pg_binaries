@@ -105,9 +105,9 @@ jobs:
       - name: Verify representative macOS failure diagnostics
         id: diagnostics
         run: bash scripts/macos/diagnostics.sh "$RUNNER_TEMP/archives" arm64 "${{ needs.build.outputs.postgresql_version }}" 0.8.7 "$RUNNER_TEMP/verification-records/diagnostics.json"
-      - name: Check pilot record emitter
+      - name: Check macOS record emitters
         if: ${{ always() }}
-        run: python3 -m unittest tests/test_emit_macos_pilot_records.py
+        run: python3 -m unittest tests/test_emit_macos_pilot_records.py tests/test_emit_macos_publication_records.py
       - name: Finalize current-OS pilot verification records
         if: ${{ always() }}
         env:
@@ -134,11 +134,49 @@ jobs:
             --outcome "$outcome" \
             --dependency-checks-passed "$DEPENDENCY_CHECKS_PASSED" \
             --static-report "$RUNNER_TEMP/verification-records/static-analysis.json"
+      - name: Finalize archive-bound macOS publication case records
+        if: ${{ always() }}
+        env:
+          ARCHIVE_SUITE_OUTCOME: ${{ steps.archive_verify.outcome }}
+          SYMBOLS_OUTCOME: ${{ steps.symbols.outcome }}
+          DIAGNOSTICS_OUTCOME: ${{ steps.diagnostics.outcome }}
+        run: |
+          record_dir="$RUNNER_TEMP/verification-records"
+          mkdir -p "$record_dir"
+          python3 - "$record_dir/publication-attempt.json" <<'PY'
+          import json, os, sys
+          from pathlib import Path
+          Path(sys.argv[1]).write_text(json.dumps({
+              "run_id": os.environ["GITHUB_RUN_ID"],
+              "source_revision": os.environ["GITHUB_SHA"],
+              "steps": {name: os.environ[key] for name, key in (
+                  ("archive-suite", "ARCHIVE_SUITE_OUTCOME"),
+                  ("symbols", "SYMBOLS_OUTCOME"),
+                  ("diagnostics", "DIAGNOSTICS_OUTCOME"))},
+          }, indent=2, sort_keys=True) + "\n")
+          PY
+          archive_dir="$RUNNER_TEMP/archives"
+          version="${{ needs.build.outputs.postgresql_version }}"
+          if [[ ! -f "$archive_dir/postgresql-$version-macos-arm64.tar.gz" || ! -f "$archive_dir/pgvector-0.8.7-postgresql-$version-macos-arm64.tar.gz" ]]; then
+            echo 'No archive-bound publication record: final archive bytes are unavailable'
+            exit 0
+          fi
+          image_id="${ImageOS:?runner image OS missing}/${ImageVersion:?runner image version missing}"
+          python3 tools/emit_macos_publication_records.py \
+            --archives "$archive_dir" --output "$record_dir/publication" \
+            --postgresql-version "$version" --os-version "$(sw_vers -productVersion)" \
+            --architecture arm64 --image-id "$image_id" \
+            --archive-suite-result "$ARCHIVE_SUITE_OUTCOME" \
+            --symbols-result "$SYMBOLS_OUTCOME" --diagnostics-result "$DIAGNOSTICS_OUTCOME" \
+            --static-report "$record_dir/static-analysis.json" \
+            --diagnostic-report "$record_dir/diagnostics.json"
       - uses: actions/upload-artifact@v4
         if: ${{ always() }}
         with:
           name: macos-arm64-pilot-verification-records
-          path: ${{ runner.temp }}/verification-records/*.json
+          path: |
+            ${{ runner.temp }}/verification-records/*.json
+            ${{ runner.temp }}/verification-records/publication/*.json
           if-no-files-found: warn
           retention-days: 7
 
