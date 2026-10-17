@@ -1,0 +1,34 @@
+{
+  "architecture": "x86_64",
+  "archives": {
+    "pgaudit-17.1-postgresql-17.11-linux-x86_64.tar.gz": "aeae2c11d8c9cff00ad2f3306316cef5490bbb334d64cf0b828640898c36a321",
+    "postgresql-17.11-linux-x86_64.tar.gz": "b9731b13f200737a034d5dcc9bc14d76e54ceb981d614170fbebde632076d747"
+  },
+  "case_results": {
+    "pgaudit-archive-suite": "passed"
+  },
+  "ci": {
+    "build_revision": "bde75d40de8eeb5c4b0b9ebd9a6d7863c0f2d41e",
+    "provider": "github-actions",
+    "run_id": "39076182027",
+    "run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/39076182027",
+    "source_revision": "bde75d40de8eeb5c4b0b9ebd9a6d7863c0f2d41e",
+    "test_revision": "bde75d40de8eeb5c4b0b9ebd9a6d7863c0f2d41e"
+  },
+  "clean_system": true,
+  "dependency_check_profile": "pgaudit-runtime-v1",
+  "dependency_checks_passed": true,
+  "distribution": "Alpine Linux",
+  "distribution_version": "3.22.6",
+  "endpoint": "current",
+  "extension_archive": "pgaudit-17.1-postgresql-17.11-linux-x86_64.tar.gz",
+  "image_id": "sha256:0f2ce457129fa454ed2c6e1db5da76b59e2e9396b84b476b5e7dbc19a0c91621",
+  "kernel_release": "6.17.0-1022-azure",
+  "postgresql_version": "17.11",
+  "prerequisite_archives": [],
+  "profile_id": "pgaudit-publication-current-x86_64",
+  "profile_revision": "38b0b89fcd45d81c9a19e86ff9c366dbdba65976d6ce5cac4c032722abfc98bd",
+  "project": "pgaudit",
+  "test_revision": "bde75d40de8eeb5c4b0b9ebd9a6d7863c0f2d41e",
+  "version": "17.1"
+}
