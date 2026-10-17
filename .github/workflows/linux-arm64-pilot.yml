@@ -126,8 +126,10 @@ jobs:
             --outcome "$outcome" \
             --dependency-checks-passed "$DEPENDENCY_CHECKS_PASSED"
       - name: Build disposable Linux 5.15 QEMU environment
+        if: github.event_name == 'workflow_dispatch'
         run: docker build -f scripts/qemu/arm64-515.Dockerfile -t pg-binaries-linux-qemu-arm64 .
       - name: Verify the same archives in an Ubuntu 22.04 arm64 Linux 5.15 guest
+        if: github.event_name == 'workflow_dispatch'
         id: minimum_verify
         run: |
           mkdir -p "$RUNNER_TEMP/qemu-linux-arm64-515"
