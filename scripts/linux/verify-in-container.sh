@@ -144,7 +144,7 @@ runuser -u postgres -- /tmp/first/postgresql/bin/initdb -D /tmp/first-data --enc
 runuser -u postgres -- /tmp/first/postgresql/bin/pg_ctl -D /tmp/first-data -o '-k /tmp/first-socket -p 55430 -h ""' -w start
 trap 'runuser -u postgres -- /tmp/first/postgresql/bin/pg_ctl -D /tmp/first-data -m immediate stop >/dev/null 2>&1 || true' EXIT
 runuser -u postgres -- /tmp/first/postgresql/bin/psql -XAt -h /tmp/first-socket -p 55430 -d postgres -c 'SHOW server_version' | grep -Fx "$pg_version"
-runuser -u postgres -- /tmp/first/postgresql/bin/psql -XAt -h /tmp/first-socket -p 55430 -d postgres -c 'SHOW lc_collate' | grep -Fx C
+runuser -u postgres -- /tmp/first/postgresql/bin/psql -XAt -v ON_ERROR_STOP=1 -h /tmp/first-socket -p 55430 -d postgres -c 'SELECT datcollate FROM pg_database WHERE datname = current_database()' | grep -Fx C
 runuser -u postgres -- /tmp/first/postgresql/bin/psql -X -v ON_ERROR_STOP=1 -h /tmp/first-socket -p 55430 -d postgres <<'SQL'
 CREATE EXTENSION vector;
 CREATE TABLE relocation_probe (embedding vector(3));
