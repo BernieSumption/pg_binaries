@@ -22,10 +22,6 @@ When dependencies are unavoidable, they are bundled with, or statically linked i
 
 Only depend on truly universal capabilities of platforms, eg the universal C runtime on Windows. Bundle or statically link non-universal.
 
-## Postgres version support
-
-We offer every stable PostgreSQL release in majors 15 and later published on or after 25 September 2025 on all three target platforms. There is no upper major-version limit. Exclude prereleases and PostgreSQL <=14.
-
 ## Extension support
 
 Our aim is to provide a wide range of extensions, so that 99%+ of apps can use our distribution.
@@ -48,25 +44,13 @@ Factors against support:
 
 In the event of conflicting factors, agents may decide that the case for or against overwhelmingly supports one result and make the decision. For example, if a deprecated extension is still widely used and supported by major Postgres hosting providers, and does not have a high cost of supporting, it's probably a good idea to support it. If the balance of factors for and against does not clearly support a decision, for example a widely used extension that is not compatible with our minimum OS support target, then add this to HUMAN_REVIEW_QUEUE.md.
 
-### Extension version support
+### Determining postgres and extension versions to support
 
-Different extensions may require different version support policies. The goal is to provide a useful subset of supported versions without an explosion of versions that all have to be build and tested against every new postgres release.
+For Postgres builds, we offer the latest stable (non prerelease) minor release of each currently supported PostgreSQL major 15 and later. Add new majors as they are released in stable form minor release 0.
 
-Any client using this project has an intended extension version - this is the version that they intend to execute their SQL against in production. Clients are expected to select the next highest version from the inventory if their intended version is not available.
+For extensions, we always offer the most recent release that is compatible with a given Postgres version. Additionally, if the project has released new major versions in the last two years, we offer the most recent minor of each such major. If the Postgres version compatibility of a given extension does not make it possible to follow this policy exactly, we should follow it as closely as practical.
 
-Our guarantee is: we will provide enough versions of an extension so that DDL written for the intended version will execute correctly in the selected version.
-
-We do _not_ guarantee that DDL written for the selected version will be backwards compatible with the intended version.
-
-Use these criteria to determine backwards compatibility:
-
-- Always include the most recent release before a break in backwards compatibility
-- Assume that a major version transition is a break in backwards compatibility
-- Research the project documentation because projects do not always follow semantic versioning and it is somewhat common for Postgres extensions to break backwards compatibility in a minor release.
-- For projects that have a very slow minor version release cadence, like PostGIS which has historically released around one minor version per year, assume that minors are breaking
-- When updating the current supported versions, use version numbers rather than release dates to establish support. So for example, if we support 2.1.7 and 3.0.1, and when checking for new versions we find that 2.1.11 has been release, it would be necessary to support it.
-
-In general we do not support extension releases made before 25 September 2025, but exceptions can be made, for example if there is a widely used incompatible version whose last release was before then, or if the current release was made before then.
+Each time we re-analyse current projects and update the supported versions, it will be necessary to go to the websites and/or package managers or repos of Postgres and all of our supported extensions and look for new releases. Because the support policy above is phrased in a time-based way, e.g. "the latest minor" and "within the last two years", this implies that publishing a new inventory will drop support for releases that no longer qualify.
 
 ### Respect both test evidence and documented compatibility
 
@@ -91,7 +75,7 @@ Use the following labelled paragraphs, in this order:
 - `Description:` What the project provides, its SQL extension name(s) and a project link.
 - `For inclusion:` Adoption, hosting support, maintenance and other reasons to include it.
 - `Against inclusion:` Build cost, dependencies, platform limitations, security or redistribution concerns. Say “None identified” when appropriate.
-- `Version policy:` Which release lines to support and why, including relevant compatibility breaks.
+- `Version policy:` Which release lines to support and why.
 - `Target support:` Intended PostgreSQL versions, operating systems and architectures, with any restrictions. Verified coverage belongs in the inventory and test records.
 - `Sources:` Links supporting the findings and decisions.
 
@@ -111,9 +95,9 @@ Example format
     
     Against inclusion: Adds a native dependency, libcrumb, which we must build and bundle. Its small size and standard build process make this an acceptable cost.
     
-    Version policy: Support the latest release in each compatible version line. Upstream documents backwards-compatible minor and patch releases, but 3.0 replaced dunk_seconds() with dunk_milliseconds(). Retain the latest 2.x release alongside the latest 3.x release so older CHECK constraints and generated columns still work. Both lines have releases after our cutoff.
+    Version policy: Select the latest 3.x release compatible with each selected PostgreSQL version. Major versions 2 and 3 were first released within the last two years, so also select the latest compatible 2.x release under the shared version support policy.
     
-    Target support: PostgreSQL 15–18 on Linux, macOS and Windows, on x86-64 and arm64, matching upstream's declared support. Build separately for each PostgreSQL major, reusing builds across minors only after verification. Broader PostgreSQL support requires further upstream evidence and testing.
+    Target support: Support the selected minor of each PostgreSQL major 15–18 on the project's required platforms, within upstream's documented support. Broader PostgreSQL support requires further upstream evidence and testing.
     
     Sources: [release and compatibility policy](https://example.org/pg_biscuit/releases), [installation requirements and licence](https://example.org/pg_biscuit/install).
 
@@ -121,9 +105,7 @@ Note: This policy document, as specified above, requires that decisions about wh
 
 ### Minimise the number of extension builds
 
-For every extension version we support, we provide enough downloads to cover every Postgres version we support (except in the case of extensions that genuinely do not support all of our Postgres versions). An extension built against version 15 of Postgres will not necessarily be compatible with version 18. Sometimes there may be breaks within a chain of minor releases, So for example perhaps one build is required to support 18.0-18.6 and another to support 18.6+.
-
-Avoid building the entire matrix of every Postgres version against every extension version. Researching compatibility in upstream docs, Make a minimal set of extension builds, and ensure that the correct tests exist to verify that a given extension build does in fact work as expected in every version it claims support for.
+Provide archives for every extension and PostgreSQL version combination selected by the version support policy. Reuse an archive where compatibility permits.
 
 ## Declared support drives builds, tests and releases
 
