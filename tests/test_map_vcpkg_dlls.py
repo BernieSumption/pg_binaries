@@ -40,6 +40,7 @@ class VcpkgDllMappingTests(unittest.TestCase):
         self.assertEqual(result["schema_version"], 1)
         item = result["components"][0]
         self.assertEqual(item["dll"], "icuuc74.dll")
+        self.assertEqual(len(item["dll_sha256"]), 64)
         self.assertEqual(item["port"], "icu")
         self.assertEqual(item["triplet"], "x64-windows")
         self.assertEqual(item["version"], "74.2")

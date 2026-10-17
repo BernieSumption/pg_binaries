@@ -140,6 +140,30 @@ foreach ($inventorySpec in $licenseInventories) {
 $coreLicenseInventory = Get-Content $licenseInventoryPath -Raw | ConvertFrom-Json
 $runtimeReview = @($coreLicenseInventory.components | Where-Object component -eq 'bundled-runtime-dependencies')[0].redistribution_review
 if ($runtimeReview.status -ne 'pending') { throw 'Windows dependency redistribution review must remain pending until package mapping and terms are established' }
+$vcpkgMapPath = Join-Path $pgRoot 'LICENSES/vcpkg-dll-map.json'
+if (-not (Test-Path $vcpkgMapPath -PathType Leaf)) { throw 'Bundled vcpkg DLL ownership map is missing' }
+$vcpkgMap = Get-Content $vcpkgMapPath -Raw | ConvertFrom-Json
+if ($vcpkgMap.schema_version -ne 1 -or @($vcpkgMap.components).Count -eq 0) {
+  throw 'Bundled vcpkg DLL ownership map is empty or invalid'
+}
+$mappedDlls = @($vcpkgMap.components | ForEach-Object dll | Sort-Object)
+$declaredDlls = @($pgManifest.bundled_runtime_dlls | Sort-Object)
+if (Compare-Object $mappedDlls $declaredDlls) { throw 'vcpkg ownership map does not cover exactly the bundled runtime DLLs' }
+foreach ($entry in $vcpkgMap.components) {
+  if ($entry.dll -notmatch '^[A-Za-z0-9._-]+\.dll$' -or
+      $entry.port -notmatch '^[A-Za-z0-9._-]+$' -or
+      -not $entry.version -or $null -eq $entry.port_version -or
+      $entry.triplet -ne 'x64-windows' -or
+      $entry.copyright_file -ne "share/$($entry.port)/copyright") {
+    throw "Invalid vcpkg ownership map entry: $($entry.dll)"
+  }
+  $dllPath = Join-Path $pgRoot "bin/$($entry.dll)"
+  $noticePath = Join-Path $pgRoot "LICENSES/dependencies/$($entry.port).txt"
+  if ((Get-FileHash $dllPath -Algorithm SHA256).Hash.ToLowerInvariant() -ne $entry.dll_sha256 -or
+      (Get-FileHash $noticePath -Algorithm SHA256).Hash.ToLowerInvariant() -ne $entry.copyright_sha256) {
+    throw "vcpkg DLL or notice bytes differ from the ownership map: $($entry.dll)"
+  }
+}
 $msvcComponent = @($coreLicenseInventory.components | Where-Object component -eq 'Microsoft Visual C++ runtime')[0]
 if ($msvcComponent.redistribution_review.status -ne 'resolved' -or
     $msvcComponent.version -notmatch '(?i)vcruntime140\.dll=\S+') {

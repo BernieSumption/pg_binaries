@@ -75,12 +75,22 @@ meson install -C $pgBuild
 
 # Place redistributable dependency DLLs with PostgreSQL binaries, where the
 # Windows loader will find them without vcpkg or the builder's PATH.
-$bundledRuntimeDlls = @(Get-ChildItem (Join-Path $vcpkg 'bin') -Filter '*.dll' -File | Select-Object -ExpandProperty Name)
-Copy-Item (Join-Path $vcpkg 'bin/*.dll') (Join-Path $pgInstall 'bin')
+$bundledRuntimeSource = Join-Path $work 'vcpkg-runtime-dlls'
+New-Item -ItemType Directory -Force $bundledRuntimeSource | Out-Null
+Copy-Item (Join-Path $vcpkg 'bin/*.dll') $bundledRuntimeSource
+$bundledRuntimeDlls = @(Get-ChildItem $bundledRuntimeSource -Filter '*.dll' -File | Select-Object -ExpandProperty Name)
+if ($bundledRuntimeDlls.Count -eq 0) { throw 'No vcpkg runtime DLLs were installed' }
+foreach ($dll in $bundledRuntimeDlls) {
+  if (Test-Path (Join-Path $pgInstall "bin/$dll")) { throw "vcpkg DLL collides with PostgreSQL output: $dll" }
+}
+Copy-Item (Join-Path $bundledRuntimeSource '*.dll') (Join-Path $pgInstall 'bin')
 
 $pgLicenses = Join-Path $pgInstall 'LICENSES'
 New-Item -ItemType Directory -Force $pgLicenses | Out-Null
 Copy-Item (Join-Path $pgSource 'COPYRIGHT') (Join-Path $pgLicenses 'PostgreSQL.txt')
+$vcpkgDllMap = Join-Path $pgLicenses 'vcpkg-dll-map.json'
+python (Join-Path $repo 'tools/map_vcpkg_dlls.py') --installed-root $vcpkg --dll-directory $bundledRuntimeSource --output $vcpkgDllMap
+if ($LASTEXITCODE -ne 0) { throw 'Cannot map copied vcpkg DLLs to installed package metadata' }
 $dependencyLicenses = Join-Path $pgLicenses 'dependencies'
 New-Item -ItemType Directory -Force $dependencyLicenses | Out-Null
 Get-ChildItem (Join-Path $vcpkg 'share') -Directory | ForEach-Object {
@@ -181,7 +191,7 @@ $pgLicenseInventory = [ordered]@{
       additional_license_files = @($dependencyNotices | ForEach-Object { "dependencies/$($_.Name)" })
       redistribution_review = [ordered]@{
         status = 'pending'
-        basis = 'The bundled DLLs and vcpkg copyright notices are recorded, but exact DLL-to-package mapping, source provenance, applicable terms and source obligations remain under review.'
+        basis = 'The bundled DLLs are mapped to installed vcpkg package versions and matching copyright notices. Their exact upstream source provenance, applicable terms and source obligations remain under review.'
         source_obligation = 'unknown'
       }
     },

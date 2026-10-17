@@ -24,12 +24,14 @@ on:
       - 'tools/create_windows_symbols.py'
       - 'tools/emit_windows_pilot_records.py'
       - 'tools/check_pe_dependencies.py'
+      - 'tools/map_vcpkg_dlls.py'
       - 'tests/schema.sql'
       - 'tests/builtins/**'
       - 'tests/extensions/**'
       - 'tests/test_create_windows_symbols.py'
       - 'tests/test_emit_windows_pilot_records.py'
       - 'tests/test_check_pe_dependencies.py'
+      - 'tests/test_map_vcpkg_dlls.py'
       - 'tests/test_profile_change_gate.py'
       - 'tools/profile_change_gate.py'
 
@@ -118,8 +120,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Check Windows symbol-index helper
-        run: python -m unittest tests/test_create_windows_symbols.py
+      - name: Check Windows build evidence helpers
+        run: python -m unittest tests/test_create_windows_symbols.py tests/test_map_vcpkg_dlls.py
       - name: Install Meson and Ninja
         run: python -m pip install --disable-pip-version-check meson ninja
       - name: Provide Flex and Bison for the PostgreSQL build

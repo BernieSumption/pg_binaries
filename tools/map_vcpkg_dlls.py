@@ -122,6 +122,7 @@ def map_bundled_dlls(installed_root, dll_directory):
             raise ValueError(f"vcpkg copyright notice is missing for {package['port']}: {notice_relative}")
         result.append({
             "dll": relative,
+            "dll_sha256": sha256(dll),
             "port": package["port"],
             "triplet": package["triplet"],
             "version": package["version"],
