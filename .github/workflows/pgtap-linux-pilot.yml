@@ -14,16 +14,30 @@ on:
         default: x86_64
         type: choice
         options: [x86_64, arm64]
+  push:
+    branches: [spike]
+    paths:
+      - '.github/workflows/pgtap-linux-pilot.yml'
+      - 'scripts/pgtap/**'
+      - 'scripts/linux/**'
+      - 'tools/check_elf_dependencies.py'
+      - 'tools/source_archive.py'
+      - 'support.json'
+      - 'support/postgresql-releases.json'
 
 jobs:
   verify:
-    runs-on: ${{ inputs.architecture == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-24.04' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        architecture: ${{ fromJSON(github.event_name == 'push' && '["x86_64","arm64"]' || format('["{0}"]', inputs.architecture)) }}
+    runs-on: ${{ matrix.architecture == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-24.04' }}
     timeout-minutes: 70
     permissions:
       contents: read
     env:
-      PG_VERSION: ${{ inputs.postgresql_version }}
-      PG_ARCHITECTURE: ${{ inputs.architecture }}
+      PG_VERSION: ${{ inputs.postgresql_version || '18.6' }}
+      PG_ARCHITECTURE: ${{ matrix.architecture }}
     steps:
       - uses: actions/checkout@v4
       - name: Build exact PostgreSQL archive
@@ -76,7 +90,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: pgtap-linux-${{ inputs.postgresql_version }}-${{ inputs.architecture }}-${{ github.run_id }}
+          name: pgtap-linux-${{ env.PG_VERSION }}-${{ matrix.architecture }}-${{ github.run_id }}
           path: |
             ${{ runner.temp }}/pgtap-attempt/step-outcomes.json
             ${{ runner.temp }}/pgtap/*.sha256
