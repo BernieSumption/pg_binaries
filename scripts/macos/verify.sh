@@ -159,17 +159,7 @@ surgery=("$pg/bin/psql" -h "$work/socket" -p 54329 -d surgery_check -X -v ON_ERR
 "${surgery[@]}" -f "$repo/tests/builtins/surgery.sql"
 stop_server
 
-python3 - "$pg" <<'PY'
-import pathlib, subprocess, sys
-for binary in pathlib.Path(sys.argv[1]).rglob('*'):
-    if not binary.is_file() or binary.is_symlink() or binary.suffix == '.a':
-        continue
-    result = subprocess.run(['otool', '-L', str(binary)], capture_output=True, text=True)
-    if result.returncode:
-        continue
-    for line in result.stdout.splitlines()[1:]:
-        dep = line.strip().split(' ', 1)[0]
-        if dep.startswith('/') and not dep.startswith(('/usr/lib/', '/System/Library/')):
-            raise SystemExit(f'Non-system absolute Mach-O dependency: {binary}: {dep}')
-PY
+static_report=${MACOS_STATIC_ANALYSIS_REPORT:-$work/macos-static-analysis.json}
+python3 "$repo/scripts/macos/static_analysis.py" "$pg" "$architecture" \
+  --archive "$archives/$pg_name" --archive "$archives/$vector_name" --report "$static_report"
 echo "macOS packaged archive verification passed on $(sw_vers -productVersion), $(uname -m), libc locale $locale_name"

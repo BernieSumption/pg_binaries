@@ -57,7 +57,20 @@ class EmitMacOSPilotRecordsTests(unittest.TestCase):
             checksum = hashlib.sha256(data).hexdigest()
             (self.archives / f"{name}.sha256").write_text(
                 f"{checksum}  {name}\n", encoding="utf-8")
+        self.static_report = self.root / "static-analysis.json"
+        self.write_static_report()
         self.output = self.root / "records"
+
+    def write_static_report(self, architecture="x86_64", **updates):
+        report = {
+            "passed": True, "architecture": architecture,
+            "inspected_files": [{"file": "bin/postgres"}],
+            "archives": [{"basename": path.name,
+                          "sha256": hashlib.sha256(path.read_bytes()).hexdigest()}
+                         for path in sorted(self.archives.glob(f"*macos-{architecture}.tar.gz"))],
+        }
+        report.update(updates)
+        self.static_report.write_text(json.dumps(report), encoding="utf-8")
 
     def tearDown(self):
         self.temp.cleanup()
@@ -66,7 +79,8 @@ class EmitMacOSPilotRecordsTests(unittest.TestCase):
         return records.emit(self.root, self.archives, self.output, "18.6", "a" * 40,
                             "15.7", architecture,
                             "macos-15-intel/ImageVersion=2026.01" if architecture == "x86_64"
-                            else "macos-15/ImageVersion=2026.01", **kwargs)
+                            else "macos-15/ImageVersion=2026.01",
+                            static_report=self.static_report, **kwargs)
 
     def test_emits_two_bound_pilot_records(self):
         paths = self.emit()
@@ -115,6 +129,7 @@ class EmitMacOSPilotRecordsTests(unittest.TestCase):
             (self.archives / name).write_bytes(data)
             (self.archives / f"{name}.sha256").write_text(
                 f"{hashlib.sha256(data).hexdigest()}  {name}\n", encoding="utf-8")
+        self.write_static_report("arm64")
         paths = self.emit(architecture="arm64")
         self.assertEqual({path.name for path in paths}, {
             "postgresql-18.6-macos-arm64-12345.json",
@@ -163,6 +178,30 @@ class EmitMacOSPilotRecordsTests(unittest.TestCase):
             self.emit(outcome="unknown")
         with self.assertRaisesRegex(records.coverage.CoverageError, "dependency check result"):
             self.emit(dependency_checks_passed="false")
+
+    def test_passed_records_require_valid_static_report(self):
+        self.static_report.unlink()
+        with self.assertRaisesRegex(records.coverage.CoverageError, "report is required"):
+            self.emit()
+        self.write_static_report(architecture="arm64")
+        with self.assertRaisesRegex(records.coverage.CoverageError, "architecture"):
+            self.emit()
+        self.write_static_report(inspected_files=[])
+        with self.assertRaisesRegex(records.coverage.CoverageError, "inspected_files"):
+            self.emit()
+        self.write_static_report(archives=[])
+        with self.assertRaisesRegex(records.coverage.CoverageError, "archives do not match"):
+            self.emit()
+
+    def test_failed_or_skipped_records_do_not_require_static_report(self):
+        self.static_report.unlink()
+        for outcome in ("failed", "skipped"):
+            paths = records.emit(self.root, self.archives, self.output, "18.6", "a" * 40,
+                                 "15.7", "x86_64", "macos-15-intel/ImageVersion=2026.01",
+                                 outcome, False)
+            self.assertEqual(len(paths), 2)
+            for path in paths:
+                path.unlink()
 
 
 if __name__ == "__main__":

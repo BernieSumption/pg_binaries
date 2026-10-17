@@ -24,6 +24,7 @@ on:
       - tests/builtins/**
       - tests/extensions/**
       - tests/test_emit_macos_pilot_records.py
+      - tests/test_macos_static_analysis.py
       - tests/test_create_macos_symbols.py
       - .github/workflows/macos-pilot.yml
 
@@ -81,6 +82,8 @@ jobs:
           path: ${{ runner.temp }}/archives
       - name: Check downloaded archives on a fresh runner
         id: archive_verify
+        env:
+          MACOS_STATIC_ANALYSIS_REPORT: ${{ runner.temp }}/verification-records/static-analysis.json
         run: bash scripts/macos/verify.sh "$RUNNER_TEMP/archives" x86_64 "${{ needs.build.outputs.postgresql_version }}"
       - name: Verify symbols against downloaded archive bytes
         id: symbols
@@ -116,7 +119,8 @@ jobs:
             --architecture "$(uname -m)" \
             --image-id "$image_id" \
             --outcome "$outcome" \
-            --dependency-checks-passed "$DEPENDENCY_CHECKS_PASSED"
+            --dependency-checks-passed "$DEPENDENCY_CHECKS_PASSED" \
+            --static-report "$RUNNER_TEMP/verification-records/static-analysis.json"
       - uses: actions/upload-artifact@v4
         if: ${{ always() }}
         with:
