@@ -14,12 +14,55 @@ on:
       - 'tools/import_linux_publication_run.py'
       - 'tools/import_linux_tiger_publication.py'
       - 'tools/coverage.py'
+      - 'tools/profile_change_gate.py'
+      - 'tests/test_profile_change_gate.py'
       - 'support/verification-profiles.json'
       - 'support.json'
       - 'support/postgresql-releases.json'
 
+permissions:
+  contents: read
+
 jobs:
+  scope:
+    runs-on: ubuntu-latest
+    outputs:
+      should_run: ${{ steps.profile_gate.outputs.should_run }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test profile-change gate
+        run: python3 -m unittest tests/test_profile_change_gate.py
+      - name: Check whether the pgAudit publication profile changed
+        id: profile_gate
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+        run: |
+          set -euo pipefail
+          before_root="$RUNNER_TEMP/profile-before"
+          if [[ ! "$BEFORE_SHA" =~ ^[0-9a-f]{40}$ ]] \
+            || ! git fetch --no-tags --depth=1 origin "$BEFORE_SHA" \
+            || ! git worktree add --detach "$before_root" "$BEFORE_SHA"; then
+            echo 'Base commit unavailable; running the pgAudit workflow.' >&2
+            echo 'should_run=true' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          x86_scope=$(python3 tools/profile_change_gate.py \
+            --before-root "$before_root" \
+            --current-root "$GITHUB_WORKSPACE" \
+            --profile-id pgaudit-publication-current-x86_64)
+          arm_scope=$(python3 tools/profile_change_gate.py \
+            --before-root "$before_root" \
+            --current-root "$GITHUB_WORKSPACE" \
+            --profile-id pgaudit-publication-current-arm64)
+          if [[ "$x86_scope" == should_run=true || "$arm_scope" == should_run=true ]]; then
+            echo 'should_run=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'should_run=false' >> "$GITHUB_OUTPUT"
+          fi
+
   verify:
+    needs: scope
+    if: ${{ needs.scope.outputs.should_run == 'true' }}
     strategy:
       fail-fast: false
       matrix:
