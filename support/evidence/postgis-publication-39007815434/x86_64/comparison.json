@@ -1,0 +1,11 @@
+{
+  "architecture": "x86_64",
+  "assembled_core_matches_separate_publication": false,
+  "assembled_core_sha256": "46c259b5440a2506971e66829e1f5f6113f68aba2bbf3bf50184edf9156f6272",
+  "core_publication_run": 39007815446,
+  "postgis_extension_sha256": "a6e4e5c6bad082294c96865ef8bda7a4dfa226cf0674809f6832e97023b9af98",
+  "postgis_run": 39007815434,
+  "postgis_version": "3.6.4",
+  "postgresql_version": "18.6",
+  "separate_core_publication_sha256": "03193ee9a49611bd9c3938bb72ee8a225fada988a27facdf048a1284be9ac558"
+}

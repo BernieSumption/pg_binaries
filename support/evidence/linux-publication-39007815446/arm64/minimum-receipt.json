@@ -1,0 +1,31 @@
+{
+  "architecture": "arm64",
+  "archives": {
+    "pgvector-0.8.7-postgresql-18.6-linux-arm64.tar.gz": "98666aa64b16eed54e537d4a232da638e7598c5d3342dda2b7504cf105ca7521",
+    "postgresql-18.6-linux-arm64.tar.gz": "d9140276b3feccec65b58f04a5b7f2f8fe33235095b2f82374c33ec4d70884e2"
+  },
+  "case_results": {
+    "archive-suite": "passed"
+  },
+  "ci": {
+    "build_revision": "89a451beee70c41c172459a786ee61c7e363be45",
+    "provider": "github-actions",
+    "run_id": "39007815446",
+    "run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/39007815446",
+    "source_revision": "89a451beee70c41c172459a786ee61c7e363be45",
+    "test_revision": "89a451beee70c41c172459a786ee61c7e363be45"
+  },
+  "clean_system": true,
+  "dependency_check_profile": "linux-runtime-v1",
+  "dependency_checks_passed": true,
+  "distribution": "Ubuntu 22.04.5 LTS",
+  "distribution_version": "22.04",
+  "endpoint": "minimum",
+  "image_id": "sha256:86e13258765945ad792dac75fac7f02f4db9fa73a4a535ffa472266e7041fa19",
+  "kernel_release": "5.15.0-198-generic",
+  "os": "linux",
+  "postgresql_version": "18.6",
+  "profile_id": "linux-publication-minimum-arm64",
+  "profile_revision": "b8b3bd3dcc273e3aefba1a5e3460510fcd67447d8ec4a48bba35ad2720537e1f",
+  "test_revision": "89a451beee70c41c172459a786ee61c7e363be45"
+}
