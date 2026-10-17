@@ -2,10 +2,39 @@
 set -euo pipefail
 architecture=${PG_ARCHITECTURE:-x86_64}
 case "$architecture" in x86_64|arm64) ;; *) echo "Unsupported Linux architecture: $architecture" >&2; exit 2 ;; esac
-pg_version=18.6
-version=18.0
-source_url='https://github.com/pgaudit/pgaudit/archive/refs/tags/18.0.tar.gz'
-source_sha256='988e8afeda320ebe0a3e632ef6b6bce5d3a08346c2e100a173a585c9521d1fa5'
+pg_version=${PG_VERSION:-18.6}
+case "$pg_version" in
+  15.19)
+    version=1.7.1
+    source_ref=72da89c3fa02f3f2b9f3933214d91ad9c3428467
+    source_url="https://api.github.com/repos/pgaudit/pgaudit/tarball/$source_ref"
+    source_sha256=1e52448238908a09e0e78b3375dcefbfca51509fdbb3a4d92eb710e380ed3567
+    ;;
+  16.15)
+    version=16.1
+    source_ref=a81792e8a4ea8f7aaf75bd610fcc4c2f96650bdc
+    source_url="https://api.github.com/repos/pgaudit/pgaudit/tarball/$source_ref"
+    source_sha256=b0648fcebe5a67340c406126e6dddc703fd03821a9ace80390e128a0d1c91c73
+    ;;
+  17.11)
+    version=17.1
+    source_ref=538f89a93d8fd0d8913f3d740cacaea7b7eb66d9
+    source_url="https://api.github.com/repos/pgaudit/pgaudit/tarball/$source_ref"
+    source_sha256=20e980bd0c22b4ae33305ec2b774bd846bf343642adad108b6c28b422a648312
+    ;;
+  18.6)
+    version=18.0
+    source_ref=18.0
+    source_url='https://github.com/pgaudit/pgaudit/archive/refs/tags/18.0.tar.gz'
+    source_sha256=988e8afeda320ebe0a3e632ef6b6bce5d3a08346c2e100a173a585c9521d1fa5
+    ;;
+  *) echo "Unsupported PostgreSQL version for pgAudit: $pg_version" >&2; exit 2 ;;
+esac
+if [[ "$pg_version" == 18.6 ]]; then
+  source_root=pgaudit-18.0
+else
+  source_root="pgaudit-pgaudit-${source_ref:0:7}"
+fi
 pg_archive="postgresql-${pg_version}-linux-${architecture}.tar.gz"
 archive="pgaudit-${version}-postgresql-${pg_version}-linux-${architecture}.tar.gz"
 cd /input
@@ -19,8 +48,10 @@ export PATH="$pgroot/bin:$PATH"
 cd /work/source
 curl -fL --retry 3 -o pgaudit.tar.gz "$source_url"
 echo "$source_sha256  pgaudit.tar.gz" | sha256sum -c -
+test "$(tar -tzf pgaudit.tar.gz | cut -d/ -f1 | sort -u)" = "$source_root"
 tar -xzf pgaudit.tar.gz
-cd pgaudit-18.0
+test -f "/work/source/$source_root/pgaudit.control"
+cd "/work/source/$source_root"
 test "$(sed -n "s/^default_version = '\([^']*\)'/\1/p" pgaudit.control)" = "$version"
 make USE_PGXS=1 -j 4
 make USE_PGXS=1 install DESTDIR=/work/stage
@@ -39,12 +70,12 @@ cat > /work/package/pgaudit/LICENSES/pgaudit-inventory.json <<EOF
     "version": "${version}",
     "payload_paths": ["lib/pgaudit.so", "share/extension"],
     "license_file": "pgAudit.txt",
-    "license_source": "https://github.com/pgaudit/pgaudit/tree/18.0/LICENSE",
+    "license_source": "https://github.com/pgaudit/pgaudit/tree/${source_ref}/LICENSE",
     "source_url": "${source_url}",
     "source_sha256": "${source_sha256}",
     "redistribution_review": {
       "status": "resolved",
-      "basis": "The unmodified pgAudit 18.0 LICENSE points to the PostgreSQL licence and names the PostgreSQL Global Development Group. This package retains that upstream notice with the full PostgreSQL licence text already included in the selected PostgreSQL 18.6 archive. The licence permits binary redistribution with the notice and terms retained and requires no source delivery.",
+      "basis": "The unmodified pgAudit ${version} LICENSE points to the PostgreSQL licence and names the PostgreSQL Global Development Group. This package retains that upstream notice with the full PostgreSQL licence text already included in the selected PostgreSQL ${pg_version} archive. The licence permits binary redistribution with the notice and terms retained and requires no source delivery.",
       "source_obligation": "none"
     }
   }]

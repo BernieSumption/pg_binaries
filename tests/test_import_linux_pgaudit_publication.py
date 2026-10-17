@@ -38,7 +38,16 @@ class LinuxPgauditPublicationImportTests(unittest.TestCase):
         self.run_id = "7654321"
         self.architecture = "x86_64"
         self.platform = "linux-x86_64"
-        self.postgresql_version = "18.6"
+        self._configure_target("18.6")
+
+    def _configure_target(self, postgresql_version):
+        self.postgresql_version = postgresql_version
+        major = int(postgresql_version.split(".", 1)[0])
+        self.pgaudit_version = {15: "1.7.1", 16: "16.1", 17: "17.1", 18: "18.0"}[major]
+        shutil.rmtree(self.base / "core-artifact", ignore_errors=True)
+        shutil.rmtree(self.base / "pgaudit-artifact", ignore_errors=True)
+        shutil.rmtree(self.root / "support/evidence", ignore_errors=True)
+        shutil.rmtree(self.root / "support/verification", ignore_errors=True)
         self.core_artifact = self.base / "core-artifact"
         self.pgaudit_artifact = self.base / "pgaudit-artifact"
         self.core_dir = self.core_artifact / "pilot"
@@ -72,12 +81,15 @@ class LinuxPgauditPublicationImportTests(unittest.TestCase):
 
     def _make_archives(self):
         self.core_name = f"postgresql-{self.postgresql_version}-{self.platform}.tar.gz"
-        self.pgaudit_name = f"pgaudit-18.0-postgresql-{self.postgresql_version}-{self.platform}.tar.gz"
+        self.pgaudit_name = f"pgaudit-{self.pgaudit_version}-postgresql-{self.postgresql_version}-{self.platform}.tar.gz"
         self._archive(self.core_dir / self.core_name)
         self._archive(self.pgaudit_artifact / self.pgaudit_name, {
-            "project": "pgaudit", "version": "18.0", "postgresql_version": "18.6",
+            "project": "pgaudit", "version": self.pgaudit_version,
+            "postgresql_version": self.postgresql_version,
             "platform": "linux", "architecture": self.architecture,
             "sql_names": ["pgaudit"], "requires": [],
+            "source": dict(zip(("url", "sha256"),
+                                importer.PGAUDIT_SOURCE_IDENTITIES[self.pgaudit_version])),
         })
         report = self.pgaudit_artifact / "static-analysis/pgaudit.json"
         report.parent.mkdir()
@@ -103,7 +115,7 @@ class LinuxPgauditPublicationImportTests(unittest.TestCase):
         attempt_path = self.publication / "attempt.json"
         attempt_path.write_text(json.dumps({
             "schema_version": 1, "run_id": self.run_id, "source_revision": "a" * 40,
-            "postgresql_version": self.postgresql_version, "pgaudit_version": "18.0",
+            "postgresql_version": self.postgresql_version, "pgaudit_version": self.pgaudit_version,
             "architecture": self.architecture, "verifier_image_id": image,
             "steps": step_outcomes,
         }))
@@ -112,7 +124,7 @@ class LinuxPgauditPublicationImportTests(unittest.TestCase):
         receipt_path = self.publication / "current-receipt.json"
         receipt_creator.create(
             self.root, self.pgaudit_artifact, self.core_dir, receipt_path, profile_id,
-            "pgaudit", "18.0", self.postgresql_version, self.postgresql_version,
+            "pgaudit", self.pgaudit_version, self.postgresql_version, self.postgresql_version,
             self.architecture, "current", "6.8.0-test-kernel", "Alpine Linux", "3.22.6",
             image, "success" if result == "success" else "failure", result == "success",
             steps_path, environ={"GITHUB_SHA": "a" * 40, "GITHUB_RUN_ID": self.run_id,
@@ -127,7 +139,7 @@ class LinuxPgauditPublicationImportTests(unittest.TestCase):
     def test_retains_archive_bound_evidence_idempotently(self):
         retained = self._import()
         record_path = self.root / "support/verification" / (
-            f"pgaudit-18.0-postgresql-{self.postgresql_version}-{self.platform}-current-{self.run_id}.json")
+            f"pgaudit-{self.pgaudit_version}-postgresql-{self.postgresql_version}-{self.platform}-current-{self.run_id}.json")
         record = json.loads(record_path.read_text())
         self.assertEqual(record["assembled_core"]["sha256"], self._sha(self.core_dir / self.core_name))
         self.assertEqual(record["sha256"], self._sha(self.pgaudit_artifact / self.pgaudit_name))
@@ -144,6 +156,41 @@ class LinuxPgauditPublicationImportTests(unittest.TestCase):
                 self._import()
                 record = json.loads(next((self.root / "support/verification").glob("*.json")).read_text())
                 self.assertEqual(record["outcome"], result)
+
+    def test_imports_each_selected_postgresql_major_and_pgaudit_release(self):
+        for pg_version, pgaudit_version in (("15.19", "1.7.1"), ("16.15", "16.1"),
+                                            ("17.11", "17.1"), ("18.6", "18.0")):
+            with self.subTest(postgresql_version=pg_version):
+                self._configure_target(pg_version)
+                self.assertEqual(self.pgaudit_version, pgaudit_version)
+                self._import()
+                record = json.loads(next((self.root / "support/verification").glob("*.json")).read_text())
+                self.assertEqual(record["postgresql_version"], pg_version)
+                self.assertEqual(record["version"], pgaudit_version)
+
+    def test_rejects_attempt_from_another_pgaudit_major(self):
+        attempt_path = self.publication / "attempt.json"
+        attempt = json.loads(attempt_path.read_text())
+        attempt["pgaudit_version"] = "17.1"
+        attempt_path.write_text(json.dumps(attempt))
+        with self.assertRaises(coverage.CoverageError):
+            self._import()
+
+    def test_rejects_extension_with_wrong_upstream_source_digest(self):
+        self._archive(self.pgaudit_artifact / self.pgaudit_name, {
+            "project": "pgaudit", "version": self.pgaudit_version,
+            "postgresql_version": self.postgresql_version,
+            "platform": "linux", "architecture": self.architecture,
+            "sql_names": ["pgaudit"], "requires": [],
+            "source": {"url": "https://example.invalid/archive.tar.gz", "sha256": "0" * 64},
+        })
+        report = self.pgaudit_artifact / "static-analysis/pgaudit.json"
+        data = json.loads(report.read_text())
+        data["archives"][1]["sha256"] = self._sha(self.pgaudit_artifact / self.pgaudit_name)
+        report.write_text(json.dumps(data))
+        self._make_publication()
+        with self.assertRaises(coverage.CoverageError):
+            self._import()
 
     def test_retains_only_attempt_when_archives_are_missing(self):
         for path in (self.core_dir / self.core_name,

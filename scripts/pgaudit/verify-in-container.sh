@@ -2,10 +2,15 @@
 set -euo pipefail
 architecture=${PG_ARCHITECTURE:-x86_64}
 case "$architecture" in x86_64|arm64) ;; *) echo "Unsupported Linux architecture: $architecture" >&2; exit 2 ;; esac
-pg_version=18.6
-version=18.0
-source_url='https://github.com/pgaudit/pgaudit/archive/refs/tags/18.0.tar.gz'
-source_sha256='988e8afeda320ebe0a3e632ef6b6bce5d3a08346c2e100a173a585c9521d1fa5'
+pg_version=${PG_VERSION:-18.6}
+case "$pg_version" in
+  15.19) version=1.7.1; source_url='https://api.github.com/repos/pgaudit/pgaudit/tarball/72da89c3fa02f3f2b9f3933214d91ad9c3428467'; source_sha256=1e52448238908a09e0e78b3375dcefbfca51509fdbb3a4d92eb710e380ed3567 ;;
+  16.15) version=16.1; source_url='https://api.github.com/repos/pgaudit/pgaudit/tarball/a81792e8a4ea8f7aaf75bd610fcc4c2f96650bdc'; source_sha256=b0648fcebe5a67340c406126e6dddc703fd03821a9ace80390e128a0d1c91c73 ;;
+  17.11) version=17.1; source_url='https://api.github.com/repos/pgaudit/pgaudit/tarball/538f89a93d8fd0d8913f3d740cacaea7b7eb66d9'; source_sha256=20e980bd0c22b4ae33305ec2b774bd846bf343642adad108b6c28b422a648312 ;;
+  18.6) version=18.0; source_url='https://github.com/pgaudit/pgaudit/archive/refs/tags/18.0.tar.gz'; source_sha256=988e8afeda320ebe0a3e632ef6b6bce5d3a08346c2e100a173a585c9521d1fa5 ;;
+  *) echo "Unsupported PostgreSQL version for pgAudit: $pg_version" >&2; exit 2 ;;
+esac
+export PGAUDIT_VERSION="$version" PGAUDIT_SOURCE_URL="$source_url" PGAUDIT_SOURCE_SHA256="$source_sha256"
 pg_archive="postgresql-${pg_version}-linux-${architecture}.tar.gz"
 extension_archive="pgaudit-${version}-postgresql-${pg_version}-linux-${architecture}.tar.gz"
 cd /input
@@ -21,22 +26,23 @@ test "$("$pgroot/bin/pg_config" --version)" = "PostgreSQL $pg_version"
 test -s "$extroot/LICENSES/pgAudit.txt"
 python3 - <<'PY'
 import json
+import os
 from pathlib import Path
 
 root = Path('/tmp/extension')
 metadata = json.loads((root / 'metadata.json').read_text())
 expected = {
-    'project': 'pgaudit', 'version': '18.0', 'sql_names': ['pgaudit'],
+    'project': 'pgaudit', 'version': os.environ['PGAUDIT_VERSION'], 'sql_names': ['pgaudit'],
     'requires': [],
     'configuration_prerequisites': [{
         'type': 'postgresql_setting', 'name': 'shared_preload_libraries',
         'value': 'pgaudit',
     }],
-    'runtime_prerequisites': [], 'postgresql_version': '18.6',
+    'runtime_prerequisites': [], 'postgresql_version': os.environ['PG_VERSION'],
     'platform': 'linux', 'architecture': __import__('os').environ['PG_ARCHITECTURE'],
     'source': {
-        'url': 'https://github.com/pgaudit/pgaudit/archive/refs/tags/18.0.tar.gz',
-        'sha256': '988e8afeda320ebe0a3e632ef6b6bce5d3a08346c2e100a173a585c9521d1fa5',
+        'url': os.environ['PGAUDIT_SOURCE_URL'],
+        'sha256': os.environ['PGAUDIT_SOURCE_SHA256'],
     },
 }
 if metadata != expected:
@@ -46,7 +52,7 @@ if inventory.get('schema_version') != 1 or len(inventory.get('components', [])) 
     raise SystemExit('pgAudit licence inventory must contain one component')
 component = inventory['components'][0]
 for key, value in {
-    'component': 'pgaudit', 'version': '18.0',
+    'component': 'pgaudit', 'version': expected['version'],
     'payload_paths': ['lib/pgaudit.so', 'share/extension'],
     'license_file': 'pgAudit.txt',
     'source_url': expected['source']['url'],
@@ -64,6 +70,9 @@ for fragment in ('This code is released under the PostgreSQL licence',
         raise SystemExit(f'pgAudit upstream licence text is incomplete: {fragment}')
 if {p.stem for p in (root / 'pgaudit/share/extension').glob('*.control')} != {'pgaudit'}:
     raise SystemExit('pgAudit payload must contain exactly the pgaudit SQL extension')
+control = (root / 'pgaudit/share/extension/pgaudit.control').read_text()
+if f"default_version = '{expected['version']}'" not in control.splitlines():
+    raise SystemExit('pgAudit control file does not declare the selected release')
 if not (root / 'pgaudit/lib/pgaudit.so').is_file():
     raise SystemExit('pgAudit shared library missing from payload')
 if {p.name for p in root.iterdir()} != {'pgaudit', 'metadata.json'}:
@@ -103,4 +112,4 @@ grep -F 'WRITE' "$log_file" | grep -F 'INSERT INTO public.pgaudit_probe' >/dev/n
 grep -F 'READ' "$log_file" | grep -F 'SELECT payload FROM public.pgaudit_probe' >/dev/null
 runuser -u postgres -- "$pgroot/bin/pg_ctl" -D /tmp/data -m fast -w stop
 trap - EXIT
-echo 'PASS: relocated PostgreSQL 18.6 and pgAudit 18.0 archives on clean Alpine 3.22'
+echo "PASS: relocated PostgreSQL $pg_version and pgAudit $version archives on clean Alpine 3.22"

@@ -14,5 +14,6 @@ extension=$(cd "$extension" && pwd)
 mkdir -p "$extension/static-analysis"
 docker build --platform "$docker_platform" -f "$repo/scripts/pgaudit/verify.Dockerfile" -t pg-binaries-pgaudit-verifier "$repo"
 docker run --rm --platform "$docker_platform" -e PG_ARCHITECTURE="$architecture" \
+  -e PG_VERSION="${PG_VERSION:-18.6}" \
   -v "$core:/input:ro" -v "$extension:/extension:ro" \
   -v "$extension/static-analysis:/analysis" pg-binaries-pgaudit-verifier

@@ -13,4 +13,4 @@ input=$(cd "$input" && pwd)
 mkdir -p "$output"
 output=$(cd "$output" && pwd)
 docker build --platform "$docker_platform" -f "$repo/scripts/pgaudit/Dockerfile" -t pg-binaries-pgaudit-pilot "$repo"
-docker run --rm -e PG_ARCHITECTURE="$architecture" --platform "$docker_platform" -v "$input:/input:ro" -v "$output:/out" pg-binaries-pgaudit-pilot
+docker run --rm -e PG_ARCHITECTURE="$architecture" -e PG_VERSION="${PG_VERSION:-18.6}" --platform "$docker_platform" -v "$input:/input:ro" -v "$output:/out" pg-binaries-pgaudit-pilot

@@ -2,10 +2,12 @@
 """Validate and retain archive-bound pgAudit Linux publication evidence."""
 
 import argparse
+import json
 from pathlib import Path
 import re
 import shutil
 import sys
+import tarfile
 
 import coverage
 from import_linux_publication_run import _case_results, _outcome, _sha256, _static_analysis, _steps
@@ -13,18 +15,52 @@ from import_linux_tiger_publication import _sidecar
 
 
 ARCHITECTURES = {"x86_64", "arm64"}
-PGAUDIT_VERSION = "18.0"
 MAX_EVIDENCE_BYTES = 1024 * 1024
 STEP_NAMES = {"core_build", "pgaudit_build", "pgaudit_verify"}
+PGAUDIT_SOURCE_IDENTITIES = {
+    "1.7.1": ("https://api.github.com/repos/pgaudit/pgaudit/tarball/"
+              "72da89c3fa02f3f2b9f3933214d91ad9c3428467",
+              "1e52448238908a09e0e78b3375dcefbfca51509fdbb3a4d92eb710e380ed3567"),
+    "16.1": ("https://api.github.com/repos/pgaudit/pgaudit/tarball/"
+             "a81792e8a4ea8f7aaf75bd610fcc4c2f96650bdc",
+             "b0648fcebe5a67340c406126e6dddc703fd03821a9ace80390e128a0d1c91c73"),
+    "17.1": ("https://api.github.com/repos/pgaudit/pgaudit/tarball/"
+             "538f89a93d8fd0d8913f3d740cacaea7b7eb66d9",
+             "20e980bd0c22b4ae33305ec2b774bd846bf343642adad108b6c28b422a648312"),
+    "18.0": ("https://github.com/pgaudit/pgaudit/archive/refs/tags/18.0.tar.gz",
+             "988e8afeda320ebe0a3e632ef6b6bce5d3a08346c2e100a173a585c9521d1fa5"),
+}
 
 
-def _attempt(path, run_id, architecture, postgresql_version):
+def _validate_source_identity(archive_path, version, postgresql_version, architecture):
+    try:
+        with tarfile.open(archive_path, "r:gz") as archive:
+            member = next((item for item in archive.getmembers()
+                           if item.name == "metadata.json" and item.isfile()
+                           and item.size <= MAX_EVIDENCE_BYTES), None)
+            if member is None:
+                raise coverage.CoverageError("pgAudit archive requires bounded metadata.json")
+            metadata = json.loads(archive.extractfile(member).read().decode("utf-8"))
+    except (OSError, tarfile.TarError, UnicodeError, json.JSONDecodeError) as exc:
+        raise coverage.CoverageError(f"cannot read pgAudit archive metadata: {exc}") from exc
+    source = metadata.get("source") if isinstance(metadata, dict) else None
+    expected_source = PGAUDIT_SOURCE_IDENTITIES.get(version)
+    if (expected_source is None or not isinstance(metadata, dict)
+            or metadata.get("project") != "pgaudit"
+            or metadata.get("version") != version
+            or metadata.get("postgresql_version") != postgresql_version
+            or metadata.get("architecture") != architecture
+            or source != {"url": expected_source[0], "sha256": expected_source[1]}):
+        raise coverage.CoverageError("pgAudit archive source identity or target does not match selected versions")
+
+
+def _attempt(path, run_id, architecture, postgresql_version, pgaudit_version):
     attempt = coverage.load_json(path)
     if (not isinstance(attempt, dict) or attempt.get("schema_version") != 1
             or str(attempt.get("run_id")) != run_id
             or attempt.get("architecture") != architecture
             or attempt.get("postgresql_version") != postgresql_version
-            or attempt.get("pgaudit_version") != PGAUDIT_VERSION
+            or attempt.get("pgaudit_version") != pgaudit_version
             or not coverage.REVISION.fullmatch(str(attempt.get("source_revision", "")))):
         raise coverage.CoverageError("attempt identity does not match this PostgreSQL run")
     steps = attempt.get("steps")
@@ -46,16 +82,22 @@ def import_run(root, core_artifact, pgaudit_artifact, run_id, architecture,
     root, core_artifact, pgaudit_artifact = map(Path, (root, core_artifact, pgaudit_artifact))
     run_id = str(run_id)
     if (not re.fullmatch(r"\d+", run_id) or architecture not in ARCHITECTURES
-            or not re.fullmatch(r"\d+\.\d+", postgresql_version)
-            or postgresql_version != "18.6"):
-        raise coverage.CoverageError("expected numeric run_id, PostgreSQL 18.6, and x86_64 or arm64")
+            or not re.fullmatch(r"\d+\.\d+", postgresql_version)):
+        raise coverage.CoverageError("expected numeric run_id, selected PostgreSQL major.minor, and x86_64 or arm64")
     support = coverage.load_json(root / "support.json")
     snapshot = coverage.load_json(root / "support/postgresql-releases.json")
     if postgresql_version not in coverage.release_snapshot(snapshot, support):
         raise coverage.CoverageError(f"PostgreSQL {postgresql_version} is not selected")
-    version = support["extensions"]["pgaudit"]["versions"].get(PGAUDIT_VERSION)
-    if not isinstance(version, dict) or version.get("postgresql_minimum_major") != 18:
-        raise coverage.CoverageError("pgAudit 18.0 is not declared for PostgreSQL 18")
+    pg_major = int(postgresql_version.split(".", 1)[0])
+    candidates = [(candidate, metadata) for candidate, metadata in
+                  support["extensions"]["pgaudit"]["versions"].items()
+                  if isinstance(metadata, dict)
+                  and metadata.get("postgresql_minimum_major", 0) <= pg_major
+                  and metadata.get("postgresql_maximum_major", pg_major) >= pg_major
+                  and "linux" in metadata.get("operating_systems", [])]
+    if len(candidates) != 1:
+        raise coverage.CoverageError(f"expected one selected pgAudit version for PostgreSQL {pg_major}")
+    pgaudit_version = candidates[0][0]
 
     platform = f"linux-{architecture}"
     profile_id = f"pgaudit-publication-current-{architecture}"
@@ -67,16 +109,19 @@ def import_run(root, core_artifact, pgaudit_artifact, run_id, architecture,
     target = root / "support/evidence" / f"pgaudit-publication-{run_id}" / architecture
     steps_path, attempt_path = publication / "current-steps.json", publication / "attempt.json"
     steps = _steps(steps_path, profile)
-    attempt, expected_suite = _attempt(attempt_path, run_id, architecture, postgresql_version)
+    attempt, expected_suite = _attempt(
+        attempt_path, run_id, architecture, postgresql_version, pgaudit_version)
     if len(profile["case_ids"]) != 1 or steps != {profile["case_ids"][0]: expected_suite}:
         raise coverage.CoverageError("publication case outcome differs from raw attempt outcomes")
 
     core_name = f"postgresql-{postgresql_version}-{platform}.tar.gz"
-    extension_name = f"pgaudit-{PGAUDIT_VERSION}-postgresql-{postgresql_version}-{platform}.tar.gz"
+    extension_name = f"pgaudit-{pgaudit_version}-postgresql-{postgresql_version}-{platform}.tar.gz"
     core_candidates = (core_artifact / core_name, core_artifact / "pilot" / core_name,
                        pgaudit_artifact / core_name)
     core_archive = next((path for path in core_candidates if path.is_file()), core_candidates[0])
     archives = [core_archive, pgaudit_artifact / extension_name]
+    if archives[1].is_file():
+        _validate_source_identity(archives[1], pgaudit_version, postgresql_version, architecture)
     records = sorted((publication / "records").glob("*.json"))
     receipt_path = publication / "current-receipt.json"
     receipt = coverage.load_json(receipt_path) if receipt_path.is_file() else None
@@ -96,7 +141,7 @@ def import_run(root, core_artifact, pgaudit_artifact, run_id, architecture,
     if receipt is not None:
         ci, revision = receipt.get("ci", {}), receipt.get("test_revision")
         expected = {
-            "profile_id": profile_id, "project": "pgaudit", "version": PGAUDIT_VERSION,
+            "profile_id": profile_id, "project": "pgaudit", "version": pgaudit_version,
             "postgresql_version": postgresql_version, "architecture": architecture,
             "endpoint": "current", "case_results": _case_results(steps),
             "archives": digests, "extension_archive": extension_name,
@@ -136,7 +181,7 @@ def import_run(root, core_artifact, pgaudit_artifact, run_id, architecture,
         coverage.validate_verification_record(record, support, root)
         expected = {
             "profile_id": profile_id, "profile_revision": receipt["profile_revision"],
-            "component": "pgaudit", "project": "pgaudit", "version": PGAUDIT_VERSION,
+            "component": "pgaudit", "project": "pgaudit", "version": pgaudit_version,
             "postgresql_version": postgresql_version, "platform": platform,
             "case_results": _case_results(steps), "outcome": _outcome(_case_results(steps)),
             "test_cases": profile["case_ids"], "ci": receipt["ci"],
@@ -146,7 +191,7 @@ def import_run(root, core_artifact, pgaudit_artifact, run_id, architecture,
             "prerequisite_archives": [],
         }
         if (any(record.get(key) != value for key, value in expected.items())
-                or source.name != f"pgaudit-{PGAUDIT_VERSION}-postgresql-{postgresql_version}-"
+                or source.name != f"pgaudit-{pgaudit_version}-postgresql-{postgresql_version}-"
                                  f"{platform}-current-{run_id}.json"
                 or any(record.get("environment", {}).get(key) != receipt.get(key) for key in (
                     "endpoint", "architecture", "kernel_release", "distribution",
