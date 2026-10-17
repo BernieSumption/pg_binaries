@@ -93,3 +93,7 @@ Avoid AIisms, including:
 ## Editorial check
 
 Read in order. Can the reader understand each term without looking ahead? Does every paragraph add a requirement, reason, fact or useful example? Can a sentence be removed without losing any of those? Shorten it until further cuts would obscure the meaning.
+
+## Markdown syntax
+
+Avoid tables in Markdown. Prefer Markdown syntax if it reads well as plain text.

@@ -67,6 +67,22 @@ if (@($vectorMetadata.sql_names).Count -ne 1 -or @($vectorMetadata.requires).Cou
 if ($pgManifest.build_id -notmatch '^[A-Za-z0-9][A-Za-z0-9._-]*$' -or
     $pgManifest.source_revision -notmatch '^([0-9a-fA-F]{40}|[0-9a-fA-F]{64})$' -or
     -not $pgManifest.build_configuration) { throw 'PostgreSQL build provenance is missing or invalid' }
+if (@($pgManifest.os_prerequisites).Count -ne 0 -or
+    @($pgManifest.bundled_msvc_runtime_dlls).Count -eq 0 -or
+    @($pgManifest.bundled_msvc_runtime_dlls) -notcontains 'vcruntime140.dll') {
+  throw 'The PostgreSQL archive does not declare an application-local Visual C++ runtime'
+}
+foreach ($name in @($pgManifest.bundled_msvc_runtime_dlls)) {
+  if ($name -notmatch '^(?i:(?:vcruntime|msvcp|concrt|vcomp|mfc|atl)\d[^\\/]*\.dll)$' -or
+      -not (Test-Path (Join-Path $pgRoot "bin/$name") -PathType Leaf)) {
+    throw "The declared Visual C++ runtime DLL is missing or invalid: $name"
+  }
+}
+$msvcNotice = 'LICENSE-Microsoft-Visual-C++-Runtime.md'
+if (-not (Test-Path (Join-Path $pgRoot "bin/$msvcNotice") -PathType Leaf) -or
+    -not (Test-Path (Join-Path $pgRoot "LICENSES/$msvcNotice") -PathType Leaf)) {
+  throw 'The Visual C++ runtime notice is missing'
+}
 foreach ($field in @('build_id', 'source_revision', 'build_configuration', 'platform', 'architecture')) {
   if ($vectorMetadata.$field -cne $pgManifest.$field) { throw "pgvector build provenance differs from PostgreSQL: $field" }
 }

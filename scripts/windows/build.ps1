@@ -23,7 +23,7 @@ if (-not $buildId) {
 if ($buildId -notmatch '^[A-Za-z0-9][A-Za-z0-9._-]*$') {
   throw 'BUILD_ID may contain only letters, digits, dot, underscore and hyphen'
 }
-$buildConfiguration = "postgresql-$pgVersion;pgvector-$vectorVersion;builder=windows-runner;meson=debugoptimized;postgresql=icu,lz4,zstd,zlib,openssl,libxml,libxslt,no-uuid,no-readline;compiler=MSVC;pgvector=debug-symbols;runtime=vcpkg-dlls"
+$buildConfiguration = "postgresql-$pgVersion;pgvector-$vectorVersion;builder=windows-runner;meson=debugoptimized;postgresql=icu,lz4,zstd,zlib,openssl,libxml,libxslt,no-uuid,no-readline;compiler=MSVC;pgvector=debug-symbols;runtime=vcpkg-and-msvc-dlls"
 $work = Join-Path $env:RUNNER_TEMP 'pg-binaries-windows-build'
 $dist = Join-Path $repo 'dist/windows'
 $vcpkgRoot = $env:VCPKG_INSTALLATION_ROOT
@@ -94,9 +94,8 @@ $pgManifest = [ordered]@{
   source_sha256 = (Get-FileHash $pgSourceArchive -Algorithm SHA256).Hash.ToLowerInvariant()
   runtime_dependencies = @('ICU', 'LZ4', 'Zstandard', 'zlib', 'OpenSSL')
   bundled_runtime_dlls = $bundledRuntimeDlls
-  os_prerequisites = @('Microsoft Visual C++ 2015-2022 Redistributable (x64)')
+  os_prerequisites = @()
 }
-$pgManifest | ConvertTo-Json -Depth 5 | Set-Content -Encoding utf8 (Join-Path $pgInstall 'manifest.json')
 
 $env:PGROOT = $pgInstall
 $vectorMakefile = Join-Path $vectorSource 'Makefile.win'
@@ -137,6 +136,10 @@ $vectorMetadata | ConvertTo-Json -Depth 5 | Set-Content -Encoding utf8 (Join-Pat
 New-Item -ItemType Directory -Force $vectorArchiveRoot | Out-Null
 Move-Item $vectorPackage (Join-Path $vectorArchiveRoot 'pgvector')
 Move-Item (Join-Path $work 'metadata.json') (Join-Path $vectorArchiveRoot 'metadata.json')
+
+$msvcRuntimeDlls = @(& (Join-Path $PSScriptRoot 'bundle-msvc-runtime.ps1') -PostgresRoot $pgInstall -ExtensionRoot (Join-Path $vectorArchiveRoot 'pgvector') -NoticeTemplate (Join-Path $PSScriptRoot 'MSVC-RUNTIME.md'))
+$pgManifest['bundled_msvc_runtime_dlls'] = $msvcRuntimeDlls
+$pgManifest | ConvertTo-Json -Depth 5 | Set-Content -Encoding utf8 (Join-Path $pgInstall 'manifest.json')
 
 $pgArchive = Join-Path $dist "postgresql-$pgVersion-windows-x86_64.tar.gz"
 $vectorArchive = Join-Path $dist "pgvector-$vectorVersion-postgresql-$pgVersion-windows-x86_64.tar.gz"

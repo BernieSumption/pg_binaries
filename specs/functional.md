@@ -44,7 +44,7 @@ Factors against support:
 - Incompatible with our supported OS or Postgres versions (extensions that explicitly declare support for a subset of our OSs or Postgres versions but are otherwise worth including are acceptable)
 - High cost of supporting eg long build times, fiddly dependencies
 - Major hosts have dropped support for it
-- License that prevents redistribution, or merely executing `CREATE EXTENSION x` and using the extension's objects in a schema definition depends on data files can't can't be redistributed (hard prohibition on supporting extensions that fail this criteria).
+- License that prevents redistribution, or merely executing `CREATE EXTENSION x` and using the extension's objects in a schema definition depends on data files can't can't be redistributed. Note that we take the license declared by a source repo at face value. If the source repo contains data files that are not explicitly put under a separate licence, they are assumed to be distributed under the same licence as the source code. We have hard prohibition on supporting extensions that Are not licensed for free redistribution.
 
 In the event of conflicting factors, agents may decide that the case for or against overwhelmingly supports one result and make the decision. For example, if a deprecated extension is still widely used and supported by major Postgres hosting providers, and does not have a high cost of supporting, it's probably a good idea to support it. If the balance of factors for and against does not clearly support a decision, for example a widely used extension that is not compatible with our minimum OS support target, then add this to HUMAN_REVIEW_QUEUE.md.
 
