@@ -92,8 +92,9 @@ runuser -u postgres -- "$pgroot/bin/initdb" -D /tmp/data --encoding=UTF8 --local
 runuser -u postgres -- "$pgroot/bin/pg_ctl" -D /tmp/data -l /tmp/data/server.log \
   -o "-k /tmp/socket -p 55432 -h '' -c shared_preload_libraries=pgaudit -c logging_collector=on -c log_directory=log -c log_filename=pgaudit.log" -w start
 trap 'runuser -u postgres -- "$pgroot/bin/pg_ctl" -D /tmp/data -m immediate stop >/dev/null 2>&1 || true' EXIT
-runuser -u postgres -- "$pgroot/bin/psql" -X -A -t -v ON_ERROR_STOP=1 \
-  -h /tmp/socket -p 55432 -d postgres -f /work/probe.sql | grep -Fxq 'audit payload'
+probe_output=$(runuser -u postgres -- "$pgroot/bin/psql" -X -A -t -v ON_ERROR_STOP=1 \
+  -h /tmp/socket -p 55432 -d postgres -f /work/probe.sql)
+grep -Fxq 'audit payload' <<< "$probe_output"
 log_file=/tmp/data/log/pgaudit.log
 test -s "$log_file"
 grep -F 'AUDIT: SESSION' "$log_file" >/dev/null
