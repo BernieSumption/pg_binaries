@@ -1,0 +1,399 @@
+probe	Set up job	﻿2026-10-17T23:41:29.0340160Z Current runner version: '2.337.0'
+probe	Set up job	2026-10-17T23:41:29.0358750Z ##[group]Runner Image Provisioner
+probe	Set up job	2026-10-17T23:41:29.0359450Z Hosted Compute Agent
+probe	Set up job	2026-10-17T23:41:29.0359850Z Version: 20260828.587
+probe	Set up job	2026-10-17T23:41:29.0360350Z Commit: abac92662cab4cc7352de4f9f9d2e2419aad9c29
+probe	Set up job	2026-10-17T23:41:29.0360960Z Build Date: 2026-08-28T16:44:25Z
+probe	Set up job	2026-10-17T23:41:29.0361450Z Worker ID: {a7d8a738-da40-4a1d-baf7-ec5ce73fb9e2}
+probe	Set up job	2026-10-17T23:41:29.0361950Z Azure Region: westus
+probe	Set up job	2026-10-17T23:41:29.0362930Z ##[endgroup]
+probe	Set up job	2026-10-17T23:41:29.0364950Z ##[group]Operating System
+probe	Set up job	2026-10-17T23:41:29.0413060Z macOS
+probe	Set up job	2026-10-17T23:41:29.0413610Z 15.7.9
+probe	Set up job	2026-10-17T23:41:29.0413950Z 24G830
+probe	Set up job	2026-10-17T23:41:29.0414360Z ##[endgroup]
+probe	Set up job	2026-10-17T23:41:29.0414770Z ##[group]Runner Image
+probe	Set up job	2026-10-17T23:41:29.0415160Z Image: macos-15-arm64
+probe	Set up job	2026-10-17T23:41:29.0415540Z Version: 20260907.0337.1
+probe	Set up job	2026-10-17T23:41:29.0416270Z Included Software: https://github.com/actions/runner-images/blob/macos-15-arm64/20260907.0337/images/macos/macos-15-arm64-Readme.md
+probe	Set up job	2026-10-17T23:41:29.0417450Z Image Release: https://github.com/actions/runner-images/releases/tag/macos-15-arm64%2F20260907.0337
+probe	Set up job	2026-10-17T23:41:29.0418120Z ##[endgroup]
+probe	Set up job	2026-10-17T23:41:29.0418970Z ##[group]GITHUB_TOKEN Permissions
+probe	Set up job	2026-10-17T23:41:29.0420690Z Actions: read
+probe	Set up job	2026-10-17T23:41:29.0421050Z Contents: read
+probe	Set up job	2026-10-17T23:41:29.0421410Z Metadata: read
+probe	Set up job	2026-10-17T23:41:29.0421780Z ##[endgroup]
+probe	Set up job	2026-10-17T23:41:29.0423380Z Secret source: Actions
+probe	Set up job	2026-10-17T23:41:29.0423950Z Cache mode: write
+probe	Set up job	2026-10-17T23:41:29.0424400Z Prepare workflow directory
+probe	Set up job	2026-10-17T23:41:29.0678730Z Prepare all required actions
+probe	Set up job	2026-10-17T23:41:29.0711950Z Getting action download info
+probe	Set up job	2026-10-17T23:41:29.4612140Z Download action repository 'actions/checkout@v4' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+probe	Set up job	2026-10-17T23:41:29.6719140Z Download action repository 'actions/download-artifact@v4' (SHA:d3f86a106a0bac45b974a628896c90dbdf5c8093)
+probe	Set up job	2026-10-17T23:41:30.0855180Z Download action repository 'actions/upload-artifact@v4' (SHA:ea165f8d65b6e75b540449e92b4886f43607fa02)
+probe	Set up job	2026-10-17T23:41:30.2594250Z Complete job name: probe
+probe	Run actions/checkout@v4	﻿2026-10-17T23:41:30.3133310Z ##[group]Run actions/checkout@v4
+probe	Run actions/checkout@v4	2026-10-17T23:41:30.3134080Z with:
+probe	Run actions/checkout@v4	2026-10-17T23:41:30.3135210Z   repository: BernieSumption/pg_binaries
+probe	Run actions/checkout@v4	2026-10-17T23:41:30.3139450Z   token: ***
+probe	Run actions/checkout@v4	2026-10-17T23:41:30.3139780Z   ssh-strict: true
+probe	Run actions/checkout@v4	2026-10-17T23:41:30.3140100Z   ssh-user: git
+probe	Run actions/checkout@v4	2026-10-17T23:41:30.3140570Z   persist-credentials: true
+probe	Run actions/checkout@v4	2026-10-17T23:41:30.3140940Z   clean: true
+probe	Run actions/checkout@v4	2026-10-17T23:41:30.3141260Z   sparse-checkout-cone-mode: true
+probe	Run actions/checkout@v4	2026-10-17T23:41:30.3141630Z   fetch-depth: 1
+probe	Run actions/checkout@v4	2026-10-17T23:41:30.3142170Z   fetch-tags: false
+probe	Run actions/checkout@v4	2026-10-17T23:41:30.3143020Z   show-progress: true
+probe	Run actions/checkout@v4	2026-10-17T23:41:30.3143350Z   lfs: false
+probe	Run actions/checkout@v4	2026-10-17T23:41:30.3143640Z   submodules: false
+probe	Run actions/checkout@v4	2026-10-17T23:41:30.3144100Z   set-safe-directory: true
+probe	Run actions/checkout@v4	2026-10-17T23:41:30.3144600Z   allow-unsafe-pr-checkout: false
+probe	Run actions/checkout@v4	2026-10-17T23:41:30.3145390Z ##[endgroup]
+probe	Run actions/checkout@v4	2026-10-17T23:41:30.6151850Z Syncing repository: BernieSumption/pg_binaries
+probe	Run actions/checkout@v4	2026-10-17T23:41:30.6154720Z ##[group]Getting Git version info
+probe	Run actions/checkout@v4	2026-10-17T23:41:30.6156690Z Working directory is '/Users/runner/work/pg_binaries/pg_binaries'
+probe	Run actions/checkout@v4	2026-10-17T23:41:30.6157800Z [command]/opt/homebrew/bin/git version
+probe	Run actions/checkout@v4	2026-10-17T23:41:30.6600500Z git version 2.55.0
+probe	Run actions/checkout@v4	2026-10-17T23:41:30.6617890Z ##[endgroup]
+probe	Run actions/checkout@v4	2026-10-17T23:41:30.6626230Z Copying '/Users/runner/.gitconfig' to '/Users/runner/work/_temp/68ec4281-bc04-412d-9259-e7949267167d/.gitconfig'
+probe	Run actions/checkout@v4	2026-10-17T23:41:30.6633260Z Temporarily overriding HOME='/Users/runner/work/_temp/68ec4281-bc04-412d-9259-e7949267167d' before making global git config changes
+probe	Run actions/checkout@v4	2026-10-17T23:41:30.6635280Z Adding repository directory to the temporary git global config as a safe directory
+probe	Run actions/checkout@v4	2026-10-17T23:41:30.6636700Z [command]/opt/homebrew/bin/git config --global --add safe.directory /Users/runner/work/pg_binaries/pg_binaries
+probe	Run actions/checkout@v4	2026-10-17T23:41:30.6744740Z Deleting the contents of '/Users/runner/work/pg_binaries/pg_binaries'
+probe	Run actions/checkout@v4	2026-10-17T23:41:30.6748910Z ##[group]Initializing the repository
+probe	Run actions/checkout@v4	2026-10-17T23:41:30.6752420Z [command]/opt/homebrew/bin/git init /Users/runner/work/pg_binaries/pg_binaries
+probe	Run actions/checkout@v4	2026-10-17T23:41:30.6939780Z hint: Using 'master' as the name for the initial branch. This default branch name
+probe	Run actions/checkout@v4	2026-10-17T23:41:30.6940710Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+probe	Run actions/checkout@v4	2026-10-17T23:41:30.6941440Z hint: to use in all of your new repositories, which will suppress this warning,
+probe	Run actions/checkout@v4	2026-10-17T23:41:30.6942090Z hint: call:
+probe	Run actions/checkout@v4	2026-10-17T23:41:30.6942460Z hint:
+probe	Run actions/checkout@v4	2026-10-17T23:41:30.6942870Z hint: 	git config --global init.defaultBranch <name>
+probe	Run actions/checkout@v4	2026-10-17T23:41:30.6943360Z hint:
+probe	Run actions/checkout@v4	2026-10-17T23:41:30.6943860Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+probe	Run actions/checkout@v4	2026-10-17T23:41:30.6944520Z hint: 'development'. The just-created branch can be renamed via this command:
+probe	Run actions/checkout@v4	2026-10-17T23:41:30.6945090Z hint:
+probe	Run actions/checkout@v4	2026-10-17T23:41:30.6945400Z hint: 	git branch -m <name>
+probe	Run actions/checkout@v4	2026-10-17T23:41:30.6945770Z hint:
+probe	Run actions/checkout@v4	2026-10-17T23:41:30.6946270Z hint: Disable this message with "git config set advice.defaultBranchName false"
+probe	Run actions/checkout@v4	2026-10-17T23:41:30.6947090Z Initialized empty Git repository in /Users/runner/work/pg_binaries/pg_binaries/.git/
+probe	Run actions/checkout@v4	2026-10-17T23:41:30.6951160Z [command]/opt/homebrew/bin/git remote add origin https://github.com/BernieSumption/pg_binaries
+probe	Run actions/checkout@v4	2026-10-17T23:41:30.7020530Z ##[endgroup]
+probe	Run actions/checkout@v4	2026-10-17T23:41:30.7021230Z ##[group]Disabling automatic garbage collection
+probe	Run actions/checkout@v4	2026-10-17T23:41:30.7022640Z [command]/opt/homebrew/bin/git config --local gc.auto 0
+probe	Run actions/checkout@v4	2026-10-17T23:41:30.7080120Z ##[endgroup]
+probe	Run actions/checkout@v4	2026-10-17T23:41:30.7080840Z ##[group]Setting up auth
+probe	Run actions/checkout@v4	2026-10-17T23:41:30.7086830Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp core\.sshCommand
+probe	Run actions/checkout@v4	2026-10-17T23:41:30.7146590Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+probe	Run actions/checkout@v4	2026-10-17T23:41:30.7947990Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+probe	Run actions/checkout@v4	2026-10-17T23:41:30.8001270Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+probe	Run actions/checkout@v4	2026-10-17T23:41:30.8645650Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+probe	Run actions/checkout@v4	2026-10-17T23:41:30.8700190Z [command]/opt/homebrew/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+probe	Run actions/checkout@v4	2026-10-17T23:41:30.9549170Z [command]/opt/homebrew/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+probe	Run actions/checkout@v4	2026-10-17T23:41:30.9607880Z ##[endgroup]
+probe	Run actions/checkout@v4	2026-10-17T23:41:30.9608570Z ##[group]Fetching the repository
+probe	Run actions/checkout@v4	2026-10-17T23:41:30.9613290Z [command]/opt/homebrew/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +748e1fb698ee8f87df4cf68d70670c6f8f3adde8:refs/remotes/origin/spike
+probe	Run actions/checkout@v4	2026-10-17T23:41:31.5816280Z From https://github.com/BernieSumption/pg_binaries
+probe	Run actions/checkout@v4	2026-10-17T23:41:31.5817640Z  * [new ref]         748e1fb698ee8f87df4cf68d70670c6f8f3adde8 -> origin/spike
+probe	Run actions/checkout@v4	2026-10-17T23:41:31.5820650Z ##[endgroup]
+probe	Run actions/checkout@v4	2026-10-17T23:41:31.5821440Z ##[group]Determining the checkout info
+probe	Run actions/checkout@v4	2026-10-17T23:41:31.5822390Z ##[endgroup]
+probe	Run actions/checkout@v4	2026-10-17T23:41:31.5826340Z [command]/opt/homebrew/bin/git sparse-checkout disable
+probe	Run actions/checkout@v4	2026-10-17T23:41:31.5904290Z [command]/opt/homebrew/bin/git config --local --unset-all extensions.worktreeConfig
+probe	Run actions/checkout@v4	2026-10-17T23:41:31.5968600Z ##[group]Checking out the ref
+probe	Run actions/checkout@v4	2026-10-17T23:41:31.5971320Z [command]/opt/homebrew/bin/git checkout --progress --force -B spike refs/remotes/origin/spike
+probe	Run actions/checkout@v4	2026-10-17T23:41:31.9911890Z Switched to a new branch 'spike'
+probe	Run actions/checkout@v4	2026-10-17T23:41:31.9932150Z branch 'spike' set up to track 'origin/spike'.
+probe	Run actions/checkout@v4	2026-10-17T23:41:31.9941720Z ##[endgroup]
+probe	Run actions/checkout@v4	2026-10-17T23:41:32.0039850Z [command]/opt/homebrew/bin/git log -1 --format=%H
+probe	Run actions/checkout@v4	2026-10-17T23:41:32.0100680Z 748e1fb698ee8f87df4cf68d70670c6f8f3adde8
+probe	Check pgAudit publication evidence helpers	﻿2026-10-17T23:41:32.0279690Z ##[group]Run python3 -m unittest tests/test_create_macos_symbols.py tests/test_emit_pgaudit_macos_publication.py tests/test_import_pgaudit_macos_publication.py
+probe	Check pgAudit publication evidence helpers	2026-10-17T23:41:32.0281390Z [36;1mpython3 -m unittest tests/test_create_macos_symbols.py tests/test_emit_pgaudit_macos_publication.py tests/test_import_pgaudit_macos_publication.py[0m
+probe	Check pgAudit publication evidence helpers	2026-10-17T23:41:32.0323290Z shell: /bin/bash -e {0}
+probe	Check pgAudit publication evidence helpers	2026-10-17T23:41:32.0324030Z ##[endgroup]
+probe	Check pgAudit publication evidence helpers	2026-10-17T23:41:32.4240910Z .........
+probe	Check pgAudit publication evidence helpers	2026-10-17T23:41:32.4241440Z ----------------------------------------------------------------------
+probe	Check pgAudit publication evidence helpers	2026-10-17T23:41:32.4241880Z Ran 9 tests in 0.032s
+probe	Check pgAudit publication evidence helpers	2026-10-17T23:41:32.4242070Z 
+probe	Check pgAudit publication evidence helpers	2026-10-17T23:41:32.4242160Z OK
+probe	Check pgAudit publication evidence helpers	2026-10-17T23:41:32.4242570Z Archives are incomplete; retaining the raw attempt without a receipt or record.
+probe	Download the successful PostgreSQL 18.6 Apple Silicon artifact	﻿2026-10-17T23:41:32.4465710Z ##[group]Run actions/download-artifact@v4
+probe	Download the successful PostgreSQL 18.6 Apple Silicon artifact	2026-10-17T23:41:32.4466060Z with:
+probe	Download the successful PostgreSQL 18.6 Apple Silicon artifact	2026-10-17T23:41:32.4466300Z   name: macos-arm64-pilot-archives
+probe	Download the successful PostgreSQL 18.6 Apple Silicon artifact	2026-10-17T23:41:32.4466540Z   run-id: 39075939632
+probe	Download the successful PostgreSQL 18.6 Apple Silicon artifact	2026-10-17T23:41:32.4469110Z   github-token: ***
+probe	Download the successful PostgreSQL 18.6 Apple Silicon artifact	2026-10-17T23:41:32.4469380Z   path: /Users/runner/work/_temp/core-archives
+probe	Download the successful PostgreSQL 18.6 Apple Silicon artifact	2026-10-17T23:41:32.4469670Z   merge-multiple: false
+probe	Download the successful PostgreSQL 18.6 Apple Silicon artifact	2026-10-17T23:41:32.4469970Z   repository: BernieSumption/pg_binaries
+probe	Download the successful PostgreSQL 18.6 Apple Silicon artifact	2026-10-17T23:41:32.4470240Z ##[endgroup]
+probe	Download the successful PostgreSQL 18.6 Apple Silicon artifact	2026-10-17T23:41:32.5641640Z Downloading single artifact
+probe	Download the successful PostgreSQL 18.6 Apple Silicon artifact	2026-10-17T23:41:32.5679430Z (node:3957) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+probe	Download the successful PostgreSQL 18.6 Apple Silicon artifact	2026-10-17T23:41:32.5680260Z (Use `node --trace-deprecation ...` to show where the warning was created)
+probe	Download the successful PostgreSQL 18.6 Apple Silicon artifact	2026-10-17T23:41:32.5875070Z (node:3957) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+probe	Download the successful PostgreSQL 18.6 Apple Silicon artifact	2026-10-17T23:41:32.7973960Z Preparing to download the following artifacts:
+probe	Download the successful PostgreSQL 18.6 Apple Silicon artifact	2026-10-17T23:41:32.7974950Z - macos-arm64-pilot-archives (ID: 12117129814, Size: 54682138, Expected Digest: sha256:0802c1026b74f9f8672e127e001ac81e411596f4e8a35eb14d01ebc19a20fc75)
+probe	Download the successful PostgreSQL 18.6 Apple Silicon artifact	2026-10-17T23:41:32.7994360Z Downloading artifact '12117129814' from 'BernieSumption/pg_binaries'
+probe	Download the successful PostgreSQL 18.6 Apple Silicon artifact	2026-10-17T23:41:32.9949530Z Redirecting to blob download url: https://productionresultssa10.blob.core.windows.net/actions-results/8eae53d0-2c70-8290-b923-c06434bbaa9a/workflow-job-run-9e8e85f2-92e6-5cd1-82aa-dd91adb25564/artifacts/ac02c6bcd2dcff03255971c8a46d7451d402d27069f936c2637a52af04f7d2f5.zip
+probe	Download the successful PostgreSQL 18.6 Apple Silicon artifact	2026-10-17T23:41:32.9951820Z Starting download of artifact to: /Users/runner/work/_temp/core-archives
+probe	Download the successful PostgreSQL 18.6 Apple Silicon artifact	2026-10-17T23:41:33.3317270Z (node:3957) [DEP0005] DeprecationWarning: Buffer() is deprecated due to security and usability issues. Please use the Buffer.alloc(), Buffer.allocUnsafe(), or Buffer.from() methods instead.
+probe	Download the successful PostgreSQL 18.6 Apple Silicon artifact	2026-10-17T23:41:37.2349270Z SHA256 digest of downloaded artifact is 0802c1026b74f9f8672e127e001ac81e411596f4e8a35eb14d01ebc19a20fc75
+probe	Download the successful PostgreSQL 18.6 Apple Silicon artifact	2026-10-17T23:41:37.2353140Z Artifact download completed successfully.
+probe	Download the successful PostgreSQL 18.6 Apple Silicon artifact	2026-10-17T23:41:37.2355340Z Total of 1 artifact(s) downloaded
+probe	Download the successful PostgreSQL 18.6 Apple Silicon artifact	2026-10-17T23:41:37.2368850Z Download artifact has finished successfully
+probe	Build and verify pgAudit against the archived core	﻿2026-10-17T23:41:37.2517650Z ##[group]Run bash scripts/pgaudit/macos-feasibility.sh "$RUNNER_TEMP/core-archives" "$RUNNER_TEMP/pgAudit-feasibility"
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:37.2518580Z [36;1mbash scripts/pgaudit/macos-feasibility.sh "$RUNNER_TEMP/core-archives" "$RUNNER_TEMP/pgAudit-feasibility"[0m
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:37.2574880Z shell: /bin/bash -e {0}
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:37.2575140Z ##[endgroup]
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:37.6820500Z postgresql-18.6-macos-arm64.tar.gz: OK
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:37.8564250Z postgresql-18.6-macos-arm64.tar.gz: OK
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:38.7237130Z   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:38.7237960Z                                  Dload  Upload   Total   Spent    Left  Speed
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:38.7238250Z 
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:38.7827610Z   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:38.7828130Z   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:39.3785780Z 
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:39.3786350Z 100 50.7M  100 50.7M    0     0  77.5M      0 --:--:-- --:--:-- --:--:-- 77.5M
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:39.6222620Z openssl.tar.gz: OK
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:41.3704060Z Configuring OpenSSL version 3.5.8 for target darwin64-arm64-cc
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:41.3705080Z Using os-specific seed configuration
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:47.3635210Z Created configdata.pm
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:47.3734500Z Running configdata.pm
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:47.9374040Z Created Makefile.in
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:47.9374350Z Created Makefile
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:47.9374600Z Created include/openssl/configuration.h
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:47.9424480Z 
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:47.9424930Z **********************************************************************
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:47.9425370Z ***                                                                ***
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:47.9426140Z ***   OpenSSL has been successfully configured                     ***
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:47.9426730Z ***                                                                ***
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:47.9427280Z ***   If you encounter a problem while building, please open an    ***
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:47.9427920Z ***   issue on GitHub <https://github.com/openssl/openssl/issues>  ***
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:47.9428440Z ***   and include the output from the following command:           ***
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:47.9429050Z ***                                                                ***
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:47.9429620Z ***       perl configdata.pm --dump                                ***
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:47.9430140Z ***                                                                ***
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:47.9430810Z ***   (If you are new to OpenSSL, you might want to consult the    ***
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:47.9431440Z ***   'Troubleshooting' section in the INSTALL.md file first)      ***
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:47.9432040Z ***                                                                ***
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:47.9432530Z **********************************************************************
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:48.3954990Z /opt/homebrew/Cellar/perl/5.44.0/bin/perl util/mkinstallvars.pl COMMENT="This file should be used when building against this OpenSSL build, and should never be installed" PREFIX=. BINDIR=apps APPLINKDIR=ms LIBDIR= INCLUDEDIR=include "INCLUDEDIR=./include" ENGINESDIR=engines MODULESDIR=providers "VERSION=3.5.8" "LDLIBS= " > builddata.pm
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:48.3963900Z /opt/homebrew/Cellar/perl/5.44.0/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" crypto/params_idx.c.in > crypto/params_idx.c
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:48.3972550Z /opt/homebrew/Cellar/perl/5.44.0/bin/perl util/mkinstallvars.pl "PREFIX=/tmp/pgaudit-macos.hehr3E/openssl-install" BINDIR=bin "LIBDIR=lib" "libdir=/tmp/pgaudit-macos.hehr3E/openssl-install/lib" INCLUDEDIR=include APPLINKDIR=include/openssl "ENGINESDIR=/tmp/pgaudit-macos.hehr3E/openssl-install/lib/engines-3" "MODULESDIR=/tmp/pgaudit-macos.hehr3E/openssl-install/lib/ossl-modules" "PKGCONFIGDIR=/tmp/pgaudit-macos.hehr3E/openssl-install/lib/pkgconfig" "CMAKECONFIGDIR=/tmp/pgaudit-macos.hehr3E/openssl-install/lib/cmake/OpenSSL" "LDLIBS= " "VERSION=3.5.8" > installdata.pm
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:48.4116560Z DEBUG: all keys: APPLINKDIR, BINDIR, CMAKECONFIGDIR, COMMENT, ENGINESDIR, INCLUDEDIR, LDLIBS, LIBDIR, MODULESDIR, PKGCONFIGDIR, PREFIX, VERSION, libdir
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:48.4117580Z /opt/homebrew/Cellar/perl/5.44.0/bin/perl "-I." "-Mconfigdata" "util/dofile.pl" "-oMakefile" include/crypto/bn_conf.h.in > include/crypto/bn_conf.h
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:48.4127790Z Use of uninitialized value in concatenation (.) or string at util/mkinstallvars.pl line 55.
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:48.4128580Z /opt/homebrew/Cellar/perl/5.44.0/bin/perl "-I." "-Mconfigdata" "util/dofile.pl" "-oMakefile" include/crypto/dso_conf.h.in > include/crypto/dso_conf.h
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:48.4277240Z DEBUG: LIBDIR = , libdir =  => Use of uninitialized value in concatenation (.) or string at util/mkinstallvars.pl line 57.
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:48.4277790Z LIBDIR = 
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:48.4278010Z No value given for CMAKECONFIGDIR
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:48.4278330Z No value given for PKGCONFIGDIR
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:48.4278570Z No value given for libdir
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:48.4278990Z DEBUG: PREFIX = . => PREFIX = /private/tmp/pgaudit-macos.hehr3E/source/openssl-3.5.8
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:48.4279520Z Use of uninitialized value in concatenation (.) or string at util/mkinstallvars.pl line 72.
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:48.4288910Z DEBUG: libdir =  => Use of uninitialized value in concatenation (.) or string at util/mkinstallvars.pl line 75.
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:48.4289360Z libdir = 
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:48.4289750Z DEBUG: BINDIR = apps => BINDIR = /private/tmp/pgaudit-macos.hehr3E/source/openssl-3.5.8/apps, BINDIR_REL_PREFIX = apps
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:48.4290340Z DEBUG: LIBDIR = Use of uninitialized value in print at util/mkinstallvars.pl line 91.
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:48.4290830Z  => Use of uninitialized value in concatenation (.) or string at util/mkinstallvars.pl line 108.
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:48.4291340Z LIBDIR = /private/tmp/pgaudit-macos.hehr3E/source/openssl-3.5.8, LIBDIR_REL_PREFIX = 
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:48.4292280Z DEBUG: INCLUDEDIR = [ include, ./include ] => INCLUDEDIR = [ /private/tmp/pgaudit-macos.hehr3E/source/openssl-3.5.8/include, /private/tmp/pgaudit-macos.hehr3E/source/openssl-3.5.8/include ], INCLUDEDIR_REL_PREFIX = [ include, ./include ]
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:48.4293280Z DEBUG: APPLINKDIR = ms => APPLINKDIR = /private/tmp/pgaudit-macos.hehr3E/source/openssl-3.5.8/ms, APPLINKDIR_REL_PREFIX = ms
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:48.4294030Z DEBUG: ENGINESDIR = engines => ENGINESDIR = /private/tmp/pgaudit-macos.hehr3E/source/openssl-3.5.8/engines, ENGINESDIR_REL_LIBDIR = engines
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:48.4294810Z DEBUG: MODULESDIR = providers => MODULESDIR = /private/tmp/pgaudit-macos.hehr3E/source/openssl-3.5.8/providers, MODULESDIR_REL_LIBDIR = providers
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:48.4295590Z DEBUG: PKGCONFIGDIR = . => PKGCONFIGDIR = /private/tmp/pgaudit-macos.hehr3E/source/openssl-3.5.8, PKGCONFIGDIR_REL_LIBDIR = .
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:48.4296290Z DEBUG: CMAKECONFIGDIR = . => CMAKECONFIGDIR = /private/tmp/pgaudit-macos.hehr3E/source/openssl-3.5.8, CMAKECONFIGDIR_REL_LIBDIR = .
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:48.4296880Z Use of uninitialized value in join or string at util/mkinstallvars.pl line 157.
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:48.4297510Z DEBUG: all keys: APPLINKDIR, BINDIR, CMAKECONFIGDIR, COMMENT, ENGINESDIR, INCLUDEDIR, LDLIBS, LIBDIR, MODULESDIR, PKGCONFIGDIR, PREFIX, VERSION, libdir
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:48.4298170Z DEBUG: LIBDIR = lib, libdir = /tmp/pgaudit-macos.hehr3E/openssl-install/lib => LIBDIR = lib
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:48.4298520Z No value given for COMMENT
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:48.4298920Z DEBUG: PREFIX = /tmp/pgaudit-macos.hehr3E/openssl-install => PREFIX = /tmp/pgaudit-macos.hehr3E/openssl-install
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:48.4299550Z DEBUG: libdir = /tmp/pgaudit-macos.hehr3E/openssl-install/lib => libdir = /tmp/pgaudit-macos.hehr3E/openssl-install/lib
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:48.4300140Z DEBUG: BINDIR = bin => BINDIR = /tmp/pgaudit-macos.hehr3E/openssl-install/bin, BINDIR_REL_PREFIX = bin
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:48.4300680Z DEBUG: LIBDIR = lib => LIBDIR = /tmp/pgaudit-macos.hehr3E/openssl-install/lib, LIBDIR_REL_PREFIX = lib
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:48.4301590Z DEBUG: INCLUDEDIR = include => INCLUDEDIR = /tmp/pgaudit-macos.hehr3E/openssl-install/include, INCLUDEDIR_REL_PREFIX = include
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:48.4302400Z DEBUG: APPLINKDIR = include/openssl => APPLINKDIR = /tmp/pgaudit-macos.hehr3E/openssl-install/include/openssl, APPLINKDIR_REL_PREFIX = include/openssl
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:48.4303340Z DEBUG: ENGINESDIR = /tmp/pgaudit-macos.hehr3E/openssl-install/lib/engines-3 => ENGINESDIR = /tmp/pgaudit-macos.hehr3E/openssl-install/lib/engines-3, ENGINESDIR_REL_LIBDIR = engines-3
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:48.4304500Z DEBUG: MODULESDIR = /tmp/pgaudit-macos.hehr3E/openssl-install/lib/ossl-modules => MODULESDIR = /tmp/pgaudit-macos.hehr3E/openssl-install/lib/ossl-modules, MODULESDIR_REL_LIBDIR = ossl-modules
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:48.4305840Z DEBUG: PKGCONFIGDIR = /tmp/pgaudit-macos.hehr3E/openssl-install/lib/pkgconfig => PKGCONFIGDIR = /tmp/pgaudit-macos.hehr3E/openssl-install/lib/pkgconfig, PKGCONFIGDIR_REL_LIBDIR = pkgconfig
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:48.4307040Z DEBUG: CMAKECONFIGDIR = /tmp/pgaudit-macos.hehr3E/openssl-install/lib/cmake/OpenSSL => CMAKECONFIGDIR = /tmp/pgaudit-macos.hehr3E/openssl-install/lib/cmake/OpenSSL, CMAKECONFIGDIR_REL_LIBDIR = cmake/OpenSSL
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:48.4307900Z Use of uninitialized value in concatenation (.) or string at util/mkinstallvars.pl line 137.
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:48.4618130Z /opt/homebrew/Cellar/perl/5.44.0/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" include/internal/param_names.h.in > include/internal/param_names.h
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:48.4721240Z /opt/homebrew/Cellar/perl/5.44.0/bin/perl "-I." "-Mconfigdata" "util/dofile.pl" "-oMakefile" include/openssl/asn1.h.in > include/openssl/asn1.h
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:48.4792100Z /opt/homebrew/Cellar/perl/5.44.0/bin/perl "-I." "-Mconfigdata" "util/dofile.pl" "-oMakefile" include/openssl/asn1t.h.in > include/openssl/asn1t.h
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:48.5317770Z /opt/homebrew/Cellar/perl/5.44.0/bin/perl "-I." "-Mconfigdata" "util/dofile.pl" "-oMakefile" include/openssl/bio.h.in > include/openssl/bio.h
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:48.5421670Z /opt/homebrew/Cellar/perl/5.44.0/bin/perl "-I." "-Mconfigdata" "util/dofile.pl" "-oMakefile" include/openssl/cmp.h.in > include/openssl/cmp.h
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:48.5523150Z /opt/homebrew/Cellar/perl/5.44.0/bin/perl "-I." "-Mconfigdata" "util/dofile.pl" "-oMakefile" include/openssl/cms.h.in > include/openssl/cms.h
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:48.6029130Z /opt/homebrew/Cellar/perl/5.44.0/bin/perl "-I." "-Mconfigdata" "util/dofile.pl" "-oMakefile" include/openssl/comp.h.in > include/openssl/comp.h
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:48.6165700Z /opt/homebrew/Cellar/perl/5.44.0/bin/perl "-I." "-Mconfigdata" "util/dofile.pl" "-oMakefile" include/openssl/conf.h.in > include/openssl/conf.h
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:48.6267780Z /opt/homebrew/Cellar/perl/5.44.0/bin/perl "-I." "-Iutil/perl" "-Mconfigdata" "-MOpenSSL::paramnames" "util/dofile.pl" "-oMakefile" include/openssl/core_names.h.in > include/openssl/core_names.h
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:48.6674450Z /opt/homebrew/Cellar/perl/5.44.0/bin/perl "-I." "-Mconfigdata" "util/dofile.pl" "-oMakefile" include/openssl/crmf.h.in > include/openssl/crmf.h
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:48.6776380Z /opt/homebrew/Cellar/perl/5.44.0/bin/perl "-I." "-Mconfigdata" "util/dofile.pl" "-oMakefile" include/openssl/crypto.h.in > include/openssl/crypto.h
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:48.6884000Z /opt/homebrew/Cellar/perl/5.44.0/bin/perl "-I." "-Mconfigdata" "util/dofile.pl" "-oMakefile" include/openssl/ct.h.in > include/openssl/ct.h
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:48.7386850Z /opt/homebrew/Cellar/perl/5.44.0/bin/perl "-I." "-Mconfigdata" "util/dofile.pl" "-oMakefile" include/openssl/err.h.in > include/openssl/err.h
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:48.7491030Z /opt/homebrew/Cellar/perl/5.44.0/bin/perl "-I." "-Mconfigdata" "util/dofile.pl" "-oMakefile" include/openssl/ess.h.in > include/openssl/ess.h
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:48.7598270Z /opt/homebrew/Cellar/perl/5.44.0/bin/perl "-I." "-Mconfigdata" "util/dofile.pl" "-oMakefile" include/openssl/fipskey.h.in > include/openssl/fipskey.h
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:48.8030980Z /opt/homebrew/Cellar/perl/5.44.0/bin/perl "-I." "-Mconfigdata" "util/dofile.pl" "-oMakefile" include/openssl/lhash.h.in > include/openssl/lhash.h
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:48.8150920Z /opt/homebrew/Cellar/perl/5.44.0/bin/perl "-I." "-Mconfigdata" "util/dofile.pl" "-oMakefile" include/openssl/ocsp.h.in > include/openssl/ocsp.h
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:48.8280200Z /opt/homebrew/Cellar/perl/5.44.0/bin/perl "-I." "-Mconfigdata" "util/dofile.pl" "-oMakefile" include/openssl/opensslv.h.in > include/openssl/opensslv.h
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:48.8723150Z /opt/homebrew/Cellar/perl/5.44.0/bin/perl "-I." "-Mconfigdata" "util/dofile.pl" "-oMakefile" include/openssl/pkcs12.h.in > include/openssl/pkcs12.h
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:48.8826400Z /opt/homebrew/Cellar/perl/5.44.0/bin/perl "-I." "-Mconfigdata" "util/dofile.pl" "-oMakefile" include/openssl/pkcs7.h.in > include/openssl/pkcs7.h
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:48.8944540Z /opt/homebrew/Cellar/perl/5.44.0/bin/perl "-I." "-Mconfigdata" "util/dofile.pl" "-oMakefile" include/openssl/safestack.h.in > include/openssl/safestack.h
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:48.9246570Z /opt/homebrew/Cellar/perl/5.44.0/bin/perl "-I." "-Mconfigdata" "util/dofile.pl" "-oMakefile" include/openssl/srp.h.in > include/openssl/srp.h
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:48.9353750Z /opt/homebrew/Cellar/perl/5.44.0/bin/perl "-I." "-Mconfigdata" "util/dofile.pl" "-oMakefile" include/openssl/ssl.h.in > include/openssl/ssl.h
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:48.9455160Z /opt/homebrew/Cellar/perl/5.44.0/bin/perl "-I." "-Mconfigdata" "util/dofile.pl" "-oMakefile" include/openssl/ui.h.in > include/openssl/ui.h
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:48.9880450Z /opt/homebrew/Cellar/perl/5.44.0/bin/perl "-I." "-Mconfigdata" "util/dofile.pl" "-oMakefile" include/openssl/x509.h.in > include/openssl/x509.h
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:48.9983570Z /opt/homebrew/Cellar/perl/5.44.0/bin/perl "-I." "-Mconfigdata" "util/dofile.pl" "-oMakefile" include/openssl/x509_acert.h.in > include/openssl/x509_acert.h
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:49.0085220Z /opt/homebrew/Cellar/perl/5.44.0/bin/perl "-I." "-Mconfigdata" "util/dofile.pl" "-oMakefile" include/openssl/x509_vfy.h.in > include/openssl/x509_vfy.h
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:49.0484830Z /opt/homebrew/Cellar/perl/5.44.0/bin/perl "-I." "-Mconfigdata" "util/dofile.pl" "-oMakefile" include/openssl/x509v3.h.in > include/openssl/x509v3.h
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:49.0586000Z /opt/homebrew/Cellar/perl/5.44.0/bin/perl "-I." "-Mconfigdata" "-Mbuilddata" "util/dofile.pl" "-oMakefile" exporters/pkg-config/libcrypto.pc.in > libcrypto.pc
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:49.0685370Z /opt/homebrew/Cellar/perl/5.44.0/bin/perl "-I." "-Mconfigdata" "-Mbuilddata" "util/dofile.pl" "-oMakefile" exporters/pkg-config/libssl.pc.in > libssl.pc
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:49.1088030Z /opt/homebrew/Cellar/perl/5.44.0/bin/perl "-I." "-Mconfigdata" "-Mbuilddata" "util/dofile.pl" "-oMakefile" exporters/cmake/OpenSSLConfig.cmake.in > OpenSSLConfig.cmake
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:49.1188400Z /opt/homebrew/Cellar/perl/5.44.0/bin/perl "-I." "-Mconfigdata" "-Minstalldata" "util/dofile.pl" "-oMakefile" exporters/cmake/OpenSSLConfig.cmake.in > exporters/OpenSSLConfig.cmake
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:49.1289070Z /opt/homebrew/Cellar/perl/5.44.0/bin/perl "-I." "-Mconfigdata" "-Minstalldata" "util/dofile.pl" "-oMakefile" exporters/pkg-config/libcrypto.pc.in > exporters/libcrypto.pc
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:49.1690110Z /opt/homebrew/Cellar/perl/5.44.0/bin/perl "-I." "-Mconfigdata" "-Minstalldata" "util/dofile.pl" "-oMakefile" exporters/pkg-config/libssl.pc.in > exporters/libssl.pc
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:49.1791830Z /opt/homebrew/Cellar/perl/5.44.0/bin/perl "-I." "-Mconfigdata" "-Mbuilddata" "-Mbuilddata" "-Mbuilddata" "util/dofile.pl" "-oMakefile" exporters/pkg-config/openssl.pc.in > openssl.pc
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:49.1893640Z /opt/homebrew/Cellar/perl/5.44.0/bin/perl "-I." "-Mconfigdata" "-Mconfigdata" "-Mbuilddata" "util/dofile.pl" "-oMakefile" exporters/cmake/OpenSSLConfigVersion.cmake.in > OpenSSLConfigVersion.cmake
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:49.2196390Z /opt/homebrew/Cellar/perl/5.44.0/bin/perl "-I." "-Mconfigdata" "-Mconfigdata" "-Minstalldata" "util/dofile.pl" "-oMakefile" exporters/cmake/OpenSSLConfigVersion.cmake.in > exporters/OpenSSLConfigVersion.cmake
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:49.2316360Z /opt/homebrew/Cellar/perl/5.44.0/bin/perl "-I." "-Mconfigdata" "-Mconfigdata" "-Mconfigdata" "-Minstalldata" "util/dofile.pl" "-oMakefile" exporters/pkg-config/openssl.pc.in > exporters/openssl.pc
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:49.3388550Z   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:49.3388980Z                                  Dload  Upload   Total   Spent    Left  Speed
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:49.3389180Z 
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:49.5061850Z   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:49.5062350Z   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:49.5062730Z   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:49.6740500Z 
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:49.6741130Z 100 47346  100 47346    0     0   137k      0 --:--:-- --:--:-- --:--:--  137k
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:49.6894820Z pgaudit.tar.gz: OK
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:49.7405330Z gcc -Wall -Wmissing-prototypes -Wpointer-arith -Wdeclaration-after-statement -Werror=vla -Werror=unguarded-availability-new -Wendif-labels -Wmissing-format-attribute -Wcast-function-type -Wformat-security -Wmissing-variable-declarations -fno-strict-aliasing -fwrapv -fexcess-precision=standard -Wno-unused-command-line-argument -Wno-compound-token-split-by-macro -Wno-format-truncation -Wno-cast-function-type-strict -O2 -g  -fvisibility=hidden -I. -I./ -I/private/tmp/pgaudit-macos.hehr3E/first/postgresql/include/server -I/private/tmp/pgaudit-macos.hehr3E/first/postgresql/include/internal -isysroot /Applications/Xcode_16.4.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.5.sdk -I/Users/runner/work/_temp/pg-macos-pilot.bcLP8u/dependencies/include  -I/Users/runner/work/_temp/pg-macos-pilot.bcLP8u/dependencies/include/libxml2 -I/usr/local/include -I/Users/runner/work/_temp/pg-macos-pilot.bcLP8u/dependencies/include -I/Users/runner/work/_temp/pg-macos-pilot.bcLP8u/dependencies/include    -c -o pgaudit.o pgaudit.c
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:50.7599540Z gcc -Wall -Wmissing-prototypes -Wpointer-arith -Wdeclaration-after-statement -Werror=vla -Werror=unguarded-availability-new -Wendif-labels -Wmissing-format-attribute -Wcast-function-type -Wformat-security -Wmissing-variable-declarations -fno-strict-aliasing -fwrapv -fexcess-precision=standard -Wno-unused-command-line-argument -Wno-compound-token-split-by-macro -Wno-format-truncation -Wno-cast-function-type-strict -O2 -g  -fvisibility=hidden -bundle -o pgaudit.dylib pgaudit.o  -L/private/tmp/pgaudit-macos.hehr3E/first/postgresql/lib  -isysroot /Applications/Xcode_16.4.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.5.sdk -Wl,-headerpad_max_install_names -L/Users/runner/work/_temp/pg-macos-pilot.bcLP8u/dependencies/lib  -L/Users/runner/work/_temp/pg-macos-pilot.bcLP8u/dependencies/lib -L/usr/local/lib -L/Users/runner/work/_temp/pg-macos-pilot.bcLP8u/dependencies/lib -Wl,-dead_strip_dylibs   -fvisibility=hidden -bundle_loader /private/tmp/pgaudit-macos.hehr3E/first/postgresql/bin/postgres
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:50.9036460Z ld: warning: search path '/Users/runner/work/_temp/pg-macos-pilot.bcLP8u/dependencies/lib' not found
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:50.9042170Z ld: warning: search path '/Users/runner/work/_temp/pg-macos-pilot.bcLP8u/dependencies/lib' not found
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:50.9048790Z ld: warning: search path '/Users/runner/work/_temp/pg-macos-pilot.bcLP8u/dependencies/lib' not found
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:50.9815930Z /bin/sh /private/tmp/pgaudit-macos.hehr3E/first/postgresql/lib/pgxs/src/makefiles/../../config/install-sh -c -d '/tmp/pgaudit-macos.hehr3E/stage/private/tmp/pgaudit-macos.hehr3E/first/postgresql/lib'
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:51.0040340Z /bin/sh /private/tmp/pgaudit-macos.hehr3E/first/postgresql/lib/pgxs/src/makefiles/../../config/install-sh -c -d '/tmp/pgaudit-macos.hehr3E/stage/private/tmp/pgaudit-macos.hehr3E/first/postgresql/share/extension'
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:51.0253350Z /bin/sh /private/tmp/pgaudit-macos.hehr3E/first/postgresql/lib/pgxs/src/makefiles/../../config/install-sh -c -d '/tmp/pgaudit-macos.hehr3E/stage/private/tmp/pgaudit-macos.hehr3E/first/postgresql/share/extension'
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:51.0294810Z /usr/bin/install -c -m 755  pgaudit.dylib '/tmp/pgaudit-macos.hehr3E/stage/private/tmp/pgaudit-macos.hehr3E/first/postgresql/lib/pgaudit.dylib'
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:51.0338980Z /usr/bin/install -c -m 644 .//pgaudit.control '/tmp/pgaudit-macos.hehr3E/stage/private/tmp/pgaudit-macos.hehr3E/first/postgresql/share/extension/'
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:51.0364320Z /usr/bin/install -c -m 644 .//pgaudit--18.0.sql  '/tmp/pgaudit-macos.hehr3E/stage/private/tmp/pgaudit-macos.hehr3E/first/postgresql/share/extension/'
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:41:51.5984630Z pgaudit-18.0-postgresql-18.6-macos-arm64.tar.gz: OK
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:42:09.1355930Z Inspected 133 Mach-O files; 0 finding(s).
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:42:09.8078840Z initdb: warning: enabling "trust" authentication for local connections
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:42:09.8079500Z initdb: hint: You can change this by editing pg_hba.conf or using the option -A, or --auth-local and --auth-host, the next time you run initdb.
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:42:10.0209040Z waiting for server to start.... done
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:42:10.0209470Z server started
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:42:10.1548870Z CREATE EXTENSION
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:42:10.1549090Z SET
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:42:10.1568580Z CREATE TABLE
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:42:10.1570510Z INSERT 0 1
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:42:10.1573310Z     payload    
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:42:10.1573510Z ---------------
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:42:10.1573660Z  audit payload
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:42:10.1573840Z (1 row)
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:42:10.1573920Z 
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:42:10.1589110Z DO
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:42:10.3587970Z waiting for server to shut down.... done
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:42:10.3688580Z server stopped
+probe	Build and verify pgAudit against the archived core	2026-10-17T23:42:10.3789530Z PASS: pgAudit 18.0 built from PostgreSQL 18.6 archive and verified after relocation on macOS arm64
+probe	Create and verify dSYM index for the final archives	﻿2026-10-17T23:42:10.7556000Z ##[group]Run core="$RUNNER_TEMP/core-archives/postgresql-18.6-macos-arm64.tar.gz"
+probe	Create and verify dSYM index for the final archives	2026-10-17T23:42:10.7556510Z [36;1mcore="$RUNNER_TEMP/core-archives/postgresql-18.6-macos-arm64.tar.gz"[0m
+probe	Create and verify dSYM index for the final archives	2026-10-17T23:42:10.7557010Z [36;1mextension="$RUNNER_TEMP/pgAudit-feasibility/pgaudit-18.0-postgresql-18.6-macos-arm64.tar.gz"[0m
+probe	Create and verify dSYM index for the final archives	2026-10-17T23:42:10.7557490Z [36;1mpython3 tools/create_macos_symbols.py "$core" "$extension" \[0m
+probe	Create and verify dSYM index for the final archives	2026-10-17T23:42:10.7557880Z [36;1m  --staged-dsyms "$RUNNER_TEMP/pgAudit-feasibility/staged-dsyms" \[0m
+probe	Create and verify dSYM index for the final archives	2026-10-17T23:42:10.7558280Z [36;1m  --output-dir "$RUNNER_TEMP/pgAudit-feasibility/debug-symbols"[0m
+probe	Create and verify dSYM index for the final archives	2026-10-17T23:42:10.7558650Z [36;1mpython3 tools/create_macos_symbols.py "$core" "$extension" \[0m
+probe	Create and verify dSYM index for the final archives	2026-10-17T23:42:10.7559050Z [36;1m  --output-dir "$RUNNER_TEMP/pgAudit-feasibility/debug-symbols" --verify-only[0m
+probe	Create and verify dSYM index for the final archives	2026-10-17T23:42:10.7605710Z shell: /bin/bash -e {0}
+probe	Create and verify dSYM index for the final archives	2026-10-17T23:42:10.7605920Z ##[endgroup]
+probe	Verify representative pgAudit startup and server diagnostics	﻿2026-10-17T23:43:13.8408860Z ##[group]Run bash scripts/pgaudit/macos-diagnostics.sh \
+probe	Verify representative pgAudit startup and server diagnostics	2026-10-17T23:43:13.8409550Z [36;1mbash scripts/pgaudit/macos-diagnostics.sh \[0m
+probe	Verify representative pgAudit startup and server diagnostics	2026-10-17T23:43:13.8409910Z [36;1m  "$RUNNER_TEMP/core-archives/postgresql-18.6-macos-arm64.tar.gz" \[0m
+probe	Verify representative pgAudit startup and server diagnostics	2026-10-17T23:43:13.8410570Z [36;1m  "$RUNNER_TEMP/pgAudit-feasibility/pgaudit-18.0-postgresql-18.6-macos-arm64.tar.gz" \[0m
+probe	Verify representative pgAudit startup and server diagnostics	2026-10-17T23:43:13.8411060Z [36;1m  "$RUNNER_TEMP/pgAudit-feasibility/diagnostics.json"[0m
+probe	Verify representative pgAudit startup and server diagnostics	2026-10-17T23:43:13.8627120Z shell: /bin/bash -e {0}
+probe	Verify representative pgAudit startup and server diagnostics	2026-10-17T23:43:13.8627430Z ##[endgroup]
+probe	Verify representative pgAudit startup and server diagnostics	2026-10-17T23:43:14.0944680Z postgresql-18.6-macos-arm64.tar.gz: OK
+probe	Verify representative pgAudit startup and server diagnostics	2026-10-17T23:43:14.1245720Z pgaudit-18.0-postgresql-18.6-macos-arm64.tar.gz: OK
+probe	Verify representative pgAudit startup and server diagnostics	2026-10-17T23:43:15.1519850Z initdb: warning: enabling "trust" authentication for local connections
+probe	Verify representative pgAudit startup and server diagnostics	2026-10-17T23:43:15.1521910Z initdb: hint: You can change this by editing pg_hba.conf or using the option -A, or --auth-local and --auth-host, the next time you run initdb.
+probe	Verify representative pgAudit startup and server diagnostics	2026-10-17T23:43:16.3005420Z initdb: warning: enabling "trust" authentication for local connections
+probe	Verify representative pgAudit startup and server diagnostics	2026-10-17T23:43:16.3006790Z initdb: hint: You can change this by editing pg_hba.conf or using the option -A, or --auth-local and --auth-host, the next time you run initdb.
+probe	Verify representative pgAudit startup and server diagnostics	2026-10-17T23:43:16.5633010Z waiting for server to start.... done
+probe	Verify representative pgAudit startup and server diagnostics	2026-10-17T23:43:16.5737010Z server started
+probe	Verify representative pgAudit startup and server diagnostics	2026-10-17T23:43:16.7617410Z waiting for server to shut down.... done
+probe	Verify representative pgAudit startup and server diagnostics	2026-10-17T23:43:16.7709260Z server stopped
+probe	Verify representative pgAudit startup and server diagnostics	2026-10-17T23:43:16.8722460Z pgAudit macOS failure diagnostics written to /Users/runner/work/_temp/pgAudit-feasibility/diagnostics.json
+probe	Finalize pgAudit archive receipt and verification record	﻿2026-10-17T23:43:17.2410510Z ##[group]Run image_id="${ImageOS:?runner image OS missing}/${ImageVersion:?runner image version missing}"
+probe	Finalize pgAudit archive receipt and verification record	2026-10-17T23:43:17.2411140Z [36;1mimage_id="${ImageOS:?runner image OS missing}/${ImageVersion:?runner image version missing}"[0m
+probe	Finalize pgAudit archive receipt and verification record	2026-10-17T23:43:17.2411550Z [36;1mos_version="$(sw_vers -productVersion)"[0m
+probe	Finalize pgAudit archive receipt and verification record	2026-10-17T23:43:17.2411940Z [36;1mpython3 tools/emit_pgaudit_macos_publication.py \[0m
+probe	Finalize pgAudit archive receipt and verification record	2026-10-17T23:43:17.2413580Z [36;1m  --core-archives "$RUNNER_TEMP/core-archives" \[0m
+probe	Finalize pgAudit archive receipt and verification record	2026-10-17T23:43:17.2413890Z [36;1m  --archives "$RUNNER_TEMP/pgAudit-feasibility" \[0m
+probe	Finalize pgAudit archive receipt and verification record	2026-10-17T23:43:17.2414200Z [36;1m  --output "$RUNNER_TEMP/pgAudit-feasibility" \[0m
+probe	Finalize pgAudit archive receipt and verification record	2026-10-17T23:43:17.2414500Z [36;1m  --os-version "$os_version" --image-id "$image_id" \[0m
+probe	Finalize pgAudit archive receipt and verification record	2026-10-17T23:43:17.2414820Z [36;1m  --archive-suite-result "$ARCHIVE_SUITE_OUTCOME" \[0m
+probe	Finalize pgAudit archive receipt and verification record	2026-10-17T23:43:17.2415110Z [36;1m  --symbols-result "$SYMBOLS_OUTCOME" \[0m
+probe	Finalize pgAudit archive receipt and verification record	2026-10-17T23:43:17.2415390Z [36;1m  --diagnostics-result "$DIAGNOSTICS_OUTCOME"[0m
+probe	Finalize pgAudit archive receipt and verification record	2026-10-17T23:43:17.2466070Z shell: /bin/bash -e {0}
+probe	Finalize pgAudit archive receipt and verification record	2026-10-17T23:43:17.2466510Z env:
+probe	Finalize pgAudit archive receipt and verification record	2026-10-17T23:43:17.2466740Z   ARCHIVE_SUITE_OUTCOME: success
+probe	Finalize pgAudit archive receipt and verification record	2026-10-17T23:43:17.2466960Z   SYMBOLS_OUTCOME: success
+probe	Finalize pgAudit archive receipt and verification record	2026-10-17T23:43:17.2467190Z   DIAGNOSTICS_OUTCOME: success
+probe	Finalize pgAudit archive receipt and verification record	2026-10-17T23:43:17.2467500Z   GITHUB_SHA: 748e1fb698ee8f87df4cf68d70670c6f8f3adde8
+probe	Finalize pgAudit archive receipt and verification record	2026-10-17T23:43:17.2467800Z ##[endgroup]
+probe	Finalize pgAudit archive receipt and verification record	2026-10-17T23:43:17.4089600Z /Users/runner/work/_temp/pgAudit-feasibility/publication/current-receipt.json
+probe	Finalize pgAudit archive receipt and verification record	2026-10-17T23:43:17.4120550Z /Users/runner/work/_temp/pgAudit-feasibility/publication/records/pgaudit-18.0-postgresql-18.6-macos-arm64-current-39079982686.json
+probe	Finalize pgAudit archive receipt and verification record	2026-10-17T23:43:17.4121930Z /Users/runner/work/_temp/pgAudit-feasibility/publication/attempt.json
+probe	Finalize pgAudit archive receipt and verification record	2026-10-17T23:43:17.4123290Z /Users/runner/work/_temp/pgAudit-feasibility/publication/current-receipt.json
+probe	Finalize pgAudit archive receipt and verification record	2026-10-17T23:43:17.4124820Z /Users/runner/work/_temp/pgAudit-feasibility/publication/records/pgaudit-18.0-postgresql-18.6-macos-arm64-current-39079982686.json
+probe	Run actions/upload-artifact@v4	﻿2026-10-17T23:43:17.4260150Z ##[group]Run actions/upload-artifact@v4
+probe	Run actions/upload-artifact@v4	2026-10-17T23:43:17.4260410Z with:
+probe	Run actions/upload-artifact@v4	2026-10-17T23:43:17.4260640Z   name: pgaudit-macos-arm64-feasibility-39079982686
+probe	Run actions/upload-artifact@v4	2026-10-17T23:43:17.4262200Z   path: /Users/runner/work/_temp/pgAudit-feasibility/*.tar.gz
+probe	Run actions/upload-artifact@v4	/Users/runner/work/_temp/pgAudit-feasibility/*.sha256
+probe	Run actions/upload-artifact@v4	/Users/runner/work/_temp/pgAudit-feasibility/*.json
+probe	Run actions/upload-artifact@v4	/Users/runner/work/_temp/pgAudit-feasibility/*.txt
+probe	Run actions/upload-artifact@v4	/Users/runner/work/_temp/pgAudit-feasibility/debug-symbols/**
+probe	Run actions/upload-artifact@v4	/Users/runner/work/_temp/pgAudit-feasibility/staged-dsyms/**
+probe	Run actions/upload-artifact@v4	/Users/runner/work/_temp/pgAudit-feasibility/publication/**
+probe	Run actions/upload-artifact@v4	
+probe	Run actions/upload-artifact@v4	2026-10-17T23:43:17.4263900Z   if-no-files-found: warn
+probe	Run actions/upload-artifact@v4	2026-10-17T23:43:17.4264250Z   retention-days: 7
+probe	Run actions/upload-artifact@v4	2026-10-17T23:43:17.4264470Z   compression-level: 6
+probe	Run actions/upload-artifact@v4	2026-10-17T23:43:17.4264690Z   overwrite: false
+probe	Run actions/upload-artifact@v4	2026-10-17T23:43:17.4264930Z   include-hidden-files: false
+probe	Run actions/upload-artifact@v4	2026-10-17T23:43:17.4265180Z ##[endgroup]
+probe	Run actions/upload-artifact@v4	2026-10-17T23:43:17.8628760Z (node:9986) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+probe	Run actions/upload-artifact@v4	2026-10-17T23:43:17.8630510Z (Use `node --trace-deprecation ...` to show where the warning was created)
+probe	Run actions/upload-artifact@v4	2026-10-17T23:43:18.2180340Z With the provided path, there will be 757 files uploaded
+probe	Run actions/upload-artifact@v4	2026-10-17T23:43:18.2180770Z Artifact name is valid!
+probe	Run actions/upload-artifact@v4	2026-10-17T23:43:18.2180950Z Root directory input is valid!
+probe	Run actions/upload-artifact@v4	2026-10-17T23:43:18.6186850Z Beginning upload of artifact content to blob storage
+probe	Run actions/upload-artifact@v4	2026-10-17T23:43:19.5212200Z (node:9986) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+probe	Run actions/upload-artifact@v4	2026-10-17T23:43:20.4943800Z Uploaded bytes 8388608
+probe	Run actions/upload-artifact@v4	2026-10-17T23:43:21.0160840Z Uploaded bytes 16777216
+probe	Run actions/upload-artifact@v4	2026-10-17T23:43:21.3772280Z Uploaded bytes 25165824
+probe	Run actions/upload-artifact@v4	2026-10-17T23:43:22.0951570Z Uploaded bytes 33554432
+probe	Run actions/upload-artifact@v4	2026-10-17T23:43:22.7144250Z Uploaded bytes 41943040
+probe	Run actions/upload-artifact@v4	2026-10-17T23:43:23.2993200Z Uploaded bytes 47074796
+probe	Run actions/upload-artifact@v4	2026-10-17T23:43:23.3872830Z Finished uploading artifact content to blob storage!
+probe	Run actions/upload-artifact@v4	2026-10-17T23:43:23.3974460Z SHA256 digest of uploaded artifact zip is f402e63c39acc3af54d5a2b04d86e57f940c4e7f8648a483bfabb967abecac8a
+probe	Run actions/upload-artifact@v4	2026-10-17T23:43:23.3975110Z Finalizing artifact upload
+probe	Run actions/upload-artifact@v4	2026-10-17T23:43:23.7120890Z Artifact pgaudit-macos-arm64-feasibility-39079982686.zip successfully finalized. Artifact ID 12118432263
+probe	Run actions/upload-artifact@v4	2026-10-17T23:43:23.7122930Z Artifact pgaudit-macos-arm64-feasibility-39079982686 has been successfully uploaded! Final size is 47074796 bytes. Artifact ID is 12118432263
+probe	Run actions/upload-artifact@v4	2026-10-17T23:43:23.7123920Z Artifact download URL: https://github.com/BernieSumption/pg_binaries/actions/runs/39079982686/artifacts/12118432263
+probe	Post Run actions/checkout@v4	﻿2026-10-17T23:43:23.7235140Z Post job cleanup.
+probe	Post Run actions/checkout@v4	2026-10-17T23:43:23.8194030Z [command]/opt/homebrew/bin/git version
+probe	Post Run actions/checkout@v4	2026-10-17T23:43:23.8417970Z git version 2.55.0
+probe	Post Run actions/checkout@v4	2026-10-17T23:43:23.8437440Z Copying '/Users/runner/.gitconfig' to '/Users/runner/work/_temp/73725536-0651-45b1-8ce8-5654125e337c/.gitconfig'
+probe	Post Run actions/checkout@v4	2026-10-17T23:43:23.8444390Z Temporarily overriding HOME='/Users/runner/work/_temp/73725536-0651-45b1-8ce8-5654125e337c' before making global git config changes
+probe	Post Run actions/checkout@v4	2026-10-17T23:43:23.8445260Z Adding repository directory to the temporary git global config as a safe directory
+probe	Post Run actions/checkout@v4	2026-10-17T23:43:23.8449450Z [command]/opt/homebrew/bin/git config --global --add safe.directory /Users/runner/work/pg_binaries/pg_binaries
+probe	Post Run actions/checkout@v4	2026-10-17T23:43:23.8555040Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp core\.sshCommand
+probe	Post Run actions/checkout@v4	2026-10-17T23:43:23.8621710Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+probe	Post Run actions/checkout@v4	2026-10-17T23:43:23.9471870Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+probe	Post Run actions/checkout@v4	2026-10-17T23:43:23.9525970Z http.https://github.com/.extraheader
+probe	Post Run actions/checkout@v4	2026-10-17T23:43:23.9534330Z [command]/opt/homebrew/bin/git config --local --unset-all http.https://github.com/.extraheader
+probe	Post Run actions/checkout@v4	2026-10-17T23:43:23.9602500Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+probe	Post Run actions/checkout@v4	2026-10-17T23:43:24.0353690Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+probe	Post Run actions/checkout@v4	2026-10-17T23:43:24.0410880Z [command]/opt/homebrew/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+probe	Complete job	﻿2026-10-17T23:43:24.2006200Z Cleaning up orphan processes
+probe	Complete job	2026-10-17T23:43:25.1566750Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/download-artifact@v4, actions/upload-artifact@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
