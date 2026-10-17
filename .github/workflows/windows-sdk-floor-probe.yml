@@ -1,0 +1,31 @@
+name: Windows 10 SDK floor probe
+
+on:
+  push:
+    branches: [spike]
+    paths:
+      - '.github/workflows/windows-sdk-floor-probe.yml'
+      - 'tools/probe_sdk_10240.ps1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: windows-2022
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Inspect Microsoft SDK bootstrapper without executing it
+        shell: pwsh
+        run: |
+          & tools/probe_sdk_10240.ps1 -OutputPath (Join-Path $env:RUNNER_TEMP 'sdk-10240-probe.json')
+          Get-Content -LiteralPath (Join-Path $env:RUNNER_TEMP 'sdk-10240-probe.json')
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: windows-sdk-10240-probe
+          path: ${{ runner.temp }}/sdk-10240-probe.json
+          if-no-files-found: error
+          retention-days: 3
