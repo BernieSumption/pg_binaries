@@ -1,0 +1,65 @@
+{
+  "archives": [
+    {
+      "name": "pgvector-0.8.7-postgresql-18.6-windows-x86_64.tar.gz",
+      "sha256": "72a5bf00f70b3c4055d027b650cd618ea3cfccb5c2369d2c74680fb6fe6232ba",
+      "sidecar": "pgvector-0.8.7-postgresql-18.6-windows-x86_64.tar.gz.sha256"
+    },
+    {
+      "name": "postgresql-18.6-windows-x86_64.tar.gz",
+      "sha256": "42de5c5d50768590fa092dfa77c5762398d8ea3eb53543b6e1bd4833d87525e7",
+      "sidecar": "postgresql-18.6-windows-x86_64.tar.gz.sha256"
+    }
+  ],
+  "compatible_profile_revisions": [
+    "67a9cdbe209f7d854d23985f1126774d92eace21feba7d5d0def7f87a0a91f0a",
+    "f888b423c4c66e16e350183298c53759185f7e3053c1dc37121b898a1b1c5ae6"
+  ],
+  "debug_symbols": {
+    "entries": 125,
+    "file": "debug-symbols-index.json",
+    "sha256": "b558bf22f58955321d144c8f128db5692afbff37312ee22e5dbd79f8b10fe057"
+  },
+  "evidence_kind": "windows-pilot",
+  "interpretation": "Successful Windows pilot smoke and static analysis evidence. This run is not publication-scope verification.",
+  "platform": "windows-x86_64",
+  "postgresql_version": "18.6",
+  "profile_id": "windows-pilot-x86_64",
+  "profile_revision": "67a9cdbe209f7d854d23985f1126774d92eace21feba7d5d0def7f87a0a91f0a",
+  "run_id": "39068360697",
+  "run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/39068360697",
+  "schema_version": 1,
+  "scope": "pilot-smoke",
+  "source_revision": "3a600990f3deed8e32c57b249c31653d319b50b2",
+  "static_analysis": {
+    "api_floor_status": "unresolved",
+    "dumpbin_version": "14.44.35229.0",
+    "file": "static-analysis.json",
+    "files_inspected": 144,
+    "limitations": [
+      "Imports loaded dynamically by application code and data-file accesses are not detected.",
+      "DLL resolution checks package basename closure and the stated Windows system allowlist; it does not emulate all Windows loader search-order rules.",
+      "PE OS and subsystem header versions do not encode the Windows 10 build number; the check enforces the 10.0 major/minor floor only.",
+      "API-set families allowed are api-ms-win-core, api-ms-win-crt, ext-ms-win-kernel32, and ext-ms-win-ntuser.",
+      "Imported function names are recorded for review but are not checked against Windows 10 build 10240 availability."
+    ],
+    "minimum_os_claimed": "10.0.10240",
+    "outcome": "passed"
+  },
+  "verification_records": [
+    {
+      "component": "postgresql",
+      "file": "postgresql-18.6-windows-x86_64-39068360697.json",
+      "outcome": "passed",
+      "sha256": "42de5c5d50768590fa092dfa77c5762398d8ea3eb53543b6e1bd4833d87525e7",
+      "version": "18.6"
+    },
+    {
+      "component": "vector",
+      "file": "vector-18.6-windows-x86_64-39068360697.json",
+      "outcome": "passed",
+      "sha256": "72a5bf00f70b3c4055d027b650cd618ea3cfccb5c2369d2c74680fb6fe6232ba",
+      "version": "0.8.7"
+    }
+  ]
+}
