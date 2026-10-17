@@ -64,6 +64,9 @@ metadata = {
     'configuration_prerequisites': [{
         'type': 'postgresql_setting', 'name': 'search_path',
         'value': '"$user",public,tiger',
+    }, {
+        'type': 'sql_extension', 'name': 'fuzzystrmatch',
+        'value': 'CREATE EXTENSION fuzzystrmatch',
     }],
     'runtime_prerequisites': [],
     'postgresql_version': pg_version,

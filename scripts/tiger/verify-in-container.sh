@@ -27,6 +27,8 @@ assert metadata['project'] == 'postgis_tiger_geocoder'
 assert metadata['version'] == '2025.2'
 assert metadata['sql_names'] == ['postgis_tiger_geocoder']
 assert metadata['requires'] == ['PostGIS']
+assert {'type': 'sql_extension', 'name': 'fuzzystrmatch',
+        'value': 'CREATE EXTENSION fuzzystrmatch'} in metadata['configuration_prerequisites']
 assert metadata['postgresql_version'] == '18.6'
 assert metadata['platform'] == 'linux' and metadata['architecture'] == architecture
 payload = root / 'postgis_tiger_geocoder'
