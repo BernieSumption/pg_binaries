@@ -128,6 +128,7 @@ if (-not $pcreLib -or -not $pcreDll) { throw 'PCRE2 8-bit shared library import 
 
 $buildDir = Join-Path $work 'address-build'
 New-Item -ItemType Directory -Force $buildDir | Out-Null
+$compiler = (Get-Command 'clang-cl.exe' -ErrorAction Stop).Source
 $objects = @()
 $sourceIndex = 0
 Start-Stage "compile Address Standardizer sources ($($sources.Count) files)"
@@ -135,7 +136,7 @@ foreach ($sourceFile in $sources) {
   $sourceIndex++
   Write-ProgressMarker 'source-compile-started' "$sourceIndex/$($sources.Count) $($sourceFile.Name)"
   $object = Join-Path $buildDir ($sourceFile.BaseName + '.obj')
-  Invoke-Native 'cl.exe' @('/nologo', '/c', '/MD', '/O2', '/DWIN32', '/D_WINDOWS', '/D_CRT_SECURE_NO_WARNINGS', '/DAS_VERSION="3.7"', '/DPCRE_VERSION=2', "/I$pgInclude", "/I$(Join-Path $pgInclude 'port/win32')", "/I$(Join-Path $pgInclude 'port/win32_msvc')", "/I$(Join-Path $pgRoot 'include')", "/I$(Join-Path $source 'src')", "/I$pcreInclude", "/Fo$object", $sourceFile.FullName)
+  Invoke-Native $compiler @('/nologo', '/c', '/MD', '/O2', '/DWIN32', '/D_WINDOWS', '/D_CRT_SECURE_NO_WARNINGS', '/DAS_VERSION="3.7"', '/DPCRE_VERSION=2', "/I$pgInclude", "/I$(Join-Path $pgInclude 'port/win32')", "/I$(Join-Path $pgInclude 'port/win32_msvc')", "/I$(Join-Path $pgRoot 'include')", "/I$(Join-Path $source 'src')", "/I$pcreInclude", "/Fo$object", $sourceFile.FullName)
   $objects += $object
   Write-ProgressMarker 'source-compile-completed' "$sourceIndex/$($sources.Count) $($sourceFile.Name)"
 }
