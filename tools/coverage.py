@@ -238,6 +238,7 @@ def expected_targets(support, releases):
                       for arch in support["platform_architectures"][os])
     core = {(v, p) for v in releases for p in platforms}
     extensions = set()
+    selected_versions = {}
     as_of = dt.date.fromisoformat(support["version_selection_as_of"])
     try:
         threshold = as_of.replace(year=as_of.year - 2)
@@ -274,6 +275,15 @@ def expected_targets(support, releases):
                         selected.add(version)
                 for sql_name in ext.get("sql_names", []):
                     extensions.update((sql_name, version, pg, platform) for version in selected)
+                selected_versions[(project, pg, platform)] = selected
+    for (project, pg, platform), versions in selected_versions.items():
+        for prerequisite in support["extensions"][project].get("requires", []):
+            prerequisite_versions = selected_versions.get((prerequisite, pg, platform), set())
+            if not any(prerequisite_version_allowed(support, project, prerequisite, version)
+                       for version in prerequisite_versions):
+                raise CoverageError(
+                    f"{project} target PostgreSQL {pg} {platform} has no selected "
+                    f"{prerequisite} prerequisite meeting its version constraint")
     return core, extensions
 
 

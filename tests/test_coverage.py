@@ -109,6 +109,23 @@ class CoverageTests(unittest.TestCase):
         self.assertEqual(versions, {("1.2", "15.19"), ("2.0", "15.19"),
                                     ("1.3", "16.15"), ("2.0", "16.15")})
 
+    def test_selected_extension_requires_prerequisite_on_same_target(self):
+        for mismatch, prerequisite_policy, dependent_policy in (
+                ("PostgreSQL", {"postgresql_minimum_major": 15, "postgresql_maximum_major": 15},
+                 {"postgresql_minimum_major": 16, "postgresql_maximum_major": 16}),
+                ("platform", {"operating_systems": ["linux"]},
+                 {"operating_systems": ["macos"]})):
+            with self.subTest(mismatch=mismatch):
+                support = json.loads(json.dumps(self.support))
+                support["extensions"] = {
+                    "Prerequisite": {"sql_names": ["prerequisite"], "requires": [],
+                                     "versions": {"1.0": prerequisite_policy}},
+                    "Dependent": {"sql_names": ["dependent"], "requires": ["Prerequisite"],
+                                  "versions": {"1.0": dependent_policy}},
+                }
+                with self.assertRaisesRegex(coverage.CoverageError, "no selected Prerequisite"):
+                    coverage.expected_targets(support, ["15.9", "16.1"])
+
     def test_extension_major_ages_out_at_two_year_boundary(self):
         support = json.loads(json.dumps(self.support))
         support["extensions"]["Example"]["versions"]["2.0"] = {}
