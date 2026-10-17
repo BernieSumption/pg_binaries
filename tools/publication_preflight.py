@@ -260,8 +260,7 @@ def _extension_metadata(path, archive_project, version, sql_names, requires, pla
             if metadata.get("project") != archive_project or metadata.get("version") != version:
                 raise PreflightError("extension metadata project or version does not match candidate")
             os_name, architecture = platform.split("-", 1)
-            if (("platform" in metadata and metadata["platform"] != os_name)
-                    or ("architecture" in metadata and metadata["architecture"] != architecture)):
+            if metadata.get("platform") != os_name or metadata.get("architecture") != architecture:
                 raise PreflightError("extension metadata platform does not match candidate")
             names = metadata.get("sql_names")
             if (not isinstance(names, list) or not names

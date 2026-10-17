@@ -81,7 +81,7 @@ class PublicationPreflightTests(unittest.TestCase):
         }
 
     def _add_extension(self, platform, content):
-        url, checksum = self._stage(content, f"example-{platform}-1.0.tar.gz")
+        url, checksum = self._stage(content, f"example-{platform}-1.0.tar.gz", platform=platform)
         core = self.candidate["postgresql"]["15.9"]["downloads"][platform]
         self.candidate["verification_evidence"][url] = [
             self._verification_record(
@@ -118,14 +118,16 @@ class PublicationPreflightTests(unittest.TestCase):
             record["assembled_core"] = assembled_core
         return record
 
-    def _stage(self, content, filename, tag="catalog-20261016-2"):
+    def _stage(self, content, filename, tag="catalog-20261016-2", platform="linux-x86_64"):
         path = self.root / filename
         with tarfile.open(path, "w:gz") as archive:
             payload = content.encode("utf-8")
             member = tarfile.TarInfo("example/lib/example.so")
             member.size = len(payload)
             archive.addfile(member, io.BytesIO(payload))
+            os_name, architecture = platform.split("-", 1)
             metadata = json.dumps({"project": "example", "version": "1.0",
+                                   "platform": os_name, "architecture": architecture,
                                    "sql_names": ["example"], "requires": [],
                                    "configuration_prerequisites": [],
                                    "runtime_prerequisites": []}).encode()
@@ -393,6 +395,16 @@ class PublicationPreflightTests(unittest.TestCase):
     def test_rejects_extension_metadata_version_mismatch(self):
         self._rewrite_metadata(lambda metadata: metadata.update(version="2.0"))
         with self.assertRaisesRegex(publication_preflight.PreflightError, "project or version"):
+            self.check()
+
+    def test_rejects_missing_extension_metadata_platform(self):
+        self._rewrite_metadata(lambda metadata: metadata.pop("platform"))
+        with self.assertRaisesRegex(publication_preflight.PreflightError, "platform does not match candidate"):
+            self.check()
+
+    def test_rejects_missing_extension_metadata_architecture(self):
+        self._rewrite_metadata(lambda metadata: metadata.pop("architecture"))
+        with self.assertRaisesRegex(publication_preflight.PreflightError, "platform does not match candidate"):
             self.check()
 
     def test_rejects_extension_archive_extra_root(self):
