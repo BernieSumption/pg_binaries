@@ -1,0 +1,3 @@
+# pgAudit Apple Silicon feasibility attempt
+
+[Run 39078573589](https://github.com/BernieSumption/pg_binaries/actions/runs/39078573589) tested unmodified pgAudit 18.0 against the PostgreSQL 18.6 macOS arm64 core archive from successful run 39075939632 (SHA-256 `853e0eafb3570378225d2ea16247c9de31770f85df5230509885df2ca5e89d67`). The probe generated the pinned OpenSSL 3.5.8 public headers, then compiled and installed pgAudit with PGXS. Packaging stopped because PGXS resolved the symlinked PostgreSQL prefix to the archive's physical extraction path before applying `DESTDIR`; the probe looked in the original prefix instead. No pgAudit archive or runtime result was produced. The [full CI log](build-log.txt) records the attempt at revision `42b2d59`.

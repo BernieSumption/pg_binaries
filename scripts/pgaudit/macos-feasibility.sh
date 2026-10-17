@@ -132,9 +132,9 @@ make USE_PGXS=1 PG_CONFIG="$pg_config" -j "$(sysctl -n hw.ncpu)"
 stage="$work/stage"
 make USE_PGXS=1 PG_CONFIG="$pg_config" install DESTDIR="$stage"
 
-# PGXS uses the configured absolute prefix under DESTDIR. Copy only pgAudit's
-# installed module and extension files into the standalone extension payload.
-staged_root="$stage$prefix"
+# PGXS resolves the linked pg_config prefix before applying DESTDIR. Copy only
+# pgAudit's installed files into the standalone extension payload.
+staged_root="$stage$(cd "$pgroot" && pwd -P)"
 package="$work/package"
 mkdir -p "$package/pgaudit/lib" "$package/pgaudit/share/extension" "$package/pgaudit/LICENSES"
 module="$staged_root/lib/pgaudit.dylib"
