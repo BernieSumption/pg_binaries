@@ -23,7 +23,7 @@ if (-not $buildId) {
 if ($buildId -notmatch '^[A-Za-z0-9][A-Za-z0-9._-]*$') {
   throw 'BUILD_ID may contain only letters, digits, dot, underscore and hyphen'
 }
-$buildConfiguration = "postgresql-$pgVersion;pgvector-$vectorVersion;builder=windows-runner;meson=debugoptimized;postgresql=icu,lz4,zstd,zlib,openssl,libxml,libxslt,no-readline;compiler=MSVC;pgvector=debug-symbols;runtime=vcpkg-dlls"
+$buildConfiguration = "postgresql-$pgVersion;pgvector-$vectorVersion;builder=windows-runner;meson=debugoptimized;postgresql=icu,lz4,zstd,zlib,openssl,libxml,libxslt,no-uuid,no-readline;compiler=MSVC;pgvector=debug-symbols;runtime=vcpkg-dlls"
 $work = Join-Path $env:RUNNER_TEMP 'pg-binaries-windows-build'
 $dist = Join-Path $repo 'dist/windows'
 $vcpkgRoot = $env:VCPKG_INSTALLATION_ROOT
@@ -53,7 +53,7 @@ $mesonArgs = @(
   "--prefix=$pgInstall", '--buildtype=debugoptimized',
   '-Dicu=enabled', '-Dlz4=enabled', '-Dzstd=enabled',
   '-Dzlib=enabled', '-Dssl=openssl', '-Dlibxml=enabled', '-Dlibxslt=enabled',
-  '-Dreadline=disabled',
+  '-Duuid=none', '-Dreadline=disabled',
   '-Dplperl=disabled', '-Dplpython=disabled', '-Dpltcl=disabled',
   "-Dextra_include_dirs=$(Join-Path $vcpkg 'include')",
   "-Dextra_lib_dirs=$(Join-Path $vcpkg 'lib')"

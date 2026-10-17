@@ -2,7 +2,7 @@
 
 ## Built-in extensions
 
-Upstream: [PostgreSQL](https://www.postgresql.org/). We support the extensions bundled with each selected PostgreSQL release. The inventory must derive the actual list from build output.
+Upstream: [PostgreSQL](https://www.postgresql.org/). We support the extensions bundled with each selected PostgreSQL build. The inventory must derive the actual list from build output; optional build dependencies can make that list differ by platform. In particular, the [PostgreSQL option policy](postgres-options.md#platform-limited-option) omits `uuid-ossp` on Windows.
 
 The October 2026 research identified these names across PostgreSQL 15–18; they are not all present in every major, and are present here only for reference to identify built-in extensions easily. The authoritative source for whether an extension is built-in to a given version is inventory.json:
 
@@ -58,7 +58,7 @@ For inclusion: Its parsing functions can appear in schema DDL, and major Postgre
 
 Against inclusion: The compiled `address_standardizer` library contains a city list derived from USPS material. The reviewed sources do not establish that the upstream project can license redistribution of that derived data in this project's public archives. The open decision and evidence are recorded in [the human review queue](../HUMAN_REVIEW_QUEUE.md#address-standardizer-us-data-redistribution). Exclude both SQL names at the project level while that question remains unresolved.
 
-Version policy: None while excluded. If redistribution is established or the derived data can be removed without losing required DDL behaviour, select maintained releases using the extension version and compatibility rules.
+Version policy: None while excluded. If redistribution is established or upstream releases an unmodified package without the derived data, select maintained releases using the extension version and compatibility rules.
 
 Target support: None while excluded; do not advertise either SQL name or package its library as a separate project.
 
@@ -526,6 +526,20 @@ Target support: None while excluded. Current upstream documentation limits the b
 
 Sources: [upstream build and installation requirements](https://github.com/MobilityDB/MobilityDB), [releases](https://github.com/MobilityDB/MobilityDB/releases), [AWS RDS catalogue](https://docs.aws.amazon.com/AmazonRDS/latest/PostgreSQLReleaseNotes/postgresql-extensions.html), [Azure Flexible Server catalogue](https://learn.microsoft.com/en-us/azure/postgresql/extensions/concepts-extensions-versions), [Google Cloud SQL catalogue](https://docs.cloud.google.com/sql/docs/postgres/extensions), [upstream Docker image](https://hub.docker.com/r/mobilitydb/mobilitydb).
 
+## online_advisor — exclude
+
+Description: [online_advisor](https://github.com/knizhnik/online_advisor) observes query execution and proposes index and extended-statistics DDL. Its SQL extension name is `online_advisor`.
+
+For inclusion: [Neon offers it on PostgreSQL 17](https://neon.com/blog/easier-postgres-fine-tuning-with-online_advisor), and its advice can help tune application queries.
+
+Against inclusion: Its adoption evidence is limited, its executor-hook integration creates version-sensitive maintenance work, and upstream has not documented support across this project's OS and architecture targets. PostgreSQL 14–16 require preloading it, and PostgreSQL 18 compatibility is not established by the reviewed sources. These costs outweigh the present case for inclusion.
+
+Version policy: None while excluded. Reconsider if upstream establishes a maintained compatibility range and broader adoption justifies the cross-platform build and verification cost.
+
+Target support: None while excluded; `online_advisor` must not appear in intended support or the public inventory.
+
+Sources: [upstream project and installation notes](https://github.com/knizhnik/online_advisor), [Neon announcement](https://neon.com/blog/easier-postgres-fine-tuning-with-online_advisor).
+
 ## Unreviewed projects
 
 Candidates extracted from the October 2026 research. No inclusion decision is implied. Names in the second column are SQL extension names used by `CREATE EXTENSION`. Provider documentation is linked where the research did not identify an upstream source project.
@@ -542,7 +556,6 @@ Candidates extracted from the October 2026 research. No inclusion decision is im
 | index_advisor | `index_advisor` | [Upstream](https://github.com/supabase/index_advisor) |
 | ip4r | `ip4r` | [Upstream](https://github.com/RhodiumToad/ip4r) |
 | mysql_fdw | `mysql_fdw` | [Upstream](https://github.com/EnterpriseDB/mysql_fdw) |
-| online_advisor | `online_advisor` | [Upstream](https://github.com/knizhnik/online_advisor) |
 | orafce | `orafce` | [Upstream](https://github.com/orafce/orafce) |
 | paradedb | `pg_search` | [Upstream](https://github.com/paradedb/paradedb) |
 | pg-semver | `semver` | [Upstream](https://github.com/theory/pg-semver) |

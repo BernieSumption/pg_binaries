@@ -74,6 +74,14 @@ Always research the documented compatibility of each extension version.
 
 The claimed compatibility for a build output should be the smaller of the documented compatibility and the actual compatibility as checked by tests. For example, if an extension version claims to support Postgres 17.0 - 17.6, and tests indicate that 17.7 also works fine, do not widen the claim made by the documentation.
 
+### Never patch or modify extensions or dependencies
+
+We intend to ship straightforward builds of upstream packages, without porting, patching or otherwise changing them to meet our goals. The extensions we support are expected to be well maintained packages that will build correctly for all of our target platforms and Postgres versions.
+
+If an extension doesn't intend to support certain OS's or Postgres versions, our inventory should reflect that lack of support. If there are other issues that we could work around by modifying source, add an item to HUMAN_REVIEW_QUEUE.md
+
+This also applies to Postgres' own dependencies required to enable certain build options.
+
 ### Documenting extension support decisions
 
 Document extension support decisions in `policies/extensions.md`, with one heading per project containing its name and the decision, for example `pg_biscuit — include`.
