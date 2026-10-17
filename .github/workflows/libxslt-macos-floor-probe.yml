@@ -1,0 +1,39 @@
+name: libxslt macOS 11 dependency-floor feasibility probe
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [spike]
+    paths:
+      - '.github/workflows/libxslt-macos-floor-probe.yml'
+      - 'scripts/dependency_probes/libxslt-macos-floor-probe.sh'
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - architecture: arm64
+            runner: macos-15
+          - architecture: x86_64
+            runner: macos-15-intel
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build unmodified upstream libxml2 and libxslt and inspect macOS floor
+        run: bash scripts/dependency_probes/libxslt-macos-floor-probe.sh "${{ matrix.architecture }}" "$RUNNER_TEMP/results"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: libxslt-macos-${{ matrix.architecture }}-floor-probe
+          path: |
+            ${{ runner.temp }}/results/inspection.txt
+            ${{ runner.temp }}/results/source.sha256
+            ${{ runner.temp }}/results/build.log
+          if-no-files-found: warn
+          retention-days: 3
