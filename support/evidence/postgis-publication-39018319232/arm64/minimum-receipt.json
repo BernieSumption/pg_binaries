@@ -1,0 +1,34 @@
+{
+  "architecture": "arm64",
+  "archives": {
+    "postgis-3.6.4-postgresql-18.6-linux-arm64.tar.gz": "76ba348efe4bd99a8e31ddcd0010b30c466b31e75a4a19da9f11aa1975e95b6f",
+    "postgresql-18.6-linux-arm64.tar.gz": "a2116abca7f089853cac9e54786fd5dbee4d410accec92084b241d9dd5426f0b"
+  },
+  "case_results": {
+    "archive-suite": "passed"
+  },
+  "ci": {
+    "build_revision": "31c576b3b2138000294b7dc18a722212aa6ffd14",
+    "provider": "github-actions",
+    "run_id": "39018319232",
+    "run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/39018319232",
+    "source_revision": "31c576b3b2138000294b7dc18a722212aa6ffd14",
+    "test_revision": "31c576b3b2138000294b7dc18a722212aa6ffd14"
+  },
+  "clean_system": true,
+  "dependency_check_profile": "postgis-runtime-v1",
+  "dependency_checks_passed": true,
+  "distribution": "Ubuntu 22.04.5 LTS",
+  "distribution_version": "22.04",
+  "endpoint": "minimum",
+  "extension_archive": "postgis-3.6.4-postgresql-18.6-linux-arm64.tar.gz",
+  "image_id": "sha256:86e13258765945ad792dac75fac7f02f4db9fa73a4a535ffa472266e7041fa19",
+  "kernel_release": "5.15.0-198-generic",
+  "postgresql_version": "18.6",
+  "prerequisite_archives": [],
+  "profile_id": "postgis-publication-minimum-arm64",
+  "profile_revision": "e0eb0d5ebf45288fac95c77d0978adf232689b5976f8bee5f22ba81a6bceb1b0",
+  "project": "PostGIS",
+  "test_revision": "31c576b3b2138000294b7dc18a722212aa6ffd14",
+  "version": "3.6.4"
+}

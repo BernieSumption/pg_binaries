@@ -1,0 +1,9 @@
+test_revision=f124fa3f4bb22b2fe8fc029794ea1f89e66681ce
+postgresql_version=17.11
+image_url=https://cloud-images.ubuntu.com/releases/jammy/release-20261004/ubuntu-22.04-server-cloudimg-arm64.img
+image_sha256=86e13258765945ad792dac75fac7f02f4db9fa73a4a535ffa472266e7041fa19
+image_manifest_url=https://cloud-images.ubuntu.com/releases/jammy/release-20261004/ubuntu-22.04-server-cloudimg-arm64.manifest
+image_format=qcow2
+qemu_version=QEMU emulator version 8.2.2 (Debian 1:8.2.2+ds-0ubuntu1.18)
+runner_kernel=6.17.0-1022-azure
+guest_root_filesystem_bytes=8141348864

@@ -1,0 +1,70 @@
+{
+  "archive": "postgis-3.6.4-postgresql-17.7-to-17.11-linux-arm64.tar.gz",
+  "assembled_core": {
+    "archive": "postgresql-17.11-linux-arm64.tar.gz",
+    "sha256": "5b6258ec5a05b273494723b1821d480dd412c1c38ef1136699febe625547be96",
+    "version": "17.11"
+  },
+  "ci": {
+    "build_revision": "f124fa3f4bb22b2fe8fc029794ea1f89e66681ce",
+    "provider": "github-actions",
+    "run_id": "39019435870",
+    "run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/39019435870",
+    "source_revision": "f124fa3f4bb22b2fe8fc029794ea1f89e66681ce",
+    "test_revision": "f124fa3f4bb22b2fe8fc029794ea1f89e66681ce"
+  },
+  "component": "postgis",
+  "environment": {
+    "architecture": "arm64",
+    "clean_system": true,
+    "dependency_check_profile": "postgis-runtime-v1",
+    "dependency_checks_passed": true,
+    "distribution": "Ubuntu 24.04.5 LTS",
+    "distribution_version": "24.04",
+    "endpoint": "current",
+    "image_id": "sha256:3a76112e784003cc2cd55e5c19c6da0f6c7d08d7d3fe846884f0f0bd01e5e4a6",
+    "kernel_release": "6.17.0-1022-azure",
+    "os": "linux",
+    "os_version": "6.17.0"
+  },
+  "outcome": "passed",
+  "platform": "linux-arm64",
+  "postgresql_version": "17.11",
+  "profile_id": "postgis-pilot-linux-arm64",
+  "profile_revision": "73d9e57a862444edc887a0793c56956b0a1326f421f5bc7a489906dc4dfec2cb",
+  "project": "PostGIS",
+  "schema_version": 2,
+  "scope": "pilot-smoke",
+  "sha256": "61899440b8ba75b06f06874c47daf0b0aea1257abb5d1f05d569767d6ccf6b4d",
+  "test_cases": [
+    "postgis-alpine",
+    "postgis-extension-smoke",
+    "postgis-license-mapping",
+    "postgis-relocation",
+    "postgis-runtime-closure",
+    "postgis-ubuntu20"
+  ],
+  "test_revision": "f124fa3f4bb22b2fe8fc029794ea1f89e66681ce",
+  "verification_profile": {
+    "case_ids": [
+      "postgis-alpine",
+      "postgis-extension-smoke",
+      "postgis-license-mapping",
+      "postgis-relocation",
+      "postgis-runtime-closure",
+      "postgis-ubuntu20"
+    ],
+    "compatible_profile_revisions": [
+      "73d9e57a862444edc887a0793c56956b0a1326f421f5bc7a489906dc4dfec2cb",
+      "d5905271c1f4c4832cf12ed2a446545843875f3c51f5cf21c25e723eb75ef22d"
+    ],
+    "platforms": [
+      "linux-arm64"
+    ],
+    "profile_id": "postgis-pilot-linux-arm64",
+    "profile_revision": "73d9e57a862444edc887a0793c56956b0a1326f421f5bc7a489906dc4dfec2cb",
+    "scope": "pilot-smoke",
+    "sources_available": true
+  },
+  "version": "3.6.4"
+}

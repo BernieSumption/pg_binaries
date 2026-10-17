@@ -1,5 +1,13 @@
 # Human review queue
 
+## Temporary production release scope
+
+The [functional specification](specs/functional.md) currently requires every qualifying stable PostgreSQL 15+ release on Linux, macOS and Windows, plus the extension versions selected under its compatibility rule. A production release containing only a subset would conflict with that requirement even if `support.json` and coverage reporting kept the missing targets visible. The current declaration has 105 PostgreSQL platform/version targets and 2,291 extension SQL targets. A latest-version release would reduce historical build and compatibility work but would not itself resolve clean-machine portability, redistribution obligations or post-publication retrieval checks.
+
+Proposed first scope, if a staged production rollout is desired: PostgreSQL 18.6 and pgvector 0.8.7 on Linux x86-64 and arm64, retaining all bundled PostgreSQL extensions. These targets have the most developed publication-profile checks. PostGIS 3.6.4 and TIGER Geocoder 2025.2 are promising next additions on the same two platforms, but their larger dependency and redistribution review should not delay the smaller first set. PostgreSQL 17.11 is the next candidate core version. This proposal is a sequence for review, not an exception under the present specification; none of these assets is ready to advertise until the applicable Linux portability and redistribution requirements pass.
+
+Decision needed: Keep the present full-support requirement before the first production release, or amend the specification to permit an explicit initial release subset while retaining the full intended-support declaration and visible unmet coverage? If allowing a subset, decide whether the proposed Linux PostgreSQL 18.6 plus pgvector scope is appropriate, and state which guarantees apply to it. Until the specification changes, the full-support requirement remains in force.
+
 ## online_advisor inclusion
 
 [online_advisor](https://github.com/knizhnik/online_advisor) observes query execution and proposes index and extended-statistics DDL. [Neon offers it on PostgreSQL 17](https://neon.com/blog/easier-postgres-fine-tuning-with-online_advisor), which is a positive factor under the extension selection specification. Its [upstream repository](https://github.com/knizhnik/online_advisor) had 19 stars and one stable 1.0 release in October 2026; broad adoption is not established. PostgreSQL 14–16 require preloading the library before use, and its executor-hook integration adds version-sensitive maintenance. Upstream does not document an OS and architecture support range. Neon describes PostgreSQL 14–17 support, while PostgreSQL 18 support has not been established from upstream documentation.

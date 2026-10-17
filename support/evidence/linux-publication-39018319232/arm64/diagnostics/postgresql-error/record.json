@@ -1,0 +1,150 @@
+{
+  "architecture": "arm64",
+  "archive_urls": null,
+  "archives": {
+    "pgvector-0.8.7-postgresql-18.6-linux-arm64.tar.gz": "b491175944976db2f6e2b47e4160d1ce7c216ae36815e553a0c13d9cca588d07",
+    "postgresql-18.6-linux-arm64.tar.gz": "a2116abca7f089853cac9e54786fd5dbee4d410accec92084b241d9dd5426f0b"
+  },
+  "ci_run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/39018319232",
+  "command": "/tmp/pg-binaries-diagnostics.WaFBpu/postgresql/bin/psql -X -v ON_ERROR_STOP=1 -h /tmp/pg-binaries-diagnostics.WaFBpu/socket -p 55439 -d postgres -c 'SELECT 1 / 0;'",
+  "complete_server_log": "postgresql-error/server.log",
+  "cwd": "/tmp/pg-binaries-diagnostics.WaFBpu/postgresql",
+  "executable_paths": {
+    "pg_ctl": "/tmp/pg-binaries-diagnostics.WaFBpu/postgresql/bin/pg_ctl",
+    "postgres": "/tmp/pg-binaries-diagnostics.WaFBpu/postgresql/bin/postgres",
+    "psql": "/tmp/pg-binaries-diagnostics.WaFBpu/postgresql/bin/psql"
+  },
+  "exit_code": 1,
+  "failure": "postgresql-server-error",
+  "finished_at_utc": "2026-10-17T09:01:47Z",
+  "gnu_build_ids_and_index_entries": [
+    {
+      "archive": "postgresql-18.6-linux-arm64.tar.gz",
+      "archive_sha256": "a2116abca7f089853cac9e54786fd5dbee4d410accec92084b241d9dd5426f0b",
+      "debug_file_path": "postgresql-18.6-linux-arm64/postgresql/bin/.pg-launcher.debug",
+      "debug_file_sha256": "09aa18b0550a13626e1184215ea2b75b172c8f8864e0d0f3579266effde10c38",
+      "gnu_build_id": "68334039395a44f2448f40ad58b4092b940018ae",
+      "module_path": "postgresql/bin/.pg-launcher",
+      "module_sha256": "ee8273da07ac4599030281ec6f414d0a306d123c1d3b6e82bc95714c75c2afcb"
+    },
+    {
+      "archive": "pgvector-0.8.7-postgresql-18.6-linux-arm64.tar.gz",
+      "archive_sha256": "b491175944976db2f6e2b47e4160d1ce7c216ae36815e553a0c13d9cca588d07",
+      "debug_file_path": "pgvector-0.8.7-postgresql-18.6-linux-arm64/pgvector/lib/vector.so.debug",
+      "debug_file_sha256": "3ab31c65281d11a0ff865a4f00868f9bf8d3c8571eeddf09ae5f0c8d382b415d",
+      "gnu_build_id": "56e5ab3cf9a04a63055c569f5a1a289495a82f3f",
+      "module_path": "pgvector/lib/vector.so",
+      "module_sha256": "561f5527820b2c597f717ef517f41fcb9f866b1ef862eb32694802f22ef07784"
+    }
+  ],
+  "inspection_tool_versions": {
+    "ldd": "ldd (Ubuntu GLIBC 2.39-0ubuntu8.9) 2.39",
+    "readelf": "GNU readelf (GNU Binutils for Ubuntu) 2.42"
+  },
+  "inventory_revision": null,
+  "kernel_release": "6.17.0-1022-azure",
+  "lookup_environment": {
+    "LD_LIBRARY_PATH": null,
+    "LD_PRELOAD": null,
+    "PATH": "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+    "PGDATA": null,
+    "PGHOST": null,
+    "PGPORT": null,
+    "PG_CONFIG": null
+  },
+  "machine": "aarch64",
+  "os_release": "PRETTY_NAME=\"Ubuntu 24.04.5 LTS\"\nNAME=\"Ubuntu\"\nVERSION_ID=\"24.04\"\nVERSION=\"24.04.5 LTS (Noble Numbat)\"\nVERSION_CODENAME=noble\nID=ubuntu\nID_LIKE=debian\nHOME_URL=\"https://www.ubuntu.com/\"\nSUPPORT_URL=\"https://help.ubuntu.com/\"\nBUG_REPORT_URL=\"https://bugs.launchpad.net/ubuntu/\"\nPRIVACY_POLICY_URL=\"https://www.ubuntu.com/legal/terms-and-policies/privacy-policy\"\nUBUNTU_CODENAME=noble\nLOGO=ubuntu-logo\n",
+  "output_file": "postgresql-error/client-output.txt",
+  "package_metadata": {
+    "pgvector": {
+      "architecture": "arm64",
+      "build_configuration": "postgresql-18.6;pgvector-0.8.7;builder=ubuntu-22.04;configure=icu,lz4,zstd,openssl,libxml,libxslt,zlib,uuid-e2fs,no-readline;cflags=-O2,-g;pgvector-optflags=empty;runtime=bundled-glibc-static-musl-launcher",
+      "build_id": "github-39018319232-2",
+      "builder_image_id": "sha256:e80418d04d08463de0bf8427facdaeaee7088ce92e2645b4510948fd80462f18",
+      "configuration_prerequisites": [],
+      "platform": "linux",
+      "project": "pgvector",
+      "requires": [],
+      "runtime_prerequisites": [],
+      "source_revision": "31c576b3b2138000294b7dc18a722212aa6ffd14",
+      "sql_names": [
+        "vector"
+      ],
+      "version": "0.8.7"
+    },
+    "postgresql": {
+      "architecture": "arm64",
+      "build_configuration": "postgresql-18.6;pgvector-0.8.7;builder=ubuntu-22.04;configure=icu,lz4,zstd,openssl,libxml,libxslt,zlib,uuid-e2fs,no-readline;cflags=-O2,-g;pgvector-optflags=empty;runtime=bundled-glibc-static-musl-launcher",
+      "build_id": "github-39018319232-2",
+      "builder_image_id": "sha256:e80418d04d08463de0bf8427facdaeaee7088ce92e2645b4510948fd80462f18",
+      "bundled_glibc_version": "2.35-0ubuntu3.15",
+      "capabilities": {
+        "icu": true,
+        "libc_collations": true,
+        "lz4": true,
+        "zstd": true
+      },
+      "component": "postgresql",
+      "included_extensions": [
+        "amcheck",
+        "autoinc",
+        "bloom",
+        "btree_gin",
+        "btree_gist",
+        "citext",
+        "cube",
+        "dblink",
+        "dict_int",
+        "dict_xsyn",
+        "earthdistance",
+        "file_fdw",
+        "fuzzystrmatch",
+        "hstore",
+        "insert_username",
+        "intagg",
+        "intarray",
+        "isn",
+        "lo",
+        "ltree",
+        "moddatetime",
+        "pageinspect",
+        "pg_buffercache",
+        "pg_freespacemap",
+        "pg_logicalinspect",
+        "pg_prewarm",
+        "pg_stat_statements",
+        "pg_surgery",
+        "pg_trgm",
+        "pg_visibility",
+        "pg_walinspect",
+        "pgcrypto",
+        "pgrowlocks",
+        "pgstattuple",
+        "plpgsql",
+        "postgres_fdw",
+        "refint",
+        "seg",
+        "sslinfo",
+        "tablefunc",
+        "tcn",
+        "tsm_system_rows",
+        "tsm_system_time",
+        "unaccent",
+        "uuid-ossp",
+        "xml2"
+      ],
+      "platform": "linux",
+      "postgresql_version": "18.6",
+      "schema_version": 1,
+      "source_revision": "31c576b3b2138000294b7dc18a722212aa6ffd14",
+      "version": "18.6"
+    }
+  },
+  "postgresql_version": "18.6",
+  "run_as_user": "diagnostic-postgres",
+  "schema_version": 1,
+  "server_log_bytes": 1350,
+  "server_start_command": "runuser -u diagnostic-postgres -- /tmp/pg-binaries-diagnostics.WaFBpu/postgresql/bin/pg_ctl -D /tmp/pg-binaries-diagnostics.WaFBpu/data -o \"-k /tmp/pg-binaries-diagnostics.WaFBpu/socket -p 55439 -h ''\" -l /archives/diagnostics/postgresql-error/server.log -w start",
+  "source_revision": "31c576b3b2138000294b7dc18a722212aa6ffd14",
+  "started_at_utc": "2026-10-17T09:01:47Z"
+}
