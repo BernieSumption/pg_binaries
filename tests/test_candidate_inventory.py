@@ -1,3 +1,4 @@
+from copy import deepcopy
 import importlib.util
 import json
 from pathlib import Path
@@ -81,12 +82,48 @@ class CandidateInventoryTests(unittest.TestCase):
         result = candidate_inventory.merge_candidate(self.old, [self.proposal()], self.support, self.snapshot,
                                                      root=self.root)
         self.assertEqual(result["candidate_status"], "structural-draft")
-        self.assertEqual(result["postgresql"]["15.8"], self.old["postgresql"]["15.8"])
+        self.assertNotIn("15.8", result["postgresql"])
         self.assertEqual(result["postgresql"]["15.10"]["downloads"]["linux-x86_64"]["sha256"], "b" * 64)
         self.assertEqual(self.old["postgresql"]["15.8"]["downloads"]["linux-x86_64"]["sha256"], "a" * 64)
         self.assertEqual(result["os_support"], self.support["os_support"])
         url = result["postgresql"]["15.10"]["downloads"]["linux-x86_64"]["url"]
         self.assertEqual(result["verification_evidence"][url], self.proposal()["verification"])
+
+    def test_retires_unselected_core_download_but_keeps_selected_base_url(self):
+        retained_url = "https://github.com/example/releases/download/old/postgresql-15.10-linux-arm64.tar.gz"
+        base = {"schema_version": 1, "os_support": self.support["os_support"],
+                "postgresql": {
+                    "15.8": {"included_extensions": [], "downloads": {"linux-x86_64": {
+                        "url": "https://github.com/example/releases/download/old/postgresql-15.8-linux-x86_64.tar.gz",
+                        "sha256": "a" * 64}}},
+                    "15.10": {"included_extensions": ["example"], "downloads": {"linux-arm64": {
+                        "url": retained_url, "sha256": "c" * 64}}}}, "extensions": {}}
+        result = candidate_inventory.merge_candidate(base, [self.proposal()], self.support, self.snapshot,
+                                                     root=self.root)
+        self.assertNotIn("15.8", result["postgresql"])
+        self.assertEqual(result["postgresql"]["15.10"]["downloads"]["linux-arm64"]["url"], retained_url)
+        self.assertEqual(result["postgresql"]["15.10"]["included_extensions"], ["example"])
+
+    def test_retires_unselected_extension_range_and_keeps_partially_useful_range(self):
+        base = deepcopy(self.old)
+        base["extensions"] = {"example": {"1.0": {
+            "requires": [], "downloads": {"linux-x86_64": [
+                {"url": "https://github.com/example/releases/download/old/example-1.0-postgresql-14.9-linux-x86_64.tar.gz",
+                 "sha256": "a" * 64, "postgresql_support": {"from": "14.8", "to": "14.9"}},
+                {"url": "https://github.com/example/releases/download/old/example-1.0-postgresql-15.8-to-16.0-linux-x86_64.tar.gz",
+                 "sha256": "c" * 64, "postgresql_support": {"from": "15.8", "to": "16.0"}},
+            ]}}, "2.0": {"requires": [], "downloads": {"linux-x86_64": [
+                {"url": "https://github.com/example/releases/download/old/example-2.0-postgresql-15.8-linux-x86_64.tar.gz",
+                 "sha256": "d" * 64, "postgresql_support": {"from": "15.8", "to": "15.8"}},
+            ]}}}}
+        result = candidate_inventory.merge_candidate(base, [self.proposal()], self.support, self.snapshot,
+                                                     root=self.root)
+        self.assertEqual(set(result["extensions"]["example"]), {"1.0"})
+        retained = result["extensions"]["example"]["1.0"]["downloads"]["linux-x86_64"]
+        self.assertEqual(len(retained), 1)
+        self.assertEqual(retained[0]["url"], base["extensions"]["example"]["1.0"]["downloads"]["linux-x86_64"][1]["url"])
+        self.assertEqual(retained[0]["postgresql_support"], {"from": "15.8", "to": "16.0"})
+        self.assertEqual(result["extensions"]["example"]["1.0"]["requires"], [])
 
     def test_correction_uses_new_url(self):
         base = {"postgresql": {"15.10": {"downloads": {"linux-x86_64": {

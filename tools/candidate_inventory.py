@@ -59,6 +59,7 @@ def merge_candidate(base_inventory, proposed_entries, support, snapshot, root=No
     if not isinstance(proposed_entries, list):
         raise CandidateError("proposed entries must be an array")
     candidate = deepcopy(base_inventory)
+    _retire_unselected(candidate, expected_core, expected_extensions)
     candidate.setdefault("schema_version", 1)
     candidate.setdefault("postgresql", {})
     candidate.setdefault("extensions", {})
@@ -249,6 +250,42 @@ def merge_candidate(base_inventory, proposed_entries, support, snapshot, root=No
                         f"missing passed {endpoint} verification for {evidence_component} {version} {pg} {platform} "
                         "bound to candidate PostgreSQL archive")
     return candidate
+
+
+def _retire_unselected(candidate, expected_core, expected_extensions):
+    """Keep base downloads that serve at least one currently selected target."""
+    postgresql = candidate.get("postgresql", {})
+    for version, record in list(postgresql.items()):
+        downloads = record.get("downloads", {})
+        for platform in list(downloads):
+            if (version, platform) not in expected_core:
+                del downloads[platform]
+        if not downloads:
+            del postgresql[version]
+
+    extensions = candidate.get("extensions", {})
+    for name, versions in list(extensions.items()):
+        for version, record in list(versions.items()):
+            downloads = record.get("downloads", {})
+            for platform, ranges in list(downloads.items()):
+                kept = []
+                for download in ranges:
+                    pg_range = download["postgresql_support"]
+                    low = version_parts(pg_range["from"], "inventory range")
+                    high = version_parts(pg_range["to"], "inventory range")
+                    selected_pg = (target[2] for target in expected_extensions
+                                   if target[0] == name and target[1] == version and target[3] == platform)
+                    if any(low <= version_parts(pg, "selected PostgreSQL") <= high
+                           for pg in selected_pg):
+                        kept.append(download)
+                if kept:
+                    downloads[platform] = kept
+                else:
+                    del downloads[platform]
+            if not downloads:
+                del versions[version]
+        if not versions:
+            del extensions[name]
 
 
 def _evidence_matches(record, download, component, version, platform, pg, endpoint, support, root,
