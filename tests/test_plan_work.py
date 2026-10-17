@@ -102,6 +102,14 @@ class PlanWorkTests(unittest.TestCase):
         self.assertEqual(result["verify_downloaded"]["extensions"], [
             ["example", "1.0", "15.9", platform]])
 
+    def test_linux_pilot_accepts_new_stable_major_from_snapshot(self):
+        snapshot = {"as_of": "2027-01-01", "source": "https://example.test/releases",
+                    "support_status": {"as_of": "2027-01-01", "source": "https://example.test/support",
+                                       "supported_majors": [19]},
+                    "releases": [{"version": "19.0", "release_date": "2026-11-01"}]}
+        self.write("support/postgresql-releases.json", snapshot)
+        self.assertEqual(plan_work.select_linux_pilot(self.root, "19.0")["postgresql_version"], "19.0")
+
     def test_passed_matching_records_remove_downloaded_work(self):
         checksum = "b" * 64
         platform = "linux-x86_64"
@@ -168,7 +176,7 @@ class PlanWorkTests(unittest.TestCase):
             "work": "build_missing", "snapshot_as_of": "2026-01-01"})
         with self.assertRaisesRegex(plan_work.coverage.CoverageError, "architecture must be"):
             plan_work.select_linux_pilot(self.root, "18.0", "ppc64le")
-        with self.assertRaisesRegex(plan_work.coverage.CoverageError, "15 through 18 minors"):
+        with self.assertRaisesRegex(plan_work.coverage.CoverageError, "at least 15"):
             plan_work.select_linux_pilot(self.root, "14.9")
         with self.assertRaisesRegex(plan_work.coverage.CoverageError, "not a missing declared"):
             plan_work.select_linux_pilot(self.root, "18.9")

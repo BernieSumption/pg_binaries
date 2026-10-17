@@ -35,13 +35,14 @@ class ExtensionArchivePlanTests(unittest.TestCase):
             {"version": "17.2", "release_date": "2025-10-01"},
         ]}
 
-    def test_compact_group_preserves_exact_target_tuple_cartesian_product(self):
+    def test_compact_group_contains_one_selected_minor_and_its_sql_names(self):
         result = extension_archive_plan.plan(self.support, self.snapshot)
         groups = [item for item in result["candidate_archives"]
                   if item["project"] == "RangeProject" and item["platform"] == "linux-x86_64"]
         by_major = {item["postgresql_major"]: item for item in groups}
         self.assertEqual(set(by_major), {15, 16})
         group = by_major[15]
+        self.assertEqual(group["postgresql_version"], "15.10")
         self.assertEqual(group["postgresql_endpoint_versions"], {"from": "15.10", "to": "15.10"})
         self.assertEqual(group["covered_postgresql_versions"], ["15.10"])
         self.assertEqual(group["sql_names"], ["range_a", "range_b"])

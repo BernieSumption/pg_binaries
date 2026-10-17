@@ -32,6 +32,9 @@ def plan(support, snapshot):
                 for major, major_targets in by_major.items():
                     pg_versions = sorted({pg for _, pg in major_targets},
                                          key=lambda item: _coverage.version_parts(item, "target"))
+                    if len(pg_versions) != 1:
+                        raise _coverage.CoverageError(
+                            f"{project} {version}: selected PostgreSQL major {major} has multiple minors")
                     sql_names = [name for name in extension["sql_names"]
                                  if any(target_name == name for target_name, _ in major_targets)]
                     grouped[(project, version, platform, major)] = {
@@ -39,6 +42,7 @@ def plan(support, snapshot):
                         "selected_version": version,
                         "platform": platform,
                         "postgresql_major": major,
+                        "postgresql_version": pg_versions[0],
                         "sql_names": sql_names,
                         "postgresql_endpoint_versions": {"from": pg_versions[0], "to": pg_versions[-1]},
                         "covered_postgresql_versions": pg_versions,
@@ -51,7 +55,7 @@ def plan(support, snapshot):
         "status": "candidate-plan-unverified",
         "source": "support.json plus support/postgresql-releases.json",
         "grouping": "project + selected extension version + PostgreSQL major + platform",
-        "range_semantics": "endpoints summarize only listed covered target tuples within one PostgreSQL major; no unsupported tuple is inferred",
+        "range_semantics": "legacy range fields have identical endpoints for the one selected PostgreSQL minor",
         "candidate_archives": [grouped[key] for key in sorted(grouped)],
         "limitations": [
             "No build, archive, runtime, verification-record, or publication-eligibility claim is made.",

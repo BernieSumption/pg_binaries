@@ -69,10 +69,10 @@ def plan(root):
 
 
 def select_linux_pilot(root, version, architecture="x86_64"):
-    """Select one declared PostgreSQL 15 through 18 Linux pilot build."""
-    if not re.fullmatch(r"(15|16|17|18)\.[0-9]+", version):
+    """Select one declared Linux PostgreSQL pilot build."""
+    if not re.fullmatch(r"[0-9]+\.[0-9]+", version) or int(version.split(".", 1)[0]) < 15:
         raise coverage.CoverageError(
-            "Linux pilot currently supports PostgreSQL 15 through 18 minors only")
+            "Linux pilot requires a PostgreSQL major of at least 15")
     if architecture not in ("x86_64", "arm64"):
         raise coverage.CoverageError("Linux pilot architecture must be x86_64 or arm64")
     work = plan(root)
