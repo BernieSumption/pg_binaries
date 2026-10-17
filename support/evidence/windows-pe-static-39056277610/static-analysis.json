@@ -1,0 +1,1142 @@
+{
+  "schema_version": 1,
+  "platform": "windows",
+  "architecture": "x86_64",
+  "minimum_os": "10.0.10240",
+  "dumpbin_version": "14.44.35229.0",
+  "archives": [
+    {
+      "basename": "postgresql-18.6-windows-x86_64.tar.gz",
+      "sha256": "a32e3e1bcb99a48a01df89258d4b9b1bac38dcff78b17d2c0242a48b1927753a"
+    },
+    {
+      "basename": "pgvector-0.8.7-postgresql-18.6-windows-x86_64.tar.gz",
+      "sha256": "05cbeeb7c4e860977e4f7b2cf1fb0eb6b16edd364dde2a7c38d180e7ebe2604a"
+    }
+  ],
+  "inspected_files": [
+    "bin/charset-1.dll",
+    "bin/clusterdb.exe",
+    "bin/createdb.exe",
+    "bin/createuser.exe",
+    "bin/dropdb.exe",
+    "bin/dropuser.exe",
+    "bin/ecpg.exe",
+    "bin/iconv-2.dll",
+    "bin/icudt78.dll",
+    "bin/icuin78.dll",
+    "bin/icuio78.dll",
+    "bin/icutu78.dll",
+    "bin/icuuc78.dll",
+    "bin/initdb.exe",
+    "bin/legacy.dll",
+    "bin/libcrypto-3-x64.dll",
+    "bin/libecpg.dll",
+    "bin/libecpg_compat.dll",
+    "bin/libexslt.dll",
+    "bin/libpgtypes.dll",
+    "bin/libpq.dll"
+  ],
+  "files": [
+    {
+      "path": "bin/charset-1.dll",
+      "machine": "AMD64",
+      "optional_header": "PE32+",
+      "os_version": "6.00",
+      "subsystem_version": "6.00",
+      "imports": [
+        {
+          "name": "KERNEL32.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "VCRUNTIME140.dll",
+          "resolution": "package",
+          "path": "bin/vcruntime140.dll"
+        },
+        {
+          "name": "api-ms-win-crt-stdio-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-locale-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-string-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-runtime-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        }
+      ]
+    },
+    {
+      "path": "bin/clusterdb.exe",
+      "machine": "AMD64",
+      "optional_header": "PE32+",
+      "os_version": "6.00",
+      "subsystem_version": "6.00",
+      "imports": [
+        {
+          "name": "libpq.dll",
+          "resolution": "package",
+          "path": "bin/libpq.dll"
+        },
+        {
+          "name": "KERNEL32.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "ADVAPI32.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "VCRUNTIME140.dll",
+          "resolution": "package",
+          "path": "bin/vcruntime140.dll"
+        },
+        {
+          "name": "api-ms-win-crt-stdio-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-runtime-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-environment-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-heap-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-string-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-filesystem-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-convert-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-locale-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-math-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        }
+      ]
+    },
+    {
+      "path": "bin/createdb.exe",
+      "machine": "AMD64",
+      "optional_header": "PE32+",
+      "os_version": "6.00",
+      "subsystem_version": "6.00",
+      "imports": [
+        {
+          "name": "libpq.dll",
+          "resolution": "package",
+          "path": "bin/libpq.dll"
+        },
+        {
+          "name": "KERNEL32.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "ADVAPI32.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "VCRUNTIME140.dll",
+          "resolution": "package",
+          "path": "bin/vcruntime140.dll"
+        },
+        {
+          "name": "api-ms-win-crt-runtime-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-environment-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-string-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-heap-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-stdio-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-filesystem-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-convert-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-locale-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-math-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        }
+      ]
+    },
+    {
+      "path": "bin/createuser.exe",
+      "machine": "AMD64",
+      "optional_header": "PE32+",
+      "os_version": "6.00",
+      "subsystem_version": "6.00",
+      "imports": [
+        {
+          "name": "libpq.dll",
+          "resolution": "package",
+          "path": "bin/libpq.dll"
+        },
+        {
+          "name": "KERNEL32.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "ADVAPI32.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "VCRUNTIME140.dll",
+          "resolution": "package",
+          "path": "bin/vcruntime140.dll"
+        },
+        {
+          "name": "api-ms-win-crt-stdio-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-heap-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-runtime-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-environment-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-string-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-filesystem-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-convert-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-locale-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-math-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        }
+      ]
+    },
+    {
+      "path": "bin/dropdb.exe",
+      "machine": "AMD64",
+      "optional_header": "PE32+",
+      "os_version": "6.00",
+      "subsystem_version": "6.00",
+      "imports": [
+        {
+          "name": "libpq.dll",
+          "resolution": "package",
+          "path": "bin/libpq.dll"
+        },
+        {
+          "name": "KERNEL32.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "ADVAPI32.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "VCRUNTIME140.dll",
+          "resolution": "package",
+          "path": "bin/vcruntime140.dll"
+        },
+        {
+          "name": "api-ms-win-crt-runtime-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-string-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-heap-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-stdio-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-filesystem-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-environment-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-convert-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-locale-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-math-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        }
+      ]
+    },
+    {
+      "path": "bin/dropuser.exe",
+      "machine": "AMD64",
+      "optional_header": "PE32+",
+      "os_version": "6.00",
+      "subsystem_version": "6.00",
+      "imports": [
+        {
+          "name": "libpq.dll",
+          "resolution": "package",
+          "path": "bin/libpq.dll"
+        },
+        {
+          "name": "KERNEL32.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "ADVAPI32.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "VCRUNTIME140.dll",
+          "resolution": "package",
+          "path": "bin/vcruntime140.dll"
+        },
+        {
+          "name": "api-ms-win-crt-runtime-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-heap-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-string-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-stdio-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-filesystem-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-environment-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-convert-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-locale-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-math-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        }
+      ]
+    },
+    {
+      "path": "bin/ecpg.exe",
+      "machine": "AMD64",
+      "optional_header": "PE32+",
+      "os_version": "6.00",
+      "subsystem_version": "6.00",
+      "imports": [
+        {
+          "name": "KERNEL32.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "ADVAPI32.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "VCRUNTIME140.dll",
+          "resolution": "package",
+          "path": "bin/vcruntime140.dll"
+        },
+        {
+          "name": "api-ms-win-crt-stdio-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-heap-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-runtime-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-string-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-convert-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-filesystem-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-environment-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-math-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-locale-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        }
+      ]
+    },
+    {
+      "path": "bin/iconv-2.dll",
+      "machine": "AMD64",
+      "optional_header": "PE32+",
+      "os_version": "6.00",
+      "subsystem_version": "6.00",
+      "imports": [
+        {
+          "name": "KERNEL32.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "VCRUNTIME140.dll",
+          "resolution": "package",
+          "path": "bin/vcruntime140.dll"
+        },
+        {
+          "name": "api-ms-win-crt-runtime-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-heap-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-utility-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-locale-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-string-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-stdio-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        }
+      ]
+    },
+    {
+      "path": "bin/icudt78.dll",
+      "machine": "AMD64",
+      "optional_header": "PE32+",
+      "os_version": "6.00",
+      "subsystem_version": "6.00",
+      "imports": []
+    },
+    {
+      "path": "bin/icuin78.dll",
+      "machine": "AMD64",
+      "optional_header": "PE32+",
+      "os_version": "6.00",
+      "subsystem_version": "6.00",
+      "imports": [
+        {
+          "name": "icuuc78.dll",
+          "resolution": "package",
+          "path": "bin/icuuc78.dll"
+        },
+        {
+          "name": "MSVCP140.dll",
+          "resolution": "package",
+          "path": "bin/msvcp140.dll"
+        },
+        {
+          "name": "KERNEL32.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "VCRUNTIME140.dll",
+          "resolution": "package",
+          "path": "bin/vcruntime140.dll"
+        },
+        {
+          "name": "VCRUNTIME140_1.dll",
+          "resolution": "package",
+          "path": "bin/vcruntime140_1.dll"
+        },
+        {
+          "name": "api-ms-win-crt-string-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-math-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-stdio-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-runtime-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-convert-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-environment-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-heap-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        }
+      ]
+    },
+    {
+      "path": "bin/icuio78.dll",
+      "machine": "AMD64",
+      "optional_header": "PE32+",
+      "os_version": "6.00",
+      "subsystem_version": "6.00",
+      "imports": [
+        {
+          "name": "icuuc78.dll",
+          "resolution": "package",
+          "path": "bin/icuuc78.dll"
+        },
+        {
+          "name": "icuin78.dll",
+          "resolution": "package",
+          "path": "bin/icuin78.dll"
+        },
+        {
+          "name": "MSVCP140.dll",
+          "resolution": "package",
+          "path": "bin/msvcp140.dll"
+        },
+        {
+          "name": "KERNEL32.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "VCRUNTIME140.dll",
+          "resolution": "package",
+          "path": "bin/vcruntime140.dll"
+        },
+        {
+          "name": "VCRUNTIME140_1.dll",
+          "resolution": "package",
+          "path": "bin/vcruntime140_1.dll"
+        },
+        {
+          "name": "api-ms-win-crt-string-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-stdio-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-convert-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-runtime-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        }
+      ]
+    },
+    {
+      "path": "bin/icutu78.dll",
+      "machine": "AMD64",
+      "optional_header": "PE32+",
+      "os_version": "6.00",
+      "subsystem_version": "6.00",
+      "imports": [
+        {
+          "name": "icuin78.dll",
+          "resolution": "package",
+          "path": "bin/icuin78.dll"
+        },
+        {
+          "name": "icuuc78.dll",
+          "resolution": "package",
+          "path": "bin/icuuc78.dll"
+        },
+        {
+          "name": "MSVCP140.dll",
+          "resolution": "package",
+          "path": "bin/msvcp140.dll"
+        },
+        {
+          "name": "KERNEL32.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "VCRUNTIME140_1.dll",
+          "resolution": "package",
+          "path": "bin/vcruntime140_1.dll"
+        },
+        {
+          "name": "VCRUNTIME140.dll",
+          "resolution": "package",
+          "path": "bin/vcruntime140.dll"
+        },
+        {
+          "name": "api-ms-win-crt-stdio-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-convert-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-filesystem-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-time-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-string-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-runtime-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-utility-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-heap-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        }
+      ]
+    },
+    {
+      "path": "bin/icuuc78.dll",
+      "machine": "AMD64",
+      "optional_header": "PE32+",
+      "os_version": "6.00",
+      "subsystem_version": "6.00",
+      "imports": [
+        {
+          "name": "icudt78.dll",
+          "resolution": "package",
+          "path": "bin/icudt78.dll"
+        },
+        {
+          "name": "ADVAPI32.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "MSVCP140.dll",
+          "resolution": "package",
+          "path": "bin/msvcp140.dll"
+        },
+        {
+          "name": "KERNEL32.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "VCRUNTIME140.dll",
+          "resolution": "package",
+          "path": "bin/vcruntime140.dll"
+        },
+        {
+          "name": "VCRUNTIME140_1.dll",
+          "resolution": "package",
+          "path": "bin/vcruntime140_1.dll"
+        },
+        {
+          "name": "api-ms-win-crt-string-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-heap-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-convert-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-runtime-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-math-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-time-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-environment-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-stdio-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-utility-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        }
+      ]
+    },
+    {
+      "path": "bin/initdb.exe",
+      "machine": "AMD64",
+      "optional_header": "PE32+",
+      "os_version": "6.00",
+      "subsystem_version": "6.00",
+      "imports": [
+        {
+          "name": "libpq.dll",
+          "resolution": "package",
+          "path": "bin/libpq.dll"
+        },
+        {
+          "name": "WS2_32.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "icuuc78.dll",
+          "resolution": "package",
+          "path": "bin/icuuc78.dll"
+        },
+        {
+          "name": "KERNEL32.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "ADVAPI32.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "VCRUNTIME140.dll",
+          "resolution": "package",
+          "path": "bin/vcruntime140.dll"
+        },
+        {
+          "name": "api-ms-win-crt-environment-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-time-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-string-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-stdio-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-heap-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-runtime-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-convert-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-locale-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-filesystem-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-math-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        }
+      ]
+    },
+    {
+      "path": "bin/legacy.dll",
+      "machine": "AMD64",
+      "optional_header": "PE32+",
+      "os_version": "6.00",
+      "subsystem_version": "6.00",
+      "imports": [
+        {
+          "name": "libcrypto-3-x64.dll",
+          "resolution": "package",
+          "path": "bin/libcrypto-3-x64.dll"
+        },
+        {
+          "name": "KERNEL32.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "VCRUNTIME140.dll",
+          "resolution": "package",
+          "path": "bin/vcruntime140.dll"
+        },
+        {
+          "name": "api-ms-win-crt-string-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-runtime-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        }
+      ]
+    },
+    {
+      "path": "bin/libcrypto-3-x64.dll",
+      "machine": "AMD64",
+      "optional_header": "PE32+",
+      "os_version": "6.00",
+      "subsystem_version": "6.00",
+      "imports": [
+        {
+          "name": "WS2_32.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "ADVAPI32.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "CRYPT32.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "USER32.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "KERNEL32.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "VCRUNTIME140.dll",
+          "resolution": "package",
+          "path": "bin/vcruntime140.dll"
+        },
+        {
+          "name": "api-ms-win-crt-string-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-stdio-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-convert-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-time-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-utility-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-heap-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-runtime-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-filesystem-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-environment-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        }
+      ]
+    },
+    {
+      "path": "bin/libecpg.dll",
+      "machine": "AMD64",
+      "optional_header": "PE32+",
+      "os_version": "6.00",
+      "subsystem_version": "6.00",
+      "imports": [
+        {
+          "name": "libpgtypes.dll",
+          "resolution": "package",
+          "path": "bin/libpgtypes.dll"
+        },
+        {
+          "name": "libpq.dll",
+          "resolution": "package",
+          "path": "bin/libpq.dll"
+        },
+        {
+          "name": "KERNEL32.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "VCRUNTIME140.dll",
+          "resolution": "package",
+          "path": "bin/vcruntime140.dll"
+        },
+        {
+          "name": "api-ms-win-crt-heap-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-environment-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-string-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-runtime-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-convert-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-locale-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-stdio-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        }
+      ]
+    },
+    {
+      "path": "bin/libecpg_compat.dll",
+      "machine": "AMD64",
+      "optional_header": "PE32+",
+      "os_version": "6.00",
+      "subsystem_version": "6.00",
+      "imports": [
+        {
+          "name": "libecpg.dll",
+          "resolution": "package",
+          "path": "bin/libecpg.dll"
+        },
+        {
+          "name": "libpgtypes.dll",
+          "resolution": "package",
+          "path": "bin/libpgtypes.dll"
+        },
+        {
+          "name": "VCRUNTIME140.dll",
+          "resolution": "package",
+          "path": "bin/vcruntime140.dll"
+        },
+        {
+          "name": "api-ms-win-crt-heap-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-runtime-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-string-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-math-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "KERNEL32.dll",
+          "resolution": "windows-system-allowlist"
+        }
+      ]
+    },
+    {
+      "path": "bin/libexslt.dll",
+      "machine": "AMD64",
+      "optional_header": "PE32+",
+      "os_version": "6.00",
+      "subsystem_version": "6.00",
+      "imports": [
+        {
+          "name": "libxslt.dll",
+          "resolution": "package",
+          "path": "bin/libxslt.dll"
+        },
+        {
+          "name": "libxml2.dll",
+          "resolution": "package",
+          "path": "bin/libxml2.dll"
+        },
+        {
+          "name": "VCRUNTIME140.dll",
+          "resolution": "package",
+          "path": "bin/vcruntime140.dll"
+        },
+        {
+          "name": "api-ms-win-crt-runtime-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-convert-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-environment-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-time-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-math-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-utility-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "KERNEL32.dll",
+          "resolution": "windows-system-allowlist"
+        }
+      ]
+    },
+    {
+      "path": "bin/libpgtypes.dll",
+      "machine": "AMD64",
+      "optional_header": "PE32+",
+      "os_version": "6.00",
+      "subsystem_version": "6.00",
+      "imports": [
+        {
+          "name": "KERNEL32.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "VCRUNTIME140.dll",
+          "resolution": "package",
+          "path": "bin/vcruntime140.dll"
+        },
+        {
+          "name": "api-ms-win-crt-heap-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-runtime-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-string-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-convert-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-time-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-math-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        },
+        {
+          "name": "api-ms-win-crt-stdio-l1-1-0.dll",
+          "resolution": "windows-system-allowlist"
+        }
+      ]
+    }
+  ],
+  "findings": [
+    "unresolved non-system import WLDAP32.dll in bin/libpq.dll"
+  ],
+  "outcome": "failed",
+  "limits": [
+    "Imports loaded dynamically by application code and data-file accesses are not detected.",
+    "DLL resolution checks package basename closure and the stated Windows system allowlist; it does not emulate all Windows loader search-order rules.",
+    "PE OS and subsystem header versions do not encode the Windows 10 build number; the check enforces the 10.0 major/minor floor only.",
+    "API-set families allowed are api-ms-win-core, api-ms-win-crt, ext-ms-win-kernel32, and ext-ms-win-ntuser."
+  ]
+}
