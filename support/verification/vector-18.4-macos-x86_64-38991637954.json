@@ -1,0 +1,60 @@
+{
+  "ci": {
+    "build_revision": "6717c5073550b9fc817865c0dd2b42e1bd9c3434",
+    "provider": "github-actions",
+    "run_id": "38991637954",
+    "run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/38991637954",
+    "source_revision": "6717c5073550b9fc817865c0dd2b42e1bd9c3434",
+    "test_revision": "6717c5073550b9fc817865c0dd2b42e1bd9c3434"
+  },
+  "component": "vector",
+  "environment": {
+    "architecture": "x86_64",
+    "clean_system": true,
+    "dependency_check_profile": "macho-system-dependencies-v1",
+    "dependency_checks_passed": true,
+    "endpoint": "current",
+    "image_id": "macos15/20260824.0482.1",
+    "os": "macos",
+    "os_version": "15.7.9"
+  },
+  "outcome": "passed",
+  "platform": "macos-x86_64",
+  "postgresql_version": "18.4",
+  "profile_id": "macos-pilot-x86_64",
+  "profile_revision": "aa50b48b84afd7a141a251b4440a4f3520854fabbad1ea76d78865d12a48f41c",
+  "schema_version": 2,
+  "scope": "pilot-smoke",
+  "sha256": "78d0167c027279f6b3599652f4f57a8d7b34e6d75a5613ab09d49888756db64a",
+  "test_cases": [
+    "archive-assembly",
+    "built-in-extension-smoke",
+    "core-schema-smoke",
+    "debug-symbol-linkage",
+    "pgvector-ddl-smoke",
+    "relocation"
+  ],
+  "test_revision": "6717c5073550b9fc817865c0dd2b42e1bd9c3434",
+  "verification_profile": {
+    "case_ids": [
+      "archive-assembly",
+      "built-in-extension-smoke",
+      "core-schema-smoke",
+      "debug-symbol-linkage",
+      "pgvector-ddl-smoke",
+      "relocation"
+    ],
+    "compatible_profile_revisions": [
+      "aa50b48b84afd7a141a251b4440a4f3520854fabbad1ea76d78865d12a48f41c",
+      "f670765b26c5fe75418deaefc580b77b19f0e0c196be6510017f7e6e227a9f09"
+    ],
+    "platforms": [
+      "macos-x86_64"
+    ],
+    "profile_id": "macos-pilot-x86_64",
+    "profile_revision": "aa50b48b84afd7a141a251b4440a4f3520854fabbad1ea76d78865d12a48f41c",
+    "scope": "pilot-smoke",
+    "sources_available": true
+  },
+  "version": "0.8.7"
+}
