@@ -1,0 +1,7 @@
+# pgAudit macOS arm64 publication-profile result
+
+[Run 39079096110](https://github.com/BernieSumption/pg_binaries/actions/runs/39079096110) passed the scoped PostgreSQL 18.6 and unmodified pgAudit 18.0 archive suite on macOS arm64. The [imported receipt](arm64/current-receipt.json) and [verification record](../../verification/pgaudit-18.0-postgresql-18.6-macos-arm64-current-39079096110.json) bind the exact PostgreSQL core archive (SHA-256 `853e0eafb3570378225d2ea16247c9de31770f85df5230509885df2ca5e89d67`) and pgAudit archive (SHA-256 `5ddbf71d2d4e4f93ee81581728e5368d76d4908c40ff609e3fc5e9219e53d987`) to three passing cases: relocated extension and audit-log behaviour, matching debug symbols, and representative loader/server diagnostics.
+
+The [static analysis](arm64/static-analysis.json) passed on the assembled archive, the [symbol index](arm64/debug-symbols/index.json) includes the pgAudit module among 124 entries, and the [diagnostic report](arm64/diagnostics.json) records a missing-module startup failure and server error. The [raw attempt](arm64/attempt.json) and [full CI log](arm64/build-log.txt) are retained. The importer checked final archive hashes, source/profile identities, report hashes, receipt fields and record applicability before writing the repository evidence. The binary archives and dSYMs remain temporary CI artifacts.
+
+This covers one selected macOS extension/core combination. Other selected PostgreSQL versions, Intel macOS, and other extensions still require their own publication evidence.
