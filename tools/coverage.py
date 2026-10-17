@@ -270,6 +270,7 @@ def verification_profile(root, profile_id, allow_missing_sources=False):
             or platforms != sorted(set(platforms))):
         raise CoverageError(f"verification profile {profile_id}: platforms must be sorted unique strings")
     source_hashes = {}
+    crlf_source_hashes = {}
     sources_available = True
     root = Path(root)
     for source in sources:
@@ -277,18 +278,31 @@ def verification_profile(root, profile_id, allow_missing_sources=False):
         if source_path.is_absolute() or ".." in source_path.parts:
             raise CoverageError(f"verification profile {profile_id}: invalid source path {source!r}")
         try:
-            source_hashes[source] = hashlib.sha256((root / source_path).read_bytes()).hexdigest()
+            content = (root / source_path).read_bytes()
+            try:
+                content.decode("utf-8")
+                text_source = b"\0" not in content
+            except UnicodeDecodeError:
+                text_source = False
+            normalized = content.replace(b"\r\n", b"\n") if text_source else content
+            source_hashes[source] = hashlib.sha256(normalized).hexdigest()
+            crlf = normalized.replace(b"\n", b"\r\n") if text_source else content
+            crlf_source_hashes[source] = hashlib.sha256(crlf).hexdigest()
         except OSError as exc:
             if not allow_missing_sources:
                 raise CoverageError(f"verification profile {profile_id}: cannot read source {source!r}: {exc}") from exc
             sources_available = False
             source_hashes[source] = None
-    digest_input = {"profile_id": profile_id, "scope": scope, "case_ids": cases,
-                    "platforms": platforms, "sources": source_hashes}
-    revision = hashlib.sha256(json.dumps(digest_input, sort_keys=True, separators=(",", ":"),
+            crlf_source_hashes[source] = None
+    def digest(hashes):
+        digest_input = {"profile_id": profile_id, "scope": scope, "case_ids": cases,
+                        "platforms": platforms, "sources": hashes}
+        return hashlib.sha256(json.dumps(digest_input, sort_keys=True, separators=(",", ":"),
                                          ensure_ascii=False).encode("utf-8")).hexdigest()
+    revision = digest(source_hashes)
     return {"profile_id": profile_id, "scope": scope, "case_ids": cases,
             "platforms": platforms, "profile_revision": revision,
+            "compatible_profile_revisions": sorted({revision, digest(crlf_source_hashes)}),
             "sources_available": sources_available}
 
 
@@ -368,7 +382,7 @@ def validate_verification_record(data, support, root, label="verification record
             or len(cases) != len(set(cases)) or cases != sorted(cases)):
         raise CoverageError(f"{label}: test_cases must be nonempty unique strings")
     current_profile = (profile is not None and profile["sources_available"]
-                       and profile_revision == profile["profile_revision"]
+                       and profile_revision in profile["compatible_profile_revisions"]
                        and cases == profile["case_ids"])
     if not current_profile and not allow_stale:
         raise CoverageError(f"{label}: test profile does not match current suite")

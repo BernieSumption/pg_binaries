@@ -1,5 +1,6 @@
 import importlib.util
 import contextlib
+import hashlib
 import io
 import json
 import sys
@@ -435,5 +436,43 @@ class CoverageTests(unittest.TestCase):
             removed_profile = coverage.verification_records(root, self.support)
             self.assertEqual(len(removed_profile), 1)
             self.assertFalse(removed_profile[0]["_profile_current"])
+
+    def test_profile_digest_accepts_windows_checkout_line_endings(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            profile = self.add_profile(root, profile_id="fixture-windows",
+                                       platforms=["windows-x86_64"],
+                                       source_text="first\nsecond\n")
+            source = root / "tests" / "fixture.sh"
+            source.write_bytes(b"first\r\nsecond\r\n")
+            windows_profile = coverage.verification_profile(root, "fixture-windows")
+            self.assertEqual(profile["profile_revision"], windows_profile["profile_revision"])
+            registry = json.loads((root / "support" / "verification-profiles.json").read_text())
+            definition = registry["profiles"]["fixture-windows"]
+            legacy_input = {"profile_id": "fixture-windows", "scope": definition["scope"],
+                            "case_ids": definition["case_ids"], "platforms": definition["platforms"],
+                            "sources": {"tests/fixture.sh": hashlib.sha256(source.read_bytes()).hexdigest()}}
+            legacy_revision = hashlib.sha256(json.dumps(
+                legacy_input, sort_keys=True, separators=(",", ":"),
+                ensure_ascii=False).encode("utf-8")).hexdigest()
+            self.assertIn(legacy_revision, windows_profile["compatible_profile_revisions"])
+            record = {"schema_version": 2, "profile_id": "fixture-windows",
+                      "profile_revision": legacy_revision, "scope": "pilot-smoke",
+                      "outcome": "passed", "sha256": "a" * 64, "test_revision": "a" * 40,
+                      "test_cases": definition["case_ids"], "platform": "windows-x86_64",
+                      "environment": {"os": "windows", "architecture": "x86_64",
+                                      "image_id": "windows-test", "dependency_check_profile": "test",
+                                      "dependency_checks_passed": True}}
+            self.assertTrue(coverage.validate_verification_record(record, self.support, root))
+            source.write_bytes(b"first\r\nchanged\r\n")
+            changed = coverage.verification_profile(root, "fixture-windows")
+            self.assertNotIn(legacy_revision, changed["compatible_profile_revisions"])
+            self.assertFalse(coverage.validate_verification_record(
+                record, self.support, root, allow_stale=True))
+            source.write_bytes(b"\0first\r\n")
+            binary_crlf = coverage.verification_profile(root, "fixture-windows")
+            source.write_bytes(b"\0first\n")
+            binary_lf = coverage.verification_profile(root, "fixture-windows")
+            self.assertNotEqual(binary_crlf["profile_revision"], binary_lf["profile_revision"])
 if __name__ == "__main__":
     unittest.main()
