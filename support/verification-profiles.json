@@ -139,6 +139,18 @@
       "case_ids": ["pgivm-archive-suite"],
       "sources": [".github/workflows/linux-publication.yml#profile-section=archive-builds", ".github/workflows/linux-publication.yml#profile-section=job-setup", ".github/workflows/linux-publication.yml#profile-section=pgivm-build", ".github/workflows/linux-publication.yml#profile-section=pgivm-report", ".github/workflows/linux-publication.yml#profile-section=pgivm-verify", "scripts/linux/Dockerfile", "scripts/linux/build-in-container.sh", "scripts/linux/build.sh", "scripts/linux/bundle-glibc-in-container.sh", "scripts/linux/launcher.c", "scripts/pg_ivm/Dockerfile", "scripts/pg_ivm/build-in-container.sh", "scripts/pg_ivm/build.sh", "scripts/pg_ivm/probe.sql", "scripts/pg_ivm/verify-in-container.sh", "scripts/pg_ivm/verify.Dockerfile", "scripts/pg_ivm/verify.sh", "support.json", "support/postgresql-releases.json", "tools/check_elf_dependencies.py", "tools/check_source_identity.py", "tools/create_extension_publication_receipt.py", "tools/emit_extension_publication_records.py", "tools/source_archive.py"]
     },
+    "pgaudit-publication-current-x86_64": {
+      "scope": "publication",
+      "platforms": ["linux-x86_64"],
+      "case_ids": ["pgaudit-archive-suite"],
+      "sources": [".github/workflows/pgaudit-linux-pilot.yml","scripts/linux/Dockerfile","scripts/linux/build-in-container.sh","scripts/linux/build.sh","scripts/linux/bundle-glibc-in-container.sh","scripts/linux/launcher.c","scripts/pgaudit/Dockerfile","scripts/pgaudit/build-in-container.sh","scripts/pgaudit/build.sh","scripts/pgaudit/probe.sql","scripts/pgaudit/verify-in-container.sh","scripts/pgaudit/verify.Dockerfile","scripts/pgaudit/verify.sh","support.json","support/postgresql-releases.json","tools/check_elf_dependencies.py","tools/check_source_identity.py","tools/coverage.py","tools/create_extension_publication_receipt.py","tools/emit_extension_publication_records.py","tools/source_archive.py"]
+    },
+    "pgaudit-publication-current-arm64": {
+      "scope": "publication",
+      "platforms": ["linux-arm64"],
+      "case_ids": ["pgaudit-archive-suite"],
+      "sources": [".github/workflows/pgaudit-linux-pilot.yml","scripts/linux/Dockerfile","scripts/linux/build-in-container.sh","scripts/linux/build.sh","scripts/linux/bundle-glibc-in-container.sh","scripts/linux/launcher.c","scripts/pgaudit/Dockerfile","scripts/pgaudit/build-in-container.sh","scripts/pgaudit/build.sh","scripts/pgaudit/probe.sql","scripts/pgaudit/verify-in-container.sh","scripts/pgaudit/verify.Dockerfile","scripts/pgaudit/verify.sh","support.json","support/postgresql-releases.json","tools/check_elf_dependencies.py","tools/check_source_identity.py","tools/coverage.py","tools/create_extension_publication_receipt.py","tools/emit_extension_publication_records.py","tools/source_archive.py"]
+    },
     "macos-publication-current-x86_64": {
       "scope": "publication",
       "platforms": ["macos-x86_64"],

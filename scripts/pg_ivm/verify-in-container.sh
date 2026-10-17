@@ -2,7 +2,10 @@
 set -euo pipefail
 architecture=${PG_ARCHITECTURE:-x86_64}
 case "$architecture" in x86_64|arm64) ;; *) echo "Unsupported Linux architecture: $architecture" >&2; exit 2 ;; esac
-pg_version=18.6
+pg_version=${PG_VERSION:-18.6}
+if [[ ! $pg_version =~ ^(15|16|17|18)\.[0-9]+$ ]]; then
+  echo "Unsupported PostgreSQL version: $pg_version" >&2; exit 2
+fi
 version=1.16
 source_url='https://github.com/sraoss/pg_ivm/archive/refs/tags/v1.16.tar.gz'
 source_sha256='87807d6af1974fce591715d55f75d939dffea33ea6908b413e62d3dd79b9c583'
@@ -18,14 +21,14 @@ tar -xzf "/extension/$extension_archive" -C /tmp/extension
 pgroot=/tmp/first/postgresql
 extroot=/tmp/extension/pg_ivm
 test "$("$pgroot/bin/pg_config" --version)" = "PostgreSQL $pg_version"
-python3 - "$extroot" "$source_url" "$architecture" "$source_sha256" <<'PY'
+python3 - "$extroot" "$source_url" "$architecture" "$source_sha256" "$pg_version" <<'PY'
 import json, os, sys
 from pathlib import Path
 root=Path(sys.argv[1]).parent
 metadata=json.loads((root/'metadata.json').read_text())
 if metadata != {'project':'pg_ivm','version':'1.16','sql_names':['pg_ivm'],'requires':[],
  'configuration_prerequisites':[{'type':'postgresql_setting','name':'shared_preload_libraries','value':'pg_ivm'}],
- 'runtime_prerequisites':[],'postgresql_version':'18.6','platform':'linux','architecture':sys.argv[3],
+ 'runtime_prerequisites':[],'postgresql_version':sys.argv[5],'platform':'linux','architecture':sys.argv[3],
  'source':{'url':sys.argv[2],'sha256':sys.argv[4]}}:
  raise SystemExit('pg_ivm package metadata mismatch')
 digest=metadata['source']['sha256']
@@ -65,4 +68,4 @@ trap 'runuser -u postgres -- "$pgroot/bin/pg_ctl" -D /tmp/data -m immediate stop
 runuser -u postgres -- "$pgroot/bin/psql" -X -v ON_ERROR_STOP=1 -h /tmp/socket -p 55432 -d postgres -f /work/probe.sql
 runuser -u postgres -- "$pgroot/bin/pg_ctl" -D /tmp/data -m fast -w stop
 trap - EXIT
-echo 'PASS: relocated PostgreSQL 18.6 and pg_ivm 1.16 archives on clean Alpine 3.22'
+echo "PASS: relocated PostgreSQL $pg_version and pg_ivm 1.16 archives on clean Alpine 3.22"

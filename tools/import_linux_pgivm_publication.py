@@ -28,7 +28,7 @@ def _attempt(path, run_id, architecture, postgresql_version):
             or attempt.get("postgresql_version") != postgresql_version
             or attempt.get("pg_ivm_version") != PGIVM_VERSION
             or not coverage.REVISION.fullmatch(str(attempt.get("source_revision", "")))):
-        raise coverage.CoverageError("attempt identity does not match this PG18 run")
+        raise coverage.CoverageError("attempt identity does not match this PostgreSQL run")
     steps = attempt.get("steps")
     if (not isinstance(steps, dict) or set(steps) != STEP_NAMES
             or any(value not in {"success", "failure", "skipped"} for value in steps.values())):
@@ -48,14 +48,20 @@ def import_run(root, core_artifact, pgivm_artifact, run_id, architecture,
     root, core_artifact, pgivm_artifact = map(Path, (root, core_artifact, pgivm_artifact))
     run_id = str(run_id)
     if (not re.fullmatch(r"\d+", run_id) or architecture not in ARCHITECTURES
-            or not re.fullmatch(r"18\.\d+", postgresql_version)):
-        raise coverage.CoverageError("expected numeric run_id, selected PostgreSQL 18 minor, and x86_64 or arm64")
+            or not re.fullmatch(r"\d+\.\d+", postgresql_version)):
+        raise coverage.CoverageError("expected numeric run_id, selected PostgreSQL minor, and x86_64 or arm64")
     support = coverage.load_json(root / "support.json")
     snapshot = coverage.load_json(root / "support/postgresql-releases.json")
     if postgresql_version not in coverage.release_snapshot(snapshot, support):
         raise coverage.CoverageError(f"PostgreSQL {postgresql_version} is not selected")
-    if PGIVM_VERSION not in support["extensions"]["pg_ivm"]["versions"]:
+    extension_version = support["extensions"]["pg_ivm"]["versions"].get(PGIVM_VERSION)
+    if not isinstance(extension_version, dict):
         raise coverage.CoverageError("pg_ivm 1.16 is not declared in support")
+    major = int(postgresql_version.split(".", 1)[0])
+    minimum = extension_version.get("postgresql_minimum_major", 0)
+    maximum = extension_version.get("postgresql_maximum_major")
+    if major < minimum or (maximum is not None and major > maximum):
+        raise coverage.CoverageError(f"pg_ivm 1.16 does not support PostgreSQL {major}")
 
     platform = f"linux-{architecture}"
     profile_id = f"pgivm-publication-current-{architecture}"
@@ -64,7 +70,9 @@ def import_run(root, core_artifact, pgivm_artifact, run_id, architecture,
         raise coverage.CoverageError("profile does not match the Linux publication platform")
 
     publication = pgivm_artifact / "pgivm-publication"
-    extension_dir = pgivm_artifact
+    extension_dir = pgivm_artifact / "pg_ivm"
+    if not extension_dir.is_dir():
+        extension_dir = pgivm_artifact
     target = root / "support/evidence" / f"pgivm-publication-{run_id}" / architecture
     steps_path = publication / "current-steps.json"
     attempt_path = publication / "attempt.json"

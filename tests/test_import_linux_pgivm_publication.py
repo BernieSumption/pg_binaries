@@ -67,7 +67,7 @@ class LinuxPgivmPublicationImportTests(unittest.TestCase):
         self.core_artifact = self.base / "core-artifact"
         self.pgivm_artifact = self.base / "pgivm-artifact"
         self.core_dir = self.core_artifact / "pilot"
-        self.pgivm_dir = self.pgivm_artifact
+        self.pgivm_dir = self.pgivm_artifact / "pg_ivm"
         self.core_dir.mkdir(parents=True, exist_ok=True)
         self.pgivm_dir.mkdir(parents=True, exist_ok=True)
         self.platform = f"linux-{self.architecture}"
@@ -149,6 +149,23 @@ class LinuxPgivmPublicationImportTests(unittest.TestCase):
             f"pg_ivm-1.16-postgresql-18.6-linux-arm64-current-{self.run_id}.json")
         self.assertEqual(json.loads(record_path.read_text())["platform"], "linux-arm64")
 
+    def test_imports_selected_postgresql_15_through_17_archives(self):
+        for version in ("15.19", "16.15", "17.11"):
+            with self.subTest(version=version):
+                shutil.rmtree(self.pgivm_artifact / "pgivm-publication", ignore_errors=True)
+                shutil.rmtree(self.pgivm_dir / "static-analysis", ignore_errors=True)
+                shutil.rmtree(self.core_dir, ignore_errors=True)
+                shutil.rmtree(self.root / "support/evidence", ignore_errors=True)
+                shutil.rmtree(self.root / "support/verification", ignore_errors=True)
+                self.postgresql_version = version
+                self._make_artifacts()
+                self._make_publication()
+                self._import()
+                record_path = self.root / "support/verification" / (
+                    f"pg_ivm-1.16-postgresql-{version}-{self.platform}-current-{self.run_id}.json")
+                record = json.loads(record_path.read_text())
+                self.assertEqual(record["postgresql_version"], version)
+
     def test_retains_failed_and_skipped_archive_records_as_nonpassing(self):
         for result in ("failed", "skipped"):
             with self.subTest(result=result):
@@ -226,10 +243,10 @@ class LinuxPgivmPublicationImportTests(unittest.TestCase):
         with self.assertRaisesRegex(coverage.CoverageError, "Alpine 3.22"):
             self._import()
 
-    def test_rejects_non_pg18_target(self):
-        with self.assertRaisesRegex(coverage.CoverageError, "selected PostgreSQL 18 minor"):
+    def test_rejects_unselected_target(self):
+        with self.assertRaisesRegex(coverage.CoverageError, "not selected"):
             importer.import_run(self.root, self.core_artifact, self.pgivm_artifact,
-                                self.run_id, self.architecture, "17.11")
+                                self.run_id, self.architecture, "17.10")
 
     def test_rejects_missing_or_mismatched_static_analysis_for_passed_run(self):
         report = self.pgivm_dir / "static-analysis/pg_ivm.json"

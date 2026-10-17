@@ -8,6 +8,13 @@ on:
       - 'scripts/linux/**'
       - 'tools/check_elf_dependencies.py'
       - 'tools/source_archive.py'
+      - 'tools/create_extension_publication_receipt.py'
+      - 'tools/emit_extension_publication_records.py'
+      - 'tools/import_linux_pgaudit_publication.py'
+      - 'tools/import_linux_publication_run.py'
+      - 'tools/import_linux_tiger_publication.py'
+      - 'tools/coverage.py'
+      - 'support/verification-profiles.json'
       - 'support.json'
       - 'support/postgresql-releases.json'
 
@@ -19,8 +26,10 @@ jobs:
         include:
           - architecture: x86_64
             runner: ubuntu-24.04
+            docker_platform: linux/amd64
           - architecture: arm64
             runner: ubuntu-24.04-arm
+            docker_platform: linux/arm64
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 70
     permissions:
@@ -40,23 +49,34 @@ jobs:
         run: bash scripts/pgaudit/verify.sh "$RUNNER_TEMP/core" "$RUNNER_TEMP/pgaudit"
       - name: Record core archive identity
         id: archive_identity
-        run: cp "$RUNNER_TEMP/core/postgresql-18.6-linux-$PG_ARCHITECTURE.tar.gz.sha256" "$RUNNER_TEMP/pgaudit/"
-      - name: Record raw attempt outcomes
+        run: |
+          cp "$RUNNER_TEMP/core/postgresql-18.6-linux-$PG_ARCHITECTURE.tar.gz" "$RUNNER_TEMP/pgaudit/"
+          cp "$RUNNER_TEMP/core/postgresql-18.6-linux-$PG_ARCHITECTURE.tar.gz.sha256" "$RUNNER_TEMP/pgaudit/"
+      - name: Record pgAudit archive-bound publication evidence
         if: always()
         env:
           CORE_BUILD_OUTCOME: ${{ steps.core_build.outcome }}
           PGAUDIT_BUILD_OUTCOME: ${{ steps.pgaudit_build.outcome }}
           PGAUDIT_VERIFY_OUTCOME: ${{ steps.pgaudit_verify.outcome }}
-          ARCHIVE_IDENTITY_OUTCOME: ${{ steps.archive_identity.outcome }}
         run: |
           set -euo pipefail
-          mkdir -p "$RUNNER_TEMP/pgaudit-attempt"
-          python3 - "$RUNNER_TEMP/pgaudit-attempt/step-outcomes.json" <<'PY'
+          publication="$RUNNER_TEMP/pgaudit/pgaudit-publication"
+          mkdir -p "$publication"
+          image=$(docker image inspect --format '{{.Id}}' pg-binaries-pgaudit-verifier 2>/dev/null || true)
+          if [[ ! "$image" =~ ^sha256:[0-9a-f]{64}$ ]]; then image=unknown; fi
+          IMAGE_ID="$image" python3 - "$publication/attempt.json" "$publication/current-steps.json" <<'PY'
           import json
           import os
           import sys
           from pathlib import Path
 
+          core = os.environ["CORE_BUILD_OUTCOME"]
+          build = os.environ["PGAUDIT_BUILD_OUTCOME"]
+          verify = os.environ["PGAUDIT_VERIFY_OUTCOME"]
+          image = os.environ["IMAGE_ID"]
+          suite = "failure" if "failure" in (build, verify) or (
+              build == verify == "success" and image == "unknown") else (
+              "success" if build == verify == "success" else "skipped")
           result = {
               "schema_version": 1,
               "run_id": os.environ["GITHUB_RUN_ID"],
@@ -64,22 +84,52 @@ jobs:
               "postgresql_version": "18.6",
               "pgaudit_version": "18.0",
               "architecture": os.environ["PG_ARCHITECTURE"],
-              "steps": {
-                  "core_build": os.environ["CORE_BUILD_OUTCOME"],
-                  "pgaudit_build": os.environ["PGAUDIT_BUILD_OUTCOME"],
-                  "pgaudit_verify": os.environ["PGAUDIT_VERIFY_OUTCOME"],
-                  "archive_identity": os.environ["ARCHIVE_IDENTITY_OUTCOME"],
-              },
+              "verifier_image_id": image,
+              "steps": {"core_build": core, "pgaudit_build": build,
+                        "pgaudit_verify": verify},
           }
-          Path(sys.argv[1]).write_text(json.dumps(result, indent=2, sort_keys=True) + "\n",
-                                       encoding="utf-8")
+          Path(sys.argv[1]).write_text(json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+          Path(sys.argv[2]).write_text(json.dumps({"pgaudit-archive-suite": suite}, sort_keys=True) + "\n", encoding="utf-8")
           PY
+          core="$RUNNER_TEMP/core/postgresql-18.6-linux-$PG_ARCHITECTURE.tar.gz"
+          extension="$RUNNER_TEMP/pgaudit/pgaudit-18.0-postgresql-18.6-linux-$PG_ARCHITECTURE.tar.gz"
+          if [[ ! -f "$core" || ! -f "$core.sha256" || ! -f "$extension" || ! -f "$extension.sha256" ]]; then
+            echo 'No pgAudit publication receipt or record: exact core and extension archives with sidecars are required'
+            exit 0
+          fi
+          clean=false
+          dependencies=failure
+          if [[ "$(python3 -c 'import json,sys; print(next(iter(json.load(open(sys.argv[1])).values())) == "success")' "$publication/current-steps.json")" == True ]]; then
+            clean=true
+            dependencies=success
+          fi
+          distribution='Alpine Linux'
+          distribution_version=3.22
+          if [[ "$image" != unknown ]]; then
+            distribution=$(docker run --rm --platform "${{ matrix.docker_platform }}" \
+              --entrypoint sh pg-binaries-pgaudit-verifier -c '. /etc/os-release; printf "%s" "$NAME"')
+            distribution_version=$(docker run --rm --platform "${{ matrix.docker_platform }}" \
+              --entrypoint sh pg-binaries-pgaudit-verifier -c '. /etc/os-release; printf "%s" "$VERSION_ID"')
+          fi
+          python3 tools/create_extension_publication_receipt.py \
+            --archives "$RUNNER_TEMP/pgaudit" --core-archives "$RUNNER_TEMP/core" \
+            --receipt "$publication/current-receipt.json" \
+            --profile-id "pgaudit-publication-current-$PG_ARCHITECTURE" \
+            --project pgaudit --version 18.0 --postgresql-version 18.6 \
+            --architecture "$PG_ARCHITECTURE" --endpoint current \
+            --kernel-release "$(uname -r)" --distribution "$distribution" \
+            --distribution-version "$distribution_version" --image-id "$image" \
+            --dependency-check-result "$dependencies" --clean-system "$clean" \
+            --step-results "$publication/current-steps.json"
+          python3 tools/emit_extension_publication_records.py \
+            --archives "$RUNNER_TEMP/pgaudit" --core-archives "$RUNNER_TEMP/core" \
+            --receipt "$publication/current-receipt.json" --output "$publication/records"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: pgaudit-linux-18.6-${{ matrix.architecture }}-${{ github.run_id }}
           path: |
-            ${{ runner.temp }}/pgaudit-attempt/step-outcomes.json
+            ${{ runner.temp }}/pgaudit/pgaudit-publication/**
             ${{ runner.temp }}/pgaudit/*.tar.gz
             ${{ runner.temp }}/pgaudit/*.sha256
             ${{ runner.temp }}/pgaudit/static-analysis/*.json

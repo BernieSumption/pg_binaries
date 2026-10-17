@@ -2,7 +2,10 @@
 set -euo pipefail
 architecture=${PG_ARCHITECTURE:-x86_64}
 case "$architecture" in x86_64|arm64) ;; *) echo "Unsupported Linux architecture: $architecture" >&2; exit 2 ;; esac
-pg_version=18.6
+pg_version=${PG_VERSION:-18.6}
+if [[ ! $pg_version =~ ^(15|16|17|18)\.[0-9]+$ ]]; then
+  echo "Unsupported PostgreSQL version: $pg_version" >&2; exit 2
+fi
 version=1.16
 source_url='https://github.com/sraoss/pg_ivm/archive/refs/tags/v1.16.tar.gz'
 source_sha256='87807d6af1974fce591715d55f75d939dffea33ea6908b413e62d3dd79b9c583'

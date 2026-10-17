@@ -91,10 +91,10 @@ jobs:
         run: bash scripts/hypopg/build.sh "$RUNNER_TEMP/pilot" "$RUNNER_TEMP/hypopg"
       # profile-section: hypopg-build end
       # profile-section: pgivm-build begin
-      - name: Build pg_ivm 1.16 against PostgreSQL 18.6
-        if: ${{ always() && steps.build.outcome == 'success' && startsWith(env.PG_VERSION, '18.') }}
+      - name: Build pg_ivm 1.16 against the selected PostgreSQL archive
+        if: ${{ always() && steps.build.outcome == 'success' && (startsWith(env.PG_VERSION, '15.') || startsWith(env.PG_VERSION, '16.') || startsWith(env.PG_VERSION, '17.') || startsWith(env.PG_VERSION, '18.')) }}
         id: pgivm_build
-        run: bash scripts/pg_ivm/build.sh "$RUNNER_TEMP/pilot" "$RUNNER_TEMP/pg_ivm"
+        run: PG_VERSION="$PG_VERSION" bash scripts/pg_ivm/build.sh "$RUNNER_TEMP/pilot" "$RUNNER_TEMP/pg_ivm"
       # profile-section: pgivm-build end
       # profile-section: core-current begin
       - name: Check launch without host shell or C library
@@ -135,7 +135,7 @@ jobs:
       - name: Verify relocated pg_ivm 1.16 archive and runtime closure in Alpine 3.22
         if: ${{ always() && steps.pgivm_build.outcome == 'success' }}
         id: pgivm_verify
-        run: bash scripts/pg_ivm/verify.sh "$RUNNER_TEMP/pilot" "$RUNNER_TEMP/pg_ivm"
+        run: PG_VERSION="$PG_VERSION" bash scripts/pg_ivm/verify.sh "$RUNNER_TEMP/pilot" "$RUNNER_TEMP/pg_ivm"
       # profile-section: pgivm-verify end
       # profile-section: core-current-report begin
       - name: Record current-OS publication case results
@@ -464,7 +464,7 @@ jobs:
       # profile-section: pgtap-report end
       # profile-section: pgivm-report begin
       - name: Record pg_ivm publication outcomes and emit archive-bound evidence
-        if: ${{ always() && startsWith(env.PG_VERSION, '18.') }}
+        if: ${{ always() && (startsWith(env.PG_VERSION, '15.') || startsWith(env.PG_VERSION, '16.') || startsWith(env.PG_VERSION, '17.') || startsWith(env.PG_VERSION, '18.')) }}
         env:
           CORE_BUILD_OUTCOME: ${{ steps.build.outcome }}
           PGIVM_BUILD_OUTCOME: ${{ steps.pgivm_build.outcome }}

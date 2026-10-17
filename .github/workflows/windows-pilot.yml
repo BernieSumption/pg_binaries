@@ -30,16 +30,48 @@ on:
       - 'tests/test_create_windows_symbols.py'
       - 'tests/test_emit_windows_pilot_records.py'
       - 'tests/test_check_pe_dependencies.py'
+      - 'tests/test_profile_change_gate.py'
+      - 'tools/profile_change_gate.py'
 
 permissions:
   contents: read
 
-concurrency:
-  group: windows-pilot-${{ github.ref }}
-  cancel-in-progress: true
-
 jobs:
+  scope:
+    runs-on: ubuntu-latest
+    outputs:
+      should_run: ${{ steps.profile_gate.outputs.should_run }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test profile-change gate
+        run: python3 -m unittest tests/test_profile_change_gate.py
+      - name: Check whether the Windows profile changed
+        id: profile_gate
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+          if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
+            echo 'should_run=true' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          before_root="$RUNNER_TEMP/profile-before"
+          if [[ ! "$BEFORE_SHA" =~ ^[0-9a-f]{40}$ ]] \
+            || ! git fetch --no-tags --depth=1 origin "$BEFORE_SHA" \
+            || ! git worktree add --detach "$before_root" "$BEFORE_SHA"; then
+            echo 'Base commit unavailable; running the platform workflow.' >&2
+            echo 'should_run=true' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          python3 tools/profile_change_gate.py \
+            --before-root "$before_root" \
+            --current-root "$GITHUB_WORKSPACE" \
+            --profile-id windows-publication-current-x86_64 >> "$GITHUB_OUTPUT"
+
   select:
+    needs: scope
+    if: ${{ needs.scope.outputs.should_run == 'true' }}
     runs-on: ubuntu-latest
     outputs:
       postgresql_version: ${{ steps.select.outputs.postgresql_version }}
