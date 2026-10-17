@@ -55,7 +55,8 @@ class MacOSLicenseTests(unittest.TestCase):
         args = [sys.executable, str(SCRIPT), str(self.root)]
         if with_manifest:
             args.append(str(self.manifest_path))
-        args.extend(["--component", "postgresql", "--version", "18.1", "--source-url", "https://example.invalid/postgresql.tar.gz"])
+        args.extend(["--component", "postgresql", "--version", "18.1", "--source-url", "https://example.invalid/postgresql.tar.gz",
+                     "--source-sha256", "b" * 64])
         return subprocess.run(args, capture_output=True, text=True)
 
     def test_collects_source_archive_license_with_pinned_identity(self):
@@ -66,6 +67,7 @@ class MacOSLicenseTests(unittest.TestCase):
         primary, dependency = inventory["components"]
         self.assertEqual(primary["component"], "postgresql")
         self.assertEqual(primary["payload_paths"], ["lib/libpq.dylib"])
+        self.assertEqual(primary["source_sha256"], "b" * 64)
         self.assertEqual(dependency["component"], "lz4")
         self.assertEqual(dependency["version"], "1.10.0")
         self.assertEqual(dependency["payload_paths"], ["lib/" + self.library.name])
@@ -146,6 +148,16 @@ class MacOSLicenseTests(unittest.TestCase):
         result = self.run_licenses()
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("require package, version", result.stderr)
+
+    def test_rejects_malformed_primary_source_digest(self):
+        result = self.run_licenses()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        result = subprocess.run([sys.executable, str(SCRIPT), str(self.root), str(self.manifest_path),
+                                 "--component", "postgresql", "--version", "18.6",
+                                 "--source-url", "https://ftp.postgresql.org/pub/source/v18.6/postgresql-18.6.tar.bz2",
+                                 "--source-sha256", "not-a-digest"], capture_output=True, text=True)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("primary source_sha256", result.stderr)
 
 
 if __name__ == "__main__":

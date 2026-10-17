@@ -78,7 +78,7 @@ mkdir -p "$package_dir/postgresql/LICENSES" "$package_dir/pgvector/lib" "$packag
 cp -R "$install_dir"/. "$package_dir/postgresql/"
 cp "$work_dir/postgresql-${pg_version}/COPYRIGHT" "$package_dir/postgresql/LICENSES/PostgreSQL.txt"
 python3 "$script_dir/bundle.py" "$package_dir/postgresql" "$architecture"
-python3 "$script_dir/licenses.py" "$package_dir/postgresql" "$source_prefix/share/pg_binaries/source-dependencies.json" --component postgresql --version "$pg_version" --source-url "$pg_source_url"
+python3 "$script_dir/licenses.py" "$package_dir/postgresql" "$source_prefix/share/pg_binaries/source-dependencies.json" --component postgresql --version "$pg_version" --source-url "$pg_source_url" --source-sha256 "$pg_source_sha256"
 builtins=$(python3 "$script_dir/../../tools/discover_builtins.py" "$package_dir/postgresql")
 
 cat > "$package_dir/postgresql/manifest.json" <<EOF
@@ -105,7 +105,7 @@ cp "$install_dir/lib/vector.dylib" "$package_dir/pgvector/lib/"
 cp "$install_dir/share/extension/vector"* "$package_dir/pgvector/share/extension/"
 cp LICENSE "$package_dir/pgvector/LICENSES/pgvector.txt"
 python3 "$script_dir/bundle.py" "$package_dir/pgvector" "$architecture"
-python3 "$script_dir/licenses.py" "$package_dir/pgvector" "$source_prefix/share/pg_binaries/source-dependencies.json" --component pgvector --version "$vector_version" --source-url "$vector_source_url"
+python3 "$script_dir/licenses.py" "$package_dir/pgvector" "$source_prefix/share/pg_binaries/source-dependencies.json" --component pgvector --version "$vector_version" --source-url "$vector_source_url" --source-sha256 "$vector_source_sha256"
 mv "$package_dir/pgvector/bundled-dependencies.json" "$package_dir/pgvector/LICENSES/pgvector-bundled-dependencies.json"
 
 cat > "$package_dir/metadata.json" <<EOF

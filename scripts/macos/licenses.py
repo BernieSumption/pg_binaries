@@ -17,6 +17,7 @@ parser.add_argument("source_manifest", nargs="?")
 parser.add_argument("--component", required=True, choices=("postgresql", "pgvector"))
 parser.add_argument("--version", required=True)
 parser.add_argument("--source-url", required=True)
+parser.add_argument("--source-sha256")
 args = parser.parse_args()
 root = pathlib.Path(args.package_root).resolve()
 licenses = root / "LICENSES"
@@ -151,6 +152,20 @@ reviewed_source = {
         "Zstandard 1.5.7 LICENSE permits BSD-3-Clause redistribution of this library-only payload with the included notice and no source delivery. https://github.com/facebook/zstd/blob/v1.5.7/LICENSE",
     ),
 }
+reviewed_primary = {
+    ("postgresql", "18.6"): (
+        "https://ftp.postgresql.org/pub/source/v18.6/postgresql-18.6.tar.bz2",
+        "555610c24d53e4316da5b7d3fc25c279d96856d5e0e23ee308c328c5fa881d9f",
+        "3d6af92ff8a4c2cdf69afb1cf44edea727922f5cd0cf8b5f72b11cdecac8fdfd",
+        "PostgreSQL 18.6 COPYRIGHT permits binary redistribution when its copyright, permission and disclaimer paragraphs accompany copies; the complete source text is retained here. It does not require source delivery. https://github.com/postgres/postgres/blob/REL_18_6/COPYRIGHT",
+    ),
+    ("pgvector", "0.8.7"): (
+        "https://github.com/pgvector/pgvector/archive/refs/tags/v0.8.7.tar.gz",
+        "cac0b10c360f05b2d521200105ba3697e773d4cd3731f5a915a7e37ebe0bea85",
+        "6bba9ebeb73e27477463b05e5ef1bf303bccbddb3db9bbc95905d351604d6a87",
+        "pgvector 0.8.7 LICENSE permits binary redistribution when its copyright, permission and disclaimer paragraphs accompany copies; the complete source text is retained here. It does not require source delivery. https://github.com/pgvector/pgvector/blob/v0.8.7/LICENSE",
+    ),
+}
 inventory = []
 
 def payload_paths(libraries):
@@ -249,8 +264,20 @@ primary_payloads = sorted(path.relative_to(root).as_posix() for directory in ("b
                           if path.is_file() and path.relative_to(root).as_posix() not in dependency_payloads)
 if not primary_payloads:
     raise SystemExit(f"no primary payload for {args.component}")
-inventory.insert(0, {"component": args.component, "version": args.version, "payload_paths": primary_payloads,
-                     "license_file": primary_license, "source_url": args.source_url,
-                     "redistribution_review": dict(pending_review)})
+primary = {"component": args.component, "version": args.version, "payload_paths": primary_payloads,
+           "license_file": primary_license, "source_url": args.source_url,
+           "redistribution_review": dict(pending_review)}
+if args.source_sha256:
+    if not re.fullmatch(r"[0-9a-f]{64}", args.source_sha256):
+        raise SystemExit("primary source_sha256 must be 64 lowercase hexadecimal digits")
+    primary["source_sha256"] = args.source_sha256
+reviewed = reviewed_primary.get((args.component, args.version))
+if reviewed is not None:
+    source_url, source_digest, license_digest, basis = reviewed
+    if (args.source_url == source_url and args.source_sha256 == source_digest
+            and hashlib.sha256((licenses / primary_license).read_bytes()).hexdigest() == license_digest):
+        primary["redistribution_review"] = {
+            "status": "resolved", "basis": basis, "source_obligation": "none"}
+inventory.insert(0, primary)
 (licenses / "inventory.json").write_text(json.dumps({"schema_version": 1, "components": inventory}, indent=2, sort_keys=True) + "\n")
 print(f"Collected {len(inventory)} dependency license texts")
