@@ -1,0 +1,41 @@
+{
+  "files": [
+    {
+      "archive": "postgis-3.6.4-postgresql-15.19-linux-arm64.tar.gz",
+      "archive_sha256": "cabfffb76e68f46bb06df80ed410f856135af0bed590017759d67cbf37ee7fc7",
+      "debug_file_path": "postgis-3.6.4-postgresql-15.19-linux-arm64/postgis/lib/postgis_topology-3.so.debug",
+      "debug_file_sha256": "97905d0669ecea5f7fbc74a29a3fb9756fadd62ccd07c40bf0e0c7ffeb9b3a38",
+      "gnu_build_id": "b4b881bedf35535bed5cde2f0476ae9820ef84d6",
+      "module_path": "postgis/lib/postgis_topology-3.so",
+      "module_sha256": "ce4ebcbb677340de6f73c96c6ec42326d97b1df9a76376c3cf38c17ec40b58bf"
+    },
+    {
+      "archive": "postgis-3.6.4-postgresql-15.19-linux-arm64.tar.gz",
+      "archive_sha256": "cabfffb76e68f46bb06df80ed410f856135af0bed590017759d67cbf37ee7fc7",
+      "debug_file_path": "postgis-3.6.4-postgresql-15.19-linux-arm64/postgis/lib/postgis-3.so.debug",
+      "debug_file_sha256": "2ebef30f00a70c9a927d0626e1788e143ea8adfe6240c656fc07e96e24d15550",
+      "gnu_build_id": "38fd6ec932debde3dde8062256161eb525dacb00",
+      "module_path": "postgis/lib/postgis-3.so",
+      "module_sha256": "d47738e54440fa55bf41cdfb64548baa61fec73eb0d1285dc55c477d5b5df030"
+    },
+    {
+      "archive": "postgis-3.6.4-postgresql-15.19-linux-arm64.tar.gz",
+      "archive_sha256": "cabfffb76e68f46bb06df80ed410f856135af0bed590017759d67cbf37ee7fc7",
+      "debug_file_path": "postgis-3.6.4-postgresql-15.19-linux-arm64/postgis/lib/postgis_sfcgal-3.so.debug",
+      "debug_file_sha256": "c2adf86890e64cff5737e27788d60159050ba3eff7904dd3cb3e74631220cb08",
+      "gnu_build_id": "c093df12e690eaae06ceb8b3e1d2f0ce5ff85281",
+      "module_path": "postgis/lib/postgis_sfcgal-3.so",
+      "module_sha256": "4874ab3f65f02bb1a557f6737400a5c0e5fdf465b8c22e93bf42785d6be7ace4"
+    },
+    {
+      "archive": "postgis-3.6.4-postgresql-15.19-linux-arm64.tar.gz",
+      "archive_sha256": "cabfffb76e68f46bb06df80ed410f856135af0bed590017759d67cbf37ee7fc7",
+      "debug_file_path": "postgis-3.6.4-postgresql-15.19-linux-arm64/postgis/lib/postgis_raster-3.so.debug",
+      "debug_file_sha256": "62ced577ae2c09a5ed6e6002eb3ec1174ef3a1a098966284f3bb4f2c0607b594",
+      "gnu_build_id": "67ab12d79e76a3c61ac0b1cbcb89d4eeb66feb55",
+      "module_path": "postgis/lib/postgis_raster-3.so",
+      "module_sha256": "4e30e0798ddea6c4798c6cbed39118b9449049c7b1c6490a22d6bcba69b70502"
+    }
+  ],
+  "schema_version": 1
+}
