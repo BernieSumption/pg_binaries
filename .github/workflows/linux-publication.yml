@@ -90,15 +90,15 @@ jobs:
         run: |
           set -euo pipefail
           archive_dir="$RUNNER_TEMP/pilot"
+          mkdir -p "$archive_dir/publication"
+          printf '{"archive-suite":"%s","diagnostics":"%s","no-host-userspace":"%s","portability":"%s"}\n' \
+            "$ARCHIVE_OUTCOME" "$DIAGNOSTICS_OUTCOME" "$NOHOST_OUTCOME" "$PORTABILITY_OUTCOME" \
+            > "$archive_dir/publication/current-steps.json"
           if [[ ! -f "$archive_dir/postgresql-$PG_VERSION-linux-$PG_ARCHITECTURE.tar.gz" || \
                 ! -f "$archive_dir/pgvector-0.8.7-postgresql-$PG_VERSION-linux-$PG_ARCHITECTURE.tar.gz" ]]; then
             echo "No current-OS record: archive bytes are unavailable"
             exit 0
           fi
-          mkdir -p "$archive_dir/publication"
-          printf '{"archive-suite":"%s","diagnostics":"%s","no-host-userspace":"%s","portability":"%s"}\n' \
-            "$ARCHIVE_OUTCOME" "$DIAGNOSTICS_OUTCOME" "$NOHOST_OUTCOME" "$PORTABILITY_OUTCOME" \
-            > "$archive_dir/publication/current-steps.json"
           image_id=$(docker image inspect pg-binaries-linux-verifier --format '{{.Id}}' 2>/dev/null || true)
           if [[ -z "$image_id" ]]; then image_id=unknown; fi
           clean=false
@@ -141,6 +141,9 @@ jobs:
           set -euo pipefail
           archive_dir="$RUNNER_TEMP/pilot"
           evidence="$RUNNER_TEMP/qemu-linux-515/evidence"
+          mkdir -p "$archive_dir/publication"
+          printf '{"archive-suite":"%s"}\n' "$MINIMUM_OUTCOME" \
+            > "$archive_dir/publication/minimum-steps.json"
           if [[ ! -f "$archive_dir/postgresql-$PG_VERSION-linux-$PG_ARCHITECTURE.tar.gz" || \
                 ! -f "$archive_dir/pgvector-0.8.7-postgresql-$PG_VERSION-linux-$PG_ARCHITECTURE.tar.gz" ]]; then
             echo "No minimum-OS record: archive bytes are unavailable"
@@ -158,9 +161,6 @@ jobs:
           fi
           grep -Fx "image_sha256=${{ matrix.guest_image_sha256 }}" \
             "$evidence/environment.txt"
-          mkdir -p "$archive_dir/publication"
-          printf '{"archive-suite":"%s"}\n' "$MINIMUM_OUTCOME" \
-            > "$archive_dir/publication/minimum-steps.json"
           clean=false
           dependencies=failure
           if [[ "$MINIMUM_OUTCOME" == success ]]; then clean=true; dependencies=success; fi
