@@ -40,24 +40,16 @@ case "$architecture" in
   arm64) platform_arch=arm64 ;;
   *) echo "Unsupported macOS architecture: $architecture" >&2; exit 1 ;;
 esac
-build_configuration="postgresql-${pg_version};pgvector-${vector_version};builder=native-macos;deployment-target=11.0;configure=icu,openssl,lz4,zstd,libxml,libxslt,zlib,uuid-e2fs,no-readline;cflags=-O2,-g;pgvector-optflags=-O2,-g;runtime=bundled-dylibs"
+build_configuration="postgresql-${pg_version};pgvector-${vector_version};builder=native-macos;deployment-target=11.0;configure=icu,openssl,lz4,zstd,libxml,libxslt,zlib,uuid-e2fs,no-readline;dependencies=pinned-upstream-source-with-homebrew-uuid;cflags=-O2,-g;pgvector-optflags=-O2,-g;runtime=bundled-dylibs"
 
-brew install icu4c openssl@3 lz4 zstd libxml2 libxslt e2fsprogs
-brew_prefixes=()
-pkgconfig_paths=()
-for formula in icu4c openssl@3 lz4 zstd libxml2 libxslt e2fsprogs; do
-  prefix=$(brew --prefix "$formula")
-  brew_prefixes+=("$prefix")
-  pkgconfig_paths+=("$prefix/lib/pkgconfig")
-done
-export PKG_CONFIG_PATH=$(IFS=:; echo "${pkgconfig_paths[*]}")
-export CPPFLAGS=""
-export LDFLAGS=" -Wl,-headerpad_max_install_names"
-for prefix in "${brew_prefixes[@]}"; do
-  CPPFLAGS+=" -I$prefix/include"
-  LDFLAGS+=" -L$prefix/lib"
-done
-export CPPFLAGS LDFLAGS
+brew install e2fsprogs
+uuid_prefix=$(brew --prefix e2fsprogs)
+source_prefix="$work_dir/dependencies"
+bash "$script_dir/build-source-dependencies.sh" "$architecture" "$source_prefix"
+export PG_MACOS_DEPENDENCY_PREFIX="$source_prefix"
+export PKG_CONFIG_PATH="$source_prefix/lib/pkgconfig:$uuid_prefix/lib/pkgconfig"
+export CPPFLAGS="-I$source_prefix/include -I$uuid_prefix/include"
+export LDFLAGS="-Wl,-headerpad_max_install_names -L$source_prefix/lib -L$uuid_prefix/lib"
 export MACOSX_DEPLOYMENT_TARGET=11.0
 
 curl -fL --retry 3 "https://ftp.postgresql.org/pub/source/v${pg_version}/postgresql-${pg_version}.tar.bz2" -o "$work_dir/postgresql.tar.bz2"
@@ -78,7 +70,7 @@ mkdir -p "$package_dir/postgresql/LICENSES" "$package_dir/pgvector/lib" "$packag
 cp -R "$install_dir"/. "$package_dir/postgresql/"
 cp "$work_dir/postgresql-${pg_version}/COPYRIGHT" "$package_dir/postgresql/LICENSES/PostgreSQL.txt"
 python3 "$script_dir/bundle.py" "$package_dir/postgresql" "$architecture"
-python3 "$script_dir/licenses.py" "$package_dir/postgresql"
+python3 "$script_dir/licenses.py" "$package_dir/postgresql" "$source_prefix/share/pg_binaries/source-dependencies.json"
 builtins=$(python3 "$script_dir/../../tools/discover_builtins.py" "$package_dir/postgresql")
 
 cat > "$package_dir/postgresql/manifest.json" <<EOF
