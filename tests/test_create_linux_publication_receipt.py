@@ -27,7 +27,7 @@ class LinuxPublicationReceiptTests(unittest.TestCase):
         (self.root / "support" / "verification-profiles.json").write_text(json.dumps({
             "schema_version": 1,
             "profiles": {self.profile_id: {
-                "scope": "publication", "platforms": ["linux-x86_64"],
+                "scope": "publication", "platforms": ["linux-arm64", "linux-x86_64"],
                 "case_ids": ["archive-suite", "diagnostics"],
                 "sources": ["profile-source.txt"],
             }},
@@ -86,6 +86,19 @@ class LinuxPublicationReceiptTests(unittest.TestCase):
         self.create(clean_system=False, dependency_check_result="failure")
         receipt = json.loads(self.receipt_path.read_text())
         self.assertEqual(receipt["case_results"], {"archive-suite": "failed", "diagnostics": "skipped"})
+
+    def test_arm64_receipt_uses_arm64_archives_and_profile_platform(self):
+        for name in ("postgresql-18.6-linux-arm64.tar.gz",
+                     "pgvector-0.8.7-postgresql-18.6-linux-arm64.tar.gz"):
+            (self.archives / name).write_bytes(name.encode())
+            digest = hashlib.sha256(name.encode()).hexdigest()
+            (self.archives / f"{name}.sha256").write_text(f"{digest}  {name}\n")
+        self.create(architecture="arm64")
+        receipt = json.loads(self.receipt_path.read_text())
+        self.assertEqual(receipt["architecture"], "arm64")
+        paths = emitter.emit(self.root, self.archives, self.receipt_path, self.base / "arm-records")
+        self.assertEqual(len(paths), 2)
+        self.assertTrue(all("linux-arm64" in path.name for path in paths))
 
     def test_rejects_case_set_mismatch_and_never_writes_receipt(self):
         self.steps.write_text(json.dumps({"archive-suite": "success", "extra": "success"}))

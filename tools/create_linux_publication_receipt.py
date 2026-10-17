@@ -45,8 +45,8 @@ def create(root, archives_dir, receipt_path, profile_id, postgresql_version,
            environ=None):
     root, archives_dir, receipt_path = Path(root), Path(archives_dir), Path(receipt_path)
     environ = os.environ if environ is None else environ
-    if architecture != "x86_64":
-        raise coverage.CoverageError("architecture must be x86_64")
+    if architecture not in {"x86_64", "arm64"}:
+        raise coverage.CoverageError("architecture must be x86_64 or arm64")
     if endpoint not in {"minimum", "current"}:
         raise coverage.CoverageError("endpoint must be minimum or current")
     if dependency_check_profile != DEPENDENCY_PROFILE:
@@ -63,13 +63,13 @@ def create(root, archives_dir, receipt_path, profile_id, postgresql_version,
             or not run_id.isdigit() or not repository or not server_url):
         raise coverage.CoverageError("GitHub Actions SHA, run ID, repository, and server URL are required")
     profile = coverage.verification_profile(root, profile_id)
-    if profile["scope"] != "publication" or "linux-x86_64" not in profile["platforms"]:
-        raise coverage.CoverageError("registered profile is not an x86_64 Linux publication profile")
+    platform = f"linux-{architecture}"
+    if profile["scope"] != "publication" or platform not in profile["platforms"]:
+        raise coverage.CoverageError("registered profile is not a Linux publication profile for this architecture")
     results = _read_steps(step_results_path, profile["case_ids"])
     version = postgresql_version
     if not re.fullmatch(r"\d+\.\d+", version):
         raise coverage.CoverageError("postgresql_version must be major.minor")
-    platform = "linux-x86_64"
     names = (f"postgresql-{version}-{platform}.tar.gz",
              f"pgvector-0.8.7-postgresql-{version}-{platform}.tar.gz")
     archive_hashes = {name: _sha256(archives_dir / name) for name in names}
@@ -120,7 +120,7 @@ def main():
     parser.add_argument("--receipt", type=Path, required=True)
     parser.add_argument("--profile-id", required=True)
     parser.add_argument("--postgresql-version", required=True)
-    parser.add_argument("--architecture", choices=("x86_64",), required=True)
+    parser.add_argument("--architecture", choices=("x86_64", "arm64"), required=True)
     parser.add_argument("--endpoint", choices=("minimum", "current"), required=True)
     parser.add_argument("--kernel-release", required=True)
     parser.add_argument("--distribution", required=True)
