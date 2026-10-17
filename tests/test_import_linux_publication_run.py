@@ -244,6 +244,81 @@ class LinuxPublicationRunImportTests(unittest.TestCase):
             importer.import_run(self.root, self.core_artifact, self.postgis_artifact,
                                 self.run_id, self.architecture)
 
+    def _core_only_artifact(self, postgresql_version):
+        artifact = Path(self.temporary.name) / f"core-{postgresql_version}"
+        archives = artifact / "pilot"
+        publication = archives / "publication"
+        records = publication / "records"
+        records.mkdir(parents=True)
+        core = archives / f"postgresql-{postgresql_version}-{self.platform}.tar.gz"
+        vector = archives / f"pgvector-{importer.VECTOR_VERSION}-postgresql-{postgresql_version}-{self.platform}.tar.gz"
+        core.write_bytes(f"core {postgresql_version}".encode())
+        vector.write_bytes(f"vector {postgresql_version}".encode())
+        for archive in (core, vector):
+            self._write_sidecar(archive)
+        profile_id = f"linux-publication-current-{self.architecture}"
+        steps = publication / "current-steps.json"
+        profile = coverage.verification_profile(self.root, profile_id)
+        steps.write_text(json.dumps({case: "success" for case in profile["case_ids"]}))
+        receipt = publication / "current-receipt.json"
+        environ = {
+            "GITHUB_SHA": "a" * 40, "GITHUB_RUN_ID": self.run_id,
+            "GITHUB_REPOSITORY": "example/repo", "GITHUB_SERVER_URL": "https://github.com",
+        }
+        core_receipts.create(
+            self.root, archives, receipt, profile_id, postgresql_version,
+            self.architecture, "current", "6.8.0-test-kernel", "Alpine Linux",
+            "3.22.6", "sha256:" + "b" * 64, "linux-runtime-v1", "success",
+            True, steps, environ=environ)
+        core_emitter.emit(self.root, archives, receipt, records)
+        report = publication / "static-analysis/core-pgvector.json"
+        report.parent.mkdir(parents=True)
+        report.write_text(json.dumps({
+            "outcome": "passed", "architecture": self.architecture,
+            "files": [{"path": "metadata.json"}],
+            "archives": [{"basename": archive.name, "sha256": self._sha(archive)}
+                         for archive in (core, vector)],
+        }))
+        return artifact
+
+    def test_imports_core_and_pgvector_for_each_selected_core_without_postgis(self):
+        for version in ("15.19", "16.15", "17.11", "18.6"):
+            with self.subTest(postgresql_version=version):
+                self.run_id = "7654321"
+                artifact = self._core_only_artifact(version)
+                retained = importer.import_run(
+                    self.root, artifact, None, self.run_id, self.architecture, version)
+                core_records = [Path(path).name for path in retained
+                                if "/support/verification/" in f"/{path}"]
+                self.assertEqual(len(core_records), 2)
+                self.assertTrue(any(name.startswith(f"postgresql-{version}-")
+                                    for name in core_records))
+                self.assertTrue(any(name.startswith(f"pgvector-{importer.VECTOR_VERSION}-postgresql-{version}-")
+                                    for name in core_records))
+                evidence = self.root / "support/evidence" / f"linux-publication-{self.run_id}"
+                if version == "18.6":
+                    evidence /= self.architecture
+                else:
+                    evidence = evidence / f"postgresql-{version}" / self.architecture
+                self.assertTrue((evidence / "current-receipt.json").is_file())
+
+    def test_postgis_artifact_is_rejected_for_non_18_6_core(self):
+        with self.assertRaisesRegex(coverage.CoverageError, "only for PostgreSQL 18.6"):
+            importer.import_run(self.root, self.core_artifact, self.postgis_artifact,
+                                self.run_id, self.architecture, "17.11")
+
+    def test_rejects_unselected_postgresql_minor(self):
+        with self.assertRaisesRegex(coverage.CoverageError, "18.5.*not selected"):
+            importer.import_run(self.root, self.core_artifact, None,
+                                self.run_id, self.architecture, "18.5")
+
+    def test_18_6_core_import_can_omit_postgis_artifact(self):
+        self.run_id = "7654321"
+        artifact = self._core_only_artifact("18.6")
+        retained = importer.import_run(
+            self.root, artifact, None, self.run_id, self.architecture, "18.6")
+        self.assertEqual(sum("/support/verification/" in f"/{path}" for path in retained), 2)
+
 
 if __name__ == "__main__":
     unittest.main()

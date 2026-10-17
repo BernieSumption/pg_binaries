@@ -13,7 +13,8 @@ import coverage
 
 
 ARCHITECTURES = {"x86_64", "arm64"}
-PG_VERSION = "18.6"
+DEFAULT_PG_VERSION = "18.6"
+POSTGIS_PILOT_PG_VERSION = "18.6"
 VECTOR_VERSION = "0.8.7"
 POSTGIS_VERSION = "3.6.4"
 
@@ -68,7 +69,8 @@ def _retain(source, destination):
 
 
 def _validate_receipt(receipt_path, profile_id, profile, endpoint, architecture,
-                      run_id, steps, expected_archives, digests, core_name=None):
+                      run_id, steps, expected_archives, digests, postgresql_version,
+                      core_name=None):
     if not Path(receipt_path).is_file():
         return None
     receipt = coverage.load_json(receipt_path)
@@ -106,11 +108,11 @@ def _validate_receipt(receipt_path, profile_id, profile, endpoint, architecture,
             raise coverage.CoverageError(f"{receipt_path}: PostGIS must not declare extension prerequisites")
         if receipt.get("project") != "PostGIS" or receipt.get("version") != POSTGIS_VERSION:
             raise coverage.CoverageError(f"{receipt_path}: expected PostGIS 3.6.4")
-        if receipt.get("postgresql_version") != PG_VERSION:
+        if receipt.get("postgresql_version") != postgresql_version:
             raise coverage.CoverageError(f"{receipt_path}: PostgreSQL build version mismatch")
         if receipt.get("extension_archive") not in expected_archives:
             raise coverage.CoverageError(f"{receipt_path}: extension archive claim is invalid")
-    elif receipt.get("postgresql_version") != PG_VERSION:
+    elif receipt.get("postgresql_version") != postgresql_version:
         raise coverage.CoverageError(f"{receipt_path}: PostgreSQL version mismatch")
     return receipt
 
@@ -122,7 +124,7 @@ def _record_files(directory, run_id):
 
 
 def _validate_record(path, support, root, profile_id, profile, endpoint, platform,
-                     run_id, steps, digests, core_name, kind, receipt):
+                     run_id, steps, digests, core_name, kind, receipt, postgresql_version):
     record = coverage.load_json(path)
     coverage.validate_verification_record(record, support, root)
     results = _case_results(steps)
@@ -130,7 +132,7 @@ def _validate_record(path, support, root, profile_id, profile, endpoint, platfor
                 and record.get("profile_revision") in profile["compatible_profile_revisions"]
                 and record.get("scope") == "publication"
                 and record.get("platform") == platform
-                and record.get("postgresql_version") == PG_VERSION
+                and record.get("postgresql_version") == postgresql_version
                 and record.get("environment", {}).get("endpoint") == endpoint
                 and record.get("test_cases") == profile["case_ids"]
                 and record.get("case_results") == results
@@ -143,26 +145,26 @@ def _validate_record(path, support, root, profile_id, profile, endpoint, platfor
     if kind == "core":
         component = record.get("component")
         names = {"postgresql": core_name,
-                 "vector": f"pgvector-{VECTOR_VERSION}-postgresql-{PG_VERSION}-{platform}.tar.gz"}
-        if component not in names or record.get("version") != (PG_VERSION if component == "postgresql" else VECTOR_VERSION):
+                 "vector": f"pgvector-{VECTOR_VERSION}-postgresql-{postgresql_version}-{platform}.tar.gz"}
+        if component not in names or record.get("version") != (postgresql_version if component == "postgresql" else VECTOR_VERSION):
             raise coverage.CoverageError(f"{path}: unexpected PostgreSQL publication component")
         archive_name = names[component]
         if record.get("sha256") != digests.get(archive_name):
             raise coverage.CoverageError(f"{path}: archive checksum does not match {archive_name}")
         if component == "vector" and record.get("assembled_core") != {
-                "archive": core_name, "sha256": digests.get(core_name), "version": PG_VERSION}:
+                "archive": core_name, "sha256": digests.get(core_name), "version": postgresql_version}:
             raise coverage.CoverageError(f"{path}: assembled core checksum mismatch")
     else:
         project = support["extensions"]["PostGIS"]
         expected = set(project["sql_names"])
         component = record.get("component")
-        postgis_name = f"postgis-{POSTGIS_VERSION}-postgresql-{PG_VERSION}-{platform}.tar.gz"
+        postgis_name = f"postgis-{POSTGIS_VERSION}-postgresql-{postgresql_version}-{platform}.tar.gz"
         if (component not in expected or record.get("project") != "PostGIS"
                 or record.get("version") != POSTGIS_VERSION
                 or record.get("sha256") != digests.get(postgis_name)):
             raise coverage.CoverageError(f"{path}: PostGIS archive or component claim mismatch")
         if record.get("assembled_core") != {
-                "archive": core_name, "sha256": digests.get(core_name), "version": PG_VERSION}:
+                "archive": core_name, "sha256": digests.get(core_name), "version": postgresql_version}:
             raise coverage.CoverageError(f"{path}: assembled core checksum mismatch")
         if record.get("prerequisite_archives") != []:
             raise coverage.CoverageError(f"{path}: unexpected PostGIS prerequisites")
@@ -179,10 +181,10 @@ def _validate_record(path, support, root, profile_id, profile, endpoint, platfor
     if any(environment.get(key) != value for key, value in receipt_environment.items()):
         raise coverage.CoverageError(f"{path}: record environment differs from its receipt")
     if kind == "core":
-        expected_stem = (f"postgresql-{PG_VERSION}" if record["component"] == "postgresql"
-                         else f"pgvector-{VECTOR_VERSION}-postgresql-{PG_VERSION}")
+        expected_stem = (f"postgresql-{postgresql_version}" if record["component"] == "postgresql"
+                         else f"pgvector-{VECTOR_VERSION}-postgresql-{postgresql_version}")
     else:
-        expected_stem = f"{record['component']}-{POSTGIS_VERSION}-postgresql-{PG_VERSION}"
+        expected_stem = f"{record['component']}-{POSTGIS_VERSION}-postgresql-{postgresql_version}"
     if path.name != f"{expected_stem}-{platform}-{endpoint}-{run_id}.json":
         raise coverage.CoverageError(f"{path}: filename does not match record identity")
     return record
@@ -231,26 +233,53 @@ def _static_analysis(path, architecture, archives, required):
     return path
 
 
-def import_run(root, core_artifact, postgis_artifact, run_id, architecture):
+def _evidence_target(root, project_name, run_id, architecture, postgresql_version):
+    target = Path(root) / "support/evidence" / (
+        f"linux-publication-{run_id}" if project_name == "core"
+        else f"postgis-publication-{run_id}")
+    if project_name == "core" and postgresql_version != POSTGIS_PILOT_PG_VERSION:
+        target /= f"postgresql-{postgresql_version}"
+    return target / architecture
+
+
+def _selected_postgresql_versions(root):
+    root = Path(root)
+    support = coverage.load_json(root / "support.json")
+    snapshot = coverage.load_json(root / "support/postgresql-releases.json")
+    return set(coverage.release_snapshot(snapshot, support))
+
+
+def import_run(root, core_artifact, postgis_artifact, run_id, architecture,
+               postgresql_version=DEFAULT_PG_VERSION):
     """Validate and retain records, receipts, and compact evidence for a run."""
-    root, core_artifact, postgis_artifact = map(Path, (root, core_artifact, postgis_artifact))
+    root, core_artifact = Path(root), Path(core_artifact)
+    postgis_artifact = Path(postgis_artifact) if postgis_artifact is not None else None
     run_id = str(run_id)
     if not re.fullmatch(r"\d+", run_id):
         raise coverage.CoverageError("run_id must contain digits only")
     if architecture not in ARCHITECTURES:
         raise coverage.CoverageError("architecture must be x86_64 or arm64")
+    selected_versions = _selected_postgresql_versions(root)
+    if postgresql_version not in selected_versions:
+        raise coverage.CoverageError(
+            f"postgresql_version {postgresql_version!r} is not selected; choose one of "
+            f"{', '.join(sorted(selected_versions))}")
+    if postgis_artifact is not None and postgresql_version != POSTGIS_PILOT_PG_VERSION:
+        raise coverage.CoverageError("PostGIS publication evidence is currently supported only for PostgreSQL 18.6")
     platform = f"linux-{architecture}"
     core_dir = core_artifact / "pilot"
     core_publication = core_dir / "publication"
-    postgis_dir = postgis_artifact / "postgis"
-    postgis_publication = postgis_artifact / "postgis-publication"
+    postgis_dir = postgis_artifact / "postgis" if postgis_artifact is not None else None
+    postgis_publication = (postgis_artifact / "postgis-publication"
+                           if postgis_artifact is not None else None)
     core_records_dir = core_publication / "records"
-    postgis_records_dir = postgis_publication / "records"
-    core_name = f"postgresql-{PG_VERSION}-{platform}.tar.gz"
-    vector_name = f"pgvector-{VECTOR_VERSION}-postgresql-{PG_VERSION}-{platform}.tar.gz"
-    postgis_name = f"postgis-{POSTGIS_VERSION}-postgresql-{PG_VERSION}-{platform}.tar.gz"
-    paths = {"core": core_dir / core_name, "vector": core_dir / vector_name,
-             "postgis": postgis_dir / postgis_name}
+    postgis_records_dir = postgis_publication / "records" if postgis_publication else None
+    core_name = f"postgresql-{postgresql_version}-{platform}.tar.gz"
+    vector_name = f"pgvector-{VECTOR_VERSION}-postgresql-{postgresql_version}-{platform}.tar.gz"
+    postgis_name = f"postgis-{POSTGIS_VERSION}-postgresql-{postgresql_version}-{platform}.tar.gz"
+    paths = {"core": core_dir / core_name, "vector": core_dir / vector_name}
+    if postgis_dir is not None:
+        paths["postgis"] = postgis_dir / postgis_name
     digests = {}
     for name, path in paths.items():
         if path.is_file():
@@ -258,10 +287,14 @@ def import_run(root, core_artifact, postgis_artifact, run_id, architecture):
             _sidecar(path, digests[path.name])
 
     profiles = {}
-    steps_by_project = {"core": {}, "postgis": {}}
-    receipts = {"core": {}, "postgis": {}}
-    for project_name, publication_dir in (("core", core_publication),
-                                          ("postgis", postgis_publication)):
+    steps_by_project = {"core": {}}
+    receipts = {"core": {}}
+    projects = [("core", core_publication)]
+    if postgis_publication is not None:
+        steps_by_project["postgis"] = {}
+        receipts["postgis"] = {}
+        projects.append(("postgis", postgis_publication))
+    for project_name, publication_dir in projects:
         profile_prefix = "linux-publication" if project_name == "core" else "postgis-publication"
         for endpoint in ("current",):
             profile_id = f"{profile_prefix}-{endpoint}-{architecture}"
@@ -279,19 +312,17 @@ def import_run(root, core_artifact, postgis_artifact, run_id, architecture):
             receipts[project_name][endpoint] = _validate_receipt(
                 receipt_path, profile_id, profile, endpoint, architecture, run_id,
                 steps, expected, available_digests,
-                core_name if project_name == "postgis" else None)
+                postgresql_version, core_name if project_name == "postgis" else None)
 
     has_records = (_record_files(core_records_dir, run_id)
-                   or _record_files(postgis_records_dir, run_id))
+                   or (postgis_records_dir is not None and _record_files(postgis_records_dir, run_id)))
     has_receipts = any(receipt is not None for group in receipts.values()
                        for receipt in group.values())
     if not all(path.is_file() for path in paths.values()) and not has_records and not has_receipts:
         retained = []
-        for project_name, publication_dir in (("core", core_publication),
-                                              ("postgis", postgis_publication)):
-            target = root / "support/evidence" / (
-                f"linux-publication-{run_id}" if project_name == "core"
-                else f"postgis-publication-{run_id}") / architecture
+        for project_name, publication_dir in projects:
+            target = _evidence_target(root, project_name, run_id, architecture,
+                                      postgresql_version)
             for endpoint in ("current",):
                 source = publication_dir / f"{endpoint}-steps.json"
                 _retain(source, target / source.name)
@@ -300,8 +331,10 @@ def import_run(root, core_artifact, postgis_artifact, run_id, architecture):
 
     support = coverage.load_json(root / "support.json")
     records = {"core": {}, "postgis": {}}
-    for project_name, directory in (("core", core_records_dir),
-                                    ("postgis", postgis_records_dir)):
+    record_dirs = [("core", core_records_dir)]
+    if postgis_records_dir is not None:
+        record_dirs.append(("postgis", postgis_records_dir))
+    for project_name, directory in record_dirs:
         files = _record_files(directory, run_id)
         for path in files:
             name = path.name
@@ -319,20 +352,22 @@ def import_run(root, core_artifact, postgis_artifact, run_id, architecture):
                                       profiles[project_name, endpoint], endpoint,
                                       platform, run_id, steps_by_project[project_name][endpoint][1],
                                       digests, core_name, project_name,
-                                      receipts[project_name][endpoint])
+                                      receipts[project_name][endpoint], postgresql_version)
             receipt = receipts[project_name][endpoint]
             if record.get("test_revision") != receipt.get("test_revision"):
                 raise coverage.CoverageError(f"{path}: record test revision differs from receipt")
             records[project_name].setdefault(endpoint, []).append((path, record))
 
     # Existing receipts imply that both archives named by the receipt were emitted.
-    for project_name, names in (("core", [core_name, vector_name]),
-                                ("postgis", [postgis_name, core_name])):
+    expected_project_archives = [("core", [core_name, vector_name])]
+    if postgis_artifact is not None:
+        expected_project_archives.append(("postgis", [postgis_name, core_name]))
+    for project_name, names in expected_project_archives:
         for endpoint, receipt in receipts[project_name].items():
             if receipt is not None and any(name not in digests for name in names):
                 raise coverage.CoverageError(f"{project_name} {endpoint} receipt exists but a referenced archive is missing")
 
-    for project_name in ("core", "postgis"):
+    for project_name, _ in projects:
         for endpoint in ("current",):
             if receipts[project_name][endpoint] is None and records[project_name].get(endpoint):
                 raise coverage.CoverageError(f"{project_name} records require a matching receipt")
@@ -347,9 +382,10 @@ def import_run(root, core_artifact, postgis_artifact, run_id, architecture):
                     raise coverage.CoverageError(f"core {endpoint} records do not cover PostgreSQL and pgvector")
 
     analysis = {}
-    for project_name, relative, names in (
-            ("core", "static-analysis/core-pgvector.json", [core_name, vector_name]),
-            ("postgis", "static-analysis/postgis.json", [core_name, postgis_name])):
+    analysis_specs = [("core", "static-analysis/core-pgvector.json", [core_name, vector_name])]
+    if postgis_artifact is not None:
+        analysis_specs.append(("postgis", "static-analysis/postgis.json", [core_name, postgis_name]))
+    for project_name, relative, names in analysis_specs:
         receipt = receipts[project_name]["current"]
         passed = ((receipt is not None and all(value == "passed" for value in receipt["case_results"].values()))
                   or any(record.get("outcome") == "passed"
@@ -360,12 +396,10 @@ def import_run(root, core_artifact, postgis_artifact, run_id, architecture):
             {name: digests[name] for name in names if name in digests}, passed)
 
     retained = []
-    targets = {
-        "core": root / "support/evidence" / f"linux-publication-{run_id}" / architecture,
-        "postgis": root / "support/evidence" / f"postgis-publication-{run_id}" / architecture,
-    }
-    for project_name, publication_dir in (("core", core_publication),
-                                          ("postgis", postgis_publication)):
+    targets = {project_name: _evidence_target(root, project_name, run_id, architecture,
+                                              postgresql_version)
+               for project_name, _ in projects}
+    for project_name, publication_dir in projects:
         target = targets[project_name]
         for endpoint in ("current",):
             steps_path, _ = steps_by_project[project_name][endpoint]
@@ -401,14 +435,16 @@ def main():
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[1])
     parser.add_argument("--core-artifact", type=Path, required=True,
                         help="extracted linux-publication evidence artifact root")
-    parser.add_argument("--postgis-artifact", type=Path, required=True,
+    parser.add_argument("--postgis-artifact", type=Path,
                         help="extracted postgis-publication evidence artifact root")
     parser.add_argument("--run-id", required=True)
     parser.add_argument("--architecture", choices=sorted(ARCHITECTURES), required=True)
+    parser.add_argument("--postgresql-version", default=DEFAULT_PG_VERSION,
+                        help="selected exact PostgreSQL version (defaults to the current 18.6 pilot)")
     args = parser.parse_args()
     try:
         paths = import_run(args.root, args.core_artifact, args.postgis_artifact,
-                           args.run_id, args.architecture)
+                           args.run_id, args.architecture, args.postgresql_version)
         print("\n".join(paths))
         return 0
     except (coverage.CoverageError, OSError, ValueError, TypeError) as exc:
