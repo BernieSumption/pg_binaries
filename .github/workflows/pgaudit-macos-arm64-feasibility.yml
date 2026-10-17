@@ -2,6 +2,10 @@ name: pgAudit macOS arm64 feasibility
 
 on:
   workflow_dispatch:
+  push:
+    branches: [spike]
+    paths:
+      - .github/workflows/pgaudit-macos-arm64-feasibility.yml
 
 permissions:
   actions: read
