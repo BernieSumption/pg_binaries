@@ -36,6 +36,7 @@
     "PostGIS TIGER Geocoder": {
       "sql_names": ["postgis_tiger_geocoder"],
       "requires": ["PostGIS"],
+      "requires_versions": {"PostGIS": {"minimum_version": "3.6"}},
       "versions": {
         "2025.2": { "postgresql_minimum_major": 16, "postgresql_maximum_major": 18 }
       }

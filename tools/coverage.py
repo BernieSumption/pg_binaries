@@ -125,6 +125,31 @@ def validate_support(support):
                 or len(names) != len(set(names)) or declared_sql_names.intersection(names)):
             raise CoverageError(f"support extension {project}: duplicate or invalid SQL extension name")
         declared_sql_names.update(names)
+        required_projects = ext.get("requires", [])
+        if (not isinstance(required_projects, list)
+                or any(not isinstance(name, str) or not name for name in required_projects)
+                or len(required_projects) != len(set(required_projects))
+                or any(name not in extensions for name in required_projects)):
+            raise CoverageError(f"support extension {project}: requires must list declared projects uniquely")
+        required_versions = ext.get("requires_versions", {})
+        if (not isinstance(required_versions, dict)
+                or any(name not in required_projects for name in required_versions)):
+            raise CoverageError(f"support extension {project}: requires_versions keys must name required projects")
+        for required_project, constraint in required_versions.items():
+            if (not isinstance(constraint, dict) or set(constraint) != {"minimum_version"}
+                    or not isinstance(constraint.get("minimum_version"), str)):
+                raise CoverageError(
+                    f"support extension {project}: {required_project} requires a minimum_version constraint")
+            version_parts(constraint["minimum_version"],
+                          f"support extension {project} {required_project} minimum_version")
+            eligible = support["extensions"][required_project].get("versions", {})
+            if not any(version_parts(candidate, f"support extension {required_project} version")
+                       >= version_parts(constraint["minimum_version"],
+                                        f"support extension {project} {required_project} minimum_version")
+                       for candidate in eligible):
+                raise CoverageError(
+                    f"support extension {project}: no declared {required_project} version meets minimum "
+                    f"{constraint['minimum_version']}")
         versions = ext.get("versions")
         if not isinstance(versions, dict) or not versions:
             raise CoverageError(f"support extension {project} must declare versions")
@@ -139,6 +164,15 @@ def validate_support(support):
                     or any(not isinstance(name, str) or name not in support["os_support"] for name in systems)
                     or len(systems) != len(set(systems))):
                 raise CoverageError(f"support extension {project} {version}: invalid operating_systems")
+
+
+def prerequisite_version_allowed(support, project, prerequisite, version):
+    """Return whether a prerequisite release meets the consuming project's declared constraint."""
+    constraint = (support.get("extensions", {}).get(project, {})
+                  .get("requires_versions", {}).get(prerequisite, {}))
+    minimum = constraint.get("minimum_version")
+    return minimum is None or version_parts(version, f"{prerequisite} version") >= version_parts(
+        minimum, f"{project} prerequisite minimum_version")
 
 
 def validate_extension_policy(root, support):
@@ -461,9 +495,12 @@ def validate_verification_record(data, support, root, label="verification record
                 f"{label}: publication extension evidence requires assembled_core with canonical archive, version and SHA-256")
         project = data.get("project")
         selected = support.get("extensions", {}).get(project)
+        selected_project = project
         if selected is None:
-            selected = next((details for candidate, details in support["extensions"].items()
-                             if data.get("component") in details.get("sql_names", [])), None)
+            selected_project, selected = next(((candidate, details)
+                                               for candidate, details in support["extensions"].items()
+                                               if data.get("component") in details.get("sql_names", [])),
+                                              (None, None))
         if not isinstance(selected, dict):
             raise CoverageError(f"{label}: publication extension evidence names an undeclared project")
         if project is not None and support["extensions"].get(project) is not selected:
@@ -498,7 +535,15 @@ def validate_verification_record(data, support, root, label="verification record
                     target_covers_pg = target == pg_version
             canonical = (isinstance(prereq_version, str)
                          and prereq_version in support["extensions"].get(required_project, {}).get("versions", {})
+                         and prerequisite_version_allowed(support, selected_project, required_project, prereq_version)
                          and target_covers_pg)
+            if (isinstance(prereq_version, str)
+                    and prereq_version in support["extensions"].get(required_project, {}).get("versions", {})
+                    and not prerequisite_version_allowed(support, selected_project, required_project, prereq_version)):
+                minimum = (support["extensions"][selected_project].get("requires_versions", {})
+                           .get(required_project, {}).get("minimum_version"))
+                raise CoverageError(
+                    f"{label}: prerequisite {required_project} {prereq_version} does not meet minimum {minimum}")
             if (not canonical or required_project in seen_prerequisites
                     or not isinstance(checksum, str) or not SHA256.fullmatch(checksum)):
                 raise CoverageError(f"{label}: prerequisite archive reference is invalid for {required_project}")
@@ -546,6 +591,7 @@ def expected_prerequisite_archives(support, extension_downloads, project, pg_ver
         for sql_name in support["extensions"][prerequisite]["sql_names"]:
             matches = [(key, download) for key, download in extension_downloads.items()
                        if key[0] == sql_name and key[4] == platform
+                       and prerequisite_version_allowed(support, project, prerequisite, key[1])
                        and version_parts(key[2], "prerequisite range") <= version_parts(pg_version, "target")
                        <= version_parts(key[3], "prerequisite range")]
             if len(matches) != 1:

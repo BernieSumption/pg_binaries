@@ -22,7 +22,8 @@ class CoverageTests(unittest.TestCase):
         self.support = {
             "schema_version": 1,
             "postgresql": {"minimum_major": 15, "stable_release_cutoff": "2025-09-25"},
-            "os_support": {"macos": {}, "windows": {}, "linux": {}},
+            "os_support": {name: {"minimum_version": version} for name, version in
+                           (("macos", "11.0"), ("windows", "10.0"), ("linux", "5.15"))},
             "architectures": ["x86_64", "arm64"],
             "platform_architectures": {"macos": ["x86_64", "arm64"], "windows": ["x86_64"], "linux": ["x86_64", "arm64"]},
             "extensions": {"Example": {"sql_names": ["example"], "versions": {
@@ -313,6 +314,84 @@ class CoverageTests(unittest.TestCase):
         with self.assertRaises(coverage.CoverageError):
             coverage.validate_support(duplicate)
 
+    def test_support_validates_required_project_version_constraints(self):
+        support = json.loads(json.dumps(self.support))
+        support["extensions"] = {
+            "PostGIS": {"sql_names": ["postgis"], "requires": [], "versions": {"3.5.7": {}, "3.6.4": {}}},
+            "TIGER": {"sql_names": ["tiger"], "requires": ["PostGIS"],
+                      "requires_versions": {"PostGIS": {"minimum_version": "3.6"}},
+                      "versions": {"2025.2": {}}},
+        }
+        coverage.validate_support(support)
+        for invalid in (
+                {"PostGIS": {"minimum_version": "3.x"}},
+                {"PostGIS": {"minimum_version": "9.0"}},
+                {"PostGIS": {"minimum_version": "3.6", "maximum_version": "3.8"}},
+                {"Unrequired": {"minimum_version": "3.6"}},
+        ):
+            with self.subTest(invalid=invalid):
+                bad = json.loads(json.dumps(support))
+                bad["extensions"]["TIGER"]["requires_versions"] = invalid
+                with self.assertRaises(coverage.CoverageError):
+                    coverage.validate_support(bad)
+
+    def test_prerequisite_archive_resolution_applies_minimum_version(self):
+        support = {
+            "extensions": {
+                "PostGIS": {"sql_names": ["postgis", "postgis_raster"], "versions": {"3.5.7": {}, "3.6.4": {}}},
+                "TIGER": {"sql_names": ["tiger"], "requires": ["PostGIS"],
+                          "requires_versions": {"PostGIS": {"minimum_version": "3.6"}},
+                          "versions": {"2025.2": {}}},
+            },
+        }
+        downloads = {}
+        for name in ("postgis", "postgis_raster"):
+            for version in ("3.5.7", "3.6.4"):
+                key = (name, version, "18.6", "18.6", "linux-x86_64")
+                downloads[key] = {"url": f"https://example.test/postgis-{version}.tar.gz",
+                                  "sha256": ("a" if version == "3.5.7" else "b") * 64}
+        result = coverage.expected_prerequisite_archives(support, downloads, "TIGER", "18.6", "linux-x86_64")
+        self.assertEqual(result[0]["version"], "3.6.4")
+        only_old = {key: value for key, value in downloads.items() if key[1] == "3.5.7"}
+        self.assertIsNone(coverage.expected_prerequisite_archives(
+            support, only_old, "TIGER", "18.6", "linux-x86_64"))
+
+    def test_verification_record_rejects_old_prerequisite_archive_version(self):
+        support = {
+            "schema_version": 1, "postgresql": {"minimum_major": 15, "stable_release_cutoff": "2025-09-25"},
+            "os_support": {name: {"minimum_version": version} for name, version in
+                           (("macos", "11.0"), ("windows", "10.0"), ("linux", "5.15"))},
+            "architectures": ["x86_64", "arm64"],
+            "platform_architectures": {"macos": ["x86_64", "arm64"], "windows": ["x86_64"],
+                                        "linux": ["x86_64", "arm64"]},
+            "extensions": {
+                "PostGIS": {"sql_names": ["postgis"], "requires": [], "versions": {"3.5.7": {}, "3.6.4": {}}},
+                "PostGIS TIGER Geocoder": {"sql_names": ["postgis_tiger_geocoder"], "requires": ["PostGIS"],
+                                           "requires_versions": {"PostGIS": {"minimum_version": "3.6"}},
+                                           "versions": {"2025.2": {"postgresql_minimum_major": 16,
+                                                                   "postgresql_maximum_major": 18}}},
+            },
+        }
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            profile = self.add_profile(root, scope="publication", platforms=["linux-x86_64"],
+                                       case_ids=["case-a"])
+            record = {"schema_version": 2, "outcome": "passed", "sha256": "a" * 64,
+                      "component": "postgis_tiger_geocoder", "project": "PostGIS TIGER Geocoder",
+                      "version": "2025.2", "platform": "linux-x86_64", "postgresql_version": "18.6",
+                      "test_revision": "b" * 40, "test_cases": ["case-a"],
+                      "case_results": {"case-a": "passed"}, "scope": "publication",
+                      "profile_id": profile["profile_id"], "profile_revision": profile["profile_revision"],
+                      "assembled_core": {"archive": "postgresql-18.6-linux-x86_64.tar.gz",
+                                         "version": "18.6", "sha256": "c" * 64},
+                      "prerequisite_archives": [{"project": "PostGIS",
+                          "archive": "postgis-3.5.7-postgresql-18.6-linux-x86_64.tar.gz",
+                          "version": "3.5.7", "sha256": "d" * 64}],
+                      "environment": {"os": "linux", "architecture": "x86_64", "os_version": "5.15",
+                                      "clean_system": True, "endpoint": "minimum", "image_id": "test-image",
+                                      "dependency_check_profile": "test", "dependency_checks_passed": True}}
+            with self.assertRaisesRegex(coverage.CoverageError, "does not meet minimum 3.6"):
+                coverage.validate_verification_record(record, support, root)
     def test_extension_policy_includes_must_match_support_projects(self):
         with tempfile.TemporaryDirectory() as temporary:
             policy_dir = Path(temporary) / "policies"

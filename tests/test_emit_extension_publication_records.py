@@ -173,6 +173,7 @@ class ExtensionPublicationRecordTests(unittest.TestCase):
     def test_no_prerequisite_project_keeps_existing_record_behavior(self):
         support = json.loads((self.root / "support.json").read_text())
         support["extensions"]["PostGIS TIGER Geocoder"]["requires"] = []
+        support["extensions"]["PostGIS TIGER Geocoder"].pop("requires_versions", None)
         (self.root / "support.json").write_text(json.dumps(support))
         self.metadata["requires"] = []
         self._write_extension()
