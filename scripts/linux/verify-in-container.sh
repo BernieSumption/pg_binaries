@@ -135,7 +135,8 @@ done < <(find "$extroot" -mindepth 1 -print0)
 cp -a "$extroot/." "$pgroot/"
 ' _ "$pgroot" "$extroot"
 test -s "$pgroot/LICENSES/pgvector.txt"
-python3 /usr/local/bin/check-elf-dependencies "$pgroot"
+python3 /usr/local/bin/check-elf-dependencies "$pgroot" --architecture "$architecture" \
+  --archive "/out/$pg" --archive "/out/$vector" --report /analysis/core-pgvector.json
 test "$(/tmp/first/postgresql/bin/postgres --version)" = "postgres (PostgreSQL) $pg_version"
 mkdir -p /tmp/first-data /tmp/first-socket
 chown postgres:postgres /tmp/first-data /tmp/first-socket

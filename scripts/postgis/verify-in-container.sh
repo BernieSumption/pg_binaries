@@ -106,7 +106,9 @@ done < <(find "$extroot" -mindepth 1 -print0)
 cp -a "$extroot/." "$pgroot/"
 test -s "$extroot/LICENSES/postgis/proj-data.copyright"
 test -s "$extroot/LICENSES/postgis/gdal-data.copyright"
-python3 /usr/local/bin/check-elf-dependencies "$pgroot"
+python3 /usr/local/bin/check-elf-dependencies "$pgroot" --architecture "$architecture" \
+  --archive "/input/$pg_archive" --archive "/out/$postgis_archive" \
+  --report /analysis/postgis.json
 export PROJ_LIB="$pgroot/share/proj" PROJ_DATA="$pgroot/share/proj" GDAL_DATA="$pgroot/share/gdal"
 useradd -m postgres
 chown postgres:postgres /tmp/data /tmp/socket

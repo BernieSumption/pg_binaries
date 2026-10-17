@@ -66,7 +66,9 @@ pgroot=/tmp/install/postgresql
 test -s "$pgroot/share/extension/postgis_tiger_geocoder.control"
 test -s "$pgroot/share/extension/postgis_tiger_geocoder--2025.2.sql"
 test "$("$pgroot/bin/pg_config" --sharedir)" = "$pgroot/share"
-python3 /usr/local/bin/check-elf-dependencies "$pgroot"
+python3 /usr/local/bin/check-elf-dependencies "$pgroot" --architecture "$architecture" \
+  --archive "/core/$core_archive" --archive "/postgis/$postgis_archive" \
+  --archive "/tiger/$tiger_archive" --report /analysis/tiger.json
 export PROJ_LIB="$pgroot/share/proj" PROJ_DATA="$pgroot/share/proj" GDAL_DATA="$pgroot/share/gdal"
 useradd -m postgres
 chown postgres:postgres /tmp/data /tmp/socket

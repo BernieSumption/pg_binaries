@@ -55,6 +55,31 @@ def _copy(source, destination):
     shutil.copyfile(source, destination)
 
 
+def _static_analysis(path, architecture, archives, required):
+    if not path.is_file():
+        if required:
+            raise coverage.CoverageError(f"{path}: passed publication requires a static-analysis report")
+        return None
+    report = coverage.load_json(path)
+    if not required and isinstance(report, dict) and report.get("outcome") == "failed":
+        return None
+    claims = report.get("archives") if isinstance(report, dict) else None
+    if (not isinstance(report, dict) or report.get("outcome") != "passed"
+            or report.get("architecture") != architecture
+            or not isinstance(report.get("files"), list) or not report["files"]
+            or any(not isinstance(item, dict) or not isinstance(item.get("path"), str)
+                   or not item["path"] for item in report["files"])
+            or not isinstance(claims, list)
+            or any(not isinstance(item, dict) or set(item) != {"basename", "sha256"}
+                   or not isinstance(item["basename"], str)
+                   or not re.fullmatch(r"[0-9a-f]{64}", str(item["sha256"])) for item in claims)):
+        raise coverage.CoverageError(f"{path}: invalid static-analysis report")
+    actual = {item["basename"]: item["sha256"] for item in claims}
+    if len(actual) != len(claims) or actual != archives:
+        raise coverage.CoverageError(f"{path}: static-analysis archives do not match publication archives")
+    return path
+
+
 def _retain_steps(root, run_id, architecture, step_sources):
     target = root / "support/evidence" / f"tiger-publication-{run_id}" / architecture
     copies = [(source, target / source.name) for source in step_sources]
@@ -135,6 +160,15 @@ def import_run(root, core_artifact, postgis_artifact, tiger_artifact, run_id, ar
         digests[path.name] = _sha256(path)
         _sidecar(path, digests[path.name])
 
+    report_path = tiger_dir / "static-analysis/tiger.json"
+    passed = any(data.get("receipt", {}).get("case_results")
+                 and all(value == "passed" for value in data["receipt"]["case_results"].values())
+                 for data in endpoint_data.values()) or any(
+                     coverage.load_json(path).get("outcome") == "passed"
+                     for path in records_dir.glob(f"*-{run_id}.json") if path.is_file())
+    report = _static_analysis(report_path, architecture,
+                              digests, passed)
+
     support = coverage.load_json(root / "support.json")
     for endpoint, data in endpoint_data.items():
         profile_id = data["profile_id"]
@@ -188,6 +222,8 @@ def import_run(root, core_artifact, postgis_artifact, tiger_artifact, run_id, ar
         copies.append((source, evidence_target / source.name))
     for source in record_sources:
         copies.append((source, verification_target / source.name))
+    if report is not None:
+        copies.append((report, evidence_target / "static-analysis" / report.name))
     for source, destination in copies:
         if destination.exists() and destination.read_bytes() != source.read_bytes():
             raise coverage.CoverageError(f"refusing to replace retained evidence {destination}")

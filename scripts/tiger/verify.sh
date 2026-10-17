@@ -14,6 +14,8 @@ repo=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 core=$(cd "$core" && pwd)
 postgis=$(cd "$postgis" && pwd)
 tiger=$(cd "$tiger" && pwd)
+mkdir -p "$tiger/static-analysis"
 docker run --rm --platform "$docker_platform" -e PG_ARCHITECTURE="$architecture" \
   -v "$core:/core:ro" -v "$postgis:/postgis:ro" -v "$tiger:/tiger:ro" -v "$repo:/repo:ro" \
+  -v "$tiger/static-analysis:/analysis" \
   --entrypoint bash pg-binaries-postgis-verifier /repo/scripts/tiger/verify-in-container.sh

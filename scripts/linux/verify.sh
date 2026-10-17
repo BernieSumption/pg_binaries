@@ -15,4 +15,5 @@ if [[ ! $pg_version =~ ^(15|16|17|18)\.[0-9]+$ ]]; then
   exit 2
 fi
 docker build --platform "$docker_platform" -f "$repo/scripts/linux/verify.Dockerfile" -t pg-binaries-linux-verifier "$repo"
-docker run --rm --platform "$docker_platform" -e PG_VERSION="$pg_version" -e PG_ARCHITECTURE="$architecture" -v "$out:/out:ro" -v "$repo/tests:/tests:ro" pg-binaries-linux-verifier
+mkdir -p "$out/publication/static-analysis"
+docker run --rm --platform "$docker_platform" -e PG_VERSION="$pg_version" -e PG_ARCHITECTURE="$architecture" -v "$out:/out:ro" -v "$out/publication/static-analysis:/analysis" -v "$repo/tests:/tests:ro" pg-binaries-linux-verifier

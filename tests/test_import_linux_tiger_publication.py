@@ -65,6 +65,15 @@ class LinuxTigerPublicationImportTests(unittest.TestCase):
                                 (self.tiger_dir, self.tiger_name)):
             path = directory / name
             (directory / f"{name}.sha256").write_text(f"{self._sha(path)}  {name}\n")
+        analysis = self.tiger_dir / "static-analysis/tiger.json"
+        analysis.parent.mkdir(parents=True)
+        analysis.write_text(json.dumps({"outcome": "passed", "architecture": self.architecture,
+            "files": [{"path": "metadata.json", "architecture": self.architecture,
+                       "interpreter": "none", "runtime_search_paths": []}], "archives": [
+                {"basename": name, "sha256": self._sha(directory / name)}
+                for directory, name in ((self.core_dir, self.core_name),
+                                        (self.postgis_dir, self.postgis_name),
+                                        (self.tiger_dir, self.tiger_name))]}))
         self.publication = self.tiger_artifact / "tiger-publication"
         self.records_dir = self.publication / "records"
         self.records_dir.mkdir(parents=True)
@@ -143,7 +152,7 @@ class LinuxTigerPublicationImportTests(unittest.TestCase):
     def test_imports_records_and_compact_evidence_after_checksum_validation(self):
         retained = importer.import_run(self.root, self.core_artifact, self.postgis_artifact,
                                        self.tiger_artifact, self.run_id, self.architecture)
-        self.assertEqual(len(retained), 3)
+        self.assertEqual(len(retained), 4)
         record = self.root / "support/verification" / (
             f"postgis_tiger_geocoder-2025.2-postgresql-18.6-{self.platform}-current-{self.run_id}.json")
         self.assertEqual(json.loads(record.read_text())["outcome"], "passed")
@@ -221,6 +230,25 @@ class LinuxTigerPublicationImportTests(unittest.TestCase):
         data["profile_revision"] = "0" * 64
         record.write_text(json.dumps(data))
         with self.assertRaisesRegex(coverage.CoverageError, "test profile"):
+            importer.import_run(self.root, self.core_artifact, self.postgis_artifact,
+                                self.tiger_artifact, self.run_id, self.architecture)
+
+    def test_tiger_static_analysis_is_retained_and_claims_are_checked(self):
+        importer.import_run(self.root, self.core_artifact, self.postgis_artifact,
+                            self.tiger_artifact, self.run_id, self.architecture)
+        retained = self.root / "support/evidence" / f"tiger-publication-{self.run_id}/x86_64/static-analysis/tiger.json"
+        self.assertTrue(retained.is_file())
+        report = self.tiger_dir / "static-analysis/tiger.json"
+        data = json.loads(report.read_text())
+        data["archives"][0]["sha256"] = "0" * 64
+        report.write_text(json.dumps(data))
+        with self.assertRaisesRegex(coverage.CoverageError, "archives do not match"):
+            importer.import_run(self.root, self.core_artifact, self.postgis_artifact,
+                                self.tiger_artifact, self.run_id, self.architecture)
+
+    def test_passed_tiger_publication_requires_report(self):
+        (self.tiger_dir / "static-analysis/tiger.json").unlink()
+        with self.assertRaisesRegex(coverage.CoverageError, "requires a static-analysis report"):
             importer.import_run(self.root, self.core_artifact, self.postgis_artifact,
                                 self.tiger_artifact, self.run_id, self.architecture)
 

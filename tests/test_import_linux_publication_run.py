@@ -70,6 +70,15 @@ class LinuxPublicationRunImportTests(unittest.TestCase):
         for archive in (self.core_archive, self.vector_archive, self.postgis_archive):
             self._write_sidecar(archive)
         self._make_records()
+        for directory, filename, archives in (
+                (self.core_dir / "publication", "core-pgvector.json", (self.core_archive, self.vector_archive)),
+                (self.postgis_dir, "postgis.json", (self.core_archive, self.postgis_archive))):
+            analysis = directory / "static-analysis" / filename
+            analysis.parent.mkdir(parents=True, exist_ok=True)
+            analysis.write_text(json.dumps({"outcome": "passed", "architecture": self.architecture,
+                "files": [{"path": "metadata.json", "architecture": self.architecture,
+                           "interpreter": "none", "runtime_search_paths": []}], "archives": [
+                    {"basename": item.name, "sha256": self._sha(item)} for item in archives]}))
         self._write_symbol_indexes()
         diagnostic = self.core_dir / "diagnostics/postgresql-error"
         diagnostic.mkdir(parents=True)
@@ -213,6 +222,25 @@ class LinuxPublicationRunImportTests(unittest.TestCase):
         record["sha256"] = "0" * 64
         record_path.write_text(json.dumps(record), encoding="utf-8")
         with self.assertRaisesRegex(coverage.CoverageError, "archive checksum does not match"):
+            importer.import_run(self.root, self.core_artifact, self.postgis_artifact,
+                                self.run_id, self.architecture)
+
+    def test_static_analysis_report_is_retained_and_archive_claims_are_exact(self):
+        importer.import_run(self.root, self.core_artifact, self.postgis_artifact,
+                            self.run_id, self.architecture)
+        retained = self.root / "support/evidence" / f"linux-publication-{self.run_id}/x86_64/static-analysis/core-pgvector.json"
+        self.assertTrue(retained.is_file())
+        report = self.core_dir / "publication/static-analysis/core-pgvector.json"
+        data = json.loads(report.read_text())
+        data["archives"].pop()
+        report.write_text(json.dumps(data))
+        with self.assertRaisesRegex(coverage.CoverageError, "archives do not match"):
+            importer.import_run(self.root, self.core_artifact, self.postgis_artifact,
+                                self.run_id, self.architecture)
+
+    def test_passed_publication_requires_static_analysis_report(self):
+        (self.postgis_dir / "static-analysis/postgis.json").unlink()
+        with self.assertRaisesRegex(coverage.CoverageError, "requires a static-analysis report"):
             importer.import_run(self.root, self.core_artifact, self.postgis_artifact,
                                 self.run_id, self.architecture)
 

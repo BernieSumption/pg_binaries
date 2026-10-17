@@ -1,4 +1,7 @@
+import hashlib
+import json
 import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -48,6 +51,56 @@ class ElfInspectionTests(unittest.TestCase):
             for search_path in ("/opt/host/lib", "$ORIGIN/../../../outside", "$ORIGINsuffix"):
                 with self.subTest(search_path=search_path), self.assertRaises(ValueError):
                     checker.validate_paths(binary, prefix, "x86_64", None, [search_path])
+
+
+class ArchiveReportTests(unittest.TestCase):
+    def test_archive_evidence_binds_basename_and_exact_bytes(self):
+        with tempfile.TemporaryDirectory() as temp:
+            archive = Path(temp) / "final.tar.gz"
+            archive.write_bytes(b"final archive bytes")
+            self.assertEqual(checker.archive_evidence([archive]), [{
+                "basename": "final.tar.gz",
+                "sha256": hashlib.sha256(b"final archive bytes").hexdigest(),
+            }])
+
+    def test_archive_evidence_rejects_duplicate_basenames(self):
+        with tempfile.TemporaryDirectory() as temp:
+            first = Path(temp) / "first" / "same.tar.gz"
+            second = Path(temp) / "second" / "same.tar.gz"
+            first.parent.mkdir()
+            second.parent.mkdir()
+            first.write_bytes(b"one")
+            second.write_bytes(b"two")
+            with self.assertRaisesRegex(ValueError, "duplicate archive basename"):
+                checker.archive_evidence([first, second])
+
+    def test_archive_evidence_rejects_missing_or_non_file_paths(self):
+        with tempfile.TemporaryDirectory() as temp:
+            directory = Path(temp)
+            with self.assertRaisesRegex(ValueError, "missing or not a regular file"):
+                checker.archive_evidence([directory / "missing.tar.gz"])
+            with self.assertRaisesRegex(ValueError, "missing or not a regular file"):
+                checker.archive_evidence([directory])
+
+    def test_report_cli_accepts_repeated_archives(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            first, second = root / "a.tar.gz", root / "b.tar.gz"
+            first.write_bytes(b"archive a")
+            second.write_bytes(b"archive b")
+            report_path = root / "report.json"
+            argv = ["checker", str(root), "--report", str(report_path),
+                    "--archive", str(first), "--archive", str(second)]
+            readelf_version = subprocess.CompletedProcess([], 0, "GNU readelf 2.40\n", "")
+            with patch.object(sys, "argv", argv), \
+                    patch.object(checker.subprocess, "run", return_value=readelf_version), \
+                    patch.object(checker, "check", return_value=3):
+                self.assertEqual(checker.main(), 0)
+            report = json.loads(report_path.read_text(encoding="utf-8"))
+            self.assertEqual(report["archives"], [
+                {"basename": "a.tar.gz", "sha256": hashlib.sha256(b"archive a").hexdigest()},
+                {"basename": "b.tar.gz", "sha256": hashlib.sha256(b"archive b").hexdigest()},
+            ])
 
     def test_rejects_wrong_or_missing_bundled_interpreter(self):
         with tempfile.TemporaryDirectory() as temp:

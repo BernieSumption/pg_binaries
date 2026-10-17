@@ -2,6 +2,7 @@
 """Inspect Linux ELF architecture, loader paths and resolved library closure."""
 
 import argparse
+import hashlib
 import json
 from pathlib import Path
 import re
@@ -166,12 +167,36 @@ def check(prefix, expected_architecture=None, report=None):
     return count
 
 
+def archive_evidence(paths):
+    """Return basename and digest evidence for the supplied final archives."""
+    entries = []
+    names = set()
+    for supplied in paths:
+        path = Path(supplied)
+        if not path.is_file():
+            raise ValueError(f"archive is missing or not a regular file: {path}")
+        if path.name in names:
+            raise ValueError(f"duplicate archive basename: {path.name}")
+        names.add(path.name)
+        digest = hashlib.sha256()
+        try:
+            with path.open("rb") as stream:
+                for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+                    digest.update(chunk)
+        except OSError as exc:
+            raise ValueError(f"cannot read archive {path}: {exc}") from exc
+        entries.append({"basename": path.name, "sha256": digest.hexdigest()})
+    return entries
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("prefix", type=Path)
     parser.add_argument("--architecture", choices=("x86_64", "arm64"))
     parser.add_argument("--report", type=Path,
                         help="write JSON inspection evidence to this path")
+    parser.add_argument("--archive", type=Path, action="append", default=[],
+                        help="final archive to bind to the inspection report (repeatable)")
     args = parser.parse_args()
     report = {
         "schema_version": 1,
@@ -179,6 +204,7 @@ def main():
         "readelf_version": None,
         "inspected_files": [],
         "files": [],
+        "archives": [],
         "outcome": "failed",
         "findings": [],
         "limits": [
@@ -188,6 +214,7 @@ def main():
         ],
     }
     try:
+        report["archives"] = archive_evidence(args.archive)
         version = subprocess.run(["readelf", "--version"], check=True,
                                   capture_output=True, text=True).stdout.splitlines()[0]
         report["readelf_version"] = version

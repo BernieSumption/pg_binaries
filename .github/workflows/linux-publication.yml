@@ -286,6 +286,7 @@ jobs:
             ${{ runner.temp }}/postgis/*.tar.gz
             ${{ runner.temp }}/postgis/*.sha256
             ${{ runner.temp }}/postgis/debug-symbols/**
+            ${{ runner.temp }}/postgis/static-analysis/**
             ${{ runner.temp }}/postgis-publication/**
           if-no-files-found: ignore
           retention-days: 3
@@ -296,6 +297,7 @@ jobs:
           path: |
             ${{ runner.temp }}/tiger/*.tar.gz
             ${{ runner.temp }}/tiger/*.sha256
+            ${{ runner.temp }}/tiger/static-analysis/**
             ${{ runner.temp }}/tiger-publication/**
           if-no-files-found: ignore
           retention-days: 3

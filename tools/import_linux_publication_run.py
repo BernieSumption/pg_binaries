@@ -203,6 +203,34 @@ def _copy_tree_files(source, destination, *, limit=1024 * 1024):
     return retained
 
 
+def _static_analysis(path, architecture, archives, required):
+    path = Path(path)
+    if not path.is_file():
+        if required:
+            raise coverage.CoverageError(f"{path}: passed publication requires a static-analysis report")
+        return None
+    report = coverage.load_json(path)
+    if not required and isinstance(report, dict) and report.get("outcome") == "failed":
+        return None
+    if (not isinstance(report, dict) or report.get("outcome") != "passed"
+            or report.get("architecture") != architecture
+            or not isinstance(report.get("files"), list) or not report["files"]
+            or any(not isinstance(item, dict) or not isinstance(item.get("path"), str)
+                   or not item["path"] for item in report["files"])
+            or not isinstance(report.get("archives"), list)):
+        raise coverage.CoverageError(f"{path}: invalid static-analysis report")
+    claims = report["archives"]
+    if any(not isinstance(item, dict) or set(item) != {"basename", "sha256"}
+           or not isinstance(item["basename"], str)
+           or not re.fullmatch(r"[0-9a-f]{64}", str(item["sha256"])) for item in claims):
+        raise coverage.CoverageError(f"{path}: invalid static-analysis archive claims")
+    expected = {name: digest for name, digest in archives.items()}
+    actual = {item["basename"]: item["sha256"] for item in claims}
+    if len(actual) != len(claims) or actual != expected:
+        raise coverage.CoverageError(f"{path}: static-analysis archives do not match publication archives")
+    return path
+
+
 def import_run(root, core_artifact, postgis_artifact, run_id, architecture):
     """Validate and retain records, receipts, and compact evidence for a run."""
     root, core_artifact, postgis_artifact = map(Path, (root, core_artifact, postgis_artifact))
@@ -318,6 +346,19 @@ def import_run(root, core_artifact, postgis_artifact, run_id, architecture):
                 if components != {"postgresql", "vector"}:
                     raise coverage.CoverageError(f"core {endpoint} records do not cover PostgreSQL and pgvector")
 
+    analysis = {}
+    for project_name, relative, names in (
+            ("core", "static-analysis/core-pgvector.json", [core_name, vector_name]),
+            ("postgis", "static-analysis/postgis.json", [core_name, postgis_name])):
+        receipt = receipts[project_name]["current"]
+        passed = ((receipt is not None and all(value == "passed" for value in receipt["case_results"].values()))
+                  or any(record.get("outcome") == "passed"
+                         for _, record in records[project_name].get("current", [])))
+        report_path = (core_publication if project_name == "core" else postgis_dir) / relative
+        analysis[project_name] = _static_analysis(
+            report_path, architecture,
+            {name: digests[name] for name in names if name in digests}, passed)
+
     retained = []
     targets = {
         "core": root / "support/evidence" / f"linux-publication-{run_id}" / architecture,
@@ -338,6 +379,11 @@ def import_run(root, core_artifact, postgis_artifact, run_id, architecture):
                 destination = root / "support/verification" / source.name
                 _retain(source, destination)
                 retained.append(destination)
+        report = analysis[project_name]
+        if report is not None:
+            destination = target / "static-analysis" / report.name
+            _retain(report, destination)
+            retained.append(destination)
         symbol_index = (core_dir / "debug-symbols" / "index.json" if project_name == "core"
                         else postgis_dir / "debug-symbols" / "index.json")
         if symbol_index.is_file():
