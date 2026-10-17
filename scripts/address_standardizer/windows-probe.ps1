@@ -135,7 +135,7 @@ foreach ($sourceFile in $sources) {
   $sourceIndex++
   Write-ProgressMarker 'source-compile-started' "$sourceIndex/$($sources.Count) $($sourceFile.Name)"
   $object = Join-Path $buildDir ($sourceFile.BaseName + '.obj')
-  Invoke-Native 'cl.exe' @('/nologo', '/c', '/MD', '/O2', '/DWIN32', '/D_WINDOWS', '/D_CRT_SECURE_NO_WARNINGS', '/DAS_VERSION="3.7"', '/DPCRE_VERSION=2', "/I$pgInclude", "/I$(Join-Path $pgRoot 'include')", "/I$(Join-Path $source 'src')", "/I$pcreInclude", "/Fo$object", $sourceFile.FullName)
+  Invoke-Native 'cl.exe' @('/nologo', '/c', '/MD', '/O2', '/DWIN32', '/D_WINDOWS', '/D_CRT_SECURE_NO_WARNINGS', '/DAS_VERSION="3.7"', '/DPCRE_VERSION=2', "/I$pgInclude", "/I$(Join-Path $pgInclude 'port/win32')", "/I$(Join-Path $pgInclude 'port/win32_msvc')", "/I$(Join-Path $pgRoot 'include')", "/I$(Join-Path $source 'src')", "/I$pcreInclude", "/Fo$object", $sourceFile.FullName)
   $objects += $object
   Write-ProgressMarker 'source-compile-completed' "$sourceIndex/$($sources.Count) $($sourceFile.Name)"
 }
