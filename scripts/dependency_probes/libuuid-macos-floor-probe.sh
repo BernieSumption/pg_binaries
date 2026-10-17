@@ -42,7 +42,7 @@ echo "computed_sha256=$actual_sha256" >> "$inspection"
   exit 1
 }
 
-mkdir "$work_dir/source" "$work_dir/prefix"
+mkdir "$work_dir/source" "$work_dir/prefix" "$work_dir/prefix/lib"
 tar -xzf "$archive_path" -C "$work_dir/source" --strip-components=1
 export MACOSX_DEPLOYMENT_TARGET=11.0
 (
