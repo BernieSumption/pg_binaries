@@ -1,0 +1,33 @@
+{
+  "architecture": "x86_64",
+  "archives": {
+    "pgvector-0.8.7-postgresql-16.15-linux-x86_64.tar.gz": "19a166c2d392b40ed8f334dcb42fdf87696bb87fc1fe1ca018209ad5332a94ce",
+    "postgresql-16.15-linux-x86_64.tar.gz": "2955d6968dd67ddb0000272939e1df54b48fe9623f9ddb2d1ac631a178952201"
+  },
+  "case_results": {
+    "archive-suite": "passed",
+    "diagnostics": "passed",
+    "no-host-userspace": "passed"
+  },
+  "ci": {
+    "build_revision": "20b9c60276012487b88d96e642fca72d25a1d078",
+    "provider": "github-actions",
+    "run_id": "39052027961",
+    "run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/39052027961",
+    "source_revision": "20b9c60276012487b88d96e642fca72d25a1d078",
+    "test_revision": "20b9c60276012487b88d96e642fca72d25a1d078"
+  },
+  "clean_system": true,
+  "dependency_check_profile": "linux-runtime-v1",
+  "dependency_checks_passed": true,
+  "distribution": "Alpine Linux",
+  "distribution_version": "3.22.6",
+  "endpoint": "current",
+  "image_id": "sha256:96719fba0cbc6ea6a13a1e5c2b63af17ff3f85032fb9676ef1602635b8bb89a9",
+  "kernel_release": "6.17.0-1022-azure",
+  "os": "linux",
+  "postgresql_version": "16.15",
+  "profile_id": "linux-publication-current-x86_64",
+  "profile_revision": "0a25a4027d1fd5f427c8a461b87320336f4a7fbd3c172122bea0fc0f27a78292",
+  "test_revision": "20b9c60276012487b88d96e642fca72d25a1d078"
+}

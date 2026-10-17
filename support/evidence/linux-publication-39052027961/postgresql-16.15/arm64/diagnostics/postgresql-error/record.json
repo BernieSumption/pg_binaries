@@ -1,0 +1,151 @@
+{
+  "architecture": "arm64",
+  "archive_urls": null,
+  "archives": {
+    "pgvector-0.8.7-postgresql-16.15-linux-arm64.tar.gz": "ca6989fa5aa5434c3f3aad908e63b99f3fe9cd4f8ecc481d24689be8382c47ad",
+    "postgresql-16.15-linux-arm64.tar.gz": "6024157deb1917223f25ecd9d1715f2511afb3000cf24b690e42ee2bce83a67d"
+  },
+  "ci_run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/39052027961",
+  "command": "/tmp/pg-binaries-diagnostics.pDlBRM/postgresql/bin/psql -X -v ON_ERROR_STOP=1 -h /tmp/pg-binaries-diagnostics.pDlBRM/socket -p 55439 -d postgres -c 'SELECT 1 / 0;'",
+  "complete_server_log": "postgresql-error/server.log",
+  "cwd": "/tmp/pg-binaries-diagnostics.pDlBRM/postgresql",
+  "executable_paths": {
+    "pg_ctl": "/tmp/pg-binaries-diagnostics.pDlBRM/postgresql/bin/pg_ctl",
+    "postgres": "/tmp/pg-binaries-diagnostics.pDlBRM/postgresql/bin/postgres",
+    "psql": "/tmp/pg-binaries-diagnostics.pDlBRM/postgresql/bin/psql"
+  },
+  "exit_code": 1,
+  "failure": "postgresql-server-error",
+  "finished_at_utc": "2026-10-17T17:05:38Z",
+  "gnu_build_ids_and_index_entries": [
+    {
+      "archive": "postgresql-16.15-linux-arm64.tar.gz",
+      "archive_sha256": "6024157deb1917223f25ecd9d1715f2511afb3000cf24b690e42ee2bce83a67d",
+      "debug_file_path": "postgresql-16.15-linux-arm64/postgresql/bin/.pg-launcher.debug",
+      "debug_file_sha256": "09aa18b0550a13626e1184215ea2b75b172c8f8864e0d0f3579266effde10c38",
+      "gnu_build_id": "68334039395a44f2448f40ad58b4092b940018ae",
+      "module_path": "postgresql/bin/.pg-launcher",
+      "module_sha256": "ee8273da07ac4599030281ec6f414d0a306d123c1d3b6e82bc95714c75c2afcb"
+    },
+    {
+      "archive": "pgvector-0.8.7-postgresql-16.15-linux-arm64.tar.gz",
+      "archive_sha256": "ca6989fa5aa5434c3f3aad908e63b99f3fe9cd4f8ecc481d24689be8382c47ad",
+      "debug_file_path": "pgvector-0.8.7-postgresql-16.15-linux-arm64/pgvector/lib/vector.so.debug",
+      "debug_file_sha256": "492572ad65b4f8096f868e798190753671d9bdc4014037bbcbf092af9b4c2915",
+      "gnu_build_id": "31e8d131776cf539bd19b966be3816dfdfb627d0",
+      "module_path": "pgvector/lib/vector.so",
+      "module_sha256": "10ddf3af391c6dbf03acfe140da9e3175e490013659f7c1ed862181abb1026de"
+    }
+  ],
+  "inspection_tool_versions": {
+    "ldd": "ldd (Ubuntu GLIBC 2.39-0ubuntu8.9) 2.39",
+    "readelf": "GNU readelf (GNU Binutils for Ubuntu) 2.42"
+  },
+  "inventory_revision": null,
+  "kernel_release": "6.17.0-1022-azure",
+  "lookup_environment": {
+    "LD_LIBRARY_PATH": null,
+    "LD_PRELOAD": null,
+    "PATH": "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+    "PGDATA": null,
+    "PGHOST": null,
+    "PGPORT": null,
+    "PG_CONFIG": null
+  },
+  "machine": "aarch64",
+  "os_release": "PRETTY_NAME=\"Ubuntu 24.04.5 LTS\"\nNAME=\"Ubuntu\"\nVERSION_ID=\"24.04\"\nVERSION=\"24.04.5 LTS (Noble Numbat)\"\nVERSION_CODENAME=noble\nID=ubuntu\nID_LIKE=debian\nHOME_URL=\"https://www.ubuntu.com/\"\nSUPPORT_URL=\"https://help.ubuntu.com/\"\nBUG_REPORT_URL=\"https://bugs.launchpad.net/ubuntu/\"\nPRIVACY_POLICY_URL=\"https://www.ubuntu.com/legal/terms-and-policies/privacy-policy\"\nUBUNTU_CODENAME=noble\nLOGO=ubuntu-logo\n",
+  "output_file": "postgresql-error/client-output.txt",
+  "package_metadata": {
+    "pgvector": {
+      "architecture": "arm64",
+      "build_configuration": "postgresql-16.15;pgvector-0.8.7;builder=ubuntu-22.04;configure=icu,lz4,zstd,openssl,libxml,libxslt,zlib,uuid-e2fs,no-readline,no-rpath;cflags=-O2,-g;pgvector-optflags=empty;runtime=bundled-glibc-static-musl-launcher",
+      "build_id": "github-39052027961-1",
+      "builder_image_id": "sha256:bfe59bbb82a2eadc6c1a293fdc9f30741edea31e0a6c5ebbbbe9e318938ea426",
+      "configuration_prerequisites": [],
+      "platform": "linux",
+      "project": "pgvector",
+      "requires": [],
+      "runtime_prerequisites": [],
+      "source_revision": "20b9c60276012487b88d96e642fca72d25a1d078",
+      "sql_names": [
+        "vector"
+      ],
+      "version": "0.8.7"
+    },
+    "postgresql": {
+      "architecture": "arm64",
+      "build_configuration": "postgresql-16.15;pgvector-0.8.7;builder=ubuntu-22.04;configure=icu,lz4,zstd,openssl,libxml,libxslt,zlib,uuid-e2fs,no-readline,no-rpath;cflags=-O2,-g;pgvector-optflags=empty;runtime=bundled-glibc-static-musl-launcher",
+      "build_id": "github-39052027961-1",
+      "builder_image_id": "sha256:bfe59bbb82a2eadc6c1a293fdc9f30741edea31e0a6c5ebbbbe9e318938ea426",
+      "bundled_glibc_version": "2.35-0ubuntu3.15",
+      "capabilities": {
+        "icu": true,
+        "libc_collations": true,
+        "lz4": true,
+        "zstd": true
+      },
+      "component": "postgresql",
+      "included_extensions": [
+        "adminpack",
+        "amcheck",
+        "autoinc",
+        "bloom",
+        "btree_gin",
+        "btree_gist",
+        "citext",
+        "cube",
+        "dblink",
+        "dict_int",
+        "dict_xsyn",
+        "earthdistance",
+        "file_fdw",
+        "fuzzystrmatch",
+        "hstore",
+        "insert_username",
+        "intagg",
+        "intarray",
+        "isn",
+        "lo",
+        "ltree",
+        "moddatetime",
+        "old_snapshot",
+        "pageinspect",
+        "pg_buffercache",
+        "pg_freespacemap",
+        "pg_prewarm",
+        "pg_stat_statements",
+        "pg_surgery",
+        "pg_trgm",
+        "pg_visibility",
+        "pg_walinspect",
+        "pgcrypto",
+        "pgrowlocks",
+        "pgstattuple",
+        "plpgsql",
+        "postgres_fdw",
+        "refint",
+        "seg",
+        "sslinfo",
+        "tablefunc",
+        "tcn",
+        "tsm_system_rows",
+        "tsm_system_time",
+        "unaccent",
+        "uuid-ossp",
+        "xml2"
+      ],
+      "platform": "linux",
+      "postgresql_version": "16.15",
+      "schema_version": 1,
+      "source_revision": "20b9c60276012487b88d96e642fca72d25a1d078",
+      "version": "16.15"
+    }
+  },
+  "postgresql_version": "16.15",
+  "run_as_user": "diagnostic-postgres",
+  "schema_version": 1,
+  "server_log_bytes": 1329,
+  "server_start_command": "runuser -u diagnostic-postgres -- /tmp/pg-binaries-diagnostics.pDlBRM/postgresql/bin/pg_ctl -D /tmp/pg-binaries-diagnostics.pDlBRM/data -o \"-k /tmp/pg-binaries-diagnostics.pDlBRM/socket -p 55439 -h ''\" -l /archives/diagnostics/postgresql-error/server.log -w start",
+  "source_revision": "20b9c60276012487b88d96e642fca72d25a1d078",
+  "started_at_utc": "2026-10-17T17:05:38Z"
+}
