@@ -50,19 +50,19 @@ Target support: PostgreSQL 16–18 on Linux and macOS x86-64 and arm64 and Windo
 
 Sources: [2025.2 announcement](https://postgis.net/2026/08/PostGIS-Tiger-Geocoder-2025.2/), [upstream 2025.2 source archive](https://download.osgeo.org/postgis/source/postgis_tiger_geocoder/postgis_tiger_geocoder-2025.2.tar.gz) (`README.md`, `META.json` and `COPYING`), [PostGIS installation guide](https://postgis.net/docs/postgis_installation.html).
 
-## Address Standardizer — exclude
+## Address Standardizer — support selection pending
 
 Description: [Address Standardizer](https://github.com/postgis/address_standardizer) provides address parsing and rule-based standardization. Its SQL extension names are `address_standardizer` and `address_standardizer_data_us`.
 
-For inclusion: Its parsing functions can appear in schema DDL, and major PostgreSQL hosts offer both SQL extensions. Its code is available under an open-source licence.
+For inclusion: Its parsing functions can appear in schema DDL, and major PostgreSQL hosts offer both SQL extensions. The upstream repository contains the USPS-derived city file used to generate `parseaddress-stcities.h` and states an MIT-style licence in `COPYING`. No separate terms were identified for that US file. Under the [repository-data licence assumption](releases.md#redistribution-review-before-publication), the city file and compiled output use the repository licence; do not investigate whether upstream had authority to license the earlier USPS source.
 
-Against inclusion: The compiled `address_standardizer` library contains a city list derived from USPS material. The reviewed sources do not establish that the upstream project can license redistribution of that derived data in this project's public archives. The open decision and evidence are recorded in [the human review queue](../HUMAN_REVIEW_QUEUE.md#address-standardizer-us-data-redistribution). Exclude both SQL names at the project level while that question remains unresolved.
+Against inclusion: The native library needs PCRE2, which must be bundled on platforms where it is not universal. Upstream moved the project out of PostGIS after the 3.6 line, so release selection, DDL compatibility, documented PostgreSQL support and platform builds need research before intended support can be declared. Any newer data file with explicit separate terms needs its own review.
 
-Version policy: None while excluded. If redistribution is established or upstream releases an unmodified package without the derived data, select maintained releases using the extension version and compatibility rules.
+Version policy: Select maintained releases from the PostGIS-bundled and standalone lines after checking their DDL compatibility boundary. Do not infer that the standalone split is a DDL break or that every older line must be retained.
 
-Target support: None while excluded; do not advertise either SQL name or package its library as a separate project.
+Target support: Not yet declared in `support.json`. Research each selected release's PostgreSQL and OS support, then add both SQL names at the project level for the supported targets. The resolved US-data assumption alone is not build, compatibility or publication evidence.
 
-Sources: [upstream project](https://github.com/postgis/address_standardizer), [PostGIS build rules](https://github.com/postgis/postgis/blob/stable-3.6/extensions/address_standardizer/Makefile.in), [upstream README](https://github.com/postgis/postgis/blob/stable-3.6/extensions/address_standardizer/README.address_standardizer), [PostGIS installation guide](https://postgis.net/docs/postgis_installation.html).
+Sources: [upstream project and data-generation description](https://github.com/postgis/address_standardizer), [repository licence](https://github.com/postgis/address_standardizer/blob/main/COPYING), [PostGIS 3.6 build rules](https://github.com/postgis/postgis/blob/stable-3.6/extensions/address_standardizer/Makefile.in), [PostGIS installation guide](https://postgis.net/docs/postgis_installation.html).
 
 ## oracle_fdw — exclude
 
