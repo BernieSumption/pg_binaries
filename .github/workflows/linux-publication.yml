@@ -21,6 +21,13 @@ on:
       - 'tools/check_elf_dependencies.py'
       - 'tools/create_linux_publication_receipt.py'
       - 'tools/emit_linux_publication_records.py'
+      - 'scripts/postgis/**'
+      - 'tools/check_postgis_license_inventory.py'
+      - 'tools/write_postgis_license_inventory.py'
+      - 'tools/create_extension_publication_receipt.py'
+      - 'tools/emit_extension_publication_records.py'
+      - 'tests/test_emit_extension_publication_records.py'
+      - 'support.json'
       - 'tools/write_linux_license_inventory.py'
 jobs:
   verify:
@@ -176,6 +183,153 @@ jobs:
           python3 tools/emit_linux_publication_records.py \
             --archives "$archive_dir" --receipt "$archive_dir/publication/minimum-receipt.json" \
             --output "$archive_dir/publication/records"
+      - name: Check extension publication record machinery
+        run: python3 -m unittest tests/test_emit_extension_publication_records.py
+      - name: Build PostGIS 3.6.4 against the publication PostgreSQL archive
+        id: postgis_build
+        run: bash scripts/postgis/build.sh "$RUNNER_TEMP/pilot" "$RUNNER_TEMP/postgis"
+      - name: Verify assembled PostGIS archives on clean Ubuntu 24.04
+        id: postgis_current_verify
+        run: bash scripts/postgis/verify.sh "$RUNNER_TEMP/pilot" "$RUNNER_TEMP/postgis"
+      - name: Check PostGIS with older or absent host glibc
+        id: postgis_portability
+        run: |
+          for image in ubuntu:20.04 alpine:3.22; do
+            docker run --rm --platform "${{ matrix.docker_platform }}" -e PG_ARCHITECTURE \
+              -v "$RUNNER_TEMP/pilot:/core:ro" -v "$RUNNER_TEMP/postgis:/ext:ro" \
+              -v "$GITHUB_WORKSPACE:/repo:ro" \
+              --entrypoint sh "$image" /repo/scripts/postgis/verify-portability.sh /core /ext
+          done
+      - name: Verify same core and PostGIS archives in Linux 5.15 guest
+        id: postgis_minimum_verify
+        if: ${{ always() && steps.postgis_build.outcome == 'success' && steps.qemu_build.outcome == 'success' }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/postgis-qemu"
+          chmod 0777 "$RUNNER_TEMP/postgis-qemu"
+          docker run --rm --network bridge --cap-drop=ALL --security-opt no-new-privileges \
+            -v "$GITHUB_WORKSPACE:/repo:ro" -v "$RUNNER_TEMP/pilot:/core:ro" \
+            -v "$RUNNER_TEMP/postgis:/ext:ro" -v "$RUNNER_TEMP/postgis-qemu:/work" \
+            -e PG_ARCHITECTURE="$PG_ARCHITECTURE" -e GITHUB_SHA="$GITHUB_SHA" \
+            "${{ matrix.qemu_tag }}" \
+            bash /repo/scripts/postgis/qemu-kernel-515.sh /core "$PG_VERSION" /work /ext
+      - name: Record PostGIS publication step outcomes
+        if: ${{ always() }}
+        env:
+          CURRENT_VERIFY_OUTCOME: ${{ steps.postgis_current_verify.outcome }}
+          PORTABILITY_OUTCOME: ${{ steps.postgis_portability.outcome }}
+          MINIMUM_VERIFY_OUTCOME: ${{ steps.postgis_minimum_verify.outcome }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/postgis-publication"
+          printf '{"archive-suite":"%s","portability":"%s"}\n' \
+            "$CURRENT_VERIFY_OUTCOME" "$PORTABILITY_OUTCOME" \
+            > "$RUNNER_TEMP/postgis-publication/current-steps.json"
+          printf '{"archive-suite":"%s"}\n' "$MINIMUM_VERIFY_OUTCOME" \
+            > "$RUNNER_TEMP/postgis-publication/minimum-steps.json"
+      - name: Emit PostGIS publication records for verified endpoints
+        if: ${{ always() }}
+        run: |
+          set -euo pipefail
+          core="$RUNNER_TEMP/pilot/postgresql-18.6-linux-$PG_ARCHITECTURE.tar.gz"
+          extension="$RUNNER_TEMP/postgis/postgis-3.6.4-postgresql-18.6-linux-$PG_ARCHITECTURE.tar.gz"
+          if [[ ! -f "$core" || ! -f "$core.sha256" || ! -f "$extension" || ! -f "$extension.sha256" ]]; then
+            echo 'No publication record: assembled archive bytes or sidecars are unavailable'
+            exit 0
+          fi
+          python3 - "$core" "$RUNNER_TEMP/pilot/publication/records" "$PG_ARCHITECTURE" "$GITHUB_RUN_ID" "$GITHUB_SHA" <<'PY'
+          import hashlib
+          import json
+          from pathlib import Path
+          import sys
+          sys.path.insert(0, 'tools')
+          import coverage
+          core, records, architecture, run_id, revision = sys.argv[1:]
+          digest = hashlib.sha256(Path(core).read_bytes()).hexdigest()
+          support = coverage.load_json(Path('support.json'))
+          for endpoint in ('current', 'minimum'):
+              name = f'postgresql-18.6-linux-{architecture}-{endpoint}-{run_id}.json'
+              record = coverage.load_json(Path(records) / name)
+              coverage.validate_verification_record(record, support, Path('.'))
+              if (record['outcome'] != 'passed' or record['sha256'] != digest
+                      or record['ci']['run_id'] != run_id
+                      or record['test_revision'] != revision):
+                  raise SystemExit(f'PostGIS core differs from passed {endpoint} publication record')
+          PY
+          publication="$RUNNER_TEMP/postgis-publication"
+          current_image=$(docker image inspect --format '{{.Id}}' pg-binaries-postgis-verifier 2>/dev/null || true)
+          if [[ "$current_image" =~ ^sha256:[0-9a-f]{64}$ ]]; then
+            clean=false
+            dependencies=failure
+            if [[ "$(python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); print(all(v == "success" for v in d.values()))' "$publication/current-steps.json")" = True ]]; then
+              clean=true
+              dependencies=success
+            fi
+            . /etc/os-release
+            python3 tools/create_extension_publication_receipt.py \
+              --archives "$RUNNER_TEMP/postgis" --core-archives "$RUNNER_TEMP/pilot" \
+              --receipt "$publication/current-receipt.json" \
+              --profile-id "postgis-publication-current-$PG_ARCHITECTURE" \
+              --project PostGIS --version 3.6.4 --postgresql-version 18.6 \
+              --architecture "$PG_ARCHITECTURE" --endpoint current \
+              --kernel-release "$(uname -r)" --distribution "$PRETTY_NAME" \
+              --distribution-version "$VERSION_ID" --image-id "$current_image" \
+              --dependency-check-result "$dependencies" --clean-system "$clean" \
+              --step-results "$publication/current-steps.json"
+            python3 tools/emit_extension_publication_records.py \
+              --archives "$RUNNER_TEMP/postgis" --core-archives "$RUNNER_TEMP/pilot" \
+              --receipt "$publication/current-receipt.json" --output "$publication/records"
+          else
+            echo 'No current-OS publication record: clean verifier image identity is unavailable'
+          fi
+          evidence="$RUNNER_TEMP/postgis-qemu/evidence"
+          log="$evidence/full-verifier.log"
+          if [[ ! -f "$log" || ! -f "$evidence/environment.txt" || ! -f "$evidence/archive-checksums.sha256" ]]; then
+            echo 'No minimum-OS publication record: guest evidence is unavailable'
+            exit 0
+          fi
+          kernel=$(sed -n 's/^guest_kernel=//p' "$log" | head -1)
+          distribution=$(sed -n 's/^guest_os=//p' "$log" | head -1)
+          grep -Eq '^5\.15\.' <<< "$kernel"
+          grep -q '^Ubuntu 22\.04' <<< "$distribution"
+          grep -Fx "guest_architecture=$PG_ARCHITECTURE" "$log"
+          grep -Fx "test_revision=$GITHUB_SHA" "$evidence/environment.txt"
+          case "$PG_ARCHITECTURE" in
+            x86_64) image_sha=e3297e0aa6c408ac90d854348465d3991c65159b444c4ef9016f52f6807290e3 ;;
+            arm64) image_sha=86e13258765945ad792dac75fac7f02f4db9fa73a4a535ffa472266e7041fa19 ;;
+          esac
+          grep -Fx "image_sha256=$image_sha" "$evidence/environment.txt"
+          python3 - "$evidence/archive-checksums.sha256" "$core" "$extension" <<'PY'
+          import hashlib
+          from pathlib import Path
+          import sys
+          sys.path.insert(0, 'tools')
+          from emit_linux_minimum_pilot_records import parse_archive_checksums
+          actual = parse_archive_checksums(Path(sys.argv[1]))
+          expected = {Path(path).name: hashlib.sha256(Path(path).read_bytes()).hexdigest()
+                      for path in sys.argv[2:]}
+          if actual != expected:
+              raise SystemExit('guest archive checksums differ from publication archives')
+          PY
+          clean=false
+          dependencies=failure
+          if [[ "$(python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); print(all(v == "success" for v in d.values()))' "$publication/minimum-steps.json")" = True ]]; then
+            grep -Fx 'PASS: PostGIS 3.6.4 minimum-kernel archive verification' "$log"
+            clean=true
+            dependencies=success
+          fi
+          python3 tools/create_extension_publication_receipt.py \
+            --archives "$RUNNER_TEMP/postgis" --core-archives "$RUNNER_TEMP/pilot" \
+            --receipt "$publication/minimum-receipt.json" \
+            --profile-id "postgis-publication-minimum-$PG_ARCHITECTURE" \
+            --project PostGIS --version 3.6.4 --postgresql-version 18.6 \
+            --architecture "$PG_ARCHITECTURE" --endpoint minimum \
+            --kernel-release "$kernel" --distribution "$distribution" \
+            --distribution-version 22.04 --image-id "sha256:$image_sha" \
+            --dependency-check-result "$dependencies" --clean-system "$clean" \
+            --step-results "$publication/minimum-steps.json"
+          python3 tools/emit_extension_publication_records.py \
+            --archives "$RUNNER_TEMP/postgis" --core-archives "$RUNNER_TEMP/pilot" \
+            --receipt "$publication/minimum-receipt.json" --output "$publication/records"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -188,4 +342,16 @@ jobs:
             ${{ runner.temp }}/pilot/diagnostics/**
             ${{ runner.temp }}/qemu-linux-515/evidence/**
           include-hidden-files: true
+          retention-days: 3
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: postgis-publication-${{ matrix.architecture }}-evidence
+          path: |
+            ${{ runner.temp }}/postgis/*.tar.gz
+            ${{ runner.temp }}/postgis/*.sha256
+            ${{ runner.temp }}/postgis/debug-symbols/**
+            ${{ runner.temp }}/postgis-publication/**
+            ${{ runner.temp }}/postgis-qemu/evidence/**
+          if-no-files-found: ignore
           retention-days: 3
