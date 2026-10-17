@@ -67,7 +67,7 @@ trap stop_server EXIT
 "$prefix/bin/pg_ctl" -D "$work/data" -m fast -w stop
 trap - EXIT
 
-extension_dylib=$(find "$prefix/lib" -maxdepth 1 -name 'address_standardizer.*' -print -quit)
+extension_dylib=$(find "$prefix/lib/postgresql" -maxdepth 1 -name 'address_standardizer.*' -print -quit)
 pcre2_dylib=$(find "$prefix/lib" -maxdepth 1 -name 'libpcre2-8*.dylib' -print -quit)
 test -f "$extension_dylib"
 test -n "$pcre2_dylib"
