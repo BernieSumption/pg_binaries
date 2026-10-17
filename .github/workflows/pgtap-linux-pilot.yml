@@ -18,7 +18,10 @@ on:
     branches: [spike]
     paths:
       - '.github/workflows/pgtap-linux-pilot.yml'
-      - 'scripts/pgtap/**'
+      - 'scripts/pgtap/build*'
+      - 'scripts/pgtap/verify*'
+      - 'scripts/pgtap/Dockerfile'
+      - 'scripts/pgtap/probe.sql'
       - 'scripts/linux/**'
       - 'tools/check_elf_dependencies.py'
       - 'tools/source_archive.py'

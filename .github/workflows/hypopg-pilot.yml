@@ -4,7 +4,10 @@ on:
   push:
     branches: [spike]
     paths:
-      - 'scripts/hypopg/**'
+      - 'scripts/hypopg/build*'
+      - 'scripts/hypopg/verify*'
+      - 'scripts/hypopg/Dockerfile'
+      - 'scripts/hypopg/probe.sql'
       - 'tools/reuse_linux_core_artifact.py'
       - 'tools/source_archive.py'
       - 'support.json'
