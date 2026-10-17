@@ -21,6 +21,15 @@ class CoverageError(Exception):
     pass
 
 
+def archive_project_name(project):
+    if not isinstance(project, str):
+        raise CoverageError("extension project name must be a string")
+    name = re.sub(r"[^a-z0-9]+", "_", project.lower()).strip("_")
+    if not name:
+        raise CoverageError(f"extension project has no archive name: {project!r}")
+    return name
+
+
 def load_json(path, required=True):
     if not path.exists():
         if required:
@@ -103,7 +112,12 @@ def validate_support(support):
     if not isinstance(extensions, dict) or not extensions:
         raise CoverageError("support extensions must be a nonempty object")
     declared_sql_names = set()
+    archive_names = set()
     for project, ext in extensions.items():
+        archive_name = archive_project_name(project)
+        if archive_name in archive_names:
+            raise CoverageError(f"duplicate extension archive project name: {archive_name}")
+        archive_names.add(archive_name)
         if not isinstance(ext, dict) or not isinstance(ext.get("sql_names"), list) or not ext["sql_names"]:
             raise CoverageError(f"support extension {project} must declare sql_names")
         names = ext["sql_names"]

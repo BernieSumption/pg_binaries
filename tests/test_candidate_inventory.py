@@ -170,6 +170,26 @@ class CandidateInventoryTests(unittest.TestCase):
             candidate_inventory.merge_candidate(self.old, [outside], restricted_support, self.snapshot,
                                                  root=self.root)
 
+    def test_spaced_project_name_uses_canonical_archive_name(self):
+        self.support["extensions"]["Example Project"] = self.support["extensions"].pop("Example")
+        url = "https://github.com/BernieSumption/pg_binaries/releases/download/catalog-20261016-2/example_project-1.0-postgresql-15.9-linux-x86_64.tar.gz"
+        records = []
+        for endpoint in ("minimum", "current"):
+            record = self.evidence(url, "d" * 64, endpoint)
+            record.update({"component": "example", "version": "1.0",
+                           "assembled_core": self.core_reference("15.9")})
+            records.append(record)
+        extension = {
+            "component": "example", "version": "1.0", "platform": "linux-x86_64",
+            "tag": "catalog-20261016-2",
+            "filename": "example_project-1.0-postgresql-15.9-linux-x86_64.tar.gz",
+            "sha256": "d" * 64, "postgresql_support": {"from": "15.9", "to": "15.9"},
+            "verification": records,
+        }
+        candidate = candidate_inventory.merge_candidate(
+            self.old, [self.proposal(), extension], self.support, self.snapshot, root=self.root)
+        self.assertEqual(candidate["extensions"]["example"]["1.0"]["downloads"]["linux-x86_64"][0]["url"], url)
+
     def test_extension_evidence_must_match_exact_retained_core_archive(self):
         base = {"schema_version": 1, "os_support": self.support["os_support"],
                 "postgresql": {"15.9": {"downloads": {"linux-x86_64": {

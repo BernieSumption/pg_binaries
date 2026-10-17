@@ -130,7 +130,7 @@ def _validate_new_filenames(new_urls, core_by_url, extension_assets, extension_r
         association, _sql_names = extension_assets[url]
         project, version, platform = association
         match = re.fullmatch(
-            rf"{re.escape(project.lower())}-{re.escape(version)}-postgresql-"
+            rf"{re.escape(_coverage.archive_project_name(project))}-{re.escape(version)}-postgresql-"
             rf"(\d+\.\d+(?:-to-\d+\.\d+)?)-{re.escape(platform)}\.tar\.gz",
             filename)
         if not match:
@@ -502,7 +502,7 @@ def preflight_candidate(base_inventory, candidate, support, snapshot, staged_ass
 
         if url in extension_assets:
             (project, version, _platform), _associated_names = extension_assets[url]
-            archive_project = project.lower()
+            archive_project = _coverage.archive_project_name(project)
             filename = url.rsplit("/", 1)[-1]
             prefix = f"{archive_project}-{version}-postgresql-"
             suffix = f"-{_platform}.tar.gz"

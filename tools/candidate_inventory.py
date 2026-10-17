@@ -139,7 +139,7 @@ def merge_candidate(base_inventory, proposed_entries, support, snapshot, root=No
                 sql_names = [component]
             if not policy:
                 raise CandidateError(f"unsupported extension target {component} {version}")
-            if filename[:marker] != project.lower():
+            if filename[:marker] != _coverage.archive_project_name(project):
                 raise CandidateError("extension filename must identify the declared project")
             pg_range = item.get("postgresql_support")
             try:

@@ -415,6 +415,38 @@ class PublicationPreflightTests(unittest.TestCase):
                             record["sha256"] = checksum
         self.assertEqual(self.check()["extension_target_count"], 10)
 
+    def test_accepts_canonical_archive_name_for_spaced_project(self):
+        self.support["extensions"]["Example Project"] = self.support["extensions"].pop("Example")
+        for old_url in list(self.staged):
+            if "/example-1.0-postgresql-" not in old_url:
+                continue
+            path = Path(self.staged[old_url]["path"])
+            with tarfile.open(path, "r:gz") as archive:
+                contents = {member.name: archive.extractfile(member).read()
+                            for member in archive.getmembers()}
+            for name in list(contents):
+                if name.startswith("example/"):
+                    contents["example_project/" + name[len("example/"):]] = contents.pop(name)
+            metadata = json.loads(contents["metadata.json"])
+            metadata["project"] = "example_project"
+            contents["metadata.json"] = json.dumps(metadata).encode()
+            with tarfile.open(path, "w:gz") as archive:
+                for name, data in contents.items():
+                    member = tarfile.TarInfo(name)
+                    member.size = len(data)
+                    archive.addfile(member, io.BytesIO(data))
+            checksum = hashlib.sha256(path.read_bytes()).hexdigest()
+            self.staged[old_url]["sha256"] = checksum
+            for record in self.candidate["verification_evidence"][old_url]:
+                record["sha256"] = checksum
+            for records in self.candidate["extensions"]["example"]["1.0"]["downloads"].values():
+                for record in records:
+                    if record["url"] == old_url:
+                        record["sha256"] = checksum
+            new_name = old_url.rsplit("/", 1)[-1].replace("example-", "example_project-", 1)
+            self._rename_new_url(old_url, new_name)
+        self.assertEqual(self.check()["preflight_status"], "passed")
+
     def _rewrite_metadata(self, transform):
         def rewrite(contents):
             metadata = json.loads(contents["metadata.json"])
