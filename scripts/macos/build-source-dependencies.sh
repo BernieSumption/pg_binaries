@@ -50,9 +50,12 @@ build_log="$work_dir/build.log"
 run_build() {
   local label=$1
   shift
+  local started=$SECONDS
+  echo "Starting $label build" >&2
   : > "$build_log"
   if "$@" > "$build_log" 2>&1; then
     grep -E '(^| )clang|\.dylib|install|error:|warning:' "$build_log" | tail -n 30 || true
+    echo "Completed $label build in $((SECONDS - started))s" >&2
   else
     echo "$label build failed; final build output:" >&2
     tail -n 100 "$build_log" >&2
