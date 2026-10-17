@@ -28,7 +28,7 @@ cp "$install_root/lib/hypopg.so" /work/package/hypopg/lib/
 cp "$install_root/share/extension/"* /work/package/hypopg/share/extension/
 cp LICENSE /work/package/hypopg/LICENSES/HypoPG.txt
 cat > /work/package/metadata.json <<EOF
-{"project":"hypopg","version":"${hypopg_version}","sql_names":["hypopg"],"requires":[],"configuration_prerequisites":[],"runtime_prerequisites":[],"postgresql_version":"${pg_version}","source":{"url":"https://github.com/HypoPG/hypopg/archive/refs/tags/1.4.3.tar.gz","sha256":"498a961d88cf37057fd9e98027d06fe805c8959d51895c3d9b94c9eb4e14f706"}}
+{"project":"hypopg","version":"${hypopg_version}","sql_names":["hypopg"],"requires":[],"configuration_prerequisites":[],"runtime_prerequisites":[],"postgresql_version":"${pg_version}","platform":"linux","architecture":"${architecture}","source":{"url":"https://github.com/HypoPG/hypopg/archive/refs/tags/1.4.3.tar.gz","sha256":"498a961d88cf37057fd9e98027d06fe805c8959d51895c3d9b94c9eb4e14f706"}}
 EOF
 cp /work/package/hypopg/lib/hypopg.so "$pgroot/lib/"
 cp /work/package/hypopg/share/extension/* "$pgroot/share/extension/"
