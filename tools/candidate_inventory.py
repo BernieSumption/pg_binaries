@@ -176,6 +176,9 @@ def merge_candidate(base_inventory, proposed_entries, support, snapshot, root=No
             raise CandidateError("candidate asset URL is reused")
         if component == "postgresql":
             target_keys = [target_key]
+        elif low == high and pg_target == low and url not in base_urls:
+            _replace_selected_range_targets(
+                candidate, sql_names, version, platform, low, expected_extensions, base_urls)
         for target_key in target_keys:
             if target_key in seen_targets:
                 raise CandidateError(f"duplicate target {target_key}")
@@ -286,6 +289,46 @@ def _retire_unselected(candidate, expected_core, expected_extensions):
                 del versions[version]
         if not versions:
             del extensions[name]
+
+
+def _replace_selected_range_targets(candidate, sql_names, version, platform, pg,
+                                    expected_extensions, base_urls):
+    """Move a selected target from a retained range URL to a new exact archive.
+
+    Historical bytes keep their URL. Their inventory claim is reduced to the
+    other selected PostgreSQL releases they still serve.
+    """
+    pg_parts = version_parts(pg, "replacement PostgreSQL target")
+    for name in sql_names:
+        record = candidate.get("extensions", {}).get(name, {}).get(version, {})
+        ranges = record.get("downloads", {}).get(platform, [])
+        rebuilt = []
+        for download in ranges:
+            support = download["postgresql_support"]
+            low, high = (version_parts(support[key], "retained extension range")
+                         for key in ("from", "to"))
+            if (download.get("url") not in base_urls or not low <= pg_parts <= high):
+                rebuilt.append(download)
+                continue
+            remaining = sorted({target[2] for target in expected_extensions
+                                if target[0] == name and target[1] == version
+                                and target[3] == platform
+                                and target[2] != pg
+                                and low <= version_parts(target[2], "selected PostgreSQL") <= high},
+                               key=lambda value: version_parts(value, "selected PostgreSQL"))
+            for selected_pg in remaining:
+                narrowed = deepcopy(download)
+                narrowed["postgresql_support"] = {"from": selected_pg, "to": selected_pg}
+                rebuilt.append(narrowed)
+        if record and ranges:
+            if rebuilt:
+                record["downloads"][platform] = rebuilt
+            else:
+                del record["downloads"][platform]
+                if not record["downloads"]:
+                    del candidate["extensions"][name][version]
+                if not candidate["extensions"][name]:
+                    del candidate["extensions"][name]
 
 
 def _evidence_matches(record, download, component, version, platform, pg, endpoint, support, root,

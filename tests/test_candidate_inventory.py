@@ -125,6 +125,46 @@ class CandidateInventoryTests(unittest.TestCase):
         self.assertEqual(retained[0]["postgresql_support"], {"from": "15.8", "to": "16.0"})
         self.assertEqual(result["extensions"]["example"]["1.0"]["requires"], [])
 
+    def test_exact_core_proposal_replaces_one_selected_target_in_historical_range(self):
+        self.snapshot["support_status"]["supported_majors"].append(16)
+        self.snapshot["releases"].append({"version": "16.6", "release_date": "2025-11-01"})
+        base = {"schema_version": 1, "os_support": self.support["os_support"],
+                "postgresql": {
+                    "15.10": {"included_extensions": ["example"], "downloads": {
+                        "linux-x86_64": {"url": "https://github.com/example/releases/download/old/postgresql-15.10-linux-x86_64.tar.gz",
+                                         "sha256": "c" * 64}}},
+                    "16.6": {"included_extensions": ["example"], "downloads": {
+                        "linux-x86_64": {"url": "https://github.com/example/releases/download/old/postgresql-16.6-linux-x86_64.tar.gz",
+                                         "sha256": "b" * 64}}}},
+                "extensions": {"example": {"1.0": {"requires": [], "downloads": {
+                    "linux-x86_64": [{
+                        "url": "https://github.com/example/releases/download/old/example-1.0-postgresql-15.8-to-16.6-linux-x86_64.tar.gz",
+                        "sha256": "a" * 64,
+                        "postgresql_support": {"from": "15.8", "to": "16.6"}}]}}}}}
+        url = ("https://github.com/BernieSumption/pg_binaries/releases/download/"
+               "catalog-20261016-5/example-1.0-postgresql-15.10-linux-x86_64.tar.gz")
+        checksum = "d" * 64
+        record = self.evidence(url, checksum, "current", "15.10")
+        record.update({"component": "example", "version": "1.0", "postgresql_version": "15.10",
+                       "assembled_core": self.core_reference("15.10")})
+        proposal = {"component": "example", "version": "1.0", "platform": "linux-x86_64",
+                    "tag": "catalog-20261016-5",
+                    "filename": "example-1.0-postgresql-15.10-linux-x86_64.tar.gz",
+                    "sha256": checksum,
+                    "postgresql_support": {"from": "15.10", "to": "15.10"},
+                    "verification": [record]}
+
+        result = candidate_inventory.merge_candidate(base, [proposal], self.support, self.snapshot,
+                                                     root=self.root)
+        retained = result["extensions"]["example"]["1.0"]["downloads"]["linux-x86_64"]
+        retained_claims = {entry["url"]: entry["postgresql_support"] for entry in retained}
+        historical_url = base["extensions"]["example"]["1.0"]["downloads"]["linux-x86_64"][0]["url"]
+        self.assertEqual(retained_claims, {
+            url: {"from": "15.10", "to": "15.10"},
+            historical_url: {"from": "16.6", "to": "16.6"},
+        })
+        self.assertEqual(result["verification_evidence"][url], [record])
+
     def test_correction_uses_new_url(self):
         base = {"postgresql": {"15.10": {"downloads": {"linux-x86_64": {
             "url": "https://github.com/example/releases/download/old/pg.tgz", "sha256": "a" * 64}}}},
