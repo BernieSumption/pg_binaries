@@ -96,6 +96,9 @@ jobs:
             "$RUNNER_TEMP/archives/postgresql-${{ needs.build.outputs.postgresql_version }}-macos-x86_64.tar.gz" \
             "$RUNNER_TEMP/archives/pgvector-0.8.7-postgresql-${{ needs.build.outputs.postgresql_version }}-macos-x86_64.tar.gz" \
             --output-dir "$RUNNER_TEMP/archives/debug-symbols" --verify-only
+      - name: Verify representative macOS failure diagnostics
+        id: diagnostics
+        run: bash scripts/macos/diagnostics.sh "$RUNNER_TEMP/archives" x86_64 "${{ needs.build.outputs.postgresql_version }}" 0.8.7 "$RUNNER_TEMP/verification-records/diagnostics.json"
       - name: Check pilot record emitter
         if: ${{ always() }}
         run: python3 -m unittest tests/test_emit_macos_pilot_records.py
@@ -103,7 +106,7 @@ jobs:
         if: ${{ always() }}
         env:
           GITHUB_SHA: ${{ github.sha }}
-          CHECK_OUTCOMES: ${{ steps.archive_verify.outcome }},${{ steps.symbols.outcome }}
+          CHECK_OUTCOMES: ${{ steps.archive_verify.outcome }},${{ steps.symbols.outcome }},${{ steps.diagnostics.outcome }}
           DEPENDENCY_CHECKS_PASSED: ${{ steps.archive_verify.outcome == 'success' }}
         run: |
           image_id="${ImageOS:?runner image OS missing}/${ImageVersion:?runner image version missing}"
