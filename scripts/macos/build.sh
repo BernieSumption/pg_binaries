@@ -43,7 +43,9 @@ esac
 build_configuration="postgresql-${pg_version};pgvector-${vector_version};builder=native-macos;deployment-target=11.0;configure=icu,openssl,lz4,zstd,libxml,libxslt,zlib,uuid-e2fs-interface-apple-system,no-readline;dependencies=pinned-upstream-source;cflags=-O2,-g;pgvector-optflags=-O2,-g;runtime=bundled-dylibs"
 
 source_prefix="$work_dir/dependencies"
+echo "Building pinned macOS dependencies" >&2
 bash "$script_dir/build-source-dependencies.sh" "$architecture" "$source_prefix"
+echo "Pinned macOS dependencies built" >&2
 export PG_MACOS_DEPENDENCY_PREFIX="$source_prefix"
 export PKG_CONFIG_PATH="$source_prefix/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
 export CPPFLAGS="-I$source_prefix/include${CPPFLAGS:+ $CPPFLAGS}"
@@ -64,6 +66,7 @@ tar -xzf "$work_dir/pgvector.tar.gz" -C "$work_dir"
 
 install_dir="$work_dir/install/postgresql"
 cd "$work_dir/postgresql-${pg_version}"
+echo "Building PostgreSQL $pg_version" >&2
 if ! CFLAGS='-O2 -g' ./configure --prefix="$install_dir" --with-icu --with-ssl=openssl --with-lz4 --with-zstd --with-libxml --with-libxslt --with-zlib --with-uuid=e2fs --without-readline; then
   tail -n 100 config.log >&2
   exit 1
@@ -72,6 +75,7 @@ make -j "$(sysctl -n hw.ncpu)"
 make -C contrib -j "$(sysctl -n hw.ncpu)"
 make install
 make -C contrib install
+echo "PostgreSQL $pg_version installed" >&2
 
 package_dir="$work_dir/package"
 mkdir -p "$package_dir/postgresql/LICENSES" "$package_dir/pgvector/lib" "$package_dir/pgvector/share/extension" "$package_dir/pgvector/LICENSES"
@@ -99,6 +103,7 @@ cat > "$package_dir/postgresql/manifest.json" <<EOF
 EOF
 
 cd "$work_dir/pgvector-${vector_version}"
+echo "Building pgvector $vector_version" >&2
 make PG_CONFIG="$install_dir/bin/pg_config" OPTFLAGS='-O2 -g' -j "$(sysctl -n hw.ncpu)"
 make PG_CONFIG="$install_dir/bin/pg_config" OPTFLAGS= install
 cp "$install_dir/lib/vector.dylib" "$package_dir/pgvector/lib/"
@@ -107,6 +112,7 @@ cp LICENSE "$package_dir/pgvector/LICENSES/pgvector.txt"
 python3 "$script_dir/bundle.py" "$package_dir/pgvector" "$architecture"
 python3 "$script_dir/licenses.py" "$package_dir/pgvector" "$source_prefix/share/pg_binaries/source-dependencies.json" --component pgvector --version "$vector_version" --source-url "$vector_source_url" --source-sha256 "$vector_source_sha256"
 mv "$package_dir/pgvector/bundled-dependencies.json" "$package_dir/pgvector/LICENSES/pgvector-bundled-dependencies.json"
+echo "pgvector $vector_version packaged" >&2
 
 cat > "$package_dir/metadata.json" <<EOF
 {"project":"pgvector","version":"${vector_version}","sql_names":["vector"],"requires":[],"configuration_prerequisites":[],"runtime_prerequisites":[],"build_id":"${build_id}","source_revision":"${source_revision}","source_archive":{"url":"${vector_source_url}","sha256":"${vector_source_sha256}"},"build_configuration":"${build_configuration}","platform":"macos","architecture":"${platform_arch}"}
@@ -136,11 +142,18 @@ for component in ("postgresql", "pgvector"):
                 sys.stdout.buffer.write(str(path).encode() + b"\0")
 PY
 dsyms="$work_dir/dsyms"
+echo "Generating dSYM files" >&2
+dsym_count=0
 while IFS= read -r -d '' binary; do
   relative=${binary#"$package_dir"/}
+  if (( dsym_count % 20 == 0 )); then
+    echo "dSYM $dsym_count: $relative" >&2
+  fi
   mkdir -p "$dsyms/$(dirname "$relative")"
   dsymutil "$binary" -o "$dsyms/$relative.dSYM"
+  dsym_count=$((dsym_count + 1))
 done < "$work_dir/macho-paths.bin"
+echo "Generated $dsym_count dSYM files" >&2
 
 pg_archive="postgresql-${pg_version}-macos-${platform_arch}.tar.gz"
 vector_archive="pgvector-${vector_version}-postgresql-${pg_version}-macos-${platform_arch}.tar.gz"
