@@ -6,6 +6,7 @@ import hashlib
 import json
 import pathlib
 import re
+import shutil
 import subprocess
 import sys
 
@@ -19,9 +20,11 @@ def run(*args):
 
 
 def tool_version(tool):
-    flag = {"file": "-v", "lipo": "-version", "otool": "-V"}[tool]
-    result = run(tool, flag)
-    return (result.stdout or result.stderr).strip().splitlines()[:1]
+    if tool in ("lipo", "otool"):
+        return shutil.which(tool)
+    result = run(tool, "-v")
+    lines = (result.stdout or result.stderr).strip().splitlines()
+    return lines[0] if lines else None
 
 
 def archive_evidence(paths):
@@ -192,7 +195,11 @@ def main(argv=None):
     if args.report:
         args.report.parent.mkdir(parents=True, exist_ok=True)
         args.report.write_text(encoded)
-    print(encoded, end="")
+    print(f"Inspected {len(report['inspected_files'])} Mach-O files; {len(report['findings'])} finding(s).")
+    for finding in report["findings"][:20]:
+        print(json.dumps(finding, sort_keys=True))
+    if len(report["findings"]) > 20:
+        print(f"... {len(report['findings']) - 20} more finding(s) in {args.report}")
     return 0 if report["passed"] else 1
 
 
