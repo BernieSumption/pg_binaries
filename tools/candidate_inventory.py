@@ -62,6 +62,7 @@ def merge_candidate(base_inventory, proposed_entries, support, snapshot, root=No
     candidate.setdefault("postgresql", {})
     candidate.setdefault("extensions", {})
     candidate["candidate_status"] = "structural-draft"
+    candidate_evidence = candidate["verification_evidence"] = {}
     seen_targets, seen_urls = set(), set()
     base_urls = {entry["url"] for entry in list(base_core.values()) + list(base_extensions.values())}
 
@@ -150,6 +151,8 @@ def merge_candidate(base_inventory, proposed_entries, support, snapshot, root=No
                 if not any(_evidence_matches(r, download, component, version, platform, pg, endpoint, support, root)
                            for r in records):
                     raise CandidateError(f"missing passed {endpoint} verification for {component} {version} {pg} {platform}")
+
+        candidate_evidence[url] = deepcopy(records)
 
         if component == "postgresql":
             version_entry = candidate["postgresql"].setdefault(version, {})

@@ -243,6 +243,26 @@ def preflight_candidate(base_inventory, candidate, support, snapshot, staged_ass
     if extra_assets:
         raise PreflightError(f"staged asset is not referenced by candidate: {extra_assets[0]}")
 
+    evidence_by_url = candidate.get("verification_evidence")
+    if not isinstance(evidence_by_url, dict):
+        raise PreflightError("candidate verification_evidence must be an object keyed by new asset URL")
+    missing_evidence = sorted(new_urls - set(evidence_by_url))
+    if missing_evidence:
+        raise PreflightError(f"candidate URL has no verification evidence: {missing_evidence[0]}")
+    extra_evidence = sorted(set(evidence_by_url) - new_urls)
+    if extra_evidence:
+        raise PreflightError(f"verification evidence is not for a new candidate URL: {extra_evidence[0]}")
+    for url in sorted(new_urls):
+        records = evidence_by_url[url]
+        if not isinstance(records, list) or not records:
+            raise PreflightError(f"candidate URL requires verification records: {url}")
+        for record in records:
+            if not isinstance(record, dict):
+                raise PreflightError(f"candidate verification record must be an object: {url}")
+            evidence_sha = record.get("sha256")
+            if not isinstance(evidence_sha, str) or evidence_sha.lower() != candidate_refs[url]:
+                raise PreflightError(f"verification record checksum does not match candidate archive: {url}")
+
     for url, checksum in candidate_refs.items():
         if url in base_refs and checksum != base_refs[url]:
             raise PreflightError(f"retained URL checksum changed: {url}")

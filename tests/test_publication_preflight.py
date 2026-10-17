@@ -38,7 +38,7 @@ class PublicationPreflightTests(unittest.TestCase):
         self.base = {"schema_version": 1, "postgresql": {}, "extensions": {}}
         self.candidate = {"schema_version": 1, "os_support": self.support["os_support"],
                           "candidate_status": "structural-draft",
-                          "postgresql": {}, "extensions": {}}
+                          "postgresql": {}, "extensions": {}, "verification_evidence": {}}
         self.staged = {}
         for os_name, architectures in self.support["platform_architectures"].items():
             for arch in architectures:
@@ -59,6 +59,7 @@ class PublicationPreflightTests(unittest.TestCase):
         checksum = hashlib.sha256(payload).hexdigest()
         url = f"https://github.com/BernieSumption/pg_binaries/releases/download/{tag}/{filename}"
         self.staged[url] = {"path": str(path), "sha256": checksum}
+        inventory.setdefault("verification_evidence", {})[url] = [{"sha256": checksum}]
         entry = inventory["postgresql"].setdefault(version, {"included_extensions": ["example"], "downloads": {}})
         entry["included_extensions"] = ["example"]
         entry["downloads"][platform] = {
@@ -85,6 +86,7 @@ class PublicationPreflightTests(unittest.TestCase):
         checksum = hashlib.sha256(payload).hexdigest()
         url = f"https://github.com/BernieSumption/pg_binaries/releases/download/{tag}/{filename}"
         self.staged[url] = {"path": str(path), "sha256": checksum}
+        self.candidate["verification_evidence"][url] = [{"sha256": checksum}]
         return url, checksum
 
     def _licence_members(self, archive, root, payload_path):
@@ -112,6 +114,7 @@ class PublicationPreflightTests(unittest.TestCase):
                 archive.addfile(member, io.BytesIO(data))
         checksum = hashlib.sha256(path.read_bytes()).hexdigest()
         self.staged[url]["sha256"] = checksum
+        self.candidate["verification_evidence"][url][0]["sha256"] = checksum
         self.candidate["extensions"]["example"]["1.0"]["downloads"]["linux-x86_64"][0]["sha256"] = checksum
 
     def _review(self, **changes):
@@ -243,6 +246,18 @@ class PublicationPreflightTests(unittest.TestCase):
         self.assertEqual(report["extension_target_count"], 5)
         self.assertNotIn("release_eligible", report)
 
+    def test_verification_evidence_is_required_and_bound_to_candidate_checksum(self):
+        url = next(iter(self.candidate["verification_evidence"]))
+        del self.candidate["verification_evidence"][url]
+        with self.assertRaisesRegex(publication_preflight.PreflightError, "no verification evidence"):
+            self.check()
+
+        self.setUp()
+        url = next(iter(self.candidate["verification_evidence"]))
+        self.candidate["verification_evidence"][url][0]["sha256"] = "0" * 64
+        with self.assertRaisesRegex(publication_preflight.PreflightError, "verification record checksum"):
+            self.check()
+
     def test_rejects_staged_file_with_wrong_bytes(self):
         url = next(iter(self.staged))
         Path(self.staged[url]["path"]).write_text("different bytes", encoding="utf-8")
@@ -265,6 +280,7 @@ class PublicationPreflightTests(unittest.TestCase):
             archive.addfile(member, io.BytesIO(payload))
         checksum = hashlib.sha256(path.read_bytes()).hexdigest()
         self.staged[url]["sha256"] = checksum
+        self.candidate["verification_evidence"][url][0]["sha256"] = checksum
         self.candidate["postgresql"]["15.9"]["downloads"]["linux-x86_64"]["sha256"] = checksum
         with self.assertRaisesRegex(publication_preflight.PreflightError,
                                     "missing or duplicate PostgreSQL extension controls"):
@@ -280,6 +296,7 @@ class PublicationPreflightTests(unittest.TestCase):
             archive.addfile(member, io.BytesIO(payload))
         checksum = hashlib.sha256(path.read_bytes()).hexdigest()
         self.staged[url]["sha256"] = checksum
+        self.candidate["verification_evidence"][url][0]["sha256"] = checksum
         self.candidate["postgresql"]["15.9"]["downloads"]["linux-x86_64"]["sha256"] = checksum
         with self.assertRaisesRegex(publication_preflight.PreflightError,
                                     "malformed PostgreSQL extension control"):
@@ -295,6 +312,7 @@ class PublicationPreflightTests(unittest.TestCase):
             archive.addfile(member, io.BytesIO(payload))
         checksum = hashlib.sha256(path.read_bytes()).hexdigest()
         self.staged[url]["sha256"] = checksum
+        self.candidate["verification_evidence"][url][0]["sha256"] = checksum
         self.candidate["postgresql"]["15.9"]["downloads"]["linux-x86_64"]["sha256"] = checksum
         with self.assertRaisesRegex(publication_preflight.PreflightError,
                                     "outside postgresql/share/extension"):
@@ -336,6 +354,7 @@ class PublicationPreflightTests(unittest.TestCase):
         asset = self.staged.pop(old_url)
         mutable_url = "https://github.com/BernieSumption/pg_binaries/releases/latest/download/archive.tar.gz"
         self.staged[mutable_url] = asset
+        self.candidate["verification_evidence"][mutable_url] = self.candidate["verification_evidence"].pop(old_url)
         self.candidate["postgresql"]["15.9"]["downloads"]["linux-x86_64"]["url"] = mutable_url
         with self.assertRaisesRegex(publication_preflight.PreflightError, "not an immutable catalog"):
             self.check()

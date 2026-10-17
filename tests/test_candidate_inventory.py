@@ -77,6 +77,8 @@ class CandidateInventoryTests(unittest.TestCase):
         self.assertEqual(result["postgresql"]["15.8"], self.old["postgresql"]["15.8"])
         self.assertEqual(result["postgresql"]["15.9"]["downloads"]["linux-x86_64"]["sha256"], "b" * 64)
         self.assertEqual(self.old["postgresql"]["15.8"]["downloads"]["linux-x86_64"]["sha256"], "a" * 64)
+        url = result["postgresql"]["15.9"]["downloads"]["linux-x86_64"]["url"]
+        self.assertEqual(result["verification_evidence"][url], self.proposal()["verification"])
 
     def test_correction_uses_new_url(self):
         base = {"postgresql": {"15.9": {"downloads": {"linux-x86_64": {
