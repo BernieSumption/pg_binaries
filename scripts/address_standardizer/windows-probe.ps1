@@ -110,7 +110,7 @@ Complete-Stage
 $pcreSourceDir = Join-Path $work 'pcre-source'
 New-Item -ItemType Directory -Force $pcreSourceDir | Out-Null
 Start-Stage 'extract PCRE2 source'
-Invoke-Native 'tar.exe' @('-xjf', $pcreArchive, '-C', $pcreSourceDir)
+Invoke-Native 'python' @('-m', 'tarfile', '-e', $pcreArchive, $pcreSourceDir)
 Complete-Stage
 $pcreSource = Join-Path $pcreSourceDir "pcre2-$pcreVersion"
 $pcreBuild = Join-Path $work 'pcre-build'
