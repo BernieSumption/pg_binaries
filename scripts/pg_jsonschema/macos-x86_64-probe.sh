@@ -59,7 +59,8 @@ trap stop_server EXIT
 "$prefix/bin/pg_ctl" -D "$work/data" -m fast -w stop
 trap - EXIT
 
-extension_dylib=$(find "$prefix/lib/postgresql" -maxdepth 1 -type f \( -name '*jsonschema*.so' -o -name '*jsonschema*.dylib' \) -print -quit)
+pkglibdir=$("$prefix/bin/pg_config" --pkglibdir)
+extension_dylib=$(find "$pkglibdir" -maxdepth 1 -type f \( -name '*jsonschema*.so' -o -name '*jsonschema*.dylib' \) -print -quit)
 test -n "$extension_dylib" && test -f "$extension_dylib"
 {
   echo "architecture=$(uname -m)"
