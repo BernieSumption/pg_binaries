@@ -213,7 +213,34 @@ runuser -u postgres -- "$pgroot/bin/pg_restore" --exit-on-error -h /tmp/pgsocket
 restored=(runuser -u postgres -- "$pgroot/bin/psql" -X -v ON_ERROR_STOP=1 -h /tmp/pgsocket -p 55431 -d restored)
 "${restored[@]}" <<'SQL'
 DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_namespace WHERE nspname = 'pilot') THEN
+    RAISE EXCEPTION 'restored pilot schema missing'; END IF;
   IF pilot.active_item_count(1) <> 1 THEN RAISE EXCEPTION 'restored function or data missing'; END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_proc p
+    JOIN pg_namespace n ON n.oid = p.pronamespace
+    WHERE n.nspname = 'pilot' AND p.proname = 'active_item_count'
+      AND p.prokind = 'f'
+  ) THEN RAISE EXCEPTION 'restored function missing from catalogue'; END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_class r
+    JOIN pg_namespace n ON n.oid = r.relnamespace
+    WHERE n.nspname = 'pilot' AND r.relname = 'active_items' AND r.relkind = 'v'
+  ) THEN RAISE EXCEPTION 'restored view missing from catalogue'; END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint c
+    JOIN pg_class r ON r.oid = c.conrelid
+    JOIN pg_namespace n ON n.oid = r.relnamespace
+    WHERE n.nspname = 'pilot' AND r.relname = 'items'
+      AND c.conname = 'items_title_check' AND c.contype = 'c'
+  ) THEN RAISE EXCEPTION 'restored check constraint missing'; END IF;
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_class i
+    JOIN pg_namespace n ON n.oid = i.relnamespace
+    JOIN pg_index x ON x.indexrelid = i.oid
+    WHERE n.nspname = 'pilot' AND i.relname = 'items_title_key_active_idx'
+      AND x.indisvalid AND x.indpred IS NOT NULL
+  ) THEN RAISE EXCEPTION 'restored partial index missing'; END IF;
   IF (SELECT count(*) FROM pilot.events_2026) <> 1 THEN RAISE EXCEPTION 'restored partition data missing'; END IF;
   IF (SELECT extversion FROM pg_extension WHERE extname = 'vector') <> '0.8.7' THEN
     RAISE EXCEPTION 'restored pgvector missing'; END IF;

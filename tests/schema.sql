@@ -42,6 +42,11 @@ LANGUAGE sql STABLE AS $$
     WHERE account_id = p_account_id AND state = 'active'
 $$;
 
+CREATE VIEW pilot.active_items AS
+    SELECT item_id, account_id, title, price
+    FROM pilot.items
+    WHERE state = 'active';
+
 INSERT INTO pilot.accounts (email) VALUES ('pilot@example.test');
 INSERT INTO pilot.items (account_id, state, title, price, attributes)
 VALUES (1, 'active', 'Portable Database', 12.50, '{"category":"test"}');

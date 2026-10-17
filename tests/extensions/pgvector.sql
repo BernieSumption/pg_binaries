@@ -24,11 +24,13 @@ BEGIN
         RAISE EXCEPTION 'nearest vector result mismatch';
     END IF;
     IF NOT EXISTS (
-        SELECT 1 FROM pg_indexes
-        WHERE tablename = 'pilot_vectors'
-          AND indexname = 'pilot_vectors_hnsw'
+        SELECT 1
+        FROM pg_class index_relation
+        JOIN pg_am access_method ON access_method.oid = index_relation.relam
+        WHERE index_relation.oid = 'pilot_vectors_hnsw'::regclass
+          AND access_method.amname = 'hnsw'
     ) THEN
-        RAISE EXCEPTION 'HNSW index missing';
+        RAISE EXCEPTION 'HNSW index or access method missing';
     END IF;
 END
 $$;
