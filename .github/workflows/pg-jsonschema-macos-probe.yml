@@ -1,4 +1,4 @@
-name: pg_jsonschema macOS x86_64 feasibility probe
+name: pg_jsonschema macOS source feasibility probe
 
 on:
   workflow_dispatch:
@@ -13,17 +13,25 @@ permissions:
 
 jobs:
   probe:
-    runs-on: macos-15-intel
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - architecture: x86_64
+            runner: macos-15-intel
+          - architecture: arm64
+            runner: macos-15
+    runs-on: ${{ matrix.runner }}
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@1.90.0
       - name: Build unmodified upstream source and run SQL probe
-        run: bash scripts/pg_jsonschema/macos-x86_64-probe.sh "$RUNNER_TEMP/results"
+        run: bash scripts/pg_jsonschema/macos-probe.sh "$RUNNER_TEMP/results" "${{ matrix.architecture }}"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: pg-jsonschema-macos-x86_64-feasibility
+          name: pg-jsonschema-macos-${{ matrix.architecture }}-feasibility
           path: ${{ runner.temp }}/results/**
           if-no-files-found: warn
           retention-days: 3

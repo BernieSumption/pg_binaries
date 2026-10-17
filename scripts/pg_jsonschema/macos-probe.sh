@@ -1,11 +1,21 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-output=${1:?usage: macos-x86_64-probe.sh OUTPUT_DIRECTORY}
+output=${1:?usage: macos-probe.sh OUTPUT_DIRECTORY [EXPECTED_ARCH]}
+expected_arch=${2:-x86_64}
+case "$expected_arch" in x86_64|arm64) ;; *)
+  echo "Unsupported architecture: $expected_arch" >&2
+  exit 2
+esac
+actual_arch=$(uname -m)
+test "$actual_arch" = "$expected_arch" || {
+  echo "Expected native $expected_arch runner, got $actual_arch" >&2
+  exit 1
+}
 script_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 mkdir -p "$output"
 output=$(cd "$output" && pwd)
-work=${RUNNER_TEMP:-${TMPDIR:-/tmp}}/pg-jsonschema-macos-x86_64
+work=${RUNNER_TEMP:-${TMPDIR:-/tmp}}/pg-jsonschema-macos-$expected_arch
 prefix="$work/postgres"
 source="$work/source"
 mkdir -p "$source" "$work/socket"
@@ -85,7 +95,7 @@ test -n "$extension_dylib" && test -f "$extension_dylib"
   otool -L "$extension_dylib"
 } | tee "$output/macho-inspection.txt"
 
-lipo -archs "$extension_dylib" | grep -Eq '(^| )x86_64( |$)'
+lipo -archs "$extension_dylib" | grep -Eq "(^| )$expected_arch( |$)"
 minimum=$(otool -l "$extension_dylib" | awk '/cmd LC_BUILD_VERSION/ {build=1; next} build && /minos / {print $2; exit} /cmd LC_VERSION_MIN_MACOSX/ {legacy=1; next} legacy && /version / {print $2; exit}')
 test -n "$minimum"
 awk -v version="$minimum" 'BEGIN {split(version,a,"."); if (a[1] > 11 || (a[1] == 11 && a[2] > 0)) exit 1}'
