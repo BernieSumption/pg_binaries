@@ -119,7 +119,12 @@ $sourcePackage = Join-Path $SourcePackageDirectory $sourcePackageName
   }
   Move-Item $pgRoot (Join-Path $moved 'postgresql')
   $pgRoot = Join-Path $moved 'postgresql'
-  Copy-Item (Join-Path $extensionPayload '*') $pgRoot -Recurse
+  foreach ($file in Get-ChildItem $extensionPayload -Recurse -File) {
+    $relative = $file.FullName.Substring($extensionPayload.Length).TrimStart('\','/')
+    $destination = Join-Path $pgRoot $relative
+    New-Item -ItemType Directory -Force (Split-Path $destination -Parent) | Out-Null
+    Copy-Item $file.FullName $destination
+  }
   $pgCtl = Join-Path $pgRoot 'bin/pg_ctl.exe'
   $initdb = Join-Path $pgRoot 'bin/initdb.exe'
   $psql = Join-Path $pgRoot 'bin/psql.exe'
