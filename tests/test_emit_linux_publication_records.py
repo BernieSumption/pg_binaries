@@ -37,7 +37,7 @@ class LinuxPublicationRecordTests(unittest.TestCase):
             "test_revision": "a" * 40,
             "postgresql_version": "18.6", "architecture": "x86_64",
             "os": "linux", "clean_system": True,
-            "endpoint": "minimum", "kernel_release": "5.15.0-1109-kvm",
+            "endpoint": "current", "kernel_release": "6.8.0-40-generic",
             "distribution": "Ubuntu 22.04.5 LTS", "distribution_version": "22.04",
             "image_id": "sha256:" + "b" * 64,
             "dependency_check_profile": emitter.DEPENDENCY_PROFILE,
@@ -75,8 +75,8 @@ class LinuxPublicationRecordTests(unittest.TestCase):
                          [self.receipt["archives"][name] for name in self.names])
         self.assertEqual(records[1]["assembled_core"]["archive"], self.names[0])
         for record in records:
-            self.assertEqual(record["environment"]["os_version"], "5.15.0")
-            self.assertEqual(record["environment"]["kernel_release"], "5.15.0-1109-kvm")
+            self.assertEqual(record["environment"]["os_version"], "6.8.0")
+            self.assertEqual(record["environment"]["kernel_release"], "6.8.0-40-generic")
             self.assertTrue(coverage.validate_verification_record(
                 record, coverage.load_json(self.root / "support.json"), self.root))
         verification_dir = self.root / "support" / "verification"
@@ -129,6 +129,10 @@ class LinuxPublicationRecordTests(unittest.TestCase):
         self.receipt = dict(original, architecture="arm64")
         self._write_receipt()
         with self.assertRaises(coverage.CoverageError):
+            emitter.emit(self.root, self.archives, self.receipt_path, self.output)
+        self.receipt = dict(original, endpoint="minimum", kernel_release="5.15.0-1109-kvm")
+        self._write_receipt()
+        with self.assertRaisesRegex(coverage.CoverageError, "endpoint must be current"):
             emitter.emit(self.root, self.archives, self.receipt_path, self.output)
         self.receipt = dict(original, kernel_release="5.14.9")
         self._write_receipt()

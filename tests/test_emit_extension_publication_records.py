@@ -60,7 +60,7 @@ class ExtensionPublicationRecordTests(unittest.TestCase):
                 self.root, self.profile_id)["profile_revision"],
             "test_revision": "a" * 40, "project": "PostGIS TIGER Geocoder",
             "version": "2025.2", "postgresql_version": "18.6", "architecture": "x86_64",
-            "endpoint": "minimum", "kernel_release": "5.15.0-1109-kvm",
+            "endpoint": "current", "kernel_release": "6.8.0-40-generic",
             "distribution": "Ubuntu 22.04.5 LTS", "distribution_version": "22.04",
             "image_id": "sha256:" + "b" * 64, "clean_system": True,
             "dependency_check_profile": "postgis_tiger_geocoder-runtime-v1",
@@ -139,7 +139,7 @@ class ExtensionPublicationRecordTests(unittest.TestCase):
                          self.receipt["archives"][self.core_name])
         self.assertEqual(record["prerequisite_archives"], self.receipt["prerequisite_archives"])
         self.assertEqual(record["sha256"], self.receipt["archives"][self.extension_name])
-        self.assertEqual(record["environment"]["os_version"], "5.15.0")
+        self.assertEqual(record["environment"]["os_version"], "6.8.0")
         coverage.validate_verification_record(
             record, coverage.load_json(self.root / "support.json"), self.root)
 
@@ -214,9 +214,14 @@ class ExtensionPublicationRecordTests(unittest.TestCase):
 
     def test_rejects_wrong_endpoint_and_unpinned_passing_image(self):
         self.receipt["kernel_release"] = "5.14.9"
-        with self.assertRaisesRegex(coverage.CoverageError, "Linux kernel 5.15"):
+        with self.assertRaisesRegex(coverage.CoverageError, "newer than 5.15"):
             self.emit()
+        self.receipt["endpoint"] = "minimum"
         self.receipt["kernel_release"] = "5.15.0-1109-kvm"
+        with self.assertRaisesRegex(coverage.CoverageError, "endpoint must be current"):
+            self.emit()
+        self.receipt["endpoint"] = "current"
+        self.receipt["kernel_release"] = "6.8.0-40-generic"
         self.receipt["image_id"] = "ubuntu-22.04"
         with self.assertRaisesRegex(coverage.CoverageError, "image digest"):
             self.emit()
@@ -257,7 +262,7 @@ class ExtensionPublicationRecordTests(unittest.TestCase):
         receipt_creator.create(
             self.root, self.archives, self.core_archives, self.receipt_path,
             self.profile_id, "PostGIS TIGER Geocoder", "2025.2", "18.6", "18.6",
-            "x86_64", "minimum", "5.15.0-1109-kvm", "Ubuntu 22.04.5 LTS",
+            "x86_64", "current", "6.8.0-40-generic", "Ubuntu 22.04.5 LTS",
             "22.04", "sha256:" + "b" * 64, "success", True, steps, environment,
             prerequisite_archives={"PostGIS": self.postgis_path})
         receipt = json.loads(self.receipt_path.read_text())
@@ -274,6 +279,20 @@ class ExtensionPublicationRecordTests(unittest.TestCase):
         environment = {"GITHUB_SHA": "a" * 40, "GITHUB_RUN_ID": "987",
                        "GITHUB_REPOSITORY": "o/r", "GITHUB_SERVER_URL": "https://github.com"}
         with self.assertRaisesRegex(coverage.CoverageError, "exactly every registered"):
+            receipt_creator.create(
+                self.root, self.archives, self.core_archives, self.receipt_path,
+                self.profile_id, "PostGIS TIGER Geocoder", "2025.2", "18.6", "18.6",
+                "x86_64", "current", "6.8.0-40-generic", "Ubuntu 22.04.5 LTS",
+                "22.04", "sha256:" + "b" * 64, "success", True, steps, environment,
+                prerequisite_archives={"PostGIS": self.postgis_path})
+
+    def test_receipt_creator_rejects_minimum_endpoint(self):
+        steps = self.root / "step-results.json"
+        steps.write_text(json.dumps({"archive-assembly": "success",
+                                     "tiger-normalize": "success"}))
+        environment = {"GITHUB_SHA": "a" * 40, "GITHUB_RUN_ID": "987",
+                       "GITHUB_REPOSITORY": "o/r", "GITHUB_SERVER_URL": "https://github.com"}
+        with self.assertRaisesRegex(coverage.CoverageError, "endpoint must be current"):
             receipt_creator.create(
                 self.root, self.archives, self.core_archives, self.receipt_path,
                 self.profile_id, "PostGIS TIGER Geocoder", "2025.2", "18.6", "18.6",

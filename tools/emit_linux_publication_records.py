@@ -2,7 +2,7 @@
 """Emit Linux PostgreSQL and pgvector publication records from verifier JSON.
 
 Receipt schema: profile_id, profile_revision, test_revision, postgresql_version,
-architecture, endpoint (minimum/current), kernel_release, distribution,
+architecture, current endpoint, kernel_release, distribution,
 distribution_version, image_id, dependency_check_profile, dependency_checks_passed,
 case_results (case ID to passed/failed/skipped), archives (canonical filename
 to sha256), and ci (GitHub Actions provider, run_id, run_url, source_revision,
@@ -102,14 +102,10 @@ def emit(root, archives, receipt_path, output):
     kernel = receipt["kernel_release"]
     kernel_parts = _kernel(kernel)
     endpoint = receipt["endpoint"]
-    if endpoint == "minimum":
-        if kernel_parts[:2] != MINIMUM_KERNEL:
-            _fail("minimum endpoint must use Linux kernel 5.15")
-    elif endpoint == "current":
-        if kernel_parts[:2] <= MINIMUM_KERNEL:
-            _fail("current endpoint kernel must be newer than 5.15")
-    else:
-        _fail("endpoint must be minimum or current")
+    if endpoint != "current":
+        _fail("publication endpoint must be current")
+    if kernel_parts[:2] <= MINIMUM_KERNEL:
+        _fail("current endpoint kernel must be newer than 5.15")
     if (not isinstance(receipt["distribution"], str) or not receipt["distribution"]
             or not isinstance(receipt["distribution_version"], str)
             or not re.fullmatch(r"\d+(?:\.\d+)*", receipt["distribution_version"])):

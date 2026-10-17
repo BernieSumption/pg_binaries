@@ -24,8 +24,8 @@ def create(root, archives, core_archives, receipt_path, profile_id, project,
     environ = os.environ if environ is None else environ
     if architecture not in {"x86_64", "arm64"}:
         raise coverage.CoverageError("architecture must be x86_64 or arm64")
-    if endpoint not in {"minimum", "current"}:
-        raise coverage.CoverageError("endpoint must be minimum or current")
+    if endpoint != "current":
+        raise coverage.CoverageError("Linux publication endpoint must be current")
     if dependency_check_result not in {"success", "failure"}:
         raise coverage.CoverageError("dependency check result must be success or failure")
     if not isinstance(clean_system, bool):
@@ -130,7 +130,7 @@ def main():
     parser.add_argument("--postgresql-version", required=True)
     parser.add_argument("--archive-target")
     parser.add_argument("--architecture", choices=("x86_64", "arm64"), required=True)
-    parser.add_argument("--endpoint", choices=("minimum", "current"), required=True)
+    parser.add_argument("--endpoint", choices=("current",), required=True)
     parser.add_argument("--kernel-release", required=True)
     parser.add_argument("--distribution", required=True)
     parser.add_argument("--distribution-version", required=True)

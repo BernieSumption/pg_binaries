@@ -106,6 +106,11 @@ class LinuxPublicationReceiptTests(unittest.TestCase):
             self.create()
         self.assertFalse(self.receipt_path.exists())
 
+    def test_rejects_minimum_endpoint_and_never_writes_receipt(self):
+        with self.assertRaisesRegex(coverage.CoverageError, "endpoint must be current"):
+            self.create(endpoint="minimum", kernel_release="5.15.0-1109-kvm")
+        self.assertFalse(self.receipt_path.exists())
+
     def test_rejects_missing_github_provenance_and_bad_archive_sidecar(self):
         with self.assertRaises(coverage.CoverageError):
             self.create(environ={})

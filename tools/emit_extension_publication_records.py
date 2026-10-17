@@ -142,14 +142,10 @@ def emit(root, archives, core_archives, receipt_path, output, prerequisite_archi
     kernel = receipt["kernel_release"]
     parts = _kernel(kernel)
     endpoint = receipt["endpoint"]
-    if endpoint == "minimum":
-        if parts[:2] != (5, 15):
-            _fail("minimum endpoint must use Linux kernel 5.15")
-    elif endpoint == "current":
-        if parts[:2] <= (5, 15):
-            _fail("current endpoint kernel must be newer than 5.15")
-    else:
-        _fail("endpoint must be minimum or current")
+    if endpoint != "current":
+        _fail("publication endpoint must be current")
+    if parts[:2] <= (5, 15):
+        _fail("current endpoint kernel must be newer than 5.15")
     if (not isinstance(receipt["distribution"], str) or not receipt["distribution"]
             or not isinstance(receipt["distribution_version"], str)
             or not re.fullmatch(r"\d+(?:\.\d+)*", receipt["distribution_version"])):
