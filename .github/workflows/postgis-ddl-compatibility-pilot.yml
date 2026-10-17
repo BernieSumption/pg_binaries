@@ -1,25 +1,6 @@
 name: PostGIS adjacent-version DDL pilot
 on:
   workflow_dispatch:
-  push:
-    branches: [spike]
-    paths:
-      - '.github/workflows/postgis-ddl-compatibility-pilot.yml'
-      - 'scripts/postgis/ddl-compatibility-in-container.sh'
-      - 'scripts/postgis/ddl-3.4.6.sql'
-      - 'scripts/postgis/ddl-3.5.7.sql'
-      - 'scripts/postgis/Dockerfile'
-      - 'scripts/linux/build.sh'
-      - 'scripts/linux/Dockerfile'
-      - 'scripts/linux/build-in-container.sh'
-      - 'scripts/linux/bundle-glibc-in-container.sh'
-      - 'scripts/linux/launcher.c'
-      - 'tools/discover_builtins.py'
-      - 'tools/write_linux_license_inventory.py'
-      - 'tools/create_linux_symbols.py'
-      - 'tools/reuse_linux_core_artifact.py'
-      - 'tools/plan_work.py'
-      - 'support.json'
 jobs:
   postgis-ddl-linux-x86_64:
     runs-on: ubuntu-24.04
