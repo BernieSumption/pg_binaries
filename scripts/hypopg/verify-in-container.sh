@@ -2,8 +2,9 @@
 set -euo pipefail
 architecture=${PG_ARCHITECTURE:-x86_64}
 case "$architecture" in x86_64|arm64) ;; *) echo "Unsupported Linux architecture: $architecture" >&2; exit 2 ;; esac
-pg_archive="postgresql-18.6-linux-${architecture}.tar.gz"
-hypopg_archive="hypopg-1.4.3-postgresql-18.6-linux-${architecture}.tar.gz"
+pg_version=${PG_VERSION:-18.6}
+pg_archive="postgresql-${pg_version}-linux-${architecture}.tar.gz"
+hypopg_archive="hypopg-1.4.3-postgresql-${pg_version}-linux-${architecture}.tar.gz"
 cd /input
 sha256sum -c "$pg_archive.sha256"
 cd /extension
@@ -13,7 +14,7 @@ tar -xzf "/input/$pg_archive" -C /tmp/first
 tar -xzf "/extension/$hypopg_archive" -C /tmp/extension
 pgroot=/tmp/first/postgresql
 extroot=/tmp/extension/hypopg
-test "$(/tmp/first/postgresql/bin/pg_config --version)" = 'PostgreSQL 18.6'
+test "$(/tmp/first/postgresql/bin/pg_config --version)" = "PostgreSQL $pg_version"
 test -s "$extroot/LICENSES/HypoPG.txt"
 python3 - <<'PY'
 import json
@@ -29,7 +30,7 @@ expected = {
     'requires': [],
     'configuration_prerequisites': [],
     'runtime_prerequisites': [],
-    'postgresql_version': '18.6',
+    'postgresql_version': os.environ['PG_VERSION'],
     'platform': 'linux',
     'architecture': os.environ['PG_ARCHITECTURE'],
     'source': {

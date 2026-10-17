@@ -302,10 +302,54 @@ class LinuxPublicationRunImportTests(unittest.TestCase):
                     evidence = evidence / f"postgresql-{version}" / self.architecture
                 self.assertTrue((evidence / "current-receipt.json").is_file())
 
-    def test_postgis_artifact_is_rejected_for_non_18_6_core(self):
-        with self.assertRaisesRegex(coverage.CoverageError, "only for PostgreSQL 18.6"):
-            importer.import_run(self.root, self.core_artifact, self.postgis_artifact,
-                                self.run_id, self.architecture, "17.11")
+    def test_imports_postgis_against_selected_pg17_core(self):
+        version = "17.11"
+        core_artifact = self._core_only_artifact(version)
+        postgis_artifact = Path(self.temporary.name) / "postgis-17.11"
+        extension_dir = postgis_artifact / "postgis"
+        publication = postgis_artifact / "postgis-publication"
+        records = publication / "records"
+        records.mkdir(parents=True)
+        archive = extension_dir / f"postgis-3.6.4-postgresql-{version}-{self.platform}.tar.gz"
+        extension_dir.mkdir()
+        self._metadata_archive(archive, {
+            "project": "postgis", "version": "3.6.4", "postgresql_version": version,
+            "platform": "linux", "architecture": self.architecture,
+            "sql_names": coverage.load_json(self.root / "support.json")["extensions"]["PostGIS"]["sql_names"],
+            "requires": [],
+        })
+        self._write_sidecar(archive)
+        profile_id = f"postgis-publication-current-{self.architecture}"
+        steps = publication / "current-steps.json"
+        profile = coverage.verification_profile(self.root, profile_id)
+        steps.write_text(json.dumps({case: "success" for case in profile["case_ids"]}))
+        receipt = publication / "current-receipt.json"
+        environ = {
+            "GITHUB_SHA": "a" * 40, "GITHUB_RUN_ID": self.run_id,
+            "GITHUB_REPOSITORY": "example/repo", "GITHUB_SERVER_URL": "https://github.com",
+        }
+        extension_receipts.create(
+            self.root, extension_dir, core_artifact / "pilot", receipt,
+            profile_id, "PostGIS", "3.6.4", version, version,
+            self.architecture, "current", "6.8.0-test-kernel", "Alpine Linux",
+            "3.22.6", "sha256:" + "b" * 64, "success", True, steps,
+            environ=environ, prerequisite_archives={})
+        extension_emitter.emit(self.root, extension_dir, core_artifact / "pilot",
+                               receipt, records, {})
+        report = extension_dir / "static-analysis/postgis.json"
+        report.parent.mkdir(parents=True)
+        core = core_artifact / "pilot" / f"postgresql-{version}-{self.platform}.tar.gz"
+        report.write_text(json.dumps({
+            "outcome": "passed", "architecture": self.architecture,
+            "files": [{"path": "metadata.json"}],
+            "archives": [{"basename": item.name, "sha256": self._sha(item)}
+                         for item in (core, archive)],
+        }))
+        retained = importer.import_run(self.root, core_artifact, postgis_artifact,
+                                       self.run_id, self.architecture, version)
+        self.assertEqual(sum("/support/verification/" in f"/{path}" for path in retained), 6)
+        self.assertTrue((self.root / "support/verification" /
+                         f"postgis-3.6.4-postgresql-{version}-{self.platform}-current-{self.run_id}.json").is_file())
 
     def test_rejects_unselected_postgresql_minor(self):
         with self.assertRaisesRegex(coverage.CoverageError, "18.5.*not selected"):

@@ -2,7 +2,7 @@
 set -euo pipefail
 architecture=${PG_ARCHITECTURE:-x86_64}
 case "$architecture" in x86_64|arm64) ;; *) echo "Unsupported Linux architecture: $architecture" >&2; exit 2 ;; esac
-pg_version=18.6
+pg_version=${PG_VERSION:-18.6}
 hypopg_version=1.4.3
 pg_archive="postgresql-${pg_version}-linux-${architecture}.tar.gz"
 hypopg_archive="hypopg-${hypopg_version}-postgresql-${pg_version}-linux-${architecture}.tar.gz"
@@ -12,7 +12,7 @@ mkdir -p /work/prefix /work/source /work/stage /out
 tar -xzf "$pg_archive" -C /work/prefix
 mv /work/prefix/postgresql /opt/postgresql
 pgroot=/opt/postgresql
-test "$("$pgroot/bin/pg_config" --version)" = 'PostgreSQL 18.6'
+test "$("$pgroot/bin/pg_config" --version)" = "PostgreSQL $pg_version"
 export PATH="$pgroot/bin:$PATH"
 cd /work/source
 curl -fL --retry 3 -o hypopg.tar.gz 'https://github.com/HypoPG/hypopg/archive/refs/tags/1.4.3.tar.gz'

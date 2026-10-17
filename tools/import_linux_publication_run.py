@@ -14,7 +14,6 @@ import coverage
 
 ARCHITECTURES = {"x86_64", "arm64"}
 DEFAULT_PG_VERSION = "18.6"
-POSTGIS_PILOT_PG_VERSION = "18.6"
 VECTOR_VERSION = "0.8.7"
 POSTGIS_VERSION = "3.6.4"
 
@@ -237,7 +236,7 @@ def _evidence_target(root, project_name, run_id, architecture, postgresql_versio
     target = Path(root) / "support/evidence" / (
         f"linux-publication-{run_id}" if project_name == "core"
         else f"postgis-publication-{run_id}")
-    if project_name == "core" and postgresql_version != POSTGIS_PILOT_PG_VERSION:
+    if project_name == "core" and postgresql_version != DEFAULT_PG_VERSION:
         target /= f"postgresql-{postgresql_version}"
     return target / architecture
 
@@ -264,8 +263,6 @@ def import_run(root, core_artifact, postgis_artifact, run_id, architecture,
         raise coverage.CoverageError(
             f"postgresql_version {postgresql_version!r} is not selected; choose one of "
             f"{', '.join(sorted(selected_versions))}")
-    if postgis_artifact is not None and postgresql_version != POSTGIS_PILOT_PG_VERSION:
-        raise coverage.CoverageError("PostGIS publication evidence is currently supported only for PostgreSQL 18.6")
     platform = f"linux-{architecture}"
     core_dir = core_artifact / "pilot"
     core_publication = core_dir / "publication"

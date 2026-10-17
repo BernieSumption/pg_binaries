@@ -74,7 +74,7 @@ jobs:
       # profile-section: archive-builds end
       # profile-section: hypopg-build begin
       - name: Build HypoPG 1.4.3 against the publication PostgreSQL archive
-        if: ${{ always() && steps.build.outcome == 'success' && env.PG_VERSION == '18.6' }}
+        if: ${{ always() && steps.build.outcome == 'success' }}
         id: hypopg_build
         run: bash scripts/hypopg/build.sh "$RUNNER_TEMP/pilot" "$RUNNER_TEMP/hypopg"
       # profile-section: hypopg-build end
@@ -103,7 +103,7 @@ jobs:
       # profile-section: combined-current end
       # profile-section: hypopg-verify begin
       - name: Verify relocated HypoPG archive and runtime closure in Alpine 3.22
-        if: ${{ always() && steps.hypopg_build.outcome == 'success' && env.PG_VERSION == '18.6' }}
+        if: ${{ always() && steps.hypopg_build.outcome == 'success' }}
         id: hypopg_verify
         run: bash scripts/hypopg/verify.sh "$RUNNER_TEMP/pilot" "$RUNNER_TEMP/hypopg"
       # profile-section: hypopg-verify end
@@ -288,7 +288,7 @@ jobs:
       # profile-section: tiger-report end
       # profile-section: hypopg-report begin
       - name: Record HypoPG publication step outcome
-        if: ${{ always() && env.PG_VERSION == '18.6' }}
+        if: ${{ always() }}
         env:
           VERIFY_OUTCOME: ${{ steps.hypopg_verify.outcome }}
         run: |
@@ -297,25 +297,25 @@ jobs:
           printf '{"archive-suite":"%s"}\n' "$VERIFY_OUTCOME" \
             > "$RUNNER_TEMP/hypopg-publication/current-steps.json"
       - name: Emit HypoPG publication records
-        if: ${{ always() && env.PG_VERSION == '18.6' }}
+        if: ${{ always() }}
         run: |
           set -euo pipefail
-          core="$RUNNER_TEMP/pilot/postgresql-18.6-linux-$PG_ARCHITECTURE.tar.gz"
-          extension="$RUNNER_TEMP/hypopg/hypopg-1.4.3-postgresql-18.6-linux-$PG_ARCHITECTURE.tar.gz"
+          core="$RUNNER_TEMP/pilot/postgresql-$PG_VERSION-linux-$PG_ARCHITECTURE.tar.gz"
+          extension="$RUNNER_TEMP/hypopg/hypopg-1.4.3-postgresql-$PG_VERSION-linux-$PG_ARCHITECTURE.tar.gz"
           if [[ ! -f "$core" || ! -f "$core.sha256" || ! -f "$extension" || ! -f "$extension.sha256" ]]; then
             echo 'No HypoPG publication record: assembled archive bytes or sidecars are unavailable'
             exit 0
           fi
-          python3 - "$core" "$RUNNER_TEMP/pilot/publication/records" "$PG_ARCHITECTURE" "$GITHUB_RUN_ID" "$GITHUB_SHA" <<'PYCODE'
+          python3 - "$core" "$RUNNER_TEMP/pilot/publication/records" "$PG_VERSION" "$PG_ARCHITECTURE" "$GITHUB_RUN_ID" "$GITHUB_SHA" <<'PYCODE'
           import hashlib
           from pathlib import Path
           import sys
           sys.path.insert(0, 'tools')
           import coverage
-          core, records, architecture, run_id, revision = sys.argv[1:]
+          core, records, pg_version, architecture, run_id, revision = sys.argv[1:]
           digest = hashlib.sha256(Path(core).read_bytes()).hexdigest()
           support = coverage.load_json(Path('support.json'))
-          name = f'postgresql-18.6-linux-{architecture}-current-{run_id}.json'
+          name = f'postgresql-{pg_version}-linux-{architecture}-current-{run_id}.json'
           record = coverage.load_json(Path(records) / name)
           coverage.validate_verification_record(record, support, Path('.'))
           if (record['sha256'] != digest
@@ -343,7 +343,7 @@ jobs:
             --archives "$RUNNER_TEMP/hypopg" --core-archives "$RUNNER_TEMP/pilot" \
             --receipt "$publication/current-receipt.json" \
             --profile-id "hypopg-publication-current-$PG_ARCHITECTURE" \
-            --project HypoPG --version 1.4.3 --postgresql-version 18.6 \
+            --project HypoPG --version 1.4.3 --postgresql-version "$PG_VERSION" \
             --architecture "$PG_ARCHITECTURE" --endpoint current \
             --kernel-release "$(uname -r)" --distribution "$distribution" \
             --distribution-version "$distribution_version" --image-id "$image" \

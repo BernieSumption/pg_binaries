@@ -44,12 +44,20 @@ class LinuxHypopgPublicationImportTests(unittest.TestCase):
         self.run_id = "7654321"
         self.architecture = "x86_64"
         self.platform = "linux-x86_64"
-        self.core_name = f"postgresql-18.6-{self.platform}.tar.gz"
-        self.hypopg_name = f"hypopg-1.4.3-postgresql-18.6-{self.platform}.tar.gz"
+        self.postgresql_version = "18.6"
+        self._make_archives()
+        self.publication = self.hypopg_artifact / "hypopg-publication"
+        self.records_dir = self.publication / "records"
+        self.records_dir.mkdir(parents=True)
+        self._make_records()
+
+    def _make_archives(self):
+        self.core_name = f"postgresql-{self.postgresql_version}-{self.platform}.tar.gz"
+        self.hypopg_name = f"hypopg-1.4.3-postgresql-{self.postgresql_version}-{self.platform}.tar.gz"
         self._archive(self.core_dir / self.core_name, b"core")
         self._metadata_archive(self.hypopg_dir / self.hypopg_name, {
             "project": "hypopg", "version": "1.4.3",
-            "postgresql_version": "18.6", "platform": "linux", "architecture": "x86_64",
+            "postgresql_version": self.postgresql_version, "platform": "linux", "architecture": "x86_64",
             "sql_names": ["hypopg"], "requires": [],
         })
         for directory, name in ((self.core_dir, self.core_name),
@@ -64,10 +72,6 @@ class LinuxHypopgPublicationImportTests(unittest.TestCase):
                 {"basename": name, "sha256": self._sha(directory / name)}
                 for directory, name in ((self.core_dir, self.core_name),
                                         (self.hypopg_dir, self.hypopg_name))]}))
-        self.publication = self.hypopg_artifact / "hypopg-publication"
-        self.records_dir = self.publication / "records"
-        self.records_dir.mkdir(parents=True)
-        self._make_records()
 
     def tearDown(self):
         self.temporary.cleanup()
@@ -99,7 +103,7 @@ class LinuxHypopgPublicationImportTests(unittest.TestCase):
             receipt = {
                 "profile_id": profile_id, "profile_revision": profile["profile_revision"],
                 "test_revision": "a" * 40, "project": "HypoPG",
-                "version": "1.4.3", "postgresql_version": "18.6", "architecture": "x86_64",
+                "version": "1.4.3", "postgresql_version": self.postgresql_version, "architecture": "x86_64",
                 "endpoint": endpoint, "kernel_release": kernel,
                 "distribution": distribution, "distribution_version": distribution_version,
                 "image_id": "sha256:" + "b" * 64, "clean_system": result == "success",
@@ -131,7 +135,24 @@ class LinuxHypopgPublicationImportTests(unittest.TestCase):
 
     def _import(self):
         return importer.import_run(self.root, self.core_artifact, self.hypopg_artifact,
-                                   self.run_id, self.architecture)
+                                   self.run_id, self.architecture, self.postgresql_version)
+
+    def test_retains_selected_pg15_core(self):
+        shutil.rmtree(self.core_dir)
+        shutil.rmtree(self.hypopg_dir)
+        shutil.rmtree(self.publication)
+        self.core_dir.mkdir()
+        self.hypopg_dir.mkdir()
+        self.records_dir.mkdir(parents=True)
+        self.postgresql_version = "15.19"
+        self._make_archives()
+        self._make_records()
+        retained = self._import()
+        record = json.loads((self.root / "support/verification" /
+            f"hypopg-1.4.3-postgresql-15.19-{self.platform}-current-{self.run_id}.json").read_text())
+        self.assertEqual(record["postgresql_version"], "15.19")
+        self.assertEqual(record["assembled_core"]["archive"], self.core_name)
+        self.assertEqual(len(retained), 4)
 
     def test_retains_exact_bytes_and_is_idempotent(self):
         log = self.publication / "current-verifier.log"

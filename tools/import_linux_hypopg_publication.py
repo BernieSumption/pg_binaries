@@ -15,11 +15,16 @@ ARCHITECTURES = {"x86_64", "arm64"}
 MAX_EVIDENCE_BYTES = 1024 * 1024
 
 
-def import_run(root, core_artifact, hypopg_artifact, run_id, architecture):
+def import_run(root, core_artifact, hypopg_artifact, run_id, architecture, postgresql_version="18.6"):
     root, core_artifact, hypopg_artifact = map(Path, (root, core_artifact, hypopg_artifact))
     run_id = str(run_id)
-    if not re.fullmatch(r"\d+", run_id) or architecture not in ARCHITECTURES:
-        raise coverage.CoverageError("expected numeric run_id and architecture x86_64 or arm64")
+    if (not re.fullmatch(r"\d+", run_id) or architecture not in ARCHITECTURES
+            or not re.fullmatch(r"\d+\.\d+", postgresql_version)):
+        raise coverage.CoverageError("expected numeric run_id, PostgreSQL version and architecture x86_64 or arm64")
+    support = coverage.load_json(root / "support.json")
+    snapshot = coverage.load_json(root / "support/postgresql-releases.json")
+    if postgresql_version not in coverage.release_snapshot(snapshot, support):
+        raise coverage.CoverageError(f"PostgreSQL {postgresql_version} is not selected")
     platform = f"linux-{architecture}"
     profile_id = f"hypopg-publication-current-{architecture}"
     profile = coverage.verification_profile(root, profile_id)
@@ -31,8 +36,8 @@ def import_run(root, core_artifact, hypopg_artifact, run_id, architecture):
     steps_path = publication / "current-steps.json"
     steps = _steps(steps_path, profile)
     copies = [(steps_path, target / steps_path.name)]
-    core_name = f"postgresql-18.6-{platform}.tar.gz"
-    extension_name = f"hypopg-1.4.3-postgresql-18.6-{platform}.tar.gz"
+    core_name = f"postgresql-{postgresql_version}-{platform}.tar.gz"
+    extension_name = f"hypopg-1.4.3-postgresql-{postgresql_version}-{platform}.tar.gz"
     archives = [core_artifact / "pilot" / core_name, extension_dir / extension_name]
     records = sorted((publication / "records").glob("*.json"))
     receipt_path = publication / "current-receipt.json"
@@ -49,7 +54,7 @@ def import_run(root, core_artifact, hypopg_artifact, run_id, architecture):
         ci = receipt.get("ci", {})
         revision = receipt.get("test_revision")
         expected = {"profile_id": profile_id, "project": "HypoPG", "version": "1.4.3",
-                    "postgresql_version": "18.6", "architecture": architecture,
+                    "postgresql_version": postgresql_version, "architecture": architecture,
                     "endpoint": "current", "case_results": _case_results(steps),
                     "archives": digests, "extension_archive": extension_name,
                     "prerequisite_archives": []}
@@ -74,16 +79,16 @@ def import_run(root, core_artifact, hypopg_artifact, run_id, architecture):
         raise coverage.CoverageError("expected one HypoPG record")
     for source in records:
         record = coverage.load_json(source)
-        coverage.validate_verification_record(record, coverage.load_json(root / "support.json"), root)
+        coverage.validate_verification_record(record, support, root)
         expected = {"profile_id": profile_id, "component": "hypopg", "project": "HypoPG",
-                    "version": "1.4.3", "postgresql_version": "18.6", "platform": platform,
+                    "version": "1.4.3", "postgresql_version": postgresql_version, "platform": platform,
                     "case_results": _case_results(steps), "outcome": _outcome(_case_results(steps)),
                     "test_cases": profile["case_ids"], "ci": receipt["ci"],
                     "test_revision": receipt["test_revision"], "sha256": digests[extension_name],
-                    "assembled_core": {"archive": core_name, "sha256": digests[core_name], "version": "18.6"},
+                    "assembled_core": {"archive": core_name, "sha256": digests[core_name], "version": postgresql_version},
                     "prerequisite_archives": []}
         if (any(record.get(key) != value for key, value in expected.items())
-                or source.name != f"hypopg-1.4.3-postgresql-18.6-{platform}-current-{run_id}.json"
+                or source.name != f"hypopg-1.4.3-postgresql-{postgresql_version}-{platform}-current-{run_id}.json"
                 or any(record.get("environment", {}).get(key) != receipt.get(key) for key in (
                     "endpoint", "architecture", "kernel_release", "distribution", "distribution_version",
                     "image_id", "clean_system", "dependency_check_profile", "dependency_checks_passed"))):
@@ -113,10 +118,11 @@ def main():
     parser.add_argument("--hypopg-artifact", type=Path, required=True)
     parser.add_argument("--run-id", required=True)
     parser.add_argument("--architecture", choices=sorted(ARCHITECTURES), required=True)
+    parser.add_argument("--postgresql-version", default="18.6")
     args = parser.parse_args()
     try:
         print("\n".join(import_run(args.root, args.core_artifact, args.hypopg_artifact,
-                                   args.run_id, args.architecture)))
+                                   args.run_id, args.architecture, args.postgresql_version)))
         return 0
     except (coverage.CoverageError, OSError, ValueError, TypeError) as exc:
         print(f"Linux HypoPG publication import: {exc}", file=sys.stderr)

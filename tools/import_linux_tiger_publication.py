@@ -15,7 +15,7 @@ import coverage
 ARCHITECTURES = {"x86_64", "arm64"}
 PROJECT = "PostGIS TIGER Geocoder"
 VERSION = "2025.2"
-PG_VERSION = "18.6"
+DEFAULT_PG_VERSION = "18.6"
 
 
 def _sha256(path):
@@ -91,7 +91,8 @@ def _retain_steps(root, run_id, architecture, step_sources):
     return [str(destination.relative_to(root)) for _, destination in copies]
 
 
-def import_run(root, core_artifact, postgis_artifact, tiger_artifact, run_id, architecture):
+def import_run(root, core_artifact, postgis_artifact, tiger_artifact, run_id, architecture,
+               postgresql_version=DEFAULT_PG_VERSION):
     """Validate a run bundle, then retain its TIGER records and compact evidence."""
     root, core_artifact, postgis_artifact, tiger_artifact = map(
         Path, (root, core_artifact, postgis_artifact, tiger_artifact))
@@ -99,6 +100,15 @@ def import_run(root, core_artifact, postgis_artifact, tiger_artifact, run_id, ar
         raise coverage.CoverageError("run_id must contain digits only")
     if architecture not in ARCHITECTURES:
         raise coverage.CoverageError("architecture must be x86_64 or arm64")
+    support = coverage.load_json(root / "support.json")
+    snapshot = coverage.load_json(root / "support/postgresql-releases.json")
+    selected = set(coverage.release_snapshot(snapshot, support))
+    if postgresql_version not in selected:
+        raise coverage.CoverageError(f"PostgreSQL {postgresql_version} is not selected")
+    target = support["extensions"][PROJECT]["versions"][VERSION]
+    major = int(postgresql_version.split(".", 1)[0])
+    if not (target["postgresql_minimum_major"] <= major <= target["postgresql_maximum_major"]):
+        raise coverage.CoverageError(f"TIGER {VERSION} does not support PostgreSQL {postgresql_version}")
 
     platform = f"linux-{architecture}"
     core_dir = core_artifact / "pilot"
@@ -143,13 +153,13 @@ def import_run(root, core_artifact, postgis_artifact, tiger_artifact, run_id, ar
             endpoint_data[endpoint]["receipt"] = receipt
             receipt_sources.append(receipt_path)
 
-    core = core_dir / f"postgresql-{PG_VERSION}-{platform}.tar.gz"
-    postgis = postgis_dir / f"postgis-3.6.4-postgresql-{PG_VERSION}-{platform}.tar.gz"
-    tiger = tiger_dir / f"postgis_tiger_geocoder-{VERSION}-postgresql-{PG_VERSION}-{platform}.tar.gz"
+    core = core_dir / f"postgresql-{postgresql_version}-{platform}.tar.gz"
+    postgis = postgis_dir / f"postgis-3.6.4-postgresql-{postgresql_version}-{platform}.tar.gz"
+    tiger = tiger_dir / f"postgis_tiger_geocoder-{VERSION}-postgresql-{postgresql_version}-{platform}.tar.gz"
     archive_paths = (core, postgis, tiger)
     if not all(path.is_file() for path in archive_paths):
         existing_records = [records_dir / (
-            f"postgis_tiger_geocoder-{VERSION}-postgresql-{PG_VERSION}-{platform}-{endpoint}-{run_id}.json")
+            f"postgis_tiger_geocoder-{VERSION}-postgresql-{postgresql_version}-{platform}-{endpoint}-{run_id}.json")
             for endpoint in endpoint_data]
         if any(path.is_file() for path in existing_records):
             raise coverage.CoverageError("TIGER records exist but one or more referenced archives are missing")
@@ -169,13 +179,12 @@ def import_run(root, core_artifact, postgis_artifact, tiger_artifact, run_id, ar
     report = _static_analysis(report_path, architecture,
                               digests, passed)
 
-    support = coverage.load_json(root / "support.json")
     for endpoint, data in endpoint_data.items():
         profile_id = data["profile_id"]
         profile = data["profile"]
         steps = data["steps"]
         record_path = records_dir / (
-            f"postgis_tiger_geocoder-{VERSION}-postgresql-{PG_VERSION}-{platform}-{endpoint}-{run_id}.json")
+            f"postgis_tiger_geocoder-{VERSION}-postgresql-{postgresql_version}-{platform}-{endpoint}-{run_id}.json")
         if not record_path.exists():
             continue
         record = coverage.load_json(record_path)
@@ -185,7 +194,7 @@ def import_run(root, core_artifact, postgis_artifact, tiger_artifact, run_id, ar
                 or record.get("platform") != platform
                 or record.get("component") != "postgis_tiger_geocoder"
                 or record.get("project") != PROJECT or record.get("version") != VERSION
-                or record.get("postgresql_version") != PG_VERSION
+                or record.get("postgresql_version") != postgresql_version
                 or not isinstance(record.get("ci"), dict)
                 or record["ci"].get("run_id") != str(run_id)
                 or record.get("environment", {}).get("endpoint") != endpoint
@@ -205,7 +214,7 @@ def import_run(root, core_artifact, postgis_artifact, tiger_artifact, run_id, ar
         if record.get("sha256") != digests[tiger.name]:
             raise coverage.CoverageError(f"{record_path}: TIGER archive checksum mismatch")
         if record.get("assembled_core") != {
-                "archive": core.name, "sha256": digests[core.name], "version": PG_VERSION}:
+                "archive": core.name, "sha256": digests[core.name], "version": postgresql_version}:
             raise coverage.CoverageError(f"{record_path}: assembled core checksum mismatch")
         prerequisites = record.get("prerequisite_archives")
         if prerequisites != [{
@@ -243,10 +252,12 @@ def main():
                         help="extracted tiger-publication evidence artifact root")
     parser.add_argument("--run-id", required=True)
     parser.add_argument("--architecture", choices=sorted(ARCHITECTURES), required=True)
+    parser.add_argument("--postgresql-version", default=DEFAULT_PG_VERSION)
     args = parser.parse_args()
     try:
         paths = import_run(args.root, args.core_artifact, args.postgis_artifact,
-                           args.tiger_artifact, args.run_id, args.architecture)
+                           args.tiger_artifact, args.run_id, args.architecture,
+                           args.postgresql_version)
         print("\n".join(paths))
         return 0
     except (coverage.CoverageError, OSError, ValueError, TypeError) as exc:

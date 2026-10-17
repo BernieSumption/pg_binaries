@@ -46,18 +46,26 @@ class LinuxTigerPublicationImportTests(unittest.TestCase):
         self.run_id = "7654321"
         self.architecture = "x86_64"
         self.platform = "linux-x86_64"
-        self.core_name = f"postgresql-18.6-{self.platform}.tar.gz"
-        self.postgis_name = f"postgis-3.6.4-postgresql-18.6-{self.platform}.tar.gz"
-        self.tiger_name = f"postgis_tiger_geocoder-2025.2-postgresql-18.6-{self.platform}.tar.gz"
+        self.postgresql_version = "18.6"
+        self._make_archives()
+        self.publication = self.tiger_artifact / "tiger-publication"
+        self.records_dir = self.publication / "records"
+        self.records_dir.mkdir(parents=True)
+        self._make_records()
+
+    def _make_archives(self):
+        self.core_name = f"postgresql-{self.postgresql_version}-{self.platform}.tar.gz"
+        self.postgis_name = f"postgis-3.6.4-postgresql-{self.postgresql_version}-{self.platform}.tar.gz"
+        self.tiger_name = f"postgis_tiger_geocoder-2025.2-postgresql-{self.postgresql_version}-{self.platform}.tar.gz"
         self._archive(self.core_dir / self.core_name, b"core")
         self._metadata_archive(self.postgis_dir / self.postgis_name, {
-            "project": "postgis", "version": "3.6.4", "postgresql_version": "18.6",
+            "project": "postgis", "version": "3.6.4", "postgresql_version": self.postgresql_version,
             "platform": "linux", "architecture": "x86_64",
             "sql_names": ["postgis", "postgis_raster", "postgis_sfcgal", "postgis_topology"],
         })
         self._metadata_archive(self.tiger_dir / self.tiger_name, {
             "project": "postgis_tiger_geocoder", "version": "2025.2",
-            "postgresql_version": "18.6", "platform": "linux", "architecture": "x86_64",
+            "postgresql_version": self.postgresql_version, "platform": "linux", "architecture": "x86_64",
             "sql_names": ["postgis_tiger_geocoder"], "requires": ["PostGIS"],
         })
         for directory, name in ((self.core_dir, self.core_name),
@@ -74,10 +82,6 @@ class LinuxTigerPublicationImportTests(unittest.TestCase):
                 for directory, name in ((self.core_dir, self.core_name),
                                         (self.postgis_dir, self.postgis_name),
                                         (self.tiger_dir, self.tiger_name))]}))
-        self.publication = self.tiger_artifact / "tiger-publication"
-        self.records_dir = self.publication / "records"
-        self.records_dir.mkdir(parents=True)
-        self._make_records()
 
     def tearDown(self):
         self.temporary.cleanup()
@@ -118,7 +122,7 @@ class LinuxTigerPublicationImportTests(unittest.TestCase):
             receipt = {
                 "profile_id": profile_id, "profile_revision": profile["profile_revision"],
                 "test_revision": "a" * 40, "project": "PostGIS TIGER Geocoder",
-                "version": "2025.2", "postgresql_version": "18.6", "architecture": "x86_64",
+                "version": "2025.2", "postgresql_version": self.postgresql_version, "architecture": "x86_64",
                 "endpoint": endpoint, "kernel_release": kernel,
                 "distribution": distribution, "distribution_version": distribution_version,
                 "image_id": "sha256:" + "b" * 64, "clean_system": result == "success",
@@ -166,6 +170,26 @@ class LinuxTigerPublicationImportTests(unittest.TestCase):
         importer.import_run(self.root, self.core_artifact, self.postgis_artifact,
                             self.tiger_artifact, self.run_id, self.architecture)
         self.assertEqual(steps.read_bytes(), first_bytes)
+
+    def test_imports_selected_pg16_and_rejects_unsupported_pg15(self):
+        for directory in (self.core_dir, self.postgis_dir, self.tiger_dir, self.publication):
+            shutil.rmtree(directory)
+            directory.mkdir(parents=True)
+        self.records_dir.mkdir()
+        self.postgresql_version = "16.15"
+        self._make_archives()
+        self._make_records()
+        retained = importer.import_run(self.root, self.core_artifact, self.postgis_artifact,
+                                       self.tiger_artifact, self.run_id, self.architecture,
+                                       self.postgresql_version)
+        record_path = self.root / "support/verification" / (
+            f"postgis_tiger_geocoder-2025.2-postgresql-16.15-{self.platform}-current-{self.run_id}.json")
+        record = json.loads(record_path.read_text())
+        self.assertEqual(record["assembled_core"]["archive"], self.core_name)
+        self.assertEqual(len(retained), 4)
+        with self.assertRaisesRegex(coverage.CoverageError, "does not support PostgreSQL 15.19"):
+            importer.import_run(self.root, self.core_artifact, self.postgis_artifact,
+                                self.tiger_artifact, self.run_id, self.architecture, "15.19")
 
     def test_retains_failed_and_skipped_steps_when_records_are_absent(self):
         for result in ("failed", "skipped"):
