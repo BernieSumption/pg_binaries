@@ -1,4 +1,5 @@
 import importlib.util
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -34,6 +35,7 @@ class LinuxLicenseInventoryTests(unittest.TestCase):
         dpkg_query.write_text(
             "#!/bin/sh\ncase \"$3\" in\n"
             "  libc6) source=glibc ;;\n  musl) source=musl ;;\n"
+            "  libicu70) printf '70.1-2\\ticu\\t70.1-2\\n'; exit 0 ;;\n"
             "  *) source=libexample ;;\nesac\n"
             "printf '1.2.3-4ubuntu5\\t%s\\t1.2.3-4ubuntu5\\n' \"$source\"\n"
         )
@@ -162,6 +164,56 @@ class LinuxLicenseInventoryTests(unittest.TestCase):
         result = self.write_inventory()
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("unexpected libc6 source package", result.stderr)
+
+    def add_icu(self, metadata="70.1-2\\ticu\\t70.1-2"):
+        (self.archive / "lib/runtime/libicuuc.so.70").write_bytes(b"icu")
+        (self.archive / "LICENSES/libicu70.copyright").write_text("Ubuntu ICU copyright\n")
+        notice = REPO / "support/licences/icu-70.1-LICENSE.txt"
+        (self.archive / "LICENSES/libicu70-icu-70.1-LICENSE.txt").write_bytes(notice.read_bytes())
+        self.mapping.write_text(
+            self.mapping.read_text() + "libicu70\tlib/runtime/libicuuc.so.70\n"
+        )
+        (self.root / "bin/dpkg-query").write_text(
+            "#!/bin/sh\ncase \"$3\" in\n"
+            f"  libicu70) printf '{metadata}\\n'; exit 0 ;;\n"
+            "  libc6) source=glibc ;;\n  musl) source=musl ;;\n"
+            "  *) source=libexample ;;\nesac\n"
+            "printf '1.2.3-4ubuntu5\\t%s\\t1.2.3-4ubuntu5\\n' \"$source\"\n"
+        )
+        (self.root / "bin/dpkg-query").chmod(0o755)
+
+    def test_icu_inventory_includes_hash_checked_upstream_third_party_notices(self):
+        self.add_icu()
+        result = self.write_inventory()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        components = json.loads((self.archive / "LICENSES/inventory.json").read_text())["components"]
+        icu = next(entry for entry in components if entry.get("package") == "libicu70")
+        self.assertEqual((icu["version"], icu["source_package"], icu["source_version"]),
+                         ("70.1-2", "icu", "70.1-2"))
+        notice = "libicu70-icu-70.1-LICENSE.txt"
+        self.assertEqual(icu["additional_license_files"], [notice])
+        self.assertEqual(
+            hashlib.sha256((self.archive / "LICENSES" / notice).read_bytes()).hexdigest(),
+            "861671f8c712aa046f8f5ac89239e6c33821636516c5d0cc8c4e1973085f27a6",
+        )
+        ordinary = next(entry for entry in components if entry.get("package") == "libexample1")
+        self.assertNotIn("additional_license_files", ordinary)
+
+    def test_icu_notice_requires_exact_binary_and_source_versions(self):
+        for metadata in ("70.1-3\\ticu\\t70.1-2", "70.1-2\\ticu\\t70.1-3",
+                         "70.1-2\\tother\\t70.1-2"):
+            with self.subTest(metadata=metadata):
+                self.add_icu(metadata)
+                result = self.write_inventory()
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn("unexpected libicu70 source identity", result.stderr)
+
+    def test_icu_notice_must_match_pinned_upstream_text(self):
+        self.add_icu()
+        (self.archive / "LICENSES/libicu70-icu-70.1-LICENSE.txt").write_text("stale notice")
+        result = self.write_inventory()
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("unexpected ICU third-party notices", result.stderr)
 
     def test_static_launcher_records_musl_source_and_license(self):
         (self.archive / "bin/.pg-launcher").write_bytes(b"launcher")

@@ -2,6 +2,7 @@
 """Write archive-local provenance for Linux PostgreSQL pilot license texts."""
 
 import argparse
+import hashlib
 import json
 import pathlib
 import subprocess
@@ -85,6 +86,20 @@ for package, payload_paths in sorted(packages.items()):
             path = root / "LICENSES" / additional
             if not path.is_file() or not path.stat().st_size:
                 raise SystemExit(f"missing glibc license text: {path}")
+    elif package == "libicu70":
+        if (version, source_package, source_version) != ("70.1-2", "icu", "70.1-2"):
+            raise SystemExit(
+                "unexpected libicu70 source identity: "
+                f"{version} {source_package} {source_version}"
+            )
+        additional = "libicu70-icu-70.1-LICENSE.txt"
+        path = root / "LICENSES" / additional
+        if not path.is_file() or not path.stat().st_size:
+            raise SystemExit(f"missing ICU third-party notices: {path}")
+        digest = hashlib.sha256(path.read_bytes()).hexdigest()
+        if digest != "861671f8c712aa046f8f5ac89239e6c33821636516c5d0cc8c4e1973085f27a6":
+            raise SystemExit(f"unexpected ICU third-party notices: {path}")
+        entry["additional_license_files"] = [additional]
     elif package == "musl":
         if source_package != "musl":
             raise SystemExit(f"unexpected musl source package: {source_package}")

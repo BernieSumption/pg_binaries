@@ -12,5 +12,6 @@ COPY scripts/linux/launcher.c /usr/local/src/pg-launcher.c
 COPY tools/discover_builtins.py /usr/local/bin/discover-builtins
 COPY tools/write_linux_license_inventory.py /usr/local/bin/write-linux-license-inventory
 COPY tools/create_linux_symbols.py /usr/local/bin/create-linux-symbols
+COPY support/licences/icu-70.1-LICENSE.txt /usr/local/share/pg-binaries/icu-70.1-LICENSE.txt
 RUN chmod +x /usr/local/bin/build-pilot
 ENTRYPOINT ["/usr/local/bin/build-pilot"]

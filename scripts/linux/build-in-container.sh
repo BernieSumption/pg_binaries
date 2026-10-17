@@ -84,6 +84,17 @@ for pass in 1 2 3; do
           exit 1
         fi
         cp "/usr/share/doc/$package/copyright" "$root/LICENSES/${package}.copyright"
+        if [[ "$package" == libicu70 ]]; then
+          read -r package_version source_package source_version < <(
+            dpkg-query -W -f='${Version} ${source:Package} ${source:Version}' libicu70
+          )
+          if [[ "$package_version" != 70.1-2 || "$source_package" != icu || "$source_version" != 70.1-2 ]]; then
+            echo "Unexpected libicu70 source identity: $package_version $source_package $source_version" >&2
+            exit 1
+          fi
+          cp /usr/local/share/pg-binaries/icu-70.1-LICENSE.txt \
+            "$root/LICENSES/libicu70-icu-70.1-LICENSE.txt"
+        fi
         printf '%s\t%s\n' "$package" "lib/runtime/$library" >> /work/runtime-packages.tsv
       fi
     done < <(ldd "$elf" 2>/dev/null | awk '$2 == "=>" && $3 ~ /^\// {print $1, $3}')

@@ -10,6 +10,8 @@ The included `PostgreSQL.txt` notice supports a candidate `source_obligation: no
 
 The included Ubuntu copyright files and source-package listings give the following candidates for the remaining runtime payloads. The table describes the shipped shared objects or launcher, not every file in each source package. It does not establish which source files were compiled into each binary.
 
+The upstream [ICU 70.1 license file](https://github.com/unicode-org/icu/blob/release-70-1/icu4c/LICENSE) contains third-party notices absent from Ubuntu's `libicu70` 70.1-2 copyright file. The builder now retains that exact file when it bundles `libicu70` 70.1-2 from source package `icu` 70.1-2, and the generated inventory records it as an additional notice. Its SHA-256 is `861671f8c712aa046f8f5ac89239e6c33821636516c5d0cc8c4e1973085f27a6`. The inventory writer rejects other package identities or notice contents. This closes the notice-packaging gap for that identified package; the redistribution review still needs to assess the shipped ICU objects and source obligations.
+
 | Binary package | Source package | Candidate terms for shipped payload; next check |
 | --- | --- | --- |
 | `libc6` | [`glibc`](https://packages.ubuntu.com/source/jammy-updates/glibc) | Predominantly LGPL-2.1-or-later with additional file-specific notices. Confirm the exact object mapping and make matching Ubuntu source, modifications and build material available. |
