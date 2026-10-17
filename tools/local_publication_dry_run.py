@@ -60,12 +60,14 @@ class LocalPublicationStore:
         (target / "inventory.json").write_text(
             json.dumps(inventory, sort_keys=True) + "\n", encoding="utf-8")
 
-    def promote(self, tag, candidate, new_assets, *, fail_at=None):
+    def promote(self, tag, candidate, new_assets, *, preflight_context=None, fail_at=None):
         """Stage, verify, then atomically switch current inventory.
 
         ``new_assets`` maps immutable URLs for ``tag`` to archive bytes. ``fail_at``
         is a test hook accepting ``after_stage``, ``after_verify`` or
-        ``before_current_switch``.
+        ``before_current_switch``. When ``preflight_context`` is supplied, it
+        contains ``support``, ``snapshot`` and optional ``root`` values for the
+        publication preflight; failed candidates never become a local release.
         """
         if not re.fullmatch(r"catalog-\d{8}-\d+", tag):
             raise DryRunError(f"invalid release tag: {tag!r}")
@@ -75,6 +77,11 @@ class LocalPublicationStore:
             raise DryRunError(f"release tag already used: {tag}")
         if fail_at not in (None, "after_stage", "after_verify", "before_current_switch"):
             raise ValueError(f"unknown failure point: {fail_at}")
+        if preflight_context is not None and (
+                not isinstance(preflight_context, dict)
+                or not isinstance(preflight_context.get("support"), dict)
+                or not isinstance(preflight_context.get("snapshot"), dict)):
+            raise DryRunError("preflight context requires support and release snapshot objects")
 
         refs = self._references(candidate)
         stage_dir.mkdir(parents=True)
@@ -95,6 +102,7 @@ class LocalPublicationStore:
 
             if staged_urls != {url for url in refs if self._path_parts(url)[0] == tag}:
                 raise DryRunError("staged archives do not exactly match candidate references for this tag")
+            preflight_assets = {}
             for url, expected in refs.items():
                 asset_tag, filename = self._path_parts(url)
                 path = (stage_dir if asset_tag == tag else self.releases / asset_tag) / filename
@@ -103,6 +111,16 @@ class LocalPublicationStore:
                 actual = hashlib.sha256(path.read_bytes()).hexdigest()
                 if actual != expected:
                     raise DryRunError(f"checksum mismatch for {url}: expected {expected}, got {actual}")
+                if asset_tag == tag:
+                    preflight_assets[url] = {"path": str(path), "sha256": actual}
+            if preflight_context is not None:
+                try:
+                    _preflight.preflight_candidate(
+                        self.current_inventory(), candidate,
+                        preflight_context["support"], preflight_context["snapshot"],
+                        preflight_assets, root=preflight_context.get("root"))
+                except _preflight.PreflightError as exc:
+                    raise DryRunError(f"candidate preflight failed: {exc}") from exc
             if fail_at == "after_verify":
                 raise DryRunError("injected failure after verification")
 
