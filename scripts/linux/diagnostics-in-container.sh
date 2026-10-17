@@ -34,8 +34,10 @@ loader_name=ld-linux-x86-64.so.2
 loader="$root/lib/glibc/$loader_name"
 test -s "$loader"
 ldd_output=$(ldd "$root/libexec/postgres" 2>&1 || true)
-ldd_version=$(ldd --version | head -1)
-readelf_version=$(readelf --version | head -1)
+ldd_version=$(ldd --version)
+ldd_version=${ldd_version%%$'\n'*}
+readelf_version=$(readelf --version)
+readelf_version=${readelf_version%%$'\n'*}
 failure_start=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 failure_cwd="$root"
 failure_command="$root/bin/postgres --version"

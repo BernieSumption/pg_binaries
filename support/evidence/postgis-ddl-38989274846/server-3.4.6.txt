@@ -1,0 +1,11 @@
+2026-10-17 01:08:36.658 UTC [12349] LOG:  starting PostgreSQL 17.11 on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 11.4.0-1ubuntu1~22.04.3) 11.4.0, 64-bit
+2026-10-17 01:08:36.658 UTC [12349] LOG:  listening on Unix socket "/work/run/socket-3.4.6/.s.PGSQL.55437"
+2026-10-17 01:08:36.660 UTC [12352] LOG:  database system was shut down at 2026-10-17 01:08:36 UTC
+2026-10-17 01:08:36.663 UTC [12349] LOG:  database system is ready to accept connections
+2026-10-17 01:08:37.213 UTC [12349] LOG:  received fast shutdown request
+2026-10-17 01:08:37.214 UTC [12349] LOG:  aborting any active transactions
+2026-10-17 01:08:37.216 UTC [12349] LOG:  background worker "logical replication launcher" (PID 12355) exited with exit code 1
+2026-10-17 01:08:37.217 UTC [12350] LOG:  shutting down
+2026-10-17 01:08:37.217 UTC [12350] LOG:  checkpoint starting: shutdown immediate
+2026-10-17 01:08:37.376 UTC [12350] LOG:  checkpoint complete: wrote 2081 buffers (12.7%); 0 WAL file(s) added, 0 removed, 1 recycled; write=0.012 s, sync=0.146 s, total=0.159 s; sync files=357, longest=0.033 s, average=0.001 s; distance=15329 kB, estimate=15329 kB; lsn=0/23DC080, redo lsn=0/23DC080
+2026-10-17 01:08:37.384 UTC [12349] LOG:  database system is shut down
