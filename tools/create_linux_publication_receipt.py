@@ -70,8 +70,9 @@ def create(root, archives_dir, receipt_path, profile_id, postgresql_version,
     version = postgresql_version
     if not re.fullmatch(r"\d+\.\d+", version):
         raise coverage.CoverageError("postgresql_version must be major.minor")
+    vector_version = emit_linux_publication_records.selected_pgvector_version(root, version, platform)
     names = (f"postgresql-{version}-{platform}.tar.gz",
-             f"pgvector-0.8.7-postgresql-{version}-{platform}.tar.gz")
+             f"pgvector-{vector_version}-postgresql-{version}-{platform}.tar.gz")
     archive_hashes = {name: _sha256(archives_dir / name) for name in names}
     clean = clean_system
     dep_passed = dependency_check_result == "success"

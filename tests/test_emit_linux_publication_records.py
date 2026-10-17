@@ -23,6 +23,7 @@ class LinuxPublicationRecordTests(unittest.TestCase):
         (self.root / "support").mkdir(parents=True)
         self.archives.mkdir()
         shutil.copy(REPO / "support.json", self.root / "support.json")
+        shutil.copy(REPO / "support/postgresql-releases.json", self.root / "support/postgresql-releases.json")
         (self.root / "source.txt").write_text("verifier source v1\n")
         self.profile_id = "linux-publication-x86_64"
         self.profile_data = {"schema_version": 1, "profiles": {self.profile_id: {
@@ -172,6 +173,15 @@ class LinuxPublicationRecordTests(unittest.TestCase):
         self.receipt["image_id"] = "ubuntu-22.04"
         self._write_receipt()
         with self.assertRaisesRegex(coverage.CoverageError, "image_id sha256"):
+            emitter.emit(self.root, self.archives, self.receipt_path, self.output)
+
+    def test_rejects_archive_for_superseded_pgvector_version(self):
+        support_path = self.root / "support.json"
+        support = json.loads(support_path.read_text())
+        support["extensions"]["pgvector"]["versions"]["0.9.0"] = {
+            "postgresql_minimum_major": 15}
+        support_path.write_text(json.dumps(support))
+        with self.assertRaisesRegex(coverage.CoverageError, "canonical PostgreSQL and pgvector"):
             emitter.emit(self.root, self.archives, self.receipt_path, self.output)
 
 

@@ -24,6 +24,18 @@ MINIMUM_KERNEL = (5, 15)
 DEPENDENCY_PROFILE = "linux-runtime-v1"
 
 
+def selected_pgvector_version(root, postgresql_version, platform):
+    support = coverage.load_json(Path(root) / "support.json")
+    snapshot = coverage.load_json(Path(root) / "support" / "postgresql-releases.json")
+    releases = coverage.release_snapshot(snapshot, support)
+    _, selected = coverage.expected_targets(support, releases)
+    versions = {extension_version for name, extension_version, pg, target_platform in selected
+                if name == "vector" and pg == postgresql_version and target_platform == platform}
+    if not versions:
+        _fail(f"no selected pgvector target for PostgreSQL {postgresql_version} {platform}")
+    return max(versions, key=lambda value: coverage.version_parts(value, "pgvector version"))
+
+
 def sha256_file(path):
     digest = hashlib.sha256()
     with Path(path).open("rb") as stream:
@@ -123,8 +135,9 @@ def emit(root, archives, receipt_path, output):
     version = receipt["postgresql_version"]
     if not isinstance(version, str) or not re.fullmatch(r"\d+\.\d+", version):
         _fail("postgresql_version must be major.minor")
+    vector_version = selected_pgvector_version(root, version, platform)
     core_name = f"postgresql-{version}-{platform}.tar.gz"
-    vector_name = f"pgvector-0.8.7-postgresql-{version}-{platform}.tar.gz"
+    vector_name = f"pgvector-{vector_version}-postgresql-{version}-{platform}.tar.gz"
     archive_receipt = receipt["archives"]
     if not isinstance(archive_receipt, dict) or set(archive_receipt) != {core_name, vector_name}:
         _fail("archives must identify exactly the canonical PostgreSQL and pgvector archives")
@@ -142,7 +155,7 @@ def emit(root, archives, receipt_path, output):
     support = coverage.load_json(root / "support.json")
     records = []
     for name, component, record_version in (
-        (core_name, "postgresql", version), (vector_name, "vector", "0.8.7")):
+        (core_name, "postgresql", version), (vector_name, "vector", vector_version)):
         record = {
             "schema_version": 2,
             "scope": "publication",

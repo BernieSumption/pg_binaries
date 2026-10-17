@@ -22,6 +22,7 @@ class LinuxPublicationReceiptTests(unittest.TestCase):
         self.root = self.base / "root"
         (self.root / "support").mkdir(parents=True)
         shutil.copy(REPO / "support.json", self.root / "support.json")
+        shutil.copy(REPO / "support/postgresql-releases.json", self.root / "support/postgresql-releases.json")
         (self.root / "profile-source.txt").write_text("profile fixture\n")
         self.profile_id = "publication-fixture"
         (self.root / "support" / "verification-profiles.json").write_text(json.dumps({
@@ -119,6 +120,25 @@ class LinuxPublicationReceiptTests(unittest.TestCase):
         with self.assertRaises(coverage.CoverageError):
             self.create()
         self.assertFalse(self.receipt_path.exists())
+
+    def test_selected_newer_pgvector_version_changes_receipt_archive(self):
+        support_path = self.root / "support.json"
+        support = json.loads(support_path.read_text())
+        support["extensions"]["pgvector"]["versions"]["0.9.0"] = {
+            "postgresql_minimum_major": 15}
+        support_path.write_text(json.dumps(support))
+        newer = self.names[1].replace("0.8.7", "0.9.0")
+        data = b"new selected pgvector archive"
+        digest = hashlib.sha256(data).hexdigest()
+        (self.archives / newer).write_bytes(data)
+        (self.archives / f"{newer}.sha256").write_text(f"{digest}  {newer}\n")
+        self.create()
+        receipt = json.loads(self.receipt_path.read_text())
+        self.assertIn(newer, receipt["archives"])
+        self.assertNotIn(self.names[1], receipt["archives"])
+        records = emitter.emit(self.root, self.archives, self.receipt_path, self.base / "records")
+        vector = json.loads(records[1].read_text())
+        self.assertEqual(vector["version"], "0.9.0")
 
 
 if __name__ == "__main__":
