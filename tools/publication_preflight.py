@@ -59,6 +59,37 @@ def _candidate_targets(inventory):
     return core, extensions
 
 
+def _require_retained_urls(base_core, base_extensions, candidate_core,
+                           candidate_extensions, expected_core, expected_extensions):
+    """Keep URLs when selected targets still use identical archive bytes."""
+    for target in expected_core:
+        base = base_core.get(target)
+        candidate = candidate_core.get(target)
+        if (base and candidate and base["sha256"].lower() == candidate["sha256"].lower()
+                and base["url"] != candidate["url"]):
+            raise PreflightError(f"unchanged selected target changed URL: PostgreSQL {target[0]} {target[1]}")
+
+    for name, version, pg_version, platform in expected_extensions:
+        base = next((entry for (base_name, base_version, low, high, base_platform), entry
+                     in base_extensions.items()
+                     if base_name == name and base_version == version and base_platform == platform
+                     and _coverage.version_parts(low, "base extension range")
+                     <= _coverage.version_parts(pg_version, "selected PostgreSQL version")
+                     <= _coverage.version_parts(high, "base extension range")), None)
+        candidate = next((entry for (candidate_name, candidate_version, low, high, candidate_platform), entry
+                          in candidate_extensions.items()
+                          if candidate_name == name and candidate_version == version
+                          and candidate_platform == platform
+                          and _coverage.version_parts(low, "candidate extension range")
+                          <= _coverage.version_parts(pg_version, "selected PostgreSQL version")
+                          <= _coverage.version_parts(high, "candidate extension range")), None)
+        if (base and candidate and base["sha256"].lower() == candidate["sha256"].lower()
+                and base["url"] != candidate["url"]):
+            raise PreflightError(
+                f"unchanged selected target changed URL: extension {name} {version} "
+                f"PostgreSQL {pg_version} {platform}")
+
+
 def _verification_matches(record, *, checksum, component, version, platform, pg_version,
                           endpoint, support, root, expected_core=None,
                           expected_prerequisites=None):
@@ -371,9 +402,6 @@ def preflight_candidate(base_inventory, candidate, support, snapshot, staged_ass
 
     base_refs = _asset_references(base_inventory)
     candidate_refs = _asset_references(candidate)
-    dropped_refs = sorted(set(base_refs) - set(candidate_refs))
-    if dropped_refs:
-        raise PreflightError(f"candidate dropped retained URL: {dropped_refs[0]}")
     candidate_core, candidate_extensions = _candidate_targets(candidate)
     sql_to_project = {sql_name: project for project, details in support["extensions"].items()
                       for sql_name in details["sql_names"]}
@@ -411,6 +439,10 @@ def preflight_candidate(base_inventory, candidate, support, snapshot, staged_ass
         name, version, pg, platform = missing_extensions[0]
         raise PreflightError(
             f"candidate is missing extension target {name} {version} PostgreSQL {pg} {platform}")
+
+    base_core, base_extensions = _candidate_targets(base_inventory)
+    _require_retained_urls(base_core, base_extensions, candidate_core,
+                           candidate_extensions, expected_core, expected_extensions)
 
     new_urls = set(candidate_refs) - set(base_refs)
     manifest_urls = set(staged_assets)

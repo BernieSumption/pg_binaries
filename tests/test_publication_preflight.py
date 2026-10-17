@@ -690,11 +690,48 @@ class PublicationPreflightTests(unittest.TestCase):
         with self.assertRaisesRegex(publication_preflight.PreflightError, "retained URL checksum changed"):
             self.check()
 
-    def test_rejects_dropped_base_url(self):
+    def test_allows_retiring_unselected_base_url(self):
         url = "https://example.test/old/pg.tgz"
         self.base["postgresql"]["14.9"] = {"downloads": {"linux-x86_64": {
             "url": url, "sha256": "a" * 64}}}
-        with self.assertRaisesRegex(publication_preflight.PreflightError, "dropped retained URL"):
+        self.check()
+
+    def test_requires_same_url_for_unchanged_selected_core_archive(self):
+        candidate = self.candidate["postgresql"]["15.9"]["downloads"]["linux-x86_64"]
+        self.base["postgresql"]["15.9"] = {"downloads": {"linux-x86_64": {
+            "url": "https://example.test/old/postgresql-15.9-linux-x86_64.tar.gz",
+            "sha256": candidate["sha256"]}}}
+        with self.assertRaisesRegex(publication_preflight.PreflightError,
+                                    "unchanged selected target changed URL: PostgreSQL 15.9 linux-x86_64"):
+            self.check()
+
+    def test_requires_same_url_for_unchanged_selected_extension_archive(self):
+        candidate = self.candidate["extensions"]["example"]["1.0"]["downloads"]["linux-x86_64"][0]
+        self.base["extensions"]["example"] = {"1.0": {"requires": [], "downloads": {
+            "linux-x86_64": [{"postgresql_support": {"from": "15.9", "to": "15.9"},
+                              "url": "https://example.test/old/example-1.0.tar.gz",
+                              "sha256": candidate["sha256"]}]}}}
+        with self.assertRaisesRegex(publication_preflight.PreflightError,
+                                    "unchanged selected target changed URL: extension example 1.0"):
+            self.check()
+
+    def test_rejects_dropping_base_url_when_selected_core_target_is_missing(self):
+        url = "https://example.test/old/pg.tgz"
+        self.base["postgresql"]["15.9"] = {"downloads": {"linux-x86_64": {
+            "url": url, "sha256": "a" * 64}}}
+        del self.candidate["postgresql"]["15.9"]["downloads"]["linux-x86_64"]
+        with self.assertRaisesRegex(publication_preflight.PreflightError,
+                                    "missing PostgreSQL target 15.9 linux-x86_64"):
+            self.check()
+
+    def test_rejects_dropping_partially_selected_base_extension_range_when_target_is_missing(self):
+        url = "https://example.test/old/example.tgz"
+        self.base["extensions"]["example"] = {"1.0": {"requires": [], "downloads": {
+            "linux-x86_64": [{"postgresql_support": {"from": "15.8", "to": "15.9"},
+                              "url": url, "sha256": "a" * 64}]}}}
+        del self.candidate["extensions"]["example"]["1.0"]["downloads"]["linux-x86_64"]
+        with self.assertRaisesRegex(publication_preflight.PreflightError,
+                                    "missing extension target example 1.0 PostgreSQL 15.9 linux-x86_64"):
             self.check()
 
     def test_rejects_candidate_reference_without_staged_or_base_asset(self):
