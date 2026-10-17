@@ -310,13 +310,13 @@ Description: [pg_jsonschema](https://github.com/supabase/pg_jsonschema) validate
 
 For inclusion: Applications can use its functions in CHECK constraints to enforce JSON document shapes. Supabase maintains and offers it, and upstream publishes PostgreSQL 18 and Linux arm64 builds. Its Apache-2.0 licence permits redistribution with applicable notices.
 
-Against inclusion: The Rust/pgrx toolchain adds native build and dependency cost for each PostgreSQL major. Upstream's release workflow builds Linux x86-64 and arm64, but does not establish macOS or Windows packages. Expansion to those systems needs separate feasibility and testing. No external data or service is required for schema use.
+Against inclusion: The Rust/pgrx toolchain adds native build and dependency cost for each PostgreSQL major. Upstream's release workflow builds Linux packages; the source uses pgrx 0.16.1, whose documentation lists tested Linux x86-64/arm64, macOS arm64 and Windows x86-64 targets. macOS x86-64 is not listed as tested, so it needs an early source-build feasibility check. No external data or service is required for schema use.
 
 Version policy: Apply the shared version support rule to published compatible releases.
 
-Target support: PostgreSQL 15–18 on Linux x86-64 and arm64, matching the relevant upstream release jobs and Cargo features. Each build and archive still requires verification before publication. Mac and Windows remain outside this extension's declared OS subset until upstream compatibility or project build evidence supports both required architectures on an added OS.
+Target support: PostgreSQL 15–18 on all five project platforms. The Linux-only upstream release workflow does not declare source incompatibility elsewhere; none was identified in the selected source. All combinations remain intended, not verified. If an upstream source limitation prevents a target build, document the evidence and narrow its support rather than patching the dependency.
 
-Sources: [upstream releases](https://github.com/supabase/pg_jsonschema/releases), [0.3.4 source and release workflow](https://github.com/supabase/pg_jsonschema/tree/v0.3.4), [Supabase documentation](https://supabase.com/docs/guides/database/extensions/pg_jsonschema), [pgrx platform guidance](https://github.com/pgcentralfoundation/pgrx), [licence](https://github.com/supabase/pg_jsonschema/blob/master/LICENSE).
+Sources: [upstream releases](https://github.com/supabase/pg_jsonschema/releases), [0.3.4 source and release workflow](https://github.com/supabase/pg_jsonschema/tree/v0.3.4), [0.3.4 Cargo features and pgrx dependency](https://raw.githubusercontent.com/supabase/pg_jsonschema/v0.3.4/Cargo.toml), [pgrx 0.16.1 platform guidance](https://raw.githubusercontent.com/pgcentralfoundation/pgrx/v0.16.1/README.md), [Supabase documentation](https://supabase.com/docs/guides/database/extensions/pg_jsonschema), [licence](https://github.com/supabase/pg_jsonschema/blob/master/LICENSE).
 
 ## lakebase_text — exclude
 
@@ -436,9 +436,9 @@ Description: [Lantern](https://github.com/lanterndata/lantern) provides vector i
 
 For inclusion: It offers a distinct HNSW index implementation that can use PostgreSQL's `vector` type, and upstream has an associated managed service and a visible user community.
 
-Against inclusion: Lantern overlaps with pgvector's vector-search use case, and its latest release is v0.5.0 from November 2024. No current major-host support or PostgreSQL 18 compatibility is documented in the reviewed primary sources. Its native implementation adds substantial build and testing work across the project's targets. The AGPL-3.0 licence permits redistribution subject to its source and licence obligations; it does not prohibit redistribution. The inactivity, overlapping use case and support cost outweigh the case for adding this extension.
+Against inclusion: Lantern overlaps with pgvector's vector-search use case. On 2026-10-17, its latest listed release remained v0.5.0 from November 2024; the installation guide documented PostgreSQL through 17 and Linux x86-64 and Intel macOS paths, without PostgreSQL 18, Windows or arm64 support. Its native implementation adds substantial build and testing work for a narrow additional use case. The AGPL-3.0 licence permits redistribution subject to its source and licence obligations; it does not prohibit redistribution. The documented compatibility limits, overlap and support cost outweigh the case for adding this extension; age alone is not the exclusion rule.
 
-Version policy: None while excluded. Re-review PostgreSQL 18 compatibility, maintenance and major-host adoption evidence before reaffirming the exclusion under the revised selection rule.
+Version policy: None while excluded. Re-review the current upstream compatibility and adoption evidence when reconsidering inclusion.
 
 Target support: None while excluded. Upstream documents PostgreSQL through 17 and Linux and Intel macOS build paths; it does not establish the required cross-platform support.
 

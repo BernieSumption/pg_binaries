@@ -672,26 +672,17 @@ def classify_extension_targets(targets, downloads, records, core_downloads, supp
         if not matching:
             without_download.append((name, version, pg, platform))
             continue
-        (_, _, low, high, _), download = matching[0]
-        endpoints = {low, high}
-        verified_endpoints = []
-        for pg_endpoint in endpoints:
-            core_download = core_downloads.get((pg_endpoint, platform))
-            if core_download is None:
-                continue
-            project = next((project for project, details in support["extensions"].items()
-                            if name in details["sql_names"]), None) if support else None
-            prerequisites = (expected_prerequisite_archives(
-                support, downloads, project, pg_endpoint, platform)
-                if project else [])
-            if prerequisites is None:
-                continue
-            for os_endpoint in ("minimum", "current"):
-                if verified(records, download, name, version, platform, pg_endpoint, os_endpoint,
-                            assembled_core_sha256=core_download["sha256"],
-                            prerequisite_archives=prerequisites):
-                    verified_endpoints.append((pg_endpoint, os_endpoint))
-        if len(verified_endpoints) != len(endpoints) * 2:
+        download = matching[0][1]
+        core_download = core_downloads.get((pg, platform))
+        project = next((project for project, details in support["extensions"].items()
+                        if name in details["sql_names"]), None) if support else None
+        prerequisites = (expected_prerequisite_archives(
+            support, downloads, project, pg, platform) if project else [])
+        if (core_download is None or prerequisites is None
+                or any(not verified(records, download, name, version, platform, pg, os_endpoint,
+                                    assembled_core_sha256=core_download["sha256"],
+                                    prerequisite_archives=prerequisites)
+                       for os_endpoint in ("minimum", "current"))):
             awaiting_verification.append((name, version, pg, platform))
     return without_download, awaiting_verification
 

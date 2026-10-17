@@ -121,12 +121,13 @@ class CoverageTests(unittest.TestCase):
         _, targets = coverage.expected_targets(support, ["15.19"])
         self.assertEqual({version for _, version, _, _ in targets}, {"2.0"})
 
-    def test_extension_target_classification_uses_download_range_and_final_archive_sha(self):
+    def test_extension_target_classification_verifies_selected_core_not_old_range_ends(self):
         target = ("example", "1.0", "15.9", "linux-x86_64")
         missing_target = ("example", "1.0", "15.9", "linux-arm64")
         download = {"url": "https://example.test/archive.tar.gz", "sha256": "a" * 64}
         key = ("example", "1.0", "15.0", "16.9", "linux-x86_64")
         core_downloads = {
+            ("15.9", "linux-x86_64"): {"sha256": "b" * 64},
             ("15.0", "linux-x86_64"): {"sha256": "b" * 64},
             ("16.9", "linux-x86_64"): {"sha256": "c" * 64},
         }
@@ -140,22 +141,33 @@ class CoverageTests(unittest.TestCase):
                     "assembled_core": {"sha256": core_sha256},
                     "environment": {"endpoint": endpoint},
                 })
-        records[0]["assembled_core"]["sha256"] = "d" * 64
-
         without_download, awaiting = coverage.classify_extension_targets(
             [target, missing_target], {key: download}, records, core_downloads)
 
         self.assertEqual(without_download, [missing_target])
         self.assertEqual(awaiting, [target])
 
-        records[0]["assembled_core"]["sha256"] = "b" * 64
+        for endpoint in ("minimum", "current"):
+            records.append({
+                "scope": "publication", "outcome": "passed", "_profile_current": True,
+                "sha256": "a" * 64, "component": "example", "version": "1.0",
+                "platform": "linux-x86_64", "postgresql_version": "15.9",
+                "assembled_core": {"sha256": "d" * 64},
+                "environment": {"endpoint": endpoint},
+            })
+        records[-2]["assembled_core"]["sha256"] = "b" * 64
         without_download, awaiting = coverage.classify_extension_targets(
             [target], {key: download}, records, core_downloads)
         self.assertEqual(without_download, [])
+        self.assertEqual(awaiting, [target])
+
+        records[-1]["assembled_core"]["sha256"] = "b" * 64
+        _, awaiting = coverage.classify_extension_targets(
+            [target], {key: download}, records, core_downloads)
         self.assertEqual(awaiting, [])
 
         without_download, awaiting = coverage.classify_extension_targets(
-            [target], {key: download}, records, {("15.0", "linux-x86_64"): core_downloads[("15.0", "linux-x86_64")]})
+            [target], {key: download}, records, {})
         self.assertEqual(without_download, [])
         self.assertEqual(awaiting, [target])
 

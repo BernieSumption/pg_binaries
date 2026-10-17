@@ -92,7 +92,7 @@
       "sql_names": ["pg_jsonschema"],
       "requires": [],
       "versions": {
-        "0.3.4": { "postgresql_minimum_major": 15, "postgresql_maximum_major": 18, "operating_systems": ["linux"] }
+        "0.3.4": { "postgresql_minimum_major": 15, "postgresql_maximum_major": 18 }
       }
     }
   },
