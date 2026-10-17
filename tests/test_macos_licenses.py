@@ -7,6 +7,7 @@ import unittest
 
 
 SCRIPT = pathlib.Path(__file__).resolve().parents[1] / "scripts/macos/licenses.py"
+LIBXML2_NOTICES = pathlib.Path(__file__).resolve().parent / "fixtures/libxml2-2.15.4"
 
 
 class MacOSLicenseTests(unittest.TestCase):
@@ -111,6 +112,39 @@ class MacOSLicenseTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         dependency = json.loads((self.root / "LICENSES/inventory.json").read_text())["components"][1]
         self.assertEqual((self.root / "LICENSES" / dependency["additional_license_files"][0]).read_text(), "Additional attribution")
+
+    def test_libxml2_review_requires_all_exact_notices(self):
+        library = self.prefix / "lib/libxml2.16.dylib"
+        library.write_text("source-built libxml2 fixture")
+        (self.root / "lib/libxml2.16.dylib").write_text("bundled libxml2 fixture")
+        bundled = json.loads((self.root / "bundled-dependencies.json").read_text())
+        bundled[library.name] = str(library)
+        (self.root / "bundled-dependencies.json").write_text(json.dumps(bundled))
+        notices = self.manifest_path.parent / "licenses"
+        for source, target in (("Copyright", "libxml2-Copyright.txt"),
+                               ("dict-notice.txt", "libxml2-2.15.4-dict.txt"),
+                               ("list-notice.txt", "libxml2-2.15.4-list.txt")):
+            (notices / target).write_bytes((LIBXML2_NOTICES / source).read_bytes())
+        self.manifest["components"].append({
+            "package": "libxml2", "version": "2.15.4", "libraries": [library.name],
+            "license_file": "licenses/libxml2-Copyright.txt",
+            "license_source": "libxml2-2.15.4/Copyright",
+            "source_url": "https://download.gnome.org/sources/libxml2/2.15/libxml2-2.15.4.tar.xz",
+            "source_sha256": "98087fd181d9070724f3fbc65c7377db03038eb92bd882374daff44940138821",
+            "additional_license_files": ["licenses/libxml2-2.15.4-dict.txt", "licenses/libxml2-2.15.4-list.txt"],
+        })
+        self.write_manifest()
+        result = self.run_licenses()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        entries = json.loads((self.root / "LICENSES/inventory.json").read_text())["components"]
+        xml = next(entry for entry in entries if entry["component"] == "libxml2")
+        self.assertEqual(xml["redistribution_review"]["status"], "resolved")
+        (notices / "libxml2-2.15.4-list.txt").write_text("changed notice")
+        result = self.run_licenses()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        entries = json.loads((self.root / "LICENSES/inventory.json").read_text())["components"]
+        xml = next(entry for entry in entries if entry["component"] == "libxml2")
+        self.assertEqual(xml["redistribution_review"]["status"], "pending")
 
     def test_pgvector_without_dependencies_has_primary_inventory(self):
         (self.root / "bundled-dependencies.json").write_text("{}")

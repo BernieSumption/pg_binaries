@@ -133,6 +133,14 @@ reviewed_source = {
         {"libxslt.1.dylib"},
         "libxslt 1.1.45 Copyright contains the permission and copyright notice for its bundled library; retaining that text permits binary redistribution without source delivery. https://gitlab.gnome.org/GNOME/libxslt/-/tags/v1.1.45",
     ),
+    ("libxml2", "2.15.4"): (
+        "98087fd181d9070724f3fbc65c7377db03038eb92bd882374daff44940138821",
+        "5d4873884a890122a4b9b20ad56ac6f7da1d796a5bfcf04a427970ac96217626",
+        {"libxml2.16.dylib"},
+        "libxml2 2.15.4 Copyright grants redistribution of the library with its copyright and permission notice; it excludes dict.c and list.c, whose complete separate header notices are also retained. None of these notices requires source delivery. https://github.com/GNOME/libxml2/blob/v2.15.4/Copyright",
+        ["ea9e97f88bf4ef8ad1142e12d0e6da003968420aa38094f74b9b51206675438a",
+         "2fdb83809864852d236c64fffa74054699e61887b736e18724d4a8ac0e9684f8"],
+    ),
     ("lz4", "1.10.0"): (
         "537512904744b35e232912055ccf8ec66d768639ff3abe5788d90d792ec5f48b",
         "8b58c446121a109ccf32edc094bba3010a3d85e4ee3702950db55e4d3e87736c",
@@ -192,13 +200,6 @@ for (origin_kind, name, version), libraries in sorted(formulas.items()):
         entry = dependency_entry(name, version, libraries, target, origin)
         entry.update({key: source_component[key] for key in ("source_url", "source_sha256")})
         reviewed = reviewed_source.get((name, version))
-        if reviewed is not None:
-            source_digest, licence_digest, expected_libraries, basis = reviewed
-            if (source_component["source_sha256"] == source_digest
-                    and hashlib.sha256(target.read_bytes()).hexdigest() == licence_digest
-                    and set(libraries) == expected_libraries):
-                entry["redistribution_review"] = {
-                    "status": "resolved", "basis": basis, "source_obligation": "none"}
         additional = source_component.get("additional_license_files", [])
         if not isinstance(additional, list):
             raise SystemExit(f"additional_license_files must be a list for {name}")
@@ -211,6 +212,17 @@ for (origin_kind, name, version), libraries in sorted(formulas.items()):
             notice = licenses / f"{target.stem}-notice-{index + 1}.txt"
             shutil.copyfile(source_path, notice)
             entry.setdefault("additional_license_files", []).append(notice.name)
+        if reviewed is not None:
+            source_digest, licence_digest, expected_libraries, basis, *notice_digests = reviewed
+            actual_notices = [hashlib.sha256((licenses / filename).read_bytes()).hexdigest()
+                              for filename in entry.get("additional_license_files", [])]
+            expected_notices = notice_digests[0] if notice_digests else []
+            if (source_component["source_sha256"] == source_digest
+                    and hashlib.sha256(target.read_bytes()).hexdigest() == licence_digest
+                    and set(libraries) == expected_libraries
+                    and actual_notices == expected_notices):
+                entry["redistribution_review"] = {
+                    "status": "resolved", "basis": basis, "source_obligation": "none"}
         inventory.append(entry)
         continue
 
