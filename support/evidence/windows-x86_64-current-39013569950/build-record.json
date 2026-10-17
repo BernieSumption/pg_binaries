@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "record_id": "github-39013569950-1-windows-x86_64",
+  "build_id": "github-39013569950-1",
+  "source_revision": "17a01f96846d8c4a7b84ee3ba038898813c7ba7e",
+  "build_configuration": "postgresql-18.1;pgvector-0.8.7;builder=windows-runner;meson=debugoptimized;postgresql=icu,lz4,zstd,zlib,openssl,libxml,libxslt,no-readline;compiler=MSVC;pgvector=debug-symbols;runtime=vcpkg-dlls",
+  "platform": "windows",
+  "architecture": "x86_64",
+  "packages": {
+    "postgresql": {
+      "archive": "postgresql-18.1-windows-x86_64.tar.gz",
+      "sha256": "0f568812feef631734e0ebd58e82d7c9bbdb857b08d79899ac0b6be1c8789a38"
+    },
+    "pgvector": {
+      "archive": "pgvector-0.8.7-postgresql-18.1-windows-x86_64.tar.gz",
+      "sha256": "00cc1d9762e783e8401baa105b40a23495400c82d2d5048e49ff8fe4d369f50c"
+    }
+  },
+  "symbol_index": {
+    "path": "debug-symbols-index.json",
+    "sha256": "52bd096e472f86dda8fed3c73077b821bc5d3a9a538dd78f369a9e2b9c6b515d"
+  }
+}

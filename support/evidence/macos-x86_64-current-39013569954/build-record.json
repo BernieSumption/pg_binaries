@@ -1,0 +1,23 @@
+{
+  "schema_version": 1,
+  "record_id": "github-39013569954-1-macos-x86_64",
+  "build_id": "github-39013569954-1",
+  "source_revision": "17a01f96846d8c4a7b84ee3ba038898813c7ba7e",
+  "build_configuration": "postgresql-18.1;pgvector-0.8.7;builder=native-macos;deployment-target=11.0;configure=icu,openssl,lz4,zstd,libxml,libxslt,zlib,uuid-e2fs,no-readline;cflags=-O2,-g;pgvector-optflags=-O2,-g;runtime=bundled-dylibs",
+  "platform": "macos",
+  "architecture": "x86_64",
+  "packages": {
+    "postgresql": {
+      "archive": "postgresql-18.1-macos-x86_64.tar.gz",
+      "sha256": "e5ff8e4b1a3d11079260a92650fe3aace860bc9dd04762e239f882be5b185f98"
+    },
+    "pgvector": {
+      "archive": "pgvector-0.8.7-postgresql-18.1-macos-x86_64.tar.gz",
+      "sha256": "08d7dac56ba696e61d8ad294682024aedb0fa57f27abd274ec3ec4729be2380c"
+    }
+  },
+  "symbol_index": {
+    "path": "debug-symbols-index.json",
+    "sha256": "1a141c60f6de21fda50a106d5cfddd196e8c4b32656f10b48d26040e2d49424f"
+  }
+}
