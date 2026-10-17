@@ -27,21 +27,58 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Build exact PostgreSQL archive
+        id: core_build
         run: scripts/linux/build.sh "$RUNNER_TEMP/core"
       - name: Build pgTAP from upstream source
+        id: pgtap_build
         run: bash scripts/pgtap/build.sh "$RUNNER_TEMP/core" "$RUNNER_TEMP/pgtap"
       - name: Verify final archives in Alpine 3.22
+        id: pgtap_verify
         run: bash scripts/pgtap/verify.sh "$RUNNER_TEMP/core" "$RUNNER_TEMP/pgtap"
       - name: Record archive identities
+        id: archive_identities
         run: |
           set -euo pipefail
           cp "$RUNNER_TEMP/core/postgresql-$PG_VERSION-linux-$PG_ARCHITECTURE.tar.gz.sha256" "$RUNNER_TEMP/pgtap/"
           test -s "$RUNNER_TEMP/pgtap/static-analysis/pgtap.json"
+      - name: Record raw attempt outcomes
+        if: always()
+        env:
+          CORE_BUILD_OUTCOME: ${{ steps.core_build.outcome }}
+          PGTAP_BUILD_OUTCOME: ${{ steps.pgtap_build.outcome }}
+          PGTAP_VERIFY_OUTCOME: ${{ steps.pgtap_verify.outcome }}
+          ARCHIVE_IDENTITIES_OUTCOME: ${{ steps.archive_identities.outcome }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/pgtap-attempt"
+          python3 - "$RUNNER_TEMP/pgtap-attempt/step-outcomes.json" <<'PY'
+          import json
+          import os
+          import sys
+          from pathlib import Path
+
+          outcome = {
+              "schema_version": 1,
+              "run_id": os.environ["GITHUB_RUN_ID"],
+              "source_revision": os.environ["GITHUB_SHA"],
+              "postgresql_version": os.environ["PG_VERSION"],
+              "architecture": os.environ["PG_ARCHITECTURE"],
+              "steps": {
+                  "core_build": os.environ["CORE_BUILD_OUTCOME"],
+                  "pgtap_build": os.environ["PGTAP_BUILD_OUTCOME"],
+                  "pgtap_verify": os.environ["PGTAP_VERIFY_OUTCOME"],
+                  "archive_identities": os.environ["ARCHIVE_IDENTITIES_OUTCOME"],
+              },
+          }
+          Path(sys.argv[1]).write_text(json.dumps(outcome, indent=2, sort_keys=True) + "\n",
+                                       encoding="utf-8")
+          PY
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: pgtap-linux-${{ inputs.postgresql_version }}-${{ inputs.architecture }}-${{ github.run_id }}
           path: |
+            ${{ runner.temp }}/pgtap-attempt/step-outcomes.json
             ${{ runner.temp }}/pgtap/*.sha256
             ${{ runner.temp }}/pgtap/static-analysis/*.json
           if-no-files-found: warn
