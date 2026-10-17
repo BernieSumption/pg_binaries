@@ -51,13 +51,27 @@ class EmitWindowsPilotRecordsTests(unittest.TestCase):
             (self.archives / f"{name}.sha256").write_text(
                 f"{hashlib.sha256(data).hexdigest()}  {name}\n", encoding="utf-8")
         self.output = self.root / "records"
+        self.static_report = self.root / "static-analysis.json"
+        self.write_static_report()
 
     def tearDown(self):
         self.temp.cleanup()
 
     def emit(self):
         return records.emit(self.root, self.archives, self.output, "18.6", "a" * 40,
-                            "10.0.20348.2402", "win22/2026.01")
+                            "10.0.20348.2402", "win22/2026.01",
+                            static_report=self.static_report)
+
+    def write_static_report(self, **updates):
+        report = {
+            "outcome": "passed", "architecture": "x86_64",
+            "inspected_files": ["bin/postgres"],
+            "archives": [{"basename": path.name,
+                          "sha256": hashlib.sha256(path.read_bytes()).hexdigest()}
+                         for path in sorted(self.archives.glob("*.tar.gz"))],
+        }
+        report.update(updates)
+        self.static_report.write_text(json.dumps(report), encoding="utf-8")
 
     def test_emits_two_checksum_bound_current_endpoint_records(self):
         paths = self.emit()
@@ -113,6 +127,32 @@ class EmitWindowsPilotRecordsTests(unittest.TestCase):
             records.emit(self.root, self.archives, self.output, "18.6", "a" * 40,
                          "10.0.20348.2402", "win22/2026.01", "passed", False)
         self.assertFalse(self.output.exists())
+
+    def test_passed_records_require_valid_static_analysis_report(self):
+        self.static_report.unlink()
+        with self.assertRaisesRegex(records.coverage.CoverageError, "report is required"):
+            self.emit()
+        self.write_static_report(outcome="failed")
+        with self.assertRaisesRegex(records.coverage.CoverageError, "did not pass"):
+            self.emit()
+        self.write_static_report(architecture="arm64")
+        with self.assertRaisesRegex(records.coverage.CoverageError, "architecture"):
+            self.emit()
+        self.write_static_report(inspected_files=[])
+        with self.assertRaisesRegex(records.coverage.CoverageError, "inspected_files"):
+            self.emit()
+        self.write_static_report(archives=[])
+        with self.assertRaisesRegex(records.coverage.CoverageError, "archives do not match"):
+            self.emit()
+
+    def test_failed_or_skipped_records_do_not_require_static_report(self):
+        self.static_report.unlink()
+        for outcome in ("failed", "skipped"):
+            paths = records.emit(self.root, self.archives, self.output, "18.6", "a" * 40,
+                                 "10.0.20348.2402", "win22/2026.01", outcome, False)
+            self.assertEqual(len(paths), 2)
+            for path in paths:
+                path.unlink()
 
 
 if __name__ == "__main__":

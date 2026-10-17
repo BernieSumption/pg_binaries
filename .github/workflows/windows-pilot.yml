@@ -21,11 +21,13 @@ on:
       - 'tools/discover_builtins.py'
       - 'tools/create_windows_symbols.py'
       - 'tools/emit_windows_pilot_records.py'
+      - 'tools/check_pe_dependencies.py'
       - 'tests/schema.sql'
       - 'tests/builtins/**'
       - 'tests/extensions/**'
       - 'tests/test_create_windows_symbols.py'
       - 'tests/test_emit_windows_pilot_records.py'
+      - 'tests/test_check_pe_dependencies.py'
 
 permissions:
   contents: read
@@ -134,6 +136,8 @@ jobs:
           path: dist/windows
       - name: Verify packaged archives after relocation
         id: archive_verify
+        env:
+          PE_STATIC_ANALYSIS_REPORT: ${{ runner.temp }}/verification-records/static-analysis.json
         run: ./scripts/windows/verify.ps1
       - name: Verify PDBs against downloaded archive bytes
         id: symbols
@@ -172,12 +176,14 @@ jobs:
           if ($outcomes -contains 'failure') { $outcome = 'failed' }
           elseif (@($outcomes | Where-Object { $_ -ne 'success' }).Count -eq 0) { $outcome = 'passed' }
           else { $outcome = 'skipped' }
-          python tools/emit_windows_pilot_records.py --archives $archiveDir --output (Join-Path $archiveDir 'verification') --postgresql-version $env:PG_VERSION --os-version $osVersion --image-id $imageId --outcome $outcome --dependency-checks-passed $env:DEPENDENCY_CHECKS_PASSED.ToLowerInvariant()
+          python tools/emit_windows_pilot_records.py --archives $archiveDir --output (Join-Path $archiveDir 'verification') --postgresql-version $env:PG_VERSION --os-version $osVersion --image-id $imageId --outcome $outcome --dependency-checks-passed $env:DEPENDENCY_CHECKS_PASSED.ToLowerInvariant() --static-report (Join-Path $env:RUNNER_TEMP 'verification-records/static-analysis.json')
           if ($LASTEXITCODE -ne 0) { throw 'Windows pilot record finalization failed' }
       - uses: actions/upload-artifact@v4
         if: ${{ always() }}
         with:
           name: windows-postgresql-${{ needs.select.outputs.postgresql_version }}-pilot-verification
-          path: dist/windows/verification/*.json
+          path: |
+            dist/windows/verification/*.json
+            ${{ runner.temp }}/verification-records/static-analysis.json
           retention-days: 1
           if-no-files-found: warn

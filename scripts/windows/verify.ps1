@@ -138,6 +138,21 @@ try {
 
 Move-Item $pgRoot $moved
 
+$vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio/Installer/vswhere.exe'
+if (-not (Test-Path $vswhere -PathType Leaf)) { throw 'Visual Studio vswhere is unavailable for PE inspection' }
+$vsRoot = & $vswhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
+if ($LASTEXITCODE -ne 0 -or -not $vsRoot) { throw 'Visual Studio C++ tools are unavailable for PE inspection' }
+$toolset = Get-ChildItem (Join-Path $vsRoot 'VC/Tools/MSVC') -Directory |
+  Sort-Object Name -Descending | Select-Object -First 1
+if (-not $toolset) { throw 'Visual Studio C++ toolset is unavailable for PE inspection' }
+$dumpbin = Join-Path $toolset.FullName 'bin/Hostx64/x64/dumpbin.exe'
+if (-not (Test-Path $dumpbin -PathType Leaf)) { throw 'Visual Studio dumpbin is unavailable for PE inspection' }
+$staticReport = if ($env:PE_STATIC_ANALYSIS_REPORT) { $env:PE_STATIC_ANALYSIS_REPORT } else { Join-Path $work 'static-analysis.json' }
+New-Item -ItemType Directory -Force (Split-Path $staticReport -Parent) | Out-Null
+python (Join-Path $repo 'tools/check_pe_dependencies.py') $moved --dumpbin $dumpbin `
+  --archive $pgArchive --archive $vectorArchive --report $staticReport
+if ($LASTEXITCODE -ne 0) { throw 'Packaged PE static analysis failed' }
+
 $bin = Join-Path $moved 'bin'
 $env:PATH = "$bin;$env:SystemRoot\System32;$env:SystemRoot"
 $initdb = Join-Path $bin 'initdb.exe'

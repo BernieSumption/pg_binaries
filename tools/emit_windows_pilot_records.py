@@ -24,8 +24,31 @@ def sha256_file(path):
     return digest.hexdigest()
 
 
+def validate_static_report(path, archives):
+    try:
+        report = json.loads(Path(path).read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise coverage.CoverageError("static analysis report is required and must be valid") from exc
+    if not isinstance(report, dict) or report.get("outcome") != "passed":
+        raise coverage.CoverageError("static analysis report did not pass")
+    if report.get("architecture") != "x86_64":
+        raise coverage.CoverageError("static analysis report architecture does not match x86_64")
+    if not isinstance(report.get("inspected_files"), list) or not report["inspected_files"]:
+        raise coverage.CoverageError("static analysis report inspected_files must be nonempty")
+    expected = sorted((archive.name, sha256_file(archive).lower()) for archive in archives)
+    actual = report.get("archives")
+    if not isinstance(actual, list):
+        raise coverage.CoverageError("static analysis report archives are missing")
+    try:
+        actual_pairs = sorted((item["basename"], item["sha256"].lower()) for item in actual)
+    except (KeyError, AttributeError, TypeError):
+        raise coverage.CoverageError("static analysis report archives are malformed")
+    if actual_pairs != expected:
+        raise coverage.CoverageError("static analysis report archives do not match final archives")
+
+
 def emit(root, archive_dir, output_dir, pg_version, revision, os_version, image_id,
-         outcome="passed", dependency_checks_passed=True):
+         outcome="passed", dependency_checks_passed=True, static_report=None):
     if not re.fullmatch(r"(?:[0-9a-fA-F]{40}|[0-9a-fA-F]{64})", revision):
         raise coverage.CoverageError("test revision must be a full Git commit hash")
     if not re.fullmatch(r"\d+(?:\.\d+)*", os_version):
@@ -99,6 +122,10 @@ def emit(root, archive_dir, output_dir, pg_version, revision, os_version, image_
         coverage.validate_verification_record(record, support, root)
         path = output_dir / f"{component}-{pg_version}-windows-x86_64-{run_id}.json"
         records.append((path, record))
+    if outcome == "passed":
+        if static_report is None:
+            raise coverage.CoverageError("static analysis report is required for passed records")
+        validate_static_report(static_report, [archive_dir / filename for filename, _, _ in names])
     output_dir.mkdir(parents=True, exist_ok=True)
     for path, record in records:
         path.write_text(json.dumps(record, indent=2, sort_keys=True) + "\n", encoding="utf-8")
@@ -115,11 +142,12 @@ def main():
     parser.add_argument("--image-id", required=True)
     parser.add_argument("--outcome", choices=("passed", "failed", "skipped"), default="passed")
     parser.add_argument("--dependency-checks-passed", choices=("true", "false"), default="true")
+    parser.add_argument("--static-report", type=Path)
     args = parser.parse_args()
     try:
         paths = emit(args.root, args.archives, args.output, args.postgresql_version,
                      os.environ.get("GITHUB_SHA", ""), args.os_version, args.image_id,
-                     args.outcome, args.dependency_checks_passed == "true")
+                     args.outcome, args.dependency_checks_passed == "true", args.static_report)
         for path in paths:
             print(path)
         return 0
