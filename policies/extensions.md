@@ -484,6 +484,20 @@ Target support: None while excluded. AWS service availability does not establish
 
 Sources: [AWS rds_tools function reference](https://docs.aws.amazon.com/AmazonRDS/latest/UserGuide/PostgreSQL_rds_tools-functions-reference.html), [AWS extension catalogue](https://docs.aws.amazon.com/AmazonRDS/latest/PostgreSQLReleaseNotes/postgresql-extensions.html).
 
+## MobilityDB — exclude
+
+Description: [MobilityDB](https://github.com/MobilityDB/MobilityDB) adds temporal and spatial trajectory types and operations to PostgreSQL and PostGIS. Its SQL extension name is `mobilitydb`.
+
+For inclusion: It is maintained, has an OSGeo community, and provides schema types for a real but specialized moving-object use case. The September 2026 releases include security fixes.
+
+Against inclusion: The October 2026 AWS RDS, Azure Flexible Server and Google Cloud SQL extension catalogues do not list it, and available adoption evidence does not establish wide use. Its documented target is Linux and PostgreSQL 16–19; building and running it also requires PostGIS, GEOS, PROJ and JSON-C, with a PostGIS preload and increased lock setting. This is a substantial support cost for a project without either established inclusion signal in the specification.
+
+Version policy: None while excluded. Reassess the 1.2 and 1.3 lines if adoption or hosting support changes; the upstream 1.2-to-1.3 data-format change requires backup and restore.
+
+Target support: None while excluded. Current upstream documentation limits the build to PostgreSQL 16–19 and tests Linux; those facts do not establish a portable archive for this project.
+
+Sources: [upstream build and installation requirements](https://github.com/MobilityDB/MobilityDB), [releases](https://github.com/MobilityDB/MobilityDB/releases), [AWS RDS catalogue](https://docs.aws.amazon.com/AmazonRDS/latest/PostgreSQLReleaseNotes/postgresql-extensions.html), [Azure Flexible Server catalogue](https://learn.microsoft.com/en-us/azure/postgresql/extensions/concepts-extensions-versions), [Google Cloud SQL catalogue](https://docs.cloud.google.com/sql/docs/postgres/extensions), [upstream Docker image](https://hub.docker.com/r/mobilitydb/mobilitydb).
+
 ## Unreviewed projects
 
 Candidates extracted from the October 2026 research. No inclusion decision is implied. Names in the second column are SQL extension names used by `CREATE EXTENSION`. Provider documentation is linked where the research did not identify an upstream source project.
@@ -500,7 +514,6 @@ Candidates extracted from the October 2026 research. No inclusion decision is im
 | h3-pg | `h3`, `h3_postgis` | [Upstream](https://github.com/postgis/h3-pg) |
 | index_advisor | `index_advisor` | [Upstream](https://github.com/supabase/index_advisor) |
 | ip4r | `ip4r` | [Upstream](https://github.com/RhodiumToad/ip4r) |
-| MobilityDB | `mobilitydb` | [Upstream](https://github.com/MobilityDB/MobilityDB) |
 | mysql_fdw | `mysql_fdw` | [Upstream](https://github.com/EnterpriseDB/mysql_fdw) |
 | online_advisor | `online_advisor` | [Upstream](https://github.com/knizhnik/online_advisor) |
 | orafce | `orafce` | [Upstream](https://github.com/orafce/orafce) |

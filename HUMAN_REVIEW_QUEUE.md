@@ -1,5 +1,11 @@
 # Human review queue
 
+## online_advisor inclusion
+
+[online_advisor](https://github.com/knizhnik/online_advisor) observes query execution and proposes index and extended-statistics DDL. [Neon offers it on PostgreSQL 17](https://neon.com/blog/easier-postgres-fine-tuning-with-online_advisor), which is a positive factor under the extension selection specification. Its [upstream repository](https://github.com/knizhnik/online_advisor) had 19 stars and one stable 1.0 release in October 2026; broad adoption is not established. PostgreSQL 14–16 require preloading the library before use, and its executor-hook integration adds version-sensitive maintenance. Upstream does not document an OS and architecture support range. Neon describes PostgreSQL 14–17 support, while PostgreSQL 18 support has not been established from upstream documentation.
+
+Decision needed: Include this project despite limited adoption evidence and the expected cross-platform verification cost, or exclude it until broader adoption or compatibility evidence appears? If included, start with the documented PostgreSQL range intersected with this project's supported releases; do not silently narrow the intended OS and architecture scope to Linux merely because it is the first feasible pilot. Keep it outside `support.json` until the decision is made.
+
 ## Windows Visual C++ runtime redistribution
 
 The Windows x86-64 pilot passes on Windows Server 2022, but its archive omits `VCRUNTIME140.dll` even though `postgres.exe` imports it. The runner has the Visual C++ runtime installed, so that result does not establish the [functional specification's](specs/functional.md) clean-machine installation guarantee. The archive must not be advertised as self-contained yet.
