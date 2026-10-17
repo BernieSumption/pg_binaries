@@ -52,10 +52,10 @@ cd address_standardizer
 test "$(sed -n "s/^default_version = '\([^']*\)'/\1/p" address_standardizer.control)" = 3.7
 make -s PG_CONFIG="$prefix/bin/pg_config" \
   PG_CPPFLAGS="-I$prefix/include -DAS_VERSION=\\\"3.7\\\" -DPCRE_VERSION=2" \
-  SHLIB_LINK="-L$prefix/lib -lpcre2-8" -j"$(sysctl -n hw.ncpu)"
+  PG_LDFLAGS="-L$prefix/lib" -j"$(sysctl -n hw.ncpu)"
 make -s PG_CONFIG="$prefix/bin/pg_config" \
   PG_CPPFLAGS="-I$prefix/include -DAS_VERSION=\\\"3.7\\\" -DPCRE_VERSION=2" \
-  SHLIB_LINK="-L$prefix/lib -lpcre2-8" install
+  PG_LDFLAGS="-L$prefix/lib" install
 git rev-parse HEAD > "$output/address-standardizer-commit.txt"
 
 "$prefix/bin/initdb" -D "$work/data" --encoding=UTF8 --locale=C --no-instructions
