@@ -163,7 +163,8 @@ def emit(root, archives, receipt_path, output):
             "platform": platform,
             "postgresql_version": version,
             "environment": {
-                "os": "linux", "os_version": kernel, "kernel_release": kernel,
+                "os": "linux", "os_version": ".".join(map(str, kernel_parts)),
+                "kernel_release": kernel,
                 "distribution": receipt["distribution"],
                 "distribution_version": receipt["distribution_version"],
                 "architecture": architecture, "clean_system": receipt["clean_system"],

@@ -75,8 +75,16 @@ class LinuxPublicationRecordTests(unittest.TestCase):
                          [self.receipt["archives"][name] for name in self.names])
         self.assertEqual(records[1]["assembled_core"]["archive"], self.names[0])
         for record in records:
+            self.assertEqual(record["environment"]["os_version"], "5.15.0")
+            self.assertEqual(record["environment"]["kernel_release"], "5.15.0-1109-kvm")
             self.assertTrue(coverage.validate_verification_record(
                 record, coverage.load_json(self.root / "support.json"), self.root))
+        verification_dir = self.root / "support" / "verification"
+        verification_dir.mkdir()
+        for path in paths:
+            shutil.copy(path, verification_dir / path.name)
+        self.assertEqual(len(coverage.verification_records(
+            self.root, coverage.load_json(self.root / "support.json"))), 2)
 
     def test_rejects_missing_or_extra_cases_and_nonpassed_results(self):
         bad_results = ({"archive-install": "passed"},
@@ -152,7 +160,9 @@ class LinuxPublicationRecordTests(unittest.TestCase):
         self.receipt["endpoint"] = "current"
         self.receipt["kernel_release"] = "6.11.0-1018-azure"
         self._write_receipt()
-        self.assertEqual(len(emitter.emit(self.root, self.archives, self.receipt_path, self.output)), 2)
+        paths = emitter.emit(self.root, self.archives, self.receipt_path, self.output)
+        self.assertEqual(len(paths), 2)
+        self.assertEqual(json.loads(paths[0].read_text())["environment"]["os_version"], "6.11.0")
 
     def test_passed_records_require_sha256_image_identity(self):
         self.receipt["image_id"] = "ubuntu-22.04"
