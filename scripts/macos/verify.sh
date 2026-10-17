@@ -57,6 +57,11 @@ if any(vector.get(key) != value for key, value in expected_vector.items()):
     raise SystemExit('pgvector metadata mismatch')
 if any(vector.get(field) != value for field, value in provenance.items()):
     raise SystemExit('pgvector build provenance differs from PostgreSQL')
+licence_inventory = extension / 'pgvector/LICENSES/inventory.json'
+inventory = json.loads(licence_inventory.read_text())
+if inventory.get('schema_version') != 1 or not inventory.get('components'):
+    raise SystemExit('pgvector licence inventory missing components')
+licence_inventory.rename(licence_inventory.with_name('pgvector-inventory.json'))
 for source in (extension / 'pgvector').rglob('*'):
     destination = core / source.relative_to(extension / 'pgvector')
     if destination.exists() or destination.is_symlink():

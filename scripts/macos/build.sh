@@ -72,7 +72,7 @@ mkdir -p "$package_dir/postgresql/LICENSES" "$package_dir/pgvector/lib" "$packag
 cp -R "$install_dir"/. "$package_dir/postgresql/"
 cp "$work_dir/postgresql-${pg_version}/COPYRIGHT" "$package_dir/postgresql/LICENSES/PostgreSQL.txt"
 python3 "$script_dir/bundle.py" "$package_dir/postgresql" "$architecture"
-python3 "$script_dir/licenses.py" "$package_dir/postgresql" "$source_prefix/share/pg_binaries/source-dependencies.json"
+python3 "$script_dir/licenses.py" "$package_dir/postgresql" "$source_prefix/share/pg_binaries/source-dependencies.json" --component postgresql --version "$pg_version" --source-url "https://ftp.postgresql.org/pub/source/v${pg_version}/postgresql-${pg_version}.tar.bz2"
 builtins=$(python3 "$script_dir/../../tools/discover_builtins.py" "$package_dir/postgresql")
 
 cat > "$package_dir/postgresql/manifest.json" <<EOF
@@ -98,9 +98,8 @@ cp "$install_dir/lib/vector.dylib" "$package_dir/pgvector/lib/"
 cp "$install_dir/share/extension/vector"* "$package_dir/pgvector/share/extension/"
 cp LICENSE "$package_dir/pgvector/LICENSES/pgvector.txt"
 python3 "$script_dir/bundle.py" "$package_dir/pgvector" "$architecture"
-python3 "$script_dir/licenses.py" "$package_dir/pgvector"
+python3 "$script_dir/licenses.py" "$package_dir/pgvector" "$source_prefix/share/pg_binaries/source-dependencies.json" --component pgvector --version "$vector_version" --source-url "https://github.com/pgvector/pgvector/archive/refs/tags/v${vector_version}.tar.gz"
 mv "$package_dir/pgvector/bundled-dependencies.json" "$package_dir/pgvector/LICENSES/pgvector-bundled-dependencies.json"
-mv "$package_dir/pgvector/LICENSES/inventory.json" "$package_dir/pgvector/LICENSES/pgvector-dependency-inventory.json"
 
 cat > "$package_dir/metadata.json" <<EOF
 {"project":"pgvector","version":"${vector_version}","sql_names":["vector"],"requires":[],"configuration_prerequisites":[],"runtime_prerequisites":[],"build_id":"${build_id}","source_revision":"${source_revision}","build_configuration":"${build_configuration}","platform":"macos","architecture":"${platform_arch}"}

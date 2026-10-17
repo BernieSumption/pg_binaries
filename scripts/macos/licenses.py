@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Collect licence texts for libraries embedded in a pilot archive."""
 
+import argparse
 import json
 import pathlib
 import re
@@ -9,10 +10,14 @@ import sys
 import urllib.request
 
 
-if len(sys.argv) not in (2, 3):
-    raise SystemExit("usage: licenses.py <package-root> [source-dependencies.json]")
-
-root = pathlib.Path(sys.argv[1]).resolve()
+parser = argparse.ArgumentParser()
+parser.add_argument("package_root")
+parser.add_argument("source_manifest", nargs="?")
+parser.add_argument("--component", required=True, choices=("postgresql", "pgvector"))
+parser.add_argument("--version", required=True)
+parser.add_argument("--source-url", required=True)
+args = parser.parse_args()
+root = pathlib.Path(args.package_root).resolve()
 licenses = root / "LICENSES"
 licenses.mkdir(exist_ok=True)
 sources = json.loads((root / "bundled-dependencies.json").read_text())
@@ -22,8 +27,8 @@ source_prefix = None
 source_components = {}
 source_libraries = {}
 
-if len(sys.argv) == 3:
-    manifest_path = pathlib.Path(sys.argv[2]).resolve()
+if args.source_manifest:
+    manifest_path = pathlib.Path(args.source_manifest).resolve()
     try:
         manifest = json.loads(manifest_path.read_text())
     except (OSError, json.JSONDecodeError) as exc:
@@ -111,15 +116,46 @@ known_urls = {
     "libgcrypt": "https://raw.githubusercontent.com/gpg/libgcrypt/master/COPYING.LIB",
     "libgpg-error": "https://raw.githubusercontent.com/gpg/libgpg-error/master/COPYING.LIB",
 }
+pending_review = {"status": "pending", "basis": "Redistribution terms and source obligations require review.",
+                  "source_obligation": "unknown"}
 inventory = []
+
+def payload_paths(libraries):
+    paths = []
+    for library in sorted(libraries):
+        path = root / "lib" / library
+        if pathlib.Path(library).name != library or not path.is_file() or not path.resolve().is_relative_to(root):
+            raise SystemExit(f"missing or unsafe bundled library payload: {library}")
+        paths.append(path.relative_to(root).as_posix())
+    return paths
+
+
+def dependency_entry(name, version, libraries, target, origin):
+    return {"component": name, "package": name, "version": version, "libraries": sorted(libraries),
+            "payload_paths": payload_paths(libraries), "license_file": target.name,
+            "license_source": origin, "redistribution_review": dict(pending_review)}
+
 for (origin_kind, name, version), libraries in sorted(formulas.items()):
     if origin_kind == "source":
         source_component = source_components[(name, version)]
         target = licenses / f"{name.replace('@', '-')}-{version}.txt"
         shutil.copyfile(source_component["_license_path"], target)
         origin = source_component["license_source"]
-        inventory.append({"package": name, "version": version, "libraries": libraries,
-                          "license_file": target.name, "license_source": origin})
+        entry = dependency_entry(name, version, libraries, target, origin)
+        entry.update({key: source_component[key] for key in ("source_url", "source_sha256")})
+        additional = source_component.get("additional_license_files", [])
+        if not isinstance(additional, list):
+            raise SystemExit(f"additional_license_files must be a list for {name}")
+        for index, filename in enumerate(additional):
+            if not isinstance(filename, str) or not filename:
+                raise SystemExit(f"invalid additional licence path for {name}")
+            source_path = (source_manifest.parent / filename).resolve()
+            if not source_path.is_relative_to(source_manifest.parent) or not source_path.is_file() or not source_path.stat().st_size:
+                raise SystemExit(f"missing or unsafe additional licence text for {name}: {filename}")
+            notice = licenses / f"{target.stem}-notice-{index + 1}.txt"
+            shutil.copyfile(source_path, notice)
+            entry.setdefault("additional_license_files", []).append(notice.name)
+        inventory.append(entry)
         continue
 
     source_paths = [pathlib.Path(sources[library]) for library in libraries]
@@ -159,7 +195,21 @@ for (origin_kind, name, version), libraries in sorted(formulas.items()):
         origin = known_urls[name]
     else:
         raise SystemExit(f"missing license text for bundled package {name} {version}")
-    inventory.append({"package": name, "version": version, "libraries": libraries, "license_file": target.name, "license_source": origin})
+    if not target.stat().st_size:
+        raise SystemExit(f"empty licence text for {name} {version}")
+    inventory.append(dependency_entry(name, version, libraries, target, origin))
 
-(licenses / "inventory.json").write_text(json.dumps(inventory, indent=2, sort_keys=True) + "\n")
+primary_license = "PostgreSQL.txt" if args.component == "postgresql" else "pgvector.txt"
+if not (licenses / primary_license).is_file() or not (licenses / primary_license).stat().st_size:
+    raise SystemExit(f"missing primary licence text: {primary_license}")
+dependency_payloads = {path for entry in inventory for path in entry["payload_paths"]}
+primary_payloads = sorted(path.relative_to(root).as_posix() for directory in ("bin", "lib", "share", "include")
+                          for path in (root / directory).rglob("*")
+                          if path.is_file() and path.relative_to(root).as_posix() not in dependency_payloads)
+if not primary_payloads:
+    raise SystemExit(f"no primary payload for {args.component}")
+inventory.insert(0, {"component": args.component, "version": args.version, "payload_paths": primary_payloads,
+                     "license_file": primary_license, "source_url": args.source_url,
+                     "redistribution_review": dict(pending_review)})
+(licenses / "inventory.json").write_text(json.dumps({"schema_version": 1, "components": inventory}, indent=2, sort_keys=True) + "\n")
 print(f"Collected {len(inventory)} dependency license texts")
