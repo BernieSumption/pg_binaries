@@ -1,0 +1,1130 @@
+{
+  "files": [
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/lib/utf8_and_euc_cn.so.debug",
+      "debug_file_sha256": "e20afec9c9c9c98c23bec0d51a82709ffe2c08ea2887e5a10b3c71629930368c",
+      "gnu_build_id": "56e3887815619c7e4fb286ab880fe923f8033654",
+      "module_path": "postgresql/lib/utf8_and_euc_cn.so",
+      "module_sha256": "658ce17efa4509b5883b8bdfadbc247d2eac3926e3d7f16b3815608efaaac160"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/lib/insert_username.so.debug",
+      "debug_file_sha256": "330fc823326272aa38b6ba4c14886c3719bd71bafa405984d611290e132facad",
+      "gnu_build_id": "154360f445ddf7cdba3e1c5ec57e233146359839",
+      "module_path": "postgresql/lib/insert_username.so",
+      "module_sha256": "3a56bd189f7cc49ed00cb0609438bb41cd6e159dd8055bf45d7a32493ec91039"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/lib/pg_visibility.so.debug",
+      "debug_file_sha256": "e35e1f4953c517f1d14d9bc27109d1ae83cb352ca72fd954b209d8c90d62a375",
+      "gnu_build_id": "c63deb140c413ffe48106463dd9940f4ca98bcae",
+      "module_path": "postgresql/lib/pg_visibility.so",
+      "module_sha256": "522d4e1510d0faf3c9d08e24aacf99349d5d82478b33cf41034f8279a9b0a6e1"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/lib/citext.so.debug",
+      "debug_file_sha256": "ecfc7488eba46d8d12b9c971084f405664ffab1aeaa0f32a10dc9fc5759a731e",
+      "gnu_build_id": "6d2a963e878c0364cb1fa9422d6158eb6b4ac90e",
+      "module_path": "postgresql/lib/citext.so",
+      "module_sha256": "d103c5376a6d59eff38d9e4157cce06e61520c0d5c3e442684c37f577dd7cdc4"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/lib/tablefunc.so.debug",
+      "debug_file_sha256": "36a2cb5423d3ec6a5e291937317947bb4c50fbf604483795e6866cc21a7b628e",
+      "gnu_build_id": "268953a0d47beb0075e714cdc66ac155e73dd6b8",
+      "module_path": "postgresql/lib/tablefunc.so",
+      "module_sha256": "db6728366d15eccf0891eeaca58b62d9861319e91e84a49fcb3f4c3f58c9c227"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/lib/euc2004_sjis2004.so.debug",
+      "debug_file_sha256": "46eaa18976d7cd4c990450a852cfdc617e5d0b0f06fa2d17669ee02ad85be959",
+      "gnu_build_id": "5405b3b06d26a3e543243f6df4a77759c656f901",
+      "module_path": "postgresql/lib/euc2004_sjis2004.so",
+      "module_sha256": "42b5b925f11a49cbb8e1330588c5d2973a3bad784e570442b3b2a32f67558c66"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/lib/utf8_and_euc_jp.so.debug",
+      "debug_file_sha256": "0fdb998223f1bb7cf03677542750a713e670dd1befe09ace86b4bc4347c32cb6",
+      "gnu_build_id": "59e366d8b8d21b0fd9731568c1d76e7dbe95c90f",
+      "module_path": "postgresql/lib/utf8_and_euc_jp.so",
+      "module_sha256": "f4d7377c6a97f7ef5249cae2d6910ebf2f64b8b5674345853d5bad8fca25bab7"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/lib/cyrillic_and_mic.so.debug",
+      "debug_file_sha256": "d5bf0342a692352d05170743d7cbf35487923597e3f5ed179469bd7db4453e30",
+      "gnu_build_id": "907ab217458d6a4c55b2fa9f5c39a1e19ed3a919",
+      "module_path": "postgresql/lib/cyrillic_and_mic.so",
+      "module_sha256": "515f36f55b8f13843ef91bacbbd4c69d0cf9ba2dbd00a2c35e5c0b8ffdcbe9cb"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/lib/basebackup_to_shell.so.debug",
+      "debug_file_sha256": "31c07e6c449c864c143f637073e94b55d5b41cc3fbe2dee2433dc77c74a8fea2",
+      "gnu_build_id": "8a3ec442078f3c9e3ee17326ef74a2d6a9529306",
+      "module_path": "postgresql/lib/basebackup_to_shell.so",
+      "module_sha256": "c6ebaa2ee27f2da6cc3e2e06a38e9fd056af955358df38502320b01dc5020438"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/lib/euc_cn_and_mic.so.debug",
+      "debug_file_sha256": "b4bff92b70ace084bf7cf204347c2baa3d866063ba4b194c39a9452ea71c428a",
+      "gnu_build_id": "d2fc8e331952e4aee19993ab1bd73b3f71fb52ce",
+      "module_path": "postgresql/lib/euc_cn_and_mic.so",
+      "module_sha256": "b1f204f5059095cfaa1cc66c0a8e9e311d1f2ff51f9f8dba88da4ad662bfb462"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/lib/isn.so.debug",
+      "debug_file_sha256": "705b18ae375c7dd6c156b1498fdfc2d7b1814e613a3976646d1b686b2cbd21e8",
+      "gnu_build_id": "ed10d7218f84039afdf46653ee6649fe1ae1c909",
+      "module_path": "postgresql/lib/isn.so",
+      "module_sha256": "1cff9ed5f71fce1f73f2006913b4d2e502b45006064e98b09ffe97524c50cca7"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/lib/test_decoding.so.debug",
+      "debug_file_sha256": "1de0a742305c5c5b118fc67826487720ffa546698c29e0fb790231dc7ebb6456",
+      "gnu_build_id": "b0b9aa40b59ea7aad866c42f7966068d408bd0d3",
+      "module_path": "postgresql/lib/test_decoding.so",
+      "module_sha256": "d13d60d30116f949d3656e51667b2a1fa2883855964db78dc5ce7136b21f7a33"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/lib/refint.so.debug",
+      "debug_file_sha256": "dfc902e6b8fe07964dc41b5e0a30320f03c4c5bf7758672935309c5e3d8d72c2",
+      "gnu_build_id": "e4e07ddea952088f8d94b4668c98018c4f22d980",
+      "module_path": "postgresql/lib/refint.so",
+      "module_sha256": "62c1fa5b7075b454547d402f604ab74c94406639f9372ed2188f97041e2645aa"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/lib/pg_surgery.so.debug",
+      "debug_file_sha256": "2cd6fefe8cabbfeecc5e43ec31b737f00a67dc985431fe2356729951ef6eba2f",
+      "gnu_build_id": "fcda9261108dc8c9145dc969324e36915bde2bc4",
+      "module_path": "postgresql/lib/pg_surgery.so",
+      "module_sha256": "7b2801a31ed50dac2e6e671f44bccda7005e5f6d0f98995668894c6c5774578a"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/lib/pg_logicalinspect.so.debug",
+      "debug_file_sha256": "7c8ce913cad5d613095ef2a483c7cf1a7b9b0720aa3e38c07e2e226b4c5b4cca",
+      "gnu_build_id": "08cb8336c743c2adf984332b95faf328d67a33c5",
+      "module_path": "postgresql/lib/pg_logicalinspect.so",
+      "module_sha256": "f7a915d37d81d5f82cfa04a34499ec00a942cb9f43b923ec91bad3af2bc9bbb4"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/lib/euc_kr_and_mic.so.debug",
+      "debug_file_sha256": "7eef249c785f74f57e820059689c35cf0298683d7c4e8a71e1c4ab49cb7567b0",
+      "gnu_build_id": "6106989b05dd0255ff10545fb31a63b007106ddd",
+      "module_path": "postgresql/lib/euc_kr_and_mic.so",
+      "module_sha256": "a867a4889750ca718932d4fd608f3e841d15a0ebf1479dad34723b4da8adbdfb"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/lib/euc_jp_and_sjis.so.debug",
+      "debug_file_sha256": "17939093b18dc32a4808284652ba8584951351591a6185c6a2c23eeafdf205e7",
+      "gnu_build_id": "0a74e9227c16b421b7ed7b83569664d6e3cee501",
+      "module_path": "postgresql/lib/euc_jp_and_sjis.so",
+      "module_sha256": "c2e3050a5e45a1d8c182ca4cbd1eb1590f53203057b9f852d41c605c7696c0ea"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/lib/basic_archive.so.debug",
+      "debug_file_sha256": "ea488cd54d4c81fe8f3af62bed80d08077a8ea992871cebc2ad91a98925c5fb8",
+      "gnu_build_id": "3bffc0b23e5147562bbd5a70605822e5baccd1d5",
+      "module_path": "postgresql/lib/basic_archive.so",
+      "module_sha256": "c372cf31feecb095073597cdb0ceda5d0a83fbd0af381084847ff76444dbb8f7"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/lib/auth_delay.so.debug",
+      "debug_file_sha256": "e2eb3a40b1bb058fd9b82256aadd0902956d88e3a796a5d7bda5bfb0e93b9988",
+      "gnu_build_id": "f1e4b6633048fcd4bb463295e19c420fefbeb898",
+      "module_path": "postgresql/lib/auth_delay.so",
+      "module_sha256": "500e6c5f0e986a37d8df179ba32ee468ea885e06a785724fd016456ad6873e86"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/lib/utf8_and_iso8859.so.debug",
+      "debug_file_sha256": "56df1c6c3954a61b047353396a228f2ffd4c28e53ebb194c08229f59dd1c5bfe",
+      "gnu_build_id": "94a6f1329198fc518883960b408369a3c031255e",
+      "module_path": "postgresql/lib/utf8_and_iso8859.so",
+      "module_sha256": "8274885bb47835721619a6efa6301e3cc9fc9695cdc9f651223ac2d528a04604"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/lib/latin_and_mic.so.debug",
+      "debug_file_sha256": "768cb3e97f67a04ddd707d3aba3cfcbf81b310cab60d2294431393423293d0ca",
+      "gnu_build_id": "929676cc2b84aa7a7eea2eaa59372eee57de079b",
+      "module_path": "postgresql/lib/latin_and_mic.so",
+      "module_sha256": "fcd3f352b1ea70fde16fb4969d734df3fed5cd1434bce09ef36e85bf75a85724"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/lib/fuzzystrmatch.so.debug",
+      "debug_file_sha256": "8f6ca17ec4b8510a1f24628830614cffb3c42b885793a72b5cd62ba28c342bd4",
+      "gnu_build_id": "254ef909c8b5e852058931a6c09f9de4eb53d98d",
+      "module_path": "postgresql/lib/fuzzystrmatch.so",
+      "module_sha256": "6a49513e719e0876d43dfcc12cc8fdb057b307cb7dd68faa7bb9477638110791"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/lib/libpqwalreceiver.so.debug",
+      "debug_file_sha256": "bccc8ac0cd4ff708659749c0524f53c87b700de235f7b2bdc1b0b0177ebb6fb2",
+      "gnu_build_id": "9b9699aaebb3687a2f1708bd45b1365cff518285",
+      "module_path": "postgresql/lib/libpqwalreceiver.so",
+      "module_sha256": "f2d1355c3423311f8d6ce12f8d85832cb49c8c22798ac662fcaa8d4e3ff65e8d"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/lib/pgxml.so.debug",
+      "debug_file_sha256": "59f7c5827f73e306fe9566b44887319326c6b68a20804a607ed0beddbbae05ec",
+      "gnu_build_id": "f78b60c6927bb86ba14fb50c873234641b5aa0e4",
+      "module_path": "postgresql/lib/pgxml.so",
+      "module_sha256": "c23e11440b96f7094e5bcb467f206b86238bbe10e1b32f2a04ab85676d4c7793"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/lib/autoinc.so.debug",
+      "debug_file_sha256": "de0bc6a88921b7fb1df90d8e29a629940603d50b1eb910c5f07d4128056492f7",
+      "gnu_build_id": "acd6074fb5527cc7ed22e365b6f801e30d54a4f6",
+      "module_path": "postgresql/lib/autoinc.so",
+      "module_sha256": "7d7e7c026419bac3a97731f1b277f0e4684c3fb2183d013bc0fecc0dae63f675"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/lib/pgxs/src/test/regress/pg_regress.debug",
+      "debug_file_sha256": "ab1e6e89a1439c368b3b6a5ccb0b025e38e6051e74d84dd283487274e7f547af",
+      "gnu_build_id": "05d36f9ea791c6da70b6ca4709e0d1ddb27f3d0c",
+      "module_path": "postgresql/lib/pgxs/src/test/regress/pg_regress",
+      "module_sha256": "d7a6b8be7b60701c4c5f78b2beff5a7642a0c346de12b9e7fd48b795de6b1a81"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/lib/pgxs/src/test/isolation/pg_isolation_regress.debug",
+      "debug_file_sha256": "181a2e655b69f517994012232a1c6bace09c79545b9b46df7e3ddb6bec172c1b",
+      "gnu_build_id": "da71579cb493fc6d4bfd1fa24c4a3d41f0e02994",
+      "module_path": "postgresql/lib/pgxs/src/test/isolation/pg_isolation_regress",
+      "module_sha256": "302f3e872edaf9b3d0b8264c686223134e5d8c2ed81457b07804b37a0ad87f8e"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/lib/pgxs/src/test/isolation/isolationtester.debug",
+      "debug_file_sha256": "070789357b522b45391b893256f05a197cb7eb40f61c05afb70bd302e0433d85",
+      "gnu_build_id": "172b0d1736c7c3707e2dce7fbc8b38874d9cc331",
+      "module_path": "postgresql/lib/pgxs/src/test/isolation/isolationtester",
+      "module_sha256": "92bacb599ebc24a415cc3b9360f34cf5bc5b011f0255b7f79015c8adf655c4df"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/lib/postgres_fdw.so.debug",
+      "debug_file_sha256": "c579a00b2e237eaa9614f98f142477755df87d5dc6bb9441484625f282b0e43f",
+      "gnu_build_id": "f67106ddd4d281977005aec25fb04e4941c18d9a",
+      "module_path": "postgresql/lib/postgres_fdw.so",
+      "module_sha256": "4c4cf20fa6cf5b20da1622084be5569ff78851ddbc55f785c53ced5eed580472"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/lib/latin2_and_win1250.so.debug",
+      "debug_file_sha256": "ccf3ee8495dec69c37378e99f5c774040faacd03bac0d2eb2fe75f2ac65623fa",
+      "gnu_build_id": "5e7d7eabd8e8eae91a5a58ecd6c28e5258a68b4b",
+      "module_path": "postgresql/lib/latin2_and_win1250.so",
+      "module_sha256": "c6c53302bc18b3fc03b4756d050d98d8cb52b8d9ef954870684f77d23b719b2d"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/lib/pageinspect.so.debug",
+      "debug_file_sha256": "a294659eb87b2f72f40d3e9324caed46cc5a1d4c3cd13f997e21c1144e90b72e",
+      "gnu_build_id": "271455e6d04f1d04be613683d87bc477f3ee1d6f",
+      "module_path": "postgresql/lib/pageinspect.so",
+      "module_sha256": "c210f75efbaf869ebb5b28770d599131fbb25acbcb2c8e9460f20fdcff5cffc0"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/lib/utf8_and_gbk.so.debug",
+      "debug_file_sha256": "ade37a2c826cd064fb3dc1ae2e5eeb886e806ca2c1739513c6e8380b759b141f",
+      "gnu_build_id": "e07cd68ba06fa500ba390f32c5ff9f98d2949a85",
+      "module_path": "postgresql/lib/utf8_and_gbk.so",
+      "module_sha256": "8c52cf8796ca075a8f6b28d83988c4d4062da6b81e3dfb514ceadd4c08da94c1"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/lib/earthdistance.so.debug",
+      "debug_file_sha256": "433247495e092dbff9382c53de2aa5e3f90f03228a86b46ca72c67719177fe25",
+      "gnu_build_id": "8873cdd2f4317fd8e0a2e6ee4d8eace445f0a8ca",
+      "module_path": "postgresql/lib/earthdistance.so",
+      "module_sha256": "cb06727a6d2b3fc2565e4fba4240e07f48855b1ed1c9f7c1f02bb815c048ae11"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/lib/plpgsql.so.debug",
+      "debug_file_sha256": "139b3e7d51d1d7cbee18ee0fe707ba6445c38070e44a267753e77628deb5f27d",
+      "gnu_build_id": "794f357d096a047aff5f8421c2010712f8e53618",
+      "module_path": "postgresql/lib/plpgsql.so",
+      "module_sha256": "5c7b423e00b934af4f7f134a0a1f254e85bac4138143a8ea0552dc7d1398b2d1"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/lib/utf8_and_johab.so.debug",
+      "debug_file_sha256": "4eaf729799685c084feb9f7023ad7db72d59b9e98c3194321e7d47007c266921",
+      "gnu_build_id": "d7b6efa0b97a79323aa735b116ec58295504e3ec",
+      "module_path": "postgresql/lib/utf8_and_johab.so",
+      "module_sha256": "7b105e41ad4438ecdd85cb21196fb5f6729ad34ec0f3d013b72e3ede117ec3c2"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/lib/pg_stat_statements.so.debug",
+      "debug_file_sha256": "3651855682da25c3fdd52e17283d48ee93d674c976cf93b021445e377e6a427b",
+      "gnu_build_id": "5338f033b85d1df19bec36d46947ccc06338b64b",
+      "module_path": "postgresql/lib/pg_stat_statements.so",
+      "module_sha256": "e4d9476be88cb74e22fb5f56005524250a0063873e7086a796cefb638004458e"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/lib/euc_tw_and_big5.so.debug",
+      "debug_file_sha256": "6441cbd197363f82d33136f967476a78c12a1338605e8b4197189a5cacd3972c",
+      "gnu_build_id": "acd58277499533d65685d1bf075117c26da039e4",
+      "module_path": "postgresql/lib/euc_tw_and_big5.so",
+      "module_sha256": "fd768c1e5fe1d7a47bfd7dcf83f6914a43142af5e2226fa117818e5c8335f5c8"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/lib/ltree.so.debug",
+      "debug_file_sha256": "78e4a00d9dbbb9f7fc636facbc16491894d7a3592bff8db380f84aa74391ae28",
+      "gnu_build_id": "9809d14806c0b43c62d7262f1a0877f6e60509bb",
+      "module_path": "postgresql/lib/ltree.so",
+      "module_sha256": "7451e6af35dcdeb33f54ae774f4326bca89403e1ec9c52de4d316c3feb45e4c9"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/lib/hstore.so.debug",
+      "debug_file_sha256": "e6bf62793608e82cbfd46d3771be556e5047e3b53c6b2b1707fb874d861b4f82",
+      "gnu_build_id": "459f813ed73fdd8035a12c4b1b9e8bee71e9a03f",
+      "module_path": "postgresql/lib/hstore.so",
+      "module_sha256": "e142091d8722e4d769d69eb0b093afd181f77d9d1b13afb9c2749ddb436db40d"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/lib/dict_snowball.so.debug",
+      "debug_file_sha256": "50c50d8358ade6b21bae18e6736223ea622464c26bc359fa659a026de6f114ac",
+      "gnu_build_id": "4cdec2f539574d8e803c53a238dcd6f1eaa09c95",
+      "module_path": "postgresql/lib/dict_snowball.so",
+      "module_sha256": "7ee0e617ff8109ab53840382451ddde22b18c51bf983d13e3b7001f3b02e5ecf"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/lib/pg_walinspect.so.debug",
+      "debug_file_sha256": "e4976963c196e1b296285aab00a55453d808787f7493496a9b0b2b6020195f61",
+      "gnu_build_id": "52f194e513e62d14367c7c1467111f877ea6a3a8",
+      "module_path": "postgresql/lib/pg_walinspect.so",
+      "module_sha256": "077023efc0ba7d99d215496a8cc5e8529b84b612b8bca63f099a3652e19b9927"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/lib/lo.so.debug",
+      "debug_file_sha256": "ae9bcecf891c58b0d876c150bb8746b171958a352bad15913ddce5b692a83ef9",
+      "gnu_build_id": "e78c382226427dc9d136767beda658ca0bdb47fc",
+      "module_path": "postgresql/lib/lo.so",
+      "module_sha256": "fbcf626532502df0a1785cb849ee4ebf25777d008213d29cb9ecfc3cedc0a260"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/lib/utf8_and_win.so.debug",
+      "debug_file_sha256": "f2d95cf211531c43e27ff6bec8c1363b85d6394cde4adfa836326b2500f2bd9c",
+      "gnu_build_id": "9488820edc5b2f5fb6ff9900b171be06ba2f346a",
+      "module_path": "postgresql/lib/utf8_and_win.so",
+      "module_sha256": "a6cbfd5ff739b160a25241314d33734b11043f7020ab5ffeb7f42f86a0451154"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/lib/pgoutput.so.debug",
+      "debug_file_sha256": "2522c94db653b3d3b7f35960a3e966bdcf9a89ba4be5c3d25c2aeaeea8199824",
+      "gnu_build_id": "09ba9adb397ec5d2dce2b4220d5a289d996fbf6f",
+      "module_path": "postgresql/lib/pgoutput.so",
+      "module_sha256": "39e173ba246f19f6dd1204749dd09432d2364f83225fa84b3ba3f26b317f475c"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/lib/utf8_and_cyrillic.so.debug",
+      "debug_file_sha256": "77b8c28462f7e2415e2d84855fd6e1256d80875d664bb790e0d171d8a3aed026",
+      "gnu_build_id": "80ecbbc13a03fca53db36481f309024b577bbfad",
+      "module_path": "postgresql/lib/utf8_and_cyrillic.so",
+      "module_sha256": "7c3ecf0d8a89c621cd6dbbb0a3654a8f00229f5499d922475d52a62e69405867"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/lib/dict_int.so.debug",
+      "debug_file_sha256": "f7026eaaf80e06249a9dd36497669d1103f0be7bb34a9f2a0ce6a31951963575",
+      "gnu_build_id": "080204524b1042ce8a2e45bf47a689a3c05e9d91",
+      "module_path": "postgresql/lib/dict_int.so",
+      "module_sha256": "57a04a3c25c35fb9f29eaa6451c4cb9f4266c1c47c738598ad0e27d66f9cc2a2"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/lib/libpgtypes.so.3.18.debug",
+      "debug_file_sha256": "0296719832c9c974af67f9549606ab94a533d7e9dbbec5cb35fd4dfd679c672e",
+      "gnu_build_id": "f03cbef91a0b37fae360fab8fc43d9424cf62edf",
+      "module_path": "postgresql/lib/libpgtypes.so.3.18",
+      "module_sha256": "e9d78f8a3d604e094f0c834ebf8e0bb38d7dd2b84f32e439461af4ba46e9650b"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/lib/utf8_and_euc2004.so.debug",
+      "debug_file_sha256": "b112e10e5681518c2dc92634a9b64f316c6f4ce21973731fec5ea9e3f817fc57",
+      "gnu_build_id": "b7bd949ebf5983b5f7bec4cee0a09e4278236b0d",
+      "module_path": "postgresql/lib/utf8_and_euc2004.so",
+      "module_sha256": "c0a957694cdd261e1fd4769b34065e356d02c891d4eb4eb84aaaf8a307b16a5b"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/lib/utf8_and_gb18030.so.debug",
+      "debug_file_sha256": "62dd0e84d3a619c9cd07b68b5a9e0ebdbd2263f217f351ce3f820f71cc1c2471",
+      "gnu_build_id": "b79ed4289baf37949db5c4bbcb918ab2ecf6ab46",
+      "module_path": "postgresql/lib/utf8_and_gb18030.so",
+      "module_sha256": "7fb24d3c43fd74333c3b550583940be26f8812f057f24772d317bb63d199d881"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/lib/libecpg_compat.so.3.18.debug",
+      "debug_file_sha256": "062ee8b1554cd080493834a3b22a86155dbaa3661b4369db1c055518a0611d6f",
+      "gnu_build_id": "7e66cfcfda5de10c8334c664c49bec7f0d9f19e4",
+      "module_path": "postgresql/lib/libecpg_compat.so.3.18",
+      "module_sha256": "e705da55bcd1160643dc0b6cfd85de9b7dfd255fbdd29c48ccff9c1bc8559521"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/lib/utf8_and_sjis.so.debug",
+      "debug_file_sha256": "e52e59ede77f4dfac82a56fe5390eb8891e0c2a750fecb519b16e7af6df06b00",
+      "gnu_build_id": "f0f09fe4b34847d1fac85ae0efcadb20e9d34825",
+      "module_path": "postgresql/lib/utf8_and_sjis.so",
+      "module_sha256": "fddb8074933ef453da0ef22c4d945d01d63b89cdd5574b83818e85ef30f9747d"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/lib/tsm_system_time.so.debug",
+      "debug_file_sha256": "83c5c00876cff11b54639ed6456bfeff3da664b7ebc59e3df14d666362d4583a",
+      "gnu_build_id": "59c54b234aec8ddfb1a72a5e90b3b5c5bd81b6d9",
+      "module_path": "postgresql/lib/tsm_system_time.so",
+      "module_sha256": "7eda61c30c546b3454f39c06f5b12c40005927504894c01b3ac7d2474828fc5f"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/lib/unaccent.so.debug",
+      "debug_file_sha256": "69b1870f793dc96b3481992ea1e46e3c4868804782127c03457bf3f295ba673c",
+      "gnu_build_id": "e3dd9292b5ec21cc77f31ff1aaa23128ac257d16",
+      "module_path": "postgresql/lib/unaccent.so",
+      "module_sha256": "290153e33f6615497334bfa303bad8352c9da4e76c0d93eadbaf56f4fbf868b3"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/lib/pg_overexplain.so.debug",
+      "debug_file_sha256": "13eea25a14033bb139ada2a771efc974e2ac5c9b4598694cbb6f8e45e98605e8",
+      "gnu_build_id": "a1655ac6a5fcfd65bfb86e4afe913bb63122d72a",
+      "module_path": "postgresql/lib/pg_overexplain.so",
+      "module_sha256": "045922431ef5373f16b5209ae26fc53620dcae4ddb877d962a60cbb855124133"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/lib/auto_explain.so.debug",
+      "debug_file_sha256": "850348a06a7c92c0ae58d1631c0bd9c310aa407f2fca8d61b19be92dd98d6c72",
+      "gnu_build_id": "f4af6846591cdb330ae3454d85081f495c6317de",
+      "module_path": "postgresql/lib/auto_explain.so",
+      "module_sha256": "9e67c958d85fdd2b0c0ea166f0e2ea5d4190c9f1786952681b4f2bb1ce75df35"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/lib/dblink.so.debug",
+      "debug_file_sha256": "0b8ed33000346fe11f96ae9c024bf18029c5633ed6347d4d8749df7b628346e0",
+      "gnu_build_id": "ec6a7c19329cacae59fcaa25db568b8feccd4398",
+      "module_path": "postgresql/lib/dblink.so",
+      "module_sha256": "1a1196865765a0c0e2639a87a93ee51e3908e5c233675fce8126dc0920046e16"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/lib/amcheck.so.debug",
+      "debug_file_sha256": "841436a60329f1cbfb244ecc85cc6297fee2eb0244b05f81306436bfa1bbe008",
+      "gnu_build_id": "f4bace9808f7cd1a9c79fe5ce13e7fbf8fb8cca6",
+      "module_path": "postgresql/lib/amcheck.so",
+      "module_sha256": "dc1bdd7c0c568a94f43ff2d2556643c81cadedf706df94b27cde3ebd6d19a3b1"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/lib/libecpg.so.6.18.debug",
+      "debug_file_sha256": "3a93f9cf2b63bec38adfc2104e4b54aed4ddc54434f107999a6c94b124d18655",
+      "gnu_build_id": "3c762cb44690d899c17987fb111c1397214bb68d",
+      "module_path": "postgresql/lib/libecpg.so.6.18",
+      "module_sha256": "87bb659f62b8654fec56ff7cdeb3ab226809165d7da0c392b9125b3b87cc204f"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/lib/pg_prewarm.so.debug",
+      "debug_file_sha256": "2e2b9164dd7a6bd2880fa9416518492d40b8284f011da21caccc423467ebdefd",
+      "gnu_build_id": "368edce986c9fc1feef506eced63bbab90837206",
+      "module_path": "postgresql/lib/pg_prewarm.so",
+      "module_sha256": "7399b3d93780ca31839860cedca6948b49248663f2bb289e0041156f76eae702"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/lib/seg.so.debug",
+      "debug_file_sha256": "bd52d4f534de1bdfb13c6a61d988b839c54ea8f814aa9fb0dd1d708e6488411b",
+      "gnu_build_id": "453c6fef710fd16886e486cc2a38bcea752481d8",
+      "module_path": "postgresql/lib/seg.so",
+      "module_sha256": "98b42350fdec39a7c7f70ef2cdf22449b7eb20cc1090b45c03a096e593d5a2d2"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/lib/pg_trgm.so.debug",
+      "debug_file_sha256": "45fd396c59a24955f613308cc196a013a6418b02b5d9db4f19d7e1c391e9b1b5",
+      "gnu_build_id": "011fc99dd555a080b37fae0429a45fc014c24731",
+      "module_path": "postgresql/lib/pg_trgm.so",
+      "module_sha256": "d12b8f726f3100a4b725be072e889385a49b086e8e44c5637ffe12692ec4716f"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/lib/passwordcheck.so.debug",
+      "debug_file_sha256": "a28a793d0dfbf07e3277f4e72ce76bb98e6d3740e014e3d9233007437fc10ae7",
+      "gnu_build_id": "7a4450553bd506ed8ad5d7597bfe640087be168d",
+      "module_path": "postgresql/lib/passwordcheck.so",
+      "module_sha256": "77c536eae0897e9e68e606461999c9c4c7b9cfdcbd49a9f3259daeac4c6263ef"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/lib/utf8_and_euc_tw.so.debug",
+      "debug_file_sha256": "f6ae9b3d8cf2cc57ab4e0da5e68ff406459c575ca45367c7b35f41f69c80725b",
+      "gnu_build_id": "5c2c8dace7a6a4629eaee3efbec6bfb5a75295fc",
+      "module_path": "postgresql/lib/utf8_and_euc_tw.so",
+      "module_sha256": "e094c5de113dae9943c927ad15f22f67c13d2d089833a3306de7dbf6eeec41ec"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/lib/tcn.so.debug",
+      "debug_file_sha256": "b973ea87dbdb4c1787a52afbdd657f401ab5267103aed41a97f7197ddc964b84",
+      "gnu_build_id": "5eaf43685647752666e16b1414c230538f35b598",
+      "module_path": "postgresql/lib/tcn.so",
+      "module_sha256": "9cd27c2545f0229a3b98a90dc06584d696baf98993516451d76d4c388b2ea429"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/lib/libpq.so.5.18.debug",
+      "debug_file_sha256": "7c83924dfb542a04244382cd053a0f13c8a5e159619ce43fbb870dba0223dd53",
+      "gnu_build_id": "51303f1fca2609ca6ef0553480aacf0ffbbbfa01",
+      "module_path": "postgresql/lib/libpq.so.5.18",
+      "module_sha256": "da12c02d595eb40b8458ead240fc696fead4ee0d8950bf9c8387528e9a55b1f4"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/lib/_int.so.debug",
+      "debug_file_sha256": "84f70e07dedabaee412b60c2f70af58edcf44be24379944dd5419c7d017466d5",
+      "gnu_build_id": "a1ddcc2092571a4fccd488fbdd638e623fba0080",
+      "module_path": "postgresql/lib/_int.so",
+      "module_sha256": "fd6c97b3fc1d486fecf97eb1990222a1e758eaf81349b184ddc37b980d2eda34"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/lib/utf8_and_iso8859_1.so.debug",
+      "debug_file_sha256": "0cfc14024c681805e3e14f15d86634cad1e9839bc11f34ac71b0dde59e7bb7de",
+      "gnu_build_id": "1f3104651cc1fb81c3a6ecd25c84ff6048813287",
+      "module_path": "postgresql/lib/utf8_and_iso8859_1.so",
+      "module_sha256": "1e476bc036b2848c299a844112b623a022067a7cc2af8820feb5533234661e76"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/lib/tsm_system_rows.so.debug",
+      "debug_file_sha256": "12c668b1db7ce7af7773a5fdc109e031e8862239487a8d8d5e1fbfe2c36848da",
+      "gnu_build_id": "28bf90709a14a98d5d694d072f13d37c7c3cb5d7",
+      "module_path": "postgresql/lib/tsm_system_rows.so",
+      "module_sha256": "02d446ff668c8feba45c775bc091d56f1073e86b444b8dd84a729e56a2ee0059"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/lib/utf8_and_euc_kr.so.debug",
+      "debug_file_sha256": "b2c83b2bf269140f9fe6111004e96f33b420f8af563f201a55d278384a945fed",
+      "gnu_build_id": "4a7e7f0d5e55b172e19f390631210ae2996f8d7d",
+      "module_path": "postgresql/lib/utf8_and_euc_kr.so",
+      "module_sha256": "ebc2d3c26c9447250dcb301ac8a703b69decc45dfbf95ce668809edf126934f9"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/lib/utf8_and_uhc.so.debug",
+      "debug_file_sha256": "0c82048bab39ddd3c4d1600ba747f7fbcc7c165c1d1852d37abc174efe7a6937",
+      "gnu_build_id": "74fedcf0bb300f08b9ef17828e772568e760b403",
+      "module_path": "postgresql/lib/utf8_and_uhc.so",
+      "module_sha256": "2bbb1037c52cb0fb5cf64c97f9af60b47ea8729b8bdb0f1eb041587fc7f5addc"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/lib/btree_gin.so.debug",
+      "debug_file_sha256": "666c93a1b13aaf00ecb71b8bae7531f33fbf518bd65d10060ffa143ca52e1697",
+      "gnu_build_id": "133222de454d655d0d7704d903004aaf98e82031",
+      "module_path": "postgresql/lib/btree_gin.so",
+      "module_sha256": "680a46b288cca498e0dc403ddd84628435a48ae4b0e85c087c2bf3ac7352e053"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/lib/bloom.so.debug",
+      "debug_file_sha256": "73fda707f69a6616041487ac456b2075f23768ecb5f9483a61383813900910f5",
+      "gnu_build_id": "d663d9d983f9f79562e986cd6637167a9071e3d8",
+      "module_path": "postgresql/lib/bloom.so",
+      "module_sha256": "cf458ccf26c47f35043db683f06081fe4f8ec1ae8c4fe358036f1e1956c40aa2"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/lib/utf8_and_big5.so.debug",
+      "debug_file_sha256": "b106ff858691673e2f754c20c0247081126da1fe5fd471ddbaba4c2410bd121a",
+      "gnu_build_id": "1e14fc47ec836f75179059265a81d66d9146a35c",
+      "module_path": "postgresql/lib/utf8_and_big5.so",
+      "module_sha256": "136ccb82f4f6a6f51e3b60627e3005956a02c837217ad622ceafc369ee292251"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/lib/pg_freespacemap.so.debug",
+      "debug_file_sha256": "2b63f99d6a89c5c7da06179348cc5110ae96188d4ce52b805e9b9923a28ffecb",
+      "gnu_build_id": "a3389d1d1f58fa2c93c0f69f4d646811f045f015",
+      "module_path": "postgresql/lib/pg_freespacemap.so",
+      "module_sha256": "4e2d2865246a3bb9e673ed70641ef34bc084bbdd7f9f1eff99726a9c0ce33c2e"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/lib/sslinfo.so.debug",
+      "debug_file_sha256": "aafcb7266aa4d44acd815757c0eef8aff22c174d14d83644a42ed596a5deb84e",
+      "gnu_build_id": "e4de24e86439bd29e4966241e539ffdba5d702e5",
+      "module_path": "postgresql/lib/sslinfo.so",
+      "module_sha256": "a782fe675f253fe453e8e9c4ae60f2b43b0d43a32f7d9ae2f06f80763abe6aec"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/lib/moddatetime.so.debug",
+      "debug_file_sha256": "9249bc99dfa99d3fbd0b04a25dd394a397041ad7217eadf832eaf699bbd1c575",
+      "gnu_build_id": "b4ee4fbee7d6eb3641b6553d14042deabb957e4a",
+      "module_path": "postgresql/lib/moddatetime.so",
+      "module_sha256": "a2f6261cc75a55c416f20c6bbcd2ffcc35414e39ffdfd48df613bde647794f75"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/lib/pgcrypto.so.debug",
+      "debug_file_sha256": "cad645e9cbd67df6451e54b51995626bb672d748e74e74597660dae18d17de38",
+      "gnu_build_id": "1c65dc58c6ba987516a0059996e44f8adfd8bbc9",
+      "module_path": "postgresql/lib/pgcrypto.so",
+      "module_sha256": "05912d2c7363ff18286d7a7c034eb48e9dd3f92f9cc46bd5c2dac93a3eb87baf"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/lib/utf8_and_sjis2004.so.debug",
+      "debug_file_sha256": "6968f0b837ce6158d6cdc4193aac34fe34b4eaedb04974a4912aff047def3c22",
+      "gnu_build_id": "ce9157106b0dafa6ac7a9ba83e960fd3703d5f6e",
+      "module_path": "postgresql/lib/utf8_and_sjis2004.so",
+      "module_sha256": "bda190c0e4ed57780cc620a60a0520c5b9588a19efdad75ee832f7d6fd31b715"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/lib/file_fdw.so.debug",
+      "debug_file_sha256": "573c6ecd5e876098a6c243d23a12bb162da769e3ea804264c42106442444bb29",
+      "gnu_build_id": "0bb5693cab2a315ebbb933efc8d4dc31c93510c7",
+      "module_path": "postgresql/lib/file_fdw.so",
+      "module_sha256": "329ff4f1597f3a5a102b9b2fbdec1726ed521cbb0835c2ac757a7ed445657c3f"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/lib/btree_gist.so.debug",
+      "debug_file_sha256": "79539178e66f595d06d98089be794db89ff4326705654856f0234df90a948e0c",
+      "gnu_build_id": "97324c7021a0707a5a7736a82cf20f4d6069d384",
+      "module_path": "postgresql/lib/btree_gist.so",
+      "module_sha256": "7a59385dddb5fed290cd5c16eb81895b9543e59dd18cabfe0758554c36f9a195"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/lib/dict_xsyn.so.debug",
+      "debug_file_sha256": "cde5a5ae93ff0cb3baeb5a9312e0f60ecc88b3526350ca68441fdf2e8d4e4744",
+      "gnu_build_id": "82a667fcfd99a1280072a45dc09422c8ed895a68",
+      "module_path": "postgresql/lib/dict_xsyn.so",
+      "module_sha256": "0e04a747095bb81a91e29da763363f82701acbf1a79390a804d9aae7a722e14a"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/lib/pg_buffercache.so.debug",
+      "debug_file_sha256": "e5a7eab4143ddf1c61afd1a3857a41853fc74e9dbfac07f225c46a3e8360a5dc",
+      "gnu_build_id": "fd2a9a32d2291c1062cb73c6977632fb8deceb7d",
+      "module_path": "postgresql/lib/pg_buffercache.so",
+      "module_sha256": "37d4b50e41f9234daab3ed6ae9654b85ee77f8c08c77b77d7242f7077f146a71"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/lib/cube.so.debug",
+      "debug_file_sha256": "355120c12d9168174ea8b45019719802ea4f92b2fafeef93155cbaaf133436a1",
+      "gnu_build_id": "cb89556596c8e9d997850cec7ad68f12785a9a98",
+      "module_path": "postgresql/lib/cube.so",
+      "module_sha256": "a2bc65a9969d59ba185b66b4ea785fb87e44016e1b181d812047e1e7f5365d74"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/lib/pgstattuple.so.debug",
+      "debug_file_sha256": "b93240c208063bb26e32acef968ce6e918c14a63d440de1b6fa0b740a2a8d7c9",
+      "gnu_build_id": "b8726a3720bb85029a5e0643693a3c30ab8fd5cd",
+      "module_path": "postgresql/lib/pgstattuple.so",
+      "module_sha256": "17d80fa8669f49bc2ab486199437d1bee8e1f7fa635e20e5f1a482b71612c061"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/lib/uuid-ossp.so.debug",
+      "debug_file_sha256": "d8ce92f263ee1a189154e163d975007942d2a9185c64f21f04656dd528e70f52",
+      "gnu_build_id": "fbc9f697066a9d3557e2e16121066ed203e4e1df",
+      "module_path": "postgresql/lib/uuid-ossp.so",
+      "module_sha256": "9bc2154569126cca4b5a1867036907a59a6cb453e7d8c5e18dd60d1f3398f84b"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/lib/pgrowlocks.so.debug",
+      "debug_file_sha256": "a6632c50911c8ce599e80b6e7f8787d7334e8804efc5aaf75e0f759738978158",
+      "gnu_build_id": "6c2a0fd6f3bb541a3dd80c407b529b66c6886417",
+      "module_path": "postgresql/lib/pgrowlocks.so",
+      "module_sha256": "d40b449ab396b491e85304c3934c46c78909b5cee93435f9f393800dcea77faa"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/libexec/pg_test_timing.debug",
+      "debug_file_sha256": "187d012f467065b8975ec2a39ad00562212ada12145dbb8958c62cb950c20dbb",
+      "gnu_build_id": "72ffd2badec5684d8e95df8cb2f941a30acee13e",
+      "module_path": "postgresql/libexec/pg_test_timing",
+      "module_sha256": "2c722ea13cc1e35adbd3e4e7b1e10c37694014ce2806af13a82993d80ba1aba1"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/libexec/pg_receivewal.debug",
+      "debug_file_sha256": "06257169e9bd362902726891ab109ffe34374303b136369a2d147483245a8bda",
+      "gnu_build_id": "db5734d93236bc6fecb8f877612893d455d2eae7",
+      "module_path": "postgresql/libexec/pg_receivewal",
+      "module_sha256": "a6f2bb033ed9822381c64bb823d0ab0f32e21e661089ed7572843ee860e19f5f"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/libexec/pg_test_fsync.debug",
+      "debug_file_sha256": "f8b7adaf81def852088b7024c6e7c1c33b9b508e8319f6cab080d30a0df0aeed",
+      "gnu_build_id": "09e86d1fb584877f5f9cbae3425936b63c5ac1e8",
+      "module_path": "postgresql/libexec/pg_test_fsync",
+      "module_sha256": "097c624057ecb139e1e4f7c38fe8f105dd86dbe0f704ec330807e2cd1f1a83a5"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/libexec/pg_ctl.debug",
+      "debug_file_sha256": "37a91ed328fc1c1f8253f7f7f8a1884a9698101c258811d1f3f0e79c27087b23",
+      "gnu_build_id": "922e9e3dda55ac896b8a0e7466b6a5012bea7572",
+      "module_path": "postgresql/libexec/pg_ctl",
+      "module_sha256": "80cffb1c3eb4c9e9b0c925e086ff3d33cdcb6ea115b3149ed94c13dccbea0713"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/libexec/ecpg.debug",
+      "debug_file_sha256": "81d252c69af165ecf00f9b832eda2f0f5c6aa136ac10311be3a0221cfaec68c6",
+      "gnu_build_id": "267ed086b3e69ee562aa306417f4f259bdcce327",
+      "module_path": "postgresql/libexec/ecpg",
+      "module_sha256": "37ae68d90101b4b9c7eda86d95260222f348473e71b841bcd4c25ddf4ce02737"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/libexec/pg_walsummary.debug",
+      "debug_file_sha256": "b1b23cd9367788db0ea202227dfd9bec87a4a1b24f8c4eec62f2227684986979",
+      "gnu_build_id": "e991e0ca72057ee20cf6b55e7a9659b390546db0",
+      "module_path": "postgresql/libexec/pg_walsummary",
+      "module_sha256": "276f020b2594cced8d06268f4ab53a7406338e7322902b5d2532fdddb3db432f"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/libexec/pg_dump.debug",
+      "debug_file_sha256": "61555272d9aa0a40154074939fff241b08bf6580e6fa5e86f718d97dcf8643ef",
+      "gnu_build_id": "11c627785117501d692c1d654d88b532f6301727",
+      "module_path": "postgresql/libexec/pg_dump",
+      "module_sha256": "4256e9712386319f8ee50474142c69a694c36fa1af897715bef372b1e184a871"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/libexec/createuser.debug",
+      "debug_file_sha256": "5ccb84cd64bf8a29edded94a832c55e3ef5e01f95b3df55b3770b94446008cda",
+      "gnu_build_id": "0f40770cf157c5ad5e22701fd91e616311c1a4c9",
+      "module_path": "postgresql/libexec/createuser",
+      "module_sha256": "67211cb71d6b881b00da1bcef96a4baceddcbf271d2deb9eca6febb972e19504"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/libexec/pg_waldump.debug",
+      "debug_file_sha256": "fb950a29aa26d11418d227cfed238de79e847d65e79f480ecbecc941b92707c9",
+      "gnu_build_id": "9ed82f7a5e899a2a705519c1b5056c29ec7de04d",
+      "module_path": "postgresql/libexec/pg_waldump",
+      "module_sha256": "a59ac64c5bf5f57d23b09244ede77246654748d91e502f887a0264ffd97d8d06"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/libexec/pg_checksums.debug",
+      "debug_file_sha256": "7e543240abbe70a55a552880e89677eac620c89ac34f6c91efe8ea0177a6a360",
+      "gnu_build_id": "828e2ed20bb571f34956282a92befaba99f6daca",
+      "module_path": "postgresql/libexec/pg_checksums",
+      "module_sha256": "1e28bd51059656389ba036b392848fa6efab621bb203f98f65b3518f06f6de0f"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/libexec/pg_basebackup.debug",
+      "debug_file_sha256": "3364ec51345fc3ea7408ab969ef9eadde2d9d5cd98b0097a87c317f73a030e0f",
+      "gnu_build_id": "651bfad2ffc0ed5dc9ad0e8426830e551efd77ab",
+      "module_path": "postgresql/libexec/pg_basebackup",
+      "module_sha256": "94410f130c8513cbde6f85b0f8b5f86c779d140f9f4f703288035153a301283d"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/libexec/pg_recvlogical.debug",
+      "debug_file_sha256": "2186cb44d1b16f3fc2be2952b36a3f18e744d77cc558b002bbe79fe7c0a681e9",
+      "gnu_build_id": "de5246895f725ca8df5d5c8ce72f42be3988d965",
+      "module_path": "postgresql/libexec/pg_recvlogical",
+      "module_sha256": "88db4339e7b46177e41962acfe8e3c065864ac7b7beb78b0a09233969eb5d226"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/libexec/pg_controldata.debug",
+      "debug_file_sha256": "78a04deb9a7e40bb4b141b0fe482403366cc7cdbae14fd9846b4de480f39084c",
+      "gnu_build_id": "fa1927f9ed8af71a057f47d5503bd650e6e4d77f",
+      "module_path": "postgresql/libexec/pg_controldata",
+      "module_sha256": "1470ef542ec0a880c6f9e6c5dbeba39dca5538d2b833b258d77681178b326fbe"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/libexec/pg_restore.debug",
+      "debug_file_sha256": "f78ea5907d07907b51dab608a4f42fa9f0e110d44f62c75ad1f707944de9abc2",
+      "gnu_build_id": "e24b750ab40532a861451fcdff42555cdf5d8749",
+      "module_path": "postgresql/libexec/pg_restore",
+      "module_sha256": "9144ec97e7220ad6692732444d01ef7c938bfe3db3e4f016ef36c270996f4ac2"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/libexec/pg_upgrade.debug",
+      "debug_file_sha256": "9060d8212f8aef5a61f624c9e5f778ae043b22350cde842dd02938dde3ee09f2",
+      "gnu_build_id": "069ecea235b5d8387a18ec8b0c4cb414732b3da1",
+      "module_path": "postgresql/libexec/pg_upgrade",
+      "module_sha256": "fa6968dcd372599b7ae774c03daf60ba13e2ee3e1182b640380326165f151ec7"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/libexec/dropdb.debug",
+      "debug_file_sha256": "9cbf081d3acd5663770a7a957145c0af6a0f03309dbb4dd2e2a77bdb2b1e5e2b",
+      "gnu_build_id": "a12429cce37aa84571cdb3361f74dc586c8f2913",
+      "module_path": "postgresql/libexec/dropdb",
+      "module_sha256": "3e74130acc325fd513af95af18d001545825f401f171a71cca636b3516c28581"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/libexec/pg_amcheck.debug",
+      "debug_file_sha256": "b8b3d5f8d5b7619061db8ef9fed8dd3de8d4430d612ad800e5f0f92add866951",
+      "gnu_build_id": "c304824e3863bd2d56fbd87c69475414231f5a46",
+      "module_path": "postgresql/libexec/pg_amcheck",
+      "module_sha256": "ffe932e444ba6ee958377132edee40aa7f177382a8b65911ffa734d67bfb062c"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/libexec/pg_config.debug",
+      "debug_file_sha256": "eb5b4f08b81ea12da4a46adc18d9d502b243d88174d803354ca403e9aed8ac5d",
+      "gnu_build_id": "8d23360f6501683041db438aa00693705e8ebb28",
+      "module_path": "postgresql/libexec/pg_config",
+      "module_sha256": "1c97065c99cef5826a41a4a77dd4a9e095fe037831bb03d85148252746281c9b"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/libexec/pg_rewind.debug",
+      "debug_file_sha256": "a04e27aad3be8f34ee575968d342c3fb1a267e44ed2529e54563617564e48be8",
+      "gnu_build_id": "151fc0b34a2d34796990016030df8e1810fcb507",
+      "module_path": "postgresql/libexec/pg_rewind",
+      "module_sha256": "c12eab1caf6f6d4b0b0a5051fc71c7f240d85470d7e60456eb317dec951f88cf"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/libexec/pg_isready.debug",
+      "debug_file_sha256": "6971d438c81dca42f07701eff39d10f4d43535d671b888221dfdcc4413f36a73",
+      "gnu_build_id": "5656d75755132fb26a79ea04dc7d071cfa8c8d38",
+      "module_path": "postgresql/libexec/pg_isready",
+      "module_sha256": "adead50478ea86ba22b927aa3429909a41093f14f30cce48d7c9a3081d335024"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/libexec/initdb.debug",
+      "debug_file_sha256": "21ca524368923b499e05dc65219e9e2f3b0c7a4b5481e59a2568b4de44c95480",
+      "gnu_build_id": "b1e0255ba4bdd9b8f930e45435ab6b2984ed6b35",
+      "module_path": "postgresql/libexec/initdb",
+      "module_sha256": "f82f18a4dbd7f7794b7c1235d1a105b6e981549342244d987036dda823a18fed"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/libexec/pgbench.debug",
+      "debug_file_sha256": "916a961d8abb29fd7f81a2c6f420dcb0f17dbc91c4219cd8c3f9e412dddd5853",
+      "gnu_build_id": "8415b5a2add4f204547095274dd81e3d0abe3d07",
+      "module_path": "postgresql/libexec/pgbench",
+      "module_sha256": "94fc20b2bc148e5edbae4b4a00a24f8063c7f6bfeabf56013a3607e70a50eb58"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/libexec/pg_resetwal.debug",
+      "debug_file_sha256": "776df8d56191da9004216f270fa63fcf05527bc4433d70692c24927b2bda10fa",
+      "gnu_build_id": "0d7a22f562bb14af308113432f370cdac30bc840",
+      "module_path": "postgresql/libexec/pg_resetwal",
+      "module_sha256": "ba566a60162f8974bb84e33492ef0469fd8baaa5366084b8758fbe8bd51d6b9b"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/libexec/pg_createsubscriber.debug",
+      "debug_file_sha256": "34b9be63c8730942d3f97fee75c7a0b389bd943b30e4b420d230f0a9d273992f",
+      "gnu_build_id": "8e1662c989206f8bbaa2aff247657f1f721504c9",
+      "module_path": "postgresql/libexec/pg_createsubscriber",
+      "module_sha256": "27e0c389a5052a82f16defd6041866f2b4194467b765500166137fa9f57f44d1"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/libexec/pg_combinebackup.debug",
+      "debug_file_sha256": "c90abb9447217434abb9a084035e0248d7670c730e0278ac6fedd4741decb276",
+      "gnu_build_id": "ca513741172ed85c450008dd293ffb72c1650cc1",
+      "module_path": "postgresql/libexec/pg_combinebackup",
+      "module_sha256": "9deb80e8a782a24c3f097ea467958936b64a7d38f3b7cb17eb2986d5fbb777cb"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/libexec/reindexdb.debug",
+      "debug_file_sha256": "1f3042349a6d56d936fa94d6a88e1ad0aca610513f3f357ade7dec41dc8fd717",
+      "gnu_build_id": "320b15fa767c01ce3158ad7a25fe30a23c15a22a",
+      "module_path": "postgresql/libexec/reindexdb",
+      "module_sha256": "54522a528c6fd7a492f8faf579e1c886cfc090562c00f4f0a88265d20ff7e839"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/libexec/vacuumlo.debug",
+      "debug_file_sha256": "f5f1b0b720fe5b88ea9063bc0d8c63c14f90cf2c5b2370caacfeb51ff72a90a7",
+      "gnu_build_id": "7ae14d8cb0d5b082cd0298d30a3b4b6aceb50b5b",
+      "module_path": "postgresql/libexec/vacuumlo",
+      "module_sha256": "2c8c1de16e718dcf27ad371819e0e7f6cf625d60abb3b5cfb7594c00e6ea3da5"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/libexec/vacuumdb.debug",
+      "debug_file_sha256": "2112b23e20cb7aa167b3ce715f5a96180dc19ba8aab16dbcc50507ccf75c09b3",
+      "gnu_build_id": "408c726d460d9f6b4f28c99c5450119b03dbcb2f",
+      "module_path": "postgresql/libexec/vacuumdb",
+      "module_sha256": "ef5c1e3b86aa49b3b8771e98e2b99fbbc101a06dbba9c4f7fde667bed5a04ae8"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/libexec/createdb.debug",
+      "debug_file_sha256": "72de2716f789bd0ea12ac5f9353730f34b5ef8acb04b627827b748e18095eccb",
+      "gnu_build_id": "7f9abdca89a87efe5fdee9834cbde6cdc75acf5d",
+      "module_path": "postgresql/libexec/createdb",
+      "module_sha256": "4594443f900f73b03e70afcc438bf0112bb2dd514f9b7769b447a2f8f7fed623"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/libexec/pg_verifybackup.debug",
+      "debug_file_sha256": "e961e528b5701dff4e4ed805797509e7015c054bceee47e1285ab4014f333d7d",
+      "gnu_build_id": "5c1f2f6a944fff01bd285ad95b72376b98f78213",
+      "module_path": "postgresql/libexec/pg_verifybackup",
+      "module_sha256": "51350b1dc0550704eda1fe3bd23bc2df5a5789704c7417b51f6cb8dcd31079a1"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/libexec/pg_dumpall.debug",
+      "debug_file_sha256": "326ff541f7282e7b1d81037ace383522d61e8bfdd9b35575a88211bc4e2ed0a8",
+      "gnu_build_id": "3d3a831bd4e4b0c9b3c32cfdc8ac76caa1b3d633",
+      "module_path": "postgresql/libexec/pg_dumpall",
+      "module_sha256": "30a6e667aaeff95cde8dd936aa67da45fbf1e58b0b83d8486456012b34c9d700"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/libexec/oid2name.debug",
+      "debug_file_sha256": "73d284e7f2136c310daf4c426d6bc1823ae46c7b22448e059f605bc7f92ea7d0",
+      "gnu_build_id": "3f884d7aa73707f7cebeb8fe8699571227486eb9",
+      "module_path": "postgresql/libexec/oid2name",
+      "module_sha256": "3626addfaa8f2cf1c6c8236f9ce555911186808678f996b617f59fa372b2e0d3"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/libexec/dropuser.debug",
+      "debug_file_sha256": "ff1e02aa2ef7f2cfe24d9ae5f142f284ce594040f20d9f5283a389b401b7637f",
+      "gnu_build_id": "18b1b25a783917a72e2adec8e2c0181623577d69",
+      "module_path": "postgresql/libexec/dropuser",
+      "module_sha256": "ccb0888a9c9ea106da32a1cef018601ad0beca70a52ad6b9927f3b07f7224a35"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/libexec/psql.debug",
+      "debug_file_sha256": "536dcefd49f133e9978f24e8f70169ba43f7d29ab9ff9e61400282a7fb93fc59",
+      "gnu_build_id": "7e9f2c4bc3cb9c997cde31a7730809a40246dce1",
+      "module_path": "postgresql/libexec/psql",
+      "module_sha256": "0746d45165bf4cf1a5657c1d5a3940c31c0f4226e411378782e6b0c36fde79f0"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/libexec/postgres.debug",
+      "debug_file_sha256": "62c3cf22977ec36ee13a26a3e731d7ee28262e5da6a184386b28b40173963d9a",
+      "gnu_build_id": "e43bf4a5aecaf3b91aa6c3e1cb01cff74a4dcb66",
+      "module_path": "postgresql/libexec/postgres",
+      "module_sha256": "968a836527b273e15a342ae0a0072e65fda3afbfda36ed8dc51c1d01393efadf"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/libexec/pg_archivecleanup.debug",
+      "debug_file_sha256": "c6fd02c0a552f33c5ea4dcbffd9fab53d616ade93a388c70766af3ead43ec8b6",
+      "gnu_build_id": "0247fcffd7a1e77366d9c14861336eb4ed8ea6ac",
+      "module_path": "postgresql/libexec/pg_archivecleanup",
+      "module_sha256": "09235d37aed52e0112bd54bb2b1ec7b6b5f5e4507371e1e6734eb0fc77cde436"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/libexec/clusterdb.debug",
+      "debug_file_sha256": "ef6bea8a29a2a5180fab41256735c59f42f694a7859e18a30ddbae8e69b88527",
+      "gnu_build_id": "2641c4d80da52a86826b679d987f6fde26dd6b02",
+      "module_path": "postgresql/libexec/clusterdb",
+      "module_sha256": "4d492c04477d157f6b86419e3611e78b1d2aa0f52d56260fda0989b33cf8e46c"
+    },
+    {
+      "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6",
+      "debug_file_path": "postgresql-18.6-linux-x86_64/postgresql/bin/.pg-launcher.debug",
+      "debug_file_sha256": "db73bfbc8fa4e1e6f520fe6a57c2f77490f2ceaed042e5ab47bd1c74d6540907",
+      "gnu_build_id": "ce82962bc68afa0adb7aca1895017565a63cec78",
+      "module_path": "postgresql/bin/.pg-launcher",
+      "module_sha256": "bc193a1cbe201e236c4df5cea51614c3a491ab8e119d2d61c2435413347622bf"
+    },
+    {
+      "archive": "pgvector-0.8.7-postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "1bad48c63a7d082adde1312a3f0eb577e9d4ad1eed1e922f1be4d34446773b4c",
+      "debug_file_path": "pgvector-0.8.7-postgresql-18.6-linux-x86_64/pgvector/lib/vector.so.debug",
+      "debug_file_sha256": "f35ad5548a19192b8248b6a953c76ccc26cecaa15a7fb1df23068b4475c9eb29",
+      "gnu_build_id": "b88435648023eb6701b5874d7aa7a2f1d690fd7b",
+      "module_path": "pgvector/lib/vector.so",
+      "module_sha256": "8577784cb8c54e9813e16c284497e2e17995a7e12c1a2a13a83bfe2fda4d39dd"
+    }
+  ],
+  "schema_version": 1
+}

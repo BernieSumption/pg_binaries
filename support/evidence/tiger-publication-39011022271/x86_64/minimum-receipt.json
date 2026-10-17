@@ -1,0 +1,41 @@
+{
+  "architecture": "x86_64",
+  "archives": {
+    "postgis_tiger_geocoder-2025.2-postgresql-18.6-linux-x86_64.tar.gz": "358f6580f284ca1b57f054a4f52f07f9ec3b8fc72dc10061f7fa948302661410",
+    "postgresql-18.6-linux-x86_64.tar.gz": "3dfa32c2ce88c57bfce8cea5c28dbc5aae369b147ecde6f45959e113971620b6"
+  },
+  "case_results": {
+    "archive-suite": "passed"
+  },
+  "ci": {
+    "build_revision": "c3b7bfc8431465fd2db764b2828567130ba0e359",
+    "provider": "github-actions",
+    "run_id": "39011022271",
+    "run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/39011022271",
+    "source_revision": "c3b7bfc8431465fd2db764b2828567130ba0e359",
+    "test_revision": "c3b7bfc8431465fd2db764b2828567130ba0e359"
+  },
+  "clean_system": true,
+  "dependency_check_profile": "postgis_tiger_geocoder-runtime-v1",
+  "dependency_checks_passed": true,
+  "distribution": "Ubuntu 22.04.5 LTS",
+  "distribution_version": "22.04",
+  "endpoint": "minimum",
+  "extension_archive": "postgis_tiger_geocoder-2025.2-postgresql-18.6-linux-x86_64.tar.gz",
+  "image_id": "sha256:e3297e0aa6c408ac90d854348465d3991c65159b444c4ef9016f52f6807290e3",
+  "kernel_release": "5.15.0-1109-kvm",
+  "postgresql_version": "18.6",
+  "prerequisite_archives": [
+    {
+      "archive": "postgis-3.6.4-postgresql-18.6-linux-x86_64.tar.gz",
+      "project": "PostGIS",
+      "sha256": "60081597b87784932b52bd8e20292ba9c80d66e7414381ae600242533d77e7c0",
+      "version": "3.6.4"
+    }
+  ],
+  "profile_id": "tiger-publication-minimum-x86_64",
+  "profile_revision": "01b6a76598e8d002ec1b7c5b4bc26dccc03a6a937d2983bda7bacaa474f7af18",
+  "project": "PostGIS TIGER Geocoder",
+  "test_revision": "c3b7bfc8431465fd2db764b2828567130ba0e359",
+  "version": "2025.2"
+}
