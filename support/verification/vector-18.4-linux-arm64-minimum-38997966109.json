@@ -1,0 +1,42 @@
+{
+  "ci": {
+    "build_revision": "fafe7a9f5387e8a276f905f2f6318f247d2c23eb",
+    "provider": "github-actions",
+    "run_id": "38997966109",
+    "run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/38997966109",
+    "source_revision": "fafe7a9f5387e8a276f905f2f6318f247d2c23eb",
+    "test_revision": "fafe7a9f5387e8a276f905f2f6318f247d2c23eb"
+  },
+  "component": "vector",
+  "environment": {
+    "architecture": "arm64",
+    "clean_system": true,
+    "dependency_check_profile": "linux-runtime-v1",
+    "dependency_checks_passed": true,
+    "distribution": "Ubuntu 22.04.5 LTS",
+    "distribution_version": "22.04",
+    "endpoint": "minimum",
+    "image_id": "sha256:86e13258765945ad792dac75fac7f02f4db9fa73a4a535ffa472266e7041fa19",
+    "kernel_release": "5.15.0-198-generic",
+    "os": "linux",
+    "os_version": "5.15"
+  },
+  "outcome": "passed",
+  "platform": "linux-arm64",
+  "postgresql_version": "18.4",
+  "profile_id": "linux-minimum-kernel-arm64",
+  "profile_revision": "9b2503ffffdc4b040058eb983d6be7aa61a99a55095f07280c57bde3bd55f8c0",
+  "schema_version": 2,
+  "scope": "pilot-smoke",
+  "sha256": "79ca5fc4b556f9ed7cf0c83c136d8d4afc87091a4cb9941e2e2853d6fca80c02",
+  "test_cases": [
+    "built-in-extension-smoke",
+    "core-schema-smoke",
+    "dependency-load",
+    "dump-restore",
+    "pgvector-ddl-smoke",
+    "relocation"
+  ],
+  "test_revision": "fafe7a9f5387e8a276f905f2f6318f247d2c23eb",
+  "version": "0.8.7"
+}

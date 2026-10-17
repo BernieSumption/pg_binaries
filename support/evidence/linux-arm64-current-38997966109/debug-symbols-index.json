@@ -1,0 +1,1130 @@
+{
+  "files": [
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/libexec/pg_recvlogical.debug",
+      "debug_file_sha256": "2a65fea0fa5f55e26598fc16b2c3c0926b07c42b0b3c6107bfe2b63c884f2315",
+      "gnu_build_id": "8d81fd5bf84fd9185e207fc0ae2d11028c090ccc",
+      "module_path": "postgresql/libexec/pg_recvlogical",
+      "module_sha256": "bece32d74b843de1d0bf1b92906e3408b8b136ed6a2aaea3dfee6f6204de0697"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/libexec/dropuser.debug",
+      "debug_file_sha256": "8fa468e93b6e04cb2196a97775598bc84c36b07752cbea5b5c9b2ea66a579c86",
+      "gnu_build_id": "b1ca497cbb02ce240bf9890fe73f5c5a8f201bc1",
+      "module_path": "postgresql/libexec/dropuser",
+      "module_sha256": "557ef4661bf0ba6e523e639fe15b3bf9a80dc58e6e4b943b439ac931f780c493"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/libexec/reindexdb.debug",
+      "debug_file_sha256": "2e70f40f78c40979c0458b171afbae3187aa24409531aabad7b56cad5475a2dc",
+      "gnu_build_id": "363bcd2f89c95a145b039f534e5855520a223e08",
+      "module_path": "postgresql/libexec/reindexdb",
+      "module_sha256": "c55b3602a4e899003c6b0567371369ca1fcc61d650592273a69ab0751bb15a6f"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/libexec/pg_isready.debug",
+      "debug_file_sha256": "4c4f7fb9cc9de973e133195ffb6f542dbcb470c5f0db0faffe243a961ed6ee17",
+      "gnu_build_id": "a9fe1ed2efb06e89d6e997689a57bcb820723e35",
+      "module_path": "postgresql/libexec/pg_isready",
+      "module_sha256": "bd785f5c7fea89906c20a6883ddca51ab93bf41b677bde0a1494a5b3df2c0d53"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/libexec/pg_createsubscriber.debug",
+      "debug_file_sha256": "08f4478e3972357f00c3454c1414ddb65305233825f75c27bf4260bf76a7d3fd",
+      "gnu_build_id": "d0ee3f8ae5e87f37ab0c5f5915553b9c60e9819d",
+      "module_path": "postgresql/libexec/pg_createsubscriber",
+      "module_sha256": "ad25eee0bb6caa7bbd0876d4664e594dd9a7436fabefc874cb7502d76b58892a"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/libexec/pg_verifybackup.debug",
+      "debug_file_sha256": "aa1fbc91f807bdc8abb8c5e56b44db674fbcb5a6373059f523a1f16fc2fc0587",
+      "gnu_build_id": "cce098c6ba56afea6b07a004789ebd6bdcf52bd4",
+      "module_path": "postgresql/libexec/pg_verifybackup",
+      "module_sha256": "e7af6bd8e9fa885d7f932729b5c308393ef5e1ec1538a4f002efd19911377871"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/libexec/vacuumdb.debug",
+      "debug_file_sha256": "e17a1ea3c49e830d776410c5f5750f7be37b0bf53a36842b6476aff592f9e528",
+      "gnu_build_id": "f0ae42bc407ee2a356a2d42e1e1e8c090006b944",
+      "module_path": "postgresql/libexec/vacuumdb",
+      "module_sha256": "460aa366ae96ad2f2b1023c8bfe6df29d0b2643ae85b9025e6d7bd020d7e1b3e"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/libexec/pg_test_fsync.debug",
+      "debug_file_sha256": "6ecc4e378c459d304733e44e95061934a0a6009a38cdc606f8ea667fc0bf974d",
+      "gnu_build_id": "ecabe031906b19735b84624d44f6a82d8f1d699e",
+      "module_path": "postgresql/libexec/pg_test_fsync",
+      "module_sha256": "dce4fc2368376a164bcb60d328f797183c94164c582a418cbedb9bcc0f2363cb"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/libexec/pg_dump.debug",
+      "debug_file_sha256": "6e840b1218838ecf1b5fb356c8647817620afa25f9da8ba018922f32035f721d",
+      "gnu_build_id": "3fb68b18bf80c0f58d63a2c82d850e8397d35a2f",
+      "module_path": "postgresql/libexec/pg_dump",
+      "module_sha256": "ce7ea2419520ccc8867b98ae246410d8436116a292730ef70fa30fd87418bab3"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/libexec/pg_archivecleanup.debug",
+      "debug_file_sha256": "f22607e8808df605510104c3bba65b66f66ecc0b00bf9bae24e27f61b081b482",
+      "gnu_build_id": "d481f18903ef15e2b3044a43931102eaa2a3099c",
+      "module_path": "postgresql/libexec/pg_archivecleanup",
+      "module_sha256": "e04bf6462e20444cebac6a27f11699dfe67b94d0dd499a1ac53038ee9e32861c"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/libexec/ecpg.debug",
+      "debug_file_sha256": "e253a2ed999974c52d9b00ff32e2a8738a19881f973fa58f27ed8aa5d8ea4a5f",
+      "gnu_build_id": "878174b29f268941ca11d09db2c4f56962a2437d",
+      "module_path": "postgresql/libexec/ecpg",
+      "module_sha256": "6b33612b69c0afbe0d8dec7187d6ccf4fbcb43b4048b40d26aba87fc6889c91a"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/libexec/vacuumlo.debug",
+      "debug_file_sha256": "e6370c1f9b3c169c1dbf9d9748f8eeaf700d704226393114f950e1f97dc93e10",
+      "gnu_build_id": "b632a57ffd68fd3a96281f5146d0535a11ac4222",
+      "module_path": "postgresql/libexec/vacuumlo",
+      "module_sha256": "9d25bfa963b48ef66efd31e1736145b111b10e02492021dca725e182f743d0fd"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/libexec/pg_config.debug",
+      "debug_file_sha256": "e3337d0682d78ecc24acc2c3ca7ba9e3dc84ede0c0d42f2f3f6cd5e8f7bc7e00",
+      "gnu_build_id": "d1f73cb4c70ac626afc29f14c18a5491acbb0491",
+      "module_path": "postgresql/libexec/pg_config",
+      "module_sha256": "2243f4600dc7cb8a926ecb14978d13cc0c19ba5bf7e0e73e4a937c7b3b7b5f88"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/libexec/pg_ctl.debug",
+      "debug_file_sha256": "26b2422da069802ea812e93bfd504f8ee628543856cd7ed5168cfe073b839ec7",
+      "gnu_build_id": "7fcfc26f9cd5d61d3b15b1e8d8316519530dcebe",
+      "module_path": "postgresql/libexec/pg_ctl",
+      "module_sha256": "492ef6b6c41ae46e9d93a3572473b2be21d8d662a94df247153475c1fac63e7d"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/libexec/pg_basebackup.debug",
+      "debug_file_sha256": "3b894219d6efa3a192022ba4703f7209c0556ad8fe8b2d65018a50d95a38ac95",
+      "gnu_build_id": "08629df1af294e996c48adc06844f98bf9080188",
+      "module_path": "postgresql/libexec/pg_basebackup",
+      "module_sha256": "5be3f95938e813bde3004b83a7bf4c7b0c548c45de20e7d2d10edaea389bcdaf"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/libexec/pg_dumpall.debug",
+      "debug_file_sha256": "dd31b5d21e76d232307a42327ec93d98f8228734cb686c8debf7c178e69e9db0",
+      "gnu_build_id": "3917c716556f9f81f91bf089f81b36e0854efadb",
+      "module_path": "postgresql/libexec/pg_dumpall",
+      "module_sha256": "2f274432dfa6a0a900c1afdc3fa27b1181a7afd83e5382dcb50401e4fabbcfa5"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/libexec/pg_upgrade.debug",
+      "debug_file_sha256": "bc0b4fc099650bc1b3bafc4ffe7beb19ff405caa93218dade4a3d612b275bc7e",
+      "gnu_build_id": "227e352c8269a580314b60e65f6d59baa5639108",
+      "module_path": "postgresql/libexec/pg_upgrade",
+      "module_sha256": "c5f80657faf8437e9514e97b5d613cf7de8ccc15c8701b3a9fc62c9cc7141847"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/libexec/dropdb.debug",
+      "debug_file_sha256": "a68ee03c05e5a13f4312c8b7f584494d71530b0402aea00e1c3a7b0aadfa3bbe",
+      "gnu_build_id": "56ec5c836c5acc134593424e9a7ee54d1063a059",
+      "module_path": "postgresql/libexec/dropdb",
+      "module_sha256": "b1d9fa833601edb2704c9398b94bc60aea710650f33fbf3f6d3c50bc8dd738b9"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/libexec/pgbench.debug",
+      "debug_file_sha256": "62853aa65f71a386d5403f3311f60d04e9af4c779f86e0b64467753970451fbf",
+      "gnu_build_id": "3cf0d271fc9ad396c47653df3500c6d172e862ce",
+      "module_path": "postgresql/libexec/pgbench",
+      "module_sha256": "be38d01ceb329d75364fc167860e7ab22158ebf7e6670f1ca229278cb49fe1f2"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/libexec/pg_test_timing.debug",
+      "debug_file_sha256": "7f4757a19e776f3cbbae385cba836c07e1ca9d92d6f4f37a86a063589cf6b554",
+      "gnu_build_id": "b41a5245fc5d9d63946edbe2e0f38d07e16414d8",
+      "module_path": "postgresql/libexec/pg_test_timing",
+      "module_sha256": "416f12048ba984bfa2d1efa7e297dd1c584dc62d633d74711a2330701496ed98"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/libexec/clusterdb.debug",
+      "debug_file_sha256": "502fc347dca8556b008ec22f92e0cff61dfae24a3e4584c943c4c7da07a6c7bd",
+      "gnu_build_id": "aaa7a7347e3cd4a9a053862515f73ae5cfb5151f",
+      "module_path": "postgresql/libexec/clusterdb",
+      "module_sha256": "be7aaddf7f8874ff4d71e96e3b26598837d455084c77902f437f7472e2c92444"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/libexec/postgres.debug",
+      "debug_file_sha256": "41fab690cb7e3ac64749512482a8be52c6787c16022092d5651b06243d3f6e08",
+      "gnu_build_id": "08fab3dde8111f5f0fa1045312829a55c9fd5b14",
+      "module_path": "postgresql/libexec/postgres",
+      "module_sha256": "4c7b163dabd14840d585493d6b7237e2e8babdb13a06a84cbd96b3669e2ccdd2"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/libexec/pg_checksums.debug",
+      "debug_file_sha256": "6abadc300ab973b7d70cd8bb307071ba19b7c9910801e15f1c0a3aeb83834328",
+      "gnu_build_id": "dac3d8fa53790c90f6d3b4d5f9b4c5a57ba5e820",
+      "module_path": "postgresql/libexec/pg_checksums",
+      "module_sha256": "29ef2921b4214d834bd704ca1717781303e815cfc254f354d163bdac3f835528"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/libexec/pg_restore.debug",
+      "debug_file_sha256": "6619c3f444f9025856ece00aee1a13d36971d53686d2f42d6c86772fb1726e7c",
+      "gnu_build_id": "9f6303377893236f5a55e92ead970a326b7244e4",
+      "module_path": "postgresql/libexec/pg_restore",
+      "module_sha256": "0dcc0242830162c0e0e8e4cc92bd69381cde4a71370e2c6e5fd0bd50d89d2b18"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/libexec/oid2name.debug",
+      "debug_file_sha256": "e6401553a5c6c6a01c1f47f13c2f928b31a8828cb3cb02a3393cc1ac82498ce8",
+      "gnu_build_id": "313ac9dad3a0c0c741960f25060276426803f546",
+      "module_path": "postgresql/libexec/oid2name",
+      "module_sha256": "9dcfe9734d0a8843a3c6d18e6ec2e916d3b179d72c6f2f62170f2cff867dcef7"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/libexec/pg_receivewal.debug",
+      "debug_file_sha256": "1bfd70011c4573f86eb499afb611c6fa8f71c30477046f1c68bec6930b6cefbb",
+      "gnu_build_id": "f874458381ee65d0bd449259256c2346ff758d20",
+      "module_path": "postgresql/libexec/pg_receivewal",
+      "module_sha256": "c09b1d36065e647fb307f3359f421e57d2c77458cc457e37370e1ce29bcebd36"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/libexec/createdb.debug",
+      "debug_file_sha256": "ff65c176836c881b6aeeedb67b520be7b1b2e58b8b6a16a6ca34e4c3584b7578",
+      "gnu_build_id": "018c849497aa83ef415cdde642b2600707ee7617",
+      "module_path": "postgresql/libexec/createdb",
+      "module_sha256": "253b3dd350fcb88d5a2821039e5571dd89e42c396eedda8a76225d7449df6ab1"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/libexec/initdb.debug",
+      "debug_file_sha256": "69f621130d848e9201f8b7887a8ac07a2a09c5fcfe93e6b0c09432ad27e85092",
+      "gnu_build_id": "0cdee62dd0e01a1bd2d0e733eabf3c27079dc928",
+      "module_path": "postgresql/libexec/initdb",
+      "module_sha256": "64f00392c1709a9f334afea7c57084066e1866d74cedc4cd9200a9fa7b1e7464"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/libexec/createuser.debug",
+      "debug_file_sha256": "3f8606b243c931390cde10b97015b56f74682ab64b5f0a3563b0920fe8f2d8ba",
+      "gnu_build_id": "3cabb4ab7a90939b46178f3ee6691bc5439f18f8",
+      "module_path": "postgresql/libexec/createuser",
+      "module_sha256": "f7c283bf3805b16b36fe478ee6032bec2252f93227fac917d0f1c5c8c2e3bf0d"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/libexec/pg_controldata.debug",
+      "debug_file_sha256": "d3b2d596832a6498264f948353d733a8f92ec72cfbc552866607fd1e55780fc3",
+      "gnu_build_id": "89cf7b5946c9c88291348eb97574df818572ce05",
+      "module_path": "postgresql/libexec/pg_controldata",
+      "module_sha256": "d0218734d486f8f1b2274456e910840bc70737a0221f618cc6e81ccda2f11a52"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/libexec/pg_walsummary.debug",
+      "debug_file_sha256": "c071fd285d536d6b2364972497f4c77364f53bc74b857a02044dbcdb9eaaf409",
+      "gnu_build_id": "efe862f2ba51c199e2a79ce5a348bed387f34437",
+      "module_path": "postgresql/libexec/pg_walsummary",
+      "module_sha256": "2d620d3c8ffe595aa9bad5a00f2863abf39ef334fe3f80306d12085610c3ef86"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/libexec/pg_rewind.debug",
+      "debug_file_sha256": "500acea71c5f864c6c4bf888d7bb3cd387a4b8ad83ffdf0540a9050d09a83b8d",
+      "gnu_build_id": "6e2dc08cf8ddca03b10b811c8125f3e480149214",
+      "module_path": "postgresql/libexec/pg_rewind",
+      "module_sha256": "b226f1835ec60ad1461849c962a0dee06c0fb4e71c56c131794cbb35807fd4f6"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/libexec/psql.debug",
+      "debug_file_sha256": "ed9acb37dd51e32b76f4ed5b70a5fa00cfa4e7efa8cc84a9f0b2a57dc537564b",
+      "gnu_build_id": "aa47edf47b22f5abc1c98cc582ff237ac0d4c7b2",
+      "module_path": "postgresql/libexec/psql",
+      "module_sha256": "3d64aab98c7d72a9ceb5f792761747a89c163aa0cae15bf303392da4583d1523"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/libexec/pg_amcheck.debug",
+      "debug_file_sha256": "3c5ef51e06a20585997549a727fa0af3fcceefb557538e983ccc45c2fea39498",
+      "gnu_build_id": "2100e432f5fd02c2c098c3d547679b98b88a9844",
+      "module_path": "postgresql/libexec/pg_amcheck",
+      "module_sha256": "a3416d739835499f84f0ab03eaf5b670b9252578606e316d7713b425ecfe3eb0"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/libexec/pg_waldump.debug",
+      "debug_file_sha256": "2760f94bb9c07dee6084b8d3e4d2adcb74ed378b196ce3a91c475017a17f9e24",
+      "gnu_build_id": "02b7617ce05045536edf3910d9e39d8d8dfd83fd",
+      "module_path": "postgresql/libexec/pg_waldump",
+      "module_sha256": "630640f569d91cd859ba6d9d85f6516c5db7cd067048d66cddf77a01b2881df0"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/libexec/pg_combinebackup.debug",
+      "debug_file_sha256": "4b83a4c7a919022ef0104b7a47afe86e640d6664d6fb19494fdfafda3e9a0ba4",
+      "gnu_build_id": "a124280dbf2fd14ad4f049a461e93db903c1eb86",
+      "module_path": "postgresql/libexec/pg_combinebackup",
+      "module_sha256": "22d4d266ff50741b8d24cb924db640c9013e2fa425b5404a5e23e1edeba38fba"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/libexec/pg_resetwal.debug",
+      "debug_file_sha256": "818cd720c1d4ea357839f6673c67026918152c231d4f09fad251c0b77ac5dfa4",
+      "gnu_build_id": "a82b2435b061dbc07c7985e7b6f16cfc05a8e8f8",
+      "module_path": "postgresql/libexec/pg_resetwal",
+      "module_sha256": "9e8bffb9439d1920f3966baf897df5a416c3faa07caadf35581d84bace879d22"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/lib/dict_int.so.debug",
+      "debug_file_sha256": "a389f61df2473f6b9b2c604efc3784eedd11bccddfc72c1bf7cd5eb211c7c7a0",
+      "gnu_build_id": "d7bb114712a6b19b5c374c9289b6f8a3ad7a0ad5",
+      "module_path": "postgresql/lib/dict_int.so",
+      "module_sha256": "c57ac641b1c36c5b929b6687f3fd8607dda6fc5cae447d9aec3894924e72ae1a"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/lib/utf8_and_gbk.so.debug",
+      "debug_file_sha256": "18548398a82558ccc1b7f8ceb4454c0851db6ddc5ceb01b6a34e082d0c53320c",
+      "gnu_build_id": "a57acebfa99642e033fd54f9115a80b5a57a554d",
+      "module_path": "postgresql/lib/utf8_and_gbk.so",
+      "module_sha256": "f0680d1511577e6b651ff2a6b310ba21c7489a1dbdce9efe3ed865bcbb8199e6"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/lib/insert_username.so.debug",
+      "debug_file_sha256": "ad1f6ca46fd8763c67df19fb79d68f28018489bec2038e367041fd65bd10d51c",
+      "gnu_build_id": "19abe8fcd653bf63b5559b1ea37a1e8b4c14fb47",
+      "module_path": "postgresql/lib/insert_username.so",
+      "module_sha256": "76d563d6183ae6804473f7aecce9660495b3fdbf8c5d75266fd864b1479d3754"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/lib/cube.so.debug",
+      "debug_file_sha256": "bb1df78ced612a33360f15175e0b055d634813accf749520d531118a05e6d3d3",
+      "gnu_build_id": "c8811e14ec309b3e74092afa0dc6f0f2950f28f1",
+      "module_path": "postgresql/lib/cube.so",
+      "module_sha256": "d2a02a99892e06cad0f6bccff0e835f2714870a2372cc8040f9af8aca9933ea0"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/lib/unaccent.so.debug",
+      "debug_file_sha256": "ca67f875aa9bbb1753930c441ea8347f8c71f46e6c2a4fb72a5c99646d5ba932",
+      "gnu_build_id": "cd0021562cea62d3936405df8e9ee13e179e9b32",
+      "module_path": "postgresql/lib/unaccent.so",
+      "module_sha256": "f68f199107ba10771b409d7aafcef2d73df643d9a400d225bfc09f9d92c9e808"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/lib/lo.so.debug",
+      "debug_file_sha256": "efbb557a603a7c28370801e7fafa9866b0129c66e317b7dc93afdc01eb0a8eff",
+      "gnu_build_id": "d4c9b3475ffb4670a171301958f7d2e84f701aea",
+      "module_path": "postgresql/lib/lo.so",
+      "module_sha256": "d0d8912e22e7d066f05cd838cd3074fad545dd53718cfed08aef725256c090fb"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/lib/utf8_and_uhc.so.debug",
+      "debug_file_sha256": "6e381edb051e0ef891299b19aa65c122dee81a17c0897935804eebd9de612460",
+      "gnu_build_id": "ad7b6d3cf5b2416884eb6140674a3b905032829a",
+      "module_path": "postgresql/lib/utf8_and_uhc.so",
+      "module_sha256": "a9b21d07799893dd494a3cbc783b7d1bcfb36ecbeff9e5e5534d497b15c02fd0"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/lib/pg_visibility.so.debug",
+      "debug_file_sha256": "c627d834d7b4a168788533bb213cd5a1a2e917c44eec4bb845eea2abb5fa37eb",
+      "gnu_build_id": "3d227823c45fafe9a04a63a99466e81ce8397bb9",
+      "module_path": "postgresql/lib/pg_visibility.so",
+      "module_sha256": "e488aacc93d224e18fe7d16ee430569b21281fe216fab49e8d583a3491635ad2"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/lib/pgstattuple.so.debug",
+      "debug_file_sha256": "27ac64cecabffec38a9901a02c2a7b04b59035a25447e06cc6bb88bde2b33499",
+      "gnu_build_id": "6e77968e77143afc1889b3ed1013ead5982aeeed",
+      "module_path": "postgresql/lib/pgstattuple.so",
+      "module_sha256": "9e62ad68478ec694f9934ef511bb5a41cd695b74c559dc06a9bde841e209fac3"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/lib/hstore.so.debug",
+      "debug_file_sha256": "da46751cf303abd9100d0cbcdaff1f6c6c9e31edd4c5cb6fdf71a64d9d7ebf99",
+      "gnu_build_id": "4122da905d998b36a48a3f9935412e8fa9ec4005",
+      "module_path": "postgresql/lib/hstore.so",
+      "module_sha256": "6c13c4605f0e0db411a05b3547a51aff3daa50b8c771303dc9159150a479c367"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/lib/tablefunc.so.debug",
+      "debug_file_sha256": "ad7cb6d4ae1504331f4eea803745c20c6bb23b5d65ff5e1baaa04aaca474ccfb",
+      "gnu_build_id": "bdb0eca9845b85ecee2ad70fa82da213f8d8e1de",
+      "module_path": "postgresql/lib/tablefunc.so",
+      "module_sha256": "9dea81dd1523818cb7983443f06f0388d080be1a03bdb725da3d0cd4007ac260"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/lib/earthdistance.so.debug",
+      "debug_file_sha256": "fb2ddcd624d4f6af37132dfb7dc7b43877f16f5ccb5a42b6a5a7e95ee70f28c3",
+      "gnu_build_id": "ce1ae66409f2af5d6040b8adbeceb606ac9b847c",
+      "module_path": "postgresql/lib/earthdistance.so",
+      "module_sha256": "064967cc9e25cd7e49ab4f22fbd649d5bf4a4b5a84153a0795a0b2aaee16d11e"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/lib/libpgtypes.so.3.18.debug",
+      "debug_file_sha256": "d9d2d29e12dc68989f658f5891265e10f6a52778ef52be408b0d271181682bb1",
+      "gnu_build_id": "346276a988a7be9f2055e3c4224988c84f28c1c2",
+      "module_path": "postgresql/lib/libpgtypes.so.3.18",
+      "module_sha256": "6e87e2c3d65e9008692c027f56f4b350542d0a3c38ef7313955425b0b2204a0c"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/lib/utf8_and_sjis2004.so.debug",
+      "debug_file_sha256": "99094d1f0a7df06fee06db7e0d8be647d037a1cd8e9e0e36dae6bce69bcfd8fb",
+      "gnu_build_id": "740b3cfa9ff4f5b702acc631741830f28b9b3c96",
+      "module_path": "postgresql/lib/utf8_and_sjis2004.so",
+      "module_sha256": "a0d9c9eb8cca2874673c7c9afc35fd6f2280d5fb0b5acdfb867d24b5fb82d0e9"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/lib/euc_kr_and_mic.so.debug",
+      "debug_file_sha256": "28f9773b5f454bb1dad0675786536b19062f1bc53289a488922c8c0f1b9d1e98",
+      "gnu_build_id": "4336297aee5be6d1099cb409295bb85e9cf19529",
+      "module_path": "postgresql/lib/euc_kr_and_mic.so",
+      "module_sha256": "edb4799d1433c0c9fb5fbd1b503e0a7793f5c2f7d03b5bd6ebf23d95d330f097"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/lib/euc_cn_and_mic.so.debug",
+      "debug_file_sha256": "ceb6c586545977d17933051ef4fa9dac1f5df392676bd971f6a007d0d5c61120",
+      "gnu_build_id": "f6da0aaed212823aaf3ec2b7ab032448ea443442",
+      "module_path": "postgresql/lib/euc_cn_and_mic.so",
+      "module_sha256": "451ae9d9033383f587aab085ca5ffedac580fa5994c56fac92c89a216410c7d8"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/lib/latin_and_mic.so.debug",
+      "debug_file_sha256": "e5c3b6d2e1cfd30d080dc084fab2fb1dc103f8857d8611287cecb2a36c2e7e7b",
+      "gnu_build_id": "c8dbc3eff9da327d6b0903253fa2f83b9b259449",
+      "module_path": "postgresql/lib/latin_and_mic.so",
+      "module_sha256": "455c284c89c906a7c6fac44e0d30c1149b59ed56e5172b154b2c1cac0eba2ea8"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/lib/dict_snowball.so.debug",
+      "debug_file_sha256": "d5f9c625bcc518551ceb5d575235b238be680b5815e375eae8a335185dfb0c99",
+      "gnu_build_id": "89443072c15b0104b56e6f675b416da5d537b5e8",
+      "module_path": "postgresql/lib/dict_snowball.so",
+      "module_sha256": "9bf6640021951b39313011aae3abd3c40858316e2292378e83666d435045c7f0"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/lib/seg.so.debug",
+      "debug_file_sha256": "449916c426a5c125e7878cb321687531bc7f0f263e7914bfe8b2777e9abf0726",
+      "gnu_build_id": "3217f58498760fd555c8964b1b13112facbb3997",
+      "module_path": "postgresql/lib/seg.so",
+      "module_sha256": "e58a4f3476c1fe8dc16ad48c66d3db8b5ea8aae54fb085b33c261ea136c224e2"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/lib/auto_explain.so.debug",
+      "debug_file_sha256": "d85c5b703caee6b40300966b23352c00418bc99d613a4d4b0171104f75c10afe",
+      "gnu_build_id": "c7d787a09e820ae8c57cc68cd55cefe6fdddd5d0",
+      "module_path": "postgresql/lib/auto_explain.so",
+      "module_sha256": "845580f387c1766bf468a40dae4bb00a6f2a869d07b13849862e661bc7ff8cb3"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/lib/pg_surgery.so.debug",
+      "debug_file_sha256": "783fafa62926b6f154d28b4baa7e249b16523f074891e4487fe7bc105e957719",
+      "gnu_build_id": "0cbba5d42016b4ecd5b3af226d9d1531d69be81d",
+      "module_path": "postgresql/lib/pg_surgery.so",
+      "module_sha256": "a88dcbbe220aba5413f2bbdddabc6053601c19efda602e303dcedcfa2b2d6f32"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/lib/utf8_and_euc_jp.so.debug",
+      "debug_file_sha256": "f058e334951b12e6b3af00b14648439e192b2cc92fbff16397332eeaec986535",
+      "gnu_build_id": "6797c1203cc1836c695da89390efd2c653b21321",
+      "module_path": "postgresql/lib/utf8_and_euc_jp.so",
+      "module_sha256": "71bf289590f48658fb2d405b39bf204046605bd6d4dae2431d545d0b3ea39c87"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/lib/sslinfo.so.debug",
+      "debug_file_sha256": "6740dff863606398cfe51ba8cccbe2ef6452afd133587c6927bed56733ff1903",
+      "gnu_build_id": "39b9fefbdff4160f17957a4c62ce21d60faceac4",
+      "module_path": "postgresql/lib/sslinfo.so",
+      "module_sha256": "6a1c7385711c90163a5f61c2891fe99aa927f37ba78dac8ee414c81d25515c7a"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/lib/pgcrypto.so.debug",
+      "debug_file_sha256": "b6b8cb123fb7d62a4792806afd58ae098b515afbd51ffdff6a91a30c5b7677e3",
+      "gnu_build_id": "83219b720b746f9696f37036d091bad2aecc19d9",
+      "module_path": "postgresql/lib/pgcrypto.so",
+      "module_sha256": "a1b329d2ab246acd48aa991df22f38c3cf50c796a86d25086e0fc38d26ddb81f"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/lib/pageinspect.so.debug",
+      "debug_file_sha256": "cad0a2d1919bc34c794f7e2a1c7ce58a4aaba35f987c9f4f3be13dd952118e5f",
+      "gnu_build_id": "39113c7b3a18ced0b4e280ab6ed71bd11fd0ec80",
+      "module_path": "postgresql/lib/pageinspect.so",
+      "module_sha256": "d473c14ff977fd6768810fab8323e6cdfe90e85ec0f67b083fe345ba2591d790"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/lib/dict_xsyn.so.debug",
+      "debug_file_sha256": "d274ee9f9610adbad0a57716b1a541dc8c90106623573d3e4c7e219b3bb01e3f",
+      "gnu_build_id": "aadf54625de388d730af1e7a7f00d8d500993690",
+      "module_path": "postgresql/lib/dict_xsyn.so",
+      "module_sha256": "93ee7dda1efe69f950bcefaa6e0304ca8effceafdf8717e943eee47da15c7d95"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/lib/utf8_and_iso8859.so.debug",
+      "debug_file_sha256": "accfd2b8d137e85b704f7f545c3029f62af420c69f5c58f7f76b2430528a0321",
+      "gnu_build_id": "c5af35d763d0e1658e48ec6f8aa32c88ede83753",
+      "module_path": "postgresql/lib/utf8_and_iso8859.so",
+      "module_sha256": "01b1e55aa8a04d055c34ff031e7190d781c0cf75ea5210e1e0411cdd92ec52c7"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/lib/fuzzystrmatch.so.debug",
+      "debug_file_sha256": "7f05217c31dff2eb7ef0e0a4f5dc60ed67b7d65e4b0561df0a3884441006ffd4",
+      "gnu_build_id": "140d75dfcc70841f3d3eedc943217bc73f463add",
+      "module_path": "postgresql/lib/fuzzystrmatch.so",
+      "module_sha256": "8b636215e42f7c9ed7456d69674f9c0e3582070ee2be7891a8abde825ac24585"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/lib/pg_overexplain.so.debug",
+      "debug_file_sha256": "496637085a6add798d915450a9dc61333901e7ad204e137999ddb4d9f6204e65",
+      "gnu_build_id": "c91ba67a289f73193baf6991ca8a99fa4a30bd0b",
+      "module_path": "postgresql/lib/pg_overexplain.so",
+      "module_sha256": "213895bba7621c7706f548a5f5ab324850193159bb42e9150f93aadbc259e1c7"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/lib/pg_stat_statements.so.debug",
+      "debug_file_sha256": "162e1ec68835e5b3024fd7c97b2b596414f80786df879ab74d373417033d58a4",
+      "gnu_build_id": "51858dd8b428adcdf0f791cdfb6d3c875848fd28",
+      "module_path": "postgresql/lib/pg_stat_statements.so",
+      "module_sha256": "18ec5e6edce0946af890c47d5618a702e73bba2aa79819a152764f0bbc488b7a"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/lib/btree_gist.so.debug",
+      "debug_file_sha256": "e75386cfce5042235e89dacb69a9005ec005a5af2c9b362089719b1147d54239",
+      "gnu_build_id": "0d8be0e2e8632b54136acc49e3ce35fff622884f",
+      "module_path": "postgresql/lib/btree_gist.so",
+      "module_sha256": "71d34cff9480fff48590268f37732027f95e151ad7e5e30f7fce681668d7f666"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/lib/libecpg.so.6.18.debug",
+      "debug_file_sha256": "98a826ccc7a10d6c53ef685c39f246ae5fe688b24df82e6fbd42bd5e6102e2f0",
+      "gnu_build_id": "2ad067804800df8daaaa4afd6e5b2572a766279c",
+      "module_path": "postgresql/lib/libecpg.so.6.18",
+      "module_sha256": "5ad91251a9eeb976f230cb19b4e486a50185508a363340b702a0be62813977cf"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/lib/utf8_and_big5.so.debug",
+      "debug_file_sha256": "2040001004b3f97f31c470b02688b34a87e28a50905a0b71c720343a554947f0",
+      "gnu_build_id": "7d4847cf5a7ea3ca60a193a74c44527df8e5a59a",
+      "module_path": "postgresql/lib/utf8_and_big5.so",
+      "module_sha256": "2d4d69cff90e9c5a66b4fc69d37e6ea3826b9686a97c8d251820557d8f6faa2c"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/lib/test_decoding.so.debug",
+      "debug_file_sha256": "3f4c90d7a799d77465d2e1e83f0648a81737c1dd2f3ebbd471b9a991ae49b008",
+      "gnu_build_id": "f4099b77eabca88ebfe0eff100e578d8b5edbc5a",
+      "module_path": "postgresql/lib/test_decoding.so",
+      "module_sha256": "b033b60a219ee14b56ad6c9bfde6e6c51e64f461b2d1a8ccc209e87156abae39"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/lib/libpqwalreceiver.so.debug",
+      "debug_file_sha256": "690ec2b79999c302b91c62aba1885eafda33833056841898f7d1459169834540",
+      "gnu_build_id": "4ab851c7c7176da7a461b0086907162d0078436a",
+      "module_path": "postgresql/lib/libpqwalreceiver.so",
+      "module_sha256": "726e4cac5fcf34a31af48dcf9396e36d0c6c386eaf0f8e567782cfe76d02e249"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/lib/basic_archive.so.debug",
+      "debug_file_sha256": "ac1362836d088efac92d073c5834b2dbd01a043bf4f043812d71a9282642c642",
+      "gnu_build_id": "6f165b3fb7ee252110ce86f8c1d184a895968711",
+      "module_path": "postgresql/lib/basic_archive.so",
+      "module_sha256": "c5c3358bea8f959849011840ab5b01cea649d5f45410406ed05d1ce2a1f7fb14"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/lib/latin2_and_win1250.so.debug",
+      "debug_file_sha256": "c8b515016988426bfc872fff11892c1e3f26a36340be4a4ea2662d0ecf8165eb",
+      "gnu_build_id": "aa0e9185076f8c757c72c8fa14fb28ec43f08041",
+      "module_path": "postgresql/lib/latin2_and_win1250.so",
+      "module_sha256": "db6b13b1de4723882824349e3986362e216290c3e6cb91745fa69f3726d7e1e7"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/lib/file_fdw.so.debug",
+      "debug_file_sha256": "b6ddf5751f6f5f262ac066f0b8e647d5b8140c4068b703f5542d413e2796f402",
+      "gnu_build_id": "643bb59e79e3553dd1bb26045bdc672a0c912dc8",
+      "module_path": "postgresql/lib/file_fdw.so",
+      "module_sha256": "f213038b290fef339cff79460e9875fb4b3667866e86d6a02a27850ec14ef8b6"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/lib/refint.so.debug",
+      "debug_file_sha256": "88f12073101fee579aaa00ce5801f04dcf798e88ef04e54124662d6866cfacbc",
+      "gnu_build_id": "914b92374d6df37834930028e5f27507d8c235cc",
+      "module_path": "postgresql/lib/refint.so",
+      "module_sha256": "783282188a50e891d4f9ff4d01abf7949273dfdade8249622180c97c38a3f613"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/lib/citext.so.debug",
+      "debug_file_sha256": "a3ec415ea34024063ed962d2d61055f9a398be086a097a59de499938f863f7b9",
+      "gnu_build_id": "cb3f83f1196aa96e0c4586b5b1f71e1da727ebf2",
+      "module_path": "postgresql/lib/citext.so",
+      "module_sha256": "c8c792b16e91e4af66e41b66da0f0b0e18d7ee8186371249be05efee4c8e3d47"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/lib/pg_logicalinspect.so.debug",
+      "debug_file_sha256": "aa1ec7bcd8653ce181877b71c51080650892875f443dc2e2997972b5e5c9cd37",
+      "gnu_build_id": "191e8db68de0d088723aec7cf8dd3cc2c0581e68",
+      "module_path": "postgresql/lib/pg_logicalinspect.so",
+      "module_sha256": "19d13d1837bd357940066e3671310e561683d25f1983e58ae2a8d0d88f1a3e0a"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/lib/utf8_and_euc2004.so.debug",
+      "debug_file_sha256": "3a5eab32db00410114955527ac8e34e81746c2298f74b23dfc994cabd5a20681",
+      "gnu_build_id": "598d991eee429fb64a1afae7c57a18e4580e3eea",
+      "module_path": "postgresql/lib/utf8_and_euc2004.so",
+      "module_sha256": "7f7d2df6d1e7d99f9d172138ce0babd639ce9e39c0e34179c1d222f4a76ae979"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/lib/tcn.so.debug",
+      "debug_file_sha256": "01da5f8d50139efab07025e1ea094acd21f6775c7f91415aafe13340dbb3e05e",
+      "gnu_build_id": "a0d71eb7db149c4549b90f821f1fd8df7740d79b",
+      "module_path": "postgresql/lib/tcn.so",
+      "module_sha256": "4a699f662085242be2148cc420258ca8273e22deac91669c3adcaccfaea9b030"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/lib/tsm_system_time.so.debug",
+      "debug_file_sha256": "aba575bbc7682ca3dd334463cc090f23aa57fbb9f99673b20e22bb105e9f9743",
+      "gnu_build_id": "fe1a1c5dad03f0f92ae5f6e24c3176e990b6a05f",
+      "module_path": "postgresql/lib/tsm_system_time.so",
+      "module_sha256": "4a93df7503564042190ca8021ccf51075f6a985e86fae2f72ce43bdf4e7e9d6f"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/lib/euc2004_sjis2004.so.debug",
+      "debug_file_sha256": "06fd17bb6469a7f13dc8c955bf060d448562966efc11b49b828b5267f2a4e97f",
+      "gnu_build_id": "9336e0b3fc2f65674c80db78d95013161ad5720e",
+      "module_path": "postgresql/lib/euc2004_sjis2004.so",
+      "module_sha256": "ac4d7121deaf572724ee21bf69d17609301d501a676421358ca57e8f4cae5108"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/lib/utf8_and_iso8859_1.so.debug",
+      "debug_file_sha256": "e912168c3418e9a31d002b1ab668cce1d507c11744ff80c84344547efdae46a7",
+      "gnu_build_id": "e9ea53820e4961f644bf8a2f3e841366836319ef",
+      "module_path": "postgresql/lib/utf8_and_iso8859_1.so",
+      "module_sha256": "a8eb1bd72bac5ad25bf7b7a52e4e113d9364a478294c154e47ea3e1a018772c2"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/lib/utf8_and_euc_cn.so.debug",
+      "debug_file_sha256": "d904c7ce7f9c910b6c128195a7f7a2420995d9f46f4709966e8c7ffb798cb23d",
+      "gnu_build_id": "262a49bc9ee481d619e8f5c7b4c91658a408a251",
+      "module_path": "postgresql/lib/utf8_and_euc_cn.so",
+      "module_sha256": "b63ae5fc608a812744169dddde2d68013ee52f407c1dcf85c2a993747ffca255"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/lib/utf8_and_sjis.so.debug",
+      "debug_file_sha256": "44935e26f2de08af0680e38607ae338e6c88d3c0774ad15b3bee3d4185e7f059",
+      "gnu_build_id": "5e653a66ed087a8308c7423c72fa028f0c4b4eab",
+      "module_path": "postgresql/lib/utf8_and_sjis.so",
+      "module_sha256": "cefceb91e3e49dba7ebc73841901935a4997ff32bd4399f25482eb70ab4d0cfc"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/lib/dblink.so.debug",
+      "debug_file_sha256": "7c9430ae59b08f02c9560339831ecd759fafc5e730ea10d2626229fefb05a208",
+      "gnu_build_id": "f1730aa677aa1dcf46d0f3559c3d150d715be6f0",
+      "module_path": "postgresql/lib/dblink.so",
+      "module_sha256": "a70f75720fa96f80c6a1d4d353929c32ff1896574935f3e6d881ad819cebf20c"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/lib/pg_trgm.so.debug",
+      "debug_file_sha256": "ca7a36d74839481c92812eeaa9a7c112598839bb0dd574440ec845d1755de949",
+      "gnu_build_id": "658cca6c3268d0532a17d0015ae6e8ff07f4f238",
+      "module_path": "postgresql/lib/pg_trgm.so",
+      "module_sha256": "d7c304e1d83323426eeeecbe7e0dbee3907aa125ae979b7536f0cdbd879693f5"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/lib/utf8_and_cyrillic.so.debug",
+      "debug_file_sha256": "b2477eef515862d7035152b3622a7104ae21e32d88422fcb0290a4afff05dbcc",
+      "gnu_build_id": "4bed9d96c965df70d89b61f00becc774a9e927cc",
+      "module_path": "postgresql/lib/utf8_and_cyrillic.so",
+      "module_sha256": "1b21cdc0b0f97a563fc62fce9419b08c9734cbf4367a00306100d1c0858e46ae"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/lib/utf8_and_win.so.debug",
+      "debug_file_sha256": "17b69983b5a88a2d81a530a9d280be033ff983f6f3cb2a0d223a7eb0cf54deb9",
+      "gnu_build_id": "2c863864ce46954a54a7e1833815a73f3c815ca4",
+      "module_path": "postgresql/lib/utf8_and_win.so",
+      "module_sha256": "845170fa6b2c7e40657bccf8faffd43503b022a1b73c5f9d711241752eb4f846"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/lib/pg_buffercache.so.debug",
+      "debug_file_sha256": "e370e8611b31fc4672e13855dff7733a356d08dcffe45735b8ab9c7545c64a6c",
+      "gnu_build_id": "c6b13082f1bf9df787c53e2e0f09d2a904887a87",
+      "module_path": "postgresql/lib/pg_buffercache.so",
+      "module_sha256": "3f0eca3c3b0a6f31826494ac274034146231adcdff9a2714e97f0c90d3779f51"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/lib/isn.so.debug",
+      "debug_file_sha256": "9ec78e90c42faf76a742c5ee5768154ed26d10826d730eb511c1299e4abfb83d",
+      "gnu_build_id": "b11164588a4a68fb1656f4bf5fa988aa731fda7d",
+      "module_path": "postgresql/lib/isn.so",
+      "module_sha256": "68c6076a2e654c23e833c545bb048564c594d73a77ff56984920318315bf4726"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/lib/auth_delay.so.debug",
+      "debug_file_sha256": "b77982eead8dd42b3f3abf2c27725dab6608af7f7ef72454ace3837527b5242f",
+      "gnu_build_id": "a3fe0495b26e4a24e380f018f162af17b292c870",
+      "module_path": "postgresql/lib/auth_delay.so",
+      "module_sha256": "92303c73838273912ac255b9a0ad62977ca7fdb0b2da9858ab916c080cc8754d"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/lib/uuid-ossp.so.debug",
+      "debug_file_sha256": "30f059ff51f0d21f0ee4981b819ec741c9c542e3a6209e08670f98769d6cc069",
+      "gnu_build_id": "ab2dd193f8f7b5863633f272a7b49935f0c0e481",
+      "module_path": "postgresql/lib/uuid-ossp.so",
+      "module_sha256": "aee8790460d03076a8d9dad0c35c9480554b1cf2f7384b2e4d2dc8114ed587ce"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/lib/utf8_and_euc_tw.so.debug",
+      "debug_file_sha256": "ee20d1e15702084b7b8582fa1d2742a469ea62d3c43cdd47569b01022d3cc283",
+      "gnu_build_id": "165171baaca4a2b1caefd20786e3917d25c88776",
+      "module_path": "postgresql/lib/utf8_and_euc_tw.so",
+      "module_sha256": "95a9e84b3805412dc318839159d516c31a5dc2ccb0090c2f6b1616631c2babb6"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/lib/pgxml.so.debug",
+      "debug_file_sha256": "3fdf4a083d4ac813d496a6af57d434cb98c13c90d6fa9ddd38c8378df2d9179b",
+      "gnu_build_id": "642702ce8e8639b2b8c0c5b73c6a2a56d75951c8",
+      "module_path": "postgresql/lib/pgxml.so",
+      "module_sha256": "eccbda84ab1fa29baa6053a4258279da9a33b0aeeba0d2434d2aee851e8cf94a"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/lib/btree_gin.so.debug",
+      "debug_file_sha256": "551180a63072231650730c0d9c6b4f196ac448477a6c890c0e57a7c41655c49b",
+      "gnu_build_id": "f3a3b5811207fe3f4499012e99bbd2c0f9ce6b77",
+      "module_path": "postgresql/lib/btree_gin.so",
+      "module_sha256": "c56b175d324380894b401c6ed60719902d710cabd07f07ef92223932646fa483"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/lib/ltree.so.debug",
+      "debug_file_sha256": "28d37d1843c708406f2e6817724d9b90880ec955caff15415aeb824dc4b4ca70",
+      "gnu_build_id": "5cbb814d27f902ba7624b1e58fe462472252351f",
+      "module_path": "postgresql/lib/ltree.so",
+      "module_sha256": "8429776cbe206ad4b3ecd1f297272741d77c0232880530743081a804df847304"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/lib/utf8_and_gb18030.so.debug",
+      "debug_file_sha256": "a28625f2310e57018894f93662207e31bf22668b31eae5f630c873e13308cc74",
+      "gnu_build_id": "3f7ae01858926e3a220e7718e235ae726a129e37",
+      "module_path": "postgresql/lib/utf8_and_gb18030.so",
+      "module_sha256": "d6d173da7656d64538c1787db775a55dfd754479c64da05cd238bf59e01fd5df"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/lib/euc_jp_and_sjis.so.debug",
+      "debug_file_sha256": "24cc6e4bf30efcef290669ac6b9a7b4c630030194405bb808603d7db5c7d7831",
+      "gnu_build_id": "f91b48b50b36bfda886d201792feda671a996cd5",
+      "module_path": "postgresql/lib/euc_jp_and_sjis.so",
+      "module_sha256": "7c31941529991bd00138e50f08ffc309e65c64903d451354b728eb2e82c8fbfe"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/lib/pg_prewarm.so.debug",
+      "debug_file_sha256": "39e3252676183b1ecf2a5c025514a9944ab159df312a87213aa19a72dfa461c0",
+      "gnu_build_id": "4a96f5c81eb2f8b58973952a712319e41985a3be",
+      "module_path": "postgresql/lib/pg_prewarm.so",
+      "module_sha256": "f2fef502fe3323bb7cd95ce48efdbbcda286598cfde500a43123291f40cd556c"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/lib/moddatetime.so.debug",
+      "debug_file_sha256": "9837e519db9bc40201fb2e2f34e98f1b8fdf0a7e30657ab86ca09a49b0ed0769",
+      "gnu_build_id": "f52f1cc30314da1d36c49fcc096e88a59e5caf59",
+      "module_path": "postgresql/lib/moddatetime.so",
+      "module_sha256": "fc7d018526f01739d303a92b3280d0f45c3634bcd02c857752e63c9142153fd9"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/lib/passwordcheck.so.debug",
+      "debug_file_sha256": "39c25011d16c72af0b3291dff857218ef11d80176038a17aec2e3b3334a32252",
+      "gnu_build_id": "b697a726460a8afb214523ae479e902aeee260bf",
+      "module_path": "postgresql/lib/passwordcheck.so",
+      "module_sha256": "a437ba20e0f7aa1fc55ee4d7090b77c14948523903b387df34d9137fe66e9356"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/lib/amcheck.so.debug",
+      "debug_file_sha256": "88f3decae27208dc31cc141d77a46d89085ee621947f805eeda58a5a4bceff0b",
+      "gnu_build_id": "5d9ac1a983a588f2cfeabdb405d763519a38b217",
+      "module_path": "postgresql/lib/amcheck.so",
+      "module_sha256": "936768dc8177f47079f73a1203dc88e0ad4a4a366ead8abaa5ad71c6668b4cd6"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/lib/pg_freespacemap.so.debug",
+      "debug_file_sha256": "b50407f7d3b46ef1b0c4a5958acbe2560cd501dfcea10b5049a8d96061346e5e",
+      "gnu_build_id": "e0b2f331c4a6fa8dbcb0311dfbaa22ee1b056c2a",
+      "module_path": "postgresql/lib/pg_freespacemap.so",
+      "module_sha256": "51490eac8c76f70083cb61b9b87a98f619e312e3d194a45114a0b08a899e50e9"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/lib/pgxs/src/test/regress/pg_regress.debug",
+      "debug_file_sha256": "077dca9609eefc8c88bc7b8c73fe98d1ac012339a863953f13ffea51086a15eb",
+      "gnu_build_id": "ed77fb0ff1bafe0e831997ef7a18c58f1428299d",
+      "module_path": "postgresql/lib/pgxs/src/test/regress/pg_regress",
+      "module_sha256": "6a56fc816612c99cab8bf6ba4775487ea9dd99935bd8e60f4dbca325a47a16ab"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/lib/pgxs/src/test/isolation/isolationtester.debug",
+      "debug_file_sha256": "160dda5c70dda8a10355895c03fe786416b632005174e4341a19520a46b8ebb9",
+      "gnu_build_id": "5409dc808e1374da40df7fb3185f0158f69bdc47",
+      "module_path": "postgresql/lib/pgxs/src/test/isolation/isolationtester",
+      "module_sha256": "75d0be736e078ceabbc4578159c80930ccd695198495bc91d353f0687f4d7a43"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/lib/pgxs/src/test/isolation/pg_isolation_regress.debug",
+      "debug_file_sha256": "f929aa2cd35d479a14c78c6649889d4ce2d148c3fd2a044666c884d27813b057",
+      "gnu_build_id": "61b9e69bec6c69d1d1ccc3b2ecba2891c3b9617f",
+      "module_path": "postgresql/lib/pgxs/src/test/isolation/pg_isolation_regress",
+      "module_sha256": "5af0df20f6fbeae1a6c9aeb769cb60302e69cf96fd2a9381242f39238153afd2"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/lib/basebackup_to_shell.so.debug",
+      "debug_file_sha256": "e2b1c59c03020299ac0d83558f572c6c5062a6b08b86a85385e11d067701dd50",
+      "gnu_build_id": "b36fcf268b37c8ce1a810045587616332adc497b",
+      "module_path": "postgresql/lib/basebackup_to_shell.so",
+      "module_sha256": "acd4e85e67d4e0c7026ec4cc77bc1468ce6e512e3c2bbddc0c37dfe557f52a8e"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/lib/euc_tw_and_big5.so.debug",
+      "debug_file_sha256": "bbb9e4a9872e7c9870314c6df4f6e850f4928b6a8d8c391b3687e0cecbf1ac54",
+      "gnu_build_id": "a4534e3cfca4a969f401490ce56966091c5c2de3",
+      "module_path": "postgresql/lib/euc_tw_and_big5.so",
+      "module_sha256": "33d98e85896a90a21bdf614205e491f7e88da9124fd301b682d41ac388358a3b"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/lib/pgoutput.so.debug",
+      "debug_file_sha256": "323f60d3f235e9303fbec4863e9bf3ff4b095af9e91ec8db83778b1ae3af54b8",
+      "gnu_build_id": "775c6d41ffe8f0111178fd3655c7ca432b8b846d",
+      "module_path": "postgresql/lib/pgoutput.so",
+      "module_sha256": "c4f72cb7dddb91fb7589583fcae2aa9ff64c85d7876fc006378bc0c9a3bd2d1c"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/lib/plpgsql.so.debug",
+      "debug_file_sha256": "77db6e4efd7c0c52a54a13e75e89efc7975ffbfc3a39280482801cd81b3b7baa",
+      "gnu_build_id": "c3e7bf21ea1363d6187d379e1ddcb57ca346e7cb",
+      "module_path": "postgresql/lib/plpgsql.so",
+      "module_sha256": "7c420438628d47c5f13f990fc7cb174bf9b8d84f832229a0d3422b0821881680"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/lib/bloom.so.debug",
+      "debug_file_sha256": "83434501d2d4c545abc94fc99022e2698509c6ba4a7842d0b17c2186a7e1a6fd",
+      "gnu_build_id": "963a2eae258ea9a3bccde0320d8578dca21e4247",
+      "module_path": "postgresql/lib/bloom.so",
+      "module_sha256": "c6908c5ac9e0ccf2e27e2f0b43860a2ff11e90f69358cda202aee4db4370ccbf"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/lib/cyrillic_and_mic.so.debug",
+      "debug_file_sha256": "86113948545c288f3fd9512fd4a0a41d299fbdd00f1c00a2bd89ab03a11ae45b",
+      "gnu_build_id": "fa8ceff17f00dc30ba0f2750fa24100c0503864b",
+      "module_path": "postgresql/lib/cyrillic_and_mic.so",
+      "module_sha256": "c96943accc90582dc2d550668852a05e456d8caef71f68ecda5004c5d99cb283"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/lib/pg_walinspect.so.debug",
+      "debug_file_sha256": "1ca6155195a144b0468f748859707e2256ca175693570889d55cf7421f83dfb1",
+      "gnu_build_id": "2e3be7a4ac4c041903519222a4b891d02f4c54b8",
+      "module_path": "postgresql/lib/pg_walinspect.so",
+      "module_sha256": "825a9df812edfa2bcb997fdff9af72db2f9037030c387ae1418f0ef9ce3f73bf"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/lib/utf8_and_johab.so.debug",
+      "debug_file_sha256": "7e1496a0a4d38d0e72cb9c5e1c46792e5ec66bd78383ee0916f5b8bd92479995",
+      "gnu_build_id": "365b3bde84a73da55d3686538685ebacda9447a8",
+      "module_path": "postgresql/lib/utf8_and_johab.so",
+      "module_sha256": "bd423247e013ec567c0a4e4805448137d70e5ccdd99047446f70de9bd6e2cd0e"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/lib/libpq.so.5.18.debug",
+      "debug_file_sha256": "6920e9632be7147dbbb9e6f47c643cc2f5dbc1fbe648b82047a953b5ed8fef8e",
+      "gnu_build_id": "eb93ff7a42042749ed7b1f41cd5b5f5511d62e57",
+      "module_path": "postgresql/lib/libpq.so.5.18",
+      "module_sha256": "e2ec9d1a8b7e3149890bf8a4df53b381bd306bbcbe09ddee31e9e59f97fd5daf"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/lib/postgres_fdw.so.debug",
+      "debug_file_sha256": "d9d5a988329274084e4d563dfa0f948a265e7bd09974d16c40ce9a238bcc1a4c",
+      "gnu_build_id": "925d8b0065dfae2bbcaef572f1e0a9ea28b6035c",
+      "module_path": "postgresql/lib/postgres_fdw.so",
+      "module_sha256": "94cba1c3567122a2e0232c1c92a8f50cc8c071554b9a7da042cb4c76f352dabb"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/lib/_int.so.debug",
+      "debug_file_sha256": "4d9ca017765bc3ed2f9adedbab96747f46af8960e8819704ec45bf0885092151",
+      "gnu_build_id": "41243b60ddfc575d8c1538f63e79cca3c16803ba",
+      "module_path": "postgresql/lib/_int.so",
+      "module_sha256": "60f69b7886951cfdb3aad3abd66a2fe28eb6dc22be262a0041d1b4767f403518"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/lib/utf8_and_euc_kr.so.debug",
+      "debug_file_sha256": "96004fa7c232843bffd5b3adc80cce95b56214af134a8b65aff9e975a67d8c18",
+      "gnu_build_id": "3b894a7758d6579ecd94fc878d11fc1f0f10058e",
+      "module_path": "postgresql/lib/utf8_and_euc_kr.so",
+      "module_sha256": "5f50cb65541e06ff154ebf40e3a52528348b7c52e47621f1f77b15e623ee264b"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/lib/libecpg_compat.so.3.18.debug",
+      "debug_file_sha256": "4ec774eca463b8c2f7d151ca0a0946e3876083818742b4fb9796387383ec7fb5",
+      "gnu_build_id": "6ffd980b5ecbd27ea2ebd42a6d431b9a775f4803",
+      "module_path": "postgresql/lib/libecpg_compat.so.3.18",
+      "module_sha256": "d612ce6a4f246ebeacc9c00d737a3b25e37f2da823acd8918b8bd86fc16981b0"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/lib/pgrowlocks.so.debug",
+      "debug_file_sha256": "9d326046f611351015e365efe410277152392d60acdf25975d2ea6a6675bea79",
+      "gnu_build_id": "76f95464d4b6b9745ce79039ecb51786a5131f25",
+      "module_path": "postgresql/lib/pgrowlocks.so",
+      "module_sha256": "124668d888e74253aea25be62ba1ef119a6227587987603f6a3d6651fbb84118"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/lib/autoinc.so.debug",
+      "debug_file_sha256": "c05ba6446d80acf8d0e89ad8049befdbb60f445d89ab863159949500efbf9bcc",
+      "gnu_build_id": "5b7d7e8441b49d8bed2c38ee7fe45c8c87603fa9",
+      "module_path": "postgresql/lib/autoinc.so",
+      "module_sha256": "30646765485b96219a37e4ef0b6a2db02f1633e21bacf2c2c6b63d214646c69a"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/lib/tsm_system_rows.so.debug",
+      "debug_file_sha256": "cf6f7248a360db0d2588f50ca34ed0a56b447b8c1ea03a5e86a013ea27178e8d",
+      "gnu_build_id": "3b87c50d1c40e0f6a646a4e04a28f803e115840e",
+      "module_path": "postgresql/lib/tsm_system_rows.so",
+      "module_sha256": "9540e1f00f99292b0630d394d5b57bfc0e7216b4682ad8b146ddc0c195381377"
+    },
+    {
+      "archive": "postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "ffee7f25d8adfd10a87740cacbfeb60d3eee041a1b508e74e7f256803f3271a4",
+      "debug_file_path": "postgresql-18.4-linux-arm64/postgresql/bin/.pg-launcher.debug",
+      "debug_file_sha256": "09aa18b0550a13626e1184215ea2b75b172c8f8864e0d0f3579266effde10c38",
+      "gnu_build_id": "68334039395a44f2448f40ad58b4092b940018ae",
+      "module_path": "postgresql/bin/.pg-launcher",
+      "module_sha256": "ee8273da07ac4599030281ec6f414d0a306d123c1d3b6e82bc95714c75c2afcb"
+    },
+    {
+      "archive": "pgvector-0.8.7-postgresql-18.4-linux-arm64.tar.gz",
+      "archive_sha256": "79ca5fc4b556f9ed7cf0c83c136d8d4afc87091a4cb9941e2e2853d6fca80c02",
+      "debug_file_path": "pgvector-0.8.7-postgresql-18.4-linux-arm64/pgvector/lib/vector.so.debug",
+      "debug_file_sha256": "0375c05c51b7c781bff287f0b1ac37ed49f8293c78ed7da6c0750759eaacbdd3",
+      "gnu_build_id": "11472a0559a155d7871c4b8ef5323e49689093ef",
+      "module_path": "pgvector/lib/vector.so",
+      "module_sha256": "701ac1dda191dd030660b00df078841bd4be8f8c4f72b732fef13bc479a53395"
+    }
+  ],
+  "schema_version": 1
+}
