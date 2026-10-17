@@ -1,15 +1,23 @@
 #!/usr/bin/env python3
 """Write archive-local provenance for Linux PostgreSQL pilot license texts."""
 
+import argparse
 import json
 import pathlib
 import subprocess
-import sys
 
 
-root = pathlib.Path(sys.argv[1]).resolve()
-postgresql_version = sys.argv[2]
-runtime_map = pathlib.Path(sys.argv[3])
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument("root", type=pathlib.Path)
+parser.add_argument("postgresql_version")
+parser.add_argument("runtime_map", type=pathlib.Path)
+parser.add_argument("--reviews", type=pathlib.Path,
+                    help="explicit redistribution decisions for every packaged component")
+args = parser.parse_args()
+
+root = args.root.resolve()
+postgresql_version = args.postgresql_version
+runtime_map = args.runtime_map
 components = [{
     "component": "postgresql",
     "version": postgresql_version,
@@ -95,6 +103,47 @@ if not postgresql_version or not postgresql_version[0].isdigit():
     raise SystemExit(f"invalid PostgreSQL version: {postgresql_version}")
 if not postgres_license.is_file() or not postgres_license.stat().st_size:
     raise SystemExit(f"missing non-empty license text: {postgres_license}")
+
+if args.reviews is not None:
+    try:
+        review_data = json.loads(args.reviews.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+        raise SystemExit(f"cannot read redistribution reviews: {exc}") from exc
+    if not isinstance(review_data, dict) or review_data.get("schema_version") != 1:
+        raise SystemExit("redistribution reviews require schema_version 1")
+    entries = review_data.get("components")
+    if not isinstance(entries, list):
+        raise SystemExit("redistribution reviews require a components array")
+
+    def identity(entry):
+        if not isinstance(entry, dict):
+            raise SystemExit("redistribution review component must be an object")
+        component, package, version = (entry.get("component"), entry.get("package"),
+                                       entry.get("version"))
+        if (not isinstance(component, str) or not component
+                or (package is not None and (not isinstance(package, str) or not package))
+                or not isinstance(version, str) or not version):
+            raise SystemExit("redistribution review requires component, package and version identity")
+        return component, package, version
+
+    reviews = {}
+    for entry in entries:
+        key = identity(entry)
+        if key in reviews:
+            raise SystemExit(f"duplicate redistribution review: {key}")
+        review = entry.get("redistribution_review")
+        if (not isinstance(review, dict) or review.get("status") != "resolved"
+                or not isinstance(review.get("basis"), str) or not review["basis"].strip()
+                or review.get("source_obligation") not in {"none", "source-links", "source-offer"}):
+            raise SystemExit(f"unresolved redistribution review: {key}")
+        reviews[key] = review
+    expected = {identity(entry) for entry in components}
+    if set(reviews) != expected:
+        missing = sorted(expected - set(reviews), key=str)
+        extra = sorted(set(reviews) - expected, key=str)
+        raise SystemExit(f"redistribution reviews differ from packaged components: missing={missing}, extra={extra}")
+    for entry in components:
+        entry["redistribution_review"] = reviews[identity(entry)]
 
 inventory = {"schema_version": 1, "components": components}
 (root / "LICENSES" / "inventory.json").write_text(

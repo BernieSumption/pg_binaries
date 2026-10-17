@@ -1,13 +1,19 @@
+import importlib.util
 import json
 import os
 from pathlib import Path
 import subprocess
+import tarfile
 import tempfile
 import unittest
 
 
 REPO = Path(__file__).resolve().parents[1]
 WRITER = REPO / "tools/write_linux_license_inventory.py"
+PREFLIGHT_SPEC = importlib.util.spec_from_file_location(
+    "publication_preflight", REPO / "tools/publication_preflight.py")
+publication_preflight = importlib.util.module_from_spec(PREFLIGHT_SPEC)
+PREFLIGHT_SPEC.loader.exec_module(publication_preflight)
 
 
 class LinuxLicenseInventoryTests(unittest.TestCase):
@@ -32,11 +38,28 @@ class LinuxLicenseInventoryTests(unittest.TestCase):
     def tearDown(self):
         self.temp.cleanup()
 
-    def write_inventory(self):
+    def write_inventory(self, reviews=None):
+        command = ["python3", str(WRITER), str(self.archive), "18.6", str(self.mapping)]
+        if reviews is not None:
+            path = self.root / "reviews.json"
+            path.write_text(json.dumps(reviews), encoding="utf-8")
+            command.extend(["--reviews", str(path)])
         return subprocess.run(
-            ["python3", str(WRITER), str(self.archive), "18.6", str(self.mapping)],
+            command,
             env=self.env, capture_output=True, text=True,
         )
+
+    def reviewed_components(self):
+        return {"schema_version": 1, "components": [
+            {"component": "postgresql", "version": "18.6", "redistribution_review": {
+                "status": "resolved", "basis": "PostgreSQL licence reviewed",
+                "source_obligation": "none"}},
+            {"component": "runtime-package", "package": "libexample1",
+             "version": "1.2.3-4ubuntu5", "redistribution_review": {
+                "status": "resolved", "basis": "Fixture package terms reviewed",
+                "source_obligation": "source-links",
+                "source_links": ["https://example.test/source.tar.gz"]}},
+        ]}
 
     def test_maps_postgresql_and_each_copied_runtime_library(self):
         result = self.write_inventory()
@@ -51,6 +74,34 @@ class LinuxLicenseInventoryTests(unittest.TestCase):
         self.assertEqual(runtime["version"], "1.2.3-4ubuntu5")
         self.assertEqual(runtime["payload_paths"], ["lib/runtime/libexample.so"])
         self.assertTrue(runtime["license_source"].startswith("https://"))
+
+    def test_attaches_only_explicit_complete_redistribution_reviews(self):
+        result = self.write_inventory(self.reviewed_components())
+        self.assertEqual(result.returncode, 0, result.stderr)
+        components = json.loads((self.archive / "LICENSES/inventory.json").read_text())["components"]
+        self.assertEqual(components[0]["redistribution_review"]["source_obligation"], "none")
+        self.assertEqual(components[1]["redistribution_review"]["source_links"],
+                         ["https://example.test/source.tar.gz"])
+
+        archive = self.root / "postgresql.tar.gz"
+        with tarfile.open(archive, "w:gz") as output:
+            output.add(self.archive, arcname="postgresql")
+        publication_preflight._archive_redistribution(archive)
+
+    def test_rejects_incomplete_or_unresolved_redistribution_reviews(self):
+        reviews = self.reviewed_components()
+        reviews["components"].pop()
+        result = self.write_inventory(reviews)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("missing=", result.stderr)
+        self.assertFalse((self.archive / "LICENSES/inventory.json").exists())
+
+        reviews = self.reviewed_components()
+        reviews["components"][1]["redistribution_review"]["status"] = "pending"
+        result = self.write_inventory(reviews)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn("unresolved redistribution review", result.stderr)
+        self.assertFalse((self.archive / "LICENSES/inventory.json").exists())
 
     def test_fails_when_runtime_payload_is_missing(self):
         (self.archive / "lib/runtime/libexample.so").unlink()
