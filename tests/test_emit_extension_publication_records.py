@@ -42,6 +42,8 @@ class ExtensionPublicationRecordTests(unittest.TestCase):
         }))
         self.core_name = "postgresql-18.6-linux-x86_64.tar.gz"
         self.extension_name = "postgis_tiger_geocoder-2025.2-postgresql-18.6-linux-x86_64.tar.gz"
+        self.postgis_name = "postgis-3.6.4-postgresql-18.6-linux-x86_64.tar.gz"
+        self.postgis_path = self.archives / self.postgis_name
         self.metadata = {
             "project": "postgis_tiger_geocoder", "version": "2025.2",
             "postgresql_version": "18.6", "platform": "linux", "architecture": "x86_64",
@@ -50,6 +52,7 @@ class ExtensionPublicationRecordTests(unittest.TestCase):
             "runtime_prerequisites": [],
         }
         self._write_extension()
+        self._write_postgis()
         (self.core_archives / self.core_name).write_bytes(b"core archive fixture")
         self.receipt = {
             "profile_id": self.profile_id,
@@ -64,12 +67,14 @@ class ExtensionPublicationRecordTests(unittest.TestCase):
             "dependency_checks_passed": True,
             "case_results": {"archive-assembly": "passed", "tiger-normalize": "passed"},
             "extension_archive": self.extension_name, "archives": {},
+            "prerequisite_archives": [],
             "ci": {"provider": "github-actions", "run_id": "987",
                    "run_url": "https://github.com/o/r/actions/runs/987",
                    "source_revision": "a" * 40, "build_revision": "a" * 40,
                    "test_revision": "a" * 40},
         }
         self._write_checksums()
+        self._write_prerequisite_claim()
         self.receipt_path = base / "receipt.json"
         self._write_receipt()
 
@@ -91,13 +96,38 @@ class ExtensionPublicationRecordTests(unittest.TestCase):
             self.receipt["archives"][name] = digest
             (directory / f"{name}.sha256").write_text(f"{digest}  {name}\n")
 
+    def _write_postgis(self, build_id=None, write_sidecar=True):
+        metadata = {
+            "project": "postgis", "version": "3.6.4", "postgresql_version": "18.6",
+            "platform": "linux", "architecture": "x86_64",
+            "sql_names": ["postgis", "postgis_raster", "postgis_sfcgal", "postgis_topology"],
+        }
+        if build_id is not None:
+            metadata["build_id"] = build_id
+        with tarfile.open(self.postgis_path, "w:gz") as archive:
+            data = json.dumps(metadata).encode()
+            member = tarfile.TarInfo("metadata.json")
+            member.size = len(data)
+            archive.addfile(member, io.BytesIO(data))
+        digest = hashlib.sha256(self.postgis_path.read_bytes()).hexdigest()
+        if write_sidecar:
+            self.postgis_path.with_name(self.postgis_name + ".sha256").write_text(
+                f"{digest}  {self.postgis_name}\n")
+
+    def _write_prerequisite_claim(self):
+        digest = hashlib.sha256(self.postgis_path.read_bytes()).hexdigest()
+        self.receipt["prerequisite_archives"] = [{
+            "project": "PostGIS", "archive": self.postgis_name,
+            "version": "3.6.4", "sha256": digest,
+        }]
+
     def _write_receipt(self):
         self.receipt_path.write_text(json.dumps(self.receipt))
 
     def emit(self):
         self._write_receipt()
         return emitter.emit(self.root, self.archives, self.core_archives,
-                            self.receipt_path, self.output)
+                            self.receipt_path, self.output, {"PostGIS": self.postgis_path})
 
     def test_emits_publication_record_for_declared_sql_name(self):
         paths = self.emit()
@@ -107,6 +137,7 @@ class ExtensionPublicationRecordTests(unittest.TestCase):
         self.assertEqual(record["project"], "PostGIS TIGER Geocoder")
         self.assertEqual(record["assembled_core"]["sha256"],
                          self.receipt["archives"][self.core_name])
+        self.assertEqual(record["prerequisite_archives"], self.receipt["prerequisite_archives"])
         self.assertEqual(record["sha256"], self.receipt["archives"][self.extension_name])
         self.assertEqual(record["environment"]["os_version"], "5.15.0")
         coverage.validate_verification_record(
@@ -120,6 +151,38 @@ class ExtensionPublicationRecordTests(unittest.TestCase):
                 with self.assertRaisesRegex(coverage.CoverageError, "checksum does not match"):
                     self.emit()
                 self.receipt["archives"][name] = original
+
+    def test_rejects_missing_or_mismatched_prerequisite_archive(self):
+        record = json.loads(self.emit()[0].read_text())
+        record.pop("prerequisite_archives")
+        with self.assertRaisesRegex(coverage.CoverageError, "must bind every prerequisite"):
+            coverage.validate_verification_record(
+                record, coverage.load_json(self.root / "support.json"), self.root)
+        with self.assertRaisesRegex(coverage.CoverageError, "exactly the required projects"):
+            emitter.emit(self.root, self.archives, self.core_archives,
+                         self.receipt_path, self.output)
+        original = self.receipt["prerequisite_archives"][0]["sha256"]
+        self.receipt["prerequisite_archives"][0]["sha256"] = "0" * 64
+        with self.assertRaisesRegex(coverage.CoverageError, "claim does not match"):
+            self.emit()
+        self.receipt["prerequisite_archives"][0]["sha256"] = original
+        self._write_postgis(build_id="changed", write_sidecar=False)
+        with self.assertRaisesRegex(coverage.CoverageError, "\.sha256 does not match"):
+            self.emit()
+
+    def test_no_prerequisite_project_keeps_existing_record_behavior(self):
+        support = json.loads((self.root / "support.json").read_text())
+        support["extensions"]["PostGIS TIGER Geocoder"]["requires"] = []
+        (self.root / "support.json").write_text(json.dumps(support))
+        self.metadata["requires"] = []
+        self._write_extension()
+        self._write_checksums()
+        self.receipt["prerequisite_archives"] = []
+        self._write_receipt()
+        paths = emitter.emit(self.root, self.archives, self.core_archives,
+                             self.receipt_path, self.output)
+        record = json.loads(paths[0].read_text())
+        self.assertEqual(record["prerequisite_archives"], [])
 
     def test_rejects_stale_profile_and_missing_case(self):
         original = self.receipt["profile_revision"]
@@ -194,12 +257,15 @@ class ExtensionPublicationRecordTests(unittest.TestCase):
             self.root, self.archives, self.core_archives, self.receipt_path,
             self.profile_id, "PostGIS TIGER Geocoder", "2025.2", "18.6", "18.6",
             "x86_64", "minimum", "5.15.0-1109-kvm", "Ubuntu 22.04.5 LTS",
-            "22.04", "sha256:" + "b" * 64, "success", True, steps, environment)
+            "22.04", "sha256:" + "b" * 64, "success", True, steps, environment,
+            prerequisite_archives={"PostGIS": self.postgis_path})
         receipt = json.loads(self.receipt_path.read_text())
         self.assertEqual(receipt["case_results"], self.receipt["case_results"])
         self.assertEqual(receipt["archives"], self.receipt["archives"])
+        self.assertEqual(receipt["prerequisite_archives"], self.receipt["prerequisite_archives"])
         self.assertEqual(len(emitter.emit(self.root, self.archives, self.core_archives,
-                                          self.receipt_path, self.output)), 1)
+                                          self.receipt_path, self.output,
+                                          {"PostGIS": self.postgis_path})), 1)
 
     def test_receipt_creator_requires_complete_steps(self):
         steps = self.root / "step-results.json"
@@ -211,7 +277,8 @@ class ExtensionPublicationRecordTests(unittest.TestCase):
                 self.root, self.archives, self.core_archives, self.receipt_path,
                 self.profile_id, "PostGIS TIGER Geocoder", "2025.2", "18.6", "18.6",
                 "x86_64", "minimum", "5.15.0-1109-kvm", "Ubuntu 22.04.5 LTS",
-                "22.04", "sha256:" + "b" * 64, "success", True, steps, environment)
+                "22.04", "sha256:" + "b" * 64, "success", True, steps, environment,
+                prerequisite_archives={"PostGIS": self.postgis_path})
 
 
 if __name__ == "__main__":

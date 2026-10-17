@@ -231,11 +231,19 @@ def merge_candidate(base_inventory, proposed_entries, support, snapshot, root=No
                 raise CandidateError(f"candidate has no canonical PostgreSQL archive for {pg} {platform}")
             expected_core = {"archive": expected_name, "version": pg,
                              "sha256": str(core.get("sha256", "")).lower()}
+            _candidate_core, candidate_extensions = _coverage.inventory_targets(candidate)
+            project = next(project for project, details in support["extensions"].items()
+                           if any(name in details["sql_names"] for name in evidence_components))
+            expected_prerequisites = _coverage.expected_prerequisite_archives(
+                support, candidate_extensions, project, pg, platform)
+            if expected_prerequisites is None:
+                raise CandidateError(f"candidate has no consistent prerequisite archives for {project} PostgreSQL {pg} {platform}")
             for evidence_component in evidence_components:
                 for endpoint in ("minimum", "current"):
                     if not any(_evidence_matches(
                             record, download, evidence_component, version, platform, pg,
-                            endpoint, support, root, expected_core=expected_core)
+                            endpoint, support, root, expected_core=expected_core,
+                            expected_prerequisites=expected_prerequisites)
                             for record in records):
                         raise CandidateError(
                             f"missing passed {endpoint} verification for {evidence_component} {version} {pg} {platform} "
@@ -244,7 +252,7 @@ def merge_candidate(base_inventory, proposed_entries, support, snapshot, root=No
 
 
 def _evidence_matches(record, download, component, version, platform, pg, endpoint, support, root,
-                      expected_core=None):
+                      expected_core=None, expected_prerequisites=None):
     if not isinstance(record, dict):
         return False
     try:
@@ -263,6 +271,8 @@ def _evidence_matches(record, download, component, version, platform, pg, endpoi
         and isinstance(assembled_core.get("sha256"), str)
         and assembled_core["sha256"].lower() == expected_core["sha256"]
     ))
+    prerequisite_matches = (expected_prerequisites is None or
+                            record.get("prerequisite_archives", []) == expected_prerequisites)
     try:
         actual = _coverage._os_version_parts(environment.get("os_version"), "candidate evidence")
         minimum = _coverage._os_version_parts(support["os_support"][os_name]["minimum_version"], "support")
@@ -274,6 +284,7 @@ def _evidence_matches(record, download, component, version, platform, pg, endpoi
             and record.get("component") == component and str(record.get("version")) == str(version)
             and record.get("platform") == platform and record.get("postgresql_version") == pg
             and core_matches
+            and prerequisite_matches
             and isinstance(record.get("test_revision"), str) and bool(record["test_revision"])
             and isinstance(record.get("test_cases"), list) and bool(record["test_cases"])
             and environment.get("endpoint") == endpoint

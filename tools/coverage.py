@@ -439,6 +439,50 @@ def validate_verification_record(data, support, root, label="verification record
                 or not SHA256.fullmatch(assembled_core["sha256"])):
             raise CoverageError(
                 f"{label}: publication extension evidence requires assembled_core with canonical archive, version and SHA-256")
+        project = data.get("project")
+        selected = support.get("extensions", {}).get(project)
+        if selected is None:
+            selected = next((details for candidate, details in support["extensions"].items()
+                             if data.get("component") in details.get("sql_names", [])), None)
+        if not isinstance(selected, dict):
+            raise CoverageError(f"{label}: publication extension evidence names an undeclared project")
+        if project is not None and support["extensions"].get(project) is not selected:
+            raise CoverageError(f"{label}: publication extension project does not match its SQL name")
+        required_projects = selected.get("requires", [])
+        prerequisites = data.get("prerequisite_archives", [] if not required_projects else None)
+        if not isinstance(prerequisites, list) or len(prerequisites) != len(required_projects):
+            raise CoverageError(f"{label}: publication extension evidence must bind every prerequisite archive")
+        seen_prerequisites = set()
+        for item, required_project in zip(prerequisites, required_projects):
+            if (not isinstance(item, dict)
+                    or set(item) != {"project", "archive", "version", "sha256"}
+                    or item.get("project") != required_project):
+                raise CoverageError(f"{label}: prerequisite archive projects do not match declared requirements")
+            prereq_version = item.get("version")
+            archive = item.get("archive")
+            checksum = item.get("sha256")
+            target_match = (re.fullmatch(
+                rf"{re.escape(archive_project_name(required_project))}-"
+                rf"{re.escape(str(prereq_version))}-postgresql-(\d+\.\d+(?:-to-\d+\.\d+)?)-"
+                rf"{re.escape(platform)}\.tar\.gz", archive)
+                if isinstance(archive, str) and isinstance(prereq_version, str) else None)
+            target_covers_pg = False
+            if target_match:
+                target = target_match.group(1)
+                if "-to-" in target:
+                    low, high = target.split("-to-", 1)
+                    target_covers_pg = (version_parts(low, "prerequisite range")
+                                        <= version_parts(pg_version, "target")
+                                        <= version_parts(high, "prerequisite range"))
+                else:
+                    target_covers_pg = target == pg_version
+            canonical = (isinstance(prereq_version, str)
+                         and prereq_version in support["extensions"].get(required_project, {}).get("versions", {})
+                         and target_covers_pg)
+            if (not canonical or required_project in seen_prerequisites
+                    or not isinstance(checksum, str) or not SHA256.fullmatch(checksum)):
+                raise CoverageError(f"{label}: prerequisite archive reference is invalid for {required_project}")
+            seen_prerequisites.add(required_project)
     if profile is not None and platform not in profile["platforms"]:
         raise CoverageError(f"{label}: platform is not supported by registered profile")
     if data["outcome"] == "passed":
@@ -450,7 +494,7 @@ def validate_verification_record(data, support, root, label="verification record
 
 
 def verified(records, download, component, version, platform, pg_version, endpoint,
-             assembled_core_sha256=None):
+             assembled_core_sha256=None, prerequisite_archives=None):
     return any(r.get("outcome") == "passed"
                and r.get("scope") == "publication"
                and r.get("_profile_current") is True
@@ -463,10 +507,42 @@ def verified(records, download, component, version, platform, pg_version, endpoi
                    and isinstance(r["assembled_core"].get("sha256"), str)
                    and r["assembled_core"]["sha256"].lower() == assembled_core_sha256.lower()
                ))
+               and (prerequisite_archives is None or r.get("prerequisite_archives", []) == prerequisite_archives)
                for r in records)
 
 
-def classify_extension_targets(targets, downloads, records, core_downloads):
+def expected_prerequisite_archives(support, extension_downloads, project, pg_version, platform):
+    result = []
+    selected = support.get("extensions", {}).get(project)
+    if not isinstance(selected, dict):
+        return None
+    required_projects = selected.get("requires", [])
+    if not isinstance(required_projects, list):
+        return None
+    for prerequisite in required_projects:
+        if prerequisite not in support["extensions"]:
+            return None
+        candidates = []
+        for sql_name in support["extensions"][prerequisite]["sql_names"]:
+            matches = [(key, download) for key, download in extension_downloads.items()
+                       if key[0] == sql_name and key[4] == platform
+                       and version_parts(key[2], "prerequisite range") <= version_parts(pg_version, "target")
+                       <= version_parts(key[3], "prerequisite range")]
+            if len(matches) != 1:
+                return None
+            candidates.append(matches[0])
+        references = {(key[1], download["url"], download["sha256"].lower())
+                      for key, download in candidates}
+        if len(references) != 1:
+            return None
+        version, url, checksum = references.pop()
+        filename = url.rsplit("/", 1)[-1]
+        result.append({"project": prerequisite, "archive": filename,
+                       "version": version, "sha256": checksum})
+    return result
+
+
+def classify_extension_targets(targets, downloads, records, core_downloads, support=None):
     without_download, awaiting_verification = [], []
     for name, version, pg, platform in sorted(targets):
         matching = [(key, download) for key, download in downloads.items()
@@ -483,9 +559,17 @@ def classify_extension_targets(targets, downloads, records, core_downloads):
             core_download = core_downloads.get((pg_endpoint, platform))
             if core_download is None:
                 continue
+            project = next((project for project, details in support["extensions"].items()
+                            if name in details["sql_names"]), None) if support else None
+            prerequisites = (expected_prerequisite_archives(
+                support, downloads, project, pg_endpoint, platform)
+                if project else [])
+            if prerequisites is None:
+                continue
             for os_endpoint in ("minimum", "current"):
                 if verified(records, download, name, version, platform, pg_endpoint, os_endpoint,
-                            assembled_core_sha256=core_download["sha256"]):
+                            assembled_core_sha256=core_download["sha256"],
+                            prerequisite_archives=prerequisites):
                     verified_endpoints.append((pg_endpoint, os_endpoint))
         if len(verified_endpoints) != len(endpoints) * 2:
             awaiting_verification.append((name, version, pg, platform))
@@ -515,7 +599,7 @@ def main():
                 for endpoint in ("minimum", "current")))
         missing_core = sorted(core_without_download + core_awaiting_verification)
         extension_without_download, extension_awaiting_verification = classify_extension_targets(
-            want_ext, have_ext, records, have_core)
+            want_ext, have_ext, records, have_core, support)
         missing_ext = sorted(extension_without_download + extension_awaiting_verification)
         outcome_records = {
             outcome: [{"record": r["_record_file"],

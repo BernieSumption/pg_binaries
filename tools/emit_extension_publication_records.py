@@ -43,9 +43,62 @@ def _metadata(path, project_name, version, platform, archive_target, sql_names):
             _fail("extension archive build version is outside its filename range")
     elif build_version != archive_target:
         _fail("extension archive build version does not match its filename")
+    requires = metadata.get("requires", [])
+    if (not isinstance(requires, list) or any(not isinstance(value, str) or not value for value in requires)
+            or len(requires) != len(set(requires))):
+        _fail("extension archive metadata requires must be a unique array of project names")
+    return requires
 
 
-def emit(root, archives, core_archives, receipt_path, output):
+def _prerequisite_archive(path, project, pg_version, platform, support):
+    try:
+        with tarfile.open(path, "r:gz") as archive:
+            member = next((m for m in archive.getmembers()
+                           if m.name == "metadata.json" and m.isfile() and m.size <= 1024 * 1024), None)
+            if member is None:
+                _fail(f"prerequisite archive {path.name} requires metadata.json")
+            metadata = json.loads(archive.extractfile(member).read().decode("utf-8"))
+    except (OSError, tarfile.TarError, UnicodeError, json.JSONDecodeError) as exc:
+        _fail(f"cannot read prerequisite archive metadata: {exc}")
+    if project not in support["extensions"]:
+        _fail(f"unknown prerequisite project {project}")
+    project_name = coverage.archive_project_name(project)
+    match = re.fullmatch(
+        rf"{re.escape(project_name)}-([A-Za-z0-9.+_-]+)-postgresql-"
+        rf"(\d+\.\d+(?:-to-\d+\.\d+)?)-{re.escape(platform)}\.tar\.gz", path.name)
+    if not match:
+        _fail(f"prerequisite archive has a noncanonical filename: {path.name}")
+    version, target = match.groups()
+    if (version not in support["extensions"][project]["versions"]
+            or not isinstance(metadata, dict)
+            or metadata.get("project") != project_name
+            or metadata.get("version") != version
+            or metadata.get("platform") != "linux"
+            or metadata.get("architecture") != platform.split("-", 1)[1]
+            or not isinstance(metadata.get("postgresql_version"), str)
+            or not re.fullmatch(r"\d+\.\d+", metadata["postgresql_version"])):
+        _fail(f"prerequisite archive metadata does not match {project} {version} {platform}")
+    if "-to-" in target:
+        low, high = target.split("-to-", 1)
+        if not (coverage.version_parts(low, "prerequisite range")
+                <= coverage.version_parts(pg_version, "tested PostgreSQL version")
+                <= coverage.version_parts(high, "prerequisite range")):
+            _fail(f"prerequisite archive {path.name} does not cover PostgreSQL {pg_version}")
+        if not (coverage.version_parts(low, "prerequisite range")
+                <= coverage.version_parts(metadata["postgresql_version"], "prerequisite build version")
+                <= coverage.version_parts(high, "prerequisite range")):
+            _fail(f"prerequisite archive metadata build is outside its filename range")
+    elif target != pg_version:
+        _fail(f"prerequisite archive {path.name} targets PostgreSQL {target}, not {pg_version}")
+    elif metadata["postgresql_version"] != target:
+        _fail(f"prerequisite archive metadata does not match PostgreSQL target {target}")
+    sql_names = support["extensions"][project]["sql_names"]
+    if metadata.get("sql_names") != sql_names:
+        _fail(f"prerequisite archive metadata does not match declared SQL names for {project}")
+    return {"project": project, "archive": path.name, "version": version}
+
+
+def emit(root, archives, core_archives, receipt_path, output, prerequisite_archives=None):
     root, archives, core_archives, output = map(Path, (root, archives, core_archives, output))
     receipt = coverage.load_json(Path(receipt_path))
     if not isinstance(receipt, dict):
@@ -54,7 +107,7 @@ def emit(root, archives, core_archives, receipt_path, output):
                 "postgresql_version", "architecture", "endpoint", "kernel_release",
                 "distribution", "distribution_version", "image_id", "clean_system",
                 "dependency_check_profile", "dependency_checks_passed", "case_results",
-                "extension_archive", "archives", "ci")
+                "extension_archive", "archives", "prerequisite_archives", "ci")
     missing = [key for key in required if key not in receipt]
     if missing:
         _fail(f"receipt is missing fields: {', '.join(missing)}")
@@ -161,8 +214,32 @@ def emit(root, archives, core_archives, receipt_path, output):
             _fail(f"receipt checksum does not match {name}")
         _sidecar(directory / f"{name}.sha256", name, digest)
         digests[name] = digest
-    _metadata(archives / extension_name, project_name, version, platform,
-              match.group(1), selected["sql_names"])
+    required_projects = _metadata(archives / extension_name, project_name, version, platform,
+                                  match.group(1), selected["sql_names"])
+    if required_projects != selected.get("requires", []):
+        _fail("extension archive prerequisites do not match declared support")
+    supplied_prerequisites = prerequisite_archives or {}
+    receipt_prerequisites = receipt["prerequisite_archives"]
+    if not isinstance(receipt_prerequisites, list):
+        _fail("prerequisite_archives must be an array")
+    if required_projects and set(supplied_prerequisites) != set(required_projects):
+        _fail("prerequisite archives must identify exactly the required projects")
+    if not required_projects and supplied_prerequisites:
+        _fail("prerequisite archives were supplied for a project with no prerequisites")
+    if len(receipt_prerequisites) != len(required_projects):
+        _fail("receipt must name exactly the required prerequisite archives")
+    prerequisite_records = []
+    for prerequisite, claimed_reference in zip(required_projects, receipt_prerequisites):
+        path = Path(supplied_prerequisites[prerequisite])
+        reference = _prerequisite_archive(path, prerequisite, pg_version, platform, support)
+        digest = sha256_file(path)
+        _sidecar(path.with_name(path.name + ".sha256"), path.name, digest)
+        reference["sha256"] = digest
+        if claimed_reference != reference:
+            _fail(f"receipt prerequisite archive claim does not match {path.name}")
+        prerequisite_records.append(reference)
+    if not required_projects and receipt_prerequisites != []:
+        _fail("receipt contains unexpected prerequisite archives")
     record = {
         "schema_version": 2, "scope": "publication", "profile_id": profile["profile_id"],
         "profile_revision": receipt["profile_revision"], "test_cases": profile["case_ids"],
@@ -170,6 +247,7 @@ def emit(root, archives, core_archives, receipt_path, output):
         "sha256": digests[extension_name],
         "assembled_core": {"archive": core_name, "sha256": digests[core_name],
                            "version": pg_version},
+        "prerequisite_archives": prerequisite_records,
         "project": project, "version": version, "platform": platform,
         "postgresql_version": pg_version,
         "environment": {
@@ -202,9 +280,18 @@ def main():
     parser.add_argument("--core-archives", type=Path, required=True)
     parser.add_argument("--receipt", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--prerequisite-archive", action="append", default=[], metavar="PROJECT=PATH",
+                        help="checksum-bind one required extension project archive")
     args = parser.parse_args()
     try:
-        for path in emit(args.root, args.archives, args.core_archives, args.receipt, args.output):
+        prerequisites = {}
+        for value in args.prerequisite_archive:
+            project, separator, path = value.partition("=")
+            if not separator or not project or not path or project in prerequisites:
+                raise coverage.CoverageError("prerequisite archive must be unique PROJECT=PATH")
+            prerequisites[project] = Path(path)
+        for path in emit(args.root, args.archives, args.core_archives, args.receipt, args.output,
+                         prerequisites):
             print(path)
         return 0
     except (coverage.CoverageError, OSError, ValueError, TypeError) as exc:

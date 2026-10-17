@@ -114,6 +114,30 @@
       "platforms": ["linux-arm64"],
       "case_ids": ["archive-suite"],
       "sources": [".github/workflows/linux-publication.yml", "scripts/linux/qemu-kernel-515.Dockerfile", "scripts/postgis/probe.sql", "scripts/postgis/qemu-kernel-515-guest.sh", "scripts/postgis/qemu-kernel-515.sh", "scripts/postgis/verify-in-container.sh", "scripts/qemu/arm64-515.Dockerfile", "tools/check_elf_dependencies.py", "tools/check_postgis_license_inventory.py", "tools/create_extension_publication_receipt.py", "tools/create_linux_publication_receipt.py", "tools/emit_extension_publication_records.py"]
+    },
+    "tiger-publication-current-x86_64": {
+      "scope": "publication",
+      "platforms": ["linux-x86_64"],
+      "case_ids": ["archive-suite"],
+      "sources": [".github/workflows/linux-publication.yml", "scripts/postgis/verify.Dockerfile", "scripts/tiger/probe.sql", "scripts/tiger/verify-in-container.sh", "scripts/tiger/verify.sh", "tools/check_elf_dependencies.py", "tools/create_extension_publication_receipt.py", "tools/emit_extension_publication_records.py"]
+    },
+    "tiger-publication-current-arm64": {
+      "scope": "publication",
+      "platforms": ["linux-arm64"],
+      "case_ids": ["archive-suite"],
+      "sources": [".github/workflows/linux-publication.yml", "scripts/postgis/verify.Dockerfile", "scripts/tiger/probe.sql", "scripts/tiger/verify-in-container.sh", "scripts/tiger/verify.sh", "tools/check_elf_dependencies.py", "tools/create_extension_publication_receipt.py", "tools/emit_extension_publication_records.py"]
+    },
+    "tiger-publication-minimum-x86_64": {
+      "scope": "publication",
+      "platforms": ["linux-x86_64"],
+      "case_ids": ["archive-suite"],
+      "sources": [".github/workflows/linux-publication.yml", "scripts/linux/qemu-kernel-515.Dockerfile", "scripts/postgis/qemu-kernel-515.sh", "scripts/tiger/probe.sql", "scripts/tiger/qemu-kernel-515-guest.sh", "scripts/tiger/verify-in-container.sh", "tools/check_elf_dependencies.py", "tools/create_extension_publication_receipt.py", "tools/emit_extension_publication_records.py"]
+    },
+    "tiger-publication-minimum-arm64": {
+      "scope": "publication",
+      "platforms": ["linux-arm64"],
+      "case_ids": ["archive-suite"],
+      "sources": [".github/workflows/linux-publication.yml", "scripts/postgis/qemu-kernel-515.sh", "scripts/qemu/arm64-515.Dockerfile", "scripts/tiger/probe.sql", "scripts/tiger/qemu-kernel-515-guest.sh", "scripts/tiger/verify-in-container.sh", "tools/check_elf_dependencies.py", "tools/create_extension_publication_receipt.py", "tools/emit_extension_publication_records.py"]
     }
   }
 }

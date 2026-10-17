@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-archives=${1:?usage: qemu-kernel-515.sh CORE_ARCHIVES PG_VERSION WORK_DIRECTORY POSTGIS_ARCHIVES}
-pg_version=${2:?usage: qemu-kernel-515.sh CORE_ARCHIVES PG_VERSION WORK_DIRECTORY POSTGIS_ARCHIVES}
+archives=${1:?usage: qemu-kernel-515.sh CORE_ARCHIVES PG_VERSION WORK_DIRECTORY POSTGIS_ARCHIVES [TIGER_ARCHIVES]}
+pg_version=${2:?usage: qemu-kernel-515.sh CORE_ARCHIVES PG_VERSION WORK_DIRECTORY POSTGIS_ARCHIVES [TIGER_ARCHIVES]}
 work=${3:?}
 ext_archives=${4:?}
+tiger_archives=${5:-}
 architecture=${PG_ARCHITECTURE:?}
 case "$architecture" in
  x86_64) machine=x86_64; image_name=ubuntu-22.04-server-cloudimg-amd64-disk-kvm.img; image_sha256=e3297e0aa6c408ac90d854348465d3991c65159b444c4ef9016f52f6807290e3 ;;
@@ -116,9 +117,20 @@ printf 'guest_root_filesystem_bytes=%s\n' "$guest_root_bytes" >> "$evidence/envi
 
 pg_archive="postgresql-${pg_version}-linux-${architecture}.tar.gz"
 postgis_archive="postgis-3.6.4-postgresql-${pg_version}-linux-${architecture}.tar.gz"
-sha256sum "$archives/$pg_archive" "$ext_archives/$postgis_archive" > "$evidence/archive-checksums.sha256"
-scp "${scp_args[@]}" "$archives/$pg_archive" "$archives/$pg_archive.sha256" "$ext_archives/$postgis_archive" "$ext_archives/$postgis_archive.sha256" smoke@127.0.0.1:/tmp/
-scp "${scp_args[@]}" /repo/scripts/postgis/verify-in-container.sh /repo/scripts/postgis/probe.sql /repo/scripts/postgis/qemu-kernel-515-guest.sh /repo/tools/check_elf_dependencies.py /repo/tools/check_postgis_license_inventory.py /repo/support.json smoke@127.0.0.1:/tmp/
+archive_paths=("$archives/$pg_archive" "$ext_archives/$postgis_archive")
+transfer_paths=("$archives/$pg_archive" "$archives/$pg_archive.sha256" "$ext_archives/$postgis_archive" "$ext_archives/$postgis_archive.sha256")
+if [[ -n $tiger_archives ]]; then
+  tiger_archive="postgis_tiger_geocoder-2025.2-postgresql-${pg_version}-linux-${architecture}.tar.gz"
+  archive_paths+=("$tiger_archives/$tiger_archive")
+  transfer_paths+=("$tiger_archives/$tiger_archive" "$tiger_archives/$tiger_archive.sha256")
+fi
+sha256sum "${archive_paths[@]}" > "$evidence/archive-checksums.sha256"
+scp "${scp_args[@]}" "${transfer_paths[@]}" smoke@127.0.0.1:/tmp/
+if [[ -n $tiger_archives ]]; then
+  scp "${scp_args[@]}" /repo/scripts/tiger/verify-in-container.sh /repo/scripts/tiger/probe.sql /repo/scripts/tiger/qemu-kernel-515-guest.sh /repo/tools/check_elf_dependencies.py /repo/support.json smoke@127.0.0.1:/tmp/
+else
+  scp "${scp_args[@]}" /repo/scripts/postgis/verify-in-container.sh /repo/scripts/postgis/probe.sql /repo/scripts/postgis/qemu-kernel-515-guest.sh /repo/tools/check_elf_dependencies.py /repo/tools/check_postgis_license_inventory.py /repo/support.json smoke@127.0.0.1:/tmp/
+fi
 ssh "${ssh_args[@]}" smoke@127.0.0.1 "bash /tmp/qemu-kernel-515-guest.sh '$architecture'" | tee "$evidence/full-verifier.log"
 
 ssh "${ssh_args[@]}" smoke@127.0.0.1 'sudo shutdown -h now' || true

@@ -18,7 +18,7 @@ def create(root, archives, core_archives, receipt_path, profile_id, project,
            version, postgresql_version, archive_target, architecture, endpoint,
            kernel_release, distribution, distribution_version, image_id,
            dependency_check_result, clean_system, step_results_path,
-           environ=None):
+           environ=None, prerequisite_archives=None):
     root, archives, core_archives, receipt_path = map(
         Path, (root, archives, core_archives, receipt_path))
     environ = os.environ if environ is None else environ
@@ -52,6 +52,25 @@ def create(root, archives, core_archives, receipt_path, profile_id, project,
     core_name = f"postgresql-{postgresql_version}-{platform}.tar.gz"
     hashes = {extension_name: _sha256(archives / extension_name),
               core_name: _sha256(core_archives / core_name)}
+    support = coverage.load_json(root / "support.json")
+    selected = support.get("extensions", {}).get(project)
+    if not isinstance(selected, dict):
+        raise coverage.CoverageError("extension project is absent from declared support")
+    required_projects = emit_extension_publication_records._metadata(
+        archives / extension_name, slug, version, platform, archive_target,
+        selected["sql_names"])
+    if required_projects != selected.get("requires", []):
+        raise coverage.CoverageError("extension archive prerequisites do not match declared support")
+    supplied_prerequisites = prerequisite_archives or {}
+    if set(supplied_prerequisites) != set(required_projects):
+        raise coverage.CoverageError("prerequisite archives must identify exactly the required projects")
+    prerequisite_records = []
+    for prerequisite in required_projects:
+        path = Path(supplied_prerequisites[prerequisite])
+        reference = emit_extension_publication_records._prerequisite_archive(
+            path, prerequisite, postgresql_version, platform, support)
+        reference["sha256"] = _sha256(path)
+        prerequisite_records.append(reference)
     dep_passed = dependency_check_result == "success"
     outcome = ("failed" if "failed" in results.values()
                else "skipped" if "skipped" in results.values() else "passed")
@@ -77,6 +96,7 @@ def create(root, archives, core_archives, receipt_path, profile_id, project,
         "case_results": results,
         "extension_archive": extension_name,
         "archives": hashes,
+        "prerequisite_archives": prerequisite_records,
         "ci": {
             "provider": "github-actions",
             "run_id": run_id,
@@ -91,7 +111,8 @@ def create(root, archives, core_archives, receipt_path, profile_id, project,
         candidate = Path(temporary) / "receipt.json"
         candidate.write_text(json.dumps(receipt), encoding="utf-8")
         emit_extension_publication_records.emit(
-            root, archives, core_archives, candidate, Path(temporary) / "records")
+            root, archives, core_archives, candidate, Path(temporary) / "records",
+            supplied_prerequisites)
     receipt_path.write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n",
                             encoding="utf-8")
     return receipt_path
@@ -117,14 +138,23 @@ def main():
     parser.add_argument("--dependency-check-result", choices=("success", "failure"), required=True)
     parser.add_argument("--clean-system", choices=("true", "false"), required=True)
     parser.add_argument("--step-results", type=Path, required=True)
+    parser.add_argument("--prerequisite-archive", action="append", default=[], metavar="PROJECT=PATH",
+                        help="checksum-bind one required extension project archive")
     args = parser.parse_args()
     try:
+        prerequisites = {}
+        for value in args.prerequisite_archive:
+            project, separator, path = value.partition("=")
+            if not separator or not project or not path or project in prerequisites:
+                raise coverage.CoverageError("prerequisite archive must be unique PROJECT=PATH")
+            prerequisites[project] = Path(path)
         print(create(args.root, args.archives, args.core_archives, args.receipt,
                      args.profile_id, args.project, args.version, args.postgresql_version,
                      args.archive_target or args.postgresql_version, args.architecture,
                      args.endpoint, args.kernel_release, args.distribution,
                      args.distribution_version, args.image_id, args.dependency_check_result,
-                     args.clean_system == "true", args.step_results))
+                     args.clean_system == "true", args.step_results,
+                     prerequisite_archives=prerequisites))
         return 0
     except (coverage.CoverageError, OSError, ValueError, TypeError) as exc:
         print(f"extension publication receipt: {exc}", file=sys.stderr)

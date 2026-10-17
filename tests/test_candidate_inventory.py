@@ -211,7 +211,6 @@ class CandidateInventoryTests(unittest.TestCase):
                                             {"as_of": "2026-01-01", "source": "https://example.test/releases",
                                              "releases": [{"version": "15.9", "release_date": "2025-09-25"}]},
                                             root=self.root)
-
         records[0].pop("assembled_core")
         with self.assertRaisesRegex(candidate_inventory.CandidateError, "missing passed minimum verification"):
             candidate_inventory.merge_candidate(base, [extension], self.support,
@@ -226,10 +225,35 @@ class CandidateInventoryTests(unittest.TestCase):
                                                  "releases": [{"version": "15.9", "release_date": "2025-09-25"}]},
                                                 root=self.root)
 
+    def test_extension_evidence_must_match_required_archive_checksum(self):
+        support = dict(self.support, extensions={
+            "Example": {"sql_names": ["example"], "requires": ["Required"],
+                        "versions": {"1.0": {"postgresql_minimum_major": 15}}},
+            "Required": {"sql_names": ["required"], "requires": [],
+                         "versions": {"2.0": {"postgresql_minimum_major": 15}}},
+        })
+        url = "https://github.com/BernieSumption/pg_binaries/releases/download/catalog-20261016-1/example-1.0-postgresql-15.9-linux-x86_64.tar.gz"
+        record = self.evidence(url, "b" * 64, "minimum", "15.9")
+        record.update({"component": "example", "version": "1.0", "postgresql_version": "15.9",
+                       "assembled_core": self.core_reference("15.9")})
+        prerequisite = [{"project": "Required",
+                         "archive": "required-2.0-postgresql-15.9-linux-x86_64.tar.gz",
+                         "version": "2.0", "sha256": "c" * 64}]
+        matches = candidate_inventory._evidence_matches(
+            record, {"sha256": "b" * 64}, "example", "1.0", "linux-x86_64", "15.9",
+            "minimum", support, self.root, expected_core=self.core_reference("15.9"),
+            expected_prerequisites=prerequisite)
+        self.assertFalse(matches)
+        record["prerequisite_archives"] = prerequisite
+        self.assertTrue(candidate_inventory._evidence_matches(
+            record, {"sha256": "b" * 64}, "example", "1.0", "linux-x86_64", "15.9",
+            "minimum", support, self.root, expected_core=self.core_reference("15.9"),
+            expected_prerequisites=prerequisite))
+
     def test_project_proposal_fans_one_archive_out_to_all_sql_names(self):
         names = ["postgis", "postgis_raster", "postgis_sfcgal", "postgis_topology"]
         support = dict(self.support, extensions={"PostGIS": {
-            "sql_names": names, "requires": ["postgis"],
+            "sql_names": names, "requires": [],
             "versions": {"3.6.4": {"postgresql_minimum_major": 15}}}})
         filename = "postgis-3.6.4-postgresql-15.9-linux-x86_64.tar.gz"
         url = "https://github.com/BernieSumption/pg_binaries/releases/download/catalog-20261016-4/" + filename
@@ -259,7 +283,7 @@ class CandidateInventoryTests(unittest.TestCase):
             "https://github.com/BernieSumption/pg_binaries/releases/download/catalog-20261016-1/postgresql-15.10-linux-x86_64.tar.gz",
         })
         self.assertEqual(result["verification_evidence"][url], records)
-        self.assertTrue(all(result["extensions"][name]["3.6.4"]["requires"] == ["postgis"]
+        self.assertTrue(all(result["extensions"][name]["3.6.4"]["requires"] == []
                             for name in names))
 
         missing_name_evidence = dict(proposal, verification=records[:-4])

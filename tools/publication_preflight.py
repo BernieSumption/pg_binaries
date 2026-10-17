@@ -60,7 +60,8 @@ def _candidate_targets(inventory):
 
 
 def _verification_matches(record, *, checksum, component, version, platform, pg_version,
-                          endpoint, support, root, expected_core=None):
+                          endpoint, support, root, expected_core=None,
+                          expected_prerequisites=None):
     if not isinstance(record, dict):
         return False
     try:
@@ -78,6 +79,8 @@ def _verification_matches(record, *, checksum, component, version, platform, pg_
         and record["assembled_core"].get("version") == expected_core["version"]
         and isinstance(record["assembled_core"].get("sha256"), str)
         and record["assembled_core"]["sha256"].lower() == expected_core["sha256"].lower())
+    prerequisite_matches = (expected_prerequisites is None or
+                            record.get("prerequisite_archives", []) == expected_prerequisites)
     return (record.get("schema_version") == 2 and record.get("scope") == "publication"
             and record.get("outcome") == "passed"
             and record.get("sha256", "").lower() == checksum.lower()
@@ -89,15 +92,17 @@ def _verification_matches(record, *, checksum, component, version, platform, pg_
             and environment.get("clean_system") is True
             and ((endpoint == "minimum" and actual_os == minimum_os)
                  or (endpoint == "current" and actual_os > minimum_os))
-            and core_matches)
+            and core_matches and prerequisite_matches)
 
 
 def _require_verification(records, *, checksum, component, version, platform, pg_version,
-                          endpoint, support, root, expected_core=None):
+                          endpoint, support, root, expected_core=None,
+                          expected_prerequisites=None):
     if not any(_verification_matches(
             record, checksum=checksum, component=component, version=version,
             platform=platform, pg_version=pg_version, endpoint=endpoint,
-            support=support, root=root, expected_core=expected_core)
+            support=support, root=root, expected_core=expected_core,
+            expected_prerequisites=expected_prerequisites)
             for record in records):
         raise PreflightError(
             f"new archive requires passed current-profile publication verification for "
@@ -459,13 +464,19 @@ def preflight_candidate(base_inventory, candidate, support, snapshot, staged_ass
                         "version": pg_version,
                         "sha256": core["sha256"],
                     }
+                    expected_prerequisites = _coverage.expected_prerequisite_archives(
+                        support, candidate_extensions, project, pg_version, platform)
+                    if expected_prerequisites is None:
+                        raise PreflightError(
+                            f"extension verification requires candidate prerequisite archives for {project} PostgreSQL {pg_version} {platform}")
                     for sql_name in sql_names:
                         for endpoint in ("minimum", "current"):
                             _require_verification(
                                 records, checksum=candidate_refs[url], component=sql_name,
                                 version=version, platform=platform, pg_version=pg_version,
                                 endpoint=endpoint, support=support, root=root,
-                                expected_core=expected_core_ref)
+                                expected_core=expected_core_ref,
+                                expected_prerequisites=expected_prerequisites)
 
     for url, checksum in candidate_refs.items():
         if url in base_refs and checksum != base_refs[url]:
