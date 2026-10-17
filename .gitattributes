@@ -1,3 +1,5 @@
 # Auto detect text files and perform LF normalization
 * text=auto
 support/evidence/windows-*/debug-symbols-index.json -text
+support/evidence/windows-publication-*/*.json -text
+support/verification/*windows-x86_64-current-*.json -text
