@@ -38,7 +38,7 @@ for k,v in {'component':'pg_cron','version':'1.6.8','payload_paths':['lib/pg_cro
 r=c.get('redistribution_review',{})
 if r.get('status')!='resolved' or r.get('source_obligation')!='none' or not r.get('basis'): raise SystemExit('redistribution review is incomplete')
 license=(root/'pg_cron/LICENSES/pg_cron.txt').read_text()
-for text in ('Permission to use, copy, modify, and distribute this software','provided that the above copyright notice and this','THE AUTHORS SPECIFICALLY DISCLAIM ANY WARRANTIES'):
+for text in ('Permission to use, copy, modify, and distribute this software','provided that the above copyright notice and this','CITUS DATA SPECIFICALLY DISCLAIMS ANY WARRANTIES'):
  if text not in license: raise SystemExit('upstream licence notice incomplete')
 if {p.stem for p in (root/'pg_cron/share/extension').glob('*.control')}!={'pg_cron'}: raise SystemExit('unexpected SQL extensions')
 if not (root/'pg_cron/lib/pg_cron.so').is_file(): raise SystemExit('missing pg_cron.so')

@@ -10,17 +10,20 @@ on:
       - 'support.json'
       - 'support/postgresql-releases.json'
   workflow_dispatch:
+    inputs:
+      architecture:
+        description: Native runner architecture
+        required: true
+        default: x86_64
+        type: choice
+        options: [x86_64, arm64]
 jobs:
   verify:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - architecture: x86_64
-            runner: ubuntu-24.04
-          - architecture: arm64
-            runner: ubuntu-24.04-arm
-    runs-on: ${{ matrix.runner }}
+        architecture: ${{ fromJSON(github.event_name == 'push' && '["x86_64"]' || format('["{0}"]', inputs.architecture)) }}
+    runs-on: ${{ matrix.architecture == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-24.04' }}
     timeout-minutes: 75
     permissions:
       actions: read

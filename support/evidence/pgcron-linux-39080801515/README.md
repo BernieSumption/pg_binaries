@@ -1,0 +1,5 @@
+# pg_cron 1.6.8 Linux feasibility attempt
+
+[Run 39080801515](https://github.com/BernieSumption/pg_binaries/actions/runs/39080801515) built PostgreSQL 18.6 and unmodified pg_cron 1.6.8 on native x86-64 and arm64 runners, but both relocated Alpine verifiers stopped before static analysis and SQL execution. The verifier expected a generic warranty-disclaimer phrase, while the [packaged upstream licence](https://github.com/citusdata/pg_cron/blob/v1.6.8/LICENSE) names Citus Data. This was a test error; the builders passed and the upstream source was not changed. The verifier now checks the actual upstream phrase.
+
+The built extension archive SHA-256 values were `6617e56730732f5d39cfc727883727518c241b5e7be481628805273eceea32bc` on x86-64 and `b834e24b2c403daaf9381b7bef327cc5207104e6c7fe657280c64e29809ea32f` on arm64. The [x86-64 attempt](x86_64/attempt.json) and [arm64 attempt](arm64/attempt.json) retain each step outcome. The binary archives remain temporary CI artifacts. These results establish successful source compilation only; they do not establish relocation, ELF closure or scheduled-job behavior.
