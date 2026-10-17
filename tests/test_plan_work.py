@@ -126,7 +126,7 @@ class PlanWorkTests(unittest.TestCase):
             "sources": ["tests/fixture.sh"]}}}
         self.write("support/verification-profiles.json", profile_registry)
         profile = plan_work.coverage.verification_profile(self.root, "fixture-linux")
-        for endpoint in ("minimum", "current"):
+        for endpoint in ("current",):
             record = {"schema_version": 2, "scope": profile["scope"], "profile_id": profile["profile_id"],
                       "profile_revision": profile["profile_revision"], "outcome": "passed", "sha256": checksum, "component": "postgresql",
                       "version": "15.9", "platform": platform, "postgresql_version": "15.9",
@@ -144,7 +144,7 @@ class PlanWorkTests(unittest.TestCase):
         profile_sources.write_text("changed suite", encoding="utf-8")
         stale = plan_work.plan(self.root)
         self.assertIn(["15.9", platform], stale["verify_downloaded"]["core"])
-        self.assertEqual(stale["stale_verification_records"], 2)
+        self.assertEqual(stale["stale_verification_records"], 1)
 
     def test_output_is_stable(self):
         first = plan_work.plan(self.root)
@@ -238,42 +238,41 @@ class PlanWorkTests(unittest.TestCase):
         with self.assertRaisesRegex(plan_work.coverage.CoverageError, "architecture must be"):
             plan_work.select_next_linux_pilot(self.root, "ppc64le")
 
-    def test_next_linux_pilot_skips_only_with_paired_current_matching_pilot_evidence(self):
+    def test_next_linux_pilot_skips_with_current_pilot_evidence_only(self):
         snapshot = {"as_of": "2026-01-01", "source": "https://example.test/releases",
                     "support_status": {"source": "https://example.test/support", "as_of": "2026-01-01", "supported_majors": [15, 18]},
                     "releases": [{"version": "15.9", "release_date": "2025-09-25"},
                                  {"version": "18.2", "release_date": "2025-09-25"}]}
         self.write("support/postgresql-releases.json", snapshot)
         checksum = "c" * 64
-        passing_pair = [("18.2", endpoint, checksum, "passed", "postgresql", "18.2",
-                         "linux-x86_64") for endpoint in ("minimum", "current")]
-        self.write_pilot_records(passing_pair)
+        current_record = [("18.2", "current", checksum, "passed", "postgresql", "18.2",
+                           "linux-x86_64")]
+        self.write_pilot_records(current_record)
         self.assertEqual(plan_work.select_next_linux_pilot(self.root)["postgresql_version"], "15.9")
 
         cases = {
-            "single endpoint": passing_pair[:1],
-            "different checksums": [passing_pair[0], ("18.2", "current", "d" * 64,
-                "passed", "postgresql", "18.2", "linux-x86_64")],
-            "failed outcome": [("18.2", endpoint, checksum, "failed", "postgresql", "18.2",
-                "linux-x86_64") for endpoint in ("minimum", "current")],
-            "unrelated component": [("18.2", endpoint, checksum, "passed", "example", "18.2",
-                "linux-x86_64") for endpoint in ("minimum", "current")],
-            "unrelated PostgreSQL version": [("18.2", endpoint, checksum, "passed", "postgresql", "15.9",
-                "linux-x86_64") for endpoint in ("minimum", "current")],
-            "unrelated platform": [("18.2", endpoint, checksum, "passed", "postgresql", "18.2",
-                "linux-arm64") for endpoint in ("minimum", "current")],
+            "minimum only is historical": [("18.2", "minimum", checksum, "passed", "postgresql", "18.2",
+                "linux-x86_64")],
+            "failed outcome": [("18.2", "current", checksum, "failed", "postgresql", "18.2",
+                "linux-x86_64")],
+            "unrelated component": [("18.2", "current", checksum, "passed", "example", "18.2",
+                "linux-x86_64")],
+            "unrelated PostgreSQL version": [("18.2", "current", checksum, "passed", "postgresql", "15.9",
+                "linux-x86_64")],
+            "unrelated platform": [("18.2", "current", checksum, "passed", "postgresql", "18.2",
+                "linux-arm64")],
         }
         for label, records in cases.items():
             with self.subTest(label=label):
                 self.write_pilot_records(records)
-                self.assertEqual(plan_work.select_next_linux_pilot(self.root)["postgresql_version"], "18.2")
+            self.assertEqual(plan_work.select_next_linux_pilot(self.root)["postgresql_version"], "18.2")
         with self.subTest(label="stale profile"):
-            self.write_pilot_records(passing_pair, stale=True)
+            self.write_pilot_records(current_record, stale=True)
             self.assertEqual(plan_work.select_next_linux_pilot(self.root)["postgresql_version"], "18.2")
 
-        arm_pair = [("18.2", endpoint, checksum, "passed", "postgresql", "18.2",
-                     "linux-arm64") for endpoint in ("minimum", "current")]
-        self.write_pilot_records(arm_pair, architecture="arm64")
+        arm_record = [("18.2", "current", checksum, "passed", "postgresql", "18.2",
+                       "linux-arm64")]
+        self.write_pilot_records(arm_record, architecture="arm64")
         self.assertEqual(plan_work.select_next_linux_pilot(self.root, "arm64")["postgresql_version"], "15.9")
 
     def test_generic_pilot_selector_uses_declared_platform_and_current_macos_record(self):

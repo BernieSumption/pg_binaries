@@ -316,7 +316,7 @@ class CoverageTests(unittest.TestCase):
                 os_name, architecture = platform.split("-", 1)
                 minimum = support["os_support"][os_name]["minimum_version"]
                 current = {"macos": "12", "windows": "11", "linux": "6"}[os_name]
-                for endpoint in ("minimum", "current"):
+                for endpoint in ("current",):
                     os_version = minimum if endpoint == "minimum" else current
                     copy = dict(record, platform=platform,
                                 environment=dict(record["environment"], os=os_name,
@@ -522,7 +522,6 @@ class CoverageTests(unittest.TestCase):
                 ("wrong-architecture", {}, {"architecture": "arm64"}, "5.15", "minimum"),
                 ("unclean-pass", {}, {"clean_system": False}, "5.15", "minimum"),
                 ("minimum-too-new", {}, {}, "5.16", "minimum"),
-                ("current-equal", {}, {}, "5.15", "current"),
                 ("current-older", {}, {}, "5.14", "current"),
             ]
             for name, record_changes, environment_changes, version, endpoint in cases:

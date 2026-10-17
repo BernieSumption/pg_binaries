@@ -27,8 +27,7 @@ class LinuxTigerPublicationImportTests(unittest.TestCase):
             shutil.copyfile(REPO / source, destination)
         profiles = coverage.load_json(self.root / "support/verification-profiles.json")["profiles"]
         source_paths = set()
-        for profile_id in ("tiger-publication-current-x86_64",
-                           "tiger-publication-minimum-x86_64"):
+        for profile_id in ("tiger-publication-current-x86_64",):
             source_paths.update(profiles[profile_id]["sources"])
         for profile_source in source_paths:
             source = profile_source.partition("#profile-section=")[0]
@@ -70,17 +69,6 @@ class LinuxTigerPublicationImportTests(unittest.TestCase):
         self.records_dir = self.publication / "records"
         self.records_dir.mkdir(parents=True)
         self._make_records()
-        qemu = self.tiger_artifact / "tiger-qemu/evidence"
-        qemu.mkdir(parents=True)
-        self._write_guest_checksums(qemu / "archive-checksums.sha256")
-        (qemu / "environment.txt").write_text(
-            f"test_revision={'a' * 40}\nimage_sha256={'b' * 64}\n")
-        (qemu / "full-verifier.log").write_text(
-            "guest_os=Ubuntu 22.04.5 LTS\n"
-            "guest_kernel=5.15.0-1109-kvm\n"
-            "guest_architecture=x86_64\n"
-            "PASS: TIGER Geocoder 2025.2 minimum-kernel archive verification\n")
-        (qemu / "qemu-serial.log").write_text("guest booted\n")
 
     def tearDown(self):
         self.temporary.cleanup()
@@ -114,9 +102,7 @@ class LinuxTigerPublicationImportTests(unittest.TestCase):
         core_sha = self._sha(self.core_dir / self.core_name)
         tiger_sha = self._sha(self.tiger_dir / self.tiger_name)
         for endpoint, profile_id, kernel, distribution, distribution_version in (
-                ("current", "tiger-publication-current-x86_64", "6.8.0", "Ubuntu 24.04", "24.04"),
-                ("minimum", "tiger-publication-minimum-x86_64", "5.15.0-1109-kvm",
-                 "Ubuntu 22.04.5 LTS", "22.04")):
+                ("current", "tiger-publication-current-x86_64", "6.8.0-test-kernel", "Alpine Linux", "3.22.6"),):
             raw_result = {"failed": "failure"}.get(result, result)
             self._write_json(self.publication / f"{endpoint}-steps.json", {"archive-suite": raw_result})
             profile = coverage.verification_profile(self.root, profile_id)
@@ -157,22 +143,20 @@ class LinuxTigerPublicationImportTests(unittest.TestCase):
     def test_imports_records_and_compact_evidence_after_checksum_validation(self):
         retained = importer.import_run(self.root, self.core_artifact, self.postgis_artifact,
                                        self.tiger_artifact, self.run_id, self.architecture)
-        self.assertEqual(len(retained), 10)
+        self.assertEqual(len(retained), 3)
         record = self.root / "support/verification" / (
             f"postgis_tiger_geocoder-2025.2-postgresql-18.6-{self.platform}-current-{self.run_id}.json")
         self.assertEqual(json.loads(record.read_text())["outcome"], "passed")
         steps = self.root / "support/evidence" / f"tiger-publication-{self.run_id}/x86_64/current-steps.json"
         self.assertTrue(steps.is_file())
-        self.assertTrue((steps.parent / "qemu/archive-checksums.sha256").is_file())
-        compressed = steps.parent / "qemu/full-verifier.log.gz"
-        self.assertEqual(importer.gzip.decompress(compressed.read_bytes()),
-                         (self.tiger_artifact / "tiger-qemu/evidence/full-verifier.log").read_bytes())
-        serial = steps.parent / "qemu/qemu-serial.log.gz"
-        self.assertEqual(importer.gzip.decompress(serial.read_bytes()), b"guest booted\n")
-        first_bytes = compressed.read_bytes()
+        receipt = json.loads((steps.parent / "current-receipt.json").read_text())
+        self.assertEqual(receipt["distribution"], "Alpine Linux")
+        self.assertEqual(receipt["distribution_version"], "3.22.6")
+        self.assertEqual(receipt["kernel_release"], "6.8.0-test-kernel")
+        first_bytes = steps.read_bytes()
         importer.import_run(self.root, self.core_artifact, self.postgis_artifact,
                             self.tiger_artifact, self.run_id, self.architecture)
-        self.assertEqual(compressed.read_bytes(), first_bytes)
+        self.assertEqual(steps.read_bytes(), first_bytes)
 
     def test_retains_failed_and_skipped_steps_when_records_are_absent(self):
         for result in ("failed", "skipped"):
@@ -188,18 +172,17 @@ class LinuxTigerPublicationImportTests(unittest.TestCase):
                                                self.tiger_artifact, self.run_id, self.architecture)
                 self.assertGreaterEqual(len(retained), 2)
                 saved = json.loads((self.root / "support/evidence" /
-                                    f"tiger-publication-{self.run_id}/x86_64/minimum-steps.json").read_text())
+                                    f"tiger-publication-{self.run_id}/x86_64/current-steps.json").read_text())
                 self.assertEqual(saved, {"archive-suite": "failure" if result == "failed" else result})
 
     def test_retains_raw_outcomes_when_archives_and_records_are_absent(self):
         for path in self.records_dir.glob("*.json"):
             path.unlink()
-        for endpoint in ("current", "minimum"):
-            (self.publication / f"{endpoint}-receipt.json").unlink()
+        (self.publication / "current-receipt.json").unlink()
         (self.core_dir / self.core_name).unlink()
         retained = importer.import_run(self.root, self.core_artifact, self.postgis_artifact,
                                        self.tiger_artifact, self.run_id, self.architecture)
-        self.assertEqual(len(retained), 2)
+        self.assertEqual(len(retained), 1)
         self.assertTrue((self.root / "support/evidence" / f"tiger-publication-{self.run_id}/x86_64/current-steps.json").is_file())
 
     def test_missing_archives_with_any_record_is_an_error(self):
@@ -208,17 +191,12 @@ class LinuxTigerPublicationImportTests(unittest.TestCase):
             importer.import_run(self.root, self.core_artifact, self.postgis_artifact,
                                 self.tiger_artifact, self.run_id, self.architecture)
 
-    def test_passed_minimum_record_requires_matching_guest_proof(self):
-        log = self.tiger_artifact / "tiger-qemu/evidence/full-verifier.log"
-        log.write_text(log.read_text().replace("guest_architecture=x86_64", "guest_architecture=arm64"))
-        with self.assertRaisesRegex(coverage.CoverageError, "guest log"):
-            importer.import_run(self.root, self.core_artifact, self.postgis_artifact,
-                                self.tiger_artifact, self.run_id, self.architecture)
-
-    def test_passed_minimum_record_requires_matching_guest_image_checksum(self):
-        environment = self.tiger_artifact / "tiger-qemu/evidence/environment.txt"
-        environment.write_text(environment.read_text().replace("b" * 64, "c" * 64))
-        with self.assertRaisesRegex(coverage.CoverageError, "image checksum does not match"):
+    def test_receipt_must_identify_alpine_322_and_record_kernel(self):
+        receipt_path = self.publication / "current-receipt.json"
+        receipt = json.loads(receipt_path.read_text())
+        receipt["distribution_version"] = "3.21"
+        receipt_path.write_text(json.dumps(receipt))
+        with self.assertRaisesRegex(coverage.CoverageError, "Alpine 3.22"):
             importer.import_run(self.root, self.core_artifact, self.postgis_artifact,
                                 self.tiger_artifact, self.run_id, self.architecture)
 

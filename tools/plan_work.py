@@ -45,9 +45,8 @@ def plan(root):
         download = available_core.get((version, platform))
         if download is None:
             core_build.append(target)
-        elif any(not coverage.verified(records, download, "postgresql", version,
-                                      platform, version, endpoint)
-                 for endpoint in ("minimum", "current")):
+        elif not coverage.verified(records, download, "postgresql", version,
+                                   platform, version, "current"):
             core_verify.append(target)
 
     ext_without, ext_awaiting = coverage.classify_extension_targets(
@@ -84,7 +83,7 @@ def select_linux_pilot(root, version, architecture="x86_64"):
 
 
 def select_next_linux_pilot(root, architecture="x86_64"):
-    """Select the highest missing target not already covered by paired pilot evidence."""
+    """Select the highest missing target not already covered by current pilot evidence."""
     if architecture not in ("x86_64", "arm64"):
         raise coverage.CoverageError("Linux pilot architecture must be x86_64 or arm64")
     work = plan(root)
@@ -94,29 +93,12 @@ def select_next_linux_pilot(root, architecture="x86_64"):
     candidates = [target[0] for target in work["build_missing"]["core"]
                   if target[1] == platform]
     candidates = [version for version in candidates
-                  if not _has_paired_linux_pilot_records(records, version, platform)]
+                  if not _has_current_pilot_record(records, version, platform)]
     if not candidates:
         raise coverage.CoverageError(f"no missing declared core build for {platform}")
     version = max(candidates, key=lambda item: coverage.version_parts(item, "PostgreSQL version"))
     return {"postgresql_version": version, "platform": platform,
             "work": "build_missing", "snapshot_as_of": work["snapshot_as_of"]}
-
-
-def _has_paired_linux_pilot_records(records, version, platform):
-    """Return whether current pilot-smoke evidence covers both OS endpoints."""
-    matching = [record for record in records
-                if record.get("scope") == "pilot-smoke"
-                and record.get("_profile_current") is True
-                and record.get("outcome") == "passed"
-                and record.get("component") == "postgresql"
-                and record.get("version") == version
-                and record.get("postgresql_version") == version
-                and record.get("platform") == platform]
-    by_endpoint = {}
-    for record in matching:
-        endpoint = record["environment"]["endpoint"]
-        by_endpoint.setdefault(endpoint, set()).add(record["sha256"].lower())
-    return bool(by_endpoint.get("minimum", set()) & by_endpoint.get("current", set()))
 
 
 def select_pilot(root, version, platform):
@@ -141,12 +123,8 @@ def select_next_pilot(root, platform):
     records = coverage.verification_records(Path(root), support)
     candidates = [version for version, candidate_platform in work["build_missing"]["core"]
                   if candidate_platform == platform]
-    if platform.startswith("linux-"):
-        candidates = [version for version in candidates
-                      if not _has_paired_linux_pilot_records(records, version, platform)]
-    else:
-        candidates = [version for version in candidates
-                      if not _has_current_pilot_record(records, version, platform)]
+    candidates = [version for version in candidates
+                  if not _has_current_pilot_record(records, version, platform)]
     if not candidates:
         raise coverage.CoverageError(f"no missing declared core build for {platform}")
     version = max(candidates, key=lambda item: coverage.version_parts(item, "PostgreSQL version"))

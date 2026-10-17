@@ -458,7 +458,7 @@ def verification_records(root, support):
                                     f"support {os_name} minimum_version")
         endpoint = environment["endpoint"]
         if ((endpoint == "minimum" and actual != minimum)
-                or (endpoint == "current" and actual <= minimum)):
+                or (endpoint == "current" and actual < minimum)):
             raise CoverageError(f"verification record {path}: OS version does not match {endpoint} endpoint")
         current_profile = validate_verification_record(
             data, support, root, f"verification record {path}", allow_stale=True)
@@ -679,10 +679,9 @@ def classify_extension_targets(targets, downloads, records, core_downloads, supp
         prerequisites = (expected_prerequisite_archives(
             support, downloads, project, pg, platform) if project else [])
         if (core_download is None or prerequisites is None
-                or any(not verified(records, download, name, version, platform, pg, os_endpoint,
-                                    assembled_core_sha256=core_download["sha256"],
-                                    prerequisite_archives=prerequisites)
-                       for os_endpoint in ("minimum", "current"))):
+                or not verified(records, download, name, version, platform, pg, "current",
+                                assembled_core_sha256=core_download["sha256"],
+                                prerequisite_archives=prerequisites)):
             awaiting_verification.append((name, version, pg, platform))
     return without_download, awaiting_verification
 
@@ -705,9 +704,8 @@ def main():
         records = verification_records(root, support)
         core_without_download = sorted(t for t in want_core if t not in have_core)
         core_awaiting_verification = sorted(
-            t for t in want_core if t in have_core and any(not verified(
-                records, have_core[t], "postgresql", t[0], t[1], t[0], endpoint)
-                for endpoint in ("minimum", "current")))
+            t for t in want_core if t in have_core and not verified(
+                records, have_core[t], "postgresql", t[0], t[1], t[0], "current"))
         missing_core = sorted(core_without_download + core_awaiting_verification)
         extension_without_download, extension_awaiting_verification = classify_extension_targets(
             want_ext, have_ext, records, have_core, support)

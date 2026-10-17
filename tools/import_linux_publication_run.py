@@ -2,9 +2,7 @@
 """Validate and retain compact core and PostGIS evidence from one Linux run."""
 
 import argparse
-import gzip
 import hashlib
-import io
 import json
 from pathlib import Path
 import re
@@ -69,21 +67,6 @@ def _retain(source, destination):
     shutil.copyfile(source, destination)
 
 
-def _retain_gzip(source, destination):
-    raw = Path(source).read_bytes()
-    buffer = io.BytesIO()
-    with gzip.GzipFile(filename="", mode="wb", fileobj=buffer, mtime=0) as stream:
-        stream.write(raw)
-    compressed = buffer.getvalue()
-    destination = Path(destination)
-    if destination.exists():
-        if destination.read_bytes() != compressed:
-            raise coverage.CoverageError(f"refusing to replace retained evidence {destination}")
-        return
-    destination.parent.mkdir(parents=True, exist_ok=True)
-    destination.write_bytes(compressed)
-
-
 def _validate_receipt(receipt_path, profile_id, profile, endpoint, architecture,
                       run_id, steps, expected_archives, digests, core_name=None):
     if not Path(receipt_path).is_file():
@@ -105,6 +88,12 @@ def _validate_receipt(receipt_path, profile_id, profile, endpoint, architecture,
             or receipt.get("architecture") != architecture
             or receipt.get("test_revision") != ci.get("test_revision")):
         raise coverage.CoverageError(f"{receipt_path}: receipt identity or outcomes do not match this run")
+    if (receipt.get("distribution") != "Alpine Linux"
+            or not re.fullmatch(r"3\.22(?:\.\d+)?", str(receipt.get("distribution_version", "")))
+            or not isinstance(receipt.get("kernel_release"), str)
+            or not receipt["kernel_release"]
+            or not re.fullmatch(r"sha256:[0-9a-fA-F]{64}", str(receipt.get("image_id", "")))):
+        raise coverage.CoverageError(f"{receipt_path}: current receipt must identify Alpine 3.22 and its kernel and image")
     archive_claims = receipt.get("archives")
     if not isinstance(archive_claims, dict) or set(archive_claims) != set(expected_archives):
         raise coverage.CoverageError(f"{receipt_path}: archive claims do not match expected archives")
@@ -199,49 +188,6 @@ def _validate_record(path, support, root, profile_id, profile, endpoint, platfor
     return record
 
 
-def _parse_guest_checksums(path):
-    from emit_linux_minimum_pilot_records import parse_archive_checksums
-    return parse_archive_checksums(path)
-
-
-def _validate_guest(evidence, architecture, endpoint_records, expected, receipt, kind):
-    evidence = Path(evidence)
-    environment = evidence / "environment.txt"
-    checksum_path = evidence / "archive-checksums.sha256"
-    log = evidence / "full-verifier.log"
-    for path in (environment, checksum_path, log):
-        if not path.is_file():
-            raise coverage.CoverageError(f"passed minimum record requires {path}")
-    lines = log.read_text(encoding="utf-8").splitlines()
-    actual = _parse_guest_checksums(checksum_path)
-    if actual != expected:
-        raise coverage.CoverageError("minimum guest checksum list does not match its publication archives")
-    if ((kind == "postgis" and f"guest_architecture={architecture}" not in lines)
-            or not any(line.startswith("guest_kernel=5.15.") for line in lines)
-            or not any(line.startswith("guest_os=Ubuntu 22.04") for line in lines)):
-        raise coverage.CoverageError("minimum guest log lacks architecture, Linux 5.15, or Ubuntu 22.04 identity")
-    marker = (f"PASS: moved PostgreSQL {PG_VERSION} archive and pgvector {VECTOR_VERSION} archive"
-              if kind == "core"
-              else f"PASS: PostGIS {POSTGIS_VERSION} minimum-kernel archive verification")
-    if not any(line.startswith(marker) for line in lines):
-        raise coverage.CoverageError("minimum guest log lacks the expected PASS marker")
-    guest_kernel = next(line.split("=", 1)[1] for line in lines if line.startswith("guest_kernel="))
-    guest_os = next(line.split("=", 1)[1] for line in lines if line.startswith("guest_os="))
-    for record in endpoint_records.values():
-        env = record.get("environment", {})
-        if env.get("kernel_release") != guest_kernel or env.get("distribution") != guest_os:
-            raise coverage.CoverageError("minimum record environment differs from guest identity")
-    env_lines = environment.read_text(encoding="utf-8").splitlines()
-    env_values = dict(line.split("=", 1) for line in env_lines if "=" in line)
-    if receipt is not None:
-        if f"test_revision={receipt.get('test_revision')}" not in env_lines:
-            raise coverage.CoverageError("minimum guest test revision does not match receipt")
-        image_id = receipt.get("image_id", "")
-        if (not isinstance(image_id, str) or not image_id.startswith("sha256:")
-                or env_values.get("image_sha256") != image_id.removeprefix("sha256:")):
-            raise coverage.CoverageError("minimum guest image checksum does not match receipt")
-
-
 def _copy_tree_files(source, destination, *, limit=1024 * 1024):
     source = Path(source)
     if not source.is_dir():
@@ -289,7 +235,7 @@ def import_run(root, core_artifact, postgis_artifact, run_id, architecture):
     for project_name, publication_dir in (("core", core_publication),
                                           ("postgis", postgis_publication)):
         profile_prefix = "linux-publication" if project_name == "core" else "postgis-publication"
-        for endpoint in ("current", "minimum"):
+        for endpoint in ("current",):
             profile_id = f"{profile_prefix}-{endpoint}-{architecture}"
             profile = coverage.verification_profile(root, profile_id)
             if profile["scope"] != "publication" or platform not in profile["platforms"]:
@@ -318,7 +264,7 @@ def import_run(root, core_artifact, postgis_artifact, run_id, architecture):
             target = root / "support/evidence" / (
                 f"linux-publication-{run_id}" if project_name == "core"
                 else f"postgis-publication-{run_id}") / architecture
-            for endpoint in ("current", "minimum"):
+            for endpoint in ("current",):
                 source = publication_dir / f"{endpoint}-steps.json"
                 _retain(source, target / source.name)
                 retained.append(str((target / source.name).relative_to(root)))
@@ -331,7 +277,7 @@ def import_run(root, core_artifact, postgis_artifact, run_id, architecture):
         files = _record_files(directory, run_id)
         for path in files:
             name = path.name
-            endpoint = "minimum" if "-minimum-" in name else "current" if "-current-" in name else None
+            endpoint = "current" if "-current-" in name else None
             if endpoint is None:
                 raise coverage.CoverageError(f"{path}: record filename has no endpoint")
             if receipts[project_name][endpoint] is None:
@@ -359,7 +305,7 @@ def import_run(root, core_artifact, postgis_artifact, run_id, architecture):
                 raise coverage.CoverageError(f"{project_name} {endpoint} receipt exists but a referenced archive is missing")
 
     for project_name in ("core", "postgis"):
-        for endpoint in ("current", "minimum"):
+        for endpoint in ("current",):
             if receipts[project_name][endpoint] is None and records[project_name].get(endpoint):
                 raise coverage.CoverageError(f"{project_name} records require a matching receipt")
             # If any records exist for an endpoint, the complete declared SQL set is expected.
@@ -372,19 +318,6 @@ def import_run(root, core_artifact, postgis_artifact, run_id, architecture):
                 if components != {"postgresql", "vector"}:
                     raise coverage.CoverageError(f"core {endpoint} records do not cover PostgreSQL and pgvector")
 
-    for project_name, expected_names, evidence_dir in (
-            ("core", [core_name, vector_name], core_artifact / "qemu-linux-515" / "evidence"),
-            ("postgis", [core_name, postgis_name], postgis_artifact / "postgis-qemu" / "evidence")):
-        minimum = records[project_name].get("minimum", [])
-        passed = {record["component"]: record for _, record in minimum
-                  if record["outcome"] == "passed"}
-        expected_components = ({"postgresql", "vector"} if project_name == "core"
-                              else set(support["extensions"]["PostGIS"]["sql_names"]))
-        if passed and passed.keys() == expected_components:
-            _validate_guest(evidence_dir, architecture, passed,
-                            {name: digests[name] for name in expected_names},
-                            receipts[project_name]["minimum"], project_name)
-
     retained = []
     targets = {
         "core": root / "support/evidence" / f"linux-publication-{run_id}" / architecture,
@@ -393,7 +326,7 @@ def import_run(root, core_artifact, postgis_artifact, run_id, architecture):
     for project_name, publication_dir in (("core", core_publication),
                                           ("postgis", postgis_publication)):
         target = targets[project_name]
-        for endpoint in ("current", "minimum"):
+        for endpoint in ("current",):
             steps_path, _ = steps_by_project[project_name][endpoint]
             _retain(steps_path, target / steps_path.name)
             retained.append(target / steps_path.name)
@@ -404,20 +337,6 @@ def import_run(root, core_artifact, postgis_artifact, run_id, architecture):
             for source, record in records[project_name].get(endpoint, []):
                 destination = root / "support/verification" / source.name
                 _retain(source, destination)
-                retained.append(destination)
-        evidence_dir = (core_artifact / "qemu-linux-515" / "evidence" if project_name == "core"
-                       else postgis_artifact / "postgis-qemu" / "evidence")
-        for filename in ("environment.txt", "archive-checksums.sha256"):
-            source = evidence_dir / filename
-            if source.is_file():
-                destination = target / filename
-                _retain(source, destination)
-                retained.append(destination)
-        for filename in ("full-verifier.log", "qemu-serial.log"):
-            source = evidence_dir / filename
-            if source.is_file():
-                destination = target / f"{filename}.gz"
-                _retain_gzip(source, destination)
                 retained.append(destination)
         symbol_index = (core_dir / "debug-symbols" / "index.json" if project_name == "core"
                         else postgis_dir / "debug-symbols" / "index.json")

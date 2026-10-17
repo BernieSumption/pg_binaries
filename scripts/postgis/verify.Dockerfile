@@ -1,7 +1,5 @@
-FROM ubuntu:24.04
-ENV DEBIAN_FRONTEND=noninteractive
-RUN apt-get update && apt-get install -y --no-install-recommends python3 passwd util-linux \
- && rm -rf /var/lib/apt/lists/*
+FROM alpine:3.22
+RUN apk add --no-cache bash coreutils findutils grep python3 shadow util-linux
 COPY scripts/postgis/verify-in-container.sh /usr/local/bin/verify-postgis-pilot
 COPY tools/check_elf_dependencies.py /usr/local/bin/check-elf-dependencies
 COPY tools/check_postgis_license_inventory.py /usr/local/bin/check-postgis-license-inventory

@@ -44,8 +44,8 @@ def merge_candidate(base_inventory, proposed_entries, support, snapshot, root=No
     a declared extension project name),
     ``version``, ``platform``, ``tag``, ``filename``, ``sha256``, and
     ``verification``. Extension proposals also have ``postgresql_support``.
-    Verification is a list of coverage-style records, with passed evidence for
-    minimum and current OS endpoints crossed with the PostgreSQL range endpoints.
+    Verification is a list of coverage-style records, with one passed current
+    publication record for each selected target.
     """
     try:
         root = Path(root) if root is not None else Path(__file__).resolve().parents[1]
@@ -181,23 +181,19 @@ def merge_candidate(base_inventory, proposed_entries, support, snapshot, root=No
             seen_targets.add(target_key)
         seen_urls.add(url)
 
-        required_pg = [version] if component == "postgresql" else [low, high]
         records = item.get("verification")
         if not isinstance(records, list):
             raise CandidateError("missing verification evidence")
         evidence_components = [component] if component == "postgresql" else sql_names
         if component == "postgresql":
-            for evidence_component in evidence_components:
-                for pg in required_pg:
-                    for endpoint in ("minimum", "current"):
-                        if not any(_evidence_matches(r, download, evidence_component, version, platform, pg,
-                                                     endpoint, support, root)
-                                   for r in records):
-                            raise CandidateError(
-                                f"missing passed {endpoint} verification for {evidence_component} {version} {pg} {platform}")
+            endpoint = "current"
+            if not any(_evidence_matches(r, download, component, version, platform, version,
+                                         endpoint, support, root) for r in records):
+                raise CandidateError(
+                    f"missing passed {endpoint} verification for {component} {version} {platform}")
         else:
             pending_extension_evidence.append(
-                (download, evidence_components, version, platform, required_pg, records))
+                (download, evidence_components, version, platform, records))
 
         candidate_evidence[url] = deepcopy(records)
 
@@ -222,8 +218,12 @@ def merge_candidate(base_inventory, proposed_entries, support, snapshot, root=No
                         raise CandidateError(f"overlapping extension range for {sql_name} {version} {platform}")
                 ranges.append(download)
 
-    for download, evidence_components, version, platform, required_pg, records in pending_extension_evidence:
-        for pg in required_pg:
+    for download, evidence_components, version, platform, records in pending_extension_evidence:
+        selected_pg = [pg for pg in releases
+                       if version_parts(download["postgresql_support"]["from"], "candidate range")
+                       <= version_parts(pg, "candidate range")
+                       <= version_parts(download["postgresql_support"]["to"], "candidate range")]
+        for pg in selected_pg:
             core = candidate.get("postgresql", {}).get(pg, {}).get("downloads", {}).get(platform)
             expected_name = f"postgresql-{pg}-{platform}.tar.gz"
             if (not isinstance(core, dict) or not isinstance(core.get("url"), str)
@@ -239,15 +239,15 @@ def merge_candidate(base_inventory, proposed_entries, support, snapshot, root=No
             if expected_prerequisites is None:
                 raise CandidateError(f"candidate has no consistent prerequisite archives for {project} PostgreSQL {pg} {platform}")
             for evidence_component in evidence_components:
-                for endpoint in ("minimum", "current"):
-                    if not any(_evidence_matches(
-                            record, download, evidence_component, version, platform, pg,
-                            endpoint, support, root, expected_core=expected_core,
-                            expected_prerequisites=expected_prerequisites)
-                            for record in records):
-                        raise CandidateError(
-                            f"missing passed {endpoint} verification for {evidence_component} {version} {pg} {platform} "
-                            "bound to candidate PostgreSQL archive")
+                endpoint = "current"
+                if not any(_evidence_matches(
+                        record, download, evidence_component, version, platform, pg,
+                        endpoint, support, root, expected_core=expected_core,
+                        expected_prerequisites=expected_prerequisites)
+                        for record in records):
+                    raise CandidateError(
+                        f"missing passed {endpoint} verification for {evidence_component} {version} {pg} {platform} "
+                        "bound to candidate PostgreSQL archive")
     return candidate
 
 
@@ -290,8 +290,7 @@ def _evidence_matches(record, download, component, version, platform, pg, endpoi
             and environment.get("endpoint") == endpoint
             and environment.get("os") == os_name and environment.get("architecture") == architecture
             and environment.get("clean_system") is True
-            and ((endpoint == "minimum" and actual == minimum)
-                 or (endpoint == "current" and actual > minimum)))
+            and endpoint == "current" and actual >= minimum)
 
 
 def main(argv=None):

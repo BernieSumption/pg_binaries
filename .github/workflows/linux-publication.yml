@@ -12,8 +12,6 @@ on:
       - 'scripts/linux/launcher.c'
       - 'scripts/linux/verify*'
       - 'scripts/linux/diagnostics*'
-      - 'scripts/linux/qemu-kernel-515*'
-      - 'scripts/qemu/arm64-515*'
       - 'support/verification-profiles.json'
       - 'tests/schema.sql'
       - 'tests/builtins/**'
@@ -39,17 +37,9 @@ jobs:
           - architecture: x86_64
             runner: ubuntu-24.04
             docker_platform: linux/amd64
-            qemu_dockerfile: scripts/linux/qemu-kernel-515.Dockerfile
-            qemu_tag: pg-binaries-linux-qemu
-            qemu_script: scripts/linux/qemu-kernel-515-smoke.sh
-            guest_image_sha256: e3297e0aa6c408ac90d854348465d3991c65159b444c4ef9016f52f6807290e3
           - architecture: arm64
             runner: ubuntu-24.04-arm
             docker_platform: linux/arm64
-            qemu_dockerfile: scripts/qemu/arm64-515.Dockerfile
-            qemu_tag: pg-binaries-linux-qemu-arm64
-            qemu_script: scripts/qemu/arm64-515-smoke.sh
-            guest_image_sha256: 86e13258765945ad792dac75fac7f02f4db9fa73a4a535ffa472266e7041fa19
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 90
     permissions:
@@ -64,21 +54,12 @@ jobs:
         id: build
         run: scripts/linux/build.sh "$RUNNER_TEMP/pilot"
       # profile-section: core-current begin
-      - name: Verify final archives on clean Ubuntu 24.04
+      - name: Verify final archives in Alpine 3.22
         id: archive_verify
         run: scripts/linux/verify.sh "$RUNNER_TEMP/pilot"
       - name: Check launch without host shell or C library
         id: nohost
         run: bash scripts/linux/verify-no-host-userspace.sh "$RUNNER_TEMP/pilot" "$PG_VERSION" "$PG_ARCHITECTURE"
-      - name: Check older-glibc and no-glibc hosts
-        id: portability
-        run: |
-          for image in ubuntu:20.04 alpine:3.22; do
-            docker run --rm --platform "${{ matrix.docker_platform }}" \
-              -v "$RUNNER_TEMP/pilot:/archives:ro" -v "$GITHUB_WORKSPACE:/repo:ro" \
-              --entrypoint sh "$image" /repo/scripts/linux/verify-glibc-portability.sh \
-              /archives "$PG_VERSION" "$PG_ARCHITECTURE"
-          done
       - name: Capture controlled diagnostic failures
         id: diagnostics
         run: |
@@ -96,14 +77,13 @@ jobs:
         env:
           ARCHIVE_OUTCOME: ${{ steps.archive_verify.outcome }}
           NOHOST_OUTCOME: ${{ steps.nohost.outcome }}
-          PORTABILITY_OUTCOME: ${{ steps.portability.outcome }}
           DIAGNOSTICS_OUTCOME: ${{ steps.diagnostics.outcome }}
         run: |
           set -euo pipefail
           archive_dir="$RUNNER_TEMP/pilot"
           mkdir -p "$archive_dir/publication"
-          printf '{"archive-suite":"%s","diagnostics":"%s","no-host-userspace":"%s","portability":"%s"}\n' \
-            "$ARCHIVE_OUTCOME" "$DIAGNOSTICS_OUTCOME" "$NOHOST_OUTCOME" "$PORTABILITY_OUTCOME" \
+          printf '{"archive-suite":"%s","diagnostics":"%s","no-host-userspace":"%s"}\n' \
+            "$ARCHIVE_OUTCOME" "$DIAGNOSTICS_OUTCOME" "$NOHOST_OUTCOME" \
             > "$archive_dir/publication/current-steps.json"
           if [[ ! -f "$archive_dir/postgresql-$PG_VERSION-linux-$PG_ARCHITECTURE.tar.gz" || \
                 ! -f "$archive_dir/pgvector-0.8.7-postgresql-$PG_VERSION-linux-$PG_ARCHITECTURE.tar.gz" ]]; then
@@ -115,130 +95,41 @@ jobs:
           clean=false
           dependencies=failure
           if [[ "$ARCHIVE_OUTCOME" == success ]]; then clean=true; dependencies=success; fi
-          . /etc/os-release
+          distribution=$(docker run --rm --platform "${{ matrix.docker_platform }}" \
+            --entrypoint sh pg-binaries-linux-verifier -c '. /etc/os-release; printf "%s" "$NAME"')
+          distribution_version=$(docker run --rm --platform "${{ matrix.docker_platform }}" \
+            --entrypoint sh pg-binaries-linux-verifier -c '. /etc/os-release; printf "%s" "$VERSION_ID"')
           python3 tools/create_linux_publication_receipt.py \
             --archives "$archive_dir" --receipt "$archive_dir/publication/current-receipt.json" \
             --profile-id "linux-publication-current-$PG_ARCHITECTURE" \
             --postgresql-version "$PG_VERSION" --architecture "$PG_ARCHITECTURE" --endpoint current \
-            --kernel-release "$(uname -r)" --distribution "$PRETTY_NAME" \
-            --distribution-version "$VERSION_ID" --image-id "$image_id" \
+            --kernel-release "$(uname -r)" --distribution "$distribution" \
+            --distribution-version "$distribution_version" --image-id "$image_id" \
             --dependency-check-profile linux-runtime-v1 --dependency-check-result "$dependencies" \
             --clean-system "$clean" --step-results "$archive_dir/publication/current-steps.json"
           python3 tools/emit_linux_publication_records.py \
             --archives "$archive_dir" --receipt "$archive_dir/publication/current-receipt.json" \
             --output "$archive_dir/publication/records"
       # profile-section: core-current-report end
-      # profile-section: core-minimum begin
-      - name: Build disposable Linux 5.15 QEMU environment
-        id: qemu_build
-        if: ${{ always() && steps.build.outcome == 'success' }}
-        run: docker build -f "${{ matrix.qemu_dockerfile }}" -t "${{ matrix.qemu_tag }}" .
-      - name: Verify same archives in Ubuntu 22.04 Linux 5.15 guest
-        id: minimum_verify
-        if: ${{ always() && steps.qemu_build.outcome == 'success' && steps.build.outcome == 'success' }}
-        run: |
-          mkdir -p "$RUNNER_TEMP/qemu-linux-515"
-          chmod 0777 "$RUNNER_TEMP/qemu-linux-515"
-          docker run --rm --network bridge --cap-drop=ALL --security-opt no-new-privileges \
-            -v "$GITHUB_WORKSPACE:/repo:ro" \
-            -v "$RUNNER_TEMP/pilot:/archives:ro" \
-            -v "$RUNNER_TEMP/qemu-linux-515:/work" \
-            -e PG_VERSION="$PG_VERSION" -e GITHUB_SHA="$GITHUB_SHA" \
-            "${{ matrix.qemu_tag }}" \
-            bash "/repo/${{ matrix.qemu_script }}" /archives "$PG_VERSION" /work
-      # profile-section: core-minimum end
-      # profile-section: core-minimum-report begin
-      - name: Record minimum-OS publication case results
-        if: ${{ always() }}
-        env:
-          MINIMUM_OUTCOME: ${{ steps.minimum_verify.outcome }}
-        run: |
-          set -euo pipefail
-          archive_dir="$RUNNER_TEMP/pilot"
-          evidence="$RUNNER_TEMP/qemu-linux-515/evidence"
-          mkdir -p "$archive_dir/publication"
-          printf '{"archive-suite":"%s"}\n' "$MINIMUM_OUTCOME" \
-            > "$archive_dir/publication/minimum-steps.json"
-          if [[ ! -f "$archive_dir/postgresql-$PG_VERSION-linux-$PG_ARCHITECTURE.tar.gz" || \
-                ! -f "$archive_dir/pgvector-0.8.7-postgresql-$PG_VERSION-linux-$PG_ARCHITECTURE.tar.gz" ]]; then
-            echo "No minimum-OS record: archive bytes are unavailable"
-            exit 0
-          fi
-          if [[ ! -f "$evidence/full-verifier.log" ]]; then
-            echo "No minimum-OS record: guest kernel was not observed"
-            exit 0
-          fi
-          kernel=$(sed -n 's/^guest_kernel=//p' "$evidence/full-verifier.log" | head -1)
-          distribution=$(sed -n 's/^guest_os=//p' "$evidence/full-verifier.log" | head -1)
-          if [[ -z "$kernel" || -z "$distribution" ]]; then
-            echo "No minimum-OS record: guest identity was not observed"
-            exit 0
-          fi
-          grep -Fx "image_sha256=${{ matrix.guest_image_sha256 }}" \
-            "$evidence/environment.txt"
-          clean=false
-          dependencies=failure
-          if [[ "$MINIMUM_OUTCOME" == success ]]; then clean=true; dependencies=success; fi
-          python3 tools/create_linux_publication_receipt.py \
-            --archives "$archive_dir" --receipt "$archive_dir/publication/minimum-receipt.json" \
-            --profile-id "linux-publication-minimum-$PG_ARCHITECTURE" \
-            --postgresql-version "$PG_VERSION" --architecture "$PG_ARCHITECTURE" --endpoint minimum \
-            --kernel-release "$kernel" --distribution "$distribution" \
-            --distribution-version 22.04 \
-            --image-id "sha256:${{ matrix.guest_image_sha256 }}" \
-            --dependency-check-profile linux-runtime-v1 --dependency-check-result "$dependencies" \
-            --clean-system "$clean" --step-results "$archive_dir/publication/minimum-steps.json"
-          python3 tools/emit_linux_publication_records.py \
-            --archives "$archive_dir" --receipt "$archive_dir/publication/minimum-receipt.json" \
-            --output "$archive_dir/publication/records"
-      # profile-section: core-minimum-report end
       - name: Build PostGIS 3.6.4 against the publication PostgreSQL archive
         id: postgis_build
         run: bash scripts/postgis/build.sh "$RUNNER_TEMP/pilot" "$RUNNER_TEMP/postgis"
       # profile-section: postgis-current begin
-      - name: Verify assembled PostGIS archives on clean Ubuntu 24.04
+      - name: Verify assembled PostGIS archives in Alpine 3.22
         id: postgis_current_verify
         run: bash scripts/postgis/verify.sh "$RUNNER_TEMP/pilot" "$RUNNER_TEMP/postgis"
-      - name: Check PostGIS with older or absent host glibc
-        id: postgis_portability
-        run: |
-          for image in ubuntu:20.04 alpine:3.22; do
-            docker run --rm --platform "${{ matrix.docker_platform }}" -e PG_ARCHITECTURE \
-              -v "$RUNNER_TEMP/pilot:/core:ro" -v "$RUNNER_TEMP/postgis:/ext:ro" \
-              -v "$GITHUB_WORKSPACE:/repo:ro" \
-              --entrypoint sh "$image" /repo/scripts/postgis/verify-portability.sh /core /ext
-          done
       # profile-section: postgis-current end
-      # profile-section: postgis-minimum begin
-      - name: Verify same core and PostGIS archives in Linux 5.15 guest
-        id: postgis_minimum_verify
-        if: ${{ always() && steps.postgis_build.outcome == 'success' && steps.qemu_build.outcome == 'success' }}
-        run: |
-          mkdir -p "$RUNNER_TEMP/postgis-qemu"
-          chmod 0777 "$RUNNER_TEMP/postgis-qemu"
-          docker run --rm --network bridge --cap-drop=ALL --security-opt no-new-privileges \
-            -v "$GITHUB_WORKSPACE:/repo:ro" -v "$RUNNER_TEMP/pilot:/core:ro" \
-            -v "$RUNNER_TEMP/postgis:/ext:ro" -v "$RUNNER_TEMP/postgis-qemu:/work" \
-            -e PG_ARCHITECTURE="$PG_ARCHITECTURE" -e GITHUB_SHA="$GITHUB_SHA" \
-            "${{ matrix.qemu_tag }}" \
-            bash /repo/scripts/postgis/qemu-kernel-515.sh /core "$PG_VERSION" /work /ext
-      # profile-section: postgis-minimum end
       # profile-section: postgis-report begin
-      - name: Record PostGIS publication step outcomes
+      - name: Record PostGIS publication step outcome
         if: ${{ always() }}
         env:
-          CURRENT_VERIFY_OUTCOME: ${{ steps.postgis_current_verify.outcome }}
-          PORTABILITY_OUTCOME: ${{ steps.postgis_portability.outcome }}
-          MINIMUM_VERIFY_OUTCOME: ${{ steps.postgis_minimum_verify.outcome }}
+          VERIFY_OUTCOME: ${{ steps.postgis_current_verify.outcome }}
         run: |
           set -euo pipefail
           mkdir -p "$RUNNER_TEMP/postgis-publication"
-          printf '{"archive-suite":"%s","portability":"%s"}\n' \
-            "$CURRENT_VERIFY_OUTCOME" "$PORTABILITY_OUTCOME" \
+          printf '{"archive-suite":"%s"}\n' "$VERIFY_OUTCOME" \
             > "$RUNNER_TEMP/postgis-publication/current-steps.json"
-          printf '{"archive-suite":"%s"}\n' "$MINIMUM_VERIFY_OUTCOME" \
-            > "$RUNNER_TEMP/postgis-publication/minimum-steps.json"
-      - name: Emit PostGIS publication records for verified endpoints
+      - name: Emit PostGIS publication records
         if: ${{ always() }}
         run: |
           set -euo pipefail
@@ -248,9 +139,8 @@ jobs:
             echo 'No publication record: assembled archive bytes or sidecars are unavailable'
             exit 0
           fi
-          python3 - "$core" "$RUNNER_TEMP/pilot/publication/records" "$PG_ARCHITECTURE" "$GITHUB_RUN_ID" "$GITHUB_SHA" <<'PY'
+          python3 - "$core" "$RUNNER_TEMP/pilot/publication/records" "$PG_ARCHITECTURE" "$GITHUB_RUN_ID" "$GITHUB_SHA" <<'PYCODE'
           import hashlib
-          import json
           from pathlib import Path
           import sys
           sys.path.insert(0, 'tools')
@@ -258,128 +148,63 @@ jobs:
           core, records, architecture, run_id, revision = sys.argv[1:]
           digest = hashlib.sha256(Path(core).read_bytes()).hexdigest()
           support = coverage.load_json(Path('support.json'))
-          for endpoint in ('current', 'minimum'):
-              name = f'postgresql-18.6-linux-{architecture}-{endpoint}-{run_id}.json'
-              record = coverage.load_json(Path(records) / name)
-              coverage.validate_verification_record(record, support, Path('.'))
-              if (record['outcome'] != 'passed' or record['sha256'] != digest
-                      or record['ci']['run_id'] != run_id
-                      or record['test_revision'] != revision):
-                  raise SystemExit(f'PostGIS core differs from passed {endpoint} publication record')
-          PY
+          name = f'postgresql-18.6-linux-{architecture}-current-{run_id}.json'
+          record = coverage.load_json(Path(records) / name)
+          coverage.validate_verification_record(record, support, Path('.'))
+          if (record['outcome'] != 'passed' or record['sha256'] != digest
+                  or record['ci']['run_id'] != run_id
+                  or record['test_revision'] != revision):
+              raise SystemExit('PostGIS core differs from passed publication record')
+          PYCODE
           publication="$RUNNER_TEMP/postgis-publication"
-          current_image=$(docker image inspect --format '{{.Id}}' pg-binaries-postgis-verifier 2>/dev/null || true)
-          if [[ "$current_image" =~ ^sha256:[0-9a-f]{64}$ ]]; then
-            clean=false
-            dependencies=failure
-            if [[ "$(python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); print(all(v == "success" for v in d.values()))' "$publication/current-steps.json")" = True ]]; then
-              clean=true
-              dependencies=success
-            fi
-            . /etc/os-release
-            python3 tools/create_extension_publication_receipt.py \
-              --archives "$RUNNER_TEMP/postgis" --core-archives "$RUNNER_TEMP/pilot" \
-              --receipt "$publication/current-receipt.json" \
-              --profile-id "postgis-publication-current-$PG_ARCHITECTURE" \
-              --project PostGIS --version 3.6.4 --postgresql-version 18.6 \
-              --architecture "$PG_ARCHITECTURE" --endpoint current \
-              --kernel-release "$(uname -r)" --distribution "$PRETTY_NAME" \
-              --distribution-version "$VERSION_ID" --image-id "$current_image" \
-              --dependency-check-result "$dependencies" --clean-system "$clean" \
-              --step-results "$publication/current-steps.json"
-            python3 tools/emit_extension_publication_records.py \
-              --archives "$RUNNER_TEMP/postgis" --core-archives "$RUNNER_TEMP/pilot" \
-              --receipt "$publication/current-receipt.json" --output "$publication/records"
-          else
-            echo 'No current-OS publication record: clean verifier image identity is unavailable'
-          fi
-          evidence="$RUNNER_TEMP/postgis-qemu/evidence"
-          log="$evidence/full-verifier.log"
-          if [[ ! -f "$log" || ! -f "$evidence/environment.txt" || ! -f "$evidence/archive-checksums.sha256" ]]; then
-            echo 'No minimum-OS publication record: guest evidence is unavailable'
+          image=$(docker image inspect --format '{{.Id}}' pg-binaries-postgis-verifier 2>/dev/null || true)
+          if [[ ! "$image" =~ ^sha256:[0-9a-f]{64}$ ]]; then
+            echo 'No PostGIS publication record: verifier image identity is unavailable'
             exit 0
           fi
-          kernel=$(sed -n 's/^guest_kernel=//p' "$log" | head -1)
-          distribution=$(sed -n 's/^guest_os=//p' "$log" | head -1)
-          grep -Eq '^5\.15\.' <<< "$kernel"
-          grep -q '^Ubuntu 22\.04' <<< "$distribution"
-          grep -Fx "guest_architecture=$PG_ARCHITECTURE" "$log"
-          grep -Fx "test_revision=$GITHUB_SHA" "$evidence/environment.txt"
-          case "$PG_ARCHITECTURE" in
-            x86_64) image_sha=e3297e0aa6c408ac90d854348465d3991c65159b444c4ef9016f52f6807290e3 ;;
-            arm64) image_sha=86e13258765945ad792dac75fac7f02f4db9fa73a4a535ffa472266e7041fa19 ;;
-          esac
-          grep -Fx "image_sha256=$image_sha" "$evidence/environment.txt"
-          python3 - "$evidence/archive-checksums.sha256" "$core" "$extension" <<'PY'
-          import hashlib
-          from pathlib import Path
-          import sys
-          sys.path.insert(0, 'tools')
-          from emit_linux_minimum_pilot_records import parse_archive_checksums
-          actual = parse_archive_checksums(Path(sys.argv[1]))
-          expected = {Path(path).name: hashlib.sha256(Path(path).read_bytes()).hexdigest()
-                      for path in sys.argv[2:]}
-          if actual != expected:
-              raise SystemExit('guest archive checksums differ from publication archives')
-          PY
           clean=false
           dependencies=failure
-          if [[ "$(python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); print(all(v == "success" for v in d.values()))' "$publication/minimum-steps.json")" = True ]]; then
-            grep -Fx 'PASS: PostGIS 3.6.4 minimum-kernel archive verification' "$log"
+          if [[ "$(python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); print(all(v == "success" for v in d.values()))' "$publication/current-steps.json")" = True ]]; then
             clean=true
             dependencies=success
           fi
+          distribution=$(docker run --rm --platform "${{ matrix.docker_platform }}" \
+            --entrypoint sh pg-binaries-postgis-verifier -c '. /etc/os-release; printf "%s" "$NAME"')
+          distribution_version=$(docker run --rm --platform "${{ matrix.docker_platform }}" \
+            --entrypoint sh pg-binaries-postgis-verifier -c '. /etc/os-release; printf "%s" "$VERSION_ID"')
           python3 tools/create_extension_publication_receipt.py \
             --archives "$RUNNER_TEMP/postgis" --core-archives "$RUNNER_TEMP/pilot" \
-            --receipt "$publication/minimum-receipt.json" \
-            --profile-id "postgis-publication-minimum-$PG_ARCHITECTURE" \
+            --receipt "$publication/current-receipt.json" \
+            --profile-id "postgis-publication-current-$PG_ARCHITECTURE" \
             --project PostGIS --version 3.6.4 --postgresql-version 18.6 \
-            --architecture "$PG_ARCHITECTURE" --endpoint minimum \
-            --kernel-release "$kernel" --distribution "$distribution" \
-            --distribution-version 22.04 --image-id "sha256:$image_sha" \
+            --architecture "$PG_ARCHITECTURE" --endpoint current \
+            --kernel-release "$(uname -r)" --distribution "$distribution" \
+            --distribution-version "$distribution_version" --image-id "$image" \
             --dependency-check-result "$dependencies" --clean-system "$clean" \
-            --step-results "$publication/minimum-steps.json"
+            --step-results "$publication/current-steps.json"
           python3 tools/emit_extension_publication_records.py \
             --archives "$RUNNER_TEMP/postgis" --core-archives "$RUNNER_TEMP/pilot" \
-            --receipt "$publication/minimum-receipt.json" --output "$publication/records"
+            --receipt "$publication/current-receipt.json" --output "$publication/records"
       # profile-section: postgis-report end
       - name: Build TIGER Geocoder 2025.2 against the publication PostgreSQL archive
         id: tiger_build
         run: bash scripts/tiger/build.sh "$RUNNER_TEMP/pilot" "$RUNNER_TEMP/tiger"
       # profile-section: tiger-current begin
-      - name: Verify TIGER with the same core and PostGIS archives on clean Ubuntu 24.04
+      - name: Verify TIGER with the same core and PostGIS archives in Alpine 3.22
         id: tiger_current_verify
         run: bash scripts/tiger/verify.sh "$RUNNER_TEMP/pilot" "$RUNNER_TEMP/postgis" "$RUNNER_TEMP/tiger"
       # profile-section: tiger-current end
-      # profile-section: tiger-minimum begin
-      - name: Verify TIGER with the same core and PostGIS archives in Linux 5.15 guest
-        id: tiger_minimum_verify
-        if: ${{ always() && steps.tiger_build.outcome == 'success' && steps.postgis_build.outcome == 'success' && steps.qemu_build.outcome == 'success' }}
-        run: |
-          mkdir -p "$RUNNER_TEMP/tiger-qemu"
-          chmod 0777 "$RUNNER_TEMP/tiger-qemu"
-          docker run --rm --network bridge --cap-drop=ALL --security-opt no-new-privileges \
-            -v "$GITHUB_WORKSPACE:/repo:ro" -v "$RUNNER_TEMP/pilot:/core:ro" \
-            -v "$RUNNER_TEMP/postgis:/postgis:ro" -v "$RUNNER_TEMP/tiger:/tiger:ro" \
-            -v "$RUNNER_TEMP/tiger-qemu:/work" \
-            -e PG_ARCHITECTURE="$PG_ARCHITECTURE" -e GITHUB_SHA="$GITHUB_SHA" \
-            "${{ matrix.qemu_tag }}" \
-            bash /repo/scripts/postgis/qemu-kernel-515.sh /core "$PG_VERSION" /work /postgis /tiger
-      # profile-section: tiger-minimum end
       # profile-section: tiger-report begin
-      - name: Record TIGER publication step outcomes
+      - name: Record TIGER publication step outcome
         if: ${{ always() }}
         env:
-          CURRENT_VERIFY_OUTCOME: ${{ steps.tiger_current_verify.outcome }}
-          MINIMUM_VERIFY_OUTCOME: ${{ steps.tiger_minimum_verify.outcome }}
+          VERIFY_OUTCOME: ${{ steps.tiger_current_verify.outcome }}
         run: |
           set -euo pipefail
           mkdir -p "$RUNNER_TEMP/tiger-publication"
-          printf '{"archive-suite":"%s"}\n' "$CURRENT_VERIFY_OUTCOME" \
+          printf '{"archive-suite":"%s"}\n' "$VERIFY_OUTCOME" \
             > "$RUNNER_TEMP/tiger-publication/current-steps.json"
-          printf '{"archive-suite":"%s"}\n' "$MINIMUM_VERIFY_OUTCOME" \
-            > "$RUNNER_TEMP/tiger-publication/minimum-steps.json"
-      - name: Emit TIGER publication records for verified endpoints
+      - name: Emit TIGER publication records
         if: ${{ always() }}
         run: |
           set -euo pipefail
@@ -390,7 +215,7 @@ jobs:
             echo 'No TIGER publication record: assembled archive bytes or sidecars are unavailable'
             exit 0
           fi
-          python3 - "$core" "$postgis" "$RUNNER_TEMP/postgis-publication/records" "$PG_ARCHITECTURE" "$GITHUB_RUN_ID" "$GITHUB_SHA" <<'PY'
+          python3 - "$core" "$postgis" "$RUNNER_TEMP/postgis-publication/records" "$PG_ARCHITECTURE" "$GITHUB_RUN_ID" "$GITHUB_SHA" <<'PYCODE'
           import hashlib
           import sys
           from pathlib import Path
@@ -400,93 +225,46 @@ jobs:
           support = coverage.load_json(Path('support.json'))
           core_sha = hashlib.sha256(Path(core).read_bytes()).hexdigest()
           postgis_sha = hashlib.sha256(Path(postgis).read_bytes()).hexdigest()
-          for endpoint in ('current', 'minimum'):
-              name = f'postgis-3.6.4-postgresql-18.6-linux-{architecture}-{endpoint}-{run_id}.json'
-              record = coverage.load_json(Path(records) / name)
-              coverage.validate_verification_record(record, support, Path('.'))
-              if (record['outcome'] != 'passed' or record['sha256'] != postgis_sha
-                      or record['assembled_core']['sha256'] != core_sha
-                      or record['ci']['run_id'] != run_id
-                      or record['test_revision'] != revision):
-                  raise SystemExit(f'TIGER prerequisite differs from passed {endpoint} PostGIS publication record')
-          PY
+          name = f'postgis-3.6.4-postgresql-18.6-linux-{architecture}-current-{run_id}.json'
+          record = coverage.load_json(Path(records) / name)
+          coverage.validate_verification_record(record, support, Path('.'))
+          if (record['outcome'] != 'passed' or record['sha256'] != postgis_sha
+                  or record['assembled_core']['sha256'] != core_sha
+                  or record['ci']['run_id'] != run_id
+                  or record['test_revision'] != revision):
+              raise SystemExit('TIGER prerequisite differs from passed PostGIS publication record')
+          PYCODE
           publication="$RUNNER_TEMP/tiger-publication"
-          current_image=$(docker image inspect --format '{{.Id}}' pg-binaries-postgis-verifier 2>/dev/null || true)
-          if [[ "$current_image" =~ ^sha256:[0-9a-f]{64}$ ]]; then
-            clean=false
-            dependencies=failure
-            if [[ "$(python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); print(all(v == "success" for v in d.values()))' "$publication/current-steps.json")" = True ]]; then
-              clean=true
-              dependencies=success
-            fi
-            . /etc/os-release
-            python3 tools/create_extension_publication_receipt.py \
-              --archives "$RUNNER_TEMP/tiger" --core-archives "$RUNNER_TEMP/pilot" \
-              --prerequisite-archive "PostGIS=$postgis" \
-              --receipt "$publication/current-receipt.json" \
-              --profile-id "tiger-publication-current-$PG_ARCHITECTURE" \
-              --project 'PostGIS TIGER Geocoder' --version 2025.2 --postgresql-version 18.6 \
-              --architecture "$PG_ARCHITECTURE" --endpoint current \
-              --kernel-release "$(uname -r)" --distribution "$PRETTY_NAME" \
-              --distribution-version "$VERSION_ID" --image-id "$current_image" \
-              --dependency-check-result "$dependencies" --clean-system "$clean" \
-              --step-results "$publication/current-steps.json"
-            python3 tools/emit_extension_publication_records.py \
-              --archives "$RUNNER_TEMP/tiger" --core-archives "$RUNNER_TEMP/pilot" \
-              --prerequisite-archive "PostGIS=$postgis" \
-              --receipt "$publication/current-receipt.json" --output "$publication/records"
-          fi
-          evidence="$RUNNER_TEMP/tiger-qemu/evidence"
-          log="$evidence/full-verifier.log"
-          if [[ ! -f "$log" || ! -f "$evidence/environment.txt" || ! -f "$evidence/archive-checksums.sha256" ]]; then
-            echo 'No TIGER minimum-OS record: guest evidence is unavailable'
+          image=$(docker image inspect --format '{{.Id}}' pg-binaries-postgis-verifier 2>/dev/null || true)
+          if [[ ! "$image" =~ ^sha256:[0-9a-f]{64}$ ]]; then
+            echo 'No TIGER publication record: verifier image identity is unavailable'
             exit 0
           fi
-          kernel=$(sed -n 's/^guest_kernel=//p' "$log" | head -1)
-          distribution=$(sed -n 's/^guest_os=//p' "$log" | head -1)
-          grep -Eq '^5\.15\.' <<< "$kernel"
-          grep -q '^Ubuntu 22\.04' <<< "$distribution"
-          grep -Fx "guest_architecture=$PG_ARCHITECTURE" "$log"
-          grep -Fx "test_revision=$GITHUB_SHA" "$evidence/environment.txt"
-          case "$PG_ARCHITECTURE" in
-            x86_64) image_sha=e3297e0aa6c408ac90d854348465d3991c65159b444c4ef9016f52f6807290e3 ;;
-            arm64) image_sha=86e13258765945ad792dac75fac7f02f4db9fa73a4a535ffa472266e7041fa19 ;;
-          esac
-          grep -Fx "image_sha256=$image_sha" "$evidence/environment.txt"
-          python3 - "$evidence/archive-checksums.sha256" "$core" "$postgis" "$tiger" <<'PY'
-          import hashlib
-          from pathlib import Path
-          import sys
-          sys.path.insert(0, 'tools')
-          from emit_linux_minimum_pilot_records import parse_archive_checksums
-          actual = parse_archive_checksums(Path(sys.argv[1]))
-          expected = {Path(path).name: hashlib.sha256(Path(path).read_bytes()).hexdigest()
-                      for path in sys.argv[2:]}
-          if actual != expected:
-              raise SystemExit('TIGER guest archive checksums differ from publication archives')
-          PY
           clean=false
           dependencies=failure
-          if [[ "$(python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); print(all(v == "success" for v in d.values()))' "$publication/minimum-steps.json")" = True ]]; then
-            grep -Fx 'PASS: TIGER Geocoder 2025.2 minimum-kernel archive verification' "$log"
+          if [[ "$(python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); print(all(v == "success" for v in d.values()))' "$publication/current-steps.json")" = True ]]; then
             clean=true
             dependencies=success
           fi
+          distribution=$(docker run --rm --platform "${{ matrix.docker_platform }}" \
+            --entrypoint sh pg-binaries-postgis-verifier -c '. /etc/os-release; printf "%s" "$NAME"')
+          distribution_version=$(docker run --rm --platform "${{ matrix.docker_platform }}" \
+            --entrypoint sh pg-binaries-postgis-verifier -c '. /etc/os-release; printf "%s" "$VERSION_ID"')
           python3 tools/create_extension_publication_receipt.py \
             --archives "$RUNNER_TEMP/tiger" --core-archives "$RUNNER_TEMP/pilot" \
             --prerequisite-archive "PostGIS=$postgis" \
-            --receipt "$publication/minimum-receipt.json" \
-            --profile-id "tiger-publication-minimum-$PG_ARCHITECTURE" \
+            --receipt "$publication/current-receipt.json" \
+            --profile-id "tiger-publication-current-$PG_ARCHITECTURE" \
             --project 'PostGIS TIGER Geocoder' --version 2025.2 --postgresql-version 18.6 \
-            --architecture "$PG_ARCHITECTURE" --endpoint minimum \
-            --kernel-release "$kernel" --distribution "$distribution" \
-            --distribution-version 22.04 --image-id "sha256:$image_sha" \
+            --architecture "$PG_ARCHITECTURE" --endpoint current \
+            --kernel-release "$(uname -r)" --distribution "$distribution" \
+            --distribution-version "$distribution_version" --image-id "$image" \
             --dependency-check-result "$dependencies" --clean-system "$clean" \
-            --step-results "$publication/minimum-steps.json"
+            --step-results "$publication/current-steps.json"
           python3 tools/emit_extension_publication_records.py \
             --archives "$RUNNER_TEMP/tiger" --core-archives "$RUNNER_TEMP/pilot" \
             --prerequisite-archive "PostGIS=$postgis" \
-            --receipt "$publication/minimum-receipt.json" --output "$publication/records"
+            --receipt "$publication/current-receipt.json" --output "$publication/records"
       # profile-section: tiger-report end
       - uses: actions/upload-artifact@v4
         if: always()
@@ -498,7 +276,6 @@ jobs:
             ${{ runner.temp }}/pilot/publication/**
             ${{ runner.temp }}/pilot/debug-symbols/**
             ${{ runner.temp }}/pilot/diagnostics/**
-            ${{ runner.temp }}/qemu-linux-515/evidence/**
           include-hidden-files: true
           retention-days: 3
       - uses: actions/upload-artifact@v4
@@ -510,7 +287,6 @@ jobs:
             ${{ runner.temp }}/postgis/*.sha256
             ${{ runner.temp }}/postgis/debug-symbols/**
             ${{ runner.temp }}/postgis-publication/**
-            ${{ runner.temp }}/postgis-qemu/evidence/**
           if-no-files-found: ignore
           retention-days: 3
       - uses: actions/upload-artifact@v4
@@ -521,6 +297,5 @@ jobs:
             ${{ runner.temp }}/tiger/*.tar.gz
             ${{ runner.temp }}/tiger/*.sha256
             ${{ runner.temp }}/tiger-publication/**
-            ${{ runner.temp }}/tiger-qemu/evidence/**
           if-no-files-found: ignore
           retention-days: 3

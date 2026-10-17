@@ -83,8 +83,7 @@ class PublicationPreflightTests(unittest.TestCase):
         url = f"https://github.com/BernieSumption/pg_binaries/releases/download/{tag}/{filename}"
         self.staged[url] = {"path": str(path), "sha256": checksum}
         inventory.setdefault("verification_evidence", {})[url] = [
-            self._verification_record("postgresql", version, platform, version, checksum, endpoint)
-            for endpoint in ("minimum", "current")]
+            self._verification_record("postgresql", version, platform, version, checksum, "current")]
         entry = inventory["postgresql"].setdefault(version, {"included_extensions": ["example"], "downloads": {}})
         entry["included_extensions"] = ["example"]
         entry["downloads"][platform] = {
@@ -99,7 +98,7 @@ class PublicationPreflightTests(unittest.TestCase):
                 "example", "1.0", platform, "15.9", checksum, endpoint,
                 assembled_core={"archive": f"postgresql-15.9-{platform}.tar.gz",
                                 "version": "15.9", "sha256": core["sha256"]})
-            for endpoint in ("minimum", "current")]
+            for endpoint in ("current",)]
         self.candidate["extensions"].setdefault("example", {}).setdefault("1.0", {
             "requires": [], "downloads": {}})["downloads"][platform] = [{
                 "postgresql_support": {"from": "15.9", "to": "15.9"},
@@ -565,12 +564,18 @@ class PublicationPreflightTests(unittest.TestCase):
                                     "requires passed current-profile publication verification"):
             self.check()
 
-    def test_rejects_core_without_both_os_endpoint_records(self):
+    def test_rejects_core_without_routine_current_environment_record(self):
         url = next(url for url in self.staged if "postgresql-15.9-linux-x86_64" in url)
-        self.candidate["verification_evidence"][url] = self.candidate["verification_evidence"][url][:1]
+        self.candidate["verification_evidence"][url][0]["environment"]["endpoint"] = "minimum"
         with self.assertRaisesRegex(publication_preflight.PreflightError,
                                     "requires passed current-profile publication verification"):
             self.check()
+
+    def test_accepts_routine_verification_on_minimum_os(self):
+        for records in self.candidate["verification_evidence"].values():
+            for record in records:
+                record["environment"]["os_version"] = "1"
+        self.check()
 
     def test_rejects_stale_publication_profile(self):
         url = next(url for url in self.staged if "postgresql-15.9-linux-x86_64" in url)

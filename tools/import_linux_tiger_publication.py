@@ -2,7 +2,6 @@
 """Validate and retain one extracted Linux TIGER publication run."""
 
 import argparse
-import gzip
 import hashlib
 import json
 from pathlib import Path
@@ -67,56 +66,6 @@ def _retain_steps(root, run_id, architecture, step_sources):
     return [str(destination.relative_to(root)) for _, destination in copies]
 
 
-def _gzip_copy(source, destination):
-    destination.parent.mkdir(parents=True, exist_ok=True)
-    with source.open("rb") as input_stream, destination.open("wb") as output_stream:
-        with gzip.GzipFile(filename="", mode="wb", fileobj=output_stream, mtime=0) as compressor:
-            shutil.copyfileobj(input_stream, compressor)
-
-
-def _validate_guest(evidence_dir, architecture, core_name, postgis_name, tiger_name,
-                    digests, record):
-    environment = evidence_dir / "environment.txt"
-    checksum_file = evidence_dir / "archive-checksums.sha256"
-    full_log = evidence_dir / "full-verifier.log"
-    for path in (environment, checksum_file, full_log):
-        if not path.is_file():
-            raise coverage.CoverageError(f"passed minimum record requires {path}")
-    env_text = environment.read_text(encoding="utf-8")
-    env_values = {}
-    for line in env_text.splitlines():
-        key, separator, value = line.partition("=")
-        if separator:
-            env_values[key] = value
-    log_text = full_log.read_text(encoding="utf-8")
-    from emit_linux_minimum_pilot_records import parse_archive_checksums
-    actual = parse_archive_checksums(checksum_file)
-    expected = {name: digests[name] for name in (core_name, postgis_name, tiger_name)}
-    if actual != expected:
-        raise coverage.CoverageError("guest checksum list does not match the three run archives")
-    expected_line = f"PASS: TIGER Geocoder 2025.2 minimum-kernel archive verification"
-    if (f"guest_architecture={architecture}" not in log_text.splitlines()
-            or not any(line.startswith("guest_kernel=5.15.") for line in log_text.splitlines())
-            or not any(line.startswith("guest_os=Ubuntu 22.04") for line in log_text.splitlines())
-            or expected_line not in log_text.splitlines()):
-        raise coverage.CoverageError("guest log lacks the expected architecture, Linux 5.15 identity, or PASS marker")
-    guest_kernel = next(line.split("=", 1)[1] for line in log_text.splitlines()
-                        if line.startswith("guest_kernel="))
-    if record.get("environment", {}).get("kernel_release") != guest_kernel:
-        raise coverage.CoverageError("minimum record kernel does not match guest log")
-    if record.get("environment", {}).get("distribution") != next(
-            line.split("=", 1)[1] for line in log_text.splitlines()
-            if line.startswith("guest_os=")):
-        raise coverage.CoverageError("minimum record distribution does not match guest log")
-    test_revision = record.get("test_revision")
-    if f"test_revision={test_revision}" not in env_text.splitlines():
-        raise coverage.CoverageError("guest environment test revision does not match record")
-    image_id = record.get("environment", {}).get("image_id", "")
-    if (not isinstance(image_id, str) or not image_id.startswith("sha256:")
-            or env_values.get("image_sha256") != image_id.removeprefix("sha256:")):
-        raise coverage.CoverageError("guest environment image checksum does not match record")
-
-
 def import_run(root, core_artifact, postgis_artifact, tiger_artifact, run_id, architecture):
     """Validate a run bundle, then retain its TIGER records and compact evidence."""
     root, core_artifact, postgis_artifact, tiger_artifact = map(
@@ -132,13 +81,12 @@ def import_run(root, core_artifact, postgis_artifact, tiger_artifact, run_id, ar
     tiger_dir = tiger_artifact / "tiger"
     publication_dir = tiger_artifact / "tiger-publication"
     records_dir = publication_dir / "records"
-    evidence_dir = tiger_artifact / "tiger-qemu" / "evidence"
     record_sources = []
     receipt_sources = []
     step_sources = []
     retained_records = []
     endpoint_data = {}
-    for endpoint in ("current", "minimum"):
+    for endpoint in ("current",):
         profile_id = f"tiger-publication-{endpoint}-{architecture}"
         profile = coverage.verification_profile(root, profile_id)
         if profile["scope"] != "publication" or platform not in profile["platforms"]:
@@ -161,6 +109,13 @@ def import_run(root, core_artifact, postgis_artifact, tiger_artifact, run_id, ar
                         key: {"success": "passed", "failure": "failed", "skipped": "skipped"}[value]
                         for key, value in steps.items()}):
                 raise coverage.CoverageError(f"{receipt_path}: receipt does not match run and step outcomes")
+            if (receipt.get("distribution") != "Alpine Linux"
+                    or not re.fullmatch(r"3\.22(?:\.\d+)?", str(receipt.get("distribution_version", "")))
+                    or not isinstance(receipt.get("kernel_release"), str)
+                    or not receipt["kernel_release"]
+                    or not re.fullmatch(r"sha256:[0-9a-fA-F]{64}", str(receipt.get("image_id", "")))):
+                raise coverage.CoverageError(f"{receipt_path}: current receipt must identify Alpine 3.22 and its kernel and image")
+            endpoint_data[endpoint]["receipt"] = receipt
             receipt_sources.append(receipt_path)
 
     core = core_dir / f"postgresql-{PG_VERSION}-{platform}.tar.gz"
@@ -204,6 +159,15 @@ def import_run(root, core_artifact, postgis_artifact, tiger_artifact, run_id, ar
                     "failed" if "failure" in steps.values()
                     else "skipped" if "skipped" in steps.values() else "passed")):
             raise coverage.CoverageError(f"{record_path}: record identity or outcome does not match the run")
+        receipt = data.get("receipt")
+        if receipt is not None:
+            environment = record.get("environment", {})
+            if any(environment.get(key) != receipt.get(value)
+                   for key, value in (("kernel_release", "kernel_release"),
+                                      ("distribution", "distribution"),
+                                      ("distribution_version", "distribution_version"),
+                                      ("image_id", "image_id"))):
+                raise coverage.CoverageError(f"{record_path}: environment differs from its Alpine receipt")
         if record.get("sha256") != digests[tiger.name]:
             raise coverage.CoverageError(f"{record_path}: TIGER archive checksum mismatch")
         if record.get("assembled_core") != {
@@ -217,33 +181,11 @@ def import_run(root, core_artifact, postgis_artifact, tiger_artifact, run_id, ar
         record_sources.append(record_path)
         retained_records.append(record)
 
-    minimum_record = next((record for record in retained_records
-                           if record.get("environment", {}).get("endpoint") == "minimum"
-                           and record.get("outcome") == "passed"), None)
-    if minimum_record is not None:
-        _validate_guest(evidence_dir, architecture, core.name, postgis.name,
-                        tiger.name, digests, minimum_record)
-    if evidence_dir.exists():
-        checksums = evidence_dir / "archive-checksums.sha256"
-        if checksums.is_file():
-            from emit_linux_minimum_pilot_records import parse_archive_checksums
-            actual = parse_archive_checksums(checksums)
-            expected = {name: digests[name] for name in (core.name, postgis.name, tiger.name)}
-            if actual != expected:
-                raise coverage.CoverageError("guest checksum list does not match the three run archives")
-        elif any(record.get("environment", {}).get("endpoint") == "minimum"
-                 for record in retained_records):
-            raise coverage.CoverageError("minimum endpoint record requires guest archive checksum evidence")
-
     evidence_target = root / "support/evidence" / f"tiger-publication-{run_id}" / architecture
     verification_target = root / "support/verification"
     copies = []
     for source in step_sources + receipt_sources:
         copies.append((source, evidence_target / source.name))
-    for relative in ("environment.txt", "archive-checksums.sha256"):
-        source = evidence_dir / relative
-        if source.is_file():
-            copies.append((source, evidence_target / "qemu" / relative))
     for source in record_sources:
         copies.append((source, verification_target / source.name))
     for source, destination in copies:
@@ -251,18 +193,6 @@ def import_run(root, core_artifact, postgis_artifact, tiger_artifact, run_id, ar
             raise coverage.CoverageError(f"refusing to replace retained evidence {destination}")
     for source, destination in copies:
         _copy(source, destination)
-    for name in ("full-verifier.log", "qemu-serial.log"):
-        log = evidence_dir / name
-        compressed_log = evidence_target / "qemu" / f"{name}.gz"
-        if log.is_file():
-            evidence_target.mkdir(parents=True, exist_ok=True)
-            if compressed_log.exists():
-                with gzip.open(compressed_log, "rb") as stream:
-                    if stream.read() != log.read_bytes():
-                        raise coverage.CoverageError(f"refusing to replace retained evidence {compressed_log}")
-            else:
-                _gzip_copy(log, compressed_log)
-            copies.append((log, compressed_log))
     return [str(destination.relative_to(root)) for _, destination in copies]
 
 

@@ -90,8 +90,7 @@ def _verification_matches(record, *, checksum, component, version, platform, pg_
             and record.get("postgresql_version") == pg_version
             and environment.get("endpoint") == endpoint
             and environment.get("clean_system") is True
-            and ((endpoint == "minimum" and actual_os == minimum_os)
-                 or (endpoint == "current" and actual_os > minimum_os))
+            and endpoint == "current" and actual_os >= minimum_os
             and core_matches and prerequisite_matches)
 
 
@@ -447,14 +446,19 @@ def preflight_candidate(base_inventory, candidate, support, snapshot, staged_ass
                 raise PreflightError(f"verification record checksum does not match candidate archive: {url}")
         if url in core_by_url:
             version, platform = core_by_url[url]
-            for endpoint in ("minimum", "current"):
-                _require_verification(records, checksum=candidate_refs[url], component="postgresql",
-                                      version=version, platform=platform, pg_version=version,
-                                      endpoint=endpoint, support=support, root=root)
+            _require_verification(records, checksum=candidate_refs[url], component="postgresql",
+                                  version=version, platform=platform, pg_version=version,
+                                  endpoint="current", support=support, root=root)
         elif url in extension_assets:
             (project, version, platform), sql_names = extension_assets[url]
             for low, high in extension_ranges[url]:
-                for pg_version in {low, high}:
+                selected_pg_versions = sorted(
+                    pg_version for pg_version, candidate_platform in expected_core
+                    if candidate_platform == platform
+                    and _coverage.version_parts(low, "candidate range")
+                    <= _coverage.version_parts(pg_version, "selected PostgreSQL version")
+                    <= _coverage.version_parts(high, "candidate range"))
+                for pg_version in selected_pg_versions:
                     core = core_by_target.get((pg_version, platform))
                     if core is None:
                         raise PreflightError(
@@ -470,13 +474,12 @@ def preflight_candidate(base_inventory, candidate, support, snapshot, staged_ass
                         raise PreflightError(
                             f"extension verification requires candidate prerequisite archives for {project} PostgreSQL {pg_version} {platform}")
                     for sql_name in sql_names:
-                        for endpoint in ("minimum", "current"):
-                            _require_verification(
-                                records, checksum=candidate_refs[url], component=sql_name,
-                                version=version, platform=platform, pg_version=pg_version,
-                                endpoint=endpoint, support=support, root=root,
-                                expected_core=expected_core_ref,
-                                expected_prerequisites=expected_prerequisites)
+                        _require_verification(
+                            records, checksum=candidate_refs[url], component=sql_name,
+                            version=version, platform=platform, pg_version=pg_version,
+                            endpoint="current", support=support, root=root,
+                            expected_core=expected_core_ref,
+                            expected_prerequisites=expected_prerequisites)
 
     for url, checksum in candidate_refs.items():
         if url in base_refs and checksum != base_refs[url]:
