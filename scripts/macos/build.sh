@@ -111,6 +111,7 @@ cp "$install_dir/share/extension/vector"* "$package_dir/pgvector/share/extension
 cp LICENSE "$package_dir/pgvector/LICENSES/pgvector.txt"
 python3 "$script_dir/bundle.py" "$package_dir/pgvector" "$architecture"
 python3 "$script_dir/licenses.py" "$package_dir/pgvector" "$source_prefix/share/pg_binaries/source-dependencies.json" --component pgvector --version "$vector_version" --source-url "$vector_source_url" --source-sha256 "$vector_source_sha256"
+mv "$package_dir/pgvector/LICENSES/inventory.json" "$package_dir/pgvector/LICENSES/pgvector-inventory.json"
 mv "$package_dir/pgvector/bundled-dependencies.json" "$package_dir/pgvector/LICENSES/pgvector-bundled-dependencies.json"
 echo "pgvector $vector_version packaged" >&2
 

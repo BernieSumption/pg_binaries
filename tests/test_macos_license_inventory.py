@@ -54,6 +54,25 @@ class MacOSLicenseInventoryTests(unittest.TestCase):
     def test_accepts_complete_native_coverage_and_pending_review(self):
         self.assertEqual(check_archive(self.archive_path), (2, 4))
 
+    def test_accepts_project_named_extension_inventory_without_core_collision(self):
+        self.files = {
+            "pgvector/LICENSES/pgvector-inventory.json": json.dumps({
+                "schema_version": 1,
+                "components": [{"component": "pgvector", "payload_paths": ["lib/vector.dylib"],
+                                "license_file": "pgvector.txt"}],
+            }).encode(),
+            "pgvector/LICENSES/pgvector.txt": b"pgvector licence",
+            "pgvector/lib/vector.dylib": b"module",
+        }
+        self.write_archive()
+        self.assertEqual(check_archive(self.archive_path), (1, 1))
+
+        self.files["pgvector/LICENSES/inventory.json"] = self.files.pop(
+            "pgvector/LICENSES/pgvector-inventory.json")
+        self.write_archive()
+        with self.assertRaisesRegex(InventoryError, "inventory path does not match"):
+            check_archive(self.archive_path)
+
     def test_rejects_unmapped_native_module(self):
         inventory = json.loads(self.files["postgresql/LICENSES/inventory.json"])
         inventory["components"][0]["payload_paths"].remove("lib/libpq.dylib")

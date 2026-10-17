@@ -263,6 +263,13 @@ class PublicationPreflightTests(unittest.TestCase):
         with self.assertRaises(publication_preflight.PreflightError):
             self.check()
 
+    def test_accepts_component_named_extension_inventory(self):
+        def rename(contents):
+            contents["example/LICENSES/example-inventory.json"] = contents.pop(
+                "example/LICENSES/inventory.json")
+        self._rewrite_extension(rename)
+        self.assertEqual(self.check()["redistribution_review_status"], "declarations-checked")
+
     def test_rejects_absent_licence_text(self):
         url = next(url for url in self.staged if "example-1.0-postgresql-15.9-macos-arm64" in url)
         self._rewrite_extension(lambda contents: contents.pop("example/LICENSES/COPYING"), url)

@@ -60,11 +60,16 @@ def check_archive(archive_path):
             members[name] = member
 
         inventories = [name for name, member in members.items()
-                       if name.endswith("/LICENSES/inventory.json") and member.isfile()]
+                       if name.endswith(("/LICENSES/inventory.json", "/LICENSES/pgvector-inventory.json"))
+                       and member.isfile()]
         if len(inventories) != 1:
-            raise InventoryError("archive must contain one component LICENSES/inventory.json")
+            raise InventoryError("archive must contain one component licence inventory")
         inventory_name = inventories[0]
-        prefix = inventory_name[:-len("LICENSES/inventory.json")]
+        inventory_basename = PurePosixPath(inventory_name).name
+        prefix = inventory_name[:-len("LICENSES/" + inventory_basename)]
+        if (prefix == "pgvector/" and inventory_basename != "pgvector-inventory.json") or (
+                prefix != "pgvector/" and inventory_basename != "inventory.json"):
+            raise InventoryError("component licence inventory path does not match archive root")
         links = {name: member.linkname for name, member in members.items() if member.issym()}
 
         def require_regular(path, origin):
