@@ -1,0 +1,171 @@
+name: Linux x86-64 publication verification
+on:
+  workflow_dispatch:
+  push:
+    branches: [spike]
+    paths:
+      - '.github/workflows/linux-publication-x86_64.yml'
+      - 'scripts/linux/Dockerfile'
+      - 'scripts/linux/build.sh'
+      - 'scripts/linux/build-in-container.sh'
+      - 'scripts/linux/bundle-glibc-in-container.sh'
+      - 'scripts/linux/launcher.c'
+      - 'scripts/linux/verify*'
+      - 'scripts/linux/diagnostics*'
+      - 'scripts/linux/qemu-kernel-515*'
+      - 'support/verification-profiles.json'
+      - 'tests/schema.sql'
+      - 'tests/builtins/**'
+      - 'tests/extensions/pgvector.sql'
+      - 'tools/check_elf_dependencies.py'
+      - 'tools/create_linux_publication_receipt.py'
+      - 'tools/emit_linux_publication_records.py'
+      - 'tools/write_linux_license_inventory.py'
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    permissions:
+      contents: read
+    env:
+      PG_VERSION: '18.6'
+      PG_ARCHITECTURE: x86_64
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build exact PostgreSQL and pgvector archives
+        id: build
+        run: scripts/linux/build.sh "$RUNNER_TEMP/pilot"
+      - name: Verify final archives on clean Ubuntu 24.04
+        id: archive_verify
+        run: scripts/linux/verify.sh "$RUNNER_TEMP/pilot"
+      - name: Check launch without host shell or C library
+        id: nohost
+        run: bash scripts/linux/verify-no-host-userspace.sh "$RUNNER_TEMP/pilot" "$PG_VERSION" x86_64
+      - name: Check older-glibc and no-glibc hosts
+        id: portability
+        run: |
+          for image in ubuntu:20.04 alpine:3.22; do
+            docker run --rm --platform linux/amd64 \
+              -v "$RUNNER_TEMP/pilot:/archives:ro" -v "$GITHUB_WORKSPACE:/repo:ro" \
+              --entrypoint sh "$image" /repo/scripts/linux/verify-glibc-portability.sh \
+              /archives "$PG_VERSION" x86_64
+          done
+      - name: Capture controlled diagnostic failures
+        id: diagnostics
+        run: |
+          docker build --platform linux/amd64 -f scripts/linux/diagnostics.Dockerfile \
+            -t pg-binaries-linux-diagnostics .
+          docker run --rm --platform linux/amd64 \
+            -v "$RUNNER_TEMP/pilot:/archives" -v "$GITHUB_WORKSPACE:/repo:ro" \
+            -e GITHUB_RUN_ID -e GITHUB_REPOSITORY -e GITHUB_SERVER_URL -e GITHUB_SHA \
+            --entrypoint bash pg-binaries-linux-diagnostics \
+            /repo/scripts/linux/diagnostics-in-container.sh /archives "$PG_VERSION" x86_64
+      - name: Record current-OS publication case results
+        if: ${{ always() }}
+        env:
+          ARCHIVE_OUTCOME: ${{ steps.archive_verify.outcome }}
+          NOHOST_OUTCOME: ${{ steps.nohost.outcome }}
+          PORTABILITY_OUTCOME: ${{ steps.portability.outcome }}
+          DIAGNOSTICS_OUTCOME: ${{ steps.diagnostics.outcome }}
+        run: |
+          set -euo pipefail
+          archive_dir="$RUNNER_TEMP/pilot"
+          if [[ ! -f "$archive_dir/postgresql-$PG_VERSION-linux-x86_64.tar.gz" || \
+                ! -f "$archive_dir/pgvector-0.8.7-postgresql-$PG_VERSION-linux-x86_64.tar.gz" ]]; then
+            echo "No current-OS record: archive bytes are unavailable"
+            exit 0
+          fi
+          mkdir -p "$archive_dir/publication"
+          printf '{"archive-suite":"%s","diagnostics":"%s","no-host-userspace":"%s","portability":"%s"}\n' \
+            "$ARCHIVE_OUTCOME" "$DIAGNOSTICS_OUTCOME" "$NOHOST_OUTCOME" "$PORTABILITY_OUTCOME" \
+            > "$archive_dir/publication/current-steps.json"
+          image_id=$(docker image inspect pg-binaries-linux-verifier --format '{{.Id}}' 2>/dev/null || true)
+          if [[ -z "$image_id" ]]; then image_id=unknown; fi
+          clean=false
+          dependencies=failure
+          if [[ "$ARCHIVE_OUTCOME" == success ]]; then clean=true; dependencies=success; fi
+          . /etc/os-release
+          python3 tools/create_linux_publication_receipt.py \
+            --archives "$archive_dir" --receipt "$archive_dir/publication/current-receipt.json" \
+            --profile-id linux-publication-current-x86_64 \
+            --postgresql-version "$PG_VERSION" --architecture x86_64 --endpoint current \
+            --kernel-release "$(uname -r)" --distribution "$PRETTY_NAME" \
+            --distribution-version "$VERSION_ID" --image-id "$image_id" \
+            --dependency-check-profile linux-runtime-v1 --dependency-check-result "$dependencies" \
+            --clean-system "$clean" --step-results "$archive_dir/publication/current-steps.json"
+          python3 tools/emit_linux_publication_records.py \
+            --archives "$archive_dir" --receipt "$archive_dir/publication/current-receipt.json" \
+            --output "$archive_dir/publication/records"
+      - name: Build disposable Linux 5.15 QEMU environment
+        id: qemu_build
+        if: ${{ always() && steps.build.outcome == 'success' }}
+        run: docker build -f scripts/linux/qemu-kernel-515.Dockerfile -t pg-binaries-linux-qemu .
+      - name: Verify same archives in Ubuntu 22.04 Linux 5.15 guest
+        id: minimum_verify
+        if: ${{ always() && steps.qemu_build.outcome == 'success' && steps.build.outcome == 'success' }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/qemu-linux-515"
+          chmod 0777 "$RUNNER_TEMP/qemu-linux-515"
+          docker run --rm --network bridge --cap-drop=ALL --security-opt no-new-privileges \
+            -v "$GITHUB_WORKSPACE:/repo:ro" \
+            -v "$RUNNER_TEMP/pilot:/archives:ro" \
+            -v "$RUNNER_TEMP/qemu-linux-515:/work" \
+            -e PG_VERSION="$PG_VERSION" -e GITHUB_SHA="$GITHUB_SHA" \
+            pg-binaries-linux-qemu \
+            bash /repo/scripts/linux/qemu-kernel-515-smoke.sh /archives "$PG_VERSION" /work
+      - name: Record minimum-OS publication case results
+        if: ${{ always() }}
+        env:
+          MINIMUM_OUTCOME: ${{ steps.minimum_verify.outcome }}
+        run: |
+          set -euo pipefail
+          archive_dir="$RUNNER_TEMP/pilot"
+          evidence="$RUNNER_TEMP/qemu-linux-515/evidence"
+          if [[ ! -f "$archive_dir/postgresql-$PG_VERSION-linux-x86_64.tar.gz" || \
+                ! -f "$archive_dir/pgvector-0.8.7-postgresql-$PG_VERSION-linux-x86_64.tar.gz" ]]; then
+            echo "No minimum-OS record: archive bytes are unavailable"
+            exit 0
+          fi
+          if [[ ! -f "$evidence/full-verifier.log" ]]; then
+            echo "No minimum-OS record: guest kernel was not observed"
+            exit 0
+          fi
+          kernel=$(sed -n 's/^guest_kernel=//p' "$evidence/full-verifier.log" | head -1)
+          distribution=$(sed -n 's/^guest_os=//p' "$evidence/full-verifier.log" | head -1)
+          if [[ -z "$kernel" || -z "$distribution" ]]; then
+            echo "No minimum-OS record: guest identity was not observed"
+            exit 0
+          fi
+          grep -Fx 'image_sha256=e3297e0aa6c408ac90d854348465d3991c65159b444c4ef9016f52f6807290e3' \
+            "$evidence/environment.txt"
+          mkdir -p "$archive_dir/publication"
+          printf '{"archive-suite":"%s"}\n' "$MINIMUM_OUTCOME" \
+            > "$archive_dir/publication/minimum-steps.json"
+          clean=false
+          dependencies=failure
+          if [[ "$MINIMUM_OUTCOME" == success ]]; then clean=true; dependencies=success; fi
+          python3 tools/create_linux_publication_receipt.py \
+            --archives "$archive_dir" --receipt "$archive_dir/publication/minimum-receipt.json" \
+            --profile-id linux-publication-minimum-x86_64 \
+            --postgresql-version "$PG_VERSION" --architecture x86_64 --endpoint minimum \
+            --kernel-release "$kernel" --distribution "$distribution" \
+            --distribution-version 22.04 \
+            --image-id sha256:e3297e0aa6c408ac90d854348465d3991c65159b444c4ef9016f52f6807290e3 \
+            --dependency-check-profile linux-runtime-v1 --dependency-check-result "$dependencies" \
+            --clean-system "$clean" --step-results "$archive_dir/publication/minimum-steps.json"
+          python3 tools/emit_linux_publication_records.py \
+            --archives "$archive_dir" --receipt "$archive_dir/publication/minimum-receipt.json" \
+            --output "$archive_dir/publication/records"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: linux-publication-x86_64-evidence
+          path: |
+            ${{ runner.temp }}/pilot/*.tar.gz
+            ${{ runner.temp }}/pilot/*.sha256
+            ${{ runner.temp }}/pilot/publication/**
+            ${{ runner.temp }}/pilot/debug-symbols/**
+            ${{ runner.temp }}/pilot/diagnostics/**
+            ${{ runner.temp }}/qemu-linux-515/evidence/**
+          include-hidden-files: true
+          retention-days: 3
