@@ -1,0 +1,51 @@
+{
+  "assembled_core": {
+    "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+    "sha256": "9f963d28b7984f0a87ac65cd2a1b1f2007f63bdc218b643ac35239605c26f06f",
+    "version": "18.6"
+  },
+  "case_results": {
+    "archive-suite": "passed",
+    "diagnostics": "passed",
+    "no-host-userspace": "passed",
+    "portability": "passed"
+  },
+  "ci": {
+    "build_revision": "b5999c3a25c393449ac7c82b5f924073688ce6ae",
+    "provider": "github-actions",
+    "run_id": "39009053064",
+    "run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/39009053064",
+    "source_revision": "b5999c3a25c393449ac7c82b5f924073688ce6ae",
+    "test_revision": "b5999c3a25c393449ac7c82b5f924073688ce6ae"
+  },
+  "component": "vector",
+  "environment": {
+    "architecture": "x86_64",
+    "clean_system": true,
+    "dependency_check_profile": "linux-runtime-v1",
+    "dependency_checks_passed": true,
+    "distribution": "Ubuntu 24.04.5 LTS",
+    "distribution_version": "24.04",
+    "endpoint": "current",
+    "image_id": "sha256:4a4015ed9dae8ae66c5ccfe187067aebaf76c2ef9a57476d27b956f179992f72",
+    "kernel_release": "6.17.0-1022-azure",
+    "os": "linux",
+    "os_version": "6.17.0"
+  },
+  "outcome": "passed",
+  "platform": "linux-x86_64",
+  "postgresql_version": "18.6",
+  "profile_id": "linux-publication-current-x86_64",
+  "profile_revision": "bac559e5e88ab25be2370b8a5268bc6ce7bedc810c61497d12bf67de87067cae",
+  "schema_version": 2,
+  "scope": "publication",
+  "sha256": "1a028a59f01eaff0dd75995c1f1ab9470dda9d86749135e01bdd017f12d4f022",
+  "test_cases": [
+    "archive-suite",
+    "diagnostics",
+    "no-host-userspace",
+    "portability"
+  ],
+  "test_revision": "b5999c3a25c393449ac7c82b5f924073688ce6ae",
+  "version": "0.8.7"
+}
