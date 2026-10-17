@@ -17,6 +17,8 @@ class CreateMacosSymbolsTests(unittest.TestCase):
     def test_static_library_is_not_a_runtime_module(self):
         self.assertFalse(symbols.module_member("postgresql/lib/libecpg.a", set()))
         self.assertTrue(symbols.module_member("postgresql/lib/libpq.5.dylib", set()))
+        self.assertTrue(symbols.module_member("pgaudit/lib/pgaudit.dylib", set()))
+        self.assertFalse(symbols.module_member("pgaudit/lib/unexpected.dylib", set()))
 
     def make_archive(self, directory, members):
         archive = directory / "pilot.tar.gz"

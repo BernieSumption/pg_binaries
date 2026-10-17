@@ -45,6 +45,9 @@ cleanup() {
 }
 trap cleanup EXIT
 mkdir -p "$work/source" "$work/first" "$work/extension" "$work/moved" "$work/socket"
+staged_dsyms="$output/staged-dsyms"
+mkdir -p "$staged_dsyms"
+ditto "$core_archives/debug-symbols/dSYMs" "$staged_dsyms"
 tar -xzf "$core_archive" -C "$work/first"
 pgroot="$work/first/postgresql"
 test -s "$pgroot/include/server/pg_config.h"
@@ -140,6 +143,9 @@ mkdir -p "$package/pgaudit/lib" "$package/pgaudit/share/extension" "$package/pga
 module="$staged_root/lib/pgaudit.dylib"
 test -s "$module"
 cp "$module" "$package/pgaudit/lib/"
+mkdir -p "$staged_dsyms/pgaudit/lib"
+dsymutil "$package/pgaudit/lib/pgaudit.dylib" \
+  -o "$staged_dsyms/pgaudit/lib/pgaudit.dylib.dSYM"
 cp "$staged_root/share/extension/"pgaudit* "$package/pgaudit/share/extension/"
 cat LICENSE "$pgroot/LICENSES/PostgreSQL.txt" > "$package/pgaudit/LICENSES/pgAudit.txt"
 grep -Fq 'This code is released under the PostgreSQL licence' "$package/pgaudit/LICENSES/pgAudit.txt"
