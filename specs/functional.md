@@ -12,7 +12,7 @@ A single binary for each platform provides support for all supported OS versions
 - very old: we may drop support for anything released more than 10 years ago
 - inconvenient to support: we may drop support for older OS releases if supporting them makes it harder to support new OSs or conflicts with our other goals eg on portability or 
 
-Actual supported versions are documented in inventory.json, reasoning behind them captured in `policies/os-support.md`
+Actual supported versions are documented in inventory.json, reasoning behind them captured in `policies/os-support.md`.
 
 ## Universal OS support and machine portability
 

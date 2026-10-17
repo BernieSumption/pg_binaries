@@ -8,11 +8,17 @@ Document testing decisions and their reasoning in `policies/testing.md`, explain
 
 ## Test the archives on supported systems before publication
 
-Before publication, test the final archives on clean supported systems, outside the environment used to build them. The test systems must not supply development tools or dependencies that would hide missing files in our downloads.
+Before publication, test the final archives outside their build environment eg using an isolated container or separate GitHub runner. If the option exists to have a runner or environment with no or less developer tools installed, this should be taken, but is not mandatory. Inspect packaged dependencies and restrict runtime search paths where practical to detect reliance on undeclared installed software; successful execution on such a runner alone does not establish dependency completeness. A machine without development tools or installed runtimes is not a release prerequisite.
+
+Testing should include appropriate static analysis to verify invariants such as our requirement for no dependency on host machine files or libraries and any other appropriate invariants.
 
 Assemble installations using only the archives, their metadata and the documented installation process. PostgreSQL must run as an ordinary user without undeclared setup or dependencies.
 
-Test each supported OS and architecture. For compatibility ranges, testing the start and end is sufficient; testing every intermediate version is not required. This applies to OS versions and PostgreSQL versions supported by an extension build. Known intermediate incompatibilities must prevent advertising a continuous range even when both endpoints pass.
+Assess minimum-OS compatibility using deliberate build settings, upstream compatibility information and binary dependency inspection. Record the intended minimum and the actual test environment separately. Routine release tests do not need to execute on older OS versions or kernels.
+
+On Linux, tests should take place inside a container using an Alpine-based distribution to isolate tests from the host machine's environment, and also ensure that we are not depending on the Ubuntu host's glibc.
+
+For PostgreSQL compatibility ranges claimed by an extension archive, test both endpoints; testing every intermediate version is not required. Known incompatibilities must prevent advertising a continuous OS or PostgreSQL range, regardless of the selected test environments.
 
 ## Treat the documented install process as a tested asset
 
