@@ -25,6 +25,13 @@ jobs:
       - uses: ilammy/msvc-dev-cmd@v1
         with:
           arch: x64
+      - name: Initialize probe progress file
+        env:
+          PROBE_OUTPUT: ${{ runner.temp }}/address-standardizer-results
+        run: |
+          New-Item -ItemType Directory -Force $env:PROBE_OUTPUT | Out-Null
+          "$(Get-Date -AsUTC -Format o) event=started stage=workflow-initialization detail=probe progress initialized" |
+            Set-Content -Encoding utf8 (Join-Path $env:PROBE_OUTPUT 'progress.log')
       - name: Run pinned Windows feasibility probe
         env:
           GH_TOKEN: ${{ github.token }}
