@@ -7,6 +7,7 @@ import importlib.util
 import json
 from pathlib import Path
 import shutil
+import sys
 import tarfile
 from urllib.parse import urlparse
 
@@ -188,14 +189,47 @@ def select_and_stage(inventory, support, postgresql_version, platform_key,
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--merge-payload", type=Path, required=True)
+    mode = parser.add_mutually_exclusive_group(required=True)
+    mode.add_argument("--merge-payload", type=Path)
+    mode.add_argument("--inventory", type=Path,
+                      help="inventory JSON used to select an extension archive")
+    parser.add_argument("--support", type=Path,
+                        help="support JSON used to validate the selected target")
+    parser.add_argument("--postgresql-version")
+    parser.add_argument("--platform")
+    parser.add_argument("--project")
+    parser.add_argument("--extension-version")
+    parser.add_argument("--sql-name")
+    parser.add_argument("--archive-directory", type=Path)
     parser.add_argument("--prefix", type=Path, required=True)
+    parser.add_argument("--staging-root", type=Path)
     args = parser.parse_args()
     try:
-        merge_payload(args.merge_payload, args.prefix)
+        if args.merge_payload is not None:
+            merge_payload(args.merge_payload, args.prefix)
+            return 0
+
+        required = ("support", "postgresql_version", "platform", "project",
+                    "extension_version", "sql_name", "archive_directory", "staging_root")
+        missing = [option.replace("_", "-") for option in required
+                   if getattr(args, option) is None]
+        if missing:
+            parser.error("inventory mode requires --" + ", --".join(missing))
+        inventory = json.loads(args.inventory.read_text(encoding="utf-8"))
+        support = json.loads(args.support.read_text(encoding="utf-8"))
+        download = select_and_stage(
+            inventory, support, args.postgresql_version, args.platform,
+            args.project, args.extension_version, args.sql_name,
+            args.archive_directory, args.prefix, args.staging_root)
+        print(json.dumps(download, sort_keys=True))
+        return 0
     except StagingError as exc:
-        parser.error(str(exc))
+        print(f"stage-extension-archive: error: {exc}", file=sys.stderr)
+        return 2
+    except (OSError, json.JSONDecodeError) as exc:
+        print(f"stage-extension-archive: error: {exc}", file=sys.stderr)
+        return 2
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

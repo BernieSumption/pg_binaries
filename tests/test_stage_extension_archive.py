@@ -1,7 +1,10 @@
 import hashlib
 import importlib.util
 import io
+import json
 from pathlib import Path
+import subprocess
+import sys
 import tarfile
 import tempfile
 import unittest
@@ -38,6 +41,10 @@ class StageExtensionArchiveTests(unittest.TestCase):
             version: {"downloads": {"linux-x86_64": [download]}}
             for version, download in self.downloads.items()
         }
+        self.inventory_path = self.root / "inventory.json"
+        self.support_path = self.root / "support.json"
+        self.inventory_path.write_text(json.dumps(self.inventory), encoding="utf-8")
+        self.support_path.write_text(json.dumps(self.support), encoding="utf-8")
 
     def write_archive(self, path, version, file_name, nested_licenses=False):
         metadata = ("{\"project\":\"example_project\","
@@ -65,6 +72,48 @@ class StageExtensionArchiveTests(unittest.TestCase):
         return staging.select_and_stage(
             self.inventory, self.support, "15.10", "linux-x86_64",
             "Example Project", version, "example", self.archives, prefix, self.staging)
+
+    def run_cli(self, version, prefix):
+        script = Path(__file__).resolve().parents[1] / "tools" / "stage_extension_archive.py"
+        return subprocess.run(
+            [sys.executable, str(script), "--inventory", str(self.inventory_path),
+             "--support", str(self.support_path), "--postgresql-version", "15.10",
+             "--platform", "linux-x86_64", "--project", "Example Project",
+             "--extension-version", version, "--sql-name", "example",
+             "--archive-directory", str(self.archives), "--prefix", str(prefix),
+             "--staging-root", str(self.staging)],
+            capture_output=True, text=True, check=False)
+
+    def test_cli_selects_both_versions_and_rejects_checksum_mismatch(self):
+        old_prefix = self.root / "cli-old-prefix"
+        new_prefix = self.root / "cli-new-prefix"
+        old_result = self.run_cli("2.0", old_prefix)
+        new_result = self.run_cli("2.1", new_prefix)
+        self.assertEqual(old_result.returncode, 0, old_result.stderr)
+        self.assertEqual(new_result.returncode, 0, new_result.stderr)
+        self.assertTrue((old_prefix / "lib/old.so").is_file())
+        self.assertFalse((old_prefix / "lib/new.so").exists())
+        self.assertTrue((new_prefix / "lib/new.so").is_file())
+        self.assertFalse((new_prefix / "lib/old.so").exists())
+
+        archive = self.archives / "example-2.0-linux-x86_64.tar.gz"
+        archive.write_bytes(archive.read_bytes() + b"changed")
+        rejected = self.run_cli("2.0", self.root / "rejected-prefix")
+        self.assertEqual(rejected.returncode, 2)
+        self.assertIn("checksum mismatch", rejected.stderr)
+        self.assertFalse((self.root / "rejected-prefix").exists())
+
+    def test_cli_keeps_merge_payload_mode(self):
+        payload = self.root / "payload"
+        (payload / "share").mkdir(parents=True)
+        (payload / "share/example.control").write_text("control", encoding="utf-8")
+        prefix = self.root / "merged-prefix"
+        script = Path(__file__).resolve().parents[1] / "tools" / "stage_extension_archive.py"
+        result = subprocess.run(
+            [sys.executable, str(script), "--merge-payload", str(payload),
+             "--prefix", str(prefix)], capture_output=True, text=True, check=False)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual((prefix / "share/example.control").read_text(encoding="utf-8"), "control")
 
     def test_selects_exact_core_archive_and_stages_only_its_version(self):
         old_prefix = self.root / "old-prefix"
