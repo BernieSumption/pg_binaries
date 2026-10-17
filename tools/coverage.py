@@ -288,11 +288,31 @@ def verification_profile(root, profile_id, allow_missing_sources=False):
     sources_available = True
     root = Path(root)
     for source in sources:
-        source_path = Path(source)
+        source_name, separator, section = source.partition("#profile-section=")
+        if separator and (source_name != ".github/workflows/linux-publication.yml"
+                          or not re.fullmatch(r"[a-z0-9-]+", section)):
+            raise CoverageError(f"verification profile {profile_id}: invalid profile section {source!r}")
+        if "#" in source_name or (not separator and "#" in source):
+            raise CoverageError(f"verification profile {profile_id}: invalid source path {source!r}")
+        source_path = Path(source_name)
         if source_path.is_absolute() or ".." in source_path.parts:
             raise CoverageError(f"verification profile {profile_id}: invalid source path {source!r}")
         try:
             content = (root / source_path).read_bytes()
+            if separator:
+                try:
+                    lines = content.decode("utf-8").replace("\r\n", "\n").splitlines(keepends=True)
+                except UnicodeDecodeError as exc:
+                    raise CoverageError(
+                        f"verification profile {profile_id}: section source must be UTF-8") from exc
+                begin = f"# profile-section: {section} begin"
+                end = f"# profile-section: {section} end"
+                starts = [index for index, line in enumerate(lines) if line.strip() == begin]
+                ends = [index for index, line in enumerate(lines) if line.strip() == end]
+                if len(starts) != 1 or len(ends) != 1 or starts[0] >= ends[0]:
+                    raise CoverageError(
+                        f"verification profile {profile_id}: missing, repeated, or reversed section {section!r}")
+                content = "".join(lines[starts[0] + 1:ends[0]]).encode("utf-8")
             try:
                 content.decode("utf-8")
                 text_source = b"\0" not in content

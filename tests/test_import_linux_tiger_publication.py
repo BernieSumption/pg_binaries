@@ -30,7 +30,8 @@ class LinuxTigerPublicationImportTests(unittest.TestCase):
         for profile_id in ("tiger-publication-current-x86_64",
                            "tiger-publication-minimum-x86_64"):
             source_paths.update(profiles[profile_id]["sources"])
-        for source in source_paths:
+        for profile_source in source_paths:
+            source = profile_source.partition("#profile-section=")[0]
             destination = self.root / source
             destination.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(REPO / source, destination)
