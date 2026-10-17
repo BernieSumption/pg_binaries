@@ -90,7 +90,7 @@ class PublicationPreflightTests(unittest.TestCase):
         }
 
     def _add_extension(self, platform, content):
-        url, checksum = self._stage(content, f"example-{platform}-1.0.tar.gz", platform=platform)
+        url, checksum = self._stage(content, f"example-1.0-postgresql-15.9-{platform}.tar.gz", platform=platform)
         core = self.candidate["postgresql"]["15.9"]["downloads"][platform]
         self.candidate["verification_evidence"][url] = [
             self._verification_record(
@@ -165,7 +165,7 @@ class PublicationPreflightTests(unittest.TestCase):
 
     def _rewrite_extension(self, transform, url=None):
         if url is None:
-            url = next(url for url in self.staged if "example-linux-x86_64" in url)
+            url = next(url for url in self.staged if "example-1.0-postgresql-15.9-linux-x86_64" in url)
         path = Path(self.staged[url]["path"])
         with tarfile.open(path, "r:gz") as archive:
             contents = {m.name: archive.extractfile(m).read() for m in archive.getmembers()}
@@ -197,7 +197,7 @@ class PublicationPreflightTests(unittest.TestCase):
         self.candidate["postgresql"]["15.9"]["downloads"]["linux-x86_64"]["sha256"] = checksum
         for record in self.candidate["verification_evidence"][url]:
             record["sha256"] = checksum
-        extension_url = next(url for url in self.staged if "example-linux-x86_64" in url)
+        extension_url = next(url for url in self.staged if "example-1.0-postgresql-15.9-linux-x86_64" in url)
         for record in self.candidate["verification_evidence"][extension_url]:
             record["assembled_core"]["sha256"] = checksum
 
@@ -255,13 +255,13 @@ class PublicationPreflightTests(unittest.TestCase):
         self.check()
 
     def test_rejects_absent_inventory_or_licence_text(self):
-        url = next(url for url in self.staged if "example-macos-x86_64" in url)
+        url = next(url for url in self.staged if "example-1.0-postgresql-15.9-macos-x86_64" in url)
         self._rewrite_extension(lambda contents: contents.pop("example/LICENSES/inventory.json"), url)
         with self.assertRaises(publication_preflight.PreflightError):
             self.check()
 
     def test_rejects_absent_licence_text(self):
-        url = next(url for url in self.staged if "example-macos-arm64" in url)
+        url = next(url for url in self.staged if "example-1.0-postgresql-15.9-macos-arm64" in url)
         self._rewrite_extension(lambda contents: contents.pop("example/LICENSES/COPYING"), url)
         with self.assertRaises(publication_preflight.PreflightError):
             self.check()
@@ -306,6 +306,24 @@ class PublicationPreflightTests(unittest.TestCase):
             self.support, self.snapshot,
             staged if staged is not None else self.staged, root=self.root)
 
+    def _rename_new_url(self, old_url, filename):
+        tag = old_url.rsplit("/", 1)[0]
+        new_url = f"{tag}/{filename}"
+        self.staged[new_url] = self.staged.pop(old_url)
+        self.candidate["verification_evidence"][new_url] = self.candidate["verification_evidence"].pop(old_url)
+        for component in (self.candidate["postgresql"], self.candidate["extensions"]):
+            def replace(value):
+                if isinstance(value, dict):
+                    for key, child in value.items():
+                        if key == "url" and child == old_url:
+                            value[key] = new_url
+                        else:
+                            replace(child)
+                elif isinstance(value, list):
+                    for child in value:
+                        replace(child)
+            replace(component)
+
     def _run_cli(self, candidate=None):
         documents = {
             "base.json": self.base,
@@ -348,6 +366,20 @@ class PublicationPreflightTests(unittest.TestCase):
         self.assertEqual(report["postgresql_target_count"], 5)
         self.assertEqual(report["extension_target_count"], 5)
         self.assertNotIn("release_eligible", report)
+
+    def test_rejects_new_core_filename_for_different_target(self):
+        old_url = next(url for url in self.staged if "postgresql-15.9-linux-x86_64" in url)
+        self._rename_new_url(old_url, "postgresql-15.9-linux-mips.tar.gz")
+        with self.assertRaisesRegex(publication_preflight.PreflightError,
+                                    "PostgreSQL archive filename does not match candidate target"):
+            self.check()
+
+    def test_rejects_new_extension_filename_outside_claimed_pg_range(self):
+        old_url = next(url for url in self.staged if "example-1.0-postgresql-15.9-linux-x86_64" in url)
+        self._rename_new_url(old_url, "example-1.0-postgresql-16.0-linux-x86_64.tar.gz")
+        with self.assertRaisesRegex(publication_preflight.PreflightError,
+                                    "extension archive PostgreSQL target does not match candidate range"):
+            self.check()
 
     def test_accepts_one_project_archive_for_multiple_sql_names(self):
         self.support["extensions"]["Example"]["sql_names"].append("example_aux")
@@ -470,7 +502,7 @@ class PublicationPreflightTests(unittest.TestCase):
             self.check()
 
     def test_rejects_extension_verification_bound_to_wrong_core(self):
-        url = next(url for url in self.staged if "example-linux-x86_64" in url)
+        url = next(url for url in self.staged if "example-1.0-postgresql-15.9-linux-x86_64" in url)
         self.candidate["verification_evidence"][url][0]["assembled_core"]["sha256"] = "0" * 64
         with self.assertRaisesRegex(publication_preflight.PreflightError,
                                     "requires passed current-profile publication verification"):
@@ -539,7 +571,7 @@ class PublicationPreflightTests(unittest.TestCase):
         for record in self.candidate["verification_evidence"][url]:
             record["sha256"] = checksum
         self.candidate["postgresql"]["15.9"]["downloads"]["linux-x86_64"]["sha256"] = checksum
-        extension_url = next(url for url in self.staged if "example-linux-x86_64" in url)
+        extension_url = next(url for url in self.staged if "example-1.0-postgresql-15.9-linux-x86_64" in url)
         for record in self.candidate["verification_evidence"][extension_url]:
             record["assembled_core"]["sha256"] = checksum
         with self.assertRaisesRegex(publication_preflight.PreflightError,
@@ -559,7 +591,7 @@ class PublicationPreflightTests(unittest.TestCase):
         for record in self.candidate["verification_evidence"][url]:
             record["sha256"] = checksum
         self.candidate["postgresql"]["15.9"]["downloads"]["linux-x86_64"]["sha256"] = checksum
-        extension_url = next(url for url in self.staged if "example-linux-x86_64" in url)
+        extension_url = next(url for url in self.staged if "example-1.0-postgresql-15.9-linux-x86_64" in url)
         for record in self.candidate["verification_evidence"][extension_url]:
             record["assembled_core"]["sha256"] = checksum
         with self.assertRaisesRegex(publication_preflight.PreflightError,
@@ -579,7 +611,7 @@ class PublicationPreflightTests(unittest.TestCase):
         for record in self.candidate["verification_evidence"][url]:
             record["sha256"] = checksum
         self.candidate["postgresql"]["15.9"]["downloads"]["linux-x86_64"]["sha256"] = checksum
-        extension_url = next(url for url in self.staged if "example-linux-x86_64" in url)
+        extension_url = next(url for url in self.staged if "example-1.0-postgresql-15.9-linux-x86_64" in url)
         for record in self.candidate["verification_evidence"][extension_url]:
             record["assembled_core"]["sha256"] = checksum
         with self.assertRaisesRegex(publication_preflight.PreflightError,

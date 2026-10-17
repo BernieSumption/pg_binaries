@@ -116,6 +116,38 @@ def _covers_extension(target, extension_ranges):
     return False
 
 
+def _validate_new_filenames(new_urls, core_by_url, extension_assets, extension_ranges):
+    """Bind each new asset name to the inventory target it claims to serve."""
+    for url in sorted(new_urls):
+        filename = PurePosixPath(urlsplit(url).path).name
+        if url in core_by_url:
+            version, platform = core_by_url[url]
+            expected = f"postgresql-{version}-{platform}.tar.gz"
+            if filename != expected:
+                raise PreflightError(f"PostgreSQL archive filename does not match candidate target: {url}")
+            continue
+
+        association, _sql_names = extension_assets[url]
+        project, version, platform = association
+        match = re.fullmatch(
+            rf"{re.escape(project.lower())}-{re.escape(version)}-postgresql-"
+            rf"(\d+\.\d+(?:-to-\d+\.\d+)?)-{re.escape(platform)}\.tar\.gz",
+            filename)
+        if not match:
+            raise PreflightError(f"extension archive filename does not match candidate target: {url}")
+        pg_target = match.group(1)
+        ranges = extension_ranges[url]
+        for low, high in ranges:
+            if "-to-" in pg_target:
+                valid = pg_target == f"{low}-to-{high}"
+            else:
+                build = _coverage.version_parts(pg_target, "filename PostgreSQL build version")
+                valid = (_coverage.version_parts(low, "candidate range") <= build
+                         <= _coverage.version_parts(high, "candidate range"))
+            if not valid:
+                raise PreflightError(f"extension archive PostgreSQL target does not match candidate range: {url}")
+
+
 def _archive_builtins(path, version, platform):
     """Check PostgreSQL target metadata and read built-in SQL names."""
     try:
@@ -375,6 +407,7 @@ def preflight_candidate(base_inventory, candidate, support, snapshot, staged_ass
     for url in sorted(new_urls):
         if not NEW_ASSET_URL.fullmatch(url):
             raise PreflightError(f"new asset URL is not an immutable catalog release URL: {url}")
+    _validate_new_filenames(new_urls, core_by_url, extension_assets, extension_ranges)
 
     evidence_by_url = candidate.get("verification_evidence")
     if not isinstance(evidence_by_url, dict):
