@@ -10,6 +10,24 @@ from unittest.mock import patch
 from tools import check_pe_dependencies as checker
 
 
+def make_pe32_plus(import_pair=(0, 0), delay_pair=(0, 0)):
+    data = bytearray(400)
+    data[:2] = b"MZ"
+    data[0x3C:0x40] = (64).to_bytes(4, "little")
+    data[64:68] = b"PE\0\0"
+    data[68 + 16:68 + 18] = (240).to_bytes(2, "little")
+    optional = 88
+    data[optional:optional + 2] = (0x20B).to_bytes(2, "little")
+    data[optional + 108:optional + 112] = (14).to_bytes(4, "little")
+    for index, value in enumerate(import_pair):
+        start = optional + 112 + 8 + index * 4
+        data[start:start + 4] = value.to_bytes(4, "little")
+    for index, value in enumerate(delay_pair):
+        start = optional + 112 + 13 * 8 + index * 4
+        data[start:start + 4] = value.to_bytes(4, "little")
+    return data
+
+
 class DumpbinParserTests(unittest.TestCase):
     def test_parses_amd64_pe32_plus_and_windows_10_headers(self):
         output = """
@@ -53,6 +71,31 @@ class DumpbinParserTests(unittest.TestCase):
             with self.subTest(output=output), self.assertRaises(ValueError):
                 checker.parse_imports(output)
 
+    def test_reads_zero_import_directories_from_pe32_plus(self):
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp) / "empty.dll"
+            path.write_bytes(make_pe32_plus())
+            self.assertEqual(checker.pe_import_directories(path), ((0, 0), (0, 0)))
+
+    def test_reads_nonzero_import_directories_from_pe32_plus(self):
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp) / "imports.dll"
+            path.write_bytes(make_pe32_plus(import_pair=(0x1000, 40), delay_pair=(0x2000, 32)))
+            self.assertEqual(checker.pe_import_directories(path), ((0x1000, 40), (0x2000, 32)))
+
+    def test_rejects_truncated_pe_optional_header(self):
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp) / "truncated.dll"
+            path.write_bytes(make_pe32_plus()[:200])
+            with self.assertRaisesRegex(ValueError, "truncated PE header"):
+                checker.pe_import_directories(path)
+
+            declared_short = make_pe32_plus()
+            declared_short[68 + 16:68 + 18] = (216).to_bytes(2, "little")
+            path.write_bytes(declared_short)
+            with self.assertRaisesRegex(ValueError, "truncated PE32\+ optional-header"):
+                checker.pe_import_directories(path)
+
     def test_system_allowlist_is_narrow_and_documented(self):
         self.assertTrue(checker.is_system_dll("KERNEL32.dll"))
         self.assertTrue(checker.is_system_dll("api-ms-win-core-file-l1-2-0.dll"))
@@ -62,6 +105,39 @@ class DumpbinParserTests(unittest.TestCase):
 
 
 class PackageInspectionTests(unittest.TestCase):
+    def test_unknown_import_output_requires_zero_import_directories(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            app = root / "app.exe"
+            app.write_bytes(make_pe32_plus())
+            dumpbin = root.parent / "dumpbin.exe"
+            dumpbin.touch()
+            header = "8664 machine (x64)\n20B magic # (PE32+)\n10.00 operating system version\n6.00 subsystem version\n"
+
+            def run(command, **kwargs):
+                return subprocess.CompletedProcess(command, 0,
+                    header if command[1] == "/headers" else "unrecognized imports output", "")
+
+            with patch.object(checker.subprocess, "run", side_effect=run):
+                report = {"inspected_files": [], "files": []}
+                self.assertEqual(checker.inspect(root, dumpbin, report), 1)
+                self.assertEqual(report["files"][0]["imports"], [])
+
+                app.write_bytes(make_pe32_plus(import_pair=(0x1000, 40)))
+                with self.assertRaisesRegex(ValueError, "no recognized import sections"):
+                    checker.inspect(root, dumpbin, {"inspected_files": [], "files": []})
+
+                def explicit_no_imports(command, **kwargs):
+                    return subprocess.CompletedProcess(command, 0,
+                        header if command[1] == "/headers" else "no imports", "")
+                with patch.object(checker.subprocess, "run", side_effect=explicit_no_imports):
+                    with self.assertRaisesRegex(ValueError, "listed no imports"):
+                        checker.inspect(root, dumpbin, {"inspected_files": [], "files": []})
+
+                app.write_bytes(make_pe32_plus()[:200])
+                with self.assertRaisesRegex(ValueError, "truncated PE header"):
+                    checker.inspect(root, dumpbin, {"inspected_files": [], "files": []})
+
     def test_resolves_package_import_and_rejects_unknown_import(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)

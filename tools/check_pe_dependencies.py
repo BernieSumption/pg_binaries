@@ -27,6 +27,10 @@ DLL_NAME = re.compile(r"^[A-Za-z0-9_.+-]+\.(?:dll|drv)$", re.I)
 VERSION = re.compile(r"\b(\d+)\.(\d+)(?:\.(\d+))?\b")
 
 
+class ImportSectionsMissing(ValueError):
+    pass
+
+
 def is_system_dll(name):
     lowered = name.lower()
     return lowered in SYSTEM_DLLS or (
@@ -78,12 +82,50 @@ def parse_imports(output):
                 in_import_section = False
     no_imports = re.search(r"\bno (?:normal |delay[- ]load )?imports?\b", output, re.I)
     if sections == 0 and not no_imports:
-        raise ValueError("dumpbin /imports contains no recognized import sections")
+        raise ImportSectionsMissing("dumpbin /imports contains no recognized import sections")
     if sections == 0 and no_imports:
         return []
     if not names and not no_imports:
         raise ValueError("recognized import sections contained no parseable DLL headings")
     return list(dict.fromkeys(names))
+
+
+def pe_import_directories(path):
+    """Return the PE32+ import and delay-import RVA/size pairs."""
+    data = Path(path).read_bytes()
+
+    def require(offset, size, what):
+        if offset < 0 or size < 0 or offset + size > len(data):
+            raise ValueError(f"truncated PE header while reading {what}")
+
+    require(0, 64, "DOS header")
+    if data[:2] != b"MZ":
+        raise ValueError("invalid PE DOS signature")
+    pe_offset = int.from_bytes(data[0x3C:0x40], "little")
+    require(pe_offset, 24, "PE signature and COFF header")
+    if data[pe_offset:pe_offset + 4] != b"PE\0\0":
+        raise ValueError("invalid PE signature")
+    coff = pe_offset + 4
+    optional_size = int.from_bytes(data[coff + 16:coff + 18], "little")
+    optional = coff + 20
+    require(optional, optional_size, "optional header")
+    if optional_size < 2 or int.from_bytes(data[optional:optional + 2], "little") != 0x20B:
+        raise ValueError("PE optional header is not PE32+")
+    number_offset = optional + 108
+    require(number_offset, 4, "PE32+ data-directory count")
+    number_of_directories = int.from_bytes(data[number_offset:number_offset + 4], "little")
+    if number_of_directories < 14:
+        raise ValueError("PE32+ optional header does not declare import and delay-import directories")
+    directories = optional + 112
+    if optional_size < 112 + 14 * 8:
+        raise ValueError("truncated PE32+ optional-header data directories")
+    require(directories, 14 * 8, "PE32+ import data directories")
+    import_pair = tuple(int.from_bytes(data[directories + 8 + i * 4:directories + 12 + i * 4], "little")
+                        for i in range(2))
+    delay_offset = directories + 13 * 8
+    delay_pair = tuple(int.from_bytes(data[delay_offset + i * 4:delay_offset + 4 + i * 4], "little")
+                       for i in range(2))
+    return import_pair, delay_pair
 
 
 def archive_evidence(paths):
@@ -136,7 +178,18 @@ def inspect(prefix, dumpbin, report):
                 raise ValueError(f"dumpbin {option} failed for {relative}: {result.stderr.strip()}")
             return result.stdout
         header = parse_headers(run("/headers"))
-        imports = parse_imports(run("/imports"))
+        import_output = run("/imports")
+        try:
+            imports = parse_imports(import_output)
+        except ImportSectionsMissing:
+            import_directory, delay_directory = pe_import_directories(path)
+            if import_directory != (0, 0) or delay_directory != (0, 0):
+                raise
+            imports = []
+        if not imports:
+            import_directory, delay_directory = pe_import_directories(path)
+            if import_directory != (0, 0) or delay_directory != (0, 0):
+                raise ValueError(f"dumpbin listed no imports for PE file with import directories: {relative}")
         resolved = []
         for name in imports:
             candidate = by_name.get(name.lower())
