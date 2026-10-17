@@ -1,0 +1,41 @@
+name: pgTAP macOS x86-64 feasibility
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [spike]
+    paths:
+      - .github/workflows/pgtap-macos-x86_64-feasibility.yml
+      - scripts/pgtap/macos-x86_64-feasibility.sh
+      - scripts/pgtap/probe.sql
+      - scripts/macos/static_analysis.py
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  probe:
+    runs-on: macos-15-intel
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download the passed PostgreSQL 18.6 Intel artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: macos-pilot-archives
+          run-id: 39068360742
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/core-archives
+      - name: Package and verify pgTAP against the archived core
+        run: bash scripts/pgtap/macos-x86_64-feasibility.sh "$RUNNER_TEMP/core-archives" "$RUNNER_TEMP/pgTAP-feasibility"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pgtap-macos-x86_64-feasibility-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/pgTAP-feasibility/*.tar.gz
+            ${{ runner.temp }}/pgTAP-feasibility/*.sha256
+            ${{ runner.temp }}/pgTAP-feasibility/*.json
+            ${{ runner.temp }}/pgTAP-feasibility/*.txt
+          if-no-files-found: warn
+          retention-days: 7
