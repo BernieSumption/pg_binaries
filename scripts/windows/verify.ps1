@@ -94,6 +94,58 @@ if (-not (Test-Path (Join-Path $pgRoot 'manifest.json')) -or
     -not (Test-Path (Join-Path $vectorRoot 'LICENSES/pgvector.txt')) -or
     -not (Test-Path (Join-Path $pgRoot 'LICENSES/dependencies/icu.txt'))) { throw 'A required license text is missing' }
 
+$licenseInventoryPath = Join-Path $pgRoot 'LICENSES/inventory.json'
+$vectorLicenseInventoryPath = Join-Path $vectorRoot 'LICENSES/pgvector-inventory.json'
+if (-not (Test-Path $licenseInventoryPath -PathType Leaf) -or
+    -not (Test-Path $vectorLicenseInventoryPath -PathType Leaf) -or
+    (Test-Path (Join-Path $vectorRoot 'LICENSES/inventory.json'))) {
+  throw 'Core and extension licence inventories are missing or use colliding names'
+}
+$licenseInventories = @(
+  [ordered]@{ root = $pgRoot; path = $licenseInventoryPath; expected = @('postgresql', 'bundled-runtime-dependencies', 'Microsoft Visual C++ runtime') },
+  [ordered]@{ root = $vectorRoot; path = $vectorLicenseInventoryPath; expected = @('pgvector') }
+)
+foreach ($inventorySpec in $licenseInventories) {
+  $inventory = Get-Content $inventorySpec.path -Raw | ConvertFrom-Json
+  if ($inventory.schema_version -ne 1 -or @($inventory.components).Count -ne $inventorySpec.expected.Count) {
+    throw "Licence inventory schema or component count is invalid: $($inventorySpec.path)"
+  }
+  $actualComponents = @($inventory.components | ForEach-Object component | Sort-Object)
+  $expectedComponents = @($inventorySpec.expected | Sort-Object)
+  if (Compare-Object $actualComponents $expectedComponents) { throw "Licence inventory components differ from the packaged payload: $($inventorySpec.path)" }
+  foreach ($component in $inventory.components) {
+    if (-not $component.version -or @($component.payload_paths).Count -eq 0 -or
+        -not $component.license_file -or -not $component.redistribution_review.basis -or
+        $component.redistribution_review.status -notin @('resolved', 'pending')) {
+      throw "Licence component has incomplete identity or review: $($component.component)"
+    }
+    foreach ($licensePath in @($component.license_file) + @($component.additional_license_files)) {
+      $relativeLicense = $licensePath -replace '^LICENSES/', ''
+      $fullLicense = Join-Path $inventorySpec.root "LICENSES/$relativeLicense"
+      if (-not (Test-Path $fullLicense -PathType Leaf) -or (Get-Item $fullLicense).Length -eq 0) {
+        throw "Declared licence evidence is missing or empty: $licensePath"
+      }
+    }
+    foreach ($payloadPath in $component.payload_paths) {
+      if (-not (Test-Path (Join-Path $inventorySpec.root $payloadPath))) {
+        throw "Licence component payload path is missing: $payloadPath"
+      }
+    }
+  }
+}
+$coreLicenseInventory = Get-Content $licenseInventoryPath -Raw | ConvertFrom-Json
+$runtimeReview = @($coreLicenseInventory.components | Where-Object component -eq 'bundled-runtime-dependencies')[0].redistribution_review
+if ($runtimeReview.status -ne 'pending') { throw 'Windows dependency redistribution review must remain pending until package mapping and terms are established' }
+$msvcComponent = @($coreLicenseInventory.components | Where-Object component -eq 'Microsoft Visual C++ runtime')[0]
+if ($msvcComponent.redistribution_review.status -ne 'resolved' -or
+    $msvcComponent.version -notmatch '(?i)vcruntime140\.dll=\S+') {
+  throw 'Visual C++ runtime inventory lacks the reviewed runtime and version evidence'
+}
+$vectorInventory = Get-Content $vectorLicenseInventoryPath -Raw | ConvertFrom-Json
+if (@($vectorInventory.components)[0].redistribution_review.status -ne 'resolved') {
+  throw 'pgvector redistribution review is unresolved'
+}
+
 $coreEntries = @{}
 Get-ChildItem $pgRoot -Force -Recurse | ForEach-Object {
   $relative = $_.FullName.Substring($pgRoot.Length).TrimStart('\', '/')

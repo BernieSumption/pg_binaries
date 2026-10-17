@@ -89,6 +89,11 @@ Get-ChildItem (Join-Path $vcpkg 'share') -Directory | ForEach-Object {
     Copy-Item $copyright (Join-Path $dependencyLicenses "$($_.Name).txt")
   }
 }
+$dependencyNotices = @(Get-ChildItem $dependencyLicenses -File | Sort-Object Name)
+$dependencyNoticeBundle = Join-Path $dependencyLicenses 'NOTICE-BUNDLE.txt'
+if ($dependencyNotices.Count -eq 0) { throw 'No vcpkg dependency copyright notices were installed' }
+@($dependencyNotices | ForEach-Object { "===== $($_.Name) ====="; Get-Content $_.FullName -Raw }) |
+  Set-Content -Encoding utf8 $dependencyNoticeBundle
 $builtins = @(& python (Join-Path $repo 'tools/discover_builtins.py') $pgInstall | ConvertFrom-Json)
 
 $pgManifest = [ordered]@{
@@ -154,6 +159,61 @@ Move-Item (Join-Path $work 'metadata.json') (Join-Path $vectorArchiveRoot 'metad
 
 $msvcRuntimeDlls = @(& (Join-Path $PSScriptRoot 'bundle-msvc-runtime.ps1') -PostgresRoot $pgInstall -ExtensionRoot (Join-Path $vectorArchiveRoot 'pgvector') -NoticeTemplate (Join-Path $PSScriptRoot 'MSVC-RUNTIME.md'))
 $pgManifest['bundled_msvc_runtime_dlls'] = $msvcRuntimeDlls
+$pgLicenseInventory = [ordered]@{
+  schema_version = 1
+  components = @(
+    [ordered]@{
+      component = 'postgresql'
+      version = $pgVersion
+      payload_paths = @('bin', 'include', 'lib', 'share')
+      license_file = 'PostgreSQL.txt'
+      redistribution_review = [ordered]@{
+        status = 'resolved'
+        basis = 'The PostgreSQL source archive includes COPYRIGHT, which applies to the PostgreSQL distribution. Its permissive PostgreSQL licence imposes no source-delivery obligation for this distribution.'
+        source_obligation = 'none'
+      }
+    },
+    [ordered]@{
+      component = 'bundled-runtime-dependencies'
+      version = 'vcpkg-bundle'
+      payload_paths = @($bundledRuntimeDlls | ForEach-Object { "bin/$_" })
+      license_file = 'dependencies/NOTICE-BUNDLE.txt'
+      additional_license_files = @($dependencyNotices | ForEach-Object { "dependencies/$($_.Name)" })
+      redistribution_review = [ordered]@{
+        status = 'pending'
+        basis = 'The bundled DLLs and vcpkg copyright notices are recorded, but exact DLL-to-package mapping, source provenance, applicable terms and source obligations remain under review.'
+        source_obligation = 'unknown'
+      }
+    },
+    [ordered]@{
+      component = 'Microsoft Visual C++ runtime'
+      version = (($msvcRuntimeDlls | ForEach-Object { $item = Get-Item (Join-Path $pgInstall "bin/$_"); "$($_)=$($item.VersionInfo.FileVersion)" }) -join '; ')
+      payload_paths = @($msvcRuntimeDlls | ForEach-Object { "bin/$_" })
+      license_file = 'LICENSE-Microsoft-Visual-C++-Runtime.md'
+      redistribution_review = [ordered]@{
+        status = 'resolved'
+        basis = "The user-reviewed Visual Studio 2022 licence terms and redistributable-file list permit these listed, unmodified DLLs. Exact bundled versions: $(($msvcRuntimeDlls | ForEach-Object { $item = Get-Item (Join-Path $pgInstall "bin/$_"); "$($_) $($item.VersionInfo.FileVersion)" }) -join ', '). The project runtime notice is included beside the executables and under LICENSES."
+        source_obligation = 'none'
+      }
+    }
+  )
+}
+$pgLicenseInventory | ConvertTo-Json -Depth 8 | Set-Content -Encoding utf8 (Join-Path $pgLicenses 'inventory.json')
+$vectorLicenseInventory = [ordered]@{
+  schema_version = 1
+  components = @([ordered]@{
+    component = 'pgvector'
+    version = $vectorVersion
+    payload_paths = @('lib/vector.dll', 'share/extension')
+    license_file = 'pgvector.txt'
+    redistribution_review = [ordered]@{
+      status = 'resolved'
+      basis = 'The upstream pgvector source archive contains LICENSE at its root and states the applicable PostgreSQL licence for this repository. No separate terms are supplied for the packaged extension files; the repository licence is applied to them and redistribution creates no source-delivery obligation.'
+      source_obligation = 'none'
+    }
+  })
+}
+$vectorLicenseInventory | ConvertTo-Json -Depth 8 | Set-Content -Encoding utf8 (Join-Path $vectorArchiveRoot 'pgvector/LICENSES/pgvector-inventory.json')
 $pgManifest | ConvertTo-Json -Depth 5 | Set-Content -Encoding utf8 (Join-Path $pgInstall 'manifest.json')
 
 $pgArchive = Join-Path $dist "postgresql-$pgVersion-windows-x86_64.tar.gz"
