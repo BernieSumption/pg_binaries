@@ -1,0 +1,13 @@
+{
+  "architecture": "arm64",
+  "postgresql_version": "18.6",
+  "run_id": "39068360807",
+  "schema_version": 1,
+  "source_revision": "3a600990f3deed8e32c57b249c31653d319b50b2",
+  "steps": {
+    "core_build": "success",
+    "core_reuse": "success",
+    "hypopg_build": "success",
+    "hypopg_verify": "success"
+  }
+}
