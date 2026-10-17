@@ -49,7 +49,7 @@ export MACOSX_DEPLOYMENT_TARGET=11.0
   cd "$work_dir/source"
   ./configure --prefix="$work_dir/prefix" --enable-bsd-shlibs \
     --disable-fsck --disable-uuidd --disable-e2initrd-helper &&
-    make -C lib/uuid -j"$(sysctl -n hw.ncpu)" &&
+    make -C lib/uuid &&
     make -C lib/uuid install
 ) > "$build_log" 2>&1 || {
   tail -n 100 "$build_log" >&2
