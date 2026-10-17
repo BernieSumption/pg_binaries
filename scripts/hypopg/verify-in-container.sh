@@ -58,6 +58,9 @@ done < <(find "$extroot" -mindepth 1 -print0)
 mv /tmp/first/postgresql /tmp/moved/postgresql
 pgroot=/tmp/moved/postgresql
 cp -a "$extroot/." "$pgroot/"
+python3 /usr/local/bin/check-elf-dependencies "$pgroot" --architecture "$architecture" \
+  --archive "/input/$pg_archive" --archive "/extension/$hypopg_archive" \
+  --report "/analysis/hypopg.json"
 useradd -m postgres
 chown postgres:postgres /tmp/data /tmp/socket
 runuser -u postgres -- "$pgroot/bin/initdb" -D /tmp/data --encoding=UTF8 --locale=C --no-instructions
@@ -67,4 +70,4 @@ runuser -u postgres -- "$pgroot/bin/psql" -X -v ON_ERROR_STOP=1 -h /tmp/socket -
 grep -Eq 'Index Scan using .*btree_hypo_probe_id' /tmp/probe.out
 runuser -u postgres -- "$pgroot/bin/pg_ctl" -D /tmp/data -m fast -w stop
 trap - EXIT
-echo 'PASS: relocated PostgreSQL and HypoPG archives on clean Ubuntu 24.04'
+echo 'PASS: relocated PostgreSQL and HypoPG archives on clean Alpine 3.22'

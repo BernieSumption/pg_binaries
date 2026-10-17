@@ -11,6 +11,8 @@ case "$architecture" in
 esac
 core=$(cd "$core" && pwd)
 extension=$(cd "$extension" && pwd)
+mkdir -p "$extension/static-analysis"
 docker build --platform "$docker_platform" -f "$repo/scripts/hypopg/verify.Dockerfile" -t pg-binaries-hypopg-verifier "$repo"
 docker run --rm --platform "$docker_platform" -e PG_ARCHITECTURE="$architecture" \
-  -v "$core:/input:ro" -v "$extension:/extension:ro" pg-binaries-hypopg-verifier
+  -v "$core:/input:ro" -v "$extension:/extension:ro" \
+  -v "$extension/static-analysis:/analysis" pg-binaries-hypopg-verifier
