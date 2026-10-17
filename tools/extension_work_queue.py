@@ -82,15 +82,14 @@ def build_queue(root):
         project, version = group["project"], group["selected_version"]
         platform = group["platform"]
         pg = group["postgresql_version"]
-        pg_versions = [pg]
         sql_names = group["sql_names"]
         # Bind one project archive only when every declared SQL name maps to the same exact download.
         downloads_by_name = {}
         for name in sql_names:
             matching = [(key, dl) for key, dl in extension_downloads.items()
                         if key[0] == name and key[1] == version and key[4] == platform
-                        and all(coverage.version_parts(key[2], "archive range") <= coverage.version_parts(pg, "target")
-                                <= coverage.version_parts(key[3], "archive range") for pg in pg_versions)]
+                        and coverage.version_parts(key[2], "archive range") <= coverage.version_parts(pg, "target")
+                        <= coverage.version_parts(key[3], "archive range")]
             downloads_by_name[name] = matching
         signatures = {(dl["url"], dl["sha256"].lower()) for matches in downloads_by_name.values()
                       for _, dl in matches}
@@ -98,20 +97,17 @@ def build_queue(root):
                          and len(signatures) == 1)
         archive_download = next(iter(next(iter(downloads_by_name.values()))))[1] if archive_bound else None
         group_id = _id("build-extension", project, version, platform, group["postgresql_major"])
-        build_pg = pg
-        core_deps = [_id("build-core", build_pg, platform)]
+        core_deps = [_id("build-core", pg, platform)]
         add({"id": group_id, "kind": "build-extension", "component": project, "project": project,
              "version": version, "platform": platform, "postgresql_major": group["postgresql_major"],
              "postgresql_version": pg,
-             "postgresql_range": {"from": pg, "to": pg},
-             "build_postgresql_version": build_pg,
              "sql_names": sql_names,
              "status": "complete" if archive_bound else "needed",
              "evidence": "inventory-project-archive-bound" if archive_bound else None,
-             "range_status": "unverified",
+             "verification_status": "unverified",
              "depends_on": sorted(set(core_deps))})
 
-        # Each SQL name is checked at each distinct PostgreSQL boundary and OS endpoint.
+        # Each SQL name is checked against the exact selected PostgreSQL minor and OS endpoint.
         for name in sql_names:
             exact_download = downloads_by_name[name][0][1] if archive_bound else None
             os_endpoint = "current"
@@ -187,15 +183,14 @@ def build_queue(root):
                   and item.get("version") == version and item.get("platform") == platform
                   and item.get("postgresql_major") == group["postgresql_major"]
                   and item.get("kind") == "verify-extension"]
-        items[group_id]["range_status"] = ("complete" if archive_bound and not prerequisite_ambiguous and checks
+        items[group_id]["verification_status"] = ("complete" if archive_bound and not prerequisite_ambiguous and checks
                                             and all(item["status"] == "complete" for item in checks)
                                             else "unverified")
 
     platform_order = {f"{os}-{arch}": i for i, (os, arch) in enumerate(
         (os_name, arch) for os_name, arches in support["platform_architectures"].items() for arch in arches)}
     ordered = sorted(items.values(), key=lambda item: (
-        coverage.version_parts(item.get("postgresql_version") or
-                               item.get("postgresql_range", {}).get("from") or item["version"], "queue order"),
+        coverage.version_parts(item.get("postgresql_version") or item["version"], "queue order"),
         platform_order[item["platform"]], item["kind"], item.get("component", ""), item.get("version", ""),
         item.get("endpoint", ""), item["id"]))
     return {"snapshot_as_of": snapshot["as_of"], "work_items": ordered,

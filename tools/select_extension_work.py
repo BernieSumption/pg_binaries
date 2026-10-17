@@ -39,7 +39,7 @@ def resolve(root, selection):
     if item.get("blocked_by_unresolved_prerequisite") or any(
             unresolved.get("item_id") == item["id"] for unresolved in queue["unresolved_prerequisites"]):
         raise ValueError(f"selected group has an unresolved prerequisite: {item['id']}")
-    if item.get("platform") != platform or item.get("range_status") not in {"unverified", "complete"}:
+    if item.get("platform") != platform or item.get("verification_status") not in {"unverified", "complete"}:
         raise ValueError("selected target is inconsistent with the declared Linux group")
     closure = extension_work_queue.select_item_closure(queue, item["id"], 8)
     if closure[-1]["id"] != item["id"]:
@@ -53,11 +53,12 @@ def resolve(root, selection):
         "runner": RUNNERS[architecture],
         "group_id": item["id"],
         "closure_ids": [entry["id"] for entry in closure],
-        "build_postgresql_version": item["build_postgresql_version"],
-        "candidate_range": item["postgresql_range"],
-        "range_from": item["postgresql_range"]["from"],
-        "range_to": item["postgresql_range"]["to"],
-        "range_status": "unverified",
+        "postgresql_version": item["postgresql_version"],
+        "verification_status": item["verification_status"],
+        # Retain the historical pilot workflow's output names while it is in use.
+        "build_postgresql_version": item["postgresql_version"],
+        "range_from": item["postgresql_version"],
+        "range_to": item["postgresql_version"],
     }
 
 

@@ -73,7 +73,9 @@ class ExtensionWorkQueueTests(unittest.TestCase):
         self.assertEqual(builds[0]["postgresql_version"], "18.6")
         self.assertEqual({item["endpoint"] for item in checks}, {"current"})
         self.assertEqual(len(checks), 2)
-        self.assertEqual(builds[0]["range_status"], "unverified")
+        self.assertEqual(builds[0]["verification_status"], "unverified")
+        self.assertNotIn("postgresql_range", builds[0])
+        self.assertNotIn("build_postgresql_version", builds[0])
 
     def test_candidate_build_uses_latest_minor_and_other_endpoint_is_verified_separately(self):
         snapshot = json.loads((self.root / "support/postgresql-releases.json").read_text())
@@ -82,7 +84,6 @@ class ExtensionWorkQueueTests(unittest.TestCase):
         group = next(item for item in queue["work_items"] if item.get("project") == "PostGIS"
                      and item.get("version") == "3.6.4" and item.get("postgresql_major") == 18
                      and item.get("platform") == "linux-x86_64" and item["kind"] == "build-extension")
-        self.assertEqual(group["build_postgresql_version"], "18.6")
         self.assertEqual(group["postgresql_version"], "18.6")
         self.assertEqual(group["depends_on"], [queue_tool._id("build-core", "18.6", "linux-x86_64")])
         checks = [item for item in queue["work_items"] if item.get("project") == "PostGIS"
@@ -103,7 +104,7 @@ class ExtensionWorkQueueTests(unittest.TestCase):
                      and item.get("platform") == "linux-x86_64" and item.get("version") == "3.6.4"
                      and item["kind"] == "build-extension")
         self.assertEqual(group["status"], "complete")
-        self.assertEqual(group["range_status"], "unverified")
+        self.assertEqual(group["verification_status"], "unverified")
 
     def test_tiger_dependency_selects_structured_minimum_version_candidate(self):
         items = {item["id"]: item for item in queue_tool.build_queue(self.root)["work_items"]}
@@ -117,8 +118,8 @@ class ExtensionWorkQueueTests(unittest.TestCase):
         self.assertFalse(tiger["blocked_by_unresolved_prerequisite"])
         queue = queue_tool.build_queue(self.root)
         self.assertFalse(any(row["item_id"] == tiger_id for row in queue["unresolved_prerequisites"]))
-        self.assertEqual(tiger["postgresql_range"], {"from": "18.6", "to": "18.6"})
         self.assertEqual(tiger["postgresql_version"], "18.6")
+        self.assertEqual(tiger["verification_status"], "unverified")
         selected = queue_tool.select_batch(queue, 100, "PostGIS TIGER Geocoder", "linux-x86_64")["selected_items"]
         selected_ids = [item["id"] for item in selected]
         self.assertIn(tiger_id, selected_ids)
