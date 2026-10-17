@@ -36,6 +36,34 @@ Target support: On the five required OS and architecture targets, aim to support
 
 Sources: [PostGIS compatibility data](https://www.postgis.net/development/compatibility/), [versioning and maintenance policy](https://postgis.net/development/versions_eol/), [installation guide](https://postgis.net/docs/manual-3.6/en/postgis_installation.html), [licensing inventory](https://github.com/postgis/postgis/blob/master/LICENSE.TXT), [Google Cloud SQL extension catalogue](https://docs.cloud.google.com/sql/docs/postgres/extensions).
 
+## PostGIS TIGER Geocoder — include
+
+Description: [PostGIS TIGER Geocoder](https://postgis.net/2026/08/PostGIS-Tiger-Geocoder-2025.2/) provides address normalization, geocoding, reverse geocoding and Census-data loader functions. Its SQL extension name is `postgis_tiger_geocoder`.
+
+For inclusion: Schema DDL can use its functions and the `tiger` schema. `CREATE EXTENSION` installs the schema and empty reference tables without downloading Census data; the loader downloads data only when a user chooses to populate them. The separately released extension is PL/pgSQL-only, so its SQL files can be tested across the required OS and architecture targets without a native build for each target.
+
+Against inclusion: Actual geocoding needs US Census TIGER data loaded by the user. The archive must not bundle that dataset or claim to geocode addresses before loading it. The extension requires PostGIS and the built-in `fuzzystrmatch`; GPLv2 redistribution requires its licence and an appropriate source link or offer in the archive. SQL-only packaging still needs clean-system installation and DDL tests on every claimed target.
+
+Version policy: Support the latest stable patch in the current Census-data-year line, presently 2025.2. Its upstream metadata calls the release stable, and the 2025.2 announcement identifies fixes after 2025.1 without a documented DDL break. Treat a new data-year line as potentially incompatible until its upgrade scripts and schema DDL are tested; retain an older line if that testing finds a compatibility break.
+
+Target support: PostgreSQL 16–18 on Linux and macOS x86-64 and arm64 and Windows x86-64, with PostGIS 3.6 or later and `fuzzystrmatch` installed. The 2025.2 release declares PostgreSQL 16+ and PostGIS 3.6+; PostgreSQL 15 is outside its declared range. This is intended support, not verified archive coverage.
+
+Sources: [2025.2 announcement](https://postgis.net/2026/08/PostGIS-Tiger-Geocoder-2025.2/), [upstream 2025.2 source archive](https://download.osgeo.org/postgis/source/postgis_tiger_geocoder/postgis_tiger_geocoder-2025.2.tar.gz) (`README.md`, `META.json` and `COPYING`), [PostGIS installation guide](https://postgis.net/docs/postgis_installation.html).
+
+## Address Standardizer — exclude
+
+Description: [Address Standardizer](https://github.com/postgis/address_standardizer) provides address parsing and rule-based standardization. Its SQL extension names are `address_standardizer` and `address_standardizer_data_us`.
+
+For inclusion: Its parsing functions can appear in schema DDL, and major PostgreSQL hosts offer both SQL extensions. Its code is available under an open-source licence.
+
+Against inclusion: The compiled `address_standardizer` library contains a city list derived from USPS material. The reviewed sources do not establish that the upstream project can license redistribution of that derived data in this project's public archives. The open decision and evidence are recorded in [the human review queue](../HUMAN_REVIEW_QUEUE.md#address-standardizer-us-data-redistribution). Exclude both SQL names at the project level while that question remains unresolved.
+
+Version policy: None while excluded. If redistribution is established or the derived data can be removed without losing required DDL behaviour, select maintained releases using the extension version and compatibility rules.
+
+Target support: None while excluded; do not advertise either SQL name or package its library as a separate project.
+
+Sources: [upstream project](https://github.com/postgis/address_standardizer), [PostGIS build rules](https://github.com/postgis/postgis/blob/stable-3.6/extensions/address_standardizer/Makefile.in), [upstream README](https://github.com/postgis/postgis/blob/stable-3.6/extensions/address_standardizer/README.address_standardizer), [PostGIS installation guide](https://postgis.net/docs/postgis_installation.html).
+
 ## oracle_fdw — exclude
 
 Description: [oracle_fdw](https://github.com/laurenz/oracle_fdw) exposes Oracle tables through PostgreSQL foreign tables. Its SQL extension name is `oracle_fdw`.
@@ -504,7 +532,6 @@ Candidates extracted from the October 2026 research. No inclusion decision is im
 
 | Project | SQL extension names | Upstream URL |
 | --- | --- | --- |
-| Address Standardizer | `address_standardizer`, `address_standardizer_data_us` | [Upstream](https://github.com/postgis/address_standardizer) |
 | age | `age` | [Upstream](https://github.com/apache/age) |
 | aiven-extras | `aiven_extras` | [Upstream](https://github.com/aiven/aiven-extras) |
 | Azure pg_diskann | `pg_diskann` | [Upstream](https://learn.microsoft.com/azure/postgresql/extensions/concepts-extensions-by-engine) |
@@ -564,7 +591,6 @@ Candidates extracted from the October 2026 research. No inclusion decision is im
 | plproxy | `plproxy` | [Upstream](https://github.com/plproxy/plproxy) |
 | plrust | `plrust` | [Upstream](https://github.com/pgcentralfoundation/plrust) |
 | plv8 | `plcoffee`, `plls`, `plv8` | [Upstream](https://github.com/plv8/plv8) |
-| PostGIS TIGER Geocoder | `postgis_tiger_geocoder` | [Upstream](https://gitea.osgeo.org/postgis/postgis_tiger_geocoder) |
 | postgres-protobuf | `postgres_protobuf` | [Upstream](https://github.com/mpartel/postgres-protobuf) |
 | postgresql-hll | `hll` | [Upstream](https://github.com/citusdata/postgresql-hll) |
 | postgresql-logfdw | `log_fdw` | [Upstream](https://github.com/aws/postgresql-logfdw) |

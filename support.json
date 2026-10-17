@@ -33,6 +33,13 @@
         "3.6.4": { "postgresql_minimum_major": 15, "postgresql_maximum_major": 18 }
       }
     },
+    "PostGIS TIGER Geocoder": {
+      "sql_names": ["postgis_tiger_geocoder"],
+      "requires": ["PostGIS"],
+      "versions": {
+        "2025.2": { "postgresql_minimum_major": 16, "postgresql_maximum_major": 18 }
+      }
+    },
     "HypoPG": {
       "sql_names": ["hypopg"],
       "requires": [],
