@@ -23,6 +23,7 @@ on:
       - 'tests/builtins/**'
       - 'tests/extensions/pgvector.sql'
       - 'tools/check_elf_dependencies.py'
+      - 'tools/stage_extension_archive.py'
       - 'tools/create_linux_publication_receipt.py'
       - 'tools/emit_linux_publication_records.py'
       - 'tools/read_combined_verification_phases.py'

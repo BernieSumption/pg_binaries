@@ -26,6 +26,7 @@ on:
       - 'scripts/qemu/arm64-515*'
       - 'tools/create_linux_symbols.py'
       - 'tools/check_elf_dependencies.py'
+      - 'tools/stage_extension_archive.py'
       - 'tools/discover_builtins.py'
       - 'tools/write_linux_license_inventory.py'
       - 'tools/plan_work.py'
