@@ -1,0 +1,26 @@
+{
+  "architecture": "arm64",
+  "archives": {
+    "pgaudit-18.0-postgresql-18.6-macos-arm64.tar.gz": "8d4908a93de2d2793494071d74af4de2c88b6cd08077a692d99a62a59103e927",
+    "postgresql-18.6-macos-arm64.tar.gz": "853e0eafb3570378225d2ea16247c9de31770f85df5230509885df2ca5e89d67"
+  },
+  "extension_load_failure": {
+    "command_output": "waiting for server to start.... stopped waiting\npg_ctl: could not start server\nExamine the log output.",
+    "exit_code": 1,
+    "kind": "missing-preload-module",
+    "server_log": "2026-10-17 23:54:56.514 UTC [46583] FATAL:  could not access file \"pgaudit\": No such file or directory\n2026-10-17 23:54:56.514 UTC [46583] LOG:  database system is shut down\n"
+  },
+  "kernel": "24.6.0",
+  "os_version": "15.7.9",
+  "pgaudit_version": "18.0",
+  "platform": "macos",
+  "postgresql_failure": {
+    "client_output": "ERROR:  division by zero",
+    "command": "psql -X -v ON_ERROR_STOP=1 -c 'SELECT 1 / 0;'",
+    "exit_code": 1,
+    "kind": "server-error",
+    "server_log": "2026-10-17 23:54:57.641 UTC [46603] LOG:  pgaudit extension initialized\n2026-10-17 23:54:57.643 UTC [46603] LOG:  starting PostgreSQL 18.6 on aarch64-apple-darwin24.6.0, compiled by Apple clang version 17.0.0 (clang-1700.0.13.5), 64-bit\n2026-10-17 23:54:57.644 UTC [46603] LOG:  listening on Unix socket \"/tmp/pgaudit-macos-diagnostics.x7BltK/valid-socket/.s.PGSQL.55438\"\n2026-10-17 23:54:57.647 UTC [46609] LOG:  database system was shut down at 2026-10-17 23:54:57 UTC\n2026-10-17 23:54:57.648 UTC [46603] LOG:  database system is ready to accept connections\n2026-10-17 23:54:57.922 UTC [46616] ERROR:  division by zero\n2026-10-17 23:54:57.922 UTC [46616] STATEMENT:  SELECT 1 / 0;\n2026-10-17 23:54:57.939 UTC [46603] LOG:  received fast shutdown request\n2026-10-17 23:54:57.939 UTC [46603] LOG:  aborting any active transactions\n2026-10-17 23:54:57.941 UTC [46603] LOG:  background worker \"logical replication launcher\" (PID 46612) exited with exit code 1\n2026-10-17 23:54:57.941 UTC [46607] LOG:  shutting down\n2026-10-17 23:54:57.941 UTC [46607] LOG:  checkpoint starting: shutdown immediate\n2026-10-17 23:54:57.942 UTC [46607] LOG:  checkpoint complete: wrote 0 buffers (0.0%), wrote 3 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=0.001 s, sync=0.001 s, total=0.002 s; sync files=2, longest=0.001 s, average=0.001 s; distance=0 kB, estimate=0 kB; lsn=0/178CFC8, redo lsn=0/178CFC8\n2026-10-17 23:54:57.944 UTC [46603] LOG:  database system is shut down\n"
+  },
+  "postgresql_version": "18.6",
+  "schema_version": 1
+}
