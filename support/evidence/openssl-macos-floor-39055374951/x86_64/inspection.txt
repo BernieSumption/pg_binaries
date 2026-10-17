@@ -1,0 +1,148 @@
+OpenSSL macOS dependency-floor feasibility probe
+version=3.5.8
+architecture=x86_64
+configure_target=darwin64-x86_64-cc
+macosx_deployment_target=11.0
+source_url=https://github.com/openssl/openssl/releases/download/openssl-3.5.8/openssl-3.5.8.tar.gz
+official_sidecar_url=https://github.com/openssl/openssl/releases/download/openssl-3.5.8/openssl-3.5.8.tar.gz.sha256
+expected_sha256=a8f84a39918ec6415ce765d9b429d313ba97b8143169c172e734b9514464f5b2
+expected_sha256_status=candidate pending CI verification
+official_sidecar=a8f84a39918ec6415ce765d9b429d313ba97b8143169c172e734b9514464f5b2 *openssl-3.5.8.tar.gz
+sidecar_sha256=a8f84a39918ec6415ce765d9b429d313ba97b8143169c172e734b9514464f5b2
+computed_sha256=a8f84a39918ec6415ce765d9b429d313ba97b8143169c172e734b9514464f5b2
+
+Build log summary:
+3687:install ./include/openssl/md4.h -> /Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/include/openssl/md4.h
+3688:install ./include/openssl/md5.h -> /Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/include/openssl/md5.h
+3689:install ./include/openssl/mdc2.h -> /Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/include/openssl/mdc2.h
+3690:install ./include/openssl/ml_kem.h -> /Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/include/openssl/ml_kem.h
+3691:install ./include/openssl/modes.h -> /Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/include/openssl/modes.h
+3692:install ./include/openssl/obj_mac.h -> /Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/include/openssl/obj_mac.h
+3693:install ./include/openssl/objects.h -> /Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/include/openssl/objects.h
+3694:install ./include/openssl/objectserr.h -> /Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/include/openssl/objectserr.h
+3695:install ./include/openssl/ocsp.h -> /Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/include/openssl/ocsp.h
+3696:install ./include/openssl/ocsperr.h -> /Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/include/openssl/ocsperr.h
+3697:install ./include/openssl/opensslconf.h -> /Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/include/openssl/opensslconf.h
+3698:install ./include/openssl/opensslv.h -> /Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/include/openssl/opensslv.h
+3699:install ./include/openssl/ossl_typ.h -> /Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/include/openssl/ossl_typ.h
+3700:install ./include/openssl/param_build.h -> /Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/include/openssl/param_build.h
+3701:install ./include/openssl/params.h -> /Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/include/openssl/params.h
+3702:install ./include/openssl/pem.h -> /Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/include/openssl/pem.h
+3703:install ./include/openssl/pem2.h -> /Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/include/openssl/pem2.h
+3704:install ./include/openssl/pemerr.h -> /Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/include/openssl/pemerr.h
+3705:install ./include/openssl/pkcs12.h -> /Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/include/openssl/pkcs12.h
+3706:install ./include/openssl/pkcs12err.h -> /Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/include/openssl/pkcs12err.h
+3707:install ./include/openssl/pkcs7.h -> /Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/include/openssl/pkcs7.h
+3708:install ./include/openssl/pkcs7err.h -> /Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/include/openssl/pkcs7err.h
+3709:install ./include/openssl/prov_ssl.h -> /Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/include/openssl/prov_ssl.h
+3710:install ./include/openssl/proverr.h -> /Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/include/openssl/proverr.h
+3711:install ./include/openssl/provider.h -> /Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/include/openssl/provider.h
+3712:install ./include/openssl/quic.h -> /Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/include/openssl/quic.h
+3713:install ./include/openssl/rand.h -> /Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/include/openssl/rand.h
+3714:install ./include/openssl/randerr.h -> /Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/include/openssl/randerr.h
+3715:install ./include/openssl/rc2.h -> /Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/include/openssl/rc2.h
+3716:install ./include/openssl/rc4.h -> /Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/include/openssl/rc4.h
+3717:install ./include/openssl/rc5.h -> /Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/include/openssl/rc5.h
+3718:install ./include/openssl/ripemd.h -> /Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/include/openssl/ripemd.h
+3719:install ./include/openssl/rsa.h -> /Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/include/openssl/rsa.h
+3720:install ./include/openssl/rsaerr.h -> /Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/include/openssl/rsaerr.h
+3721:install ./include/openssl/safestack.h -> /Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/include/openssl/safestack.h
+3722:install ./include/openssl/seed.h -> /Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/include/openssl/seed.h
+3723:install ./include/openssl/self_test.h -> /Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/include/openssl/self_test.h
+3724:install ./include/openssl/sha.h -> /Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/include/openssl/sha.h
+3725:install ./include/openssl/srp.h -> /Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/include/openssl/srp.h
+3726:install ./include/openssl/srtp.h -> /Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/include/openssl/srtp.h
+3727:install ./include/openssl/ssl.h -> /Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/include/openssl/ssl.h
+3728:install ./include/openssl/ssl2.h -> /Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/include/openssl/ssl2.h
+3729:install ./include/openssl/ssl3.h -> /Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/include/openssl/ssl3.h
+3730:install ./include/openssl/sslerr.h -> /Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/include/openssl/sslerr.h
+3731:install ./include/openssl/sslerr_legacy.h -> /Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/include/openssl/sslerr_legacy.h
+3732:install ./include/openssl/stack.h -> /Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/include/openssl/stack.h
+3733:install ./include/openssl/store.h -> /Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/include/openssl/store.h
+3734:install ./include/openssl/storeerr.h -> /Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/include/openssl/storeerr.h
+3735:install ./include/openssl/symhacks.h -> /Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/include/openssl/symhacks.h
+3736:install ./include/openssl/thread.h -> /Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/include/openssl/thread.h
+3737:install ./include/openssl/tls1.h -> /Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/include/openssl/tls1.h
+3738:install ./include/openssl/trace.h -> /Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/include/openssl/trace.h
+3739:install ./include/openssl/ts.h -> /Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/include/openssl/ts.h
+3740:install ./include/openssl/tserr.h -> /Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/include/openssl/tserr.h
+3741:install ./include/openssl/txt_db.h -> /Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/include/openssl/txt_db.h
+3742:install ./include/openssl/types.h -> /Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/include/openssl/types.h
+3743:install ./include/openssl/ui.h -> /Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/include/openssl/ui.h
+3744:install ./include/openssl/uierr.h -> /Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/include/openssl/uierr.h
+3745:install ./include/openssl/whrlpool.h -> /Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/include/openssl/whrlpool.h
+3746:install ./include/openssl/x509.h -> /Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/include/openssl/x509.h
+3747:install ./include/openssl/x509_acert.h -> /Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/include/openssl/x509_acert.h
+3748:install ./include/openssl/x509_vfy.h -> /Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/include/openssl/x509_vfy.h
+3749:install ./include/openssl/x509err.h -> /Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/include/openssl/x509err.h
+3750:install ./include/openssl/x509v3.h -> /Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/include/openssl/x509v3.h
+3751:install ./include/openssl/x509v3err.h -> /Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/include/openssl/x509v3err.h
+3752:install libcrypto.a -> /Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/lib/libcrypto.a
+3772:install libssl.a -> /Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/lib/libssl.a
+3774:link /Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/lib/libcrypto.dylib -> /Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/lib/libcrypto.3.dylib
+3775:link /Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/lib/libssl.dylib -> /Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/lib/libssl.3.dylib
+3777:install exporters/libcrypto.pc -> /Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/lib/pkgconfig/libcrypto.pc
+3778:install exporters/libssl.pc -> /Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/lib/pkgconfig/libssl.pc
+3779:install exporters/openssl.pc -> /Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/lib/pkgconfig/openssl.pc
+3782:install exporters/OpenSSLConfig.cmake -> /Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/lib/cmake/OpenSSL/OpenSSLConfig.cmake
+3783:install exporters/OpenSSLConfigVersion.cmake -> /Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/lib/cmake/OpenSSL/OpenSSLConfigVersion.cmake
+3788:install engines/capi.dylib -> /Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/lib/engines-3/capi.dylib
+3789:install engines/loader_attic.dylib -> /Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/lib/engines-3/loader_attic.dylib
+3790:install engines/padlock.dylib -> /Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/lib/engines-3/padlock.dylib
+3793:install providers/legacy.dylib -> /Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/lib/ossl-modules/legacy.dylib
+3798:install apps/openssl -> /Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/bin/openssl
+3799:install tools/c_rehash -> /Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/bin/c_rehash
+
+Produced dylib inspection:
+--- lib/engines-3/capi.dylib ---
+architectures=x86_64
+minimum_os=11.0
+linked=	/Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/lib/libcrypto.3.dylib (compatibility version 3.0.0, current version 3.0.0)
+linked=	/usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1351.0.0)
+host_path_reference=found
+host_path=	/Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/lib/libcrypto.3.dylib (compatibility version 3.0.0, current version 3.0.0)
+host_path=         name /Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/lib/libcrypto.3.dylib (offset 24)
+--- lib/engines-3/loader_attic.dylib ---
+architectures=x86_64
+minimum_os=11.0
+linked=	/Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/lib/libcrypto.3.dylib (compatibility version 3.0.0, current version 3.0.0)
+linked=	/usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1351.0.0)
+host_path_reference=found
+host_path=	/Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/lib/libcrypto.3.dylib (compatibility version 3.0.0, current version 3.0.0)
+host_path=         name /Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/lib/libcrypto.3.dylib (offset 24)
+--- lib/engines-3/padlock.dylib ---
+architectures=x86_64
+minimum_os=11.0
+linked=	/Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/lib/libcrypto.3.dylib (compatibility version 3.0.0, current version 3.0.0)
+linked=	/usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1351.0.0)
+host_path_reference=found
+host_path=	/Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/lib/libcrypto.3.dylib (compatibility version 3.0.0, current version 3.0.0)
+host_path=         name /Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/lib/libcrypto.3.dylib (offset 24)
+--- lib/libcrypto.3.dylib ---
+architectures=x86_64
+minimum_os=11.0
+linked=	/Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/lib/libcrypto.3.dylib (compatibility version 3.0.0, current version 3.0.0)
+linked=	/usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1351.0.0)
+host_path_reference=found
+host_path=	/Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/lib/libcrypto.3.dylib (compatibility version 3.0.0, current version 3.0.0)
+host_path=         name /Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/lib/libcrypto.3.dylib (offset 24)
+--- lib/libssl.3.dylib ---
+architectures=x86_64
+minimum_os=11.0
+linked=	/Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/lib/libssl.3.dylib (compatibility version 3.0.0, current version 3.0.0)
+linked=	/Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/lib/libcrypto.3.dylib (compatibility version 3.0.0, current version 3.0.0)
+linked=	/usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1351.0.0)
+host_path_reference=found
+host_path=	/Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/lib/libssl.3.dylib (compatibility version 3.0.0, current version 3.0.0)
+host_path=	/Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/lib/libcrypto.3.dylib (compatibility version 3.0.0, current version 3.0.0)
+host_path=         name /Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/lib/libssl.3.dylib (offset 24)
+host_path=         name /Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/lib/libcrypto.3.dylib (offset 24)
+--- lib/ossl-modules/legacy.dylib ---
+architectures=x86_64
+minimum_os=11.0
+linked=	/Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/lib/libcrypto.3.dylib (compatibility version 3.0.0, current version 3.0.0)
+linked=	/usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1351.0.0)
+host_path_reference=found
+host_path=	/Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/lib/libcrypto.3.dylib (compatibility version 3.0.0, current version 3.0.0)
+host_path=         name /Users/runner/work/_temp/openssl-floor.NZLhr7/prefix/lib/libcrypto.3.dylib (offset 24)
+outcome=minimum-target source build passed; relocation requires final-archive verification
