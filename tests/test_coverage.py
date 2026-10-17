@@ -90,14 +90,37 @@ class CoverageTests(unittest.TestCase):
         missing_target = ("example", "1.0", "15.9", "linux-arm64")
         download = {"url": "https://example.test/archive.tar.gz", "sha256": "a" * 64}
         key = ("example", "1.0", "15.0", "16.9", "linux-x86_64")
-        records = [{"schema_version": 1, "scope": "publication", "outcome": "passed", "sha256": "b" * 64, "component": "example",
-                    "version": "1.0", "platform": "linux-x86_64", "postgresql_version": "15.0",
-                      "environment": {"endpoint": "minimum", "os": "linux", "architecture": "x86_64"}}]
+        core_downloads = {
+            ("15.0", "linux-x86_64"): {"sha256": "b" * 64},
+            ("16.9", "linux-x86_64"): {"sha256": "c" * 64},
+        }
+        records = []
+        for pg_version, core_sha256 in (("15.0", "b" * 64), ("16.9", "c" * 64)):
+            for endpoint in ("minimum", "current"):
+                records.append({
+                    "scope": "publication", "outcome": "passed", "_profile_current": True,
+                    "sha256": "a" * 64, "component": "example", "version": "1.0",
+                    "platform": "linux-x86_64", "postgresql_version": pg_version,
+                    "assembled_core": {"sha256": core_sha256},
+                    "environment": {"endpoint": endpoint},
+                })
+        records[0]["assembled_core"]["sha256"] = "d" * 64
 
         without_download, awaiting = coverage.classify_extension_targets(
-            [target, missing_target], {key: download}, records)
+            [target, missing_target], {key: download}, records, core_downloads)
 
         self.assertEqual(without_download, [missing_target])
+        self.assertEqual(awaiting, [target])
+
+        records[0]["assembled_core"]["sha256"] = "b" * 64
+        without_download, awaiting = coverage.classify_extension_targets(
+            [target], {key: download}, records, core_downloads)
+        self.assertEqual(without_download, [])
+        self.assertEqual(awaiting, [])
+
+        without_download, awaiting = coverage.classify_extension_targets(
+            [target], {key: download}, records, {("15.0", "linux-x86_64"): core_downloads[("15.0", "linux-x86_64")]})
+        self.assertEqual(without_download, [])
         self.assertEqual(awaiting, [target])
 
     def test_extension_os_subset_keeps_both_architectures_and_pg_range(self):
@@ -402,6 +425,24 @@ class CoverageTests(unittest.TestCase):
             }
             self.add_profile_fields(record, profile)
             self.assertTrue(coverage.validate_verification_record(record, self.support, root))
+
+            extension_record = dict(record, component="example", version="1.0",
+                                    assembled_core={"archive": "postgresql-18.6-linux-x86_64.tar.gz",
+                                                   "version": "18.6", "sha256": "c" * 64})
+            self.assertTrue(coverage.validate_verification_record(extension_record, self.support, root))
+            for assembled_core in (
+                    None,
+                    {"archive": "postgresql-18.6-linux-arm64.tar.gz", "version": "18.6",
+                     "sha256": "c" * 64},
+                    {"archive": "postgresql-18.6-linux-x86_64.tar.gz", "version": "18.5",
+                     "sha256": "c" * 64},
+                    {"archive": "postgresql-18.6-linux-x86_64.tar.gz", "version": "18.6",
+                     "sha256": "bad"},
+            ):
+                with self.subTest(assembled_core=assembled_core):
+                    with self.assertRaisesRegex(coverage.CoverageError, "requires assembled_core"):
+                        coverage.validate_verification_record(
+                            dict(extension_record, assembled_core=assembled_core), self.support, root)
 
             invalid_results = (
                 {},

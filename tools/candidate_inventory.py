@@ -70,6 +70,7 @@ def merge_candidate(base_inventory, proposed_entries, support, snapshot, root=No
     candidate_evidence = candidate["verification_evidence"] = {}
     seen_targets, seen_urls = set(), set()
     base_urls = {entry["url"] for entry in list(base_core.values()) + list(base_extensions.values())}
+    pending_extension_evidence = []
 
     for item in proposed_entries:
         if not isinstance(item, dict):
@@ -185,14 +186,18 @@ def merge_candidate(base_inventory, proposed_entries, support, snapshot, root=No
         if not isinstance(records, list):
             raise CandidateError("missing verification evidence")
         evidence_components = [component] if component == "postgresql" else sql_names
-        for evidence_component in evidence_components:
-            for pg in required_pg:
-                for endpoint in ("minimum", "current"):
-                    if not any(_evidence_matches(r, download, evidence_component, version, platform, pg,
-                                                 endpoint, support, root)
-                               for r in records):
-                        raise CandidateError(
-                            f"missing passed {endpoint} verification for {evidence_component} {version} {pg} {platform}")
+        if component == "postgresql":
+            for evidence_component in evidence_components:
+                for pg in required_pg:
+                    for endpoint in ("minimum", "current"):
+                        if not any(_evidence_matches(r, download, evidence_component, version, platform, pg,
+                                                     endpoint, support, root)
+                                   for r in records):
+                            raise CandidateError(
+                                f"missing passed {endpoint} verification for {evidence_component} {version} {pg} {platform}")
+        else:
+            pending_extension_evidence.append(
+                (download, evidence_components, version, platform, required_pg, records))
 
         candidate_evidence[url] = deepcopy(records)
 
@@ -216,10 +221,30 @@ def merge_candidate(base_inventory, proposed_entries, support, snapshot, root=No
                             and version_parts(a, "candidate range") <= version_parts(high, "candidate range")):
                         raise CandidateError(f"overlapping extension range for {sql_name} {version} {platform}")
                 ranges.append(download)
+
+    for download, evidence_components, version, platform, required_pg, records in pending_extension_evidence:
+        for pg in required_pg:
+            core = candidate.get("postgresql", {}).get(pg, {}).get("downloads", {}).get(platform)
+            expected_name = f"postgresql-{pg}-{platform}.tar.gz"
+            if (not isinstance(core, dict) or not isinstance(core.get("url"), str)
+                    or core.get("url", "").rsplit("/", 1)[-1] != expected_name):
+                raise CandidateError(f"candidate has no canonical PostgreSQL archive for {pg} {platform}")
+            expected_core = {"archive": expected_name, "version": pg,
+                             "sha256": str(core.get("sha256", "")).lower()}
+            for evidence_component in evidence_components:
+                for endpoint in ("minimum", "current"):
+                    if not any(_evidence_matches(
+                            record, download, evidence_component, version, platform, pg,
+                            endpoint, support, root, expected_core=expected_core)
+                            for record in records):
+                        raise CandidateError(
+                            f"missing passed {endpoint} verification for {evidence_component} {version} {pg} {platform} "
+                            "bound to candidate PostgreSQL archive")
     return candidate
 
 
-def _evidence_matches(record, download, component, version, platform, pg, endpoint, support, root):
+def _evidence_matches(record, download, component, version, platform, pg, endpoint, support, root,
+                      expected_core=None):
     if not isinstance(record, dict):
         return False
     try:
@@ -230,6 +255,14 @@ def _evidence_matches(record, download, component, version, platform, pg, endpoi
     os_name, _, architecture = platform.partition("-")
     if not isinstance(environment, dict):
         return False
+    assembled_core = record.get("assembled_core")
+    core_matches = (expected_core is None or (
+        isinstance(assembled_core, dict)
+        and assembled_core.get("archive") == expected_core["archive"]
+        and assembled_core.get("version") == expected_core["version"]
+        and isinstance(assembled_core.get("sha256"), str)
+        and assembled_core["sha256"].lower() == expected_core["sha256"]
+    ))
     try:
         actual = _coverage._os_version_parts(environment.get("os_version"), "candidate evidence")
         minimum = _coverage._os_version_parts(support["os_support"][os_name]["minimum_version"], "support")
@@ -240,6 +273,7 @@ def _evidence_matches(record, download, component, version, platform, pg, endpoi
             and str(record.get("sha256", "")).lower() == str(download["sha256"]).lower()
             and record.get("component") == component and str(record.get("version")) == str(version)
             and record.get("platform") == platform and record.get("postgresql_version") == pg
+            and core_matches
             and isinstance(record.get("test_revision"), str) and bool(record["test_revision"])
             and isinstance(record.get("test_cases"), list) and bool(record["test_cases"])
             and environment.get("endpoint") == endpoint

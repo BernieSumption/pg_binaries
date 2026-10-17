@@ -414,6 +414,17 @@ def validate_verification_record(data, support, root, label="verification record
             or environment.get("os") != os_name
             or environment.get("architecture") != architecture):
         raise CoverageError(f"{label}: environment identity does not match platform")
+    if scope == "publication" and data.get("component") != "postgresql":
+        pg_version = data.get("postgresql_version")
+        assembled_core = data.get("assembled_core")
+        expected_archive = f"postgresql-{pg_version}-{platform}.tar.gz"
+        if (not isinstance(pg_version, str) or not isinstance(assembled_core, dict)
+                or assembled_core.get("archive") != expected_archive
+                or assembled_core.get("version") != pg_version
+                or not isinstance(assembled_core.get("sha256"), str)
+                or not SHA256.fullmatch(assembled_core["sha256"])):
+            raise CoverageError(
+                f"{label}: publication extension evidence requires assembled_core with canonical archive, version and SHA-256")
     if profile is not None and platform not in profile["platforms"]:
         raise CoverageError(f"{label}: platform is not supported by registered profile")
     if data["outcome"] == "passed":
@@ -424,7 +435,8 @@ def validate_verification_record(data, support, root, label="verification record
     return current_profile
 
 
-def verified(records, download, component, version, platform, pg_version, endpoint):
+def verified(records, download, component, version, platform, pg_version, endpoint,
+             assembled_core_sha256=None):
     return any(r.get("outcome") == "passed"
                and r.get("scope") == "publication"
                and r.get("_profile_current") is True
@@ -432,10 +444,15 @@ def verified(records, download, component, version, platform, pg_version, endpoi
                and r.get("component") == component and str(r.get("version")) == str(version)
                and r.get("platform") == platform and r.get("postgresql_version") == pg_version
                and r["environment"].get("endpoint") == endpoint
+               and (assembled_core_sha256 is None or (
+                   isinstance(r.get("assembled_core"), dict)
+                   and isinstance(r["assembled_core"].get("sha256"), str)
+                   and r["assembled_core"]["sha256"].lower() == assembled_core_sha256.lower()
+               ))
                for r in records)
 
 
-def classify_extension_targets(targets, downloads, records):
+def classify_extension_targets(targets, downloads, records, core_downloads):
     without_download, awaiting_verification = [], []
     for name, version, pg, platform in sorted(targets):
         matching = [(key, download) for key, download in downloads.items()
@@ -447,9 +464,15 @@ def classify_extension_targets(targets, downloads, records):
             continue
         (_, _, low, high, _), download = matching[0]
         endpoints = {low, high}
-        verified_endpoints = [(pg_endpoint, os_endpoint) for pg_endpoint in endpoints
-                              for os_endpoint in ("minimum", "current") if verified(
-            records, download, name, version, platform, pg_endpoint, os_endpoint)]
+        verified_endpoints = []
+        for pg_endpoint in endpoints:
+            core_download = core_downloads.get((pg_endpoint, platform))
+            if core_download is None:
+                continue
+            for os_endpoint in ("minimum", "current"):
+                if verified(records, download, name, version, platform, pg_endpoint, os_endpoint,
+                            assembled_core_sha256=core_download["sha256"]):
+                    verified_endpoints.append((pg_endpoint, os_endpoint))
         if len(verified_endpoints) != len(endpoints) * 2:
             awaiting_verification.append((name, version, pg, platform))
     return without_download, awaiting_verification
@@ -478,7 +501,7 @@ def main():
                 for endpoint in ("minimum", "current")))
         missing_core = sorted(core_without_download + core_awaiting_verification)
         extension_without_download, extension_awaiting_verification = classify_extension_targets(
-            want_ext, have_ext, records)
+            want_ext, have_ext, records, have_core)
         missing_ext = sorted(extension_without_download + extension_awaiting_verification)
         outcome_records = {
             outcome: [{"record": r["_record_file"],

@@ -51,7 +51,7 @@ def plan(root):
             core_verify.append(target)
 
     ext_without, ext_awaiting = coverage.classify_extension_targets(
-        required_extensions, available_extensions, records)
+        required_extensions, available_extensions, records, available_core)
     result = {
         "snapshot_as_of": snapshot["as_of"],
         "stale_verification_records": sum(r.get("_profile_current") is False for r in records),
