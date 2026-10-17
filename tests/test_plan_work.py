@@ -121,6 +121,7 @@ class PlanWorkTests(unittest.TestCase):
                       "profile_revision": profile["profile_revision"], "outcome": "passed", "sha256": checksum, "component": "postgresql",
                       "version": "15.9", "platform": platform, "postgresql_version": "15.9",
                       "test_revision": "a" * 40, "test_cases": profile["case_ids"],
+                      "case_results": {case: "passed" for case in profile["case_ids"]},
                       "environment": {"os": "linux", "architecture": "x86_64",
                                       "os_version": "1" if endpoint == "minimum" else "2", "clean_system": True,
                                       "endpoint": endpoint, "image_id": "ubuntu@sha256:image",

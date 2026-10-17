@@ -64,6 +64,7 @@ class CandidateInventoryTests(unittest.TestCase):
                 "profile_revision": profile["profile_revision"], "outcome": "passed", "url": url, "sha256": sha,
                 "component": "postgresql", "version": version, "platform": platform,
                 "postgresql_version": version, "test_revision": "a" * 40, "test_cases": profile["case_ids"],
+                "case_results": {case: "passed" for case in profile["case_ids"]},
                 "environment": {"endpoint": endpoint, "os": os_name, "architecture": architecture,
                                 "os_version": "1" if endpoint == "minimum" else "2",
                                 "clean_system": True, "image_id": "ubuntu@sha256:image",

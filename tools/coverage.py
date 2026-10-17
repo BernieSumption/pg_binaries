@@ -387,6 +387,20 @@ def validate_verification_record(data, support, root, label="verification record
                        and cases == profile["case_ids"])
     if not current_profile and not allow_stale:
         raise CoverageError(f"{label}: test profile does not match current suite")
+    if scope == "publication":
+        case_results = data.get("case_results")
+        if (not isinstance(case_results, dict)
+                or set(case_results) != set(cases)
+                or any(not isinstance(result, str) or result not in VERIFICATION_OUTCOMES
+                       for result in case_results.values())):
+            raise CoverageError(
+                f"{label}: publication case_results must map every test case to passed, failed, or skipped")
+        result_outcome = ("failed" if "failed" in case_results.values()
+                          else "skipped" if "skipped" in case_results.values()
+                          else "passed")
+        if data["outcome"] != result_outcome:
+            raise CoverageError(
+                f"{label}: outcome must match publication case_results ({result_outcome})")
     environment = data.get("environment")
     if (not isinstance(environment, dict)
             or not all(isinstance(environment.get(field), str) and environment[field]

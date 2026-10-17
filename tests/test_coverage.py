@@ -248,7 +248,8 @@ class CoverageTests(unittest.TestCase):
                     copy = dict(record, platform=platform,
                                 environment=dict(record["environment"], os=os_name,
                                                  architecture=architecture, os_version=os_version,
-                                                 endpoint=endpoint))
+                                                 endpoint=endpoint),
+                                case_results={case: "passed" for case in record["test_cases"]})
                     path = records_dir / f"{platform}-{endpoint}.json"
                     path.write_text(json.dumps(copy), encoding="utf-8")
             status, output = run_cli()
@@ -380,6 +381,60 @@ class CoverageTests(unittest.TestCase):
                         json.dumps(dict(record, **record_changes, environment=environment)), encoding="utf-8")
                     with self.assertRaises(coverage.CoverageError):
                         coverage.verification_records(root, self.support)
+
+    def test_publication_records_require_complete_consistent_case_results(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            profile = self.add_profile(root, scope="publication",
+                                       platforms=["linux-x86_64"],
+                                       case_ids=["case-a", "case-b"])
+            record = {
+                "outcome": "passed", "sha256": "a" * 64,
+                "component": "postgresql", "version": "18.6",
+                "platform": "linux-x86_64", "postgresql_version": "18.6",
+                "test_revision": "b" * 40,
+                "case_results": {"case-a": "passed", "case-b": "passed"},
+                "environment": {
+                    "os": "linux", "architecture": "x86_64", "os_version": "5.15",
+                    "clean_system": True, "endpoint": "minimum", "image_id": "ubuntu@sha256:image",
+                    "dependency_check_profile": "linux-runtime-v1", "dependency_checks_passed": True,
+                },
+            }
+            self.add_profile_fields(record, profile)
+            self.assertTrue(coverage.validate_verification_record(record, self.support, root))
+
+            invalid_results = (
+                {},
+                {"case-a": "passed"},
+                {"case-a": "passed", "case-b": "passed", "extra": "passed"},
+                {"case-a": "passed", "case-b": "unknown"},
+                {"case-a": "passed", "case-b": ["passed"]},
+            )
+            for results in invalid_results:
+                with self.subTest(results=results):
+                    with self.assertRaises(coverage.CoverageError):
+                        coverage.validate_verification_record(
+                            dict(record, case_results=results), self.support, root)
+
+            for outcome, results in (
+                ("failed", {"case-a": "failed", "case-b": "passed"}),
+                ("skipped", {"case-a": "passed", "case-b": "skipped"}),
+            ):
+                with self.subTest(outcome=outcome):
+                    failed_or_skipped = dict(record, outcome=outcome, case_results=results)
+                    self.assertTrue(coverage.validate_verification_record(
+                        failed_or_skipped, self.support, root))
+
+            for outcome, results in (
+                ("passed", {"case-a": "failed", "case-b": "passed"}),
+                ("failed", {"case-a": "passed", "case-b": "passed"}),
+                ("skipped", {"case-a": "failed", "case-b": "skipped"}),
+            ):
+                with self.subTest(outcome=outcome, results=results):
+                    with self.assertRaises(coverage.CoverageError):
+                        coverage.validate_verification_record(
+                            dict(record, outcome=outcome, case_results=results),
+                            self.support, root)
 
     def test_profile_digest_and_exact_cases_reject_changed_or_forged_evidence(self):
         self.support["os_support"] = {name: {"minimum_version": "5.15"}
