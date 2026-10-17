@@ -102,6 +102,41 @@ class PlanWorkTests(unittest.TestCase):
         self.assertEqual(result["verify_downloaded"]["extensions"], [
             ["example", "1.0", "15.9", platform]])
 
+    def test_reports_only_inventory_entries_that_serve_no_selected_target_as_retired(self):
+        platform = "linux-x86_64"
+        inventory = {
+            "postgresql": {
+                "15.9": {"downloads": {platform: {
+                    "url": "https://example.test/pg.tgz", "sha256": "a" * 64}}},
+                "14.9": {"downloads": {platform: {
+                    "url": "https://example.test/old-pg.tgz", "sha256": "b" * 64}}},
+            },
+            "extensions": {"example": {
+                "1.0": {"downloads": {platform: [{
+                    "postgresql_support": {"from": "15.0", "to": "15.9"},
+                    "url": "https://example.test/current-ext.tgz", "sha256": "c" * 64,
+                }]}},
+                "0.9": {"downloads": {platform: [{
+                    "postgresql_support": {"from": "14.0", "to": "14.9"},
+                    "url": "https://example.test/old-ext.tgz", "sha256": "d" * 64,
+                }]}},
+            }},
+        }
+        self.write("inventory.json", inventory)
+
+        result = plan_work.plan(self.root)
+
+        self.assertEqual(result["retired_inventory"], {
+            "core": [["14.9", platform]],
+            "extensions": [["example", "0.9", "14.0", "14.9", platform]],
+        })
+        self.assertIn(["15.9", "linux-arm64"], result["build_missing"]["core"])
+        self.assertIn(["example", "1.0", "15.9", "linux-arm64"],
+                      result["build_missing"]["extensions"])
+        self.assertNotIn(["15.9", platform], result["retired_inventory"]["core"])
+        self.assertNotIn(["example", "1.0", "15.0", "15.9", platform],
+                         result["retired_inventory"]["extensions"])
+
     def test_linux_pilot_accepts_new_stable_major_from_snapshot(self):
         snapshot = {"as_of": "2027-01-01", "source": "https://example.test/releases",
                     "support_status": {"as_of": "2027-01-01", "source": "https://example.test/support",

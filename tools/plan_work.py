@@ -39,6 +39,15 @@ def plan(root):
     available_core, available_extensions = coverage.inventory_targets(inventory)
     records = coverage.verification_records(root, support)
 
+    retired_core = sorted(set(available_core) - required_core)
+    retired_extensions = sorted(
+        key for key in available_extensions
+        if not any(name == key[0] and version == key[1] and platform == key[4]
+                   and coverage.version_parts(key[2], "inventory range")
+                   <= coverage.version_parts(pg, "target")
+                   <= coverage.version_parts(key[3], "inventory range")
+                   for name, version, pg, platform in required_extensions))
+
     core_build, core_verify = [], []
     for version, platform in sorted(required_core):
         target = [version, platform]
@@ -61,6 +70,10 @@ def plan(root):
         "verify_downloaded": {
             "core": [list(target) for target in core_verify],
             "extensions": [list(target) for target in ext_awaiting],
+        },
+        "retired_inventory": {
+            "core": [list(target) for target in retired_core],
+            "extensions": [list(target) for target in retired_extensions],
         },
         "scope": "target-level planning from public inventory and verification records",
     }
