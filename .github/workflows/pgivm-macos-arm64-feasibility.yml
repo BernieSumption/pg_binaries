@@ -1,0 +1,42 @@
+name: pg_ivm macOS arm64 feasibility
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [spike]
+    paths:
+      - '.github/workflows/pgivm-macos-arm64-feasibility.yml'
+      - 'scripts/pgivm/macos-*'
+      - 'scripts/pg_ivm/probe.sql'
+      - 'scripts/macos/static_analysis.py'
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  probe:
+    runs-on: macos-15
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download the passed PostgreSQL 18.6 Apple Silicon artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: macos-arm64-pilot-archives
+          run-id: 39075939632
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/core-archives
+      - name: Build and verify pg_ivm against the archived core
+        run: bash scripts/pgivm/macos-feasibility.sh "$RUNNER_TEMP/core-archives" "$RUNNER_TEMP/pgivm-feasibility"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pgivm-macos-arm64-feasibility-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/pgivm-feasibility/*.tar.gz
+            ${{ runner.temp }}/pgivm-feasibility/*.sha256
+            ${{ runner.temp }}/pgivm-feasibility/*.json
+            ${{ runner.temp }}/pgivm-feasibility/*.txt
+          if-no-files-found: warn
+          retention-days: 7
