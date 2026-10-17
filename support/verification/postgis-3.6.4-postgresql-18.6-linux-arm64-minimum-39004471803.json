@@ -1,0 +1,65 @@
+{
+  "assembled_core": {
+    "archive": "postgresql-18.6-linux-arm64.tar.gz",
+    "sha256": "3460b362d1e5366dc38ccab808510ac717d2833778654f1da8dfbe2d5768da21",
+    "version": "18.6"
+  },
+  "ci": {
+    "build_revision": "27b4cc496ccc5a59e5e9a8613c7b0cc5ed2b6ba4",
+    "provider": "github-actions",
+    "run_id": "39004471803",
+    "run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/39004471803",
+    "source_revision": "27b4cc496ccc5a59e5e9a8613c7b0cc5ed2b6ba4",
+    "test_revision": "27b4cc496ccc5a59e5e9a8613c7b0cc5ed2b6ba4"
+  },
+  "component": "postgis",
+  "environment": {
+    "architecture": "arm64",
+    "clean_system": true,
+    "dependency_check_profile": "postgis-runtime-v1",
+    "dependency_checks_passed": true,
+    "distribution": "Ubuntu 22.04",
+    "distribution_version": "22.04",
+    "endpoint": "minimum",
+    "image_id": "sha256:86e13258765945ad792dac75fac7f02f4db9fa73a4a535ffa472266e7041fa19",
+    "kernel_release": "5.15.0-198-generic",
+    "os": "linux",
+    "os_version": "5.15.0"
+  },
+  "outcome": "passed",
+  "platform": "linux-arm64",
+  "postgresql_version": "18.6",
+  "profile_id": "postgis-minimum-kernel-arm64",
+  "profile_revision": "d7265107093edc860e6f2afc4f17c2d3a06787ddbfd50c8df0df42b7f93bcc02",
+  "project": "PostGIS",
+  "schema_version": 2,
+  "scope": "pilot-smoke",
+  "sha256": "587996351dbcb14b32deca0929d950575dcd512c0389204a0f89774015a63c42",
+  "test_cases": [
+    "postgis-extension-smoke",
+    "postgis-license-mapping",
+    "postgis-relocation",
+    "postgis-runtime-closure"
+  ],
+  "test_revision": "27b4cc496ccc5a59e5e9a8613c7b0cc5ed2b6ba4",
+  "verification_profile": {
+    "case_ids": [
+      "postgis-extension-smoke",
+      "postgis-license-mapping",
+      "postgis-relocation",
+      "postgis-runtime-closure"
+    ],
+    "compatible_profile_revisions": [
+      "227644034cd24665d0f0d152cb92d02108abc8fbaf27512f1918ba884f9f76fb",
+      "d7265107093edc860e6f2afc4f17c2d3a06787ddbfd50c8df0df42b7f93bcc02"
+    ],
+    "platforms": [
+      "linux-arm64"
+    ],
+    "profile_id": "postgis-minimum-kernel-arm64",
+    "profile_revision": "d7265107093edc860e6f2afc4f17c2d3a06787ddbfd50c8df0df42b7f93bcc02",
+    "scope": "pilot-smoke",
+    "sources_available": true
+  },
+  "version": "3.6.4"
+}
