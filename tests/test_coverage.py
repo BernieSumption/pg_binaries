@@ -193,9 +193,9 @@ class CoverageTests(unittest.TestCase):
             record = {"outcome": "skipped", "sha256": checksum, "component": "postgresql",
                       "version": "15.9", "platform": "linux-arm64", "postgresql_version": "15.9",
                       "test_revision": "a" * 40, "environment": {"os": "linux", "architecture": "arm64",
-                      "os_version": "5.15", "clean_system": True,
+                      "os_version": "5.15", "clean_system": False,
                       "endpoint": "minimum", "image_id": "ubuntu@sha256:image",
-                      "dependency_check_profile": "linux-runtime-v1", "dependency_checks_passed": True}}
+                      "dependency_check_profile": "linux-runtime-v1", "dependency_checks_passed": False}}
             self.add_profile_fields(record, profile)
             record_path = records_dir / "postgres.json"
             record_path.write_text(json.dumps(record), encoding="utf-8")
@@ -227,6 +227,8 @@ class CoverageTests(unittest.TestCase):
                              [["15.9", platform] for platform in sorted(platforms)])
 
             record["outcome"] = "passed"
+            record["environment"]["clean_system"] = True
+            record["environment"]["dependency_checks_passed"] = True
             record_path.write_text(json.dumps(record), encoding="utf-8")
             status, output = run_cli()
             self.assertEqual(status, 1)
@@ -365,6 +367,7 @@ class CoverageTests(unittest.TestCase):
                 ("wrong-schema", {"schema_version": 1}, {}, "5.15", "minimum"),
                 ("wrong-os", {}, {"os": "macos"}, "5.15", "minimum"),
                 ("wrong-architecture", {}, {"architecture": "arm64"}, "5.15", "minimum"),
+                ("unclean-pass", {}, {"clean_system": False}, "5.15", "minimum"),
                 ("minimum-too-new", {}, {}, "5.16", "minimum"),
                 ("current-equal", {}, {}, "5.15", "current"),
                 ("current-older", {}, {}, "5.14", "current"),
@@ -462,7 +465,7 @@ class CoverageTests(unittest.TestCase):
                       "test_cases": definition["case_ids"], "platform": "windows-x86_64",
                       "environment": {"os": "windows", "architecture": "x86_64",
                                       "image_id": "windows-test", "dependency_check_profile": "test",
-                                      "dependency_checks_passed": True}}
+                                      "dependency_checks_passed": True, "clean_system": True}}
             self.assertTrue(coverage.validate_verification_record(record, self.support, root))
             source.write_bytes(b"first\r\nchanged\r\n")
             changed = coverage.verification_profile(root, "fixture-windows")

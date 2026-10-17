@@ -22,7 +22,10 @@ def sha256_file(path):
     return digest.hexdigest()
 
 
-def emit(root, archives, core_archives, output, image_id, kernel, architecture="x86_64", evidence=None):
+def emit(root, archives, core_archives, output, image_id, kernel, architecture="x86_64",
+         evidence=None, outcome="passed"):
+    if outcome not in {"passed", "failed", "skipped"}:
+        raise coverage.CoverageError("outcome must be passed, failed, or skipped")
     machines = {"x86_64": "x86_64", "arm64": "aarch64"}
     if architecture not in machines or platform.machine() != machines[architecture]:
         raise coverage.CoverageError("PostGIS pilot requires a matching native runner")
@@ -60,12 +63,17 @@ def emit(root, archives, core_archives, output, image_id, kernel, architecture="
         log = (evidence / "full-verifier.log").read_text()
         guest_kernel = re.search(r"(?m)^guest_kernel=(5\.15\.\S+)$", log)
         if (not guest_kernel or "guest_os=Ubuntu 22.04" not in log
-                or f"guest_architecture={architecture}\n" not in log
-                or "\nPASS: PostGIS 3.6.4 minimum-kernel archive verification\n" not in log):
+                or f"guest_architecture={architecture}\n" not in log):
+            raise coverage.CoverageError("minimum-kernel evidence does not establish a clean guest")
+        passed_marker = "\nPASS: PostGIS 3.6.4 minimum-kernel archive verification\n" in log
+        if outcome == "passed" and not passed_marker:
             raise coverage.CoverageError("minimum-kernel guest verification did not pass")
         kernel = guest_kernel.group(1)
         kernel_match = re.match(r"^(\d+(?:\.\d+)*)", kernel)
-        release = {"PRETTY_NAME": "Ubuntu 22.04", "VERSION_ID": "22.04"}
+        if outcome == "passed":
+            release = {"PRETTY_NAME": "Ubuntu 22.04", "VERSION_ID": "22.04"}
+        else:
+            release = {}
         image_id = f"sha256:{pinned}"
         endpoint = "minimum"
         profile_id = f"postgis-minimum-kernel-{architecture}"
@@ -107,7 +115,7 @@ def emit(root, archives, core_archives, output, image_id, kernel, architecture="
             "build_revision": revision,
             "test_revision": revision,
         },
-        "outcome": "passed",
+        "outcome": outcome,
         "sha256": digest,
         "assembled_core": {"archive": core_name, "sha256": core_digest, "version": "18.6"},
         "version": "3.6.4",
@@ -116,15 +124,15 @@ def emit(root, archives, core_archives, output, image_id, kernel, architecture="
         "environment": {
             "os": "linux",
             "os_version": kernel_match.group(1),
-            "kernel_release": kernel,
-            "distribution": release["PRETTY_NAME"],
-            "distribution_version": release["VERSION_ID"],
+            **({"kernel_release": kernel} if endpoint == "current" or outcome == "passed" else {}),
+            **({"distribution": release["PRETTY_NAME"],
+                "distribution_version": release["VERSION_ID"]} if release else {}),
             "architecture": architecture,
-            "clean_system": True,
+            "clean_system": outcome == "passed",
             "endpoint": endpoint,
             "image_id": image_id,
             "dependency_check_profile": "postgis-runtime-v1",
-            "dependency_checks_passed": True,
+            "dependency_checks_passed": outcome == "passed",
         },
     }
     support = coverage.load_json(root / "support.json")
@@ -154,10 +162,12 @@ def main():
     parser.add_argument("--evidence", type=Path)
     parser.add_argument("--image-id", required=True)
     parser.add_argument("--kernel", required=True)
+    parser.add_argument("--outcome", choices=("passed", "failed", "skipped"), default="passed")
     args = parser.parse_args()
     try:
         for path in emit(args.root, args.archives, args.core_archives, args.output,
-                         args.image_id, args.kernel, args.architecture, args.evidence):
+                         args.image_id, args.kernel, args.architecture, args.evidence,
+                         args.outcome):
             print(path)
         return 0
     except (coverage.CoverageError, OSError, ValueError) as exc:

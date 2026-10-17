@@ -327,7 +327,8 @@ def verification_records(root, support):
                 or not isinstance(environment.get("os_version"), str) or not environment["os_version"]
                 or environment.get("os") != os_name
                 or environment.get("architecture") != architecture
-                or environment.get("clean_system") is not True
+                or not isinstance(environment.get("clean_system"), bool)
+                or (data.get("outcome") == "passed" and environment["clean_system"] is not True)
                 or environment.get("endpoint") not in {"minimum", "current"}):
             raise CoverageError(f"verification record {path}: invalid environment")
         actual = _os_version_parts(environment["os_version"], f"verification record {path}")
@@ -401,8 +402,11 @@ def validate_verification_record(data, support, root, label="verification record
         raise CoverageError(f"{label}: environment identity does not match platform")
     if profile is not None and platform not in profile["platforms"]:
         raise CoverageError(f"{label}: platform is not supported by registered profile")
-    if data["outcome"] == "passed" and environment["dependency_checks_passed"] is not True:
-        raise CoverageError(f"{label}: passed outcome requires successful dependency checks")
+    if data["outcome"] == "passed":
+        if environment.get("clean_system") is not True:
+            raise CoverageError(f"{label}: passed outcome requires a clean system")
+        if environment["dependency_checks_passed"] is not True:
+            raise CoverageError(f"{label}: passed outcome requires successful dependency checks")
     return current_profile
 
 

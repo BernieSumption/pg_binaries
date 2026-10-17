@@ -18,7 +18,8 @@ OS_RELEASE = 'PRETTY_NAME="Ubuntu 24.04"\nVERSION_ID="24.04"\n'
 
 
 class PostgisRecordTests(unittest.TestCase):
-    def emit(self, directory, architecture, corrupt_core=False, minimum=False, bad_log=False, bad_digest=False):
+    def emit(self, directory, architecture, corrupt_core=False, minimum=False, bad_log=False,
+             bad_digest=False, outcome='passed'):
         root = Path(directory)
         for name in (f'postgresql-18.6-linux-{architecture}.tar.gz',
                      f'postgis-3.6.4-postgresql-18.6-linux-{architecture}.tar.gz'):
@@ -35,10 +36,12 @@ class PostgisRecordTests(unittest.TestCase):
             pinned = emitter.ARCHITECTURES[architecture]['image_sha256']
             (evidence / 'environment.txt').write_text(
                 f"test_revision={ENV['GITHUB_SHA']}\npostgresql_version=18.6\nimage_sha256={pinned}\n")
+            success = ('PASS: PostGIS 3.6.4 minimum-kernel archive verification\n'
+                       if outcome == 'passed' else '')
             (evidence / 'full-verifier.log').write_text(
                 f"guest_os=Ubuntu 22.04.5 LTS\nguest_kernel={'6.8.0' if bad_log else '5.15.0-1'}\n"
                 f"guest_architecture={architecture}\n"
-                "PASS: PostGIS 3.6.4 minimum-kernel archive verification\n")
+                + success)
             checksums = ''.join(path.read_text() for path in sorted(root.glob('*.sha256')))
             if bad_digest:
                 checksums = '0' * 64 + checksums[64:]
@@ -48,7 +51,8 @@ class PostgisRecordTests(unittest.TestCase):
             return OS_RELEASE if str(path) == '/etc/os-release' else read_text(path, *args, **kwargs)
         with patch.dict(os.environ, ENV), patch.object(Path, 'read_text', read):
             return emitter.emit(ROOT, root, root, root / 'records',
-                                'sha256:' + '1' * 64, '6.11.0-ubuntu', architecture, evidence)
+                                'sha256:' + '1' * 64, '6.11.0-ubuntu', architecture,
+                                evidence, outcome)
 
     def test_records_bind_both_archives_and_matching_profile(self):
         for architecture, machine in (('x86_64', 'x86_64'), ('arm64', 'aarch64')):
@@ -86,6 +90,32 @@ class PostgisRecordTests(unittest.TestCase):
                     with self.assertRaises(coverage.CoverageError):
                         self.emit(directory, 'x86_64', minimum=True, **kwargs)
                 self.assertFalse((Path(directory) / 'records').exists())
+
+    def test_failed_and_skipped_minimum_records_require_actual_clean_guest_identity(self):
+        for outcome in ('failed', 'skipped'):
+            with self.subTest(outcome=outcome), tempfile.TemporaryDirectory() as directory:
+                with patch.object(emitter.platform, 'machine', return_value='x86_64'):
+                    paths = self.emit(directory, 'x86_64', minimum=True, outcome=outcome)
+                self.assertEqual(len(paths), 4)
+                for path in paths:
+                    record = json.loads(path.read_text())
+                    self.assertEqual(record['outcome'], outcome)
+                    self.assertFalse(record['environment']['clean_system'])
+                    self.assertFalse(record['environment']['dependency_checks_passed'])
+                    self.assertNotIn('kernel_release', record['environment'])
+                    self.assertNotIn('distribution', record['environment'])
+
+    def test_failed_current_records_do_not_claim_dependency_checks_passed(self):
+        for outcome in ('failed', 'skipped'):
+            with self.subTest(outcome=outcome), tempfile.TemporaryDirectory() as directory:
+                with patch.object(emitter.platform, 'machine', return_value='x86_64'):
+                    paths = self.emit(directory, 'x86_64', outcome=outcome)
+                self.assertEqual(len(paths), 4)
+                for path in paths:
+                    record = json.loads(path.read_text())
+                    self.assertEqual(record['outcome'], outcome)
+                    self.assertFalse(record['environment']['clean_system'])
+                    self.assertFalse(record['environment']['dependency_checks_passed'])
 
     def test_rejects_wrong_native_runner(self):
         with patch.object(emitter.platform, 'machine', return_value='x86_64'):
