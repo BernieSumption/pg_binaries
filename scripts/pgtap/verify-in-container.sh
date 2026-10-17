@@ -27,8 +27,11 @@ expected = {
     'project': 'pgtap',
     'version': '1.3.4',
     'sql_names': ['pgtap'],
-    'requires': ['plpgsql'],
-    'configuration_prerequisites': [],
+    'requires': [],
+    'configuration_prerequisites': [{
+        'type': 'sql_extension', 'name': 'plpgsql',
+        'value': 'CREATE EXTENSION plpgsql',
+    }],
     'runtime_prerequisites': [],
     'postgresql_version': os.environ['PG_VERSION'],
     'platform': 'linux',

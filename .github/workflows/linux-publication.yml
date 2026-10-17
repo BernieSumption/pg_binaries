@@ -34,6 +34,7 @@ on:
       - 'scripts/postgis/**'
       - 'scripts/tiger/**'
       - 'scripts/hypopg/**'
+      - 'scripts/pgtap/**'
       - 'tools/check_postgis_license_inventory.py'
       - 'tools/write_postgis_license_inventory.py'
       - 'tools/create_extension_publication_receipt.py'
@@ -76,6 +77,12 @@ jobs:
         id: tiger_build
         run: bash scripts/tiger/build.sh "$RUNNER_TEMP/pilot" "$RUNNER_TEMP/tiger"
       # profile-section: archive-builds end
+      # profile-section: pgtap-build begin
+      - name: Build pgTAP 1.3.4 against the publication PostgreSQL archive
+        if: ${{ always() && env.PG_VERSION == '18.6' && steps.build.outcome == 'success' }}
+        id: pgtap_build
+        run: bash scripts/pgtap/build.sh "$RUNNER_TEMP/pilot" "$RUNNER_TEMP/pgtap"
+      # profile-section: pgtap-build end
       # profile-section: hypopg-build begin
       - name: Build HypoPG 1.4.3 against the publication PostgreSQL archive
         if: ${{ always() && steps.build.outcome == 'success' }}
@@ -111,6 +118,12 @@ jobs:
         id: hypopg_verify
         run: bash scripts/hypopg/verify.sh "$RUNNER_TEMP/pilot" "$RUNNER_TEMP/hypopg"
       # profile-section: hypopg-verify end
+      # profile-section: pgtap-verify begin
+      - name: Verify relocated pgTAP archive and runtime closure in Alpine 3.22
+        if: ${{ always() && env.PG_VERSION == '18.6' && steps.pgtap_build.outcome == 'success' }}
+        id: pgtap_verify
+        run: bash scripts/pgtap/verify.sh "$RUNNER_TEMP/pilot" "$RUNNER_TEMP/pgtap"
+      # profile-section: pgtap-verify end
       # profile-section: core-current-report begin
       - name: Record current-OS publication case results
         if: ${{ always() }}
@@ -357,6 +370,96 @@ jobs:
             --archives "$RUNNER_TEMP/hypopg" --core-archives "$RUNNER_TEMP/pilot" \
             --receipt "$publication/current-receipt.json" --output "$publication/records"
       # profile-section: hypopg-report end
+      # profile-section: pgtap-report begin
+      - name: Record pgTAP publication outcomes and emit archive-bound evidence
+        if: ${{ always() && env.PG_VERSION == '18.6' }}
+        env:
+          CORE_BUILD_OUTCOME: ${{ steps.build.outcome }}
+          PGTAP_BUILD_OUTCOME: ${{ steps.pgtap_build.outcome }}
+          PGTAP_VERIFY_OUTCOME: ${{ steps.pgtap_verify.outcome }}
+        run: |
+          set -euo pipefail
+          publication="$RUNNER_TEMP/pgtap-publication"
+          mkdir -p "$publication"
+          image=$(docker image inspect --format '{{.Id}}' pg-binaries-pgtap-verifier 2>/dev/null || true)
+          if [[ ! "$image" =~ ^sha256:[0-9a-f]{64}$ ]]; then image=unknown; fi
+          IMAGE_ID="$image" python3 - "$publication/attempt.json" "$publication/current-steps.json" <<'PY'
+          import json
+          import os
+          import sys
+          from pathlib import Path
+
+          core = os.environ["CORE_BUILD_OUTCOME"]
+          build = os.environ["PGTAP_BUILD_OUTCOME"]
+          verify = os.environ["PGTAP_VERIFY_OUTCOME"]
+          image = os.environ["IMAGE_ID"]
+          suite = "failure" if "failure" in (build, verify) or (
+              build == verify == "success" and image == "unknown") else (
+              "success" if build == verify == "success" else "skipped")
+          attempt = {
+              "schema_version": 1,
+              "run_id": os.environ["GITHUB_RUN_ID"],
+              "source_revision": os.environ["GITHUB_SHA"],
+              "postgresql_version": os.environ["PG_VERSION"],
+              "architecture": os.environ["PG_ARCHITECTURE"],
+              "verifier_image_id": image,
+              "steps": {
+                  "core_build": core,
+                  "pgtap_build": build,
+                  "pgtap_verify": verify,
+              },
+          }
+          Path(sys.argv[1]).write_text(json.dumps(attempt, indent=2, sort_keys=True) + "\n",
+                                       encoding="utf-8")
+          Path(sys.argv[2]).write_text(json.dumps({"pgtap-archive-suite": suite},
+                                                   sort_keys=True) + "\n",
+                                       encoding="utf-8")
+          PY
+          core="$RUNNER_TEMP/pilot/postgresql-$PG_VERSION-linux-$PG_ARCHITECTURE.tar.gz"
+          extension="$RUNNER_TEMP/pgtap/pgtap-1.3.4-postgresql-$PG_VERSION-linux-$PG_ARCHITECTURE.tar.gz"
+          if [[ ! -f "$core" || ! -f "$core.sha256" || ! -f "$extension" || ! -f "$extension.sha256" ]]; then
+            echo 'No pgTAP publication record: assembled archive bytes or sidecars are unavailable'
+            exit 0
+          fi
+          clean=false
+          dependencies=failure
+          if [[ "$(python3 -c 'import json,sys; print(next(iter(json.load(open(sys.argv[1])).values())) == "success")' "$publication/current-steps.json")" == True ]]; then
+            clean=true
+            dependencies=success
+          fi
+          distribution='Alpine Linux'
+          distribution_version=3.22
+          if [[ "$image" != unknown ]]; then
+            distribution=$(docker run --rm --platform "${{ matrix.docker_platform }}" \
+              --entrypoint sh pg-binaries-pgtap-verifier -c '. /etc/os-release; printf "%s" "$NAME"')
+            distribution_version=$(docker run --rm --platform "${{ matrix.docker_platform }}" \
+              --entrypoint sh pg-binaries-pgtap-verifier -c '. /etc/os-release; printf "%s" "$VERSION_ID"')
+          fi
+          python3 tools/create_extension_publication_receipt.py \
+            --archives "$RUNNER_TEMP/pgtap" --core-archives "$RUNNER_TEMP/pilot" \
+            --receipt "$publication/current-receipt.json" \
+            --profile-id "pgtap-publication-current-$PG_ARCHITECTURE" \
+            --project pgtap --version 1.3.4 --postgresql-version "$PG_VERSION" \
+            --architecture "$PG_ARCHITECTURE" --endpoint current \
+            --kernel-release "$(uname -r)" --distribution "$distribution" \
+            --distribution-version "$distribution_version" --image-id "$image" \
+            --dependency-check-result "$dependencies" --clean-system "$clean" \
+            --step-results "$publication/current-steps.json"
+          python3 tools/emit_extension_publication_records.py \
+            --archives "$RUNNER_TEMP/pgtap" --core-archives "$RUNNER_TEMP/pilot" \
+            --receipt "$publication/current-receipt.json" --output "$publication/records"
+      # profile-section: pgtap-report end
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pgtap-publication-${{ matrix.architecture }}-evidence
+          path: |
+            ${{ runner.temp }}/pgtap/*.tar.gz
+            ${{ runner.temp }}/pgtap/*.sha256
+            ${{ runner.temp }}/pgtap/static-analysis/**
+            ${{ runner.temp }}/pgtap-publication/**
+          if-no-files-found: ignore
+          retention-days: 3
       - uses: actions/upload-artifact@v4
         if: always()
         with:

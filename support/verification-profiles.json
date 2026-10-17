@@ -114,6 +114,18 @@
       "platforms": ["linux-arm64"],
       "case_ids": ["archive-suite"],
       "sources": [".github/workflows/linux-publication.yml#profile-section=hypopg-build", ".github/workflows/linux-publication.yml#profile-section=hypopg-report", ".github/workflows/linux-publication.yml#profile-section=hypopg-verify", ".github/workflows/linux-publication.yml#profile-section=job-setup", "scripts/hypopg/Dockerfile", "scripts/hypopg/build-in-container.sh", "scripts/hypopg/build.sh", "scripts/hypopg/probe.sql", "scripts/hypopg/verify-in-container.sh", "scripts/hypopg/verify.Dockerfile", "scripts/hypopg/verify.sh", "support.json", "tools/check_elf_dependencies.py", "tools/create_extension_publication_receipt.py", "tools/emit_extension_publication_records.py"]
+    },
+    "pgtap-publication-current-x86_64": {
+      "scope": "publication",
+      "platforms": ["linux-x86_64"],
+      "case_ids": ["pgtap-archive-suite"],
+      "sources": [".github/workflows/linux-publication.yml#profile-section=archive-builds", ".github/workflows/linux-publication.yml#profile-section=job-setup", ".github/workflows/linux-publication.yml#profile-section=pgtap-build", ".github/workflows/linux-publication.yml#profile-section=pgtap-report", ".github/workflows/linux-publication.yml#profile-section=pgtap-verify", "scripts/linux/Dockerfile", "scripts/linux/build-in-container.sh", "scripts/linux/build.sh", "scripts/linux/bundle-glibc-in-container.sh", "scripts/linux/launcher.c", "scripts/pgtap/Dockerfile", "scripts/pgtap/build-in-container.sh", "scripts/pgtap/build.sh", "scripts/pgtap/probe.sql", "scripts/pgtap/verify-in-container.sh", "scripts/pgtap/verify.Dockerfile", "scripts/pgtap/verify.sh", "support.json", "support/postgresql-releases.json", "tools/check_elf_dependencies.py", "tools/check_source_identity.py", "tools/create_extension_publication_receipt.py", "tools/emit_extension_publication_records.py", "tools/source_archive.py"]
+    },
+    "pgtap-publication-current-arm64": {
+      "scope": "publication",
+      "platforms": ["linux-arm64"],
+      "case_ids": ["pgtap-archive-suite"],
+      "sources": [".github/workflows/linux-publication.yml#profile-section=archive-builds", ".github/workflows/linux-publication.yml#profile-section=job-setup", ".github/workflows/linux-publication.yml#profile-section=pgtap-build", ".github/workflows/linux-publication.yml#profile-section=pgtap-report", ".github/workflows/linux-publication.yml#profile-section=pgtap-verify", "scripts/linux/Dockerfile", "scripts/linux/build-in-container.sh", "scripts/linux/build.sh", "scripts/linux/bundle-glibc-in-container.sh", "scripts/linux/launcher.c", "scripts/pgtap/Dockerfile", "scripts/pgtap/build-in-container.sh", "scripts/pgtap/build.sh", "scripts/pgtap/probe.sql", "scripts/pgtap/verify-in-container.sh", "scripts/pgtap/verify.Dockerfile", "scripts/pgtap/verify.sh", "support.json", "support/postgresql-releases.json", "tools/check_elf_dependencies.py", "tools/check_source_identity.py", "tools/create_extension_publication_receipt.py", "tools/emit_extension_publication_records.py", "tools/source_archive.py"]
     }
   }
 }

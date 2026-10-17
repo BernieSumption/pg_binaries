@@ -55,7 +55,7 @@ cat > /work/package/pgtap/LICENSES/inventory.json <<EOF
 }
 EOF
 cat > /work/package/metadata.json <<EOF
-{"project":"pgtap","version":"${version}","sql_names":["pgtap"],"requires":["plpgsql"],"configuration_prerequisites":[],"runtime_prerequisites":[],"postgresql_version":"${pg_version}","platform":"linux","architecture":"${architecture}","source":{"url":"https://github.com/theory/pgtap/archive/refs/tags/v1.3.4.tar.gz","sha256":"d2c951afb296a001d21785611a8e966e3f8fa3f5bfbd929396a5130c0152f314"}}
+{"project":"pgtap","version":"${version}","sql_names":["pgtap"],"requires":[],"configuration_prerequisites":[{"type":"sql_extension","name":"plpgsql","value":"CREATE EXTENSION plpgsql"}],"runtime_prerequisites":[],"postgresql_version":"${pg_version}","platform":"linux","architecture":"${architecture}","source":{"url":"https://github.com/theory/pgtap/archive/refs/tags/v1.3.4.tar.gz","sha256":"d2c951afb296a001d21785611a8e966e3f8fa3f5bfbd929396a5130c0152f314"}}
 EOF
 cp -a "$install_root/share/extension/." "$pgroot/share/extension/"
 useradd -m postgres
