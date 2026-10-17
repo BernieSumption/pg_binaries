@@ -1,0 +1,5 @@
+# HypoPG 1.4.3 Apple Silicon feasibility
+
+[Run 39080074272](https://github.com/BernieSumption/pg_binaries/actions/runs/39080074272) passed at source revision `0e64220bd30f60dceb3a15dfca560557acdd9096`. It built unmodified HypoPG 1.4.3 against the pinned PostgreSQL 18.6 macOS arm64 core, packaged the installed module and SQL files, moved the core, and exercised `CREATE EXTENSION`, hypothetical index planning and reset on the relocated installation. The [probe output](probe-output.txt) records the SQL results.
+
+The extension archive SHA-256 was `33b94d44aafe13063f5ffbe172425fb4cffce55d806ad074bdcb72f8ee65178f`; the core archive SHA-256 was `853e0eafb3570378225d2ea16247c9de31770f85df5230509885df2ca5e89d67`. The [static report](static-analysis.json) binds both final archive hashes and passed inspection of 133 Mach-O files. The [CI log](run-log.txt) records the source checksum check, build and relocated probe. The archive remains a temporary CI artifact; this is feasibility evidence, not a publication verification record.

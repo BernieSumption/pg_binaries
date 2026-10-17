@@ -1,0 +1,234 @@
+probe	Set up job	﻿2026-10-17T23:43:36.9434460Z Current runner version: '2.337.0'
+probe	Set up job	2026-10-17T23:43:36.9451470Z ##[group]Runner Image Provisioner
+probe	Set up job	2026-10-17T23:43:36.9452000Z Hosted Compute Agent
+probe	Set up job	2026-10-17T23:43:36.9452360Z Version: 20260828.587
+probe	Set up job	2026-10-17T23:43:36.9452820Z Commit: abac92662cab4cc7352de4f9f9d2e2419aad9c29
+probe	Set up job	2026-10-17T23:43:36.9453630Z Build Date: 2026-08-28T16:44:25Z
+probe	Set up job	2026-10-17T23:43:36.9454200Z Worker ID: {38f60822-bda2-402c-a254-683d05634ad2}
+probe	Set up job	2026-10-17T23:43:36.9454650Z Azure Region: westus
+probe	Set up job	2026-10-17T23:43:36.9455220Z ##[endgroup]
+probe	Set up job	2026-10-17T23:43:36.9456490Z ##[group]Operating System
+probe	Set up job	2026-10-17T23:43:36.9457120Z macOS
+probe	Set up job	2026-10-17T23:43:36.9457440Z 15.7.9
+probe	Set up job	2026-10-17T23:43:36.9457750Z 24G830
+probe	Set up job	2026-10-17T23:43:36.9458070Z ##[endgroup]
+probe	Set up job	2026-10-17T23:43:36.9458420Z ##[group]Runner Image
+probe	Set up job	2026-10-17T23:43:36.9458780Z Image: macos-15-arm64
+probe	Set up job	2026-10-17T23:43:36.9459140Z Version: 20260907.0337.1
+probe	Set up job	2026-10-17T23:43:36.9460070Z Included Software: https://github.com/actions/runner-images/blob/macos-15-arm64/20260907.0337/images/macos/macos-15-arm64-Readme.md
+probe	Set up job	2026-10-17T23:43:36.9461260Z Image Release: https://github.com/actions/runner-images/releases/tag/macos-15-arm64%2F20260907.0337
+probe	Set up job	2026-10-17T23:43:36.9461910Z ##[endgroup]
+probe	Set up job	2026-10-17T23:43:36.9462740Z ##[group]GITHUB_TOKEN Permissions
+probe	Set up job	2026-10-17T23:43:36.9464370Z Actions: read
+probe	Set up job	2026-10-17T23:43:36.9464770Z Contents: read
+probe	Set up job	2026-10-17T23:43:36.9465120Z Metadata: read
+probe	Set up job	2026-10-17T23:43:36.9465470Z ##[endgroup]
+probe	Set up job	2026-10-17T23:43:36.9466990Z Secret source: Actions
+probe	Set up job	2026-10-17T23:43:36.9467820Z Cache mode: write
+probe	Set up job	2026-10-17T23:43:36.9468330Z Prepare workflow directory
+probe	Set up job	2026-10-17T23:43:36.9732190Z Prepare all required actions
+probe	Set up job	2026-10-17T23:43:36.9773750Z Getting action download info
+probe	Set up job	2026-10-17T23:43:37.2953870Z Download action repository 'actions/checkout@v4' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+probe	Set up job	2026-10-17T23:43:37.5402540Z Download action repository 'actions/download-artifact@v4' (SHA:d3f86a106a0bac45b974a628896c90dbdf5c8093)
+probe	Set up job	2026-10-17T23:43:38.0112110Z Download action repository 'actions/upload-artifact@v4' (SHA:ea165f8d65b6e75b540449e92b4886f43607fa02)
+probe	Set up job	2026-10-17T23:43:38.2033830Z Complete job name: probe
+probe	Run actions/checkout@v4	﻿2026-10-17T23:43:38.2520980Z ##[group]Run actions/checkout@v4
+probe	Run actions/checkout@v4	2026-10-17T23:43:38.2521660Z with:
+probe	Run actions/checkout@v4	2026-10-17T23:43:38.2522020Z   repository: BernieSumption/pg_binaries
+probe	Run actions/checkout@v4	2026-10-17T23:43:38.2524970Z   token: ***
+probe	Run actions/checkout@v4	2026-10-17T23:43:38.2525290Z   ssh-strict: true
+probe	Run actions/checkout@v4	2026-10-17T23:43:38.2525660Z   ssh-user: git
+probe	Run actions/checkout@v4	2026-10-17T23:43:38.2526040Z   persist-credentials: true
+probe	Run actions/checkout@v4	2026-10-17T23:43:38.2526470Z   clean: true
+probe	Run actions/checkout@v4	2026-10-17T23:43:38.2526800Z   sparse-checkout-cone-mode: true
+probe	Run actions/checkout@v4	2026-10-17T23:43:38.2527270Z   fetch-depth: 1
+probe	Run actions/checkout@v4	2026-10-17T23:43:38.2527590Z   fetch-tags: false
+probe	Run actions/checkout@v4	2026-10-17T23:43:38.2527920Z   show-progress: true
+probe	Run actions/checkout@v4	2026-10-17T23:43:38.2528250Z   lfs: false
+probe	Run actions/checkout@v4	2026-10-17T23:43:38.2528550Z   submodules: false
+probe	Run actions/checkout@v4	2026-10-17T23:43:38.2528890Z   set-safe-directory: true
+probe	Run actions/checkout@v4	2026-10-17T23:43:38.2529320Z   allow-unsafe-pr-checkout: false
+probe	Run actions/checkout@v4	2026-10-17T23:43:38.2529840Z ##[endgroup]
+probe	Run actions/checkout@v4	2026-10-17T23:43:38.5897320Z Syncing repository: BernieSumption/pg_binaries
+probe	Run actions/checkout@v4	2026-10-17T23:43:38.5899010Z ##[group]Getting Git version info
+probe	Run actions/checkout@v4	2026-10-17T23:43:38.5899720Z Working directory is '/Users/runner/work/pg_binaries/pg_binaries'
+probe	Run actions/checkout@v4	2026-10-17T23:43:38.5900700Z [command]/opt/homebrew/bin/git version
+probe	Run actions/checkout@v4	2026-10-17T23:43:38.6530820Z git version 2.55.0
+probe	Run actions/checkout@v4	2026-10-17T23:43:38.6579140Z ##[endgroup]
+probe	Run actions/checkout@v4	2026-10-17T23:43:38.6590430Z Copying '/Users/runner/.gitconfig' to '/Users/runner/work/_temp/3c879444-a163-4989-840b-4e33d42053df/.gitconfig'
+probe	Run actions/checkout@v4	2026-10-17T23:43:38.6596650Z Temporarily overriding HOME='/Users/runner/work/_temp/3c879444-a163-4989-840b-4e33d42053df' before making global git config changes
+probe	Run actions/checkout@v4	2026-10-17T23:43:38.6602180Z Adding repository directory to the temporary git global config as a safe directory
+probe	Run actions/checkout@v4	2026-10-17T23:43:38.6608410Z [command]/opt/homebrew/bin/git config --global --add safe.directory /Users/runner/work/pg_binaries/pg_binaries
+probe	Run actions/checkout@v4	2026-10-17T23:43:38.6752960Z Deleting the contents of '/Users/runner/work/pg_binaries/pg_binaries'
+probe	Run actions/checkout@v4	2026-10-17T23:43:38.6775170Z ##[group]Initializing the repository
+probe	Run actions/checkout@v4	2026-10-17T23:43:38.6789330Z [command]/opt/homebrew/bin/git init /Users/runner/work/pg_binaries/pg_binaries
+probe	Run actions/checkout@v4	2026-10-17T23:43:38.7804830Z hint: Using 'master' as the name for the initial branch. This default branch name
+probe	Run actions/checkout@v4	2026-10-17T23:43:38.7810050Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+probe	Run actions/checkout@v4	2026-10-17T23:43:38.7811050Z hint: to use in all of your new repositories, which will suppress this warning,
+probe	Run actions/checkout@v4	2026-10-17T23:43:38.7811650Z hint: call:
+probe	Run actions/checkout@v4	2026-10-17T23:43:38.7812010Z hint:
+probe	Run actions/checkout@v4	2026-10-17T23:43:38.7812490Z hint: 	git config --global init.defaultBranch <name>
+probe	Run actions/checkout@v4	2026-10-17T23:43:38.7814130Z hint:
+probe	Run actions/checkout@v4	2026-10-17T23:43:38.7814720Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+probe	Run actions/checkout@v4	2026-10-17T23:43:38.7816840Z hint: 'development'. The just-created branch can be renamed via this command:
+probe	Run actions/checkout@v4	2026-10-17T23:43:38.7817520Z hint:
+probe	Run actions/checkout@v4	2026-10-17T23:43:38.7817960Z hint: 	git branch -m <name>
+probe	Run actions/checkout@v4	2026-10-17T23:43:38.7818490Z hint:
+probe	Run actions/checkout@v4	2026-10-17T23:43:38.7819080Z hint: Disable this message with "git config set advice.defaultBranchName false"
+probe	Run actions/checkout@v4	2026-10-17T23:43:38.7820200Z Initialized empty Git repository in /Users/runner/work/pg_binaries/pg_binaries/.git/
+probe	Run actions/checkout@v4	2026-10-17T23:43:38.7834670Z [command]/opt/homebrew/bin/git remote add origin https://github.com/BernieSumption/pg_binaries
+probe	Run actions/checkout@v4	2026-10-17T23:43:38.7927190Z ##[endgroup]
+probe	Run actions/checkout@v4	2026-10-17T23:43:38.7936770Z ##[group]Disabling automatic garbage collection
+probe	Run actions/checkout@v4	2026-10-17T23:43:38.7940010Z [command]/opt/homebrew/bin/git config --local gc.auto 0
+probe	Run actions/checkout@v4	2026-10-17T23:43:38.8030950Z ##[endgroup]
+probe	Run actions/checkout@v4	2026-10-17T23:43:38.8031900Z ##[group]Setting up auth
+probe	Run actions/checkout@v4	2026-10-17T23:43:38.8033630Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp core\.sshCommand
+probe	Run actions/checkout@v4	2026-10-17T23:43:38.8090140Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+probe	Run actions/checkout@v4	2026-10-17T23:43:38.9274430Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+probe	Run actions/checkout@v4	2026-10-17T23:43:38.9426550Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+probe	Run actions/checkout@v4	2026-10-17T23:43:39.1260700Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+probe	Run actions/checkout@v4	2026-10-17T23:43:39.1568320Z [command]/opt/homebrew/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+probe	Run actions/checkout@v4	2026-10-17T23:43:39.2558440Z [command]/opt/homebrew/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+probe	Run actions/checkout@v4	2026-10-17T23:43:39.2807140Z ##[endgroup]
+probe	Run actions/checkout@v4	2026-10-17T23:43:39.2807990Z ##[group]Fetching the repository
+probe	Run actions/checkout@v4	2026-10-17T23:43:39.2812900Z [command]/opt/homebrew/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +23a95b9253fbc7d72f0004ed8b73b623baec75a3:refs/remotes/origin/spike
+probe	Run actions/checkout@v4	2026-10-17T23:43:40.0285060Z From https://github.com/BernieSumption/pg_binaries
+probe	Run actions/checkout@v4	2026-10-17T23:43:40.0289220Z  * [new ref]         23a95b9253fbc7d72f0004ed8b73b623baec75a3 -> origin/spike
+probe	Run actions/checkout@v4	2026-10-17T23:43:40.0292420Z ##[endgroup]
+probe	Run actions/checkout@v4	2026-10-17T23:43:40.0293300Z ##[group]Determining the checkout info
+probe	Run actions/checkout@v4	2026-10-17T23:43:40.0294160Z ##[endgroup]
+probe	Run actions/checkout@v4	2026-10-17T23:43:40.0294790Z [command]/opt/homebrew/bin/git sparse-checkout disable
+probe	Run actions/checkout@v4	2026-10-17T23:43:40.0385590Z [command]/opt/homebrew/bin/git config --local --unset-all extensions.worktreeConfig
+probe	Run actions/checkout@v4	2026-10-17T23:43:40.0469310Z ##[group]Checking out the ref
+probe	Run actions/checkout@v4	2026-10-17T23:43:40.0472320Z [command]/opt/homebrew/bin/git checkout --progress --force -B spike refs/remotes/origin/spike
+probe	Run actions/checkout@v4	2026-10-17T23:43:40.9615470Z Switched to a new branch 'spike'
+probe	Run actions/checkout@v4	2026-10-17T23:43:40.9627030Z branch 'spike' set up to track 'origin/spike'.
+probe	Run actions/checkout@v4	2026-10-17T23:43:40.9645590Z ##[endgroup]
+probe	Run actions/checkout@v4	2026-10-17T23:43:40.9929080Z [command]/opt/homebrew/bin/git log -1 --format=%H
+probe	Run actions/checkout@v4	2026-10-17T23:43:40.9986850Z 23a95b9253fbc7d72f0004ed8b73b623baec75a3
+probe	Download the passed PostgreSQL 18.6 Apple Silicon artifact	﻿2026-10-17T23:43:41.0249570Z ##[group]Run actions/download-artifact@v4
+probe	Download the passed PostgreSQL 18.6 Apple Silicon artifact	2026-10-17T23:43:41.0249890Z with:
+probe	Download the passed PostgreSQL 18.6 Apple Silicon artifact	2026-10-17T23:43:41.0250140Z   name: macos-arm64-pilot-archives
+probe	Download the passed PostgreSQL 18.6 Apple Silicon artifact	2026-10-17T23:43:41.0250430Z   run-id: 39075939632
+probe	Download the passed PostgreSQL 18.6 Apple Silicon artifact	2026-10-17T23:43:41.0252900Z   github-token: ***
+probe	Download the passed PostgreSQL 18.6 Apple Silicon artifact	2026-10-17T23:43:41.0253190Z   path: /Users/runner/work/_temp/core-archives
+probe	Download the passed PostgreSQL 18.6 Apple Silicon artifact	2026-10-17T23:43:41.0253490Z   merge-multiple: false
+probe	Download the passed PostgreSQL 18.6 Apple Silicon artifact	2026-10-17T23:43:41.0253720Z   repository: BernieSumption/pg_binaries
+probe	Download the passed PostgreSQL 18.6 Apple Silicon artifact	2026-10-17T23:43:41.0254020Z ##[endgroup]
+probe	Download the passed PostgreSQL 18.6 Apple Silicon artifact	2026-10-17T23:43:41.2515990Z Downloading single artifact
+probe	Download the passed PostgreSQL 18.6 Apple Silicon artifact	2026-10-17T23:43:41.2583810Z (node:7115) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+probe	Download the passed PostgreSQL 18.6 Apple Silicon artifact	2026-10-17T23:43:41.2586030Z (Use `node --trace-deprecation ...` to show where the warning was created)
+probe	Download the passed PostgreSQL 18.6 Apple Silicon artifact	2026-10-17T23:43:41.3617670Z (node:7115) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+probe	Download the passed PostgreSQL 18.6 Apple Silicon artifact	2026-10-17T23:43:41.6929380Z Preparing to download the following artifacts:
+probe	Download the passed PostgreSQL 18.6 Apple Silicon artifact	2026-10-17T23:43:41.6930430Z - macos-arm64-pilot-archives (ID: 12117129814, Size: 54682138, Expected Digest: sha256:0802c1026b74f9f8672e127e001ac81e411596f4e8a35eb14d01ebc19a20fc75)
+probe	Download the passed PostgreSQL 18.6 Apple Silicon artifact	2026-10-17T23:43:41.6970930Z Downloading artifact '12117129814' from 'BernieSumption/pg_binaries'
+probe	Download the passed PostgreSQL 18.6 Apple Silicon artifact	2026-10-17T23:43:41.9326950Z Redirecting to blob download url: https://productionresultssa10.blob.core.windows.net/actions-results/8eae53d0-2c70-8290-b923-c06434bbaa9a/workflow-job-run-9e8e85f2-92e6-5cd1-82aa-dd91adb25564/artifacts/ac02c6bcd2dcff03255971c8a46d7451d402d27069f936c2637a52af04f7d2f5.zip
+probe	Download the passed PostgreSQL 18.6 Apple Silicon artifact	2026-10-17T23:43:41.9329670Z Starting download of artifact to: /Users/runner/work/_temp/core-archives
+probe	Download the passed PostgreSQL 18.6 Apple Silicon artifact	2026-10-17T23:43:42.1410280Z (node:7115) [DEP0005] DeprecationWarning: Buffer() is deprecated due to security and usability issues. Please use the Buffer.alloc(), Buffer.allocUnsafe(), or Buffer.from() methods instead.
+probe	Download the passed PostgreSQL 18.6 Apple Silicon artifact	2026-10-17T23:43:44.5860240Z SHA256 digest of downloaded artifact is 0802c1026b74f9f8672e127e001ac81e411596f4e8a35eb14d01ebc19a20fc75
+probe	Download the passed PostgreSQL 18.6 Apple Silicon artifact	2026-10-17T23:43:44.5862180Z Artifact download completed successfully.
+probe	Download the passed PostgreSQL 18.6 Apple Silicon artifact	2026-10-17T23:43:44.5870950Z Total of 1 artifact(s) downloaded
+probe	Download the passed PostgreSQL 18.6 Apple Silicon artifact	2026-10-17T23:43:44.5883370Z Download artifact has finished successfully
+probe	Build and verify pg_ivm against the archived core	﻿2026-10-17T23:43:44.6260510Z ##[group]Run bash scripts/pgivm/macos-feasibility.sh "$RUNNER_TEMP/core-archives" "$RUNNER_TEMP/pgivm-feasibility"
+probe	Build and verify pg_ivm against the archived core	2026-10-17T23:43:44.6261330Z [36;1mbash scripts/pgivm/macos-feasibility.sh "$RUNNER_TEMP/core-archives" "$RUNNER_TEMP/pgivm-feasibility"[0m
+probe	Build and verify pg_ivm against the archived core	2026-10-17T23:43:44.6347090Z shell: /bin/bash -e {0}
+probe	Build and verify pg_ivm against the archived core	2026-10-17T23:43:44.6347470Z ##[endgroup]
+probe	Build and verify pg_ivm against the archived core	2026-10-17T23:43:44.8890210Z postgresql-18.6-macos-arm64.tar.gz: OK
+probe	Build and verify pg_ivm against the archived core	2026-10-17T23:43:45.0643770Z postgresql-18.6-macos-arm64.tar.gz: OK
+probe	Build and verify pg_ivm against the archived core	2026-10-17T23:43:45.8699560Z   % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+probe	Build and verify pg_ivm against the archived core	2026-10-17T23:43:45.8700200Z                                  Dload  Upload   Total   Spent    Left  Speed
+probe	Build and verify pg_ivm against the archived core	2026-10-17T23:43:45.8700510Z 
+probe	Build and verify pg_ivm against the archived core	2026-10-17T23:43:46.0535820Z   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+probe	Build and verify pg_ivm against the archived core	2026-10-17T23:43:46.0637250Z   0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0
+probe	Build and verify pg_ivm against the archived core	2026-10-17T23:43:46.3078050Z 
+probe	Build and verify pg_ivm against the archived core	2026-10-17T23:43:46.3162170Z 100  218k    0  218k    0     0   499k      0 --:--:-- --:--:-- --:--:--  499k
+probe	Build and verify pg_ivm against the archived core	2026-10-17T23:43:46.3343510Z pg_ivm.tar.gz: OK
+probe	Build and verify pg_ivm against the archived core	2026-10-17T23:43:47.6712850Z gcc -Wall -Wmissing-prototypes -Wpointer-arith -Wdeclaration-after-statement -Werror=vla -Werror=unguarded-availability-new -Wendif-labels -Wmissing-format-attribute -Wcast-function-type -Wformat-security -Wmissing-variable-declarations -fno-strict-aliasing -fwrapv -fexcess-precision=standard -Wno-unused-command-line-argument -Wno-compound-token-split-by-macro -Wno-format-truncation -Wno-cast-function-type-strict -O2 -g  -fvisibility=hidden -I. -I./ -I/private/tmp/pgivm-macos.MK3jlK/first/postgresql/include/server -I/private/tmp/pgivm-macos.MK3jlK/first/postgresql/include/internal -isysroot /Applications/Xcode_16.4.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.5.sdk -I/Users/runner/work/_temp/pg-macos-pilot.bcLP8u/dependencies/include  -I/Users/runner/work/_temp/pg-macos-pilot.bcLP8u/dependencies/include/libxml2 -I/usr/local/include -I/Users/runner/work/_temp/pg-macos-pilot.bcLP8u/dependencies/include -I/Users/runner/work/_temp/pg-macos-pilot.bcLP8u/dependencies/include    -c -o createas.o createas.c
+probe	Build and verify pg_ivm against the archived core	2026-10-17T23:43:47.6735060Z gcc -Wall -Wmissing-prototypes -Wpointer-arith -Wdeclaration-after-statement -Werror=vla -Werror=unguarded-availability-new -Wendif-labels -Wmissing-format-attribute -Wcast-function-type -Wformat-security -Wmissing-variable-declarations -fno-strict-aliasing -fwrapv -fexcess-precision=standard -Wno-unused-command-line-argument -Wno-compound-token-split-by-macro -Wno-format-truncation -Wno-cast-function-type-strict -O2 -g  -fvisibility=hidden -I. -I./ -I/private/tmp/pgivm-macos.MK3jlK/first/postgresql/include/server -I/private/tmp/pgivm-macos.MK3jlK/first/postgresql/include/internal -isysroot /Applications/Xcode_16.4.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.5.sdk -I/Users/runner/work/_temp/pg-macos-pilot.bcLP8u/dependencies/include  -I/Users/runner/work/_temp/pg-macos-pilot.bcLP8u/dependencies/include/libxml2 -I/usr/local/include -I/Users/runner/work/_temp/pg-macos-pilot.bcLP8u/dependencies/include -I/Users/runner/work/_temp/pg-macos-pilot.bcLP8u/dependencies/include    -c -o matview.o matview.c
+probe	Build and verify pg_ivm against the archived core	2026-10-17T23:43:47.6746280Z gcc -Wall -Wmissing-prototypes -Wpointer-arith -Wdeclaration-after-statement -Werror=vla -Werror=unguarded-availability-new -Wendif-labels -Wmissing-format-attribute -Wcast-function-type -Wformat-security -Wmissing-variable-declarations -fno-strict-aliasing -fwrapv -fexcess-precision=standard -Wno-unused-command-line-argument -Wno-compound-token-split-by-macro -Wno-format-truncation -Wno-cast-function-type-strict -O2 -g  -fvisibility=hidden -I. -I./ -I/private/tmp/pgivm-macos.MK3jlK/first/postgresql/include/server -I/private/tmp/pgivm-macos.MK3jlK/first/postgresql/include/internal -isysroot /Applications/Xcode_16.4.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.5.sdk -I/Users/runner/work/_temp/pg-macos-pilot.bcLP8u/dependencies/include  -I/Users/runner/work/_temp/pg-macos-pilot.bcLP8u/dependencies/include/libxml2 -I/usr/local/include -I/Users/runner/work/_temp/pg-macos-pilot.bcLP8u/dependencies/include -I/Users/runner/work/_temp/pg-macos-pilot.bcLP8u/dependencies/include    -c -o pg_ivm.o pg_ivm.c
+probe	Build and verify pg_ivm against the archived core	2026-10-17T23:43:49.7675510Z gcc -Wall -Wmissing-prototypes -Wpointer-arith -Wdeclaration-after-statement -Werror=vla -Werror=unguarded-availability-new -Wendif-labels -Wmissing-format-attribute -Wcast-function-type -Wformat-security -Wmissing-variable-declarations -fno-strict-aliasing -fwrapv -fexcess-precision=standard -Wno-unused-command-line-argument -Wno-compound-token-split-by-macro -Wno-format-truncation -Wno-cast-function-type-strict -O2 -g  -fvisibility=hidden -I. -I./ -I/private/tmp/pgivm-macos.MK3jlK/first/postgresql/include/server -I/private/tmp/pgivm-macos.MK3jlK/first/postgresql/include/internal -isysroot /Applications/Xcode_16.4.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.5.sdk -I/Users/runner/work/_temp/pg-macos-pilot.bcLP8u/dependencies/include  -I/Users/runner/work/_temp/pg-macos-pilot.bcLP8u/dependencies/include/libxml2 -I/usr/local/include -I/Users/runner/work/_temp/pg-macos-pilot.bcLP8u/dependencies/include -I/Users/runner/work/_temp/pg-macos-pilot.bcLP8u/dependencies/include    -c -o ruleutils.o ruleutils.c
+probe	Build and verify pg_ivm against the archived core	2026-10-17T23:43:49.8348990Z gcc -Wall -Wmissing-prototypes -Wpointer-arith -Wdeclaration-after-statement -Werror=vla -Werror=unguarded-availability-new -Wendif-labels -Wmissing-format-attribute -Wcast-function-type -Wformat-security -Wmissing-variable-declarations -fno-strict-aliasing -fwrapv -fexcess-precision=standard -Wno-unused-command-line-argument -Wno-compound-token-split-by-macro -Wno-format-truncation -Wno-cast-function-type-strict -O2 -g  -fvisibility=hidden -I. -I./ -I/private/tmp/pgivm-macos.MK3jlK/first/postgresql/include/server -I/private/tmp/pgivm-macos.MK3jlK/first/postgresql/include/internal -isysroot /Applications/Xcode_16.4.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.5.sdk -I/Users/runner/work/_temp/pg-macos-pilot.bcLP8u/dependencies/include  -I/Users/runner/work/_temp/pg-macos-pilot.bcLP8u/dependencies/include/libxml2 -I/usr/local/include -I/Users/runner/work/_temp/pg-macos-pilot.bcLP8u/dependencies/include -I/Users/runner/work/_temp/pg-macos-pilot.bcLP8u/dependencies/include    -c -o subselect.o subselect.c
+probe	Build and verify pg_ivm against the archived core	2026-10-17T23:43:50.1836500Z gcc -Wall -Wmissing-prototypes -Wpointer-arith -Wdeclaration-after-statement -Werror=vla -Werror=unguarded-availability-new -Wendif-labels -Wmissing-format-attribute -Wcast-function-type -Wformat-security -Wmissing-variable-declarations -fno-strict-aliasing -fwrapv -fexcess-precision=standard -Wno-unused-command-line-argument -Wno-compound-token-split-by-macro -Wno-format-truncation -Wno-cast-function-type-strict -O2 -g  -fvisibility=hidden -bundle -o pg_ivm.dylib  createas.o matview.o pg_ivm.o ruleutils.o subselect.o -L/private/tmp/pgivm-macos.MK3jlK/first/postgresql/lib  -isysroot /Applications/Xcode_16.4.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX15.5.sdk -Wl,-headerpad_max_install_names -L/Users/runner/work/_temp/pg-macos-pilot.bcLP8u/dependencies/lib  -L/Users/runner/work/_temp/pg-macos-pilot.bcLP8u/dependencies/lib -L/usr/local/lib -L/Users/runner/work/_temp/pg-macos-pilot.bcLP8u/dependencies/lib -Wl,-dead_strip_dylibs   -fvisibility=hidden -bundle_loader /private/tmp/pgivm-macos.MK3jlK/first/postgresql/bin/postgres
+probe	Build and verify pg_ivm against the archived core	2026-10-17T23:43:50.3928140Z ld: warning: search path '/Users/runner/work/_temp/pg-macos-pilot.bcLP8u/dependencies/lib' not found
+probe	Build and verify pg_ivm against the archived core	2026-10-17T23:43:50.3929720Z ld: warning: search path '/Users/runner/work/_temp/pg-macos-pilot.bcLP8u/dependencies/lib' not found
+probe	Build and verify pg_ivm against the archived core	2026-10-17T23:43:50.3931220Z ld: warning: search path '/Users/runner/work/_temp/pg-macos-pilot.bcLP8u/dependencies/lib' not found
+probe	Build and verify pg_ivm against the archived core	2026-10-17T23:43:50.4854080Z /bin/sh /private/tmp/pgivm-macos.MK3jlK/first/postgresql/lib/pgxs/src/makefiles/../../config/install-sh -c -d '/tmp/pgivm-macos.MK3jlK/stage/private/tmp/pgivm-macos.MK3jlK/first/postgresql/lib'
+probe	Build and verify pg_ivm against the archived core	2026-10-17T23:43:50.5120750Z /bin/sh /private/tmp/pgivm-macos.MK3jlK/first/postgresql/lib/pgxs/src/makefiles/../../config/install-sh -c -d '/tmp/pgivm-macos.MK3jlK/stage/private/tmp/pgivm-macos.MK3jlK/first/postgresql/share/extension'
+probe	Build and verify pg_ivm against the archived core	2026-10-17T23:43:50.5343880Z /bin/sh /private/tmp/pgivm-macos.MK3jlK/first/postgresql/lib/pgxs/src/makefiles/../../config/install-sh -c -d '/tmp/pgivm-macos.MK3jlK/stage/private/tmp/pgivm-macos.MK3jlK/first/postgresql/share/extension'
+probe	Build and verify pg_ivm against the archived core	2026-10-17T23:43:50.5385060Z /bin/sh /private/tmp/pgivm-macos.MK3jlK/first/postgresql/lib/pgxs/src/makefiles/../../config/install-sh -c -d '/tmp/pgivm-macos.MK3jlK/stage/private/tmp/pgivm-macos.MK3jlK/first/postgresql/bin'
+probe	Build and verify pg_ivm against the archived core	2026-10-17T23:43:50.5618980Z /usr/bin/install -c -m 755  pg_ivm.dylib '/tmp/pgivm-macos.MK3jlK/stage/private/tmp/pgivm-macos.MK3jlK/first/postgresql/lib/pg_ivm.dylib'
+probe	Build and verify pg_ivm against the archived core	2026-10-17T23:43:50.5664960Z /usr/bin/install -c -m 644 .//pg_ivm.control '/tmp/pgivm-macos.MK3jlK/stage/private/tmp/pgivm-macos.MK3jlK/first/postgresql/share/extension/'
+probe	Build and verify pg_ivm against the archived core	2026-10-17T23:43:50.5691490Z /usr/bin/install -c -m 644 .//pg_ivm--1.0.sql .//pg_ivm--1.0--1.1.sql .//pg_ivm--1.1--1.2.sql .//pg_ivm--1.2--1.3.sql .//pg_ivm--1.3--1.4.sql .//pg_ivm--1.4--1.5.sql .//pg_ivm--1.5--1.6.sql .//pg_ivm--1.6--1.7.sql .//pg_ivm--1.7--1.8.sql .//pg_ivm--1.8--1.9.sql .//pg_ivm--1.9--1.10.sql .//pg_ivm--1.10.sql .//pg_ivm--1.10--1.11.sql .//pg_ivm--1.11--1.12.sql .//pg_ivm--1.12--1.13.sql .//pg_ivm--1.13--1.14.sql .//pg_ivm--1.14--1.15.sql .//pg_ivm--1.15--1.16.sql  '/tmp/pgivm-macos.MK3jlK/stage/private/tmp/pgivm-macos.MK3jlK/first/postgresql/share/extension/'
+probe	Build and verify pg_ivm against the archived core	2026-10-17T23:43:50.5754460Z /usr/bin/install -c -m 755 .//scripts/pg_ivm_dump_metadata '/tmp/pgivm-macos.MK3jlK/stage/private/tmp/pgivm-macos.MK3jlK/first/postgresql/bin/'
+probe	Build and verify pg_ivm against the archived core	2026-10-17T23:43:50.6481910Z pg_ivm-1.16-postgresql-18.6-macos-arm64.tar.gz: OK
+probe	Build and verify pg_ivm against the archived core	2026-10-17T23:44:11.5490360Z Inspected 133 Mach-O files; 0 finding(s).
+probe	Build and verify pg_ivm against the archived core	2026-10-17T23:44:12.3656670Z initdb: warning: enabling "trust" authentication for local connections
+probe	Build and verify pg_ivm against the archived core	2026-10-17T23:44:12.3658160Z initdb: hint: You can change this by editing pg_hba.conf or using the option -A, or --auth-local and --auth-host, the next time you run initdb.
+probe	Build and verify pg_ivm against the archived core	2026-10-17T23:44:12.5242150Z waiting for server to start.... done
+probe	Build and verify pg_ivm against the archived core	2026-10-17T23:44:12.5243160Z server started
+probe	Build and verify pg_ivm against the archived core	2026-10-17T23:44:12.5466100Z  postgres_version 
+probe	Build and verify pg_ivm against the archived core	2026-10-17T23:44:12.5466780Z ------------------
+probe	Build and verify pg_ivm against the archived core	2026-10-17T23:44:12.5467180Z  18.6
+probe	Build and verify pg_ivm against the archived core	2026-10-17T23:44:12.5467380Z (1 row)
+probe	Build and verify pg_ivm against the archived core	2026-10-17T23:44:12.5468310Z 
+probe	Build and verify pg_ivm against the archived core	2026-10-17T23:44:12.5514780Z CREATE EXTENSION
+probe	Build and verify pg_ivm against the archived core	2026-10-17T23:44:12.5525010Z CREATE TABLE
+probe	Build and verify pg_ivm against the archived core	2026-10-17T23:44:12.5527780Z INSERT 0 2
+probe	Build and verify pg_ivm against the archived core	2026-10-17T23:44:12.5556500Z  create_immv 
+probe	Build and verify pg_ivm against the archived core	2026-10-17T23:44:12.5557550Z -------------
+probe	Build and verify pg_ivm against the archived core	2026-10-17T23:44:12.5558390Z            1
+probe	Build and verify pg_ivm against the archived core	2026-10-17T23:44:12.5558660Z (1 row)
+probe	Build and verify pg_ivm against the archived core	2026-10-17T23:44:12.5558800Z 
+probe	Build and verify pg_ivm against the archived core	2026-10-17T23:44:12.5574700Z DO
+probe	Build and verify pg_ivm against the archived core	2026-10-17T23:44:12.5583250Z INSERT 0 1
+probe	Build and verify pg_ivm against the archived core	2026-10-17T23:44:12.5584000Z DO
+probe	Build and verify pg_ivm against the archived core	2026-10-17T23:44:12.5599870Z UPDATE 1
+probe	Build and verify pg_ivm against the archived core	2026-10-17T23:44:12.5602140Z DO
+probe	Build and verify pg_ivm against the archived core	2026-10-17T23:44:12.7721930Z waiting for server to shut down.... done
+probe	Build and verify pg_ivm against the archived core	2026-10-17T23:44:12.7743480Z server stopped
+probe	Build and verify pg_ivm against the archived core	2026-10-17T23:44:12.7757290Z PASS: pg_ivm 1.16 built from unmodified upstream source, packaged, relocated, statically analysed, and exercised with PostgreSQL 18.6 on macOS arm64
+probe	Run actions/upload-artifact@v4	﻿2026-10-17T23:44:12.9788720Z ##[group]Run actions/upload-artifact@v4
+probe	Run actions/upload-artifact@v4	2026-10-17T23:44:12.9789090Z with:
+probe	Run actions/upload-artifact@v4	2026-10-17T23:44:12.9789390Z   name: pgivm-macos-arm64-feasibility-39080059366
+probe	Run actions/upload-artifact@v4	2026-10-17T23:44:12.9790190Z   path: /Users/runner/work/_temp/pgivm-feasibility/*.tar.gz
+probe	Run actions/upload-artifact@v4	/Users/runner/work/_temp/pgivm-feasibility/*.sha256
+probe	Run actions/upload-artifact@v4	/Users/runner/work/_temp/pgivm-feasibility/*.json
+probe	Run actions/upload-artifact@v4	/Users/runner/work/_temp/pgivm-feasibility/*.txt
+probe	Run actions/upload-artifact@v4	
+probe	Run actions/upload-artifact@v4	2026-10-17T23:44:12.9791080Z   if-no-files-found: warn
+probe	Run actions/upload-artifact@v4	2026-10-17T23:44:12.9791330Z   retention-days: 7
+probe	Run actions/upload-artifact@v4	2026-10-17T23:44:12.9791550Z   compression-level: 6
+probe	Run actions/upload-artifact@v4	2026-10-17T23:44:12.9791890Z   overwrite: false
+probe	Run actions/upload-artifact@v4	2026-10-17T23:44:12.9792050Z   include-hidden-files: false
+probe	Run actions/upload-artifact@v4	2026-10-17T23:44:12.9792410Z ##[endgroup]
+probe	Run actions/upload-artifact@v4	2026-10-17T23:44:13.1993150Z (node:10669) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+probe	Run actions/upload-artifact@v4	2026-10-17T23:44:13.1996490Z (Use `node --trace-deprecation ...` to show where the warning was created)
+probe	Run actions/upload-artifact@v4	2026-10-17T23:44:13.2063050Z With the provided path, there will be 4 files uploaded
+probe	Run actions/upload-artifact@v4	2026-10-17T23:44:13.2067470Z Artifact name is valid!
+probe	Run actions/upload-artifact@v4	2026-10-17T23:44:13.2068450Z Root directory input is valid!
+probe	Run actions/upload-artifact@v4	2026-10-17T23:44:13.5533700Z Beginning upload of artifact content to blob storage
+probe	Run actions/upload-artifact@v4	2026-10-17T23:44:13.5714970Z (node:10669) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+probe	Run actions/upload-artifact@v4	2026-10-17T23:44:13.8082150Z Uploaded bytes 48111
+probe	Run actions/upload-artifact@v4	2026-10-17T23:44:13.8518520Z Finished uploading artifact content to blob storage!
+probe	Run actions/upload-artifact@v4	2026-10-17T23:44:13.8519200Z SHA256 digest of uploaded artifact zip is 812423d102ed49da706b18effdd3089144cd99112e3f3aad1e7aa0e2984f933d
+probe	Run actions/upload-artifact@v4	2026-10-17T23:44:13.8519820Z Finalizing artifact upload
+probe	Run actions/upload-artifact@v4	2026-10-17T23:44:14.0873710Z Artifact pgivm-macos-arm64-feasibility-39080059366.zip successfully finalized. Artifact ID 12118612216
+probe	Run actions/upload-artifact@v4	2026-10-17T23:44:14.0874910Z Artifact pgivm-macos-arm64-feasibility-39080059366 has been successfully uploaded! Final size is 48111 bytes. Artifact ID is 12118612216
+probe	Run actions/upload-artifact@v4	2026-10-17T23:44:14.0892870Z Artifact download URL: https://github.com/BernieSumption/pg_binaries/actions/runs/39080059366/artifacts/12118612216
+probe	Post Run actions/checkout@v4	﻿2026-10-17T23:44:14.1049500Z Post job cleanup.
+probe	Post Run actions/checkout@v4	2026-10-17T23:44:14.2138860Z [command]/opt/homebrew/bin/git version
+probe	Post Run actions/checkout@v4	2026-10-17T23:44:14.2288090Z git version 2.55.0
+probe	Post Run actions/checkout@v4	2026-10-17T23:44:14.2316670Z Copying '/Users/runner/.gitconfig' to '/Users/runner/work/_temp/97ec4224-25ec-494f-b2a0-0d109c91aa5c/.gitconfig'
+probe	Post Run actions/checkout@v4	2026-10-17T23:44:14.2326680Z Temporarily overriding HOME='/Users/runner/work/_temp/97ec4224-25ec-494f-b2a0-0d109c91aa5c' before making global git config changes
+probe	Post Run actions/checkout@v4	2026-10-17T23:44:14.2328650Z Adding repository directory to the temporary git global config as a safe directory
+probe	Post Run actions/checkout@v4	2026-10-17T23:44:14.2394240Z [command]/opt/homebrew/bin/git config --global --add safe.directory /Users/runner/work/pg_binaries/pg_binaries
+probe	Post Run actions/checkout@v4	2026-10-17T23:44:14.2498080Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp core\.sshCommand
+probe	Post Run actions/checkout@v4	2026-10-17T23:44:14.2593560Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+probe	Post Run actions/checkout@v4	2026-10-17T23:44:14.3572670Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+probe	Post Run actions/checkout@v4	2026-10-17T23:44:14.3626590Z http.https://github.com/.extraheader
+probe	Post Run actions/checkout@v4	2026-10-17T23:44:14.3637290Z [command]/opt/homebrew/bin/git config --local --unset-all http.https://github.com/.extraheader
+probe	Post Run actions/checkout@v4	2026-10-17T23:44:14.3725920Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+probe	Post Run actions/checkout@v4	2026-10-17T23:44:14.4548450Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+probe	Post Run actions/checkout@v4	2026-10-17T23:44:14.4622770Z [command]/opt/homebrew/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+probe	Complete job	﻿2026-10-17T23:44:14.6018820Z Cleaning up orphan processes
+probe	Complete job	2026-10-17T23:44:15.1277050Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/download-artifact@v4, actions/upload-artifact@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
