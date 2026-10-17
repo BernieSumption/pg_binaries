@@ -106,7 +106,12 @@ cat > "$package/hypopg/LICENSES/hypopg-inventory.json" <<EOF
     "payload_paths": ["lib/hypopg.dylib", "share/extension"],
     "license_file": "HypoPG.txt",
     "license_source": "https://github.com/HypoPG/hypopg/tree/1.4.3/LICENSE",
-    "source_url": "$source_url", "source_sha256": "$source_sha256"
+    "source_url": "$source_url", "source_sha256": "$source_sha256",
+    "redistribution_review": {
+      "status": "resolved",
+      "basis": "The unmodified HypoPG 1.4.3 source archive includes this PostgreSQL License text for the project. It permits redistribution for any purpose provided the copyright notice, permission paragraph and disclaimer paragraphs remain in copies; this archive retains the complete upstream LICENSE text.",
+      "source_obligation": "none"
+    }
   }]
 }
 EOF
