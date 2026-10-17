@@ -2,6 +2,7 @@ $ErrorActionPreference = 'Stop'
 $PSNativeCommandUseErrorActionPreference = $true
 
 $repo = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
+$python = (Get-Command python -ErrorAction Stop).Source
 $dist = Join-Path $repo 'dist/windows'
 $pgVersion = $env:PG_VERSION
 if (-not $pgVersion -or $pgVersion -notmatch '^\d+\.\d+$') { throw 'PG_VERSION must be set to the selected PostgreSQL minor version' }
@@ -149,7 +150,7 @@ $dumpbin = Join-Path $toolset.FullName 'bin/Hostx64/x64/dumpbin.exe'
 if (-not (Test-Path $dumpbin -PathType Leaf)) { throw 'Visual Studio dumpbin is unavailable for PE inspection' }
 $staticReport = if ($env:PE_STATIC_ANALYSIS_REPORT) { $env:PE_STATIC_ANALYSIS_REPORT } else { Join-Path $work 'static-analysis.json' }
 New-Item -ItemType Directory -Force (Split-Path $staticReport -Parent) | Out-Null
-python (Join-Path $repo 'tools/check_pe_dependencies.py') $moved --dumpbin $dumpbin `
+& $python (Join-Path $repo 'tools/check_pe_dependencies.py') $moved --dumpbin $dumpbin `
   --archive $pgArchive --archive $vectorArchive --report $staticReport
 if ($LASTEXITCODE -ne 0) { throw 'Packaged PE static analysis failed' }
 
