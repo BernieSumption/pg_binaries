@@ -168,9 +168,13 @@ class CreateWindowsSymbolsTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
             archive = self.make_archive(root, {
-                "postgresql/manifest.json": json.dumps({"bundled_runtime_dlls": ["external.dll"]}).encode(),
+                "postgresql/manifest.json": json.dumps({
+                    "bundled_runtime_dlls": ["external.dll"],
+                    "bundled_msvc_runtime_dlls": ["MSVCP140.dll"],
+                }).encode(),
                 "postgresql/bin/postgres.exe": make_pe(),
                 "postgresql/bin/external.dll": b"third-party image without matching PDB",
+                "postgresql/bin/msvcp140.dll": b"Microsoft runtime without matching PDB",
             })
             staged = root / "staged"
             staged.mkdir()

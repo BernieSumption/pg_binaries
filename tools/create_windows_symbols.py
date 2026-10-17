@@ -156,7 +156,7 @@ def module_member(name: str, external_runtime_dlls: set[str] | None = None) -> b
         return len(parts) == 3 and parts[1] == "lib" and parts[2].lower().endswith(".dll")
     return (parts[0] == "postgresql" and len(parts) >= 3
             and parts[1] in {"bin", "lib", "libexec"}
-            and parts[-1] not in (external_runtime_dlls or set())
+            and parts[-1].casefold() not in (external_runtime_dlls or set())
             and parts[-1].lower().endswith((".exe", ".dll")))
 
 
@@ -167,10 +167,14 @@ def external_dlls(bundle: tarfile.TarFile) -> set[str]:
     stream = bundle.extractfile(name)
     if stream is None:
         raise RuntimeError("Cannot read PostgreSQL package manifest")
-    names = json.loads(stream.read()).get("bundled_runtime_dlls", [])
-    if not isinstance(names, list) or any(not isinstance(item, str) for item in names):
-        raise RuntimeError("Invalid bundled_runtime_dlls in PostgreSQL package manifest")
-    return set(names)
+    manifest = json.loads(stream.read())
+    names = []
+    for field in ("bundled_runtime_dlls", "bundled_msvc_runtime_dlls"):
+        value = manifest.get(field, [])
+        if not isinstance(value, list) or any(not isinstance(item, str) for item in value):
+            raise RuntimeError(f"Invalid {field} in PostgreSQL package manifest")
+        names.extend(value)
+    return {name.casefold() for name in names}
 
 
 def staged_pdbs(roots: list[Path]) -> dict[tuple[str, int], Path]:
