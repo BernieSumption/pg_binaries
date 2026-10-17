@@ -100,6 +100,18 @@ for package, payload_paths in sorted(packages.items()):
         if digest != "861671f8c712aa046f8f5ac89239e6c33821636516c5d0cc8c4e1973085f27a6":
             raise SystemExit(f"unexpected ICU third-party notices: {path}")
         entry["additional_license_files"] = [additional]
+    elif package == "libssl3":
+        if (version, source_package, source_version) != (
+                "3.0.2-0ubuntu1.30", "openssl", "3.0.2-0ubuntu1.30"):
+            raise SystemExit(
+                "unexpected libssl3 source identity: "
+                f"{version} {source_package} {source_version}"
+            )
+        additional = "common-licenses/Apache-2.0"
+        path = root / "LICENSES" / additional
+        if not path.is_file() or not path.stat().st_size:
+            raise SystemExit(f"missing OpenSSL Apache-2.0 license text: {path}")
+        entry["additional_license_files"] = [additional]
     elif package == "musl":
         if source_package != "musl":
             raise SystemExit(f"unexpected musl source package: {source_package}")

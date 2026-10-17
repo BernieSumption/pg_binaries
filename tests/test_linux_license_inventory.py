@@ -36,6 +36,7 @@ class LinuxLicenseInventoryTests(unittest.TestCase):
             "#!/bin/sh\ncase \"$3\" in\n"
             "  libc6) source=glibc ;;\n  musl) source=musl ;;\n"
             "  libicu70) printf '70.1-2\\ticu\\t70.1-2\\n'; exit 0 ;;\n"
+            "  libssl3) printf '3.0.2-0ubuntu1.30\\topenssl\\t3.0.2-0ubuntu1.30\\n'; exit 0 ;;\n"
             "  *) source=libexample ;;\nesac\n"
             "printf '1.2.3-4ubuntu5\\t%s\\t1.2.3-4ubuntu5\\n' \"$source\"\n"
         )
@@ -214,6 +215,53 @@ class LinuxLicenseInventoryTests(unittest.TestCase):
         result = self.write_inventory()
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("unexpected ICU third-party notices", result.stderr)
+
+    def add_openssl(self, metadata="3.0.2-0ubuntu1.30\topenssl\t3.0.2-0ubuntu1.30"):
+        (self.archive / "lib/runtime/libssl.so.3").write_bytes(b"openssl")
+        (self.archive / "LICENSES/libssl3.copyright").write_text(
+            "OpenSSL copyright and Apache-2.0 reference\n")
+        (self.archive / "LICENSES/common-licenses/Apache-2.0").parent.mkdir(
+            parents=True, exist_ok=True)
+        (self.archive / "LICENSES/common-licenses/Apache-2.0").write_text(
+            "Apache License\nVersion 2.0\n")
+        self.mapping.write_text(
+            self.mapping.read_text() + "libssl3\tlib/runtime/libssl.so.3\n"
+        )
+        (self.root / "bin/dpkg-query").write_text(
+            "#!/bin/sh\ncase \"$3\" in\n"
+            f"  libssl3) printf '{metadata}\n'; exit 0 ;;\n"
+            "  libc6) source=glibc ;;\n  musl) source=musl ;;\n"
+            "  *) source=libexample ;;\nesac\n"
+            "printf '1.2.3-4ubuntu5\t%s\t1.2.3-4ubuntu5\n' \"$source\"\n"
+        )
+        (self.root / "bin/dpkg-query").chmod(0o755)
+
+    def test_openssl_inventory_includes_common_apache_license_for_exact_package(self):
+        self.add_openssl()
+        result = self.write_inventory()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        components = json.loads((self.archive / "LICENSES/inventory.json").read_text())["components"]
+        openssl = next(entry for entry in components if entry.get("package") == "libssl3")
+        self.assertEqual((openssl["version"], openssl["source_package"],
+                          openssl["source_version"]),
+                         ("3.0.2-0ubuntu1.30", "openssl", "3.0.2-0ubuntu1.30"))
+        self.assertEqual(openssl["additional_license_files"],
+                         ["common-licenses/Apache-2.0"])
+
+    def test_openssl_additional_license_requires_exact_identity_and_nonempty_text(self):
+        for metadata, missing_license in (
+                ("3.0.2-0ubuntu1.31\topenssl\t3.0.2-0ubuntu1.30", False),
+                ("3.0.2-0ubuntu1.30\topenssl\t3.0.2-0ubuntu1.31", False),
+                ("3.0.2-0ubuntu1.30\tother\t3.0.2-0ubuntu1.30", False),
+                ("3.0.2-0ubuntu1.30\topenssl\t3.0.2-0ubuntu1.30", True)):
+            with self.subTest(metadata=metadata, missing_license=missing_license):
+                self.add_openssl(metadata)
+                if missing_license:
+                    (self.archive / "LICENSES/common-licenses/Apache-2.0").write_text("")
+                result = self.write_inventory()
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn("missing OpenSSL Apache-2.0 license text" if missing_license
+                              else "unexpected libssl3 source identity", result.stderr)
 
     def test_static_launcher_records_musl_source_and_license(self):
         (self.archive / "bin/.pg-launcher").write_bytes(b"launcher")
