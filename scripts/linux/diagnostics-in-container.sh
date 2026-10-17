@@ -17,7 +17,7 @@ for file in "$archives/$pg_archive" "$archives/$vector_archive" "$pg_sha_file" "
   test -s "$file" || { echo "Missing diagnostic input: $file" >&2; exit 2; }
 done
 (cd "$archives" && sha256sum -c "$pg_archive.sha256" "$vector_archive.sha256")
-evidence="$archives/diagnostics"
+evidence=${DIAGNOSTICS_EVIDENCE_DIR:-"$archives/diagnostics"}
 install=$(mktemp -d /tmp/pg-binaries-diagnostics.XXXXXX)
 trap 'rm -rf "$install"' EXIT
 chmod 755 "$install"
@@ -34,7 +34,7 @@ loader_name=ld-linux-x86-64.so.2
 loader="$root/lib/glibc/$loader_name"
 test -s "$loader"
 ldd_output=$(ldd "$root/libexec/postgres" 2>&1 || true)
-ldd_version=$(ldd --version)
+ldd_version=$(ldd --version 2>&1 || true)
 ldd_version=${ldd_version%%$'\n'*}
 readelf_version=$(readelf --version)
 readelf_version=${readelf_version%%$'\n'*}
