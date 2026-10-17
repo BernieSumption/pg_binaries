@@ -76,7 +76,7 @@ for dylib in "${dylibs[@]}"; do
   fi
   echo "architectures=$archs" >> "$inspection"
   if [[ " $archs " != *" $architecture "* ]]; then inspection_failed=1; fi
-  load_commands=$(otool -l "$dylib")
+  load_commands=$(otool -l "$dylib" | tail -n +2)
   minos=$(awk '/cmd LC_BUILD_VERSION/ { build=1; next } build && /minos/ { print $2; exit } /cmd LC_VERSION_MIN_MACOSX/ { legacy=1; next } legacy && /version/ { print $2; exit }' <<< "$load_commands")
   echo "minimum_os=${minos:-unavailable}" >> "$inspection"
   if [[ -z $minos ]]; then
