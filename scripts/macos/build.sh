@@ -40,16 +40,15 @@ case "$architecture" in
   arm64) platform_arch=arm64 ;;
   *) echo "Unsupported macOS architecture: $architecture" >&2; exit 1 ;;
 esac
-build_configuration="postgresql-${pg_version};pgvector-${vector_version};builder=native-macos;deployment-target=11.0;configure=icu,openssl,lz4,zstd,libxml,libxslt,zlib,uuid-e2fs,no-readline;dependencies=pinned-upstream-source-with-homebrew-uuid;cflags=-O2,-g;pgvector-optflags=-O2,-g;runtime=bundled-dylibs"
+build_configuration="postgresql-${pg_version};pgvector-${vector_version};builder=native-macos;deployment-target=11.0;configure=icu,openssl,lz4,zstd,libxml,libxslt,zlib,uuid-e2fs,no-readline;dependencies=pinned-upstream-source;cflags=-O2,-g;pgvector-optflags=-O2,-g;runtime=bundled-dylibs"
 
-brew install e2fsprogs
-uuid_prefix=$(brew --prefix e2fsprogs)
 source_prefix="$work_dir/dependencies"
 bash "$script_dir/build-source-dependencies.sh" "$architecture" "$source_prefix"
 export PG_MACOS_DEPENDENCY_PREFIX="$source_prefix"
-export PKG_CONFIG_PATH="$source_prefix/lib/pkgconfig:$uuid_prefix/lib/pkgconfig"
-export CPPFLAGS="-I$source_prefix/include -I$uuid_prefix/include"
-export LDFLAGS="-Wl,-headerpad_max_install_names -L$source_prefix/lib -L$uuid_prefix/lib"
+export PKG_CONFIG_PATH="$source_prefix/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
+export CPPFLAGS="-I$source_prefix/include${CPPFLAGS:+ $CPPFLAGS}"
+export LDFLAGS="-Wl,-headerpad_max_install_names -L$source_prefix/lib${LDFLAGS:+ $LDFLAGS}"
+export DYLD_LIBRARY_PATH="$source_prefix/lib${DYLD_LIBRARY_PATH:+:$DYLD_LIBRARY_PATH}"
 export MACOSX_DEPLOYMENT_TARGET=11.0
 
 curl -fL --retry 3 "https://ftp.postgresql.org/pub/source/v${pg_version}/postgresql-${pg_version}.tar.bz2" -o "$work_dir/postgresql.tar.bz2"
@@ -59,7 +58,10 @@ tar -xzf "$work_dir/pgvector.tar.gz" -C "$work_dir"
 
 install_dir="$work_dir/install/postgresql"
 cd "$work_dir/postgresql-${pg_version}"
-CFLAGS='-O2 -g' ./configure --prefix="$install_dir" --with-icu --with-ssl=openssl --with-lz4 --with-zstd --with-libxml --with-libxslt --with-zlib --with-uuid=e2fs --without-readline
+if ! CFLAGS='-O2 -g' ./configure --prefix="$install_dir" --with-icu --with-ssl=openssl --with-lz4 --with-zstd --with-libxml --with-libxslt --with-zlib --with-uuid=e2fs --without-readline; then
+  tail -n 100 config.log >&2
+  exit 1
+fi
 make -j "$(sysctl -n hw.ncpu)"
 make -C contrib -j "$(sysctl -n hw.ncpu)"
 make install

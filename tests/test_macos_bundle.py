@@ -47,6 +47,20 @@ class MacosBundleTests(unittest.TestCase):
             self.assertIsNone(bundle.resolve_dependency("libsample.dylib"))
             glob.assert_not_called()
 
+    def test_absolute_source_install_name_uses_pinned_library(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            prefix = Path(temporary) / "source-install"
+            library = prefix / "lib/liblz4.1.dylib"
+            library.parent.mkdir(parents=True)
+            library.write_bytes(b"pinned source build")
+            bundle.libdir = Path(temporary) / "package/lib"
+
+            with patch.dict(os.environ, {"PG_MACOS_DEPENDENCY_PREFIX": str(prefix)}):
+                self.assertEqual(
+                    bundle.resolve_dependency("/usr/local/lib/liblz4.1.dylib"),
+                    library.resolve(),
+                )
+
     def test_homebrew_rpath_lookup_remains_available(self):
         with tempfile.TemporaryDirectory() as temporary:
             library = Path(temporary) / "libsample.dylib"

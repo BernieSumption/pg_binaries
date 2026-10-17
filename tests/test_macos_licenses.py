@@ -81,13 +81,13 @@ class MacOSLicenseTests(unittest.TestCase):
         inventory = json.loads((self.root / "LICENSES/inventory.json").read_text())
         self.assertEqual([(item["package"], item["version"]) for item in inventory], [("lz4", "1.10.0")])
 
-    def test_rejects_package_version_shared_by_source_and_homebrew(self):
+    def test_rejects_homebrew_dependency_in_source_bundle(self):
         bundled = json.loads((self.root / "bundled-dependencies.json").read_text())
         bundled["liblz4-homebrew.dylib"] = "/opt/homebrew/Cellar/lz4/1.10.0/lib/liblz4-homebrew.dylib"
         (self.root / "bundled-dependencies.json").write_text(json.dumps(bundled))
         result = self.run_licenses()
         self.assertNotEqual(result.returncode, 0)
-        self.assertIn("present from both source archives and Homebrew", result.stderr)
+        self.assertIn("still includes Homebrew library", result.stderr)
 
     def test_rejects_source_library_without_manifest(self):
         result = self.run_licenses(with_manifest=False)

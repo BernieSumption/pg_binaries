@@ -4,6 +4,13 @@ CREATE SCHEMA pilot;
 
 CREATE TYPE pilot.item_state AS ENUM ('draft', 'active', 'archived');
 CREATE DOMAIN pilot.positive_price AS numeric(12, 2) CHECK (VALUE >= 0);
+CREATE COLLATION pilot.english_icu (provider = icu, locale = 'en-US');
+
+CREATE TABLE pilot.icu_names (
+    name text COLLATE pilot.english_icu NOT NULL
+);
+CREATE INDEX icu_names_name_idx ON pilot.icu_names (name);
+INSERT INTO pilot.icu_names (name) VALUES ('z'), ('a');
 
 CREATE TABLE pilot.accounts (
     account_id bigint GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -72,6 +79,17 @@ BEGIN
         WHERE schemaname = 'pilot' AND indexname = 'items_title_key_active_idx'
     ) THEN
         RAISE EXCEPTION 'partial index missing';
+    END IF;
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_collation
+        WHERE collname = 'english_icu'
+          AND collnamespace = 'pilot'::regnamespace
+          AND collprovider = 'i'
+    ) THEN
+        RAISE EXCEPTION 'ICU collation missing';
+    END IF;
+    IF (SELECT string_agg(name, ',' ORDER BY name) FROM pilot.icu_names) <> 'a,z' THEN
+        RAISE EXCEPTION 'ICU-backed index ordering failed';
     END IF;
 END
 $$;

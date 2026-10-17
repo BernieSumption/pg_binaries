@@ -72,6 +72,10 @@ record_component() {
     echo "$package source archive must contain one top-level $license_suffix licence file" >&2
     return 1
   fi
+  if [[ $package == e2fsprogs && ${archive_path#*/} != lib/uuid/COPYING ]]; then
+    echo "e2fsprogs licence must be at archive path <source-root>/lib/uuid/COPYING; found $archive_path" >&2
+    return 1
+  fi
   license_file="licenses/${package}-${version}.txt"
   target="$manifest_dir/$license_file"
   case "$archive" in
@@ -170,6 +174,18 @@ run_build libxslt bash -c 'cd "$1" && ./configure --prefix="$2" --without-python
   "$work_dir/libxslt" "$prefix" "$jobs"
 
 record_component libxslt 1.1.45 "$xslt_url" 9acfe68419c4d06a45c550321b3212762d92f41465062ca4ea19e632ee5d216e "$xslt_archive" Copyright "$xslt_before"
+
+uuid_archive=$(fetch_source e2fsprogs-1.47.3.tar.gz \
+  https://downloads.sourceforge.net/project/e2fsprogs/e2fsprogs/v1.47.3/e2fsprogs-1.47.3.tar.gz \
+  2f5164e64dd7d91eadd1e0e8a77d92c06dd7837bb19f1d9189ce1939b363d2b4)
+uuid_url=https://downloads.sourceforge.net/project/e2fsprogs/e2fsprogs/v1.47.3/e2fsprogs-1.47.3.tar.gz
+uuid_before="$work_dir/libuuid-before.txt"
+snapshot_dylibs > "$uuid_before"
+unpack "$uuid_archive" "$work_dir/e2fsprogs" gz
+mkdir -p "$prefix/lib"
+run_build libuuid bash -c 'cd "$1" && ./configure --prefix="$2" --enable-bsd-shlibs --disable-fsck --disable-uuidd --disable-e2initrd-helper && make -C lib/uuid && make -C lib/uuid install' _ \
+  "$work_dir/e2fsprogs" "$prefix"
+record_component e2fsprogs 1.47.3 "$uuid_url" 2f5164e64dd7d91eadd1e0e8a77d92c06dd7837bb19f1d9189ce1939b363d2b4 "$uuid_archive" lib/uuid/COPYING "$uuid_before"
 
 python3 - "$component_records" "$manifest_dir/source-dependencies.json" <<'PY'
 import json

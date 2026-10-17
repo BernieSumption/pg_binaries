@@ -45,6 +45,17 @@ def files():
 
 def resolve_dependency(dep):
     if dep.startswith("/"):
+        dependency_prefix = os.environ.get("PG_MACOS_DEPENDENCY_PREFIX")
+        if dependency_prefix:
+            prefix = pathlib.Path(dependency_prefix).resolve()
+            for directory in ("lib", "lib64"):
+                candidate = prefix / directory / pathlib.Path(dep).name
+                try:
+                    resolved = candidate.resolve(strict=True)
+                except (OSError, RuntimeError):
+                    continue
+                if resolved.is_relative_to(prefix) and resolved.is_file():
+                    return resolved
         return pathlib.Path(dep)
     at_rpath = dep.startswith("@rpath/")
     name = dep.removeprefix("@rpath/") if at_rpath else dep

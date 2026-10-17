@@ -98,6 +98,7 @@ class DumpbinParserTests(unittest.TestCase):
 
     def test_system_allowlist_is_narrow_and_documented(self):
         self.assertTrue(checker.is_system_dll("KERNEL32.dll"))
+        self.assertTrue(checker.is_system_dll("WLDAP32.dll"))
         self.assertTrue(checker.is_system_dll("api-ms-win-core-file-l1-2-0.dll"))
         self.assertTrue(checker.is_system_dll("api-ms-win-crt-runtime-l1-1-0.dll"))
         self.assertFalse(checker.is_system_dll("api-ms-win-security-base-l1-1-0.dll"))

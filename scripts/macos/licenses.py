@@ -75,6 +75,8 @@ for library, source in sources.items():
         if len(parts) <= index + 2:
             raise SystemExit(f"cannot identify Homebrew package and version owning {source}")
         name, version = parts[index + 1 : index + 3]
+        if source_manifest is not None:
+            raise SystemExit(f"source-built dependency bundle still includes Homebrew library {library}: {source}")
         if (name, version) in source_components:
             raise SystemExit(f"dependency {name} {version} is present from both source archives and Homebrew")
         formulas.setdefault(("homebrew", name, version), []).append(library)

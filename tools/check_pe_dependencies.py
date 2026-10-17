@@ -19,7 +19,7 @@ SYSTEM_DLLS = {
     "oleaut32.dll", "powrprof.dll", "profapi.dll", "psapi.dll", "rpcrt4.dll",
     "secur32.dll", "setupapi.dll", "shell32.dll", "shlwapi.dll", "user32.dll",
     "userenv.dll", "usp10.dll", "uxtheme.dll", "version.dll", "winhttp.dll",
-    "winmm.dll", "winspool.drv", "ws2_32.dll", "wsock32.dll",
+    "winmm.dll", "winspool.drv", "wldap32.dll", "ws2_32.dll", "wsock32.dll",
 }
 API_SET_PREFIXES = ("api-ms-win-core-", "api-ms-win-crt-",
                     "ext-ms-win-kernel32-", "ext-ms-win-ntuser-")
