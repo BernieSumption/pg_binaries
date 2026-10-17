@@ -1,5 +1,7 @@
 # Extension support
 
+Extension release selection follows the [functional specification's shared version support rule](../specs/functional.md#determining-postgres-and-extension-versions-to-support). The versions currently pinned in `support.json` are from a previous selection and remain pending refresh under that rule; this policy does not treat those pins as current release findings. Refresh the metadata, builders and tests through [the migration backlog](../GOAL_BACKLOG.md#version-policy-migration).
+
 ## Built-in extensions
 
 Upstream: [PostgreSQL](https://www.postgresql.org/). We support the extensions bundled with each selected PostgreSQL build. The inventory must derive the actual list from build output; optional build dependencies can make that list differ by platform. In particular, the [PostgreSQL option policy](postgres-options.md#platform-limited-option) omits `uuid-ossp` on Windows.
@@ -16,7 +18,7 @@ For inclusion: It is maintained, widely adopted and offered by several major Pos
 
 Against inclusion: Native code must be built and checked against each claimed PostgreSQL and platform range. No external runtime data or service is required.
 
-Version policy: Support the latest patch release of the 0.8 line, currently 0.8.7. Upstream's changelog records additions and fixes in that line, with no documented DDL break. Retain the latest release before any future documented compatibility break and assume a future major-version transition breaks compatibility. Releases before the September 2025 cutoff are not selected without a specific reason.
+Version policy: Apply the shared version support rule to compatible pgvector releases.
 
 Target support: PostgreSQL 15 and later on Linux and macOS for x86-64 and arm64, and Windows for x86-64, subject to upstream's documented PostgreSQL support and verified archive results. Upstream currently documents PostgreSQL 13+ and Linux, macOS and Windows build procedures; its Windows instructions cover x64.
 
@@ -30,9 +32,9 @@ For inclusion: PostGIS is mature, maintained and offered by major PostgreSQL hos
 
 Against inclusion: GEOS, PROJ and LibXML2 add native dependencies; raster support adds GDAL, and SFCGAL adds a substantial C++ dependency stack. Required runtime libraries and redistributable coordinate-system data must be bundled with their licences and source obligations. The Linux pilot packages the selected SQL modules and their runtime closure; it omits upstream's optional import, export and administration programs because the specified schema operations do not require them and their host interpreters or C library would break the kernel-only support claim. This pilot does not establish all-platform portability or complete redistribution evidence.
 
-Version policy: Support the latest stable patch in each maintained 3.4, 3.5 and 3.6 line. PostGIS releases minor lines about annually, so this repository's compatibility rule treats each minor transition as a DDL break despite upstream's general expectation of additive minor releases. Keep the last release of each line for clients intending that line. Review older lines and new stable lines against the release cutoff and upstream maintenance status rather than carrying unsupported historical versions indefinitely.
+Version policy: Apply the shared version support rule to releases compatible with each PostgreSQL version. Use upstream PostgreSQL compatibility information to select the release for each core.
 
-Target support: On the five required OS and architecture targets, aim to support PostgreSQL versions within each line's documented compatibility. Upstream's current compatibility data describes PostgreSQL 12–17 for 3.4 and 12–18 for 3.5 and 3.6; intersect those ranges with this repository's PostgreSQL 15+ requirement. A supported line's absence on a required target remains unmet until upstream restrictions or tested evidence justify narrowing it. The archive exposes all four PostGIS SQL names declared in `support.json`. [Address Standardizer](https://github.com/postgis/address_standardizer) and [PostGIS TIGER Geocoder](https://gitea.osgeo.org/postgis/postgis_tiger_geocoder) have separate upstream projects and inclusion decisions; their files may occur in a PostGIS source build but this PostGIS decision does not include them. Verify the exact PostgreSQL endpoints and native dependency closure before advertising any archive.
+Target support: On the five required OS and architecture targets, aim to support PostgreSQL versions within each line's documented compatibility. Upstream's current compatibility data describes PostgreSQL 12–17 for 3.4 and 12–18 for 3.5 and 3.6; intersect those ranges with this repository's PostgreSQL 15+ requirement. A selected release/core combination missing on a required platform remains unmet; a build failure alone does not remove that target. The archive exposes all four PostGIS SQL names declared in `support.json`. [Address Standardizer](https://github.com/postgis/address_standardizer) and [PostGIS TIGER Geocoder](https://gitea.osgeo.org/postgis/postgis_tiger_geocoder) have separate upstream projects and inclusion decisions; their files may occur in a PostGIS source build but this PostGIS decision does not include them. Verify the selected PostgreSQL combinations and native dependency closure before advertising any archive.
 
 Sources: [PostGIS compatibility data](https://www.postgis.net/development/compatibility/), [versioning and maintenance policy](https://postgis.net/development/versions_eol/), [installation guide](https://postgis.net/docs/manual-3.6/en/postgis_installation.html), [licensing inventory](https://github.com/postgis/postgis/blob/master/LICENSE.TXT), [Google Cloud SQL extension catalogue](https://docs.cloud.google.com/sql/docs/postgres/extensions).
 
@@ -42,9 +44,9 @@ Description: [PostGIS TIGER Geocoder](https://postgis.net/2026/08/PostGIS-Tiger-
 
 For inclusion: Schema DDL can use its functions and the `tiger` schema. `CREATE EXTENSION` installs the schema and empty reference tables without downloading Census data; the loader downloads data only when a user chooses to populate them. The separately released extension is PL/pgSQL-only, so its SQL files can be tested across the required OS and architecture targets without a native build for each target.
 
-Against inclusion: Actual geocoding needs US Census TIGER data loaded by the user. The archive must not bundle that dataset or claim to geocode addresses before loading it. The extension requires PostGIS and the built-in `fuzzystrmatch`; GPLv2 redistribution requires its licence and an appropriate source link or offer in the archive. SQL-only packaging still needs clean-system installation and DDL tests on every claimed target.
+Against inclusion: Actual geocoding needs US Census TIGER data loaded by the user. The archive must not bundle that dataset or claim to geocode addresses before loading it. The extension requires PostGIS and the built-in `fuzzystrmatch`; GPLv2 redistribution requires its licence and an appropriate source link or offer in the archive. SQL-only packaging still needs installation and DDL tests in the environments required by [the testing policy](testing.md).
 
-Version policy: Support the latest stable patch in the current Census-data-year line, presently 2025.2. Its upstream metadata calls the release stable, and the 2025.2 announcement identifies fixes after 2025.1 without a documented DDL break. Treat a new data-year line as potentially incompatible until its upgrade scripts and schema DDL are tested; retain an older line if that testing finds a compatibility break.
+Version policy: Apply the shared version support rule to compatible releases. Treat upstream data-year majors according to the shared two-year rule; verify the selected package with its declared PostgreSQL and PostGIS prerequisites.
 
 Target support: PostgreSQL 16–18 on Linux and macOS x86-64 and arm64 and Windows x86-64, with PostGIS 3.6 or later and `fuzzystrmatch` installed. The 2025.2 release declares PostgreSQL 16+ and PostGIS 3.6+; PostgreSQL 15 is outside its declared range. This is intended support, not verified archive coverage.
 
@@ -56,9 +58,9 @@ Description: [Address Standardizer](https://github.com/postgis/address_standardi
 
 For inclusion: Its parsing functions can appear in schema DDL, and major PostgreSQL hosts offer both SQL extensions. The upstream repository contains the USPS-derived city file used to generate `parseaddress-stcities.h` and states an MIT-style licence in `COPYING`. No separate terms were identified for that US file. Under the [repository-data licence assumption](releases.md#redistribution-review-before-publication), the city file and compiled output use the repository licence; do not investigate whether upstream had authority to license the earlier USPS source.
 
-Against inclusion: The native library needs PCRE2, which must be bundled on platforms where it is not universal. Upstream moved the project out of PostGIS after the 3.6 line, so release selection, DDL compatibility, documented PostgreSQL support and platform builds need research before intended support can be declared. Any newer data file with explicit separate terms needs its own review.
+Against inclusion: The native library needs PCRE2, which must be bundled on platforms where it is not universal. Upstream moved the project out of PostGIS after the 3.6 line, so release selection, documented PostgreSQL support and platform builds need research before intended support can be declared. Any newer data file with explicit separate terms needs its own review.
 
-Version policy: Select maintained releases from the PostGIS-bundled and standalone lines after checking their DDL compatibility boundary. Do not infer that the standalone split is a DDL break or that every older line must be retained.
+Version policy: Apply the shared version support rule after establishing how the bundled and standalone releases map to this project. A source-repository split does not by itself require retaining both packages.
 
 Target support: Not yet declared in `support.json`. Research each selected release's PostgreSQL and OS support, then add both SQL names at the project level for the supported targets. The resolved US-data assumption alone is not build, compatibility or publication evidence.
 
@@ -184,7 +186,7 @@ For inclusion: It is a mature query-tuning tool offered by Supabase and Crunchy 
 
 Against inclusion: None identified. Hypothetical indexes are session-local and do not store persistent table data. The 1.4.3 source archive contains SQL upgrade scripts from 1.3.1 through 1.4.3, although its README still recommends dropping and recreating the extension and says it has no upgrade scripts. Test an upgrade path before promising one; this project's selected support currently includes only 1.4.3.
 
-Version policy: Support 1.4.3, the latest stable release on 2026-10-16. Upstream documents PostgreSQL 19 compatibility for 1.4.3, but PostgreSQL 19 is not yet a stable project target. No SQL compatibility break requiring an older release line was identified.
+Version policy: Apply the shared version support rule to compatible releases.
 
 Target support: PostgreSQL 15 and later stable releases, currently 15–18. Build and test each supported project platform and architecture before claiming verified coverage. Reassess compatibility when a new PostgreSQL major becomes stable.
 
@@ -198,11 +200,11 @@ For inclusion: It supports Oracle PL/SQL associative-array migration. AWS mainta
 
 Against inclusion: Adoption evidence is limited beyond AWS RDS. The extension is a native C build, with no external runtime or data-file dependency identified.
 
-Version policy: Support 2.1.3, the latest upstream release on 2026-10-16, and 1.1.1, the latest release before the 2.0 major transition. The specification treats that transition as a compatibility break even though the 2.0 notes chiefly describe additions. Both releases are after the September 2025 cutoff. The 2.x line includes fixes to type-modifier display and typed-NULL handling.
+Version policy: Select 2.1.3 and 1.1.1 for each compatible PostgreSQL build under the shared rule. PGXN dates major 1 to 2025-04-03 and major 2 to 2026-03-20; both fall within the two-year window as of 2026-10-17. Refresh those selections when the inventory is next prepared.
 
 Target support: PostgreSQL 15 and later stable releases, currently 15–18. Build and test each supported project platform and architecture before claiming verified coverage; upstream does not specify OS or architecture guarantees. Reassess compatibility when a new PostgreSQL major becomes stable.
 
-Sources: [upstream source, PostgreSQL requirement and license](https://github.com/aws/pgcollection), [release history](https://github.com/aws/pgcollection/releases), [AWS RDS extension catalogue](https://docs.aws.amazon.com/AmazonRDS/latest/PostgreSQLReleaseNotes/postgresql-extensions.html).
+Sources: [upstream source, PostgreSQL requirement and license](https://github.com/aws/pgcollection), [release history](https://github.com/aws/pgcollection/releases), [PGXN 1.0.0 and 2.0.0 release dates](https://pgxn.org/dist/pgcollection/1.0.0/), [AWS RDS extension catalogue](https://docs.aws.amazon.com/AmazonRDS/latest/PostgreSQLReleaseNotes/postgresql-extensions.html).
 
 ## pg_background — exclude
 
@@ -226,7 +228,7 @@ For inclusion: It is maintained by Citus, widely deployed and offered by AWS, Az
 
 Against inclusion: It requires `shared_preload_libraries = 'pg_cron'`, a restart and `CREATE EXTENSION`. By default, job execution opens local libpq connections that must be permitted by `pg_hba.conf`; document these configuration requirements. Upstream provides Windows build instructions, but all target platforms and architectures require verification.
 
-Version policy: Support 1.6.8, the latest upstream release on 2026-10-16. Upstream supports PostgreSQL 10 and later; 1.6.6 explicitly added PostgreSQL 18. No earlier release line is needed for the project PostgreSQL range.
+Version policy: Apply the shared version support rule to compatible releases. Upstream supports PostgreSQL 10 and later; the release history documents PostgreSQL 18 support.
 
 Target support: PostgreSQL 15 and later stable releases, currently 15–18. Build and test each supported project platform and architecture before claiming verified coverage. Reassess compatibility when a new PostgreSQL major becomes stable. The extension can be installed in only one database per cluster.
 
@@ -268,7 +270,7 @@ For inclusion: Materialized views are schema objects used by applications, and i
 
 Against inclusion: The extension must be loaded through `shared_preload_libraries` or `session_preload_libraries` for correct maintenance. This requires documenting basic PostgreSQL configuration and a restart when using shared preload. Version 1.15 added a utility for restoring view-maintenance metadata after `pg_dump` or `pg_upgrade`; packaging must include it. Its native code and platform coverage require build verification.
 
-Version policy: Support 1.16, the latest upstream release on 2026-10-16. It fixes maintenance and concurrency errors and documents PostgreSQL 19 support. No prior SQL compatibility line is required by the project.
+Version policy: Apply the shared version support rule to compatible releases.
 
 Target support: PostgreSQL 15–18 initially, intersecting upstream's declared 13–19 range with the project's stable targets. Build and test all required OS and architecture targets before claiming coverage.
 
@@ -278,11 +280,11 @@ Sources: [upstream description, compatibility and configuration](https://github.
 
 Description: [pgAudit](https://github.com/pgaudit/pgaudit) adds session and object audit logging through the `pgaudit` SQL extension and PostgreSQL's normal logs.
 
-For inclusion: It is maintained, offered by Amazon RDS and Google Cloud SQL, and provides application and compliance audit records. Its PostgreSQL License allows redistribution, and it has no external runtime data. The current PostgreSQL 15 branch release predates the general cutoff, but the specification permits an exception for an extension's current release.
+For inclusion: It is maintained, offered by Amazon RDS and Google Cloud SQL, and provides application and compliance audit records. Its PostgreSQL License allows redistribution, and it has no external runtime data.
 
 Against inclusion: It requires `shared_preload_libraries` and a restart; full DDL audit detail also depends on creating the SQL extension before setting its log classes. Logging is best-effort rather than transactional. Upstream describes builds for most Unix-like systems and does not document native Windows support. The preload and log behavior must be represented in package metadata and tests.
 
-Version policy: Support the latest release in each upstream PostgreSQL-major branch: pgAudit 1.7.1 for PostgreSQL 15, 16.1 for 16, 17.1 for 17, and 18.0 for 18. Upstream maps these separate release lines to the server majors and maintains stable branches for bug fixes. Retain all four while the corresponding PostgreSQL majors are required; recheck branch releases for updates.
+Version policy: Apply the shared version support rule using the upstream branch mapped to each PostgreSQL major. Upstream maintains separate stable branches for server majors; select compatible releases from those branches.
 
 Target support: PostgreSQL 15–18 on Linux and macOS, x86-64 and arm64, with each pgAudit line restricted to its matching PostgreSQL major. Both architectures require build and test evidence. No Windows target is declared without documented support or a demonstrated port.
 
@@ -296,7 +298,7 @@ For inclusion: Database-level tests are a common application development need. T
 
 Against inclusion: The upstream source build uses Perl to generate installation SQL, and the optional `pg_prove` harness has a separate Perl dependency. Neither is required to execute the installed SQL functions. Packaging must keep all three SQL extension identities and their upgrade files consistent; each requires a representative schema test.
 
-Version policy: Support 1.3.4, the latest published release as of 2026-10-16. Upstream's 1.3.5 changelog entry is marked unreleased. Release 1.3.4 restores extension upgrade-path testing; no documented SQL compatibility break requires an older published line. Recheck that conclusion and retain required update scripts when moving to a newer release.
+Version policy: Apply the shared version support rule to published compatible releases; exclude unreleased changelog entries.
 
 Target support: PostgreSQL 15–18 on Linux and macOS for x86-64 and arm64, and Windows for x86-64. Upstream reports testing through PostgreSQL 18. The installed SQL payload is architecture-independent, but archive assembly and behavior still require checks on each target before publication.
 
@@ -310,7 +312,7 @@ For inclusion: Applications can use its functions in CHECK constraints to enforc
 
 Against inclusion: The Rust/pgrx toolchain adds native build and dependency cost for each PostgreSQL major. Upstream's release workflow builds Linux x86-64 and arm64, but does not establish macOS or Windows packages. Expansion to those systems needs separate feasibility and testing. No external data or service is required for schema use.
 
-Version policy: Support 0.3.4, the latest published release as of 2026-10-16. It adds PostgreSQL 18 support and fixes JSON numeric validation. Reviewed release notes do not identify an SQL API break requiring an older version; revisit that decision if a removed or changed object is found.
+Version policy: Apply the shared version support rule to published compatible releases.
 
 Target support: PostgreSQL 15–18 on Linux x86-64 and arm64, matching the relevant upstream release jobs and Cargo features. Each build and archive still requires verification before publication. Mac and Windows remain outside this extension's declared OS subset until upstream compatibility or project build evidence supports both required architectures on an added OS.
 
@@ -394,7 +396,7 @@ For inclusion: It addressed a useful analytics use case by querying S3, Parquet,
 
 Against inclusion: Upstream explicitly discontinued and archived the project on 2025-03-19, stating that it is no longer maintained and directing users to its primary `pg_search` project. It embeds DuckDB, requires Rust/pgrx and substantial native dependencies, and explicitly does not support Windows because pgrx does not support it. The functional spec permits an explicitly bounded platform subset, but the maintenance and build burden weigh against adding an archived, broad-dependency extension when the project targets all platforms.
 
-Version policy: Exclude; no forward-maintained release line. PGXN records 0.3.7 as the latest stable version (2025-03-19), before the project's 2025-09-25 release cutoff, and upstream says the project is discontinued.
+Version policy: None while excluded. Upstream says the project is discontinued and provides no forward-maintained release line.
 
 Target support: None while excluded. Upstream documents PostgreSQL 13+ and prebuilt Linux/macOS artifacts, but explicitly excludes Windows; no complete target OS/architecture matrix is claimed.
 
@@ -408,7 +410,7 @@ For inclusion: It was a public Apache-2.0 project with a useful vector search fe
 
 Against inclusion: Neon explicitly stopped committing to the project in September 2023 and recommended migration to pgvector; the repository was archived on 2024-11-21. The project is therefore abandoned, and pgvector is the maintained alternative for this use case.
 
-Version policy: Exclude; upstream's final 0.3.6 release predates the project's September 2025 cutoff, and upstream has ended maintenance.
+Version policy: None while excluded. Upstream has ended maintenance; pgvector is the maintained alternative for this use case.
 
 Target support: None while excluded. The archived project does not establish current compatibility across PostgreSQL 15+ or the project's OS and architecture targets.
 
@@ -422,7 +424,7 @@ For inclusion: It supplies durable job and function progress/error logs that sur
 
 Against inclusion: PGXN's latest stable release is 1.4.1 from 2021-08-09, and no recent upstream maintenance or current major-host support was identified. Although upstream documents PostgreSQL 9.2+, current test evidence is absent. The extension also requires `dblink` and a local connection path; non-superuser setup stores credentials in an extension table and requires `pg_hba.conf` configuration. This is a meaningful setup and security cost for a narrow logging utility.
 
-Version policy: Exclude. No release after the project cutoff (2025-09-25) or current compatibility evidence was identified; 1.4.1 is the latest PGXN stable version.
+Version policy: None while excluded. Reconsider if maintenance and current compatibility evidence improve enough to offset its setup and security costs.
 
 Target support: None while excluded. Upstream declares PostgreSQL 9.2+, which includes the project's PostgreSQL range, but current test evidence is absent; upstream documents no OS or architecture matrix. `dblink` must also be available.
 
@@ -436,7 +438,7 @@ For inclusion: It offers a distinct HNSW index implementation that can use Postg
 
 Against inclusion: Lantern overlaps with pgvector's vector-search use case, and its latest release is v0.5.0 from November 2024. No current major-host support or PostgreSQL 18 compatibility is documented in the reviewed primary sources. Its native implementation adds substantial build and testing work across the project's targets. The AGPL-3.0 licence permits redistribution subject to its source and licence obligations; it does not prohibit redistribution. The inactivity, overlapping use case and support cost outweigh the case for adding this extension.
 
-Version policy: Exclude. The latest release predates the 25 September 2025 cutoff; no later supported release line or PostgreSQL 18 compatibility evidence was identified.
+Version policy: None while excluded. Re-review PostgreSQL 18 compatibility, maintenance and major-host adoption evidence before reaffirming the exclusion under the revised selection rule.
 
 Target support: None while excluded. Upstream documents PostgreSQL through 17 and Linux and Intel macOS build paths; it does not establish the required cross-platform support.
 

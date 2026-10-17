@@ -17,7 +17,8 @@ class PlanWorkTests(unittest.TestCase):
         self.root = Path(self.temporary.name)
         self.support = {
             "schema_version": 1,
-            "postgresql": {"minimum_major": 15, "stable_release_cutoff": "2025-09-25"},
+            "version_selection_as_of": "2026-10-17",
+            "postgresql": {"minimum_major": 15},
             "os_support": {name: {"minimum_version": "1"}
                            for name in ("macos", "windows", "linux")},
             "architectures": ["x86_64", "arm64"],
@@ -26,6 +27,7 @@ class PlanWorkTests(unittest.TestCase):
                 "1.0": {"postgresql_minimum_major": 15}}}},
         }
         snapshot = {"as_of": "2026-01-01", "source": "https://example.test/releases",
+                    "support_status": {"source": "https://example.test/support", "as_of": "2026-01-01", "supported_majors": [15]},
                     "releases": [{"version": "15.9", "release_date": "2025-09-25"}]}
         self.write("support.json", self.support)
         self.write("support/postgresql-releases.json", snapshot)
@@ -143,6 +145,7 @@ class PlanWorkTests(unittest.TestCase):
 
     def test_linux_pilot_selects_declared_missing_fifteen_through_eighteen_targets(self):
         snapshot = {"as_of": "2026-01-01", "source": "https://example.test/releases",
+                    "support_status": {"source": "https://example.test/support", "as_of": "2026-01-01", "supported_majors": [15, 16, 17, 18]},
                     "releases": [{"version": "15.19", "release_date": "2025-09-25"},
                                  {"version": "16.15", "release_date": "2025-09-25"},
                                  {"version": "17.11", "release_date": "2025-09-25"},
@@ -172,6 +175,7 @@ class PlanWorkTests(unittest.TestCase):
 
     def test_linux_pilot_rejects_existing_public_download(self):
         snapshot = {"as_of": "2026-01-01", "source": "https://example.test/releases",
+                    "support_status": {"source": "https://example.test/support", "as_of": "2026-01-01", "supported_majors": [15]},
                     "releases": [{"version": "15.19", "release_date": "2025-09-25"}]}
         self.write("support/postgresql-releases.json", snapshot)
         self.write("inventory.json", {"postgresql": {"15.19": {"downloads": {
@@ -182,6 +186,7 @@ class PlanWorkTests(unittest.TestCase):
 
     def test_linux_arm64_pilot_rejects_existing_public_download(self):
         snapshot = {"as_of": "2026-01-01", "source": "https://example.test/releases",
+                    "support_status": {"source": "https://example.test/support", "as_of": "2026-01-01", "supported_majors": [15]},
                     "releases": [{"version": "15.19", "release_date": "2025-09-25"}]}
         self.write("support/postgresql-releases.json", snapshot)
         self.write("inventory.json", {"postgresql": {"15.19": {"downloads": {
@@ -192,6 +197,7 @@ class PlanWorkTests(unittest.TestCase):
 
     def test_next_linux_pilot_selects_highest_missing_declared_target(self):
         snapshot = {"as_of": "2026-01-01", "source": "https://example.test/releases",
+                    "support_status": {"source": "https://example.test/support", "as_of": "2026-01-01", "supported_majors": [15, 16, 18]},
                     "releases": [{"version": "15.9", "release_date": "2025-09-25"},
                                  {"version": "16.11", "release_date": "2025-09-25"},
                                  {"version": "18.2", "release_date": "2025-09-25"}]}
@@ -205,6 +211,7 @@ class PlanWorkTests(unittest.TestCase):
 
     def test_next_linux_pilot_skips_downloaded_target_and_rejects_empty_architecture(self):
         snapshot = {"as_of": "2026-01-01", "source": "https://example.test/releases",
+                    "support_status": {"source": "https://example.test/support", "as_of": "2026-01-01", "supported_majors": [15, 18]},
                     "releases": [{"version": "15.9", "release_date": "2025-09-25"},
                                  {"version": "18.2", "release_date": "2025-09-25"}]}
         self.write("support/postgresql-releases.json", snapshot)
@@ -225,6 +232,7 @@ class PlanWorkTests(unittest.TestCase):
 
     def test_next_linux_pilot_skips_only_with_paired_current_matching_pilot_evidence(self):
         snapshot = {"as_of": "2026-01-01", "source": "https://example.test/releases",
+                    "support_status": {"source": "https://example.test/support", "as_of": "2026-01-01", "supported_majors": [15, 18]},
                     "releases": [{"version": "15.9", "release_date": "2025-09-25"},
                                  {"version": "18.2", "release_date": "2025-09-25"}]}
         self.write("support/postgresql-releases.json", snapshot)
@@ -262,6 +270,7 @@ class PlanWorkTests(unittest.TestCase):
 
     def test_generic_pilot_selector_uses_declared_platform_and_current_macos_record(self):
         snapshot = {"as_of": "2026-01-01", "source": "https://example.test/releases",
+                    "support_status": {"source": "https://example.test/support", "as_of": "2026-01-01", "supported_majors": [15, 18]},
                     "releases": [{"version": "15.9", "release_date": "2025-09-25"},
                                  {"version": "18.2", "release_date": "2025-09-25"}]}
         self.write("support/postgresql-releases.json", snapshot)

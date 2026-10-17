@@ -21,7 +21,8 @@ class CoverageTests(unittest.TestCase):
     def setUp(self):
         self.support = {
             "schema_version": 1,
-            "postgresql": {"minimum_major": 15, "stable_release_cutoff": "2025-09-25"},
+            "postgresql": {"minimum_major": 15},
+            "version_selection_as_of": "2026-10-17",
             "os_support": {name: {"minimum_version": version} for name, version in
                            (("macos", "11.0"), ("windows", "10.0"), ("linux", "5.15"))},
             "architectures": ["x86_64", "arm64"],
@@ -56,8 +57,10 @@ class CoverageTests(unittest.TestCase):
                        "profile_revision": profile["profile_revision"], "scope": profile["scope"],
                        "test_cases": profile["case_ids"]})
 
-    def test_release_snapshot_filters_old_majors_and_cutoff(self):
-        snapshot = {"as_of": "2026-01-01", "source": "https://example.test/releases", "releases": [
+    def test_release_snapshot_selects_latest_minor_of_supported_majors(self):
+        snapshot = {"as_of": "2026-01-01", "source": "https://example.test/releases",
+                    "support_status": {"as_of": "2026-01-01", "source": "https://example.test/support",
+                                       "supported_majors": [15]}, "releases": [
             {"version": "14.20", "release_date": "2025-10-01"},
             {"version": "15.8", "release_date": "2025-09-24"},
             {"version": "15.9", "release_date": "2025-09-25"},
@@ -67,7 +70,9 @@ class CoverageTests(unittest.TestCase):
 
     def test_duplicate_release_rejected(self):
         release = {"version": "15.9", "release_date": "2025-09-25"}
-        snapshot = {"as_of": "2026-01-01", "source": "https://example.test", "releases": [release, release]}
+        snapshot = {"as_of": "2026-01-01", "source": "https://example.test",
+                    "support_status": {"as_of": "2026-01-01", "source": "https://example.test/support",
+                                       "supported_majors": [15]}, "releases": [release, release]}
         with self.assertRaises(coverage.CoverageError):
             coverage.release_snapshot(snapshot, self.support)
 
@@ -85,6 +90,36 @@ class CoverageTests(unittest.TestCase):
                              coverage.version_parts(lo, "test") <= coverage.version_parts("15.9", "test")
                              <= coverage.version_parts(hi, "test")
                              for name, _, lo, hi, _ in have_extensions))
+
+    def test_extension_selection_uses_latest_compatible_release_per_major(self):
+        support = json.loads(json.dumps(self.support))
+        support["extensions"]["Example"]["versions"] = {
+            "1.1": {"postgresql_maximum_major": 15},
+            "1.2": {"postgresql_maximum_major": 15},
+            "1.3": {"postgresql_minimum_major": 16},
+            "2.0": {"postgresql_minimum_major": 15},
+        }
+        support["extensions"]["Example"]["major_first_releases"] = {
+            "1": {"date": "2025-04-03", "source": "https://example.test/v1"},
+            "2": {"date": "2026-03-20", "source": "https://example.test/v2"},
+        }
+        coverage.validate_support(support)
+        _, targets = coverage.expected_targets(support, ["15.19", "16.15"])
+        versions = {(version, pg) for _, version, pg, _ in targets}
+        self.assertEqual(versions, {("1.2", "15.19"), ("2.0", "15.19"),
+                                    ("1.3", "16.15"), ("2.0", "16.15")})
+
+    def test_extension_major_ages_out_at_two_year_boundary(self):
+        support = json.loads(json.dumps(self.support))
+        support["extensions"]["Example"]["versions"]["2.0"] = {}
+        support["extensions"]["Example"]["major_first_releases"] = {
+            "1": {"date": "2024-10-17", "source": "https://example.test/v1"},
+        }
+        _, targets = coverage.expected_targets(support, ["15.19"])
+        self.assertEqual({version for _, version, _, _ in targets}, {"1.0", "2.0"})
+        support["version_selection_as_of"] = "2026-10-18"
+        _, targets = coverage.expected_targets(support, ["15.19"])
+        self.assertEqual({version for _, version, _, _ in targets}, {"2.0"})
 
     def test_extension_target_classification_uses_download_range_and_final_archive_sha(self):
         target = ("example", "1.0", "15.9", "linux-x86_64")
@@ -168,7 +203,8 @@ class CoverageTests(unittest.TestCase):
             root = Path(temporary)
             support = {
                 "schema_version": 1,
-                "postgresql": {"minimum_major": 15, "stable_release_cutoff": "2025-09-25"},
+                "postgresql": {"minimum_major": 15},
+                "version_selection_as_of": "2026-10-17",
                 "os_support": {"macos": {"minimum_version": "11.0"},
                                "windows": {"minimum_version": "10.0"},
                                "linux": {"minimum_version": "5.15"}},
@@ -179,6 +215,7 @@ class CoverageTests(unittest.TestCase):
                 }}},
             }
             snapshot = {"as_of": "2026-01-01", "source": "https://example.test/releases",
+                        "support_status": {"as_of": "2026-01-01", "source": "https://example.test/support", "supported_majors": [15]},
                         "releases": [{"version": "15.9", "release_date": "2025-09-25"}]}
             checksum = "a" * 64
             platforms = [f"{os}-{arch}" for os, arches in support["platform_architectures"].items()
@@ -358,7 +395,8 @@ class CoverageTests(unittest.TestCase):
 
     def test_verification_record_rejects_old_prerequisite_archive_version(self):
         support = {
-            "schema_version": 1, "postgresql": {"minimum_major": 15, "stable_release_cutoff": "2025-09-25"},
+            "schema_version": 1, "postgresql": {"minimum_major": 15},
+                "version_selection_as_of": "2026-10-17",
             "os_support": {name: {"minimum_version": version} for name, version in
                            (("macos", "11.0"), ("windows", "10.0"), ("linux", "5.15"))},
             "architectures": ["x86_64", "arm64"],

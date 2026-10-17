@@ -2,7 +2,6 @@
   "schema_version": 1,
   "postgresql": {
     "minimum_major": 15,
-    "stable_release_cutoff": "2025-09-25",
     "release_source": "https://www.postgresql.org/ftp/source/"
   },
   "os_support": {
@@ -28,8 +27,6 @@
       "sql_names": ["postgis", "postgis_raster", "postgis_sfcgal", "postgis_topology"],
       "requires": [],
       "versions": {
-        "3.4.6": { "postgresql_minimum_major": 15, "postgresql_maximum_major": 17 },
-        "3.5.7": { "postgresql_minimum_major": 15, "postgresql_maximum_major": 18 },
         "3.6.4": { "postgresql_minimum_major": 15, "postgresql_maximum_major": 18 }
       }
     },
@@ -54,6 +51,10 @@
       "versions": {
         "1.1.1": { "postgresql_minimum_major": 15 },
         "2.1.3": { "postgresql_minimum_major": 15 }
+      },
+      "major_first_releases": {
+        "1": { "date": "2025-04-03", "source": "https://pgxn.org/dist/pgcollection/1.0.0/" },
+        "2": { "date": "2026-03-20", "source": "https://pgxn.org/dist/pgcollection/2.0.0/" }
       }
     },
     "pg_cron": {
@@ -94,5 +95,6 @@
         "0.3.4": { "postgresql_minimum_major": 15, "postgresql_maximum_major": 18, "operating_systems": ["linux"] }
       }
     }
-  }
+  },
+  "version_selection_as_of": "2026-10-17"
 }

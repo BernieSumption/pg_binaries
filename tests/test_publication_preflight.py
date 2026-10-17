@@ -23,7 +23,8 @@ class PublicationPreflightTests(unittest.TestCase):
         self.root = Path(self.temporary.name)
         self.support = {
             "schema_version": 1,
-            "postgresql": {"minimum_major": 15, "stable_release_cutoff": "2025-09-25"},
+            "version_selection_as_of": "2026-10-17",
+            "postgresql": {"minimum_major": 15},
             "os_support": {name: {"minimum_version": "1"}
                            for name in ("macos", "windows", "linux")},
             "architectures": ["x86_64", "arm64"],
@@ -33,6 +34,7 @@ class PublicationPreflightTests(unittest.TestCase):
         }
         self.snapshot = {
             "as_of": "2026-01-01", "source": "https://example.test/releases",
+                    "support_status": {"source": "https://example.test/support", "as_of": "2026-01-01", "supported_majors": [15]},
             "releases": [{"version": "15.9", "release_date": "2025-09-25"}],
         }
         profile_source = self.root / "tests" / "preflight_profile.py"

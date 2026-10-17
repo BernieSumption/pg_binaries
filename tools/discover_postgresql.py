@@ -13,6 +13,7 @@ from urllib.request import Request, urlopen
 
 
 SOURCE = "https://ftp.postgresql.org/pub/source/"
+SUPPORT_POLICY = "https://www.postgresql.org/support/versioning/"
 RELEASE_NOTES = "https://www.postgresql.org/docs/release/{version}/"
 VERSION_DIR = re.compile(r"^v(\d+)\.(\d+)/$")
 RELEASE_DATE = re.compile(r"\bRelease date:\s*(\d{4}-\d{2}-\d{2})\b", re.IGNORECASE)
@@ -36,6 +37,47 @@ class IndexParser(HTMLParser):
             href = attrs.get("href")
             if href:
                 self.hrefs.append(href)
+
+
+class SupportTableParser(HTMLParser):
+    """Read rows from PostgreSQL's published version-support table."""
+
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.rows = []
+        self.row = None
+        self.cell = None
+
+    def handle_starttag(self, tag, attrs):
+        if tag == "tr":
+            self.row = []
+        elif tag in {"td", "th"} and self.row is not None:
+            self.cell = []
+
+    def handle_data(self, data):
+        if self.cell is not None:
+            self.cell.append(data)
+
+    def handle_endtag(self, tag):
+        if tag in {"td", "th"} and self.cell is not None:
+            self.row.append(" ".join(" ".join(self.cell).split()))
+            self.cell = None
+        elif tag == "tr" and self.row is not None:
+            self.rows.append(self.row)
+            self.row = None
+
+
+def parse_supported_majors(html, minimum_major):
+    parser = SupportTableParser()
+    parser.feed(html)
+    supported = []
+    for row in parser.rows:
+        if len(row) >= 3 and row[0].isdigit() and row[2].lower() in {"yes", "no"}:
+            if int(row[0]) >= minimum_major and row[2].lower() == "yes":
+                supported.append(int(row[0]))
+    if not supported or len(set(supported)) != len(supported):
+        raise DiscoveryError("official versioning policy has no unambiguous supported major rows")
+    return sorted(supported)
 
 
 def parse_index(html, minimum_major):
@@ -109,14 +151,21 @@ def fetch_release_notes(version):
         raise DiscoveryError(f"cannot fetch official release notes for PostgreSQL {version}: {exc}") from exc
 
 
-def discover_releases(index_html, minimum_major, cutoff, release_notes_fetcher=fetch_release_notes):
-    releases = []
+def discover_releases(index_html, minimum_major, supported_majors,
+                      release_notes_fetcher=fetch_release_notes):
+    latest = {}
     for version in parse_index(index_html, minimum_major):
+        major, minor = map(int, version.split("."))
+        if major in supported_majors and (major not in latest or minor > int(latest[major].split(".")[1])):
+            latest[major] = version
+    missing = set(supported_majors) - set(latest)
+    if missing:
+        raise DiscoveryError(f"FTP index lacks a release for supported PostgreSQL majors {sorted(missing)}")
+    releases = []
+    for major in sorted(latest):
+        version = latest[major]
         published = parse_release_date(release_notes_fetcher(version), version)
-        if published >= cutoff:
-            releases.append({"version": version, "release_date": published.isoformat()})
-    if not releases:
-        raise DiscoveryError("official release dates contain no releases matching the declared date cutoff")
+        releases.append({"version": version, "release_date": published.isoformat()})
     return releases
 
 
@@ -153,12 +202,15 @@ def main():
         support = json.loads((root / "support.json").read_text(encoding="utf-8"))
         pg = support["postgresql"]
         minimum = int(pg["minimum_major"])
-        cutoff = dt.date.fromisoformat(pg["stable_release_cutoff"])
-        discovered = discover_releases(fetch_index(), minimum, cutoff)
+        supported = parse_supported_majors(fetch_index(SUPPORT_POLICY), minimum)
+        discovered = discover_releases(fetch_index(), minimum, supported)
         path = root / "support" / "postgresql-releases.json"
         if args.write:
             snapshot = {"as_of": dt.datetime.now(dt.timezone.utc).date().isoformat(),
                         "source": SOURCE, "release_date_source": RELEASE_NOTES,
+                        "support_status": {"source": SUPPORT_POLICY,
+                                           "as_of": dt.datetime.now(dt.timezone.utc).date().isoformat(),
+                                           "supported_majors": supported},
                         "releases": discovered}
             path.write_text(json.dumps(snapshot, indent=2) + "\n", encoding="utf-8")
             print(f"wrote {len(discovered)} PostgreSQL releases to {path}")
@@ -166,9 +218,12 @@ def main():
 
         stored = json.loads(path.read_text(encoding="utf-8"))
         missing, extra, changed = compare_releases(discovered, stored)
-        if not missing and not extra and not changed:
-            print(f"release snapshot matches {len(discovered)} qualifying PostgreSQL releases")
+        recorded_support = stored.get("support_status", {}).get("supported_majors")
+        if not missing and not extra and not changed and recorded_support == supported:
+            print(f"release snapshot matches {len(discovered)} selected PostgreSQL releases")
             return 0
+        if recorded_support != supported:
+            print(f"upstream supported majors changed: snapshot {recorded_support}, official {supported}")
         for version in missing:
             print(f"missing from snapshot: PostgreSQL {version} ({dict((item['version'], item['release_date']) for item in discovered)[version]})")
         for version in extra:

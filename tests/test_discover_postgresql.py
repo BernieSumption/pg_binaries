@@ -32,9 +32,13 @@ class DiscoveryTests(unittest.TestCase):
         html = INDEX.replace("13-Nov-2025 14:11", "unparseable and mutable")
         self.assertEqual(discover.parse_index(html, 15), ["15.14", "15.15", "18.0"])
 
-    def test_release_date_comes_from_official_notes_and_drives_cutoff(self):
+    def test_support_status_and_latest_minor_drive_selection(self):
+        support_html = '''<table><tr><th>Version</th><th>Current minor</th><th>Supported</th></tr>
+<tr><td>18</td><td>18.0</td><td>Yes</td></tr>
+<tr><td>15</td><td>15.15</td><td>Yes</td></tr>
+<tr><td>14</td><td>14.24</td><td>No</td></tr></table>'''
+        self.assertEqual(discover.parse_supported_majors(support_html, 15), [15, 18])
         notes = {
-            "15.14": '<main><p>Release date: 2025-08-14</p></main>',
             "15.15": '<main><p>Release date: 2025-11-13</p></main>',
             "18.0": '<main><p>Release date: 2025-09-25</p></main>',
         }
@@ -42,11 +46,15 @@ class DiscoveryTests(unittest.TestCase):
         def fetch(version):
             fetched.append(version)
             return notes[version]
-        self.assertEqual(discover.discover_releases(INDEX, 15, discover.dt.date(2025, 9, 25), fetch), [
+        self.assertEqual(discover.discover_releases(INDEX, 15, [15, 18], fetch), [
             {"version": "15.15", "release_date": "2025-11-13"},
             {"version": "18.0", "release_date": "2025-09-25"},
         ])
-        self.assertEqual(fetched, ["15.14", "15.15", "18.0"])
+        self.assertEqual(fetched, ["15.15", "18.0"])
+
+    def test_missing_supported_major_fails(self):
+        with self.assertRaisesRegex(discover.DiscoveryError, "lacks a release"):
+            discover.discover_releases(INDEX, 15, [15, 16, 18])
 
     def test_release_notes_without_valid_date_fail_cleanly(self):
         for html in ("<p>No date here</p>", "<p>Release date: 2025-02-30</p>"):

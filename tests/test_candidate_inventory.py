@@ -29,7 +29,8 @@ class CandidateInventoryTests(unittest.TestCase):
         profile_path.write_text(json.dumps(registry), encoding="utf-8")
         self.support = {
             "schema_version": 1,
-            "postgresql": {"minimum_major": 15, "stable_release_cutoff": "2025-09-25"},
+            "version_selection_as_of": "2026-10-17",
+            "postgresql": {"minimum_major": 15},
             "os_support": {name: {"minimum_version": "1"} for name in ("macos", "windows", "linux")},
             "architectures": ["x86_64", "arm64"],
             "platform_architectures": {"macos": ["x86_64", "arm64"], "windows": ["x86_64"], "linux": ["x86_64", "arm64"]},
@@ -37,8 +38,8 @@ class CandidateInventoryTests(unittest.TestCase):
                 "postgresql_minimum_major": 15}}}},
         }
         self.snapshot = {"as_of": "2026-01-01", "source": "https://example.test/releases",
-                         "releases": [{"version": "15.9", "release_date": "2025-09-25"},
-                                      {"version": "15.10", "release_date": "2025-10-01"}]}
+                    "support_status": {"source": "https://example.test/support", "as_of": "2026-01-01", "supported_majors": [15]},
+                         "releases": [{"version": "15.10", "release_date": "2025-10-01"}]}
         self.old = {"schema_version": 1, "os_support": self.support["os_support"],
                     "postgresql": {"15.8": {"included_extensions": [], "downloads": {
                         "linux-x86_64": {"url": "https://github.com/example/releases/download/old/pg.tgz",
@@ -48,7 +49,7 @@ class CandidateInventoryTests(unittest.TestCase):
         self.temporary.cleanup()
 
     def proposal(self, *, tag="catalog-20261016-1", filename=None, sha="b" * 64,
-                 version="15.9", platform="linux-x86_64"):
+                 version="15.10", platform="linux-x86_64"):
         filename = filename or f"postgresql-{version}-{platform}.tar.gz"
         url = f"https://github.com/BernieSumption/pg_binaries/releases/download/{tag}/{filename}"
         return {"component": "postgresql", "version": version, "platform": platform,
@@ -56,7 +57,7 @@ class CandidateInventoryTests(unittest.TestCase):
                 "verification": [self.evidence(url, sha, endpoint, version, platform)
                                  for endpoint in ("minimum", "current")]}
 
-    def evidence(self, url, sha, endpoint, version="15.9", platform="linux-x86_64"):
+    def evidence(self, url, sha, endpoint, version="15.10", platform="linux-x86_64"):
         os_name, architecture = platform.split("-")
         profile_id = "candidate-test"
         profile = candidate_inventory._coverage.verification_profile(
@@ -75,28 +76,28 @@ class CandidateInventoryTests(unittest.TestCase):
     @staticmethod
     def core_reference(version, platform="linux-x86_64"):
         return {"archive": f"postgresql-{version}-{platform}.tar.gz", "version": version,
-                "sha256": "b" * 64 if version == "15.9" else "c" * 64}
+                "sha256": "c" * 64 if version == "15.10" else "b" * 64}
 
     def test_retains_unchanged_download_and_marks_candidate(self):
         result = candidate_inventory.merge_candidate(self.old, [self.proposal()], self.support, self.snapshot,
                                                      root=self.root)
         self.assertEqual(result["candidate_status"], "structural-draft")
         self.assertEqual(result["postgresql"]["15.8"], self.old["postgresql"]["15.8"])
-        self.assertEqual(result["postgresql"]["15.9"]["downloads"]["linux-x86_64"]["sha256"], "b" * 64)
+        self.assertEqual(result["postgresql"]["15.10"]["downloads"]["linux-x86_64"]["sha256"], "b" * 64)
         self.assertEqual(self.old["postgresql"]["15.8"]["downloads"]["linux-x86_64"]["sha256"], "a" * 64)
         self.assertEqual(result["os_support"], self.support["os_support"])
-        url = result["postgresql"]["15.9"]["downloads"]["linux-x86_64"]["url"]
+        url = result["postgresql"]["15.10"]["downloads"]["linux-x86_64"]["url"]
         self.assertEqual(result["verification_evidence"][url], self.proposal()["verification"])
 
     def test_correction_uses_new_url(self):
-        base = {"postgresql": {"15.9": {"downloads": {"linux-x86_64": {
+        base = {"postgresql": {"15.10": {"downloads": {"linux-x86_64": {
             "url": "https://github.com/example/releases/download/old/pg.tgz", "sha256": "a" * 64}}}},
                 "extensions": {}}
         result = candidate_inventory.merge_candidate(base, [self.proposal()], self.support, self.snapshot,
                                                      root=self.root)
-        self.assertNotEqual(result["postgresql"]["15.9"]["downloads"]["linux-x86_64"]["url"],
-                            base["postgresql"]["15.9"]["downloads"]["linux-x86_64"]["url"])
-        self.assertEqual(base["postgresql"]["15.9"]["downloads"]["linux-x86_64"]["sha256"], "a" * 64)
+        self.assertNotEqual(result["postgresql"]["15.10"]["downloads"]["linux-x86_64"]["url"],
+                            base["postgresql"]["15.10"]["downloads"]["linux-x86_64"]["url"])
+        self.assertEqual(base["postgresql"]["15.10"]["downloads"]["linux-x86_64"]["sha256"], "a" * 64)
 
     def test_rejects_conflicting_base_os_support(self):
         base = dict(self.old, os_support={"linux": {"minimum_version": "1"}})
@@ -113,7 +114,7 @@ class CandidateInventoryTests(unittest.TestCase):
                                                  root=self.root)
 
     def test_rejects_names_that_obscure_build_target(self):
-        proposal = self.proposal(filename="postgresql-15.10-linux-x86_64.tar.gz")
+        proposal = self.proposal(filename="postgresql-16.0-linux-x86_64.tar.gz")
         with self.assertRaisesRegex(candidate_inventory.CandidateError, "PostgreSQL filename"):
             candidate_inventory.merge_candidate(self.old, [proposal], self.support, self.snapshot,
                                                  root=self.root)
@@ -121,34 +122,33 @@ class CandidateInventoryTests(unittest.TestCase):
     def test_rejects_url_already_in_base_even_when_checksum_matches(self):
         proposal = self.proposal()
         proposal["tag"] = "catalog-20261016-1"
-        proposal["filename"] = "postgresql-15.9-linux-x86_64.tar.gz"
+        proposal["filename"] = "postgresql-15.10-linux-x86_64.tar.gz"
         proposal["verification"] = [self.evidence(
-            "https://github.com/BernieSumption/pg_binaries/releases/download/catalog-20261016-1/postgresql-15.9-linux-x86_64.tar.gz",
+            "https://github.com/BernieSumption/pg_binaries/releases/download/catalog-20261016-1/postgresql-15.10-linux-x86_64.tar.gz",
             "b" * 64, endpoint) for endpoint in ("minimum", "current")]
-        base = {"postgresql": {"15.9": {"downloads": {"linux-x86_64": {
-            "url": "https://github.com/BernieSumption/pg_binaries/releases/download/catalog-20261016-1/postgresql-15.9-linux-x86_64.tar.gz",
-            "sha256": "b" * 64}}}}, "extensions": {}}
+        base = {"postgresql": {"15.10": {"downloads": {"linux-x86_64": {
+            "url": "https://github.com/BernieSumption/pg_binaries/releases/download/catalog-20261016-1/postgresql-15.10-linux-x86_64.tar.gz",
+            "sha256": "c" * 64}}}}, "extensions": {}}
         with self.assertRaisesRegex(candidate_inventory.CandidateError, "URL must be new"):
             candidate_inventory.merge_candidate(base, [proposal], self.support, self.snapshot,
                                                  root=self.root)
 
     def test_extension_evidence_uses_range_endpoints_not_intermediate_releases(self):
-        url = "https://github.com/BernieSumption/pg_binaries/releases/download/catalog-20261016-2/example-1.0-postgresql-15.9-linux-x86_64.tar.gz"
+        url = "https://github.com/BernieSumption/pg_binaries/releases/download/catalog-20261016-2/example-1.0-postgresql-15.10-linux-x86_64.tar.gz"
         checksum = "d" * 64
         records = []
-        for pg in ("15.9", "15.10"):
+        for pg in ("15.10",):
             for endpoint in ("minimum", "current"):
                 evidence = self.evidence(url, checksum, endpoint, pg)
                 evidence.update({"component": "example", "version": "1.0", "postgresql_version": pg})
                 evidence["assembled_core"] = self.core_reference(pg)
                 records.append(evidence)
         proposal = {"component": "example", "version": "1.0", "platform": "linux-x86_64",
-                    "tag": "catalog-20261016-2", "filename": "example-1.0-postgresql-15.9-linux-x86_64.tar.gz",
-                    "sha256": checksum, "postgresql_support": {"from": "15.9", "to": "15.10"},
+                    "tag": "catalog-20261016-2", "filename": "example-1.0-postgresql-15.10-linux-x86_64.tar.gz",
+                    "sha256": checksum, "postgresql_support": {"from": "15.10", "to": "15.10"},
                     "verification": records}
-        core_159 = self.proposal()
         core_1010 = self.proposal(version="15.10", sha="c" * 64)
-        result = candidate_inventory.merge_candidate(self.old, [proposal, core_1010, core_159], self.support, self.snapshot,
+        result = candidate_inventory.merge_candidate(self.old, [proposal, core_1010], self.support, self.snapshot,
                                                      root=self.root)
         self.assertEqual(result["candidate_status"], "structural-draft")
 
@@ -157,7 +157,7 @@ class CandidateInventoryTests(unittest.TestCase):
             candidate_inventory.merge_candidate(self.old, [wrong_name], self.support, self.snapshot,
                                                  root=self.root)
 
-        wrong_project = dict(proposal, filename="other-1.0-postgresql-15.9-linux-x86_64.tar.gz")
+        wrong_project = dict(proposal, filename="other-1.0-postgresql-15.10-linux-x86_64.tar.gz")
         with self.assertRaisesRegex(candidate_inventory.CandidateError, "declared project"):
             candidate_inventory.merge_candidate(self.old, [wrong_project], self.support, self.snapshot,
                                                  root=self.root)
@@ -165,64 +165,67 @@ class CandidateInventoryTests(unittest.TestCase):
         restricted_support = dict(self.support, extensions={"Example": {
             "sql_names": ["example"], "versions": {"1.0": {
                 "postgresql_minimum_major": 15, "postgresql_maximum_major": 15}}}})
-        outside = dict(proposal, postgresql_support={"from": "15.9", "to": "16.0"})
+        outside = dict(proposal, postgresql_support={"from": "15.10", "to": "16.0"})
         with self.assertRaisesRegex(candidate_inventory.CandidateError, "exceeds declared"):
             candidate_inventory.merge_candidate(self.old, [outside], restricted_support, self.snapshot,
                                                  root=self.root)
 
     def test_spaced_project_name_uses_canonical_archive_name(self):
         self.support["extensions"]["Example Project"] = self.support["extensions"].pop("Example")
-        url = "https://github.com/BernieSumption/pg_binaries/releases/download/catalog-20261016-2/example_project-1.0-postgresql-15.9-linux-x86_64.tar.gz"
+        url = "https://github.com/BernieSumption/pg_binaries/releases/download/catalog-20261016-2/example_project-1.0-postgresql-15.10-linux-x86_64.tar.gz"
         records = []
         for endpoint in ("minimum", "current"):
             record = self.evidence(url, "d" * 64, endpoint)
             record.update({"component": "example", "version": "1.0",
-                           "assembled_core": self.core_reference("15.9")})
+                           "assembled_core": self.core_reference("15.10")})
             records.append(record)
         extension = {
             "component": "example", "version": "1.0", "platform": "linux-x86_64",
             "tag": "catalog-20261016-2",
-            "filename": "example_project-1.0-postgresql-15.9-linux-x86_64.tar.gz",
-            "sha256": "d" * 64, "postgresql_support": {"from": "15.9", "to": "15.9"},
+            "filename": "example_project-1.0-postgresql-15.10-linux-x86_64.tar.gz",
+            "sha256": "d" * 64, "postgresql_support": {"from": "15.10", "to": "15.10"},
             "verification": records,
         }
         candidate = candidate_inventory.merge_candidate(
-            self.old, [self.proposal(), extension], self.support, self.snapshot, root=self.root)
+            self.old, [self.proposal(sha="c" * 64), extension], self.support, self.snapshot, root=self.root)
         self.assertEqual(candidate["extensions"]["example"]["1.0"]["downloads"]["linux-x86_64"][0]["url"], url)
 
     def test_extension_evidence_must_match_exact_retained_core_archive(self):
         base = {"schema_version": 1, "os_support": self.support["os_support"],
-                "postgresql": {"15.9": {"downloads": {"linux-x86_64": {
-                    "url": "https://github.com/example/releases/download/old/postgresql-15.9-linux-x86_64.tar.gz",
-                    "sha256": "b" * 64}}}}, "extensions": {}}
-        url = "https://github.com/BernieSumption/pg_binaries/releases/download/catalog-20261016-2/example-1.0-postgresql-15.9-linux-x86_64.tar.gz"
+                "postgresql": {"15.10": {"downloads": {"linux-x86_64": {
+                    "url": "https://github.com/example/releases/download/old/postgresql-15.10-linux-x86_64.tar.gz",
+                    "sha256": "c" * 64}}}}, "extensions": {}}
+        url = "https://github.com/BernieSumption/pg_binaries/releases/download/catalog-20261016-2/example-1.0-postgresql-15.10-linux-x86_64.tar.gz"
         checksum = "d" * 64
         records = []
         for endpoint in ("minimum", "current"):
-            record = self.evidence(url, checksum, endpoint, "15.9")
-            record.update({"component": "example", "version": "1.0", "postgresql_version": "15.9",
-                           "assembled_core": self.core_reference("15.9")})
+            record = self.evidence(url, checksum, endpoint, "15.10")
+            record.update({"component": "example", "version": "1.0", "postgresql_version": "15.10",
+                           "assembled_core": self.core_reference("15.10")})
             records.append(record)
         extension = {"component": "example", "version": "1.0", "platform": "linux-x86_64",
-                     "tag": "catalog-20261016-2", "filename": "example-1.0-postgresql-15.9-linux-x86_64.tar.gz",
-                     "sha256": checksum, "postgresql_support": {"from": "15.9", "to": "15.9"},
+                     "tag": "catalog-20261016-2", "filename": "example-1.0-postgresql-15.10-linux-x86_64.tar.gz",
+                     "sha256": checksum, "postgresql_support": {"from": "15.10", "to": "15.10"},
                      "verification": records}
         candidate_inventory.merge_candidate(base, [extension], self.support,
                                             {"as_of": "2026-01-01", "source": "https://example.test/releases",
-                                             "releases": [{"version": "15.9", "release_date": "2025-09-25"}]},
+                    "support_status": {"source": "https://example.test/support", "as_of": "2026-01-01", "supported_majors": [15]},
+                                             "releases": [{"version": "15.10", "release_date": "2025-09-25"}]},
                                             root=self.root)
         records[0].pop("assembled_core")
         with self.assertRaisesRegex(candidate_inventory.CandidateError, "missing passed minimum verification"):
             candidate_inventory.merge_candidate(base, [extension], self.support,
                                                 {"as_of": "2026-01-01", "source": "https://example.test/releases",
-                                                 "releases": [{"version": "15.9", "release_date": "2025-09-25"}]},
+                    "support_status": {"source": "https://example.test/support", "as_of": "2026-01-01", "supported_majors": [15]},
+                                                 "releases": [{"version": "15.10", "release_date": "2025-09-25"}]},
                                                 root=self.root)
-        records[0]["assembled_core"] = self.core_reference("15.9")
+        records[0]["assembled_core"] = self.core_reference("15.10")
         records[0]["assembled_core"]["sha256"] = "e" * 64
         with self.assertRaisesRegex(candidate_inventory.CandidateError, "bound to candidate PostgreSQL archive"):
             candidate_inventory.merge_candidate(base, [extension], self.support,
                                                 {"as_of": "2026-01-01", "source": "https://example.test/releases",
-                                                 "releases": [{"version": "15.9", "release_date": "2025-09-25"}]},
+                    "support_status": {"source": "https://example.test/support", "as_of": "2026-01-01", "supported_majors": [15]},
+                                                 "releases": [{"version": "15.10", "release_date": "2025-09-25"}]},
                                                 root=self.root)
 
     def test_extension_evidence_must_match_required_archive_checksum(self):
@@ -232,22 +235,22 @@ class CandidateInventoryTests(unittest.TestCase):
             "Required": {"sql_names": ["required"], "requires": [],
                          "versions": {"2.0": {"postgresql_minimum_major": 15}}},
         })
-        url = "https://github.com/BernieSumption/pg_binaries/releases/download/catalog-20261016-1/example-1.0-postgresql-15.9-linux-x86_64.tar.gz"
-        record = self.evidence(url, "b" * 64, "minimum", "15.9")
-        record.update({"component": "example", "version": "1.0", "postgresql_version": "15.9",
-                       "assembled_core": self.core_reference("15.9")})
+        url = "https://github.com/BernieSumption/pg_binaries/releases/download/catalog-20261016-1/example-1.0-postgresql-15.10-linux-x86_64.tar.gz"
+        record = self.evidence(url, "b" * 64, "minimum", "15.10")
+        record.update({"component": "example", "version": "1.0", "postgresql_version": "15.10",
+                       "assembled_core": self.core_reference("15.10")})
         prerequisite = [{"project": "Required",
-                         "archive": "required-2.0-postgresql-15.9-linux-x86_64.tar.gz",
+                         "archive": "required-2.0-postgresql-15.10-linux-x86_64.tar.gz",
                          "version": "2.0", "sha256": "c" * 64}]
         matches = candidate_inventory._evidence_matches(
-            record, {"sha256": "b" * 64}, "example", "1.0", "linux-x86_64", "15.9",
-            "minimum", support, self.root, expected_core=self.core_reference("15.9"),
+            record, {"sha256": "b" * 64}, "example", "1.0", "linux-x86_64", "15.10",
+            "minimum", support, self.root, expected_core=self.core_reference("15.10"),
             expected_prerequisites=prerequisite)
         self.assertFalse(matches)
         record["prerequisite_archives"] = prerequisite
         self.assertTrue(candidate_inventory._evidence_matches(
-            record, {"sha256": "b" * 64}, "example", "1.0", "linux-x86_64", "15.9",
-            "minimum", support, self.root, expected_core=self.core_reference("15.9"),
+            record, {"sha256": "b" * 64}, "example", "1.0", "linux-x86_64", "15.10",
+            "minimum", support, self.root, expected_core=self.core_reference("15.10"),
             expected_prerequisites=prerequisite))
 
     def test_project_proposal_fans_one_archive_out_to_all_sql_names(self):
@@ -255,12 +258,12 @@ class CandidateInventoryTests(unittest.TestCase):
         support = dict(self.support, extensions={"PostGIS": {
             "sql_names": names, "requires": [],
             "versions": {"3.6.4": {"postgresql_minimum_major": 15}}}})
-        filename = "postgis-3.6.4-postgresql-15.9-linux-x86_64.tar.gz"
+        filename = "postgis-3.6.4-postgresql-15.10-linux-x86_64.tar.gz"
         url = "https://github.com/BernieSumption/pg_binaries/releases/download/catalog-20261016-4/" + filename
         checksum = "e" * 64
         records = []
         for name in names:
-            for pg in ("15.9", "15.10"):
+            for pg in ("15.10",):
                 for endpoint in ("minimum", "current"):
                     record = self.evidence(url, checksum, endpoint, pg)
                     record.update({"component": name, "version": "3.6.4", "postgresql_version": pg})
@@ -268,10 +271,10 @@ class CandidateInventoryTests(unittest.TestCase):
                     records.append(record)
         proposal = {"component": "PostGIS", "version": "3.6.4", "platform": "linux-x86_64",
                     "tag": "catalog-20261016-4", "filename": filename, "sha256": checksum,
-                    "postgresql_support": {"from": "15.9", "to": "15.10"}, "verification": records}
+                    "postgresql_support": {"from": "15.10", "to": "15.10"}, "verification": records}
 
         result = candidate_inventory.merge_candidate(
-            self.old, [proposal, self.proposal(version="15.10", sha="c" * 64), self.proposal()], support, self.snapshot,
+            self.old, [proposal, self.proposal(version="15.10", sha="c" * 64)], support, self.snapshot,
                                                      root=self.root)
         downloads = [result["extensions"][name]["3.6.4"]["downloads"]["linux-x86_64"][0]
                      for name in names]
@@ -279,7 +282,6 @@ class CandidateInventoryTests(unittest.TestCase):
         self.assertEqual(downloads[0]["url"], url)
         self.assertEqual(set(result["verification_evidence"]), {
             url,
-            "https://github.com/BernieSumption/pg_binaries/releases/download/catalog-20261016-1/postgresql-15.9-linux-x86_64.tar.gz",
             "https://github.com/BernieSumption/pg_binaries/releases/download/catalog-20261016-1/postgresql-15.10-linux-x86_64.tar.gz",
         })
         self.assertEqual(result["verification_evidence"][url], records)
@@ -288,15 +290,14 @@ class CandidateInventoryTests(unittest.TestCase):
 
         missing_name_evidence = dict(proposal, verification=records[:-4])
         with self.assertRaisesRegex(candidate_inventory.CandidateError,
-                                    "missing passed minimum verification for postgis_topology"):
+                                    "missing passed minimum verification for postgis_sfcgal"):
             candidate_inventory.merge_candidate(self.old, [missing_name_evidence,
-                                                           self.proposal(version="15.10", sha="c" * 64),
-                                                           self.proposal()], support, self.snapshot,
+                                                           self.proposal(version="15.10", sha="c" * 64)], support, self.snapshot,
                                                  root=self.root)
 
     def test_project_name_proposal_rejects_unknown_project(self):
         proposal = dict(self.proposal(), component="UnknownProject", version="1.0")
-        proposal["filename"] = "unknownproject-1.0-postgresql-15.9-linux-x86_64.tar.gz"
+        proposal["filename"] = "unknownproject-1.0-postgresql-15.10-linux-x86_64.tar.gz"
         with self.assertRaisesRegex(candidate_inventory.CandidateError, "unsupported extension target"):
             candidate_inventory.merge_candidate(self.old, [proposal], self.support, self.snapshot,
                                                  root=self.root)
@@ -312,8 +313,8 @@ class CandidateInventoryTests(unittest.TestCase):
         proposal = self.proposal()
         result = candidate_inventory.merge_candidate(self.old, [proposal], self.support, self.snapshot,
                                                      root=self.root)
-        self.assertEqual(result["postgresql"]["15.9"]["included_extensions"], ["example"])
-        second = self.proposal(tag="catalog-20261016-3", filename="postgresql-15.9-linux-arm64.tar.gz",
+        self.assertEqual(result["postgresql"]["15.10"]["included_extensions"], ["example"])
+        second = self.proposal(tag="catalog-20261016-3", filename="postgresql-15.10-linux-arm64.tar.gz",
                                platform="linux-arm64")
         second["included_extensions"] = ["different"]
         with self.assertRaisesRegex(candidate_inventory.CandidateError, "inconsistent included_extensions"):

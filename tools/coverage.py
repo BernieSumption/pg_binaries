@@ -57,9 +57,22 @@ def release_snapshot(data, support):
         raise CoverageError("release snapshot as_of must be YYYY-MM-DD")
     if not isinstance(data.get("source"), str) or not data["source"].startswith("https://"):
         raise CoverageError("release snapshot source must be an https URL")
-    cutoff = dt.date.fromisoformat(support["postgresql"]["stable_release_cutoff"])
     minimum = int(support["postgresql"]["minimum_major"])
-    found, targets = set(), []
+    status = data.get("support_status")
+    if not isinstance(status, dict) or not isinstance(status.get("supported_majors"), list):
+        raise CoverageError("release snapshot must include upstream support_status and supported_majors")
+    try:
+        dt.date.fromisoformat(status["as_of"])
+    except (KeyError, TypeError, ValueError):
+        raise CoverageError("release snapshot support_status as_of must be YYYY-MM-DD")
+    if not isinstance(status.get("source"), str) or not status["source"].startswith("https://"):
+        raise CoverageError("release snapshot support_status source must be an https URL")
+    supported = status["supported_majors"]
+    if (not supported
+            or any(not isinstance(v, int) or isinstance(v, bool) or v < minimum for v in supported)
+            or len(supported) != len(set(supported))):
+        raise CoverageError("release snapshot supported_majors must list distinct supported major numbers")
+    found, latest = set(), {}
     for item in data["releases"]:
         if not isinstance(item, dict) or not isinstance(item.get("version"), str):
             raise CoverageError("each release must have a version and release_date")
@@ -76,11 +89,14 @@ def release_snapshot(data, support):
             released = dt.date.fromisoformat(item["release_date"])
         except (KeyError, TypeError, ValueError):
             raise CoverageError(f"invalid release_date for PostgreSQL {version}")
-        if parts[0] >= minimum and released >= cutoff:
-            targets.append(version)
-    if not targets:
-        raise CoverageError("release snapshot has no qualifying stable PostgreSQL releases")
-    return sorted(targets, key=lambda v: version_parts(v, "snapshot"))
+        if parts[0] in supported:
+            previous = latest.get(parts[0])
+            if previous is None or parts[1] > version_parts(previous, "snapshot")[1]:
+                latest[parts[0]] = version
+    missing = set(supported) - set(latest)
+    if missing:
+        raise CoverageError(f"release snapshot lacks a stable release for supported PostgreSQL majors {sorted(missing)}")
+    return [latest[major] for major in sorted(latest)]
 
 
 def validate_support(support):
@@ -89,8 +105,12 @@ def validate_support(support):
     pg = support.get("postgresql")
     if not isinstance(pg, dict):
         raise CoverageError("support postgresql must be an object")
-    if pg.get("minimum_major") != 15 or pg.get("stable_release_cutoff") != "2025-09-25":
-        raise CoverageError("support postgresql must retain the specification's major 15 and 2025-09-25 cutoff")
+    if pg.get("minimum_major") != 15 or "stable_release_cutoff" in pg:
+        raise CoverageError("support postgresql must select supported majors from 15 without a release-date cutoff")
+    try:
+        dt.date.fromisoformat(support["version_selection_as_of"])
+    except (KeyError, TypeError, ValueError):
+        raise CoverageError("support version_selection_as_of must be YYYY-MM-DD")
     if not isinstance(support.get("os_support"), dict) or set(support["os_support"]) != {"macos", "windows", "linux"}:
         raise CoverageError("support os_support must declare exactly macos, windows, and linux")
     for name, details in support["os_support"].items():
@@ -153,6 +173,18 @@ def validate_support(support):
         versions = ext.get("versions")
         if not isinstance(versions, dict) or not versions:
             raise CoverageError(f"support extension {project} must declare versions")
+        first_releases = ext.get("major_first_releases", {})
+        if not isinstance(first_releases, dict):
+            raise CoverageError(f"support extension {project}: major_first_releases must be an object")
+        for major, record in first_releases.items():
+            if not major.isdigit() or not isinstance(record, dict):
+                raise CoverageError(f"support extension {project}: invalid major-first-release record")
+            try:
+                dt.date.fromisoformat(record["date"])
+            except (KeyError, TypeError, ValueError):
+                raise CoverageError(f"support extension {project}: invalid first release date for major {major}")
+            if not isinstance(record.get("source"), str) or not record["source"].startswith("https://"):
+                raise CoverageError(f"support extension {project}: missing source for major {major}")
         for version, policy in versions.items():
             if not isinstance(policy, dict):
                 raise CoverageError(f"support extension {project} {version}: policy must be an object")
@@ -206,20 +238,42 @@ def expected_targets(support, releases):
                       for arch in support["platform_architectures"][os])
     core = {(v, p) for v in releases for p in platforms}
     extensions = set()
+    as_of = dt.date.fromisoformat(support["version_selection_as_of"])
+    try:
+        threshold = as_of.replace(year=as_of.year - 2)
+    except ValueError:
+        threshold = as_of.replace(year=as_of.year - 2, day=28)
     for project, ext in support.get("extensions", {}).items():
-        for sql_name in ext.get("sql_names", []):
-            for ext_version, policy in ext.get("versions", {}).items():
-                systems = policy.get("operating_systems", list(support["os_support"]))
-                low = int(policy.get("postgresql_minimum_major", support["postgresql"]["minimum_major"]))
-                high = int(policy.get("postgresql_maximum_major", 999))
-                if low > high:
-                    raise CoverageError(f"{project} {ext_version}: PostgreSQL range is reversed")
-                for pg in releases:
-                    major = version_parts(pg, "snapshot")[0]
-                    if low <= major <= high:
-                        for os in systems:
-                            for arch in support["platform_architectures"][os]:
-                                extensions.add((sql_name, ext_version, pg, f"{os}-{arch}"))
+        for pg in releases:
+            pg_major = version_parts(pg, "snapshot")[0]
+            for platform in platforms:
+                os = platform.split("-", 1)[0]
+                compatible = {}
+                for ext_version, policy in ext.get("versions", {}).items():
+                    low = int(policy.get("postgresql_minimum_major", support["postgresql"]["minimum_major"]))
+                    high = int(policy.get("postgresql_maximum_major", 999))
+                    if low > high:
+                        raise CoverageError(f"{project} {ext_version}: PostgreSQL range is reversed")
+                    if not low <= pg_major <= high or os not in policy.get("operating_systems", list(support["os_support"])):
+                        continue
+                    major = version_parts(ext_version, f"{project} version")[0]
+                    previous = compatible.get(major)
+                    if previous is None or version_parts(ext_version, f"{project} version") > version_parts(previous, f"{project} version"):
+                        compatible[major] = ext_version
+                if not compatible:
+                    continue
+                latest = max(compatible.values(), key=lambda version: version_parts(version, f"{project} version"))
+                selected = {latest}
+                for major, version in compatible.items():
+                    if version == latest:
+                        continue
+                    record = ext.get("major_first_releases", {}).get(str(major))
+                    if record is None:
+                        raise CoverageError(f"{project}: first release date required for eligible major {major}")
+                    if dt.date.fromisoformat(record["date"]) >= threshold:
+                        selected.add(version)
+                for sql_name in ext.get("sql_names", []):
+                    extensions.update((sql_name, version, pg, platform) for version in selected)
     return core, extensions
 
 
