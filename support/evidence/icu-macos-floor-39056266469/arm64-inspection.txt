@@ -1,0 +1,147 @@
+ICU macOS 11 dependency-floor feasibility probe
+version=78.3
+architecture=arm64
+macosx_deployment_target=11.0
+source_url=https://github.com/unicode-org/icu/releases/download/release-78.3/icu4c-78.3-sources.tgz
+expected_sha256=3a2e7a47604ba702f345878308e6fefeca612ee895cf4a5f222e7955fabfe0c0
+sha256_reference=https://github.com/unicode-org/icu/releases/tag/release-78.3
+computed_sha256=3a2e7a47604ba702f345878308e6fefeca612ee895cf4a5f222e7955fabfe0c0
+
+Build log summary:
+1134:/bin/sh ../../mkinstalldirs /Users/runner/work/_temp/icu-floor.dYodqf/prefix/share/man/man1
+1135:/usr/bin/install -c -m 644 gencnval.1 /Users/runner/work/_temp/icu-floor.dYodqf/prefix/share/man/man1
+1136:/bin/sh ../../mkinstalldirs /Users/runner/work/_temp/icu-floor.dYodqf/prefix/bin
+1137:/usr/bin/install -c ../../bin/gencnval /Users/runner/work/_temp/icu-floor.dYodqf/prefix/bin
+1138:/Applications/Xcode_16.4.app/Contents/Developer/usr/bin/make[1]: Making `install' in `gensprep'
+1139:/bin/sh ../../mkinstalldirs /Users/runner/work/_temp/icu-floor.dYodqf/prefix/share/man/man8
+1141:/usr/bin/install -c -m 644 gensprep.8 /Users/runner/work/_temp/icu-floor.dYodqf/prefix/share/man/man8
+1142:/bin/sh ../../mkinstalldirs /Users/runner/work/_temp/icu-floor.dYodqf/prefix/sbin
+1144:/usr/bin/install -c ../../bin/gensprep /Users/runner/work/_temp/icu-floor.dYodqf/prefix/sbin
+1145:/Applications/Xcode_16.4.app/Contents/Developer/usr/bin/make[1]: Making `install' in `icuinfo'
+1146:/bin/sh ../../mkinstalldirs /Users/runner/work/_temp/icu-floor.dYodqf/prefix/bin
+1147:/usr/bin/install -c icuinfo /Users/runner/work/_temp/icu-floor.dYodqf/prefix/bin
+1148:/Applications/Xcode_16.4.app/Contents/Developer/usr/bin/make[1]: Making `install' in `genccode'
+1149:/bin/sh ../../mkinstalldirs /Users/runner/work/_temp/icu-floor.dYodqf/prefix/share/man/man8
+1150:/usr/bin/install -c -m 644 genccode.8 /Users/runner/work/_temp/icu-floor.dYodqf/prefix/share/man/man8
+1151:/bin/sh ../../mkinstalldirs /Users/runner/work/_temp/icu-floor.dYodqf/prefix/sbin
+1152:/usr/bin/install -c ../../bin/genccode /Users/runner/work/_temp/icu-floor.dYodqf/prefix/sbin
+1153:/Applications/Xcode_16.4.app/Contents/Developer/usr/bin/make[1]: Making `install' in `gencmn'
+1154:/bin/sh ../../mkinstalldirs /Users/runner/work/_temp/icu-floor.dYodqf/prefix/share/man/man8
+1155:/usr/bin/install -c -m 644 gencmn.8 /Users/runner/work/_temp/icu-floor.dYodqf/prefix/share/man/man8
+1156:/bin/sh ../../mkinstalldirs /Users/runner/work/_temp/icu-floor.dYodqf/prefix/sbin
+1157:/usr/bin/install -c ../../bin/gencmn /Users/runner/work/_temp/icu-floor.dYodqf/prefix/sbin
+1158:/Applications/Xcode_16.4.app/Contents/Developer/usr/bin/make[1]: Making `install' in `icupkg'
+1159:/bin/sh ../../mkinstalldirs /Users/runner/work/_temp/icu-floor.dYodqf/prefix/share/man/man8
+1160:/usr/bin/install -c -m 644 icupkg.8 /Users/runner/work/_temp/icu-floor.dYodqf/prefix/share/man/man8
+1161:/bin/sh ../../mkinstalldirs /Users/runner/work/_temp/icu-floor.dYodqf/prefix/sbin
+1162:/usr/bin/install -c ../../bin/icupkg /Users/runner/work/_temp/icu-floor.dYodqf/prefix/sbin
+1163:/Applications/Xcode_16.4.app/Contents/Developer/usr/bin/make[1]: Making `install' in `pkgdata'
+1164:/bin/sh ../../mkinstalldirs /Users/runner/work/_temp/icu-floor.dYodqf/prefix/share/man/man1
+1165:/usr/bin/install -c -m 644 pkgdata.1 /Users/runner/work/_temp/icu-floor.dYodqf/prefix/share/man/man1
+1166:/bin/sh ../../mkinstalldirs /Users/runner/work/_temp/icu-floor.dYodqf/prefix/bin
+1167:/usr/bin/install -c ../../bin/pkgdata /Users/runner/work/_temp/icu-floor.dYodqf/prefix/bin
+1168:/Applications/Xcode_16.4.app/Contents/Developer/usr/bin/make[1]: Making `install' in `gentest'
+1169:make[2]: Nothing to be done for `install'.
+1170:/Applications/Xcode_16.4.app/Contents/Developer/usr/bin/make[1]: Making `install' in `gennorm2'
+1171:/bin/sh ../../mkinstalldirs /Users/runner/work/_temp/icu-floor.dYodqf/prefix/sbin
+1172:/usr/bin/install -c ../../bin/gennorm2 /Users/runner/work/_temp/icu-floor.dYodqf/prefix/sbin
+1173:/Applications/Xcode_16.4.app/Contents/Developer/usr/bin/make[1]: Making `install' in `gencfu'
+1174:/bin/sh ../../mkinstalldirs /Users/runner/work/_temp/icu-floor.dYodqf/prefix/share/man/man1
+1175:/usr/bin/install -c -m 644 gencfu.1 /Users/runner/work/_temp/icu-floor.dYodqf/prefix/share/man/man1
+1176:/bin/sh ../../mkinstalldirs /Users/runner/work/_temp/icu-floor.dYodqf/prefix/bin
+1177:/usr/bin/install -c ../../bin/gencfu /Users/runner/work/_temp/icu-floor.dYodqf/prefix/bin
+1178:/Applications/Xcode_16.4.app/Contents/Developer/usr/bin/make[1]: Making `install' in `gendict'
+1179:/bin/sh ../../mkinstalldirs /Users/runner/work/_temp/icu-floor.dYodqf/prefix/share/man/man1
+1180:/usr/bin/install -c -m 644 gendict.1 /Users/runner/work/_temp/icu-floor.dYodqf/prefix/share/man/man1
+1181:/bin/sh ../../mkinstalldirs /Users/runner/work/_temp/icu-floor.dYodqf/prefix/bin
+1182:/usr/bin/install -c ../../bin/gendict /Users/runner/work/_temp/icu-floor.dYodqf/prefix/bin
+1183:/Applications/Xcode_16.4.app/Contents/Developer/usr/bin/make[1]: Making `install' in `icuexportdata'
+1184:/bin/sh ../../mkinstalldirs /Users/runner/work/_temp/icu-floor.dYodqf/prefix/share/man/man1
+1185:/usr/bin/install -c -m 644 icuexportdata.1 /Users/runner/work/_temp/icu-floor.dYodqf/prefix/share/man/man1
+1186:/bin/sh ../../mkinstalldirs /Users/runner/work/_temp/icu-floor.dYodqf/prefix/bin
+1187:/usr/bin/install -c ../../bin/icuexportdata /Users/runner/work/_temp/icu-floor.dYodqf/prefix/bin
+1188:/Applications/Xcode_16.4.app/Contents/Developer/usr/bin/make[1]: Making `install' in `escapesrc'
+1189:/bin/sh ../../mkinstalldirs /Users/runner/work/_temp/icu-floor.dYodqf/prefix/sbin
+1190:/usr/bin/install -c ../../bin/escapesrc /Users/runner/work/_temp/icu-floor.dYodqf/prefix/sbin
+1191:make[2]: Nothing to be done for `install-local'.
+1192:/Applications/Xcode_16.4.app/Contents/Developer/usr/bin/make[0]: Making `install' in `data'
+1193:/bin/sh ../mkinstalldirs  /Users/runner/work/_temp/icu-floor.dYodqf/prefix/lib
+1195:pkgdata: cd ../lib/ && /usr/bin/install -c libicudata.78.3.dylib /Users/runner/work/_temp/icu-floor.dYodqf/prefix/lib/libicudata.78.3.dylib
+1196:pkgdata: cd /Users/runner/work/_temp/icu-floor.dYodqf/prefix/lib && rm -f libicudata.78.dylib && ln -s libicudata.78.3.dylib libicudata.78.dylib
+1197:pkgdata: cd /Users/runner/work/_temp/icu-floor.dYodqf/prefix/lib && rm -f libicudata.dylib && ln -s libicudata.78.3.dylib libicudata.dylib
+1198:/Applications/Xcode_16.4.app/Contents/Developer/usr/bin/make[0]: Making `install' in `extra'
+1199:/Applications/Xcode_16.4.app/Contents/Developer/usr/bin/make[1]: Making `install' in `scrptrun'
+1200:make[2]: Nothing to be done for `install'.
+1201:/Applications/Xcode_16.4.app/Contents/Developer/usr/bin/make[1]: Making `install' in `uconv'
+1202:/bin/sh ../../mkinstalldirs /Users/runner/work/_temp/icu-floor.dYodqf/prefix/bin
+1203:/usr/bin/install -c ../../bin/uconv /Users/runner/work/_temp/icu-floor.dYodqf/prefix/bin
+1204:/bin/sh ../../mkinstalldirs /Users/runner/work/_temp/icu-floor.dYodqf/prefix/share/man/man1
+1205:/usr/bin/install -c -m 644 uconv.1 /Users/runner/work/_temp/icu-floor.dYodqf/prefix/share/man/man1
+1206:make[2]: Nothing to be done for `install-local'.
+1212:/usr/bin/install -c -m 644 ./config/mh-darwin /Users/runner/work/_temp/icu-floor.dYodqf/prefix/share/icu/78.3/config/mh-darwin
+1213:/usr/bin/install -c ./mkinstalldirs /Users/runner/work/_temp/icu-floor.dYodqf/prefix/share/icu/78.3/mkinstalldirs
+1214:/usr/bin/install -c ./install-sh /Users/runner/work/_temp/icu-floor.dYodqf/prefix/share/icu/78.3/install-sh
+1216:/usr/bin/install -c -m 644 ./config/icu-uc.pc ./config/icu-i18n.pc ./config/icu-io.pc /Users/runner/work/_temp/icu-floor.dYodqf/prefix/lib/pkgconfig/
+1217:/usr/bin/install -c -m 644 ./../LICENSE /Users/runner/work/_temp/icu-floor.dYodqf/prefix/share/icu/78.3/LICENSE
+1218:/usr/bin/install -c ./config/icu-config /Users/runner/work/_temp/icu-floor.dYodqf/prefix/bin/icu-config
+1219:/usr/bin/install -c -m 644 ./config/Makefile.inc /Users/runner/work/_temp/icu-floor.dYodqf/prefix/lib/icu/78.3/Makefile.inc
+1220:/usr/bin/install -c -m 644 ./config/pkgdata.inc /Users/runner/work/_temp/icu-floor.dYodqf/prefix/lib/icu/78.3/pkgdata.inc
+1228:/bin/sh ./mkinstalldirs /Users/runner/work/_temp/icu-floor.dYodqf/prefix/share/man/man1
+1229:/usr/bin/install -c -m 644 config/icu-config.1 /Users/runner/work/_temp/icu-floor.dYodqf/prefix/share/man/man1
+
+Produced dylib inspection:
+--- lib/libicudata.78.3.dylib ---
+architectures=arm64
+minimum_os=11.0
+linked=	libicudata.78.dylib (compatibility version 78.0.0, current version 78.3.0)
+linked=	/usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1351.0.0)
+host_path_reference=none
+--- lib/libicui18n.78.3.dylib ---
+architectures=arm64
+minimum_os=11.0
+linked=	libicui18n.78.dylib (compatibility version 78.0.0, current version 78.3.0)
+linked=	libicuuc.78.dylib (compatibility version 78.0.0, current version 78.3.0)
+linked=	libicudata.78.dylib (compatibility version 78.0.0, current version 78.3.0)
+linked=	/usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1351.0.0)
+linked=	/usr/lib/libc++.1.dylib (compatibility version 1.0.0, current version 1900.180.0)
+host_path_reference=none
+--- lib/libicuio.78.3.dylib ---
+architectures=arm64
+minimum_os=11.0
+linked=	libicuio.78.dylib (compatibility version 78.0.0, current version 78.3.0)
+linked=	libicuuc.78.dylib (compatibility version 78.0.0, current version 78.3.0)
+linked=	libicudata.78.dylib (compatibility version 78.0.0, current version 78.3.0)
+linked=	libicui18n.78.dylib (compatibility version 78.0.0, current version 78.3.0)
+linked=	/usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1351.0.0)
+linked=	/usr/lib/libc++.1.dylib (compatibility version 1.0.0, current version 1900.180.0)
+host_path_reference=none
+--- lib/libicutest.78.3.dylib ---
+architectures=arm64
+minimum_os=11.0
+linked=	libicutest.78.dylib (compatibility version 78.0.0, current version 78.3.0)
+linked=	libicutu.78.dylib (compatibility version 78.0.0, current version 78.3.0)
+linked=	libicui18n.78.dylib (compatibility version 78.0.0, current version 78.3.0)
+linked=	libicuuc.78.dylib (compatibility version 78.0.0, current version 78.3.0)
+linked=	libicudata.78.dylib (compatibility version 78.0.0, current version 78.3.0)
+linked=	/usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1351.0.0)
+linked=	/usr/lib/libc++.1.dylib (compatibility version 1.0.0, current version 1900.180.0)
+host_path_reference=none
+--- lib/libicutu.78.3.dylib ---
+architectures=arm64
+minimum_os=11.0
+linked=	libicutu.78.dylib (compatibility version 78.0.0, current version 78.3.0)
+linked=	libicui18n.78.dylib (compatibility version 78.0.0, current version 78.3.0)
+linked=	libicuuc.78.dylib (compatibility version 78.0.0, current version 78.3.0)
+linked=	libicudata.78.dylib (compatibility version 78.0.0, current version 78.3.0)
+linked=	/usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1351.0.0)
+linked=	/usr/lib/libc++.1.dylib (compatibility version 1.0.0, current version 1900.180.0)
+host_path_reference=none
+--- lib/libicuuc.78.3.dylib ---
+architectures=arm64
+minimum_os=11.0
+linked=	libicuuc.78.dylib (compatibility version 78.0.0, current version 78.3.0)
+linked=	libicudata.78.dylib (compatibility version 78.0.0, current version 78.3.0)
+linked=	/usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1351.0.0)
+linked=	/usr/lib/libc++.1.dylib (compatibility version 1.0.0, current version 1900.180.0)
+host_path_reference=none
+outcome=minimum-target source build passed; relocation requires final-archive verification
