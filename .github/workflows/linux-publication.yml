@@ -15,6 +15,7 @@ on:
       - 'scripts/linux/build.sh'
       - 'scripts/linux/build-in-container.sh'
       - 'tools/source_archive.py'
+      - 'tools/check_source_identity.py'
       - 'support.json'
       - 'support/postgresql-releases.json'
       - 'scripts/linux/bundle-glibc-in-container.sh'

@@ -31,6 +31,7 @@ on:
       - 'tools/write_linux_license_inventory.py'
       - 'tools/plan_work.py'
       - 'tools/source_archive.py'
+      - 'tools/check_source_identity.py'
       - 'support.json'
       - 'support/postgresql-releases.json'
       - 'tools/emit_linux_pilot_records.py'
