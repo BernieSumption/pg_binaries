@@ -1,0 +1,34 @@
+{
+  "architecture": "x86_64",
+  "archives": {
+    "pgvector-0.8.7-postgresql-18.6-linux-x86_64.tar.gz": "69a34cdee4cc8a0184ea46dcaea15aaf54c7b01568445063fd3150300ca39c50",
+    "postgresql-18.6-linux-x86_64.tar.gz": "7d86fa7f76df22f0140da789df98d0da8738e8b98152b8cbcbecd7720d61b214"
+  },
+  "case_results": {
+    "archive-suite": "passed",
+    "diagnostics": "passed",
+    "no-host-userspace": "passed",
+    "portability": "passed"
+  },
+  "ci": {
+    "build_revision": "320523ab544f2efa8c36b4ffc2d76a0b47a7634a",
+    "provider": "github-actions",
+    "run_id": "39021867664",
+    "run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/39021867664",
+    "source_revision": "320523ab544f2efa8c36b4ffc2d76a0b47a7634a",
+    "test_revision": "320523ab544f2efa8c36b4ffc2d76a0b47a7634a"
+  },
+  "clean_system": true,
+  "dependency_check_profile": "linux-runtime-v1",
+  "dependency_checks_passed": true,
+  "distribution": "Ubuntu 24.04.5 LTS",
+  "distribution_version": "24.04",
+  "endpoint": "current",
+  "image_id": "sha256:9e48250d845f8d58d3fdecad52b1db1b9a2534dae140a6830b0d2813db27913e",
+  "kernel_release": "6.17.0-1022-azure",
+  "os": "linux",
+  "postgresql_version": "18.6",
+  "profile_id": "linux-publication-current-x86_64",
+  "profile_revision": "891fbe94ff65bd9b81cf15564594ab761c3258b0848b1bf37070694a4b3e64d7",
+  "test_revision": "320523ab544f2efa8c36b4ffc2d76a0b47a7634a"
+}

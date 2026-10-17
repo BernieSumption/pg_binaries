@@ -1,0 +1,41 @@
+{
+  "files": [
+    {
+      "archive": "postgis-3.6.4-postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "4b6ce0951cbfbdd1b35a509bf07003d3d05d53203f8f5908699c6322c45f0e41",
+      "debug_file_path": "postgis-3.6.4-postgresql-18.6-linux-x86_64/postgis/lib/postgis_topology-3.so.debug",
+      "debug_file_sha256": "2c4778edfc34851ac099cf45fda99a5acffc6fd0d2a383558d9786ea459465b6",
+      "gnu_build_id": "f9d21ff6146e45928b020c45d739e3593e85c815",
+      "module_path": "postgis/lib/postgis_topology-3.so",
+      "module_sha256": "d44ba0eee8a038fa16ce1c1d103f29b4073bb6aeb3c94fcf2f7f38ae3a203bb4"
+    },
+    {
+      "archive": "postgis-3.6.4-postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "4b6ce0951cbfbdd1b35a509bf07003d3d05d53203f8f5908699c6322c45f0e41",
+      "debug_file_path": "postgis-3.6.4-postgresql-18.6-linux-x86_64/postgis/lib/postgis_raster-3.so.debug",
+      "debug_file_sha256": "4327ad13ffbfc939f8d04e5c5565e60146a8bab57ac79f021c89eb11cc1b4e25",
+      "gnu_build_id": "1fc4fd839ada9e9f656d889b5d8919e35b821035",
+      "module_path": "postgis/lib/postgis_raster-3.so",
+      "module_sha256": "12fd3e4b7c92591b94ee176275e6fbb9c963e3677400d4ffd81af525c0afdf85"
+    },
+    {
+      "archive": "postgis-3.6.4-postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "4b6ce0951cbfbdd1b35a509bf07003d3d05d53203f8f5908699c6322c45f0e41",
+      "debug_file_path": "postgis-3.6.4-postgresql-18.6-linux-x86_64/postgis/lib/postgis_sfcgal-3.so.debug",
+      "debug_file_sha256": "da4131b9eb9429770c812dcd9da572f2ac758845d0f6096207bf43fe4cb9c67a",
+      "gnu_build_id": "8389e11f0d257f351ccda2b6475f778cf3a459eb",
+      "module_path": "postgis/lib/postgis_sfcgal-3.so",
+      "module_sha256": "fa0c3b45ea4e42b2f1d2577bcb5c0a715df25de265c8ae1b16f5786b8f3b75f8"
+    },
+    {
+      "archive": "postgis-3.6.4-postgresql-18.6-linux-x86_64.tar.gz",
+      "archive_sha256": "4b6ce0951cbfbdd1b35a509bf07003d3d05d53203f8f5908699c6322c45f0e41",
+      "debug_file_path": "postgis-3.6.4-postgresql-18.6-linux-x86_64/postgis/lib/postgis-3.so.debug",
+      "debug_file_sha256": "29a48af7be0a03e82762dd27fa77e97b04ef044cb19ec18f9002cac01e582478",
+      "gnu_build_id": "7510d81b80479aafc78a43487d2524423c1cc388",
+      "module_path": "postgis/lib/postgis-3.so",
+      "module_sha256": "5a5fbdfca68e6c0816a5aa8d89794a7606bbeabafae296b16fd12501e63f7387"
+    }
+  ],
+  "schema_version": 1
+}
