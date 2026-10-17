@@ -51,11 +51,10 @@ def module_member(name: str, bundled_dependencies: set[str]) -> bool:
     parts = PurePosixPath(name).parts
     if not parts:
         return False
-    if parts[0] == "pgaudit":
-        return len(parts) == 3 and parts[1] == "lib" and parts[2] == "pgaudit.dylib"
-    if parts[0] == "pgvector":
-        return len(parts) == 3 and parts[1] == "lib" and parts[2] == "vector.dylib"
-    if parts[0] != "postgresql" or len(parts) < 3:
+    if parts[0] != "postgresql":
+        return (len(parts) == 3 and parts[1] == "lib"
+                and parts[2].endswith(".dylib") and parts[2] not in bundled_dependencies)
+    if len(parts) < 3:
         return False
     return (parts[1] in {"bin", "lib", "libexec"}
             and parts[-1] not in bundled_dependencies and not parts[-1].endswith(".a"))

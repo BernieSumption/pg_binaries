@@ -18,7 +18,10 @@ class CreateMacosSymbolsTests(unittest.TestCase):
         self.assertFalse(symbols.module_member("postgresql/lib/libecpg.a", set()))
         self.assertTrue(symbols.module_member("postgresql/lib/libpq.5.dylib", set()))
         self.assertTrue(symbols.module_member("pgaudit/lib/pgaudit.dylib", set()))
-        self.assertFalse(symbols.module_member("pgaudit/lib/unexpected.dylib", set()))
+        self.assertTrue(symbols.module_member("hypopg/lib/hypopg.dylib", set()))
+        self.assertFalse(symbols.module_member("pgaudit/share/unexpected.dylib", set()))
+        self.assertFalse(symbols.module_member("hypopg/lib/libfoo.a", set()))
+        self.assertFalse(symbols.module_member("hypopg/lib/dependency.dylib", {"dependency.dylib"}))
 
     def make_archive(self, directory, members):
         archive = directory / "pilot.tar.gz"
