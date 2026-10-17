@@ -64,11 +64,11 @@ jobs:
         id: build
         run: scripts/linux/build.sh "$RUNNER_TEMP/pilot"
       - name: Build PostGIS 3.6.4 against the publication PostgreSQL archive
-        if: ${{ always() && steps.build.outcome == 'success' && env.PG_VERSION == '18.6' }}
+        if: ${{ always() && steps.build.outcome == 'success' }}
         id: postgis_build
         run: bash scripts/postgis/build.sh "$RUNNER_TEMP/pilot" "$RUNNER_TEMP/postgis"
       - name: Build TIGER Geocoder 2025.2 against the publication PostgreSQL archive
-        if: ${{ always() && steps.postgis_build.outcome == 'success' && env.PG_VERSION == '18.6' }}
+        if: ${{ always() && steps.postgis_build.outcome == 'success' && (startsWith(env.PG_VERSION, '16.') || startsWith(env.PG_VERSION, '17.') || startsWith(env.PG_VERSION, '18.')) }}
         id: tiger_build
         run: bash scripts/tiger/build.sh "$RUNNER_TEMP/pilot" "$RUNNER_TEMP/tiger"
       # profile-section: archive-builds end
@@ -149,7 +149,7 @@ jobs:
       # profile-section: core-current-report end
       # profile-section: postgis-report begin
       - name: Record PostGIS publication step outcome
-        if: ${{ always() && env.PG_VERSION == '18.6' }}
+        if: ${{ always() }}
         env:
           VERIFY_OUTCOME: ${{ fromJSON(steps.phase_outcomes.outputs.outcomes).postgis }}
         run: |
@@ -158,25 +158,25 @@ jobs:
           printf '{"archive-suite":"%s"}\n' "$VERIFY_OUTCOME" \
             > "$RUNNER_TEMP/postgis-publication/current-steps.json"
       - name: Emit PostGIS publication records
-        if: ${{ always() && env.PG_VERSION == '18.6' }}
+        if: ${{ always() }}
         run: |
           set -euo pipefail
-          core="$RUNNER_TEMP/pilot/postgresql-18.6-linux-$PG_ARCHITECTURE.tar.gz"
-          extension="$RUNNER_TEMP/postgis/postgis-3.6.4-postgresql-18.6-linux-$PG_ARCHITECTURE.tar.gz"
+          core="$RUNNER_TEMP/pilot/postgresql-$PG_VERSION-linux-$PG_ARCHITECTURE.tar.gz"
+          extension="$RUNNER_TEMP/postgis/postgis-3.6.4-postgresql-$PG_VERSION-linux-$PG_ARCHITECTURE.tar.gz"
           if [[ ! -f "$core" || ! -f "$core.sha256" || ! -f "$extension" || ! -f "$extension.sha256" ]]; then
             echo 'No publication record: assembled archive bytes or sidecars are unavailable'
             exit 0
           fi
-          python3 - "$core" "$RUNNER_TEMP/pilot/publication/records" "$PG_ARCHITECTURE" "$GITHUB_RUN_ID" "$GITHUB_SHA" <<'PYCODE'
+          python3 - "$core" "$RUNNER_TEMP/pilot/publication/records" "$PG_VERSION" "$PG_ARCHITECTURE" "$GITHUB_RUN_ID" "$GITHUB_SHA" <<'PYCODE'
           import hashlib
           from pathlib import Path
           import sys
           sys.path.insert(0, 'tools')
           import coverage
-          core, records, architecture, run_id, revision = sys.argv[1:]
+          core, records, pg_version, architecture, run_id, revision = sys.argv[1:]
           digest = hashlib.sha256(Path(core).read_bytes()).hexdigest()
           support = coverage.load_json(Path('support.json'))
-          name = f'postgresql-18.6-linux-{architecture}-current-{run_id}.json'
+          name = f'postgresql-{pg_version}-linux-{architecture}-current-{run_id}.json'
           record = coverage.load_json(Path(records) / name)
           coverage.validate_verification_record(record, support, Path('.'))
           if (record['sha256'] != digest
@@ -204,7 +204,7 @@ jobs:
             --archives "$RUNNER_TEMP/postgis" --core-archives "$RUNNER_TEMP/pilot" \
             --receipt "$publication/current-receipt.json" \
             --profile-id "postgis-publication-current-$PG_ARCHITECTURE" \
-            --project PostGIS --version 3.6.4 --postgresql-version 18.6 \
+            --project PostGIS --version 3.6.4 --postgresql-version "$PG_VERSION" \
             --architecture "$PG_ARCHITECTURE" --endpoint current \
             --kernel-release "$(uname -r)" --distribution "$distribution" \
             --distribution-version "$distribution_version" --image-id "$image" \
@@ -216,7 +216,7 @@ jobs:
       # profile-section: postgis-report end
       # profile-section: tiger-report begin
       - name: Record TIGER publication step outcome
-        if: ${{ always() && env.PG_VERSION == '18.6' }}
+        if: ${{ always() && (startsWith(env.PG_VERSION, '16.') || startsWith(env.PG_VERSION, '17.') || startsWith(env.PG_VERSION, '18.')) }}
         env:
           VERIFY_OUTCOME: ${{ fromJSON(steps.phase_outcomes.outputs.outcomes).tiger }}
         run: |
@@ -225,27 +225,27 @@ jobs:
           printf '{"archive-suite":"%s"}\n' "$VERIFY_OUTCOME" \
             > "$RUNNER_TEMP/tiger-publication/current-steps.json"
       - name: Emit TIGER publication records
-        if: ${{ always() && env.PG_VERSION == '18.6' }}
+        if: ${{ always() && (startsWith(env.PG_VERSION, '16.') || startsWith(env.PG_VERSION, '17.') || startsWith(env.PG_VERSION, '18.')) }}
         run: |
           set -euo pipefail
-          core="$RUNNER_TEMP/pilot/postgresql-18.6-linux-$PG_ARCHITECTURE.tar.gz"
-          postgis="$RUNNER_TEMP/postgis/postgis-3.6.4-postgresql-18.6-linux-$PG_ARCHITECTURE.tar.gz"
-          tiger="$RUNNER_TEMP/tiger/postgis_tiger_geocoder-2025.2-postgresql-18.6-linux-$PG_ARCHITECTURE.tar.gz"
+          core="$RUNNER_TEMP/pilot/postgresql-$PG_VERSION-linux-$PG_ARCHITECTURE.tar.gz"
+          postgis="$RUNNER_TEMP/postgis/postgis-3.6.4-postgresql-$PG_VERSION-linux-$PG_ARCHITECTURE.tar.gz"
+          tiger="$RUNNER_TEMP/tiger/postgis_tiger_geocoder-2025.2-postgresql-$PG_VERSION-linux-$PG_ARCHITECTURE.tar.gz"
           if [[ ! -f "$core" || ! -f "$core.sha256" || ! -f "$postgis" || ! -f "$postgis.sha256" || ! -f "$tiger" || ! -f "$tiger.sha256" ]]; then
             echo 'No TIGER publication record: assembled archive bytes or sidecars are unavailable'
             exit 0
           fi
-          python3 - "$core" "$postgis" "$RUNNER_TEMP/postgis-publication/records" "$PG_ARCHITECTURE" "$GITHUB_RUN_ID" "$GITHUB_SHA" <<'PYCODE'
+          python3 - "$core" "$postgis" "$RUNNER_TEMP/postgis-publication/records" "$PG_VERSION" "$PG_ARCHITECTURE" "$GITHUB_RUN_ID" "$GITHUB_SHA" <<'PYCODE'
           import hashlib
           import sys
           from pathlib import Path
           sys.path.insert(0, 'tools')
           import coverage
-          core, postgis, records, architecture, run_id, revision = sys.argv[1:]
+          core, postgis, records, pg_version, architecture, run_id, revision = sys.argv[1:]
           support = coverage.load_json(Path('support.json'))
           core_sha = hashlib.sha256(Path(core).read_bytes()).hexdigest()
           postgis_sha = hashlib.sha256(Path(postgis).read_bytes()).hexdigest()
-          name = f'postgis-3.6.4-postgresql-18.6-linux-{architecture}-current-{run_id}.json'
+          name = f'postgis-3.6.4-postgresql-{pg_version}-linux-{architecture}-current-{run_id}.json'
           record = coverage.load_json(Path(records) / name)
           coverage.validate_verification_record(record, support, Path('.'))
           if (record['sha256'] != postgis_sha
@@ -275,7 +275,7 @@ jobs:
             --prerequisite-archive "PostGIS=$postgis" \
             --receipt "$publication/current-receipt.json" \
             --profile-id "tiger-publication-current-$PG_ARCHITECTURE" \
-            --project 'PostGIS TIGER Geocoder' --version 2025.2 --postgresql-version 18.6 \
+            --project 'PostGIS TIGER Geocoder' --version 2025.2 --postgresql-version "$PG_VERSION" \
             --architecture "$PG_ARCHITECTURE" --endpoint current \
             --kernel-release "$(uname -r)" --distribution "$distribution" \
             --distribution-version "$distribution_version" --image-id "$image" \

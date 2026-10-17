@@ -16,5 +16,6 @@ mkdir -p "$output" "$source_dir"
 output=$(cd "$output" && pwd)
 source_dir=$(cd "$source_dir" && pwd)
 docker run --rm --platform "$docker_platform" -e PG_ARCHITECTURE="$architecture" \
+  -e PG_VERSION="${PG_VERSION:-18.6}" \
   -v "$core:/core:ro" -v "$source_dir:/source:ro" -v "$output:/out" -v "$repo:/repo:ro" \
   --entrypoint bash pg-binaries-postgis-pilot /repo/scripts/tiger/build-in-container.sh

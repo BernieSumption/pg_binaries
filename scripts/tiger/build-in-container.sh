@@ -4,7 +4,11 @@ set -euo pipefail
 architecture=${PG_ARCHITECTURE:-x86_64}
 case "$architecture" in x86_64|arm64) ;; *) echo "Unsupported Linux architecture: $architecture" >&2; exit 2 ;; esac
 version=2025.2
-pg_version=18.6
+pg_version=${PG_VERSION:-18.6}
+if [[ ! "$pg_version" =~ ^(16|17|18)\.[0-9]+$ ]]; then
+  echo "TIGER Geocoder supports PostgreSQL 16-18 selected minors: $pg_version" >&2
+  exit 2
+fi
 source_name="postgis_tiger_geocoder-${version}.tar.gz"
 source_sha256=c33cfbfb40785db8754a36be66060e8d023773e7e1be8fb8a622bb3c48db9f54
 core_archive="postgresql-${pg_version}-linux-${architecture}.tar.gz"
@@ -16,7 +20,7 @@ mkdir -p /work/prefix /work/source /work/stage/postgis_tiger_geocoder/share/exte
 tar -xzf "$core_archive" -C /work/prefix
 mv /work/prefix/postgresql /opt/postgresql
 pgroot=/opt/postgresql
-test "$("$pgroot/bin/pg_config" --version)" = 'PostgreSQL 18.6'
+test "$("$pgroot/bin/pg_config" --version)" = "PostgreSQL $pg_version"
 
 if [[ -f "/source/$source_name" ]]; then
   cp "/source/$source_name" /work/source/

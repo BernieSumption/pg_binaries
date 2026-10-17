@@ -7,8 +7,8 @@ case "$architecture:$(uname -m)" in
   x86_64:x86_64|arm64:aarch64) ;;
   *) echo "Verifier architecture does not match $architecture: $(uname -m)" >&2; exit 2 ;;
 esac
-if [[ ! "$pg_version" =~ ^(15|16|17)\.[0-9]+$ && "$pg_version" != 18.6 ]]; then
-  echo "Combined verifier supports PostgreSQL 15-17 selected minors and 18.6: $pg_version" >&2
+if [[ ! "$pg_version" =~ ^(15|16|17|18)\.[0-9]+$ ]]; then
+  echo "Combined verifier supports PostgreSQL 15-18 selected minors: $pg_version" >&2
   exit 2
 fi
 
@@ -67,19 +67,20 @@ run_phase core /usr/local/bin/verify-core
 export DIAGNOSTICS_EVIDENCE_DIR="$results/diagnostics"
 run_phase diagnostics /usr/local/bin/verify-diagnostics "$core" "$pg_version" "$architecture"
 
-if [[ "$pg_version" == 18.6 ]]; then
-  link_dir /input "$core"
-  link_dir /out /archives/postgis
-  link_dir /analysis "$results/static-analysis/postgis"
-  run_phase postgis /usr/local/bin/verify-postgis
+pg_major=${pg_version%%.*}
+link_dir /input "$core"
+link_dir /out /archives/postgis
+link_dir /analysis "$results/static-analysis/postgis"
+run_phase postgis /usr/local/bin/verify-postgis
 
+if (( pg_major >= 16 )); then
   link_dir /core "$core"
   link_dir /postgis /archives/postgis
   link_dir /tiger /archives/tiger
   link_dir /analysis "$results/static-analysis/tiger"
   run_phase tiger /usr/local/bin/verify-tiger
 else
-  printf 'postgis\tskipped\ntiger\tskipped\n' >&9
+  printf 'tiger\tskipped\n' >&9
 fi
 
 if (( failed )); then

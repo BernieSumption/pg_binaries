@@ -3,9 +3,14 @@ set -euo pipefail
 
 architecture=${PG_ARCHITECTURE:-x86_64}
 case "$architecture" in x86_64|arm64) ;; *) echo "Unsupported Linux architecture: $architecture" >&2; exit 2 ;; esac
-core_archive="postgresql-18.6-linux-${architecture}.tar.gz"
-postgis_archive="postgis-3.6.4-postgresql-18.6-linux-${architecture}.tar.gz"
-tiger_archive="postgis_tiger_geocoder-2025.2-postgresql-18.6-linux-${architecture}.tar.gz"
+pg_version=${PG_VERSION:-18.6}
+if [[ ! "$pg_version" =~ ^(16|17|18)\.[0-9]+$ ]]; then
+  echo "TIGER Geocoder supports PostgreSQL 16-18 selected minors: $pg_version" >&2
+  exit 2
+fi
+core_archive="postgresql-${pg_version}-linux-${architecture}.tar.gz"
+postgis_archive="postgis-3.6.4-postgresql-${pg_version}-linux-${architecture}.tar.gz"
+tiger_archive="postgis_tiger_geocoder-2025.2-postgresql-${pg_version}-linux-${architecture}.tar.gz"
 cd /core && sha256sum -c "${core_archive}.sha256"
 cd /postgis && sha256sum -c "${postgis_archive}.sha256"
 cd /tiger && sha256sum -c "${tiger_archive}.sha256"
@@ -14,13 +19,14 @@ mkdir -p /tmp/install /tmp/postgis /tmp/tiger /tmp/data /tmp/socket
 tar -xzf "/core/$core_archive" -C /tmp/install
 tar -xzf "/postgis/$postgis_archive" -C /tmp/postgis
 tar -xzf "/tiger/$tiger_archive" -C /tmp/tiger
-python3 - "$architecture" <<'PY'
+python3 - "$architecture" "$pg_version" <<'PY'
 import json
 from pathlib import Path
 import shutil
 import sys
 
 architecture = sys.argv[1]
+pg_version = sys.argv[2]
 root = Path('/tmp/tiger')
 assert {entry.name for entry in root.iterdir()} == {'postgis_tiger_geocoder', 'metadata.json'}
 metadata = json.loads((root / 'metadata.json').read_text())
@@ -30,7 +36,7 @@ assert metadata['sql_names'] == ['postgis_tiger_geocoder']
 assert metadata['requires'] == ['PostGIS']
 assert {'type': 'sql_extension', 'name': 'fuzzystrmatch',
         'value': 'CREATE EXTENSION fuzzystrmatch'} in metadata['configuration_prerequisites']
-assert metadata['postgresql_version'] == '18.6'
+assert metadata['postgresql_version'] == pg_version
 assert metadata['platform'] == 'linux' and metadata['architecture'] == architecture
 payload = root / 'postgis_tiger_geocoder'
 assert (payload / 'share/extension/postgis_tiger_geocoder.control').is_file()
