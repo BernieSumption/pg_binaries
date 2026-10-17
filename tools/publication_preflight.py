@@ -59,6 +59,51 @@ def _candidate_targets(inventory):
     return core, extensions
 
 
+def _verification_matches(record, *, checksum, component, version, platform, pg_version,
+                          endpoint, support, root, expected_core=None):
+    if not isinstance(record, dict):
+        return False
+    try:
+        _coverage.validate_verification_record(record, support, root, "candidate evidence")
+        actual_os = _coverage._os_version_parts(
+            record["environment"].get("os_version"), "candidate evidence")
+        minimum_os = _coverage._os_version_parts(
+            support["os_support"][platform.split("-", 1)[0]]["minimum_version"], "support")
+    except (KeyError, TypeError, _coverage.CoverageError):
+        return False
+    environment = record["environment"]
+    core_matches = expected_core is None or (
+        isinstance(record.get("assembled_core"), dict)
+        and record["assembled_core"].get("archive") == expected_core["archive"]
+        and record["assembled_core"].get("version") == expected_core["version"]
+        and isinstance(record["assembled_core"].get("sha256"), str)
+        and record["assembled_core"]["sha256"].lower() == expected_core["sha256"].lower())
+    return (record.get("schema_version") == 2 and record.get("scope") == "publication"
+            and record.get("outcome") == "passed"
+            and record.get("sha256", "").lower() == checksum.lower()
+            and record.get("component") == component
+            and str(record.get("version")) == str(version)
+            and record.get("platform") == platform
+            and record.get("postgresql_version") == pg_version
+            and environment.get("endpoint") == endpoint
+            and environment.get("clean_system") is True
+            and ((endpoint == "minimum" and actual_os == minimum_os)
+                 or (endpoint == "current" and actual_os > minimum_os))
+            and core_matches)
+
+
+def _require_verification(records, *, checksum, component, version, platform, pg_version,
+                          endpoint, support, root, expected_core=None):
+    if not any(_verification_matches(
+            record, checksum=checksum, component=component, version=version,
+            platform=platform, pg_version=pg_version, endpoint=endpoint,
+            support=support, root=root, expected_core=expected_core)
+            for record in records):
+        raise PreflightError(
+            f"new archive requires passed current-profile publication verification for "
+            f"{component} {version} PostgreSQL {pg_version} {platform} {endpoint}")
+
+
 def _covers_extension(target, extension_ranges):
     name, version, pg, platform = target
     pg_version = _coverage.version_parts(pg, "required target")
@@ -236,7 +281,7 @@ def _extension_metadata(path, archive_project, version, sql_names, requires, pla
         raise PreflightError(f"cannot read staged extension metadata: {exc}") from exc
 
 
-def preflight_candidate(base_inventory, candidate, support, snapshot, staged_assets):
+def preflight_candidate(base_inventory, candidate, support, snapshot, staged_assets, root=None):
     """Validate candidate references and staged bytes without contacting GitHub.
 
     ``staged_assets`` maps each new immutable download URL to an object with
@@ -244,6 +289,7 @@ def preflight_candidate(base_inventory, candidate, support, snapshot, staged_ass
     inventory and review declarations defined in policies/releases.md. The result describes only this local
     preflight; it never represents publication eligibility.
     """
+    root = Path(root) if root is not None else Path(__file__).resolve().parents[1]
     if not isinstance(candidate, dict) or candidate.get("candidate_status") != "structural-draft":
         raise PreflightError("candidate must have candidate_status 'structural-draft'")
     if candidate.get("schema_version") != 1:
@@ -275,12 +321,18 @@ def preflight_candidate(base_inventory, candidate, support, snapshot, staged_ass
         if url in extension_assets and extension_assets[url][0] != association:
             raise PreflightError(f"extension archive URL is reused across projects, versions or platforms: {url}")
         extension_assets.setdefault(url, (association, set()))[1].add(sql_name)
+    extension_ranges = {}
+    for (sql_name, version, low, high, platform), entry in candidate_extensions.items():
+        extension_ranges.setdefault(entry["url"], set()).add((low, high))
     core_by_url = {}
+    core_by_target = {}
     for target, entry in candidate_core.items():
         url = entry["url"]
         if url in core_by_url:
             raise PreflightError(f"PostgreSQL archive URL is reused across targets: {url}")
-        core_by_url[url] = target[0]
+        version, platform = target
+        core_by_url[url] = target
+        core_by_target[target] = entry
     overlap = set(core_by_url) & set(extension_assets)
     if overlap:
         raise PreflightError(f"archive URL is reused by PostgreSQL and an extension: {sorted(overlap)[0]}")
@@ -304,6 +356,9 @@ def preflight_candidate(base_inventory, candidate, support, snapshot, staged_ass
     extra_assets = sorted(manifest_urls - new_urls)
     if extra_assets:
         raise PreflightError(f"staged asset is not referenced by candidate: {extra_assets[0]}")
+    for url in sorted(new_urls):
+        if not NEW_ASSET_URL.fullmatch(url):
+            raise PreflightError(f"new asset URL is not an immutable catalog release URL: {url}")
 
     evidence_by_url = candidate.get("verification_evidence")
     if not isinstance(evidence_by_url, dict):
@@ -324,14 +379,38 @@ def preflight_candidate(base_inventory, candidate, support, snapshot, staged_ass
             evidence_sha = record.get("sha256")
             if not isinstance(evidence_sha, str) or evidence_sha.lower() != candidate_refs[url]:
                 raise PreflightError(f"verification record checksum does not match candidate archive: {url}")
+        if url in core_by_url:
+            version, platform = core_by_url[url]
+            for endpoint in ("minimum", "current"):
+                _require_verification(records, checksum=candidate_refs[url], component="postgresql",
+                                      version=version, platform=platform, pg_version=version,
+                                      endpoint=endpoint, support=support, root=root)
+        elif url in extension_assets:
+            (project, version, platform), sql_names = extension_assets[url]
+            for low, high in extension_ranges[url]:
+                for pg_version in {low, high}:
+                    core = core_by_target.get((pg_version, platform))
+                    if core is None:
+                        raise PreflightError(
+                            f"extension verification requires candidate PostgreSQL archive for {pg_version} {platform}")
+                    expected_core_ref = {
+                        "archive": core["url"].rsplit("/", 1)[-1],
+                        "version": pg_version,
+                        "sha256": core["sha256"],
+                    }
+                    for sql_name in sql_names:
+                        for endpoint in ("minimum", "current"):
+                            _require_verification(
+                                records, checksum=candidate_refs[url], component=sql_name,
+                                version=version, platform=platform, pg_version=pg_version,
+                                endpoint=endpoint, support=support, root=root,
+                                expected_core=expected_core_ref)
 
     for url, checksum in candidate_refs.items():
         if url in base_refs and checksum != base_refs[url]:
             raise PreflightError(f"retained URL checksum changed: {url}")
 
     for url in sorted(new_urls):
-        if not NEW_ASSET_URL.fullmatch(url):
-            raise PreflightError(f"new asset URL is not an immutable catalog release URL: {url}")
         asset = staged_assets[url]
         if not isinstance(asset, dict) or not isinstance(asset.get("path"), (str, Path)):
             raise PreflightError(f"staged asset requires a local path: {url}")
@@ -351,7 +430,7 @@ def preflight_candidate(base_inventory, candidate, support, snapshot, staged_ass
         if digest != candidate_checksum:
             raise PreflightError(f"staged asset bytes do not match candidate checksum: {url}")
         if url in core_by_url:
-            version = core_by_url[url]
+            version, _platform = core_by_url[url]
             declared = candidate["postgresql"][version].get("included_extensions")
             if not isinstance(declared, list):
                 raise PreflightError(f"PostgreSQL {version} requires included_extensions")
@@ -394,13 +473,15 @@ def main(argv=None):
     parser.add_argument("--release-snapshot", required=True, type=Path)
     parser.add_argument("--staged-assets", required=True, type=Path,
                         help="JSON mapping each new download URL to path and sha256")
+    parser.add_argument("--root", type=Path,
+                        help="repository root containing verification profile sources")
     args = parser.parse_args(argv)
 
     try:
         documents = [json.loads(path.read_text(encoding="utf-8")) for path in (
             args.base_inventory, args.candidate_inventory, args.support,
             args.release_snapshot, args.staged_assets)]
-        report = preflight_candidate(*documents)
+        report = preflight_candidate(*documents, root=args.root)
     except (OSError, UnicodeError, json.JSONDecodeError, PreflightError) as exc:
         print(f"publication preflight failed: {exc}", file=sys.stderr)
         return 1

@@ -16,7 +16,7 @@ Immediately after publication, run the anonymous download verification in [testi
 
 `tools/local_publication_dry_run.py` models publication order after candidate generation and preflight with a filesystem-backed store. It stages archive bytes and the candidate inventory under a new tag, verifies every candidate URL and checksum against new or retained local assets, and switches the current inventory only after verification. Its tests inject failures around promotion and retrieve all promoted references from the local store. The tool never calls GitHub and does not test anonymous network access; only the post-publication check above can establish that clients can download public assets.
 
-The existing workflows upload short-lived GitHub Actions artifacts and do not publish releases. No current pilot archive is therefore advertised by a root `inventory.json`. The local preflight validates candidate references, staged bytes and each new PostgreSQL archive's built-in extension declaration before any release operation; it is only one part of the publication checks above.
+The existing workflows upload short-lived GitHub Actions artifacts and do not publish releases. No current pilot archive is therefore advertised by a root `inventory.json`. The local preflight validates candidate references, staged bytes, current-profile publication records for both OS endpoints, and each new PostgreSQL archive's built-in extension declaration before any release operation. Extension records must identify the exact candidate PostgreSQL archive used for assembly at each declared PostgreSQL range endpoint. This local gate does not rerun the recorded tests; it is only one part of the publication checks above.
 
 ## Redistribution review before publication
 
