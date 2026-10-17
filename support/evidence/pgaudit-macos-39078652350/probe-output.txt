@@ -1,0 +1,10 @@
+CREATE EXTENSION
+SET
+CREATE TABLE
+INSERT 0 1
+    payload    
+---------------
+ audit payload
+(1 row)
+
+DO
