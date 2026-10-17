@@ -1,0 +1,156 @@
+libxslt macOS 11 dependency-floor feasibility probe
+version=1.1.45
+architecture=arm64
+macosx_deployment_target=11.0
+source_url=https://download.gnome.org/sources/libxslt/1.1/libxslt-1.1.45.tar.xz
+official_checksum_url=https://download.gnome.org/sources/libxslt/1.1/libxslt-1.1.45.sha256sum
+expected_sha256=9acfe68419c4d06a45c550321b3212762d92f41465062ca4ea19e632ee5d216e
+libxml2_version=2.15.4
+libxml2_source_url=https://download.gnome.org/sources/libxml2/2.15/libxml2-2.15.4.tar.xz
+official_sidecar=9acfe68419c4d06a45c550321b3212762d92f41465062ca4ea19e632ee5d216e  libxslt-1.1.45.tar.xz
+8b6bc8fdf5fc9f71dbf2b4509d92aedd517592436359c2238f346ca1f4e45644  libxslt-1.1.45.news
+sidecar_sha256=9acfe68419c4d06a45c550321b3212762d92f41465062ca4ea19e632ee5d216e
+computed_sha256=9acfe68419c4d06a45c550321b3212762d92f41465062ca4ea19e632ee5d216e
+libxml2_computed_sha256=98087fd181d9070724f3fbc65c7377db03038eb92bd882374daff44940138821
+
+Build log summary:
+199:libtool: install: /usr/bin/install -c .libs/libxml2.16.dylib /Users/runner/work/_temp/libxslt-floor.CXrVsE/xml-prefix/lib/libxml2.16.dylib
+200:libtool: install: (cd /Users/runner/work/_temp/libxslt-floor.CXrVsE/xml-prefix/lib && { ln -s -f libxml2.16.dylib libxml2.dylib || { rm -f libxml2.dylib && ln -s libxml2.16.dylib libxml2.dylib; }; })
+201:libtool: install: /usr/bin/install -c .libs/libxml2.lai /Users/runner/work/_temp/libxslt-floor.CXrVsE/xml-prefix/lib/libxml2.la
+203:  /bin/sh ./libtool   --mode=install /usr/bin/install -c xmllint xmlcatalog '/Users/runner/work/_temp/libxslt-floor.CXrVsE/xml-prefix/bin'
+204:libtool: install: /usr/bin/install -c .libs/xmllint /Users/runner/work/_temp/libxslt-floor.CXrVsE/xml-prefix/bin/xmllint
+205:libtool: install: /usr/bin/install -c .libs/xmlcatalog /Users/runner/work/_temp/libxslt-floor.CXrVsE/xml-prefix/bin/xmlcatalog
+207: /usr/bin/install -c xml2-config '/Users/runner/work/_temp/libxslt-floor.CXrVsE/xml-prefix/bin'
+209: /usr/bin/install -c -m 644 libxml2-config.cmake '/Users/runner/work/_temp/libxslt-floor.CXrVsE/xml-prefix/lib/cmake/libxml2'
+211: /usr/bin/install -c -m 644 libxml-2.0.pc '/Users/runner/work/_temp/libxslt-floor.CXrVsE/xml-prefix/lib/pkgconfig'
+212:Making install in example
+213:make[2]: Nothing to be done for `install-exec-am'.
+214:make[2]: Nothing to be done for `install-data-am'.
+215:Making install in fuzz
+216:make[2]: Nothing to be done for `install-exec-am'.
+217:make[2]: Nothing to be done for `install-data-am'.
+243:checking for a BSD-compatible install... /usr/bin/install -c
+245:checking for a race-free mkdir -p... ./install-sh -c -d
+300:checking for -single_module linker flag... ld: warning: -single_module is obsolete
+437:Making install in libxslt
+438: .././install-sh -c -d '/Users/runner/work/_temp/libxslt-floor.CXrVsE/prefix/lib'
+439: /bin/sh ../libtool   --mode=install /usr/bin/install -c   libxslt.la '/Users/runner/work/_temp/libxslt-floor.CXrVsE/prefix/lib'
+440:libtool: install: /usr/bin/install -c .libs/libxslt.1.dylib /Users/runner/work/_temp/libxslt-floor.CXrVsE/prefix/lib/libxslt.1.dylib
+441:libtool: install: (cd /Users/runner/work/_temp/libxslt-floor.CXrVsE/prefix/lib && { ln -s -f libxslt.1.dylib libxslt.dylib || { rm -f libxslt.dylib && ln -s libxslt.1.dylib libxslt.dylib; }; })
+442:libtool: install: /usr/bin/install -c .libs/libxslt.lai /Users/runner/work/_temp/libxslt-floor.CXrVsE/prefix/lib/libxslt.la
+443:/Applications/Xcode_16.4.app/Contents/Developer/usr/bin/make  install-exec-hook
+444:make[3]: Nothing to be done for `install-exec-hook'.
+445: .././install-sh -c -d '/Users/runner/work/_temp/libxslt-floor.CXrVsE/prefix/share/man/man3'
+446: /usr/bin/install -c -m 644 libxslt.3 '/Users/runner/work/_temp/libxslt-floor.CXrVsE/prefix/share/man/man3'
+447: .././install-sh -c -d '/Users/runner/work/_temp/libxslt-floor.CXrVsE/prefix/include/libxslt'
+448: /usr/bin/install -c -m 644 xsltconfig.h '/Users/runner/work/_temp/libxslt-floor.CXrVsE/prefix/include/libxslt'
+449: .././install-sh -c -d '/Users/runner/work/_temp/libxslt-floor.CXrVsE/prefix/include/libxslt'
+450: /usr/bin/install -c -m 644 xslt.h xsltutils.h pattern.h templates.h variables.h keys.h numbersInternals.h extensions.h extra.h functions.h namespaces.h imports.h attributes.h documents.h preproc.h transform.h transformInternals.h security.h xsltInternals.h xsltexports.h xsltlocale.h '/Users/runner/work/_temp/libxslt-floor.CXrVsE/prefix/include/libxslt'
+451:Making install in libexslt
+452: .././install-sh -c -d '/Users/runner/work/_temp/libxslt-floor.CXrVsE/prefix/lib'
+453: /bin/sh ../libtool   --mode=install /usr/bin/install -c   libexslt.la '/Users/runner/work/_temp/libxslt-floor.CXrVsE/prefix/lib'
+454:libtool: install: /usr/bin/install -c .libs/libexslt.0.dylib /Users/runner/work/_temp/libxslt-floor.CXrVsE/prefix/lib/libexslt.0.dylib
+455:libtool: install: (cd /Users/runner/work/_temp/libxslt-floor.CXrVsE/prefix/lib && { ln -s -f libexslt.0.dylib libexslt.dylib || { rm -f libexslt.dylib && ln -s libexslt.0.dylib libexslt.dylib; }; })
+456:libtool: install: /usr/bin/install -c .libs/libexslt.lai /Users/runner/work/_temp/libxslt-floor.CXrVsE/prefix/lib/libexslt.la
+457: .././install-sh -c -d '/Users/runner/work/_temp/libxslt-floor.CXrVsE/prefix/include/libexslt'
+458: /usr/bin/install -c -m 644 exslt.h exsltexports.h '/Users/runner/work/_temp/libxslt-floor.CXrVsE/prefix/include/libexslt'
+459: .././install-sh -c -d '/Users/runner/work/_temp/libxslt-floor.CXrVsE/prefix/share/man/man3'
+460: /usr/bin/install -c -m 644 libexslt.3 '/Users/runner/work/_temp/libxslt-floor.CXrVsE/prefix/share/man/man3'
+461: .././install-sh -c -d '/Users/runner/work/_temp/libxslt-floor.CXrVsE/prefix/include/libexslt'
+462: /usr/bin/install -c -m 644 exsltconfig.h '/Users/runner/work/_temp/libxslt-floor.CXrVsE/prefix/include/libexslt'
+463:Making install in xsltproc
+464: .././install-sh -c -d '/Users/runner/work/_temp/libxslt-floor.CXrVsE/prefix/bin'
+465:  /bin/sh ../libtool   --mode=install /usr/bin/install -c xsltproc '/Users/runner/work/_temp/libxslt-floor.CXrVsE/prefix/bin'
+466:libtool: install: /usr/bin/install -c .libs/xsltproc /Users/runner/work/_temp/libxslt-floor.CXrVsE/prefix/bin/xsltproc
+467:make[2]: Nothing to be done for `install-data-am'.
+468:Making install in doc
+469:Making install in devhelp
+470:make[3]: Nothing to be done for `install-exec-am'.
+471: ../.././install-sh -c -d '/Users/runner/work/_temp/libxslt-floor.CXrVsE/prefix/share/gtk-doc/html/libxslt'
+472: /usr/bin/install -c -m 644 libxslt.devhelp2 general.html index.html libxslt-attributes.html libxslt-documents.html libxslt-extensions.html libxslt-extra.html libxslt-functions.html libxslt-imports.html libxslt-keys.html libxslt-namespaces.html libxslt-numbersInternals.html libxslt-pattern.html libxslt-preproc.html libxslt-security.html libxslt-templates.html libxslt-transform.html libxslt-variables.html libxslt-xsltexports.html libxslt-xslt.html libxslt-xsltInternals.html libxslt-xsltlocale.html libxslt-xsltutils.html home.png left.png right.png up.png style.css '/Users/runner/work/_temp/libxslt-floor.CXrVsE/prefix/share/gtk-doc/html/libxslt'
+473:Making install in EXSLT/devhelp
+474:make[3]: Nothing to be done for `install-exec-am'.
+475: ../../.././install-sh -c -d '/Users/runner/work/_temp/libxslt-floor.CXrVsE/prefix/share/gtk-doc/html/libexslt'
+476: /usr/bin/install -c -m 644 libexslt.devhelp2 general.html index.html libexslt-exsltexports.html libexslt-exslt.html home.png left.png right.png up.png style.css '/Users/runner/work/_temp/libxslt-floor.CXrVsE/prefix/share/gtk-doc/html/libexslt'
+477:make[3]: Nothing to be done for `install-exec-am'.
+478: .././install-sh -c -d '/Users/runner/work/_temp/libxslt-floor.CXrVsE/prefix/share/man/man1'
+479: /usr/bin/install -c -m 644 xsltproc.1 '/Users/runner/work/_temp/libxslt-floor.CXrVsE/prefix/share/man/man1'
+480: .././install-sh -c -d '/Users/runner/work/_temp/libxslt-floor.CXrVsE/prefix/share/doc/libxslt'
+481: .././install-sh -c -d '/Users/runner/work/_temp/libxslt-floor.CXrVsE/prefix/share/doc/libxslt/tutorial2'
+482: /usr/bin/install -c -m 644  tutorial2/libxslt_pipes.c tutorial2/libxslt_pipes.html '/Users/runner/work/_temp/libxslt-floor.CXrVsE/prefix/share/doc/libxslt/tutorial2'
+483: .././install-sh -c -d '/Users/runner/work/_temp/libxslt-floor.CXrVsE/prefix/share/doc/libxslt/tutorial'
+484: /usr/bin/install -c -m 644  tutorial/libxslt_tutorial.c tutorial/libxslttutorial.html '/Users/runner/work/_temp/libxslt-floor.CXrVsE/prefix/share/doc/libxslt/tutorial'
+485: .././install-sh -c -d '/Users/runner/work/_temp/libxslt-floor.CXrVsE/prefix/share/doc/libxslt/tutorial/images/callouts'
+486: /usr/bin/install -c -m 644  tutorial/images/callouts/1.png tutorial/images/callouts/10.png tutorial/images/callouts/2.png tutorial/images/callouts/3.png tutorial/images/callouts/4.png tutorial/images/callouts/5.png tutorial/images/callouts/6.png tutorial/images/callouts/7.png tutorial/images/callouts/8.png tutorial/images/callouts/9.png '/Users/runner/work/_temp/libxslt-floor.CXrVsE/prefix/share/doc/libxslt/tutorial/images/callouts'
+487: /usr/bin/install -c -m 644  xsltproc.html '/Users/runner/work/_temp/libxslt-floor.CXrVsE/prefix/share/doc/libxslt/.'
+488:Making install in tests
+489:Making install in xmlspec
+490:make[3]: Nothing to be done for `install-exec-am'.
+491:make[3]: Nothing to be done for `install-data-am'.
+492:Making install in multiple
+493:make[3]: Nothing to be done for `install-exec-am'.
+494:make[3]: Nothing to be done for `install-data-am'.
+495:Making install in xinclude
+496:make[3]: Nothing to be done for `install-exec-am'.
+497:make[3]: Nothing to be done for `install-data-am'.
+498:Making install in XSLTMark
+499:make[3]: Nothing to be done for `install-exec-am'.
+500:make[3]: Nothing to be done for `install-data-am'.
+501:Making install in docbook
+502:make[3]: Nothing to be done for `install-exec-am'.
+503:make[3]: Nothing to be done for `install-data-am'.
+504:Making install in fuzz
+505:make[3]: Nothing to be done for `install-exec-am'.
+506:make[3]: Nothing to be done for `install-data-am'.
+507:make[3]: Nothing to be done for `install-exec-am'.
+508:make[3]: Nothing to be done for `install-data-am'.
+509: ./install-sh -c -d '/Users/runner/work/_temp/libxslt-floor.CXrVsE/prefix/bin'
+510: /usr/bin/install -c xslt-config '/Users/runner/work/_temp/libxslt-floor.CXrVsE/prefix/bin'
+511: ./install-sh -c -d '/Users/runner/work/_temp/libxslt-floor.CXrVsE/prefix/lib'
+512: /usr/bin/install -c -m 644 xsltConf.sh '/Users/runner/work/_temp/libxslt-floor.CXrVsE/prefix/lib'
+513: ./install-sh -c -d '/Users/runner/work/_temp/libxslt-floor.CXrVsE/prefix/lib/cmake/libxslt'
+514: /usr/bin/install -c -m 644 libxslt-config.cmake '/Users/runner/work/_temp/libxslt-floor.CXrVsE/prefix/lib/cmake/libxslt'
+515: ./install-sh -c -d '/Users/runner/work/_temp/libxslt-floor.CXrVsE/prefix/lib/cmake/libxslt'
+516: /usr/bin/install -c -m 644 FindGcrypt.cmake '/Users/runner/work/_temp/libxslt-floor.CXrVsE/prefix/lib/cmake/libxslt'
+517: ./install-sh -c -d '/Users/runner/work/_temp/libxslt-floor.CXrVsE/prefix/lib/pkgconfig'
+518: /usr/bin/install -c -m 644 libxslt.pc libexslt.pc '/Users/runner/work/_temp/libxslt-floor.CXrVsE/prefix/lib/pkgconfig'
+
+Produced dylib inspection:
+--- /Users/runner/work/_temp/libxslt-floor.CXrVsE/prefix/lib/libexslt.0.dylib ---
+architectures=arm64
+minimum_os=11.0
+linked=	/Users/runner/work/_temp/libxslt-floor.CXrVsE/prefix/lib/libexslt.0.dylib (compatibility version 9.0.0, current version 9.25.0)
+linked=	/Users/runner/work/_temp/libxslt-floor.CXrVsE/prefix/lib/libxslt.1.dylib (compatibility version 3.0.0, current version 3.45.0)
+linked=	/Users/runner/work/_temp/libxslt-floor.CXrVsE/xml-prefix/lib/libxml2.16.dylib (compatibility version 18.0.0, current version 18.4.0)
+linked=	/usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1351.0.0)
+host_path_reference=found
+host_path=	/Users/runner/work/_temp/libxslt-floor.CXrVsE/prefix/lib/libexslt.0.dylib (compatibility version 9.0.0, current version 9.25.0)
+host_path=	/Users/runner/work/_temp/libxslt-floor.CXrVsE/prefix/lib/libxslt.1.dylib (compatibility version 3.0.0, current version 3.45.0)
+host_path=	/Users/runner/work/_temp/libxslt-floor.CXrVsE/xml-prefix/lib/libxml2.16.dylib (compatibility version 18.0.0, current version 18.4.0)
+host_path=/Users/runner/work/_temp/libxslt-floor.CXrVsE/prefix/lib/libexslt.0.dylib:
+host_path=         name /Users/runner/work/_temp/libxslt-floor.CXrVsE/prefix/lib/libexslt.0.dylib (offset 24)
+host_path=         name /Users/runner/work/_temp/libxslt-floor.CXrVsE/prefix/lib/libxslt.1.dylib (offset 24)
+host_path=         name /Users/runner/work/_temp/libxslt-floor.CXrVsE/xml-prefix/lib/libxml2.16.dylib (offset 24)
+--- /Users/runner/work/_temp/libxslt-floor.CXrVsE/prefix/lib/libxslt.1.dylib ---
+architectures=arm64
+minimum_os=11.0
+linked=	/Users/runner/work/_temp/libxslt-floor.CXrVsE/prefix/lib/libxslt.1.dylib (compatibility version 3.0.0, current version 3.45.0)
+linked=	/Users/runner/work/_temp/libxslt-floor.CXrVsE/xml-prefix/lib/libxml2.16.dylib (compatibility version 18.0.0, current version 18.4.0)
+linked=	/usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1351.0.0)
+host_path_reference=found
+host_path=	/Users/runner/work/_temp/libxslt-floor.CXrVsE/prefix/lib/libxslt.1.dylib (compatibility version 3.0.0, current version 3.45.0)
+host_path=	/Users/runner/work/_temp/libxslt-floor.CXrVsE/xml-prefix/lib/libxml2.16.dylib (compatibility version 18.0.0, current version 18.4.0)
+host_path=/Users/runner/work/_temp/libxslt-floor.CXrVsE/prefix/lib/libxslt.1.dylib:
+host_path=         name /Users/runner/work/_temp/libxslt-floor.CXrVsE/prefix/lib/libxslt.1.dylib (offset 24)
+host_path=         name /Users/runner/work/_temp/libxslt-floor.CXrVsE/xml-prefix/lib/libxml2.16.dylib (offset 24)
+--- /Users/runner/work/_temp/libxslt-floor.CXrVsE/xml-prefix/lib/libxml2.16.dylib ---
+architectures=arm64
+minimum_os=11.0
+linked=	/Users/runner/work/_temp/libxslt-floor.CXrVsE/xml-prefix/lib/libxml2.16.dylib (compatibility version 18.0.0, current version 18.4.0)
+linked=	/usr/lib/libiconv.2.dylib (compatibility version 7.0.0, current version 7.0.0)
+linked=	/usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1351.0.0)
+host_path_reference=found
+host_path=	/Users/runner/work/_temp/libxslt-floor.CXrVsE/xml-prefix/lib/libxml2.16.dylib (compatibility version 18.0.0, current version 18.4.0)
+host_path=/Users/runner/work/_temp/libxslt-floor.CXrVsE/xml-prefix/lib/libxml2.16.dylib:
+host_path=         name /Users/runner/work/_temp/libxslt-floor.CXrVsE/xml-prefix/lib/libxml2.16.dylib (offset 24)
+outcome=unmodified source builds of libxml2 and libxslt passed; relocation requires final-archive verification
