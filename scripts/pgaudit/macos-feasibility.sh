@@ -1,0 +1,160 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+core_archives=${1:?usage: macos-feasibility.sh CORE_ARCHIVE_DIRECTORY OUTPUT_DIRECTORY}
+output=${2:?usage: macos-feasibility.sh CORE_ARCHIVE_DIRECTORY OUTPUT_DIRECTORY}
+architecture=arm64
+pg_version=18.6
+pgaudit_version=18.0
+source_url='https://github.com/pgaudit/pgaudit/archive/refs/tags/18.0.tar.gz'
+source_sha256=988e8afeda320ebe0a3e632ef6b6bce5d3a08346c2e100a173a585c9521d1fa5
+core_sha256=853e0eafb3570378225d2ea16247c9de31770f85df5230509885df2ca5e89d67
+repo=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
+core_archives=$(cd "$core_archives" && pwd)
+mkdir -p "$output"
+output=$(cd "$output" && pwd)
+
+if [[ $(uname -s) != Darwin || $(uname -m) != "$architecture" ]]; then
+  echo "This feasibility probe requires native macOS $architecture" >&2
+  exit 1
+fi
+
+core_name="postgresql-${pg_version}-macos-${architecture}.tar.gz"
+core_archive="$core_archives/$core_name"
+test -s "$core_archive" && test -s "$core_archive.sha256"
+cd "$core_archives"
+shasum -a 256 -c "$core_name.sha256"
+printf '%s  %s\n' "$core_sha256" "$core_name" | shasum -a 256 -c -
+
+work=$(mktemp -d /tmp/pgaudit-macos.XXXXXX)
+cleanup() {
+  if [[ -n ${pg_ctl:-} && -n ${data_dir:-} ]]; then
+    "$pg_ctl" -D "$data_dir" -m immediate stop >/dev/null 2>&1 || true
+  fi
+  if [[ -n ${prefix_link:-} && -L $prefix_link ]]; then
+    rm "$prefix_link"
+  fi
+  rm -rf "$work"
+}
+trap cleanup EXIT
+mkdir -p "$work/source" "$work/first" "$work/extension" "$work/moved" "$work/socket"
+tar -xzf "$core_archive" -C "$work/first"
+pgroot="$work/first/postgresql"
+test -s "$pgroot/include/server/pg_config.h"
+test -s "$pgroot/lib/pgxs/src/makefiles/pgxs.mk"
+
+python3 - "$pgroot" > "$work/prefix" <<'PY'
+import json
+import pathlib
+import re
+import sys
+
+root = pathlib.Path(sys.argv[1])
+manifest = json.loads((root / "manifest.json").read_text())
+expected = {
+    "component": "postgresql",
+    "version": "18.6",
+    "postgresql_version": "18.6",
+    "platform": "macos",
+    "architecture": "arm64",
+    "build_id": "github-39075939632-1",
+    "source_revision": "457919a19e43687a9615697a751454e3c055c593",
+}
+for key, value in expected.items():
+    if manifest.get(key) != value:
+        raise SystemExit(f"core archive manifest mismatch for {key}: {manifest.get(key)!r}")
+header = (root / "include/server/pg_config.h").read_text()
+match = re.search(r'#define CONFIGURE_ARGS "[^\n]*?--prefix=([^\']+)', header)
+if not match:
+    raise SystemExit("cannot read the original PostgreSQL installation prefix")
+prefix = pathlib.Path(match.group(1))
+if not re.fullmatch(r"/Users/runner/work/_temp/pg-macos-pilot\.[A-Za-z0-9]+/install/postgresql", str(prefix)):
+    raise SystemExit(f"unexpected original PostgreSQL prefix: {prefix}")
+print(prefix)
+PY
+prefix=$(cat "$work/prefix")
+# pg_config and PGXS retain the build prefix. Recreate it as a temporary link to
+# the extracted archive so their generated paths resolve without editing source.
+prefix_link=$prefix
+if [[ -e "$prefix_link" || -L "$prefix_link" ]]; then
+  echo "Refusing to replace existing PostgreSQL prefix path: $prefix_link" >&2
+  exit 1
+fi
+mkdir -p "$(dirname "$prefix_link")"
+ln -s "$pgroot" "$prefix_link"
+pg_config="$prefix_link/bin/pg_config"
+test "$("$pg_config" --version)" = "PostgreSQL $pg_version"
+export MACOSX_DEPLOYMENT_TARGET=11.0
+
+cd "$work/source"
+curl -fL --retry 3 -o pgaudit.tar.gz "$source_url"
+printf '%s  %s\n' "$source_sha256" pgaudit.tar.gz | shasum -a 256 -c -
+test "$(tar -tzf pgaudit.tar.gz | cut -d/ -f1 | sort -u)" = pgaudit-18.0
+tar -xzf pgaudit.tar.gz
+cd "$work/source/pgaudit-18.0"
+test "$(sed -n "s/^default_version = '\([^']*\)'/\1/p" pgaudit.control)" = "$pgaudit_version"
+make USE_PGXS=1 PG_CONFIG="$pg_config" -j "$(sysctl -n hw.ncpu)"
+stage="$work/stage"
+make USE_PGXS=1 PG_CONFIG="$pg_config" install DESTDIR="$stage"
+
+# PGXS uses the configured absolute prefix under DESTDIR. Copy only pgAudit's
+# installed module and extension files into the standalone extension payload.
+staged_root="$stage$prefix"
+package="$work/package"
+mkdir -p "$package/pgaudit/lib" "$package/pgaudit/share/extension" "$package/pgaudit/LICENSES"
+module="$staged_root/lib/pgaudit.dylib"
+test -s "$module"
+cp "$module" "$package/pgaudit/lib/"
+cp "$staged_root/share/extension/"pgaudit* "$package/pgaudit/share/extension/"
+cat LICENSE "$pgroot/LICENSES/PostgreSQL.txt" > "$package/pgaudit/LICENSES/pgAudit.txt"
+grep -Fq 'This code is released under the PostgreSQL licence' "$package/pgaudit/LICENSES/pgAudit.txt"
+grep -Fq 'Permission to use, copy, modify, and distribute this software' "$package/pgaudit/LICENSES/pgAudit.txt"
+cat > "$package/metadata.json" <<EOF
+{"project":"pgaudit","version":"$pgaudit_version","sql_names":["pgaudit"],"requires":[],"configuration_prerequisites":[{"type":"postgresql_setting","name":"shared_preload_libraries","value":"pgaudit"}],"runtime_prerequisites":[],"postgresql_version":"$pg_version","platform":"macos","architecture":"$architecture","source":{"url":"$source_url","sha256":"$source_sha256"},"core_archive":{"basename":"$core_name","sha256":"$core_sha256"}}
+EOF
+
+extension_name="pgaudit-${pgaudit_version}-postgresql-${pg_version}-macos-${architecture}.tar.gz"
+tar -C "$package" -czf "$output/$extension_name" pgaudit metadata.json
+cd "$output"
+shasum -a 256 "$extension_name" > "$extension_name.sha256"
+
+# Test only the extracted archive contents after moving the assembled tree.
+shasum -a 256 -c "$extension_name.sha256"
+tar -xzf "$output/$extension_name" -C "$work/extension"
+python3 - "$work/extension/pgaudit" "$pgroot" <<'PY'
+from pathlib import Path
+import sys
+
+extension, core = map(Path, sys.argv[1:])
+for source in extension.rglob("*"):
+    destination = core / source.relative_to(extension)
+    if destination.exists() or destination.is_symlink():
+        if source.is_dir() and destination.is_dir() and not source.is_symlink() and not destination.is_symlink():
+            continue
+        raise SystemExit(f"extension payload collision: {source.relative_to(extension)}")
+PY
+ditto "$work/extension/pgaudit" "$pgroot"
+mv "$pgroot" "$work/moved/postgresql"
+pgroot="$work/moved/postgresql"
+python3 "$repo/scripts/macos/static_analysis.py" "$pgroot" "$architecture" \
+  --archive "$core_archive" --archive "$output/$extension_name" \
+  --report "$output/static-analysis.json"
+
+data_dir="$work/data"
+pg_ctl="$pgroot/bin/pg_ctl"
+export DYLD_LIBRARY_PATH= DYLD_FALLBACK_LIBRARY_PATH=
+"$pgroot/bin/initdb" -D "$data_dir" --encoding=UTF8 --locale=C --no-instructions >/dev/null
+"$pg_ctl" -D "$data_dir" -l "$work/server.log" -o \
+  "-k $work/socket -p 55432 -h '' -c shared_preload_libraries=pgaudit -c logging_collector=on -c log_directory=log -c log_filename=pgaudit.log" -w start
+"$pgroot/bin/psql" -X -v ON_ERROR_STOP=1 -h "$work/socket" -p 55432 \
+  -d postgres -f "$repo/scripts/pgaudit/probe.sql" | tee "$output/probe-output.txt"
+log_file="$data_dir/log/pgaudit.log"
+test -s "$log_file"
+grep -F 'AUDIT: SESSION' "$log_file" > "$output/audit-log-extract.txt"
+grep -F 'DDL' "$log_file" | grep -F 'CREATE TABLE public.pgaudit_probe' >> "$output/audit-log-extract.txt"
+grep -F 'WRITE' "$log_file" | grep -F 'INSERT INTO public.pgaudit_probe' >> "$output/audit-log-extract.txt"
+grep -F 'READ' "$log_file" | grep -F 'SELECT payload FROM public.pgaudit_probe' >> "$output/audit-log-extract.txt"
+"$pg_ctl" -D "$data_dir" -m fast -w stop
+data_dir=
+pg_ctl=
+echo "PASS: pgAudit $pgaudit_version built from PostgreSQL $pg_version archive and verified after relocation on macOS $architecture"
