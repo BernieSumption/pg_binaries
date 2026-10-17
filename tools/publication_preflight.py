@@ -283,7 +283,8 @@ def _archive_redistribution(path, *, metadata_sibling=False):
         raise PreflightError(f"cannot read staged archive licence evidence: {exc}") from exc
 
 
-def _extension_metadata(path, archive_project, version, sql_names, requires, platform):
+def _extension_metadata(path, archive_project, version, sql_names, requires, platform,
+                        postgresql_target):
     """Check the extension payload root and its archive-level metadata."""
     try:
         with tarfile.open(path, "r:gz") as archive:
@@ -311,6 +312,17 @@ def _extension_metadata(path, archive_project, version, sql_names, requires, pla
             os_name, architecture = platform.split("-", 1)
             if metadata.get("platform") != os_name or metadata.get("architecture") != architecture:
                 raise PreflightError("extension metadata platform does not match candidate")
+            pg_version = metadata.get("postgresql_version")
+            if not isinstance(pg_version, str) or not re.fullmatch(r"\d+\.\d+", pg_version):
+                raise PreflightError("extension metadata requires a PostgreSQL build version")
+            if "-to-" in postgresql_target:
+                low, high = postgresql_target.split("-to-", 1)
+                if not (_coverage.version_parts(low, "filename PostgreSQL range")
+                        <= _coverage.version_parts(pg_version, "extension PostgreSQL build version")
+                        <= _coverage.version_parts(high, "filename PostgreSQL range")):
+                    raise PreflightError("extension metadata PostgreSQL build version is outside filename range")
+            elif pg_version != postgresql_target:
+                raise PreflightError("extension metadata PostgreSQL build version does not match filename")
             names = metadata.get("sql_names")
             if (not isinstance(names, list) or not names
                     or any(not isinstance(name, str) or not name for name in names)
@@ -491,6 +503,10 @@ def preflight_candidate(base_inventory, candidate, support, snapshot, staged_ass
         if url in extension_assets:
             (project, version, _platform), _associated_names = extension_assets[url]
             archive_project = project.lower()
+            filename = url.rsplit("/", 1)[-1]
+            prefix = f"{archive_project}-{version}-postgresql-"
+            suffix = f"-{_platform}.tar.gz"
+            postgresql_target = filename[len(prefix):-len(suffix)]
             project_requires = support["extensions"][project].get("requires", [])
             if not isinstance(project_requires, list):
                 raise PreflightError(f"support prerequisites must be a list for {project}")
@@ -500,7 +516,8 @@ def preflight_candidate(base_inventory, candidate, support, snapshot, staged_ass
                     raise PreflightError(f"candidate prerequisites do not match support for {project}")
             _extension_metadata(
                 path, archive_project, version,
-                support["extensions"][project]["sql_names"], project_requires, _platform)
+                support["extensions"][project]["sql_names"], project_requires, _platform,
+                postgresql_target)
             _archive_redistribution(path, metadata_sibling=True)
         else:
             _archive_redistribution(path)

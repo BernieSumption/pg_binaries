@@ -137,6 +137,7 @@ class PublicationPreflightTests(unittest.TestCase):
             os_name, architecture = platform.split("-", 1)
             metadata = json.dumps({"project": "example", "version": "1.0",
                                    "platform": os_name, "architecture": architecture,
+                                   "postgresql_version": "15.9",
                                    "sql_names": ["example"], "requires": [],
                                    "configuration_prerequisites": [],
                                    "runtime_prerequisites": []}).encode()
@@ -474,6 +475,28 @@ class PublicationPreflightTests(unittest.TestCase):
     def test_rejects_missing_extension_metadata_architecture(self):
         self._rewrite_metadata(lambda metadata: metadata.pop("architecture"))
         with self.assertRaisesRegex(publication_preflight.PreflightError, "platform does not match candidate"):
+            self.check()
+
+    def test_rejects_missing_extension_metadata_postgresql_version(self):
+        self._rewrite_metadata(lambda metadata: metadata.pop("postgresql_version"))
+        with self.assertRaisesRegex(publication_preflight.PreflightError, "requires a PostgreSQL build version"):
+            self.check()
+
+    def test_rejects_extension_metadata_postgresql_version_mismatch(self):
+        self._rewrite_metadata(lambda metadata: metadata.update(postgresql_version="15.8"))
+        with self.assertRaisesRegex(publication_preflight.PreflightError, "does not match filename"):
+            self.check()
+
+    def test_accepts_extension_metadata_build_version_within_filename_range(self):
+        old_url = next(url for url in self.staged if "example-1.0-postgresql-15.9-linux-x86_64" in url)
+        self._rename_new_url(old_url, "example-1.0-postgresql-15.9-to-15.9-linux-x86_64.tar.gz")
+        self.assertEqual(self.check()["preflight_status"], "passed")
+
+    def test_rejects_extension_metadata_build_version_outside_filename_range(self):
+        self._rewrite_metadata(lambda metadata: metadata.update(postgresql_version="15.8"))
+        old_url = next(url for url in self.staged if "example-1.0-postgresql-15.9-linux-x86_64" in url)
+        self._rename_new_url(old_url, "example-1.0-postgresql-15.9-to-15.9-linux-x86_64.tar.gz")
+        with self.assertRaisesRegex(publication_preflight.PreflightError, "outside filename range"):
             self.check()
 
     def test_rejects_extension_archive_extra_root(self):
