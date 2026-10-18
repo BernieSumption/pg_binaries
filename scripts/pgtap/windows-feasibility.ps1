@@ -150,7 +150,7 @@ try {
     'share/extension/pgtap--0.95.0--0.96.0.sql' = 'd3ffb0f71447e46d7c0669390115b7919875b54761300a067585a085346c12e1'
   }
   $knownPayloadHashes['share/extension/pgtap--0.96.0--0.97.0.sql'] = '68a1b15159c75615f26d4f3b5cda22a104cd5aeb05d66e158767aad11b436153'
-  $knownPayloadHashes['share/extension/pgtap--0.97.0--0.98.0.sql'] = 'b7d0fb5784d8bc866ea2e6abad2d5c9178b353eff42fd98c6687b35cb954ce6'
+  $knownPayloadHashes['share/extension/pgtap--0.97.0--0.98.0.sql'] = 'b7d0fb5784d8bc866aa2e6abad2ad5c9178b353eff42fd98c6687b35cb954ce6'
   $knownPayloadHashes['share/extension/pgtap--0.98.0--0.99.0.sql'] = '14b307769e0d932db20859d23c36148ada3639df3cf03e19fc38e3edcd268100'
   $knownPayloadHashes['share/extension/pgtap--0.99.0--1.0.0.sql'] = '54a2d55f6fe046af7836aa0ce110b46fd818834650c1f788d5fb5f12f2abbf50'
   $knownPayloadHashes['share/extension/pgtap--1.0.0--1.1.0.sql'] = 'bd86f1cda33574fc287ef05114968456f7ef28b5bfe1a874e93bcc118b734fb0'
