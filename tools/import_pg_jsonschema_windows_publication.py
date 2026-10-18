@@ -54,7 +54,7 @@ def import_run(root, core_artifact, extension_artifact, run_id):
             or attempt.get("postgresql_version") != publication.PG_VERSION
             or attempt.get("pg_jsonschema_version") != publication.PG_JSONSCHEMA_VERSION
             or attempt.get("release_eligible") is not False
-            or attempt.get("core_status") != "temporary-development-core"
+            or attempt.get("core_status") != publication.CORE_STATUS
             or not coverage.REVISION.fullmatch(str(attempt.get("source_revision", "")))):
         raise coverage.CoverageError("raw attempt identity does not match the requested run and profile")
     raw_steps = attempt.get("steps")
@@ -62,6 +62,7 @@ def import_run(root, core_artifact, extension_artifact, run_id):
             or any(value not in {"success", "failure", "skipped", "cancelled", "timed_out"}
                    for value in raw_steps.values())):
         raise coverage.CoverageError("raw attempt must retain each publication case outcome")
+    publication.validate_core_verification(root)
     results = {case: publication._step(value, case) for case, value in raw_steps.items()}
     evidence = root / "support/evidence" / f"pg_jsonschema-windows-publication-{run_id}" / publication.ARCHITECTURE
     copies = []
@@ -101,7 +102,7 @@ def import_run(root, core_artifact, extension_artifact, run_id):
         "postgresql_version": publication.PG_VERSION, "architecture": publication.ARCHITECTURE,
         "platform": publication.PLATFORM, "endpoint": "current", "case_results": results,
         "archives": digests, "extension_archive": extension_name,
-        "release_eligible": False, "core_status": "temporary-development-core",
+        "release_eligible": False, "core_status": publication.CORE_STATUS,
     }
     if any(receipt.get(key) != value for key, value in expected_receipt.items()):
         raise coverage.CoverageError("receipt identity or archive hashes differ from the raw attempt")
@@ -150,7 +151,7 @@ def import_run(root, core_artifact, extension_artifact, run_id):
         "sha256": digests[extension_name],
         "assembled_core": {"archive": core_name, "sha256": digests[core_name], "version": publication.PG_VERSION},
         "prerequisite_archives": [], "release_eligible": False,
-        "core_status": "temporary-development-core",
+        "core_status": publication.CORE_STATUS,
     }
     if (any(record.get(key) != value for key, value in expected_record.items())
             or record_path.name != f"pg_jsonschema-{publication.PG_JSONSCHEMA_VERSION}-postgresql-{publication.PG_VERSION}-{publication.PLATFORM}-current-{run_id}.json"

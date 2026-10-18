@@ -51,8 +51,8 @@ def inspect(core_archive, extension_archive, report_path, pe_report_path=None):
             expected_manifest = {
                 "component": "postgresql", "version": publication.PG_VERSION,
                 "postgresql_version": publication.PG_VERSION, "platform": "windows",
-                "architecture": publication.ARCHITECTURE, "build_id": "github-39077749917-1",
-                "source_revision": "54f7a3079e7cb6631bf48ab2453822133087aeed",
+                "architecture": publication.ARCHITECTURE, "build_id": publication.CORE_BUILD_ID,
+                "source_revision": publication.CORE_SOURCE_REVISION,
             }
             if not isinstance(core, dict) or any(core.get(key) != value for key, value in expected_manifest.items()):
                 raise coverage.CoverageError("core archive manifest differs from the pinned build")
@@ -86,7 +86,7 @@ def inspect(core_archive, extension_archive, report_path, pe_report_path=None):
                            "cargo_lock_sha256": publication.CARGO_LOCK_SHA256},
                 "core_archive": {"basename": expected_core, "sha256": publication.CORE_SHA256},
                 "release_eligible": False,
-                "core_status": "temporary-development-core",
+                "core_status": publication.CORE_STATUS,
             }
             if not isinstance(metadata, dict) or any(metadata.get(key) != value for key, value in expected.items()):
                 raise coverage.CoverageError("pg_jsonschema metadata does not bind the exact source and core inputs")
@@ -128,7 +128,7 @@ def inspect(core_archive, extension_archive, report_path, pe_report_path=None):
         "architecture": publication.ARCHITECTURE, "archives": digests,
         "inspected_files": sorted(inspected), "native_extension_files": sorted(native),
         "pe_dependency_analysis_sha256": pe_digest,
-        "checks": ["pinned-core-manifest", "safe-archive-paths", "source-and-core-metadata",
+        "checks": ["current-profile-core-manifest", "safe-archive-paths", "source-and-core-metadata",
                    "project-named-licence-inventory", "native-extension-identity",
                    "archive-bound-pe-dependency-analysis"],
         "limits": ["The PostgreSQL PE dependency checker separately inspects the relocated core plus extension DLL."],

@@ -4,6 +4,7 @@ import hashlib
 import io
 import json
 from pathlib import Path
+import shutil
 import sys
 import tarfile
 import tempfile
@@ -41,8 +42,8 @@ class PgJsonschemaWindowsArchiveTests(unittest.TestCase):
     def _archives(self, release_eligible=False, unsafe=False, inventory=True):
         manifest = {
             "component": "postgresql", "version": "18.6", "postgresql_version": "18.6",
-            "platform": "windows", "architecture": "x86_64", "build_id": "github-39077749917-1",
-            "source_revision": "54f7a3079e7cb6631bf48ab2453822133087aeed",
+            "platform": "windows", "architecture": "x86_64", "build_id": publication.CORE_BUILD_ID,
+            "source_revision": publication.CORE_SOURCE_REVISION,
         }
         self._tar(self.core, [("postgresql/manifest.json", json.dumps(manifest))])
         core_hash = hashlib.sha256(self.core.read_bytes()).hexdigest()
@@ -53,7 +54,7 @@ class PgJsonschemaWindowsArchiveTests(unittest.TestCase):
                        "cargo_lock_sha256": publication.CARGO_LOCK_SHA256},
             "core_archive": {"basename": self.core.name, "sha256": core_hash},
             "release_eligible": release_eligible,
-            "core_status": "temporary-development-core",
+            "core_status": publication.CORE_STATUS,
         }
         prefix = "../escape" if unsafe else "pg_jsonschema"
         entries = [
@@ -70,7 +71,7 @@ class PgJsonschemaWindowsArchiveTests(unittest.TestCase):
         self._tar(self.extension, entries)
         return core_hash
 
-    def test_inspects_native_extension_and_temporary_core_metadata(self):
+    def test_inspects_native_extension_and_current_profile_core_metadata(self):
         core_hash = self._archives()
         pe_report = self.root / "pe-report.json"
         extension_hash = hashlib.sha256(self.extension.read_bytes()).hexdigest()
@@ -87,7 +88,7 @@ class PgJsonschemaWindowsArchiveTests(unittest.TestCase):
         self.assertIn("project-named-licence-inventory", report["checks"])
         self.assertEqual(report["pe_dependency_analysis_sha256"], hashlib.sha256(pe_report.read_bytes()).hexdigest())
 
-    def test_rejects_release_eligible_temporary_core(self):
+    def test_rejects_release_eligible_extension_metadata(self):
         core_hash = self._archives(release_eligible=True)
         with patch.object(publication, "CORE_SHA256", core_hash):
             with self.assertRaisesRegex(Exception, "metadata"):
@@ -98,6 +99,37 @@ class PgJsonschemaWindowsArchiveTests(unittest.TestCase):
         with patch.object(publication, "CORE_SHA256", core_hash):
             with self.assertRaisesRegex(Exception, "unsafe path"):
                 checker.inspect(self.core, self.extension, self.root / "report.json")
+
+    def test_emit_retains_attempt_before_rejecting_stale_core_record(self):
+        repo = self.root / "repo"
+        for relative in ("support.json", "support/verification-profiles.json",
+                         "support/postgresql-releases.json"):
+            destination = repo / relative
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(relative, destination)
+        profiles = json.loads((repo / "support/verification-profiles.json").read_text())["profiles"]
+        for profile_id in (publication.PROFILE_ID, publication.CORE_PROFILE_ID):
+            for relative in profiles[profile_id]["sources"]:
+                destination = repo / relative
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copyfile(relative, destination)
+        record_path = repo / "support/verification" / (
+            f"postgresql-18.6-windows-x86_64-current-{publication.CORE_RUN_ID}.json")
+        record_path.parent.mkdir(parents=True, exist_ok=True)
+        record = json.loads((Path("support/verification") / record_path.name).read_text())
+        record["profile_revision"] = "0" * 64
+        record_path.write_text(json.dumps(record))
+        output = self.root / "output"
+        with self.assertRaisesRegex(Exception, "test profile does not match current suite"):
+            publication.emit(
+                repo, self.root / "core", self.root / "archives", output,
+                {"archive-suite": "success", "static-analysis": "success"},
+                "10.0.20348.0", "windows-2022/test-image",
+                {"GITHUB_SHA": "a" * 40, "GITHUB_RUN_ID": "123",
+                 "GITHUB_REPOSITORY": "owner/repo", "GITHUB_SERVER_URL": "https://github.com"})
+        attempt = output / "publication/attempt.json"
+        self.assertTrue(attempt.is_file())
+        self.assertEqual(json.loads(attempt.read_text())["run_id"], "123")
         core_hash = self._archives(inventory=False)
         with patch.object(publication, "CORE_SHA256", core_hash):
             with self.assertRaisesRegex(Exception, "licence inventory"):
@@ -111,12 +143,26 @@ class PgJsonschemaWindowsArchiveTests(unittest.TestCase):
             destination = repo / relative
             destination.parent.mkdir(parents=True, exist_ok=True)
             destination.write_bytes(Path(relative).read_bytes())
+        core_record = Path("support/verification") / (
+            f"postgresql-18.6-windows-x86_64-current-{publication.CORE_RUN_ID}.json")
+        destination = repo / core_record
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        core_verification = json.loads(core_record.read_text())
         profile = json.loads((repo / "support/verification-profiles.json").read_text())[
             "profiles"][publication.PROFILE_ID]
         for relative in profile["sources"]:
             source, destination = Path(relative), repo / relative
             destination.parent.mkdir(parents=True, exist_ok=True)
             destination.write_bytes(source.read_bytes())
+        core_profile = json.loads((repo / "support/verification-profiles.json").read_text())[
+            "profiles"][publication.CORE_PROFILE_ID]
+        for relative in core_profile["sources"]:
+            source, destination = Path(relative), repo / relative
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            destination.write_bytes(source.read_bytes())
+        core_verification["profile_revision"] = publication.coverage.verification_profile(
+            repo, publication.CORE_PROFILE_ID)["profile_revision"]
+        destination.write_text(json.dumps(core_verification))
         artifact = self.root / "artifact"
         pub = artifact / "publication"
         pub.mkdir(parents=True)
@@ -124,7 +170,7 @@ class PgJsonschemaWindowsArchiveTests(unittest.TestCase):
             "schema_version": 1, "run_id": "999", "source_revision": "a" * 40,
             "profile_id": publication.PROFILE_ID, "postgresql_version": "18.6",
             "pg_jsonschema_version": "0.3.4", "architecture": "x86_64",
-            "release_eligible": False, "core_status": "temporary-development-core",
+            "release_eligible": False, "core_status": publication.CORE_STATUS,
             "steps": {"archive-suite": "success", "static-analysis": "success"},
         }))
         with self.assertRaisesRegex(Exception, "raw attempt identity"):

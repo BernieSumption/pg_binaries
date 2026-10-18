@@ -9,9 +9,9 @@ $pgVersion = '18.6'
 $extensionVersion = '0.3.4'
 $extensionCommit = 'cbe74b570d38aa0c4d42914e7a118bcb3adaee7a'
 $cargoLockSha256 = 'ab865dc25d9eea4bf7dbfaf8fae13283e5c0bce4bca460fe10464c6716e67028'
-$coreSha256 = '2e48881e4b5c3289bc9526ee846685d62f6cfa4fff2539cb6393f36f605fcceb'
+$coreSha256 = '19ee6d8c09136eacbeca353c9d4f71eca0104982dce632e10c723ebb63406712'
 $coreName = "postgresql-$pgVersion-windows-x86_64.tar.gz"
-$coreBuildId = 'github-39077749917-1'
+$coreBuildId = 'github-39087778141-1'
 $repo = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
 New-Item -ItemType Directory -Force $OutputDirectory | Out-Null
 $OutputDirectory = (Resolve-Path $OutputDirectory).Path
@@ -81,7 +81,7 @@ try {
   if ($manifest.component -cne 'postgresql' -or $manifest.version -cne $pgVersion -or
       $manifest.platform -cne 'windows' -or $manifest.architecture -cne 'x86_64' -or
       $manifest.build_id -cne $coreBuildId) {
-    throw 'The downloaded PostgreSQL archive manifest does not match the pinned Windows 18.6 build.'
+    throw 'The downloaded PostgreSQL archive manifest does not match the pinned current-profile Windows 18.6 build.'
   }
   $pgConfig = Join-Path $pgRoot 'bin/pg_config.exe'
   foreach ($exe in @($pgConfig,(Join-Path $pgRoot 'bin/initdb.exe'),(Join-Path $pgRoot 'bin/pg_ctl.exe'),(Join-Path $pgRoot 'bin/psql.exe'))) {
@@ -174,7 +174,7 @@ try {
     postgresql_version = $pgVersion; platform = 'windows'; architecture = 'x86_64'
     source = @{ url = 'https://github.com/supabase/pg_jsonschema.git'; commit = $actualCommit; cargo_lock_sha256 = $cargoLockSha256 }
     core_archive = @{ basename = $coreName; sha256 = $coreSha256 }
-    release_eligible = $false; core_status = 'temporary-development-core'
+    release_eligible = $false; core_status = 'current-profile-core-redistribution-pending'
   }
   $metadata | ConvertTo-Json -Depth 8 | Set-Content -Encoding utf8 (Join-Path $stage 'metadata.json')
   & tar.exe -czf $extensionArchive -C $stage pg_jsonschema metadata.json

@@ -5,22 +5,37 @@ on:
   push:
     branches: [spike]
     paths:
+      - '.github/workflows/profile-change-scope.yml'
+      - 'tools/profile_change_gate.py'
+      - 'tests/test_profile_change_gate.py'
       - '.github/workflows/pg-jsonschema-windows-publication.yml'
       - 'scripts/pg_jsonschema/windows-feasibility.ps1'
       - 'scripts/pg_jsonschema/probe.sql'
       - 'tools/check_pg_jsonschema_windows_archive.py'
       - 'tools/check_pe_dependencies.py'
+      - 'tools/coverage.py'
       - 'tools/emit_pg_jsonschema_windows_publication.py'
       - 'tools/import_pg_jsonschema_windows_publication.py'
+      - 'tools/inventory_cargo_licenses.py'
       - 'tests/test_check_pe_dependencies.py'
       - 'tests/test_pg_jsonschema_windows_publication.py'
+      - 'support/verification-profiles.json'
+      - 'support/postgresql-releases.json'
+      - 'support.json'
 
 permissions:
   actions: read
   contents: read
 
 jobs:
+  profile_scope:
+    uses: ./.github/workflows/profile-change-scope.yml
+    with:
+      profile_id: pg-jsonschema-publication-windows-x86_64-18.6
+
   publish-candidate:
+    needs: profile_scope
+    if: needs.profile_scope.outputs.should_run == 'true'
     runs-on: windows-2022
     timeout-minutes: 60
     defaults:
@@ -33,11 +48,11 @@ jobs:
           python-version: '3.12'
       - name: Test archive inspection and evidence import
         run: python -B -m unittest tests/test_pg_jsonschema_windows_publication.py
-      - name: Download the pinned temporary PostgreSQL 18.6 core archive
+      - name: Download the current-profile PostgreSQL 18.6 core archive
         uses: actions/download-artifact@v4
         with:
           name: windows-postgresql-18.6-pilot
-          run-id: 39077749917
+          run-id: 39087778141
           github-token: ${{ github.token }}
           path: ${{ runner.temp }}/core-archives
       - name: Build upstream source, package extension and run relocated SQL probe
