@@ -133,7 +133,7 @@ class ActionsCandidateDiscoveryTests(unittest.TestCase):
 
     def test_rejects_wrong_run_identity_and_current_run(self):
         for field, value in (("head_branch", "main"), ("head_sha", "invalid"),
-                             ("event", "workflow_dispatch"),
+                             ("event", "pull_request"),
                              ("conclusion", "failure"), ("id", 999)):
             with self.subTest(field=field):
                 self.run[field] = value
@@ -142,6 +142,17 @@ class ActionsCandidateDiscoveryTests(unittest.TestCase):
                 self.assertEqual(json.loads((self.root / "manifest.json").read_text())["archives"], [])
                 self.run[field] = {"head_branch": "spike", "head_sha": "a" * 40,
                                    "event": "push", "conclusion": "success", "id": 123}[field]
+
+    def test_accepts_checked_manual_dispatch_run(self):
+        self.run["event"] = "workflow_dispatch"
+        self.artifact["name"] = "linux-core"
+        with patch.object(discovery.subprocess, "run", side_effect=self.fake_run):
+            discovery.discover(repository=self.repo, workflow="build.yml", branch="spike",
+                current_run_id="999", artifact_name_template="linux-core",
+                archive_basename=self.archive_name, project="PostgreSQL", version="15.10",
+                platform="linux-x86_64", postgresql_version="15.10",
+                output_directory=self.root / "out", manifest_path=self.root / "manifest.json")
+        self.assertEqual(len(json.loads((self.root / "manifest.json").read_text())["archives"]), 1)
 
     def test_digest_mismatch_is_rejected(self):
         self.artifact["digest"] = "sha256:" + "0" * 64

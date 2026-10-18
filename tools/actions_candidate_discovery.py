@@ -67,7 +67,8 @@ def _run_matches(run, repository, workflow, branch, current_run_id):
             and str(run.get("path", "")).rsplit("/", 1)[-1] == workflow
             and isinstance(run.get("head_sha"), str)
             and re.fullmatch(r"[0-9a-f]{40}", run["head_sha"]) is not None
-            and run.get("head_branch") == branch and run.get("event") == "push"
+            and run.get("head_branch") == branch
+            and run.get("event") in {"push", "workflow_dispatch"}
             and run.get("status") == "completed" and run.get("conclusion") == "success"
             and str(run.get("id")) != str(current_run_id))
 
