@@ -10,7 +10,13 @@ on:
   push:
     branches: [spike]
     paths:
-      - scripts/macos/**
+      - scripts/macos/build.sh
+      - scripts/macos/build-source-dependencies.sh
+      - scripts/macos/bundle.py
+      - scripts/macos/licenses.py
+      - scripts/macos/verify.sh
+      - scripts/macos/static_analysis.py
+      - scripts/macos/diagnostics.sh
       - support.json
       - support/postgresql-releases.json
       - inventory.json

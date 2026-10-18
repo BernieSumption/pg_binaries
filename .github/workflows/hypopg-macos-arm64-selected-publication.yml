@@ -29,6 +29,8 @@ on:
       - 'experiments/hypopg-macos-target-trial/target.json'
       - 'scripts/hypopg/macos-feasibility.sh'
       - 'scripts/macos/core-prefix.sh'
+      - 'scripts/macos/resolve-core.sh'
+      - 'tools/macos_core_target_config.py'
 
 permissions:
   actions: read
@@ -41,11 +43,10 @@ jobs:
       postgresql_version: ${{ steps.plan.outputs.postgresql_version }}
       extension_version: ${{ steps.plan.outputs.selected_version }}
       pin_path: ${{ steps.plan.outputs.pin_path }}
-      core_run_id: ${{ steps.plan.outputs.core_run_id }}
       work_group_id: ${{ steps.work.outputs.group_id }}
     steps:
       - uses: actions/checkout@v4
-      - name: Validate the requested target and its pinned core archive
+      - name: Validate the requested target and core profile
         id: plan
         env:
           POSTGRESQL_VERSION: ${{ inputs.postgresql_version }}
@@ -68,7 +69,7 @@ jobs:
             echo "No checked macOS arm64 core archive is configured for PostgreSQL $POSTGRESQL_VERSION." >&2
             exit 1
           fi
-          core_run_id=$(python3 - "$pin_path" "$POSTGRESQL_VERSION" <<'PY'
+          python3 - "$pin_path" "$POSTGRESQL_VERSION" <<'PY'
           import sys
           from pathlib import Path
           sys.path.insert(0, "tools")
@@ -76,11 +77,8 @@ jobs:
           target = load_target_config(Path(sys.argv[1]))
           if target.postgresql_version != sys.argv[2] or target.architecture != "arm64":
               raise SystemExit("pinned core target does not match the selected request")
-          print(target.core_run_id)
           PY
-          )
           echo "pin_path=$pin_path" >> "$GITHUB_OUTPUT"
-          echo "core_run_id=$core_run_id" >> "$GITHUB_OUTPUT"
       - name: Resolve selected build work and prerequisites
         id: work
         env:
@@ -97,22 +95,19 @@ jobs:
     needs: select
     if: needs.select.result == 'success'
     runs-on: macos-15
-    timeout-minutes: 25
+    timeout-minutes: 100
     steps:
       - uses: actions/checkout@v4
-      - name: Download the selected passed PostgreSQL arm64 artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: macos-arm64-pilot-archives
-          run-id: ${{ needs.select.outputs.core_run_id }}
-          github-token: ${{ github.token }}
-          path: ${{ runner.temp }}/core-archives
-      - name: Build the HypoPG archive against the pinned core
+      - name: Retrieve a checked core archive or build the selected PostgreSQL release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash scripts/macos/resolve-core.sh "${{ needs.select.outputs.pin_path }}" "$RUNNER_TEMP/core-archives"
+      - name: Build the HypoPG archive against the selected core
         id: package
         continue-on-error: true
         env:
           HYPOPG_BUILD_ONLY: 'true'
-        run: bash scripts/hypopg/macos-feasibility.sh "$RUNNER_TEMP/core-archives" "$RUNNER_TEMP/hypopg-publication" "${{ needs.select.outputs.pin_path }}"
+        run: bash scripts/hypopg/macos-feasibility.sh "$RUNNER_TEMP/core-archives" "$RUNNER_TEMP/hypopg-publication" "$RUNNER_TEMP/core-archives/target.json"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -120,6 +115,7 @@ jobs:
           path: |
             ${{ runner.temp }}/core-archives/*.tar.gz
             ${{ runner.temp }}/core-archives/*.sha256
+            ${{ runner.temp }}/core-archives/target.json
             ${{ runner.temp }}/hypopg-publication/*.tar.gz
             ${{ runner.temp }}/hypopg-publication/*.sha256
           if-no-files-found: warn
@@ -152,12 +148,12 @@ jobs:
         id: static_analysis
         if: always() && steps.download.outcome == 'success'
         continue-on-error: true
-        run: bash scripts/hypopg/verify-macos-publication.sh static-analysis "$RUNNER_TEMP/core-archives" "$RUNNER_TEMP/hypopg-publication" "$RUNNER_TEMP/hypopg-publication" "${{ needs.select.outputs.pin_path }}"
+        run: bash scripts/hypopg/verify-macos-publication.sh static-analysis "$RUNNER_TEMP/core-archives" "$RUNNER_TEMP/hypopg-publication" "$RUNNER_TEMP/hypopg-publication" "$RUNNER_TEMP/core-archives/target.json"
       - name: Assemble and exercise the relocated final archives on the fresh runner
         id: archive_suite
         if: always() && steps.download.outcome == 'success'
         continue-on-error: true
-        run: bash scripts/hypopg/verify-macos-publication.sh archive-suite "$RUNNER_TEMP/core-archives" "$RUNNER_TEMP/hypopg-publication" "$RUNNER_TEMP/hypopg-publication" "${{ needs.select.outputs.pin_path }}"
+        run: bash scripts/hypopg/verify-macos-publication.sh archive-suite "$RUNNER_TEMP/core-archives" "$RUNNER_TEMP/hypopg-publication" "$RUNNER_TEMP/hypopg-publication" "$RUNNER_TEMP/core-archives/target.json"
       - name: Finalize archive receipt and verification record
         if: always()
         env:
@@ -169,7 +165,7 @@ jobs:
           image_id="${ImageOS:?runner image OS missing}/${ImageVersion:?runner image version missing}"
           os_version="$(sw_vers -productVersion)"
           python3 tools/emit_hypopg_macos_publication.py \
-            --target-config "${{ needs.select.outputs.pin_path }}" \
+            --target-config "$RUNNER_TEMP/core-archives/target.json" \
             --core-archives "$RUNNER_TEMP/core-archives" \
             --archives "$RUNNER_TEMP/hypopg-publication" \
             --output "$RUNNER_TEMP/hypopg-publication" \
@@ -181,7 +177,7 @@ jobs:
         run: |
           if [[ -f "$RUNNER_TEMP/hypopg-publication/publication/attempt.json" ]]; then
             python3 tools/import_hypopg_macos_publication.py \
-              --target-config "${{ needs.select.outputs.pin_path }}" \
+              --target-config "$RUNNER_TEMP/core-archives/target.json" \
               --core-artifact "$RUNNER_TEMP/core-archives" \
               --hypopg-artifact "$RUNNER_TEMP/hypopg-publication" \
               --run-id "$GITHUB_RUN_ID"

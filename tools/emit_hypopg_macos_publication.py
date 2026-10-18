@@ -35,7 +35,9 @@ def _default_target():
     if (value.get("postgresql_version") != PG_VERSION or value.get("architecture") != ARCHITECTURE
             or value.get("platform") != PLATFORM
             or not re.fullmatch(r"[0-9a-f]{64}", str(value.get("core_sha256", "")))
-            or value.get("core_build_id") != f"github-{value.get('core_run_id')}-1"):
+            or not re.fullmatch(
+                rf"github-{re.escape(str(value.get('core_run_id', '')))}-[1-9][0-9]*",
+                str(value.get("core_build_id", "")))):
         raise ValueError("Intel HypoPG target pin is inconsistent")
     return HypoPGMacosTarget(
         PROFILE_ID, PG_VERSION, ARCHITECTURE, PLATFORM,

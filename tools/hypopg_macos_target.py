@@ -74,7 +74,8 @@ def load_target_config(path):
     build_id, source_revision = core.get("build_id"), core.get("source_revision")
     if (not isinstance(run_id, str) or not run_id.isdigit()
             or not isinstance(digest, str) or not re.fullmatch(r"[0-9a-f]{64}", digest)
-            or build_id != f"github-{run_id}-1"
+            or not isinstance(build_id, str)
+            or not re.fullmatch(rf"github-{re.escape(run_id)}-[1-9][0-9]*", build_id)
             or not isinstance(source_revision, str) or not re.fullmatch(r"[0-9a-f]{40}", source_revision)):
         raise ValueError("HypoPG target core identity is invalid")
     if source != {"url": SOURCE_URL, "sha256": SOURCE_SHA256}:

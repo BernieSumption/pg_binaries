@@ -65,9 +65,53 @@ def _run_matches(run, repository, workflow, branch, current_run_id):
     return (isinstance(repo, dict) and str(repo.get("full_name", "")).casefold() == repository.casefold()
             and isinstance(head_repo, dict) and str(head_repo.get("full_name", "")).casefold() == repository.casefold()
             and str(run.get("path", "")).rsplit("/", 1)[-1] == workflow
+            and isinstance(run.get("head_sha"), str)
+            and re.fullmatch(r"[0-9a-f]{40}", run["head_sha"]) is not None
             and run.get("head_branch") == branch and run.get("event") == "push"
             and run.get("status") == "completed" and run.get("conclusion") == "success"
             and str(run.get("id")) != str(current_run_id))
+
+
+def _candidate_artifacts(repository, workflow, branch, current_run_id, artifact_name_template,
+                         fixed_name, reasons):
+    if fixed_name:
+        payload = _gh([f"repos/{repository}/actions/artifacts?name={artifact_name_template}&per_page={MAX_ARTIFACTS}"])
+        artifacts = payload.get("artifacts", []) if isinstance(payload, dict) else []
+        artifacts = sorted((a for a in artifacts if isinstance(a, dict)),
+                           key=lambda a: a.get("created_at", ""), reverse=True)[:MAX_ARTIFACTS]
+        for artifact in artifacts:
+            source = artifact.get("workflow_run")
+            run_id = str(source.get("id", "")) if isinstance(source, dict) else ""
+            if not re.fullmatch(r"[1-9][0-9]*", run_id):
+                reasons.append(f"artifact {artifact.get('id', '?')}: missing source run ID")
+                continue
+            run = _gh([f"repos/{repository}/actions/runs/{run_id}"])
+            if not isinstance(run, dict) or not _run_matches(run, repository, workflow, branch, current_run_id):
+                reasons.append(f"artifact {artifact.get('id', '?')}: rejected source run identity or status")
+                continue
+            if source.get("head_sha") != run["head_sha"] or artifact.get("name") != artifact_name_template:
+                reasons.append(f"artifact {artifact.get('id', '?')}: source identity or name mismatch")
+                continue
+            yield run, [artifact]
+        return
+
+    payload = _gh([f"repos/{repository}/actions/workflows/{workflow}/runs?branch={branch}&status=success&per_page={MAX_RUNS}"])
+    runs = payload.get("workflow_runs", []) if isinstance(payload, dict) else []
+    runs = sorted((r for r in runs if isinstance(r, dict)),
+                  key=lambda r: r.get("run_number", 0), reverse=True)[:MAX_RUNS]
+    for run in runs:
+        if not _run_matches(run, repository, workflow, branch, current_run_id):
+            reasons.append(f"run {run.get('id', '?')}: rejected run identity or status")
+            continue
+        run_id = str(run.get("id", ""))
+        artifacts_payload = _gh([f"repos/{repository}/actions/runs/{run_id}/artifacts?per_page={MAX_ARTIFACTS}"])
+        artifact_rows = artifacts_payload.get("artifacts", []) if isinstance(artifacts_payload, dict) else []
+        expected_name = artifact_name_template.replace("{run_id}", run_id)
+        found = [a for a in artifact_rows[:MAX_ARTIFACTS] if isinstance(a, dict) and a.get("name") == expected_name]
+        if not found:
+            reasons.append(f"run {run_id}: matching artifact {expected_name!r} is absent")
+            continue
+        yield run, found
 
 
 def discover(*, repository, workflow, branch, current_run_id, artifact_name_template,
@@ -89,25 +133,10 @@ def discover(*, repository, workflow, branch, current_run_id, artifact_name_temp
     manifest_path = Path(manifest_path)
     reasons = []
     archives = []
-    payload = _gh([f"repos/{repository}/actions/workflows/{workflow}/runs?branch={branch}&status=success&per_page={MAX_RUNS}"])
-    runs = payload.get("workflow_runs", []) if isinstance(payload, dict) else []
-    runs = sorted((r for r in runs if isinstance(r, dict)),
-                  key=lambda r: r.get("run_number", 0), reverse=True)[:MAX_RUNS]
-    for run in runs:
-        if not _run_matches(run, repository, workflow, branch, current_run_id):
-            reasons.append(f"run {run.get('id', '?')}: rejected run identity or status")
-            continue
+    for run, found in _candidate_artifacts(repository, workflow, branch, current_run_id,
+                                           artifact_name_template, fixed_name, reasons):
         run_id = str(run.get("id", ""))
-        if not re.fullmatch(r"[1-9][0-9]*", run_id):
-            reasons.append("run with invalid ID rejected")
-            continue
-        artifacts_payload = _gh([f"repos/{repository}/actions/runs/{run_id}/artifacts?per_page={MAX_ARTIFACTS}"])
-        artifact_rows = artifacts_payload.get("artifacts", []) if isinstance(artifacts_payload, dict) else []
         expected_name = artifact_name_template.replace("{run_id}", run_id)
-        found = [a for a in artifact_rows[:MAX_ARTIFACTS] if isinstance(a, dict) and a.get("name") == expected_name]
-        if not found:
-            reasons.append(f"run {run_id}: matching artifact {expected_name!r} is absent")
-            continue
         for artifact in found:
             expiry = _expiry(artifact.get("expires_at"))
             digest_claim = artifact.get("digest")
@@ -139,7 +168,8 @@ def discover(*, repository, workflow, branch, current_run_id, artifact_name_temp
                     "postgresql_version": postgresql_version, "path": str(archive_path),
                     "sha256": archive_digest,
                     "source": {"provider": "github-actions", "run_id": run_id,
-                               "artifact_name": expected_name, "expires_at": artifact["expires_at"]},
+                               "head_sha": run["head_sha"], "artifact_name": expected_name,
+                               "expires_at": artifact["expires_at"]},
                 })
                 return _write_manifest(manifest_path, archives)
             except ApiError:

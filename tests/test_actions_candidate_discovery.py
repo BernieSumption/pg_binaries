@@ -31,6 +31,7 @@ class ActionsCandidateDiscoveryTests(unittest.TestCase):
         self.repo = "example/project"
         self.run = {"id": 123, "run_number": 8, "repository": {"full_name": self.repo},
                     "head_repository": {"full_name": self.repo},
+                    "head_sha": "a" * 40,
                     "path": ".github/workflows/build.yml", "head_branch": "spike", "event": "push",
                     "status": "completed", "conclusion": "success"}
         self.artifact = {"id": 456, "name": "candidate-123", "expired": False,
@@ -44,7 +45,13 @@ class ActionsCandidateDiscoveryTests(unittest.TestCase):
     def fake_run(self, args, **kwargs):
         self.calls.append(args)
         endpoint = args[2]
-        if "/workflows/" in endpoint:
+        if "/actions/artifacts?name=" in endpoint:
+            value = {"artifacts": [dict(self.artifact, workflow_run={
+                "id": self.run["id"], "head_sha": self.run["head_sha"]})]}
+            output = json.dumps(value).encode()
+        elif endpoint.endswith(f"/actions/runs/{self.run['id']}"):
+            output = json.dumps(self.run).encode()
+        elif "/workflows/" in endpoint:
             value = {"workflow_runs": [self.run]}
             output = json.dumps(value).encode()
         elif "/runs/" in endpoint:
@@ -69,6 +76,7 @@ class ActionsCandidateDiscoveryTests(unittest.TestCase):
         data = json.loads((self.root / "manifest.json").read_text())
         row = data["archives"][0]
         self.assertEqual(row["source"]["run_id"], "123")
+        self.assertEqual(row["source"]["head_sha"], "a" * 40)
         self.assertEqual(row["source"]["artifact_name"], "candidate-123")
         self.assertEqual(row["sha256"], hashlib.sha256(self.archive).hexdigest())
         self.assertEqual(Path(row["path"]).read_bytes(), self.archive)
@@ -85,6 +93,19 @@ class ActionsCandidateDiscoveryTests(unittest.TestCase):
         self.assertEqual(reasons, [])
         row = json.loads((self.root / "manifest.json").read_text())["archives"][0]
         self.assertEqual(row["source"]["artifact_name"], "linux-core")
+        self.assertEqual(len(self.calls), 3)
+
+    def test_fixed_artifact_name_rejects_unrelated_workflow(self):
+        self.artifact["name"] = "linux-core"
+        self.run["path"] = ".github/workflows/other.yml"
+        with patch.object(discovery.subprocess, "run", side_effect=self.fake_run):
+            reasons = discovery.discover(repository=self.repo, workflow="build.yml", branch="spike",
+                current_run_id="999", artifact_name_template="linux-core",
+                archive_basename=self.archive_name, project="PostgreSQL", version="15.10",
+                platform="linux-x86_64", postgresql_version="15.10",
+                output_directory=self.root / "out", manifest_path=self.root / "manifest.json")
+        self.assertTrue(any("source run identity" in reason for reason in reasons))
+        self.assertEqual(json.loads((self.root / "manifest.json").read_text())["archives"], [])
 
     def test_nested_archive_pair_is_extracted_flattened(self):
         buffer = io.BytesIO()
@@ -111,14 +132,16 @@ class ActionsCandidateDiscoveryTests(unittest.TestCase):
         self.assertEqual(json.loads((self.root / "manifest.json").read_text())["archives"], [])
 
     def test_rejects_wrong_run_identity_and_current_run(self):
-        for field, value in (("head_branch", "main"), ("event", "workflow_dispatch"),
+        for field, value in (("head_branch", "main"), ("head_sha", "invalid"),
+                             ("event", "workflow_dispatch"),
                              ("conclusion", "failure"), ("id", 999)):
             with self.subTest(field=field):
                 self.run[field] = value
                 with patch.object(discovery.subprocess, "run", side_effect=self.fake_run):
                     self.invoke()
                 self.assertEqual(json.loads((self.root / "manifest.json").read_text())["archives"], [])
-                self.run[field] = {"head_branch": "spike", "event": "push", "conclusion": "success", "id": 123}[field]
+                self.run[field] = {"head_branch": "spike", "head_sha": "a" * 40,
+                                   "event": "push", "conclusion": "success", "id": 123}[field]
 
     def test_digest_mismatch_is_rejected(self):
         self.artifact["digest"] = "sha256:" + "0" * 64
