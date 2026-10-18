@@ -1,0 +1,51 @@
+{
+  "architecture": "arm64",
+  "archives": {
+    "pg_jsonschema-0.3.4-postgresql-18.6-linux-arm64.tar.gz": "342f7def9765c463d68e9e739e170d9c1842409968c08e30d7a669ba7b150de1",
+    "postgresql-18.6-linux-arm64.tar.gz": "0eb9c0144fd0b1669c594ce1ebcf7abdf4e1ae3f8e29e59a92833e476001e42b"
+  },
+  "case_results": {
+    "archive-suite": "passed",
+    "elf-closure": "passed"
+  },
+  "ci": {
+    "build_revision": "42082a506adfca1628c509f2c7b17037b9a12123",
+    "provider": "github-actions",
+    "run_id": "39093828310",
+    "run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/39093828310",
+    "source_revision": "42082a506adfca1628c509f2c7b17037b9a12123",
+    "test_revision": "42082a506adfca1628c509f2c7b17037b9a12123"
+  },
+  "clean_system": true,
+  "dependency_check_profile": "linux-elf-alpine-relocation-v1",
+  "dependency_checks_passed": true,
+  "endpoint": "current",
+  "environment": {
+    "architecture": "arm64",
+    "clean_system": true,
+    "dependency_check_profile": "linux-elf-alpine-relocation-v1",
+    "dependency_checks_passed": true,
+    "distribution": "Alpine Linux 3.22",
+    "endpoint": "current",
+    "image_id": "sha256:2a2dc3271945840d9e704e211805985e20de4265a99c299d6eaf5f653cdf1ed7",
+    "os": "linux",
+    "os_version": "6.17.0"
+  },
+  "extension_archive": "pg_jsonschema-0.3.4-postgresql-18.6-linux-arm64.tar.gz",
+  "platform": "linux-arm64",
+  "postgresql_version": "18.6",
+  "profile_id": "pg-jsonschema-publication-linux-arm64-18.6",
+  "profile_revision": "777cba68d3815c050488b09feb2d597c5e8ba8d0e51a9d1052cf2c539cc9ee76",
+  "project": "pg_jsonschema",
+  "redistribution_status": "seahash-4.1.0-notice-unresolved",
+  "release_eligible": false,
+  "reports": {
+    "build_evidence": "3b69cebf932e85c80ebcf65094f7a018057c2f0f816c04e4b469ebf43bd7d972",
+    "cargo_license_inventory": "7f11d0f50b003c9d879caf922d4e55c59b4e72aefc901b59a24224a6c2354877",
+    "elf_closure": "5c049c4b60c6ce9d40797b75d9e8b5a0be8f27cfc9ef81deb97ba1cd68233c80",
+    "probe_output": "9409b6fe157a97fbf60737c3c613f6d0beeeefcebd1b06de9a430cd24fb751da"
+  },
+  "schema_version": 1,
+  "test_revision": "42082a506adfca1628c509f2c7b17037b9a12123",
+  "version": "0.3.4"
+}
