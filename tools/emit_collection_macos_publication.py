@@ -103,11 +103,6 @@ def emit(root, core_dir, archives, output, step_results, os_version, image_id, e
         _fail("GitHub Actions revision and run provenance are required")
     if not re.fullmatch(r"\d+(?:\.\d+)*", os_version or "") or not image_id:
         _fail("macOS runner version and image identifier are required")
-    profile = coverage.verification_profile(root, PROFILE_ID)
-    if (profile["scope"] != "publication" or profile["platforms"] != [PLATFORM]
-            or profile["case_ids"] != sorted(CASES) or not profile["sources_available"]):
-        _fail("registered profile does not match this collection publication suite")
-
     outcome_map = {"success": "passed", "failure": "failed", "timed_out": "failed",
                    "skipped": "skipped", "cancelled": "skipped"}
     results = {case: outcome_map[step_results[case]] for case in sorted(CASES)}
@@ -125,6 +120,10 @@ def emit(root, core_dir, archives, output, step_results, os_version, image_id, e
                "archives_present": present,
                "release_eligibility": "blocked-pending-dependency-review"}
     attempt_path.write_text(json.dumps(attempt, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    profile = coverage.verification_profile(root, PROFILE_ID)
+    if (profile["scope"] != "publication" or profile["platforms"] != [PLATFORM]
+            or profile["case_ids"] != sorted(CASES) or not profile["sources_available"]):
+        _fail("registered profile does not match this collection publication suite")
     if not all(present.values()):
         return [attempt_path]
 

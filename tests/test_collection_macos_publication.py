@@ -18,6 +18,10 @@ REPO = Path(__file__).resolve().parents[1]
 
 
 class CollectionMacosPublicationTests(unittest.TestCase):
+    def test_registered_profile_has_valid_source_revision(self):
+        profile = coverage.verification_profile(REPO, emitter.PROFILE_ID)
+        self.assertEqual(profile["case_ids"], sorted(emitter.CASES))
+
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory()
         self.base = Path(self.temporary.name)
@@ -117,6 +121,16 @@ class CollectionMacosPublicationTests(unittest.TestCase):
         self.assertEqual(len(retained), 3)
         attempt = json.loads((self.root / retained[0]).read_text())
         self.assertEqual(attempt["steps"], {"archive-suite": "failure", "static-analysis": "skipped"})
+
+    def test_writes_raw_attempt_before_profile_validation_failure(self):
+        profile_path = self.root / "support/verification-profiles.json"
+        profiles = json.loads(profile_path.read_text())
+        profiles["profiles"][emitter.PROFILE_ID]["sources"] = ["support.json", "profile-source.txt"]
+        profile_path.write_text(json.dumps(profiles))
+        with self.assertRaisesRegex(coverage.CoverageError, "sources must be sorted"):
+            self._emit()
+        attempt = json.loads((self.publication / "attempt.json").read_text())
+        self.assertEqual(attempt["source_revision"], self.revision)
 
 
 if __name__ == "__main__":
