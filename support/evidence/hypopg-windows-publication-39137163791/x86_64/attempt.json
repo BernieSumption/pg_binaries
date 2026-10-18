@@ -1,0 +1,23 @@
+{
+  "architecture": "x86_64",
+  "archives": {
+    "hypopg-1.4.3-postgresql-17.11-windows-x86_64.tar.gz": "a3bc4eda4f9e91a71edd00847d470e33307d6a62ed4773dbc946093c90468109",
+    "postgresql-17.11-windows-x86_64.tar.gz": "c94d4cef57880ec80a4177570ab7c1f2e955f1e799a2d41fb38412e07c435285"
+  },
+  "archives_present": {
+    "hypopg-1.4.3-postgresql-17.11-windows-x86_64.tar.gz": true,
+    "postgresql-17.11-windows-x86_64.tar.gz": true
+  },
+  "core_status": "current-profile-core-redistribution-pending",
+  "hypopg_version": "1.4.3",
+  "postgresql_version": "17.11",
+  "profile_id": "hypopg-publication-windows-x86_64-17.11",
+  "release_eligible": false,
+  "run_id": "39137163791",
+  "schema_version": 1,
+  "source_revision": "d4434e10138243089bc04e3a3a940063e6cc3ead",
+  "steps": {
+    "archive-suite": "success",
+    "static-analysis": "success"
+  }
+}
