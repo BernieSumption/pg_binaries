@@ -199,6 +199,12 @@
       "case_ids": ["archive-suite", "static-analysis"],
       "sources": [".github/workflows/hypopg-macos-arm64-feasibility.yml", "scripts/hypopg/macos-feasibility.sh", "scripts/hypopg/macos-probe.sql", "scripts/macos/static_analysis.py", "support.json", "support/postgresql-releases.json", "tests/test_emit_hypopg_macos_publication.py", "tests/test_import_hypopg_macos_publication.py", "tools/check_macos_extension_license_inventory.py", "tools/coverage.py", "tools/emit_hypopg_macos_publication.py", "tools/import_hypopg_macos_publication.py", "tools/publication_preflight.py"]
     },
+    "hypopg-publication-macos-x86_64-18.6": {
+      "scope": "publication",
+      "platforms": ["macos-x86_64"],
+      "case_ids": ["archive-suite", "static-analysis"],
+      "sources": [".github/workflows/hypopg-macos-x86_64-publication.yml", ".github/workflows/profile-change-scope.yml", "scripts/hypopg/macos-probe.sql", "scripts/hypopg/macos-x86_64-feasibility.sh", "scripts/macos/static_analysis.py", "support.json", "support/postgresql-releases.json", "tests/test_hypopg_macos_x86_64_publication.py", "tests/test_profile_change_gate.py", "tools/check_macos_extension_license_inventory.py", "tools/coverage.py", "tools/emit_hypopg_macos_publication.py", "tools/emit_hypopg_macos_x86_64_publication.py", "tools/hypopg_macos_pins/18.6-x86_64.json", "tools/import_hypopg_macos_publication.py", "tools/import_hypopg_macos_x86_64_publication.py", "tools/profile_change_gate.py", "tools/publication_preflight.py"]
+    },
     "pgivm-publication-macos-arm64-17.11": {
       "scope": "publication",
       "platforms": ["macos-arm64"],
