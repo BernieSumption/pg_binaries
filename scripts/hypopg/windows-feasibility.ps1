@@ -159,7 +159,7 @@ try {
   Copy-Item (Join-Path $source 'hypopg--*.sql') (Join-Path $payload 'share/extension')
   Copy-Item (Join-Path $source 'LICENSE') (Join-Path $payload 'LICENSES/HypoPG.txt')
   $payloadPaths = @(Get-ChildItem $payload -Recurse -File | Where-Object { $_.FullName -notmatch '\\LICENSES\\' } |
-    ForEach-Object { $_.FullName.Substring($payload.Length).TrimStart('\\','/') -replace '\\','/' } | Sort-Object)
+    ForEach-Object { $_.FullName.Substring($payload.Length).TrimStart([char[]]@([char]92, [char]47)) -replace '\\','/' } | Sort-Object)
   $inventory = [ordered]@{
     schema_version = 1
     components = @(@{
