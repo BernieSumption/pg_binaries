@@ -1,6 +1,16 @@
 name: HypoPG selected PostgreSQL macOS arm64 publication
 
 on:
+  workflow_call:
+    inputs:
+      postgresql_version:
+        description: Exact selected PostgreSQL release
+        required: true
+        type: string
+      extension_version:
+        description: Exact selected HypoPG release
+        required: false
+        type: string
   workflow_dispatch:
     inputs:
       postgresql_version:
@@ -16,7 +26,6 @@ on:
   push:
     branches: [spike]
     paths:
-      - '.github/workflows/hypopg-macos-arm64-selected-publication.yml'
       - 'experiments/hypopg-macos-target-trial/target.json'
 
 permissions:

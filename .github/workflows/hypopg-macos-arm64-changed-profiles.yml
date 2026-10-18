@@ -1,0 +1,49 @@
+name: HypoPG macOS arm64 changed-profile scheduler
+
+on:
+  push:
+    branches: [spike]
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  select:
+    runs-on: ubuntu-latest
+    outputs:
+      targets: ${{ steps.plan.outputs.targets }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: plan
+        env:
+          EVENT_BEFORE: ${{ github.event.before }}
+        run: |
+          if [[ -z "$EVENT_BEFORE" || "$EVENT_BEFORE" =~ ^0+$ ]]; then
+            echo 'targets=["17.11","18.6"]' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          before_root="$RUNNER_TEMP/profile-before"
+          if ! git worktree add --detach "$before_root" "$EVENT_BEFORE"; then
+            echo 'Could not materialize the event base; selecting all declared targets.' >&2
+            echo 'targets=["17.11","18.6"]' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          python3 tools/hypopg_macos_arm64_changed_profiles.py \
+            --before-root "$before_root" \
+            --current-root "$GITHUB_WORKSPACE" \
+            --github-output "$GITHUB_OUTPUT"
+
+  publish:
+    needs: select
+    if: needs.select.outputs.targets != '[]'
+    strategy:
+      fail-fast: false
+      matrix:
+        postgresql_version: ${{ fromJSON(needs.select.outputs.targets) }}
+    uses: ./.github/workflows/hypopg-macos-arm64-selected-publication.yml
+    with:
+      postgresql_version: ${{ matrix.postgresql_version }}
+      extension_version: '1.4.3'
