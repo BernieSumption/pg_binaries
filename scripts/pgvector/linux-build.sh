@@ -14,6 +14,8 @@ python3 "$repo/scripts/pgvector/archive_input.py" validate-core "$core" "${core}
 docker build --platform linux/amd64 -f "$repo/scripts/pgvector/linux-build.Dockerfile" -t pg-binaries-pgvector-separate-linux "$repo"
 image_id=$(docker image inspect pg-binaries-pgvector-separate-linux --format '{{.Id}}')
 [[ "$image_id" =~ ^sha256:[0-9a-f]{64}$ ]] || { echo "Invalid Docker image ID" >&2; exit 2; }
+python3 "$repo/tools/selected_build_inputs.py" --builder-image-id "$image_id" \
+  > "$out/build-input-identity.json"
 build_id=${BUILD_ID:-local-$(python3 -c 'import uuid; print(uuid.uuid4())')}
 revision=${SOURCE_REVISION:-${GITHUB_SHA:-$(git -C "$repo" rev-parse HEAD)}}
 docker run --rm --platform linux/amd64 \

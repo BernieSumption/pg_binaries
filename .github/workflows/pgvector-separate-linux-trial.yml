@@ -9,6 +9,8 @@ on:
       - 'scripts/pgvector/linux-build.Dockerfile'
       - 'scripts/pgvector/linux-build-in-container.sh'
       - 'scripts/pgvector/archive_input.py'
+      - 'tools/build_input_identity.py'
+      - 'tools/selected_build_inputs.py'
       - 'scripts/linux/verify.sh'
       - 'scripts/linux/verify-in-container.sh'
       - 'tests/extensions/pgvector.sql'
@@ -68,6 +70,9 @@ jobs:
           (cd "$(dirname "$archive")" && sha256sum --check "$(basename "$archive").sha256")
           python3 - "$archive" <<'PY'
           import json, sys, tarfile
+          sys.path.insert(0, 'tools')
+          from build_input_identity import assess_reuse
+          from selected_build_inputs import selected_identity
           with tarfile.open(sys.argv[1], "r:gz") as archive:
               names = set(archive.getnames())
               required = {
@@ -86,6 +91,10 @@ jobs:
                   "sha256": "e532b07c29904db82d1681f1a4ab815364b769a4e1f277c9de9bcd45d0cdc7c6",
               }:
                   raise SystemExit("archive metadata does not identify the pinned core input")
+              assessment = assess_reuse(
+                  selected_identity(metadata["builder_image_id"]), metadata.get("build_inputs"))
+              if not assessment["reusable"]:
+                  raise SystemExit(f"archive build inputs are not current: {assessment['reason']}")
           PY
       - name: Retain build output for seven days
         if: always()

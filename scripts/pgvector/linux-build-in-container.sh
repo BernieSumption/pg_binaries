@@ -30,6 +30,22 @@ configuration='pgvector-0.8.7;postgresql-core=18.6;builder=ubuntu-22.04;optflags
 cat > /work/stage/metadata.json <<EOF
 {"project":"pgvector","version":"0.8.7","sql_names":["vector"],"requires":[],"configuration_prerequisites":[],"runtime_prerequisites":[],"build_id":"${build_id}","source_revision":"${source_revision}","source_archive":{"url":"${source_url}","sha256":"${source_sha}"},"core_archive":{"basename":"${core_archive}","sha256":"${core_sha}"},"build_configuration":"${configuration}","builder_image_id":"${builder_image_id}","platform":"linux","architecture":"${architecture}"}
 EOF
+python3 - /work/stage/metadata.json /out/build-input-identity.json <<'PY'
+import json
+from pathlib import Path
+import sys
+
+metadata_path, identity_path = map(Path, sys.argv[1:])
+metadata = json.loads(metadata_path.read_text())
+identity = json.loads(identity_path.read_text())
+if (identity['upstream_sources']['pgvector']['sha256'] != metadata['source_archive']['sha256']
+        or identity['dependencies']['builder_image']['id'] != metadata['builder_image_id']
+        or identity['target']['platform'] != 'linux-x86_64'
+        or identity['target']['postgresql_major'] != 18):
+    raise SystemExit('build input identity disagrees with the checked build inputs')
+metadata['build_inputs'] = identity
+metadata_path.write_text(json.dumps(metadata, sort_keys=True) + '\n')
+PY
 cat > "$stage/LICENSES/pgvector-inventory.json" <<EOF
 {"schema_version":1,"components":[{"component":"pgvector","version":"0.8.7","payload_paths":["lib/vector.so","share/extension"],"license_file":"pgvector.txt","license_source":"${source_url}","source_url":"${source_url}","source_sha256":"${source_sha}","redistribution_review":{"status":"resolved","basis":"The unmodified pgvector ${pg_version} source includes its PostgreSQL-style licence, permitting binary redistribution with its notice, permission and disclaimer text retained.","source_obligation":"none"}}]}
 EOF
