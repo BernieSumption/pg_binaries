@@ -1,0 +1,5 @@
+# pg_cron 1.6.8 Apple Silicon macOS source feasibility
+
+[Run 39085350230](https://github.com/BernieSumption/pg_binaries/actions/runs/39085350230) built unmodified pg_cron 1.6.8 against the checksum-pinned PostgreSQL 18.6 Apple Silicon core from run 39079982683. PGXS added `@loader_path` to the module's run paths at link time. After moving and combining the archives, the [core static report](static-analysis.json) found no Mach-O dependency errors, and the [module report](pg-cron-macho-inspection.json) resolved `@rpath/libpq.5.dylib` to bundled `lib/libpq.5.dylib` with macOS 11.0 minimum metadata. The [SQL output](probe-output.txt) records extension creation and a scheduled background-worker command; the script also checked that the command succeeded and inserted a row before unscheduling it. The module archive [checksum sidecar](pg_cron-1.6.8-postgresql-18.6-macos-arm64.tar.gz.sha256) is retained from the CI artifact.
+
+The retained SQL output has trailing whitespace removed. This is source and runtime feasibility for this exact core and target. A final extension archive publication profile and imported archive-bound verification record remain.
