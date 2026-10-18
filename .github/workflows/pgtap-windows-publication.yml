@@ -5,6 +5,9 @@ on:
   push:
     branches: [spike]
     paths:
+      - '.github/workflows/profile-change-scope.yml'
+      - 'tools/profile_change_gate.py'
+      - 'tests/test_profile_change_gate.py'
       - '.github/workflows/pgtap-windows-publication.yml'
       - 'scripts/pgtap/windows-feasibility.ps1'
       - 'scripts/pgtap/probe.sql'
@@ -20,7 +23,14 @@ permissions:
   contents: read
 
 jobs:
+  profile_scope:
+    uses: ./.github/workflows/profile-change-scope.yml
+    with:
+      profile_id: pgtap-publication-windows-x86_64-18.6
+
   publish-candidate:
+    needs: profile_scope
+    if: needs.profile_scope.outputs.should_run == 'true'
     runs-on: windows-2022
     timeout-minutes: 30
     defaults:
