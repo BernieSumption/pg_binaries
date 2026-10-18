@@ -109,8 +109,12 @@ build_one() {
   make -C "$source_root" PG_CONFIG="$pg_config" install DESTDIR="$work/stage/${version}"
 
   local staged_root="$work/stage/${version}$(cd "$pgroot" && pwd -P)"
-  test -s "$staged_root/lib/collection.dylib"
-  cp "$staged_root/lib/collection.dylib" "$package/collection/lib/"
+  local module_file
+  module_file=$(find "$staged_root/lib" -maxdepth 1 -type f \( -name 'collection.dylib' -o -name 'collection.so' \) -print)
+  test -n "$module_file" && test "$(printf '%s\n' "$module_file" | wc -l | tr -d ' ')" = 1
+  test -s "$module_file"
+  local module_name=${module_file##*/}
+  cp "$module_file" "$package/collection/lib/"
   cp "$staged_root/share/extension/collection"* "$package/collection/share/extension/"
   cp "$source_root/LICENSE" "$package/collection/LICENSES/pgcollection.txt"
   cp "$source_root/NOTICE" "$package/collection/LICENSES/pgcollection-NOTICE.txt"
@@ -118,11 +122,12 @@ build_one() {
   cp "$source_root/include/uthash/LICENSE" "$package/collection/LICENSES/uthash.txt"
   local uthash_sha
   uthash_sha=$(shasum -a 256 "$source_root/include/uthash/LICENSE" | awk '{print $1}')
-  python3 - "$package" "$version" "$pg_version" "$architecture" "$source_url" "$source_sha256" "$uthash_sha" "$core_name" "$core_sha256" <<'PY'
+  python3 - "$package" "$version" "$pg_version" "$architecture" "$source_url" "$source_sha256" "$uthash_sha" "$core_name" "$core_sha256" "$module_name" <<'PY'
 import json, sys
 from pathlib import Path
 root = Path(sys.argv[1])
-version, pg_version, architecture, url, sha256, uthash_sha, core_name, core_sha256 = sys.argv[2:]
+version, pg_version, architecture, url, sha256, uthash_sha, core_name, core_sha256, module_name = sys.argv[2:]
+module_path = "lib/" + module_name
 metadata = {
     "project": "collection", "version": version, "sql_names": ["collection"],
     "requires": [], "configuration_prerequisites": [], "runtime_prerequisites": [],
@@ -133,7 +138,7 @@ metadata = {
 (root / "metadata.json").write_text(json.dumps(metadata, indent=2, sort_keys=True) + "\n")
 components = [{
     "component": "pgcollection", "version": version,
-    "payload_paths": ["lib/collection.dylib", "share/extension"],
+    "payload_paths": [module_path, "share/extension"],
     "license_file": "pgcollection.txt", "additional_license_files": ["pgcollection-NOTICE.txt"],
     "license_source": url + "#LICENSE", "source_url": url, "source_sha256": sha256,
     "redistribution_review": {
@@ -143,7 +148,7 @@ components = [{
     },
 }, {
     "component": "uthash", "version": "vendored by pgcollection",
-    "payload_paths": ["lib/collection.dylib"], "license_file": "uthash.txt",
+    "payload_paths": [module_path], "license_file": "uthash.txt",
     "license_source": url + "#include/uthash/LICENSE", "source_url": url,
     "source_sha256": sha256, "license_sha256": uthash_sha,
     "redistribution_review": {
@@ -170,7 +175,8 @@ archive = pathlib.Path(sys.argv[1])
 version, architecture, pg_version, core_name, core_sha256 = sys.argv[2:]
 with tarfile.open(archive, "r:gz") as tar:
     names = set(tar.getnames())
-    if names != {"collection", "collection/lib", "collection/lib/collection.dylib",
+    modules = names & {"collection/lib/collection.dylib", "collection/lib/collection.so"}
+    if len(modules) != 1 or names != {"collection", "collection/lib", *modules,
                  "collection/share", "collection/share/extension",
                  *[n for n in names if n.startswith("collection/share/extension/")],
                  "collection/LICENSES", "collection/LICENSES/pgcollection.txt",

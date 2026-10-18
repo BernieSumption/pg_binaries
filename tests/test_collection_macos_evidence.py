@@ -15,6 +15,8 @@ evidence = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(evidence)
 
 
+MODULE_FILE = "lib/collection.so" if evidence.PG_VERSION.startswith("15.") else "lib/collection.dylib"
+
 class CollectionMacosEvidenceTests(unittest.TestCase):
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory()
@@ -34,7 +36,7 @@ class CollectionMacosEvidenceTests(unittest.TestCase):
         with tarfile.open(self.archive, "w:gz") as tar:
             self._add(tar, "metadata.json", json.dumps(metadata).encode())
             for name in (
-                "collection/lib/collection.dylib",
+                "collection/" + MODULE_FILE,
                 "collection/share/extension/collection.control",
                 "collection/LICENSES/pgcollection.txt",
                 "collection/LICENSES/pgcollection-NOTICE.txt",
@@ -47,7 +49,7 @@ class CollectionMacosEvidenceTests(unittest.TestCase):
         self.report_path = self.root / "static-analysis.json"
         self.report_path.write_text(json.dumps({
             "passed": True, "architecture": evidence.ARCHITECTURE,
-            "inspected_files": [{"file": "lib/collection.dylib"}],
+            "inspected_files": [{"file": MODULE_FILE}],
             "archives": [
                 {"basename": self.core.name, "sha256": evidence.sha256(self.core)},
                 {"basename": self.archive.name, "sha256": evidence.sha256(self.archive)},

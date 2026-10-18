@@ -73,7 +73,19 @@ def _metadata(path, version):
         _fail(f"collection {version} archive metadata differs from pinned identity")
 
 
-def _report(path, digests):
+def _module_path(path):
+    try:
+        with tarfile.open(path, "r:gz") as archive:
+            modules = [item.name.removeprefix("collection/") for item in archive.getmembers()
+                       if item.isfile() and re.fullmatch(r"collection/lib/collection\.(?:dylib|so)", item.name)]
+    except (OSError, tarfile.TarError) as exc:
+        _fail(f"cannot inspect collection module in final archive: {exc}")
+    if len(modules) != 1:
+        _fail("collection archive must contain one PGXS-selected module")
+    return modules[0]
+
+
+def _report(path, digests, module_path):
     try:
         report = json.loads(Path(path).read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
@@ -86,7 +98,7 @@ def _report(path, digests):
             actual = None
     if (actual != digests or report.get("passed") is not True
             or report.get("architecture") != ARCHITECTURE
-            or not any(item.get("file") == "lib/collection.dylib"
+            or not any(item.get("file") == module_path
                        for item in report.get("inspected_files", []) if isinstance(item, dict))):
         _fail("collection Mach-O report does not pass against the final core and extension archives")
 
@@ -129,6 +141,7 @@ def emit(root, core_dir, archives, output, step_results, os_version, image_id, e
 
     core = core_dir / CORE_NAME
     digests = {CORE_NAME: sha256(core)}
+    module_paths = {}
     _sidecar(core, digests[CORE_NAME])
     if digests[CORE_NAME] != CORE_SHA256:
         _fail("PostgreSQL core archive differs from the selected passed build")
@@ -137,6 +150,7 @@ def emit(root, core_dir, archives, output, step_results, os_version, image_id, e
         digests[name] = sha256(path)
         _sidecar(path, digests[name])
         _metadata(path, version)
+        module_paths[name] = _module_path(path)
     attempt["archives"] = digests
     attempt_path.write_text(json.dumps(attempt, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
@@ -148,7 +162,7 @@ def emit(root, core_dir, archives, output, step_results, os_version, image_id, e
         report_path = archives / f"static-analysis-collection-{version}.json"
         report_hash = sha256(report_path) if report_path.is_file() else None
         if results["static-analysis"] == "passed":
-            _report(report_path, {CORE_NAME: digests[CORE_NAME], name: digests[name]})
+            _report(report_path, {CORE_NAME: digests[CORE_NAME], name: digests[name]}, module_paths[name])
         receipt = {"schema_version": 1, "profile_id": PROFILE_ID,
                    "profile_revision": profile["profile_revision"], "test_revision": revision,
                    "project": "collection", "version": version,

@@ -18,6 +18,8 @@ import import_collection_macos_publication as importer
 REPO = Path(__file__).resolve().parents[1]
 
 
+MODULE_FILE = "lib/collection.so" if emitter.PG_VERSION.startswith("15.") else "lib/collection.dylib"
+
 class CollectionMacosPublicationTests(unittest.TestCase):
     def test_unresolved_postgresql_17_identity_is_rejected(self):
         import collection_macos_identity
@@ -88,13 +90,13 @@ class CollectionMacosPublicationTests(unittest.TestCase):
                         "core_archive": {"basename": emitter.CORE_NAME, "sha256": self.core_hash}}
             with tarfile.open(path, "w:gz") as archive:
                 self._add(archive, "metadata.json", json.dumps(metadata).encode())
-                self._add(archive, "collection/lib/collection.dylib", b"native fixture")
+                self._add(archive, "collection/" + MODULE_FILE, b"native fixture")
             digest = hashlib.sha256(path.read_bytes()).hexdigest()
             path.with_name(path.name + ".sha256").write_text(f"{digest}  {path.name}\n")
             self.extension_hashes[version] = digest
             (self.output / f"static-analysis-collection-{version}.json").write_text(json.dumps({
                 "passed": True, "architecture": emitter.ARCHITECTURE,
-                "inspected_files": [{"file": "lib/collection.dylib"}],
+                "inspected_files": [{"file": MODULE_FILE}],
                 "archives": [{"basename": emitter.CORE_NAME, "sha256": self.core_hash},
                              {"basename": path.name, "sha256": digest}]}))
         self.environ = {"GITHUB_SHA": self.revision, "GITHUB_RUN_ID": self.run_id,

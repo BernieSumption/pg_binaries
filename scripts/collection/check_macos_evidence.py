@@ -69,8 +69,11 @@ def verify_collection_archive(path, version):
         }
         if metadata != expected:
             raise EvidenceError(f"metadata identity mismatch in {path.name}")
+        modules = {name for name in names if re.fullmatch(r"collection/lib/collection\.(?:dylib|so)", name)}
+        if len(modules) != 1:
+            raise EvidenceError(f"expected one PGXS-selected collection module in {path.name}")
         required = {
-            "collection/lib/collection.dylib",
+            *modules,
             "collection/share/extension/collection.control",
             "collection/LICENSES/pgcollection.txt",
             "collection/LICENSES/pgcollection-NOTICE.txt",
@@ -90,9 +93,13 @@ def verify_report(path, archive_paths):
     if isinstance(actual_archives, list):
         actual_archives = {item.get("basename"): item.get("sha256") for item in actual_archives}
     inspected = report.get("inspected_files", [])
+    with tarfile.open(archive_paths[1], "r:gz") as archive:
+        module = next(name for name in archive.getnames()
+                      if re.fullmatch(r"collection/lib/collection\.(?:dylib|so)", name))
+    module_path = module.removeprefix("collection/")
     if (report.get("passed") is not True or report.get("architecture") != ARCHITECTURE
             or not isinstance(inspected, list)
-            or not any(item.get("file") == "lib/collection.dylib" for item in inspected)
+            or not any(item.get("file") == module_path for item in inspected)
             or actual_archives != expected_archives):
         raise EvidenceError(f"static analysis does not pass against final archives: {path}")
 

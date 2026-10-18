@@ -157,7 +157,8 @@ def import_run(root, core_artifact, collection_artifact, run_id):
                 or not str(ci.get("run_url", "")).endswith(f"/actions/runs/{run_id}")):
             raise coverage.CoverageError("receipt CI provenance differs from raw attempt")
         if results["static-analysis"] == "passed":
-            publication._report(report_path, expected_archives)
+            publication._report(report_path, expected_archives,
+                                 publication._module_path(archives[extension_names[version]]))
         _retain(receipt_path, evidence / receipt_path.name, copies)
         expected_records.add(f"collection-{version}-postgresql-{publication.PG_VERSION}-{publication.PLATFORM}-current-{run_id}.json")
 
