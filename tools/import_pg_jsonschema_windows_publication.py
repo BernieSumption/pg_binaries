@@ -167,6 +167,7 @@ def import_run(root, core_artifact, extension_artifact, run_id):
             destination = (evidence / "verification-record.json"
                            if source == record_path else evidence / source.name)
             _retain(source, destination, copies)
+    _retain(record_path, root / "support/verification" / record_path.name, copies)
     _copy(copies)
     return [str(dest.relative_to(root)) for _, dest in copies]
 

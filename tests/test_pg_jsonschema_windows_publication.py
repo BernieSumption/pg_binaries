@@ -134,6 +134,66 @@ class PgJsonschemaWindowsArchiveTests(unittest.TestCase):
             with self.assertRaisesRegex(Exception, "licence inventory"):
                 checker.inspect(self.core, self.extension, self.root / "report.json")
 
+    def test_importer_persists_validated_record_to_verification_directory(self):
+        repo = self.root / "repo"
+        for relative in ("support.json", "support/verification-profiles.json",
+                         "support/postgresql-releases.json"):
+            destination = repo / relative
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(relative, destination)
+        profiles = json.loads((repo / "support/verification-profiles.json").read_text())["profiles"]
+        for relative in profiles[publication.PROFILE_ID]["sources"]:
+            destination = repo / relative
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            shutil.copyfile(relative, destination)
+
+        core_dir, output = self.root / "core", self.root / "output"
+        core_dir.mkdir()
+        output.mkdir()
+        self.core = core_dir / self.core.name
+        self.extension = output / self.extension.name
+        core_hash = self._archives()
+        extension_hash = hashlib.sha256(self.extension.read_bytes()).hexdigest()
+        for archive, digest in ((self.core, core_hash), (self.extension, extension_hash)):
+            Path(str(archive) + ".sha256").write_text(f"{digest}  {archive.name}\n")
+        (output / "probe-output.txt").parent.mkdir(parents=True, exist_ok=True)
+        (output / "probe-output.txt").write_text("CREATE EXTENSION pg_jsonschema\n")
+        pe_report = output / "pe-dependency-analysis.json"
+        pe_report.write_text(json.dumps({"outcome": "passed", "inspected_files": [
+            "pg_jsonschema/lib/pg_jsonschema.dll"]}))
+        static = {
+            "passed": True, "architecture": publication.ARCHITECTURE,
+            "archives": {self.core.name: core_hash, self.extension.name: extension_hash},
+            "inspected_files": ["pg_jsonschema/lib/pg_jsonschema.dll"],
+            "native_extension_files": ["pg_jsonschema/lib/pg_jsonschema.dll"],
+            "pe_dependency_analysis_sha256": hashlib.sha256(pe_report.read_bytes()).hexdigest(),
+        }
+        (output / "static-analysis.json").write_text(json.dumps(static))
+
+        with patch.object(publication, "CORE_SHA256", core_hash):
+            publication.emit(
+                repo, core_dir, output, output,
+                {"archive-suite": "success", "static-analysis": "success"},
+                "10.0.20348.0", "windows-2022/test-image",
+                {"GITHUB_SHA": "a" * 40, "GITHUB_RUN_ID": "123",
+                 "GITHUB_REPOSITORY": "owner/repo", "GITHUB_SERVER_URL": "https://github.com"})
+            imported = importer.import_run(repo, core_dir, output, "123")
+
+        record_name = ("pg_jsonschema-0.3.4-postgresql-18.6-windows-x86_64-current-123.json")
+        retained = repo / "support/verification" / record_name
+        self.assertTrue(retained.is_file())
+        self.assertIn(f"support/verification/{record_name}", imported)
+        evidence_record = (repo / "support/evidence/pg_jsonschema-windows-publication-123/x86_64/"
+                          / "verification-record.json")
+        self.assertEqual(retained.read_bytes(), evidence_record.read_bytes())
+        record = json.loads(retained.read_text())
+        coverage_module = sys.modules.get("coverage")
+        if coverage_module is None:
+            sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
+            import coverage as coverage_module
+        self.assertTrue(coverage_module.validate_verification_record(
+            record, coverage_module.load_json(repo / "support.json"), repo))
+
     def test_importer_rejects_attempt_for_a_different_run(self):
         repo = self.root / "repo"
         (repo / "support").mkdir(parents=True)
