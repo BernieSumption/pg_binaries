@@ -1,6 +1,14 @@
 name: pg_jsonschema 0.3.4 PostgreSQL 15.19 and 16.15 Linux candidate publication
 
 on:
+  push:
+    branches: [spike]
+    paths:
+      - '.github/workflows/pg-jsonschema-linux-15-16-publication.yml'
+      - 'scripts/pg_jsonschema/linux-*'
+      - 'tools/emit_pg_jsonschema_linux_publication.py'
+      - 'tools/import_pg_jsonschema_linux_publication.py'
+      - 'tests/test_pg_jsonschema_linux_publication.py'
   workflow_dispatch:
     inputs:
       postgresql_version:
@@ -21,19 +29,33 @@ permissions:
   contents: read
 
 jobs:
-  scope:
-    uses: ./.github/workflows/profile-change-scope.yml
-    with:
-      profile_id: pg-jsonschema-publication-linux-${{ inputs.architecture }}-${{ inputs.postgresql_version }}
+  select:
+    runs-on: ubuntu-latest
+    outputs:
+      targets: ${{ steps.targets.outputs.targets }}
+    steps:
+      - id: targets
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PG_VERSION: ${{ inputs.postgresql_version }}
+          PG_ARCHITECTURE: ${{ inputs.architecture }}
+        run: |
+          if [[ "$EVENT_NAME" == push ]]; then
+            echo 'targets={"include":[{"postgresql_version":"15.19","architecture":"x86_64"},{"postgresql_version":"15.19","architecture":"arm64"},{"postgresql_version":"16.15","architecture":"x86_64"},{"postgresql_version":"16.15","architecture":"arm64"}]}' >> "$GITHUB_OUTPUT"
+          else
+            echo "targets={\"include\":[{\"postgresql_version\":\"$PG_VERSION\",\"architecture\":\"$PG_ARCHITECTURE\"}]}" >> "$GITHUB_OUTPUT"
+          fi
 
   publish:
-    needs: scope
-    if: needs.scope.outputs.should_run == 'true'
-    runs-on: ${{ inputs.architecture == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-24.04' }}
+    needs: select
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.select.outputs.targets) }}
+    runs-on: ${{ matrix.architecture == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-24.04' }}
     timeout-minutes: 90
     env:
-      PG_ARCHITECTURE: ${{ inputs.architecture }}
-      PG_VERSION: ${{ inputs.postgresql_version }}
+      PG_ARCHITECTURE: ${{ matrix.architecture }}
+      PG_VERSION: ${{ matrix.postgresql_version }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -44,8 +66,8 @@ jobs:
       - name: Download pinned PostgreSQL core archive
         uses: actions/download-artifact@v4
         with:
-          name: linux-publication-${{ inputs.architecture }}-evidence
-          run-id: ${{ inputs.postgresql_version == '15.19' && '39082151857' || '39082147531' }}
+          name: linux-publication-${{ matrix.architecture }}-evidence
+          run-id: ${{ matrix.postgresql_version == '15.19' && '39082151857' || '39082147531' }}
           github-token: ${{ github.token }}
           path: ${{ runner.temp }}/core
       - name: Build final archive from pinned upstream source
@@ -79,7 +101,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: pg-jsonschema-0.3.4-postgresql-${{ inputs.postgresql_version }}-linux-${{ inputs.architecture }}-candidate-${{ github.run_id }}
+          name: pg-jsonschema-0.3.4-postgresql-${{ matrix.postgresql_version }}-linux-${{ matrix.architecture }}-candidate-${{ github.run_id }}
           path: |
             ${{ runner.temp }}/pg_jsonschema/*.tar.gz
             ${{ runner.temp }}/pg_jsonschema/*.sha256
