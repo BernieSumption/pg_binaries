@@ -540,7 +540,7 @@
       "scope": "publication",
       "platforms": ["windows-x86_64"],
       "case_ids": ["archive-suite", "static-analysis"],
-      "sources": [".gitattributes", ".github/workflows/hypopg-windows-17.11-publication.yml", "scripts/hypopg/probe.sql", "scripts/hypopg/windows-feasibility.ps1", "support.json", "support/postgresql-releases.json", "support/windows-core-pins/17.11-x86_64.json", "tests/test_hypopg_windows_publication.py", "tests/test_windows_core_pin.py", "tools/check_extension_redistribution.py", "tools/check_hypopg_windows_archive.py", "tools/check_pe_dependencies.py", "tools/coverage.py", "tools/create_windows_symbols.py", "tools/emit_hypopg_windows_publication.py", "tools/hypopg_windows_symbols.py", "tools/import_hypopg_windows_publication.py", "tools/windows_core_pin.py"]
+      "sources": [".gitattributes", ".github/workflows/hypopg-windows-17.11-publication.yml", "scripts/hypopg/probe.sql", "scripts/hypopg/verify-windows-publication.ps1", "scripts/hypopg/windows-feasibility.ps1", "support.json", "support/postgresql-releases.json", "support/windows-core-pins/17.11-x86_64.json", "tests/test_hypopg_windows_publication.py", "tests/test_windows_core_pin.py", "tools/check_extension_redistribution.py", "tools/check_hypopg_windows_archive.py", "tools/check_pe_dependencies.py", "tools/coverage.py", "tools/create_windows_symbols.py", "tools/emit_hypopg_windows_publication.py", "tools/hypopg_windows_symbols.py", "tools/import_hypopg_windows_publication.py", "tools/windows_core_pin.py"]
     }
   }
 }

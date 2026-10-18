@@ -1,7 +1,8 @@
 param(
   [Parameter(Mandatory = $true)][string]$CoreArchiveDirectory,
   [Parameter(Mandatory = $true)][string]$OutputDirectory,
-  [ValidateSet("15.19", "16.15", "17.11", "18.6")][string]$PostgreSQLVersion = "18.6"
+  [ValidateSet("15.19", "16.15", "17.11", "18.6")][string]$PostgreSQLVersion = "18.6",
+  [switch]$BuildOnly
 )
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
@@ -191,6 +192,8 @@ try {
   if ($LASTEXITCODE -ne 0) { throw 'Final HypoPG archive redistribution inventory check failed' }
   $extensionHash = (Get-FileHash $extensionArchive -Algorithm SHA256).Hash.ToLowerInvariant()
   [IO.File]::WriteAllText("$extensionArchive.sha256", "$extensionHash  $archiveName`n", [Text.UTF8Encoding]::new($false))
+
+  if ($BuildOnly) { return }
 
   Move-Item $pgRoot $moved
   $pgRoot = $moved

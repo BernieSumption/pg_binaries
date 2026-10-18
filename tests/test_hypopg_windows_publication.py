@@ -34,6 +34,19 @@ class HypopgWindowsArchiveTests(unittest.TestCase):
         self.assertIn("windows_core_pin.py", script)
         self.assertIn("run-id: ${{ steps.core_pin.outputs.run_id }}", workflow)
 
+    def test_17_11_verifies_uploaded_archives_on_a_separate_runner(self):
+        workflow = Path(".github/workflows/hypopg-windows-17.11-publication.yml").read_text()
+        verifier = Path("scripts/hypopg/verify-windows-publication.ps1")
+        profiles = json.loads(Path("support/verification-profiles.json").read_text())["profiles"]
+        profile = profiles["hypopg-publication-windows-x86_64-17.11"]
+        self.assertIn("build:\n", workflow)
+        self.assertIn("verify:\n", workflow)
+        self.assertIn("needs: [profile_scope, build]", workflow)
+        self.assertIn("windows-2022", workflow)
+        self.assertIn("hypopg-windows-17.11-build-${{ github.run_id }}", workflow)
+        self.assertIn("scripts/hypopg/verify-windows-publication.ps1", profile["sources"])
+        self.assertTrue(verifier.is_file())
+
     @staticmethod
     def _tar(path, entries):
         with tarfile.open(path, "w:gz") as archive:
