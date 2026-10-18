@@ -1,0 +1,3 @@
+build	Build and package	2026-10-18T00:35:48.8450316Z usage: map_vcpkg_dlls.py [-h] --installed-root INSTALLED_ROOT --dll-directory
+build	Build and package	2026-10-18T00:35:48.8451882Z map_vcpkg_dlls.py: error: installed vcpkg status record must contain exactly one nonempty version field: icu:x64-windows
+build	Build and package	2026-10-18T00:35:49.0313273Z ##[error]Process completed with exit code 1.
