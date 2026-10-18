@@ -1,0 +1,7 @@
+# Selected Linux trial with version-aware verification
+
+[GitHub Actions run 39171748020](https://github.com/BernieSumption/pg_binaries/actions/runs/39171748020) passed at source revision `39c1820942a6d8ed509ce3591f761e053ea8cbeb`. It selected PostgreSQL 17.11 and pgvector 0.8.7 for Linux x86-64, built a new core, and passed the relocated Alpine archive suite, diagnostics and no-host-user-space launch against the final archive bytes. This revision passes the selected pgvector version into the verifier and source-identity check.
+
+The imported [PostgreSQL record](../verification/postgresql-17.11-linux-x86_64-current-39171748020.json) binds core SHA-256 `071b343d3bc5b0a258bf43e5385fb5872d4f48431ae3bd33e079c9d8a1cf7f5e`; the [pgvector record](../verification/pgvector-0.8.7-postgresql-17.11-linux-x86_64-current-39171748020.json) binds extension SHA-256 `214ba887efb5464a2ae85afa96825d7da5177e97f5f1897f60eb3720f57115ac` and the same core. Both report all three cases passed under profile revision `46898f825bff62cfa774a85fe6808652dc7d580cac3a5eb04eb99b10feff6d68`. The importer checked the downloaded archive checksums, receipt, static-analysis report and diagnostic evidence. Retained outputs are under [the run evidence directory](linux-publication-39171748020/postgresql-17.11/x86_64/current-steps.json).
+
+The selected workflow did not yet reuse a core archive from a previous selected run; it rebuilt the core. That reuse path remains to be verified.
