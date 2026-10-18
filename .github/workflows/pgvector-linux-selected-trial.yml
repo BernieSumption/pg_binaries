@@ -85,53 +85,9 @@ jobs:
         run: |
           set -euo pipefail
           core_name="postgresql-$PG_VERSION-linux-x86_64.tar.gz"
-          mkdir -p "$RUNNER_TEMP/core"
-          candidate_fresh=false
-          docker pull --platform linux/amd64 ubuntu:22.04
-          base_image_ref=$(docker image inspect ubuntu:22.04 --format '{{index .RepoDigests 0}}')
-          base_image_digest=${base_image_ref##*@}
-          docker build --pull --platform linux/amd64 -f scripts/linux/Dockerfile \
-            -t pg-binaries-linux-pilot .
-          builder_packages_sha256=$(docker run --rm --platform linux/amd64 \
-            --entrypoint dpkg-query pg-binaries-linux-pilot \
-            -W -f='${binary:Package}\t${Version}\t${Architecture}\t${db:Status-Abbrev}\n' \
-            | LC_ALL=C sort | sha256sum | awk '{print $1}')
-          for candidate_source in selected publication; do
-            if [[ "$candidate_source" == selected ]]; then
-              source_workflow=pgvector-linux-selected-trial.yml
-              artifact_template="pgvector-linux-selected-$PG_VERSION-{run_id}"
-            else
-              source_workflow=linux-publication.yml
-              artifact_template=linux-publication-x86_64-evidence
-            fi
-            python3 tools/actions_candidate_discovery.py \
-              --repository "$GITHUB_REPOSITORY" --workflow "$source_workflow" \
-              --branch "$GITHUB_REF_NAME" --current-run-id "$GITHUB_RUN_ID" \
-              --artifact-name-template "$artifact_template" \
-              --archive-basename "$core_name" --project postgresql --version "$PG_VERSION" \
-              --platform linux-x86_64 --postgresql-version "$PG_VERSION" \
-              --output-directory "$RUNNER_TEMP/core" \
-              --manifest-path "$RUNNER_TEMP/core-candidate-manifest.json"
-            if [[ -s "$RUNNER_TEMP/core/$core_name" && -s "$RUNNER_TEMP/core/$core_name.sha256" ]] && \
-               python3 tools/linux_core_candidate.py \
-                 --manifest "$RUNNER_TEMP/core-candidate-manifest.json" \
-                 --archive "$RUNNER_TEMP/core/$core_name" --postgresql-version "$PG_VERSION" \
-                 --base-image-digest "$base_image_digest" \
-                 --builder-packages-sha256 "$builder_packages_sha256"; then
-              candidate_fresh=true
-              break
-            fi
-            rm -f "$RUNNER_TEMP/core/$core_name" "$RUNNER_TEMP/core/$core_name.sha256"
-          done
-          if [[ "$candidate_fresh" == true ]] && \
-             [[ -s "$RUNNER_TEMP/core/$core_name" ]]; then
-            echo 'Using a checksum-verified core candidate with matching source/run identity and builder inputs.'
-          else
-            rm -f "$RUNNER_TEMP/core/$core_name" "$RUNNER_TEMP/core/$core_name.sha256"
-            echo 'No fresh checked core candidate exists; building the selected PostgreSQL core in Docker.'
-            PG_VERSION="$PG_VERSION" PG_ARCHITECTURE=x86_64 \
-              scripts/linux/build.sh "$RUNNER_TEMP/core"
-          fi
+          scripts/linux/resolve-core.sh "$PG_VERSION" x86_64 "$RUNNER_TEMP/core" \
+            pgvector-linux-selected-trial.yml "pgvector-linux-selected-$PG_VERSION-{run_id}" \
+            linux-publication.yml linux-publication-x86_64-evidence
           python3 scripts/pgvector/archive_input.py validate-core \
             "$RUNNER_TEMP/core/$core_name" "$RUNNER_TEMP/core/$core_name.sha256" \
             "$(sha256sum "$RUNNER_TEMP/core/$core_name" | awk '{print $1}')" \

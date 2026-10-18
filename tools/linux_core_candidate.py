@@ -54,7 +54,8 @@ def relevant_inputs_match(revision, root=ROOT):
 
 
 def validate_candidate(manifest_path, archive_path, version, base_image_digest,
-                       builder_packages_sha256, root=ROOT):
+                       builder_packages_sha256, root=ROOT, architecture="x86_64",
+                       artifact_name_template=None):
     """Require a discovered core archive to match target, producer and current recipe inputs."""
     root, archive_path = Path(root), Path(archive_path)
     try:
@@ -67,20 +68,26 @@ def validate_candidate(manifest_path, archive_path, version, base_image_digest,
         raise ValueError("discovery must identify exactly one checked core archive")
     row = rows[0]
     source = row.get("source") if isinstance(row, dict) else None
+    if architecture not in {"x86_64", "arm64"}:
+        raise ValueError(f"unsupported Linux architecture: {architecture}")
     if (not isinstance(row, dict) or row.get("component") != "postgresql" or row.get("version") != version
-            or row.get("platform") != "linux-x86_64"
+            or row.get("platform") != f"linux-{architecture}"
             or row.get("postgresql_version") != version
             or Path(str(row.get("path", ""))).name != archive_path.name):
         raise ValueError("discovered archive target does not match selected PostgreSQL core")
     run_id = str(source.get("run_id", "")) if isinstance(source, dict) else ""
     artifact_name = source.get("artifact_name") if isinstance(source, dict) else None
-    publication_artifact = artifact_name == "linux-publication-x86_64-evidence"
-    selected_artifact = artifact_name == f"pgvector-linux-selected-{version}-{run_id}"
+    expected_artifacts = {
+        f"linux-publication-{architecture}-evidence",
+        f"pgvector-linux-selected-{version}-{run_id}",
+    }
+    if artifact_name_template is not None:
+        expected_artifacts = {artifact_name_template.replace("{run_id}", run_id)}
     if (not isinstance(source, dict) or source.get("provider") != "github-actions"
             or not re.fullmatch(r"[1-9][0-9]*", run_id)
             or not isinstance(source.get("run_attempt"), int)
             or isinstance(source.get("run_attempt"), bool) or source["run_attempt"] < 1
-            or not (publication_artifact or selected_artifact)
+            or artifact_name not in expected_artifacts
             or not SHA.fullmatch(str(source.get("head_sha", "")))):
         raise ValueError("candidate lacks a checked matching Linux run and artifact identity")
     if not archive_path.is_file() or row.get("sha256") != _sha256(archive_path):
@@ -94,7 +101,7 @@ def validate_candidate(manifest_path, archive_path, version, base_image_digest,
     except (OSError, tarfile.TarError, json.JSONDecodeError) as exc:
         raise ValueError(f"cannot read candidate PostgreSQL manifest: {exc}") from exc
     if (metadata.get("component") != "postgresql" or metadata.get("version") != version
-            or metadata.get("platform") != "linux" or metadata.get("architecture") != "x86_64"
+            or metadata.get("platform") != "linux" or metadata.get("architecture") != architecture
             or metadata.get("source_revision") != source["head_sha"]
             or not re.fullmatch(r"sha256:[0-9a-f]{64}", str(metadata.get("builder_image_id", "")))):
         raise ValueError("core manifest target or source revision differs from producer run")
@@ -134,11 +141,14 @@ def main(argv=None):
     parser.add_argument("--postgresql-version", required=True)
     parser.add_argument("--base-image-digest", required=True)
     parser.add_argument("--builder-packages-sha256", required=True)
+    parser.add_argument("--architecture", choices=("x86_64", "arm64"), default="x86_64")
+    parser.add_argument("--artifact-name-template")
     parser.add_argument("--root", type=Path, default=ROOT)
     args = parser.parse_args(argv)
     try:
         result = validate_candidate(args.manifest, args.archive, args.postgresql_version,
-                                    args.base_image_digest, args.builder_packages_sha256, args.root)
+                                    args.base_image_digest, args.builder_packages_sha256, args.root,
+                                    args.architecture, args.artifact_name_template)
     except (OSError, ValueError, TypeError, KeyError, source_archive.SourceArchiveError) as exc:
         print(f"Rejected core candidate: {exc}", file=sys.stderr)
         return 1

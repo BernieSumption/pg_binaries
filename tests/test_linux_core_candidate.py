@@ -46,10 +46,10 @@ class LinuxCoreCandidateTests(unittest.TestCase):
         self.temp.cleanup()
 
     def write_candidate(self, *, producer_revision=None, artifact_name="linux-publication-x86_64-evidence",
-                        builder_image_id=BUILDER_IMAGE_ID):
+                        builder_image_id=BUILDER_IMAGE_ID, architecture="x86_64"):
         source = source_archive.source_archive("postgresql", "17.11", "tar.bz2", self.root)
         metadata = {"component": "postgresql", "version": "17.11", "platform": "linux",
-                    "architecture": "x86_64", "source_revision": producer_revision or self.revision,
+                    "architecture": architecture, "source_revision": producer_revision or self.revision,
                     "source_archive": source, "builder_image_id": builder_image_id,
                     "builder_inputs": {"base_image": "ubuntu:22.04",
                                        "base_image_digest": self.BASE_IMAGE_DIGEST,
@@ -59,7 +59,7 @@ class LinuxCoreCandidateTests(unittest.TestCase):
             info = tarfile.TarInfo("postgresql/manifest.json")
             info.size = len(data)
             archive.addfile(info, io.BytesIO(data))
-        row = {"component": "postgresql", "version": "17.11", "platform": "linux-x86_64",
+        row = {"component": "postgresql", "version": "17.11", "platform": f"linux-{architecture}",
                "postgresql_version": "17.11", "path": str(self.archive_path),
                "sha256": hashlib.sha256(self.archive_path.read_bytes()).hexdigest(),
                "source": {"provider": "github-actions", "run_id": "1234", "run_attempt": 2,
@@ -127,6 +127,30 @@ class LinuxCoreCandidateTests(unittest.TestCase):
             self.manifest_path, self.archive_path, "17.11", self.BASE_IMAGE_DIGEST,
             self.BUILDER_PACKAGES_SHA256, self.root)
         self.assertEqual(result["run_id"], "1234")
+
+    def test_selected_artifact_template_is_bound_to_run_and_version(self):
+        self.write_candidate(artifact_name="hypopg-linux-selected-17.11-1234")
+        result = candidate.validate_candidate(
+            self.manifest_path, self.archive_path, "17.11", self.BASE_IMAGE_DIGEST,
+            self.BUILDER_PACKAGES_SHA256, self.root, "x86_64",
+            "hypopg-linux-selected-17.11-{run_id}")
+        self.assertEqual(result["run_id"], "1234")
+        with self.assertRaisesRegex(ValueError, "artifact identity"):
+            candidate.validate_candidate(
+                self.manifest_path, self.archive_path, "17.11", self.BASE_IMAGE_DIGEST,
+                self.BUILDER_PACKAGES_SHA256, self.root, "x86_64",
+                "hypopg-linux-selected-18.0-{run_id}")
+
+    def test_accepts_arm64_candidate_and_rejects_wrong_architecture(self):
+        self.write_candidate(artifact_name="linux-publication-arm64-evidence", architecture="arm64")
+        result = candidate.validate_candidate(
+            self.manifest_path, self.archive_path, "17.11", self.BASE_IMAGE_DIGEST,
+            self.BUILDER_PACKAGES_SHA256, self.root, "arm64")
+        self.assertEqual(result["run_id"], "1234")
+        with self.assertRaisesRegex(ValueError, "target"):
+            candidate.validate_candidate(
+                self.manifest_path, self.archive_path, "17.11", self.BASE_IMAGE_DIGEST,
+                self.BUILDER_PACKAGES_SHA256, self.root, "x86_64")
 
     def test_rejects_selected_artifact_with_mismatched_version_or_run(self):
         for name in ("pgvector-linux-selected-18.0-1234", "pgvector-linux-selected-17.11-9876"):
