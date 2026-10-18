@@ -37,10 +37,10 @@ def parse_status(path):
             raise ValueError("installed vcpkg status record lacks Package or Architecture")
         versions = [(field, fields[field]) for field in VERSION_FIELDS
                     if fields.get(field)]
-        if len(versions) != 1:
+        if not versions or len({value for _, value in versions}) != 1:
             raise ValueError(
-                f"installed vcpkg status record must contain exactly one nonempty version field: "
-                f"{name}:{triplet}")
+                f"installed vcpkg status record needs one unambiguous version: "
+                f"{name}:{triplet}; version fields={versions!r}; fields={sorted(fields)!r}")
         version = versions[0][1]
         key = (name, triplet)
         record = {

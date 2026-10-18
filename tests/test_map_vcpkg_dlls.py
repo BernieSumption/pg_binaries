@@ -99,14 +99,24 @@ class VcpkgDllMappingTests(unittest.TestCase):
                 item = map_bundled_dlls(self.installed, self.dll_dir)["components"][0]
                 self.assertEqual(item["version"], "74.2")
 
-    def test_rejects_multiple_nonempty_vcpkg_version_fields(self):
+    def test_accepts_matching_duplicate_vcpkg_version_fields(self):
         status = self.root / "installed" / "vcpkg" / "status"
         status.write_text(
             "Package: icu\nVersion: 74.2\nVersion-Date: 74.2\n"
             "Port-Version: 0\nArchitecture: x64-windows\nStatus: install ok installed\n\n",
             encoding="utf-8")
         (self.dll_dir / "icuuc74.dll").write_bytes(b"icu")
-        with self.assertRaisesRegex(ValueError, "exactly one nonempty version field"):
+        item = map_bundled_dlls(self.installed, self.dll_dir)["components"][0]
+        self.assertEqual(item["version"], "74.2")
+
+    def test_rejects_conflicting_vcpkg_version_fields(self):
+        status = self.root / "installed" / "vcpkg" / "status"
+        status.write_text(
+            "Package: icu\nVersion: 74.2\nVersion-Date: 2026-10-18\n"
+            "Port-Version: 0\nArchitecture: x64-windows\nStatus: install ok installed\n\n",
+            encoding="utf-8")
+        (self.dll_dir / "icuuc74.dll").write_bytes(b"icu")
+        with self.assertRaisesRegex(ValueError, "one unambiguous version"):
             map_bundled_dlls(self.installed, self.dll_dir)
 
     def test_rejects_unowned_dll(self):
@@ -124,7 +134,7 @@ class VcpkgDllMappingTests(unittest.TestCase):
         status = self.root / "installed" / "vcpkg" / "status"
         status.write_text("Package: icu\nArchitecture: x64-windows\nStatus: install ok installed\n", encoding="utf-8")
         (self.dll_dir / "icuuc74.dll").write_bytes(b"icu")
-        with self.assertRaisesRegex(ValueError, "exactly one nonempty version field"):
+        with self.assertRaisesRegex(ValueError, "one unambiguous version"):
             map_bundled_dlls(self.installed, self.dll_dir)
 
     def test_rejects_missing_notice(self):
