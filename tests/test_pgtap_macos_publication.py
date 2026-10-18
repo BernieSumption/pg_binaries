@@ -113,7 +113,7 @@ class PublicationFixture:
 
 class PgtapMacOSPublicationTests(unittest.TestCase):
     def test_target_pins_match_passed_current_core_records(self):
-        self.assertEqual(len(TARGET_CONFIGS), 4)
+        self.assertEqual(len(TARGET_CONFIGS), 8)
         for config in TARGET_CONFIGS:
             target = load_target_config(config)
             record_path = (ROOT / "support/verification" /
