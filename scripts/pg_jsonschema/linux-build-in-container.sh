@@ -39,7 +39,51 @@ cargo pgrx install --release --no-default-features --features "pg${pg_major}" --
 test "$(sha256sum /work/source/Cargo.lock | awk '{print $1}')" = "$lock_sha256"
 test -s "$pgroot/lib/pg_jsonschema.so"
 test -s "$pgroot/share/extension/pg_jsonschema.control"
-tar -C /opt -czf "/out/$output_archive" postgresql
+package=/work/package/pg_jsonschema
+mkdir -p "$package/lib" "$package/share/extension" "$package/LICENSES/pg_jsonschema" "$package/LICENSES/cargo"
+install -m 755 "$pgroot/lib/pg_jsonschema.so" "$package/lib/pg_jsonschema.so"
+install -m 644 "$pgroot/share/extension/pg_jsonschema.control" "$package/share/extension/pg_jsonschema.control"
+shopt -s nullglob
+sql_files=("$pgroot/share/extension/pg_jsonschema--"*.sql)
+(( ${#sql_files[@]} > 0 ))
+install -m 644 "${sql_files[@]}" "$package/share/extension/"
+if [[ -f /work/source/LICENSE ]]; then install -m 644 /work/source/LICENSE "$package/LICENSES/pg_jsonschema/LICENSE"; fi
+cp /out/cargo-license-inventory.json "$package/LICENSES/cargo/cargo-license-inventory.json"
+python3 - "$package" /work/source /work/cargo-metadata.json /out/cargo-license-inventory.json \
+  "$extension_version" "$pg_version" "$architecture" "$extension_commit" "$lock_sha256" <<'PY'
+import json, pathlib, shutil, sys
+
+package, source = pathlib.Path(sys.argv[1]), pathlib.Path(sys.argv[2])
+metadata_path, inventory_path = pathlib.Path(sys.argv[3]), pathlib.Path(sys.argv[4])
+version, pg_version, architecture, commit, lock_sha = sys.argv[5:]
+cargo = json.loads(metadata_path.read_text())
+inventory = json.loads(inventory_path.read_text())
+by_package = {(item['name'], item['version'], item.get('source')): pathlib.Path(item['manifest_path']).parent
+              for item in cargo['packages']}
+for item in inventory['packages']:
+    crate = by_package[(item['name'], item['version'], item.get('source'))]
+    target = package / 'LICENSES' / 'cargo' / f"{item['name']}-{item['version']}"
+    for notice in item['license_notice_files']:
+        relative = pathlib.Path(notice['path'])
+        destination = target / relative
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(crate / relative, destination)
+for notice in inventory['source_files']:
+    relative = pathlib.Path(notice['path'])
+    destination = package / 'LICENSES' / 'pg_jsonschema' / relative
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(source / relative, destination)
+metadata = {
+    'project': 'pg_jsonschema', 'version': version, 'sql_names': ['pg_jsonschema'],
+    'requires': [], 'configuration_prerequisites': [], 'runtime_prerequisites': [],
+    'postgresql_version': pg_version, 'platform': 'linux', 'architecture': architecture,
+    'source': {'url': 'https://github.com/supabase/pg_jsonschema.git', 'commit': commit,
+               'cargo_lock_sha256': lock_sha},
+    'release_eligible': False, 'redistribution_status': 'seahash-4.1.0-notice-unresolved',
+}
+pathlib.Path('/work/package/metadata.json').write_text(json.dumps(metadata, indent=2, sort_keys=True) + '\n')
+PY
+tar -C /work/package -czf "/out/$output_archive" pg_jsonschema metadata.json
 cd /out
 sha256sum "$output_archive" > "$output_archive.sha256"
 {

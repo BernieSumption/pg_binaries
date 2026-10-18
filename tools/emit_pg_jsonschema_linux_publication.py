@@ -15,12 +15,17 @@ DEFAULT_PG_VERSION = "18.6"
 EXTENSION_VERSION = "0.3.4"
 SOURCE_COMMIT = "cbe74b570d38aa0c4d42914e7a118bcb3adaee7a"
 CARGO_LOCK_SHA256 = "ab865dc25d9eea4bf7dbfaf8fae13283e5c0bce4bca460fe10464c6716e67028"
-CORE_RUNS = {"18.6": "39081368117", "17.11": "39082111630"}
+CORE_RUNS = {"18.6": "39081368117", "17.11": "39082111630",
+             "15.19": "39082151857", "16.15": "39082147531"}
 CORE_SHA256 = {
     "18.6": {"x86_64": "f89a7047812324b85c3b0bb29a3118fc55a492b17956f1fe0d74d1788d33d680",
              "arm64": "0eb9c0144fd0b1669c594ce1ebcf7abdf4e1ae3f8e29e59a92833e476001e42b"},
     "17.11": {"x86_64": "ffc3160481f8d0cd5f7c14bd95f0e3964242ac78b01f6d4b0e3b03806d4b34dc",
               "arm64": "82f22d4110bd8d82307d068d4416fc5d223dc6d68efc41cb3494677384509010"},
+    "15.19": {"x86_64": "f538b0f41d25b8eea530ce59897248e83dfe770265c7a53698e7a9c2bef45db5",
+              "arm64": "9b570ba3827c2255a668375ec09ffe8d249e473d8389a7191e7c1fd77fbdca97"},
+    "16.15": {"x86_64": "f8758cdcb93f6d177f1d01e10dc10ba590acc3bbdadb47b78110996678c599ff",
+              "arm64": "8602843a166b8de1944857b0bfe9eefc3139a9cb726f4296ee66e18a8e608b70"},
 }
 PG_VERSIONS = tuple(CORE_RUNS)
 
@@ -103,7 +108,8 @@ def emit(root, archives, core_archives, output, architecture, build_result,
     static = read_json(static_path)
     static_archives = static.get("archives", [])
     if (static.get("outcome") != "passed" or static.get("architecture") != architecture
-            or {item.get("basename"): item.get("sha256") for item in static_archives} != {archive_name: checksums[archive_name]}):
+            or {item.get("basename"): item.get("sha256") for item in static_archives}
+            != {archive_name: checksums[archive_name], core_name: checksums[core_name]}):
         raise coverage.CoverageError("ELF closure report does not pass for the exact final archive")
     build_text = (archives / "build-evidence.txt").read_text(encoding="utf-8")
     if (f"pg_jsonschema_source_commit={SOURCE_COMMIT}" not in build_text

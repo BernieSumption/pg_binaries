@@ -1,0 +1,93 @@
+name: pg_jsonschema 0.3.4 PostgreSQL 15.19 and 16.15 Linux candidate publication
+
+on:
+  workflow_dispatch:
+    inputs:
+      postgresql_version:
+        description: PostgreSQL version
+        type: choice
+        options: ['15.19', '16.15']
+        default: '16.15'
+        required: true
+      architecture:
+        description: Linux architecture
+        type: choice
+        options: [x86_64, arm64]
+        default: x86_64
+        required: true
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  scope:
+    uses: ./.github/workflows/profile-change-scope.yml
+    with:
+      profile_id: pg-jsonschema-publication-linux-${{ inputs.architecture }}-${{ inputs.postgresql_version }}
+
+  publish:
+    needs: scope
+    if: needs.scope.outputs.should_run == 'true'
+    runs-on: ${{ inputs.architecture == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-24.04' }}
+    timeout-minutes: 90
+    env:
+      PG_ARCHITECTURE: ${{ inputs.architecture }}
+      PG_VERSION: ${{ inputs.postgresql_version }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate publication evidence tooling
+        run: python -B -m unittest tests/test_pg_jsonschema_linux_publication.py
+      - name: Download pinned PostgreSQL core archive
+        uses: actions/download-artifact@v4
+        with:
+          name: linux-publication-${{ inputs.architecture }}-evidence
+          run-id: ${{ inputs.postgresql_version == '15.19' && '39082151857' || '39082147531' }}
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/core
+      - name: Build final archive from pinned upstream source
+        id: build
+        continue-on-error: true
+        run: bash scripts/pg_jsonschema/linux-build.sh "$RUNNER_TEMP/core/pilot" "$RUNNER_TEMP/pg_jsonschema"
+      - name: Run relocated Alpine SQL probe and inspect ELF closure
+        id: verify
+        if: always() && steps.build.outcome == 'success'
+        continue-on-error: true
+        run: bash scripts/pg_jsonschema/linux-verify.sh "$RUNNER_TEMP/pg_jsonschema" "$RUNNER_TEMP/core/pilot" 2>&1 | tee "$RUNNER_TEMP/pg_jsonschema/probe-output.txt"
+      - name: Emit attempt and archive-bound verification record
+        if: always()
+        env:
+          BUILD_RESULT: ${{ steps.build.outcome }}
+          VERIFY_RESULT: ${{ steps.verify.outcome }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/pg_jsonschema/publication"
+          python tools/emit_pg_jsonschema_linux_publication.py \
+            --archives "$RUNNER_TEMP/pg_jsonschema" --core-archives "$RUNNER_TEMP/core/pilot" \
+            --output "$RUNNER_TEMP/pg_jsonschema/publication" --architecture "$PG_ARCHITECTURE" --postgresql-version "$PG_VERSION" \
+            --build-result "${BUILD_RESULT:-skipped}" --verify-result "${VERIFY_RESULT:-skipped}" \
+            --image-id "$(docker image inspect pg-binaries-pg-jsonschema-alpine-probe --format '{{.Id}}' 2>/dev/null || echo unavailable)" \
+            --kernel-release "$(uname -r)"
+      - name: Validate and retain Linux publication evidence
+        if: always()
+        run: python tools/import_pg_jsonschema_linux_publication.py --core-archives "$RUNNER_TEMP/core/pilot" --archives "$RUNNER_TEMP/pg_jsonschema" --run-id "$GITHUB_RUN_ID"
+      - name: Upload candidate archive and evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pg-jsonschema-0.3.4-postgresql-${{ inputs.postgresql_version }}-linux-${{ inputs.architecture }}-candidate-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/pg_jsonschema/*.tar.gz
+            ${{ runner.temp }}/pg_jsonschema/*.sha256
+            ${{ runner.temp }}/pg_jsonschema/*.txt
+            ${{ runner.temp }}/pg_jsonschema/*.json
+            ${{ runner.temp }}/pg_jsonschema/static-analysis/**
+            ${{ runner.temp }}/pg_jsonschema/publication/**
+            support/evidence/pg_jsonschema-linux-publication-${{ github.run_id }}/**
+          if-no-files-found: warn
+          retention-days: 7
+      - name: Require archive suite and ELF closure to pass
+        if: always()
+        run: test '${{ steps.verify.outcome }}' = success

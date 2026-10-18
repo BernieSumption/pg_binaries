@@ -6,6 +6,8 @@ import json
 from pathlib import Path
 import shutil
 import sys
+import tarfile
+from pathlib import PurePosixPath
 
 import coverage
 import emit_pg_jsonschema_linux_publication as publication
@@ -64,6 +66,56 @@ def _step_results(attempt):
                    "elf-closure": publication._step(expected[1])}:
         raise coverage.CoverageError("case outcomes do not match retained workflow step outcomes")
     return results
+
+
+def _validate_package(path, architecture, pg_version):
+    expected = {
+        "project": "pg_jsonschema", "version": publication.EXTENSION_VERSION,
+        "sql_names": ["pg_jsonschema"], "requires": [],
+        "configuration_prerequisites": [], "runtime_prerequisites": [],
+        "postgresql_version": pg_version, "platform": "linux", "architecture": architecture,
+        "source": {"url": "https://github.com/supabase/pg_jsonschema.git",
+                   "commit": publication.SOURCE_COMMIT,
+                   "cargo_lock_sha256": publication.CARGO_LOCK_SHA256},
+        "release_eligible": False,
+        "redistribution_status": "seahash-4.1.0-notice-unresolved",
+    }
+    try:
+        with tarfile.open(path, "r:gz") as archive:
+            members = archive.getmembers()
+            names = set()
+            roots = set()
+            for member in members:
+                name = member.name.rstrip("/")
+                parsed = PurePosixPath(name)
+                if (not name or "\\" in name or parsed.is_absolute()
+                        or any(part in ("", ".", "..") for part in name.split("/"))
+                        or member.issym() or member.islnk() or name in names):
+                    raise coverage.CoverageError("extension archive contains an unsafe or duplicate member")
+                names.add(name)
+                roots.add(name.split("/")[0])
+            if roots != {"pg_jsonschema", "metadata.json"}:
+                raise coverage.CoverageError("extension archive must contain pg_jsonschema and sibling metadata.json")
+            metadata_member = next((m for m in members if m.name == "metadata.json" and m.isfile()), None)
+            if metadata_member is None or metadata_member.size > 1024 * 1024:
+                raise coverage.CoverageError("extension archive lacks bounded regular metadata.json")
+            metadata = json.load(archive.extractfile(metadata_member))
+            if metadata != expected:
+                raise coverage.CoverageError("extension package metadata does not match this candidate")
+            required = {"pg_jsonschema/lib/pg_jsonschema.so",
+                        "pg_jsonschema/share/extension/pg_jsonschema.control",
+                        "pg_jsonschema/LICENSES/cargo/cargo-license-inventory.json"}
+            if not required <= names:
+                raise coverage.CoverageError("extension archive is missing a required payload or licence inventory")
+            controls = {name.rsplit("/", 1)[-1][:-8] for name in names
+                        if name.startswith("pg_jsonschema/share/extension/") and name.endswith(".control")}
+            if controls != {"pg_jsonschema"}:
+                raise coverage.CoverageError("extension payload SQL names differ from candidate metadata")
+            if not any(name.startswith("pg_jsonschema/share/extension/pg_jsonschema--") and name.endswith(".sql")
+                       for name in names):
+                raise coverage.CoverageError("extension payload lacks its versioned SQL script")
+    except (OSError, tarfile.TarError, UnicodeError, json.JSONDecodeError) as exc:
+        raise coverage.CoverageError(f"cannot inspect pg_jsonschema extension archive: {exc}") from exc
 
 
 def _retain_available(attempt_path, attempt, archives, evidence, copies):
@@ -135,6 +187,7 @@ def import_run(root, core_archives, archives, run_id):
     publication._sidecar(core_archive, digests[core_name])
     if digests[core_name] != publication.CORE_SHA256[pg_version][architecture]:
         raise coverage.CoverageError("downloaded core archive differs from the pinned current-profile archive")
+    _validate_package(extension_archive, architecture, pg_version)
     if attempt.get("archives") != digests:
         raise coverage.CoverageError("downloaded archive bytes differ from raw attempt hashes")
     _retain(Path(str(extension_archive) + ".sha256"), evidence / f"{archive_name}.sha256", copies)
@@ -142,10 +195,13 @@ def import_run(root, core_archives, archives, run_id):
     static_path = archives / "static-analysis" / "pg_jsonschema.json"
     if static_path.is_file():
         static = _read(static_path)
-        expected_static_archives = [{"basename": archive_name, "sha256": digests[archive_name]}]
+        expected_static_archives = sorted([
+            {"basename": archive_name, "sha256": digests[archive_name]},
+            {"basename": core_name, "sha256": digests[core_name]},
+        ], key=lambda item: item["basename"])
         if (static.get("outcome") not in {"passed", "failed"}
                 or static.get("architecture") != architecture
-                or static.get("archives") != expected_static_archives
+                or sorted(static.get("archives", []), key=lambda item: item.get("basename", "")) != expected_static_archives
                 or (static.get("outcome") == "passed") != (results["elf-closure"] == "passed")):
             raise coverage.CoverageError("ELF report outcome or checksum does not match the raw attempt")
     receipt_path = archives / "publication" / "current-receipt.json"

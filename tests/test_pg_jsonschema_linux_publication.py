@@ -1,9 +1,11 @@
 """Focused checks for Linux pg_jsonschema candidate evidence helpers."""
 
 import hashlib
+import io
 import json
 import sys
 import tempfile
+import tarfile
 import unittest
 from pathlib import Path
 from unittest.mock import patch
@@ -24,6 +26,19 @@ class LinuxPublicationHelpers(unittest.TestCase):
                          "pg-jsonschema-publication-linux-x86_64-17.11")
         self.assertNotEqual(publication.profile_id("x86_64", "18.6"),
                             publication.profile_id("arm64", "18.6"))
+
+    def test_selected_postgresql_15_and_16_core_pins(self):
+        self.assertEqual(publication.PG_VERSIONS, ("18.6", "17.11", "15.19", "16.15"))
+        self.assertEqual(publication.CORE_RUNS["15.19"], "39082151857")
+        self.assertEqual(publication.CORE_RUNS["16.15"], "39082147531")
+        self.assertEqual(publication.CORE_SHA256["15.19"], {
+            "x86_64": "f538b0f41d25b8eea530ce59897248e83dfe770265c7a53698e7a9c2bef45db5",
+            "arm64": "9b570ba3827c2255a668375ec09ffe8d249e473d8389a7191e7c1fd77fbdca97",
+        })
+        self.assertEqual(publication.CORE_SHA256["16.15"], {
+            "x86_64": "f8758cdcb93f6d177f1d01e10dc10ba590acc3bbdadb47b78110996678c599ff",
+            "arm64": "8602843a166b8de1944857b0bfe9eefc3139a9cb726f4296ee66e18a8e608b70",
+        })
 
     def test_step_outcomes_are_mapped(self):
         self.assertEqual(publication._step("success"), "passed")
@@ -70,6 +85,24 @@ class LinuxPublicationHelpers(unittest.TestCase):
             self.assertEqual(attempt["postgresql_version"], "17.11")
             self.assertEqual(attempt["core_run_id"], "39082111630")
 
+    def test_postgresql_15_and_16_attempts_select_pinned_core_runs(self):
+        for version, architecture in (("15.19", "arm64"), ("16.15", "x86_64")):
+            with self.subTest(version=version, architecture=architecture), tempfile.TemporaryDirectory() as directory:
+                root = Path(directory)
+                archives, core_dir = root / "archives", root / "core"
+                archives.mkdir()
+                core_dir.mkdir()
+                profile = {"profile_revision": "b" * 64, "case_ids": list(publication.CASES)}
+                with patch.object(coverage, "verification_profile", return_value=profile):
+                    paths = publication.emit(ROOT, archives, core_dir, archives / "publication", architecture,
+                                             "failure", "skipped", "c" * 40, "12345", "owner/repo",
+                                             "https://github.com", "image", "6.17.0-azure", version)
+                attempt = json.loads(paths[0].read_text(encoding="utf-8"))
+                self.assertEqual(attempt["profile_id"], publication.profile_id(architecture, version))
+                self.assertEqual(attempt["core_run_id"], publication.CORE_RUNS[version])
+                self.assertIs(attempt["release_eligible"], False)
+                self.assertEqual(attempt["redistribution_status"], "seahash-4.1.0-notice-unresolved")
+
     def test_kernel_release_must_meet_linux_floor(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -102,7 +135,27 @@ class LinuxPublicationHelpers(unittest.TestCase):
             archive_name = "pg_jsonschema-0.3.4-postgresql-18.6-linux-x86_64.tar.gz"
             core_name = "postgresql-18.6-linux-x86_64.tar.gz"
             archive, core = archives / archive_name, core_dir / core_name
-            archive.write_bytes(b"final candidate archive")
+            package_metadata = {
+                "project": "pg_jsonschema", "version": "0.3.4", "sql_names": ["pg_jsonschema"],
+                "requires": [], "configuration_prerequisites": [], "runtime_prerequisites": [],
+                "postgresql_version": "18.6", "platform": "linux", "architecture": arch,
+                "source": {"url": "https://github.com/supabase/pg_jsonschema.git",
+                           "commit": publication.SOURCE_COMMIT,
+                           "cargo_lock_sha256": publication.CARGO_LOCK_SHA256},
+                "release_eligible": False,
+                "redistribution_status": "seahash-4.1.0-notice-unresolved",
+            }
+            with tarfile.open(archive, "w:gz") as package:
+                for name, contents in {
+                    "pg_jsonschema/lib/pg_jsonschema.so": b"module",
+                    "pg_jsonschema/share/extension/pg_jsonschema.control": b"default_version = '0.3.4'\n",
+                    "pg_jsonschema/share/extension/pg_jsonschema--0.3.4.sql": b"SELECT 1;\n",
+                    "pg_jsonschema/LICENSES/cargo/cargo-license-inventory.json": b"{}\n",
+                    "metadata.json": (json.dumps(package_metadata) + "\n").encode(),
+                }.items():
+                    member = tarfile.TarInfo(name)
+                    member.size = len(contents)
+                    package.addfile(member, io.BytesIO(contents))
             core.write_bytes(b"pinned core archive")
             archive_hash = hashlib.sha256(archive.read_bytes()).hexdigest()
             core_hash = hashlib.sha256(core.read_bytes()).hexdigest()
@@ -112,8 +165,11 @@ class LinuxPublicationHelpers(unittest.TestCase):
             static_dir = archives / "static-analysis"
             static_dir.mkdir()
             (static_dir / "pg_jsonschema.json").write_text(json.dumps({
-                "outcome": "passed", "architecture": arch,
-                "archives": [{"basename": archive_name, "sha256": archive_hash}],
+                    "outcome": "passed", "architecture": arch,
+                "archives": [
+                    {"basename": archive_name, "sha256": archive_hash},
+                    {"basename": core_name, "sha256": core_hash},
+                ],
             }), encoding="utf-8")
             (archives / "build-evidence.txt").write_text(
                 f"pg_jsonschema_source_commit={publication.SOURCE_COMMIT}\n"

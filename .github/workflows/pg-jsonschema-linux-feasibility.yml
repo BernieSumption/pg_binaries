@@ -34,7 +34,7 @@ jobs:
       - name: Build pg_jsonschema 0.3.4 from pinned upstream source
         run: bash scripts/pg_jsonschema/linux-build.sh "$RUNNER_TEMP/core" "$RUNNER_TEMP/pg_jsonschema"
       - name: Verify ELF closure and runtime in relocated Alpine 3.22
-        run: bash scripts/pg_jsonschema/linux-verify.sh "$RUNNER_TEMP/pg_jsonschema"
+        run: bash scripts/pg_jsonschema/linux-verify.sh "$RUNNER_TEMP/pg_jsonschema" "$RUNNER_TEMP/core"
       - name: Upload feasibility evidence
         if: always()
         uses: actions/upload-artifact@v4
