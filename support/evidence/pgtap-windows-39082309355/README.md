@@ -1,0 +1,5 @@
+# pgTAP 1.3.4 Windows feasibility
+
+[Run 39082309355](https://github.com/BernieSumption/pg_binaries/actions/runs/39082309355) passed at source revision `ee22bd1`. On a standard Windows 2022 runner it generated pgTAP SQL from the checksum-pinned, unmodified upstream 1.3.4 archive, checked the expected files and invariant hashes, packaged the SQL-only extension, relocated the exact archived PostgreSQL 18.6 x86-64 core, and passed `CREATE EXTENSION pgtap` plus four schema assertions with a restricted runtime `PATH`. The [CI log](run-log.txt), [probe output](probe-output.txt), [prerequisite output](prerequisite-output.txt) and [catalog closure](extension-closure.txt) are retained.
+
+The final extension archive SHA-256 is `5e483bd06dfff61757611b7ddf597953c3a612af1f782d9c45d9f3cdc8b64712`; its downloaded sidecar passed `shasum -a 256 -c`. This is feasibility evidence. The core and extension are still temporary CI artifacts, and Windows publication requires final-archive static analysis and archive-bound records.
