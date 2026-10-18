@@ -55,7 +55,7 @@ EOF
 mkdir -p /out/static-analysis
 tar -C /work/package -czf "/out/${archive}" pg_stat_monitor metadata.json
 cd /out
-sha256sum "$archive" > "${archive%.tar.gz}.sha256"
+sha256sum "$archive" > pg_stat_monitor.sha256
 printf 'source_url=%s\nsource_commit=%s\nsource_archive_sha256=%s\n' \
   "$source_url" "$source_commit" "$source_sha256" > build-evidence.txt
 printf 'postgresql_version=%s\narchitecture=%s\n' "$pg_version" "$architecture" >> build-evidence.txt
