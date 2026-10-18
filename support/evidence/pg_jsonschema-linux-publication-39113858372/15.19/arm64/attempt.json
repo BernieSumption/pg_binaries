@@ -1,0 +1,34 @@
+{
+  "architecture": "arm64",
+  "archives": {
+    "pg_jsonschema-0.3.4-postgresql-15.19-linux-arm64.tar.gz": "132c8206eed0cff0012c48b492b64a1fc3ebb35287089b5e223cd50c2ab64aab",
+    "postgresql-15.19-linux-arm64.tar.gz": "9b570ba3827c2255a668375ec09ffe8d249e473d8389a7191e7c1fd77fbdca97"
+  },
+  "archives_present": {
+    "pg_jsonschema-0.3.4-postgresql-15.19-linux-arm64.tar.gz": true,
+    "postgresql-15.19-linux-arm64.tar.gz": true
+  },
+  "core_run_id": "39082151857",
+  "pg_jsonschema_version": "0.3.4",
+  "postgresql_version": "15.19",
+  "profile_id": "pg-jsonschema-publication-linux-arm64-15.19",
+  "redistribution_status": "seahash-4.1.0-notice-unresolved",
+  "release_eligible": false,
+  "reports": {
+    "build_evidence": "b60d04b5f8d9fa03d4125b4da35c1b6c6bbb1f5bd5a42c5b7ea790b79a833535",
+    "cargo_license_inventory": "7f11d0f50b003c9d879caf922d4e55c59b4e72aefc901b59a24224a6c2354877",
+    "elf_closure": "15794b16f863eaed34160369a83f7edf0c47f4cd8a9e4b7f173ee0dbbd384a1c",
+    "probe_output": "d732b6c83a7b37e76212c104c6efcd23f9d81c3e53533c531334e38b24950c83"
+  },
+  "run_id": "39113858372",
+  "schema_version": 1,
+  "source_revision": "2c87ffff2ea0e2f676121396ceacd68295dad65b",
+  "steps": {
+    "archive-suite": "success",
+    "elf-closure": "success"
+  },
+  "workflow_steps": {
+    "build": "success",
+    "verify": "success"
+  }
+}
