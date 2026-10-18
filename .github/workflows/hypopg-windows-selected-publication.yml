@@ -77,7 +77,7 @@ jobs:
     needs: select
     if: needs.select.result == 'success'
     runs-on: windows-2022
-    timeout-minutes: 30
+    timeout-minutes: 120
     defaults:
       run:
         shell: pwsh
@@ -86,22 +86,42 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Load pinned PostgreSQL core identity
-        id: core_pin
-        run: python tools/windows_core_pin.py --postgresql-version '${{ needs.select.outputs.postgresql_version }}' --github-output >> $env:GITHUB_OUTPUT
+      - name: Resolve a checked PostgreSQL core candidate
+        id: core_candidate
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python tools/windows_core_candidate.py --base-pin "support/windows-core-pins/${{ needs.select.outputs.postgresql_version }}-x86_64.json" --output-directory "$env:RUNNER_TEMP/core-archives"
+          if ($LASTEXITCODE -ne 0) { throw 'PostgreSQL core candidate resolution failed.' }
+          $result = Get-Content (Join-Path $env:RUNNER_TEMP 'core-archives/result.json') -Raw | ConvertFrom-Json
+          "status=$($result.status)" | Add-Content $env:GITHUB_OUTPUT
       - name: Check HypoPG publication evidence tooling
         run: python -B -m unittest tests/test_hypopg_windows_publication.py
-      - name: Download the pinned PostgreSQL core archive
-        uses: actions/download-artifact@v4
-        with:
-          name: windows-postgresql-${{ needs.select.outputs.postgresql_version }}-pilot
-          run-id: ${{ steps.core_pin.outputs.run_id }}
-          github-token: ${{ github.token }}
-          path: ${{ runner.temp }}/core-archives
+      - name: Set up PostgreSQL core build dependencies when needed
+        if: steps.core_candidate.outputs.status == 'missing' || steps.core_candidate.outputs.status == 'stale'
+        env:
+          PG_VERSION: ${{ needs.select.outputs.postgresql_version }}
+        run: ./scripts/windows/setup-core-dependencies.ps1 -PostgreSQLVersion $env:PG_VERSION
+      - name: Build selected PostgreSQL core when no current candidate is available
+        if: steps.core_candidate.outputs.status == 'missing' || steps.core_candidate.outputs.status == 'stale'
+        env:
+          PG_VERSION: ${{ needs.select.outputs.postgresql_version }}
+          BUILD_MODE: core-only
+        run: |
+          cmd.exe /d /c scripts\windows\build.cmd
+          if ($LASTEXITCODE -ne 0) { throw 'PostgreSQL core build failed.' }
+          $archiveName = "postgresql-${env:PG_VERSION}-windows-x86_64.tar.gz"
+          $archive = Join-Path $env:RUNNER_TEMP "core-archives/$archiveName"
+          Copy-Item "dist/windows/$archiveName" $archive -Force
+          Copy-Item "dist/windows/$archiveName.sha256" "$archive.sha256" -Force
+          python tools/windows_core_target_config.py --base-pin "support/windows-core-pins/${env:PG_VERSION}-x86_64.json" --core-archive $archive --source-run-id $env:GITHUB_RUN_ID --source-run-attempt $env:GITHUB_RUN_ATTEMPT --source-artifact-name "hypopg-windows-${env:PG_VERSION}-build-$env:GITHUB_RUN_ID" --output (Join-Path $env:RUNNER_TEMP 'core-archives/candidate-target.json')
+          if ($LASTEXITCODE -ne 0) { throw 'Generated PostgreSQL core identity validation failed.' }
+      - name: Select PostgreSQL core identity
+        run: Copy-Item (Join-Path $env:RUNNER_TEMP 'core-archives/candidate-target.json') (Join-Path $env:RUNNER_TEMP 'core-archives/identity.json') -Force
       - name: Build and package HypoPG from pinned upstream source
         id: archive
         continue-on-error: true
-        run: ./scripts/hypopg/windows-feasibility.ps1 -CoreArchiveDirectory "$env:RUNNER_TEMP/core-archives" -OutputDirectory "$env:RUNNER_TEMP/hypopg-build" -PostgreSQLVersion '${{ needs.select.outputs.postgresql_version }}' -BuildOnly
+        run: ./scripts/hypopg/windows-feasibility.ps1 -CoreArchiveDirectory "$env:RUNNER_TEMP/core-archives" -OutputDirectory "$env:RUNNER_TEMP/hypopg-build" -PostgreSQLVersion '${{ needs.select.outputs.postgresql_version }}' -CoreIdentityPath "$env:RUNNER_TEMP/core-archives/identity.json" -BuildOnly
       - name: Upload final core and extension archives
         if: always()
         uses: actions/upload-artifact@v4
@@ -157,7 +177,7 @@ jobs:
         id: verification
         if: always() && needs.build.result == 'success' && steps.download.outcome == 'success'
         continue-on-error: true
-        run: ./scripts/hypopg/verify-windows-publication.ps1 -CoreArchiveDirectory "$env:RUNNER_TEMP/core-archives" -ExtensionArchiveDirectory "$env:RUNNER_TEMP/hypopg-extension" -OutputDirectory "$env:RUNNER_TEMP/hypopg-verification" -PostgreSQLVersion '${{ needs.select.outputs.postgresql_version }}'
+        run: ./scripts/hypopg/verify-windows-publication.ps1 -CoreArchiveDirectory "$env:RUNNER_TEMP/core-archives" -ExtensionArchiveDirectory "$env:RUNNER_TEMP/hypopg-extension" -OutputDirectory "$env:RUNNER_TEMP/hypopg-verification" -PostgreSQLVersion '${{ needs.select.outputs.postgresql_version }}' -CoreIdentityPath "$env:RUNNER_TEMP/core-archives/identity.json"
       - name: Emit archive-bound attempt and verification record
         if: always()
         env:
@@ -169,7 +189,7 @@ jobs:
           New-Item -ItemType Directory -Force $dir | Out-Null
           $version = (Get-CimInstance Win32_OperatingSystem).Version
           $image = "$([Environment]::GetEnvironmentVariable('ImageOS'))/$([Environment]::GetEnvironmentVariable('ImageVersion'))"
-          python tools/emit_hypopg_windows_publication.py --postgresql-version $env:POSTGRESQL_VERSION --core-archives (Join-Path $env:RUNNER_TEMP 'core-archives') --archives (Join-Path $env:RUNNER_TEMP 'hypopg-extension') --output $dir --os-version $version --image-id $image --archive-suite-result $env:ARCHIVE_RESULT --static-analysis-result $env:STATIC_RESULT
+          python tools/emit_hypopg_windows_publication.py --postgresql-version $env:POSTGRESQL_VERSION --core-identity-path (Join-Path $env:RUNNER_TEMP 'core-archives/identity.json') --core-archives (Join-Path $env:RUNNER_TEMP 'core-archives') --archives (Join-Path $env:RUNNER_TEMP 'hypopg-extension') --output $dir --os-version $version --image-id $image --archive-suite-result $env:ARCHIVE_RESULT --static-analysis-result $env:STATIC_RESULT
       - name: Validate and retain publication evidence
         if: always()
         env:
@@ -182,7 +202,7 @@ jobs:
             if ($attempt.archives) {
               $extensionDir = Join-Path $env:RUNNER_TEMP 'hypopg-extension'
               Copy-Item (Join-Path $dir '*') $extensionDir -Recurse -Force
-              python tools/import_hypopg_windows_publication.py --postgresql-version $env:POSTGRESQL_VERSION --core-artifact (Join-Path $env:RUNNER_TEMP 'core-archives') --extension-artifact $extensionDir --run-id $env:GITHUB_RUN_ID
+              python tools/import_hypopg_windows_publication.py --postgresql-version $env:POSTGRESQL_VERSION --core-identity-path (Join-Path $env:RUNNER_TEMP 'core-archives/identity.json') --core-artifact (Join-Path $env:RUNNER_TEMP 'core-archives') --extension-artifact $extensionDir --run-id $env:GITHUB_RUN_ID
             }
           }
       - name: Upload candidate archive and verification evidence
@@ -193,6 +213,7 @@ jobs:
           path: |
             ${{ runner.temp }}/core-archives/*.tar.gz
             ${{ runner.temp }}/core-archives/*.sha256
+            ${{ runner.temp }}/core-archives/identity.json
             ${{ runner.temp }}/hypopg-extension/*
             ${{ runner.temp }}/hypopg-verification/*
             support/evidence/hypopg-windows-publication-${{ github.run_id }}/**

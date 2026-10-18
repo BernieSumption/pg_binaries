@@ -28,11 +28,14 @@ class HypopgWindowsArchiveTests(unittest.TestCase):
         self.extension = self.root / (
             f"hypopg-1.4.3-postgresql-18.6-{publication.PLATFORM}.tar.gz")
 
-    def test_candidate_pins_current_core_identity(self):
+    def test_candidate_uses_generated_core_identity(self):
         script = Path("scripts/hypopg/windows-feasibility.ps1").read_text()
         workflow = Path(".github/workflows/hypopg-windows-selected-publication.yml").read_text()
         self.assertIn("windows_core_pin.py", script)
-        self.assertIn("run-id: ${{ steps.core_pin.outputs.run_id }}", workflow)
+        self.assertIn("tools/windows_core_candidate.py", workflow)
+        self.assertIn("tools/windows_core_target_config.py", workflow)
+        self.assertIn("-CoreIdentityPath", workflow)
+        self.assertNotIn("steps.core_pin.outputs.run_id", workflow)
 
     def test_selected_target_verifies_uploaded_archives_on_a_separate_runner(self):
         workflow = Path(".github/workflows/hypopg-windows-selected-publication.yml").read_text()
