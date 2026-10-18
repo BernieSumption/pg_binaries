@@ -13,6 +13,10 @@ on:
         required: false
         type: string
         default: ''
+  push:
+    branches: [spike]
+    paths:
+      - '.github/workflows/pgtap-windows-selected-publication.yml'
 
 permissions:
   actions: read
@@ -29,7 +33,7 @@ jobs:
       - name: Validate the requested selected target
         id: plan
         env:
-          POSTGRESQL_VERSION: ${{ inputs.postgresql_version }}
+          POSTGRESQL_VERSION: ${{ inputs.postgresql_version || '17.11' }}
           EXTENSION_VERSION: ${{ inputs.extension_version }}
         run: |
           args=(--project pgtap --platform windows-x86_64 \
