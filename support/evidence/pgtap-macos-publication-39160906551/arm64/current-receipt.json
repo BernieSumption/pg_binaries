@@ -1,0 +1,43 @@
+{
+  "architecture": "arm64",
+  "archives": {
+    "pgtap-1.3.4-postgresql-16.15-macos-arm64.tar.gz": "a3890e74a68586ad3628877559da4ed0d3209f0428941b57c6988b7db5cedf29",
+    "postgresql-16.15-macos-arm64.tar.gz": "716083752061eebab60923ae2e8cb269bc2e4bdb7401d951465cd726a50e6cbf"
+  },
+  "case_results": {
+    "archive-suite": "passed",
+    "static-analysis": "passed"
+  },
+  "ci": {
+    "build_revision": "4604b3ba0e96ee9a3d8cba1abd481d16ec7a2ea1",
+    "provider": "github-actions",
+    "run_id": "39160906551",
+    "run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/39160906551",
+    "source_revision": "4604b3ba0e96ee9a3d8cba1abd481d16ec7a2ea1",
+    "test_revision": "4604b3ba0e96ee9a3d8cba1abd481d16ec7a2ea1"
+  },
+  "clean_system": true,
+  "dependency_check_profile": "macho-system-dependencies-v1",
+  "dependency_checks_passed": true,
+  "endpoint": "current",
+  "environment": {
+    "architecture": "arm64",
+    "image_id": "macos15/20260907.0337.1",
+    "os": "macos",
+    "os_version": "15.7.9"
+  },
+  "extension_archive": "pgtap-1.3.4-postgresql-16.15-macos-arm64.tar.gz",
+  "platform": "macos-arm64",
+  "postgresql_version": "16.15",
+  "profile_id": "pgtap-publication-macos-arm64-16.15",
+  "profile_revision": "259309fd9183f713d2d1aa92ec1aed1ea070327481fb2ce436dd6a812db81cd5",
+  "project": "pgtap",
+  "reports": {
+    "build_log": "d0f7ed2e2a835b22291ded263580de06199bb22a493e05518f924ca2fe7de350",
+    "probe_output": "2fe4134b93da9610a35d47edb16e12a1048469f9beb1ac5ad8870ca380f37db0",
+    "static_analysis": "4d2320b40696c1ae9b4b7c20d458874df1c5c967e4186068d01e3066eead052a"
+  },
+  "schema_version": 1,
+  "test_revision": "4604b3ba0e96ee9a3d8cba1abd481d16ec7a2ea1",
+  "version": "1.3.4"
+}

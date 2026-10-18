@@ -1,0 +1,46 @@
+{
+  "assembled_core": {
+    "archive": "postgresql-16.15-macos-arm64.tar.gz",
+    "sha256": "716083752061eebab60923ae2e8cb269bc2e4bdb7401d951465cd726a50e6cbf",
+    "version": "16.15"
+  },
+  "case_results": {
+    "archive-suite": "passed",
+    "static-analysis": "passed"
+  },
+  "ci": {
+    "build_revision": "4604b3ba0e96ee9a3d8cba1abd481d16ec7a2ea1",
+    "provider": "github-actions",
+    "run_id": "39160906551",
+    "run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/39160906551",
+    "source_revision": "4604b3ba0e96ee9a3d8cba1abd481d16ec7a2ea1",
+    "test_revision": "4604b3ba0e96ee9a3d8cba1abd481d16ec7a2ea1"
+  },
+  "component": "pgtap",
+  "environment": {
+    "architecture": "arm64",
+    "clean_system": true,
+    "dependency_check_profile": "macho-system-dependencies-v1",
+    "dependency_checks_passed": true,
+    "endpoint": "current",
+    "image_id": "macos15/20260907.0337.1",
+    "os": "macos",
+    "os_version": "15.7.9"
+  },
+  "outcome": "passed",
+  "platform": "macos-arm64",
+  "postgresql_version": "16.15",
+  "prerequisite_archives": [],
+  "profile_id": "pgtap-publication-macos-arm64-16.15",
+  "profile_revision": "259309fd9183f713d2d1aa92ec1aed1ea070327481fb2ce436dd6a812db81cd5",
+  "project": "pgtap",
+  "schema_version": 2,
+  "scope": "publication",
+  "sha256": "a3890e74a68586ad3628877559da4ed0d3209f0428941b57c6988b7db5cedf29",
+  "test_cases": [
+    "archive-suite",
+    "static-analysis"
+  ],
+  "test_revision": "4604b3ba0e96ee9a3d8cba1abd481d16ec7a2ea1",
+  "version": "1.3.4"
+}
