@@ -2,6 +2,12 @@ name: pg_jsonschema Windows feasibility
 
 on:
   workflow_dispatch:
+  push:
+    branches: [spike]
+    paths:
+      - '.github/workflows/pg-jsonschema-windows-feasibility.yml'
+      - 'scripts/pg_jsonschema/windows-feasibility.ps1'
+      - 'scripts/pg_jsonschema/probe.sql'
 
 permissions:
   actions: read
