@@ -1,0 +1,7 @@
+# First selected Linux publication attempt
+
+[GitHub Actions run 39170751250](https://github.com/BernieSumption/pg_binaries/actions/runs/39170751250) built PostgreSQL 17.11 and pgvector 0.8.7 for Linux x86-64 at source revision `1f570a6dd4b94337760d739a04a89bffb4ff3050`. The final core archive has SHA-256 `dfca361b631cf3bbecc590ea524faf363c81fb61b0b0f94a0309f049941e7674`; the extension archive has SHA-256 `02a06a875903b79fa72344b267cbb77e7e1e5b28ed250b0b384cabd0399794df`. The run built a new core after checking available candidates, rather than reusing one.
+
+The exact final archives passed the relocated Alpine 3.22.6 archive suite and Linux diagnostics. The no-host-user-space step failed with `Permission denied` before executing its check: the workflow called `scripts/linux/verify-no-host-userspace.sh` as a program although the file is not executable. The overall run failed. The importer validated the downloaded archive checksums, receipts and diagnostic report, then retained [failed verification records](../verification/pgvector-0.8.7-postgresql-17.11-linux-x86_64-current-39170751250.json) with `no-host-userspace: failed`. The source artifact data are retained in [the run evidence directory](linux-publication-39170751250/postgresql-17.11/x86_64/current-steps.json). These records do not establish publication eligibility.
+
+The workflow now invokes that script through `bash`. A new CI run must verify the fix and the selected path; this failed run does not prove the no-host-user-space requirement.

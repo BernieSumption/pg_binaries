@@ -145,7 +145,7 @@ jobs:
         env:
           PG_VERSION: ${{ steps.target.outputs.postgresql_version }}
           PGVECTOR_VERSION: ${{ steps.target.outputs.version }}
-        run: scripts/linux/verify-no-host-userspace.sh "$RUNNER_TEMP/archives" "$PG_VERSION" x86_64
+        run: bash scripts/linux/verify-no-host-userspace.sh "$RUNNER_TEMP/archives" "$PG_VERSION" x86_64
       - name: Index symbols from the exact final archives
         id: symbols
         continue-on-error: true
