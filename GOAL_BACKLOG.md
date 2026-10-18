@@ -10,6 +10,8 @@ This project also resolves the overlapping open work below: fresh-runner verific
 
 ### Prove the shared path
 
+The Windows pgTAP PostgreSQL 17.11 fresh-runner trial passed in [run 39155301851](support/evidence/pgtap-windows-publication-39155301851/README.md). The final archive hashes match the retained record. Its workflow remains release-specific and uses a pinned core run, so this result proves the verifier boundary but does not complete the shared target-driven path.
+
 - [ ] Inventory active workflows, recipes, probes, planners and evidence tools. Identify which files implement selected targets, which serve optional investigations, and which are obsolete. Record the migration mapping before deleting an old path.
 - [ ] Establish one target-driven path using PostgreSQL 17.11 on Linux x86-64, macOS arm64 and Windows x86-64; use pgvector and HypoPG to exercise a native extension on those platforms, pgTAP to exercise a SQL-only package, and a Linux PostGIS/TIGER target to exercise multiple SQL names and an extension prerequisite. Adjust the exact trial targets if upstream support or available runners make a listed target unsuitable, while retaining each distinct case.
 - [ ] For the trial, build and verify final archive bytes in the environments required by `policies/testing.md`. Check relocation, each selected SQL name's representative behaviour, platform-specific dependency inspection, exact core and prerequisite identities, failure/skip recording, and evidence import. Compare the new results with the applicable existing profiles; do not treat a passing job alone as equivalent evidence.
