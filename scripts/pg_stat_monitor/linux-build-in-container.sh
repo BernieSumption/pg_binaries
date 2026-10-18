@@ -22,7 +22,7 @@ cd /work/source
 curl -fL --retry 3 -o pg_stat_monitor-source.tar.gz "$source_url"
 printf '%s  %s\n' "$source_sha256" pg_stat_monitor-source.tar.gz | sha256sum -c -
 tar -xzf pg_stat_monitor-source.tar.gz
-cd pg_stat_monitor
+cd "pg_stat_monitor-${extension_version}"
 test "$(sed -n "s/^default_version = '\([^']*\)'/\1/p" pg_stat_monitor.control)" = "$extension_sql_version"
 
 pkglibdir=$("$pgroot/bin/pg_config" --pkglibdir)
