@@ -18,6 +18,7 @@ def _load(name, filename):
 
 coverage = _load("work_queue_coverage", "coverage.py")
 archive_plan = _load("work_queue_archive_plan", "extension_archive_plan.py")
+candidate_cache = _load("work_queue_candidate_cache", "candidate_archive_cache.py")
 
 
 def _id(kind, *key):
@@ -25,7 +26,7 @@ def _id(kind, *key):
     return f"{kind}:{digest}"
 
 
-def build_queue(root):
+def build_queue(root, candidate_manifest=None):
     """Build project-level archive candidates and exact endpoint verification tasks."""
     root = Path(root)
     support = coverage.load_json(root / "support.json")
@@ -37,6 +38,10 @@ def build_queue(root):
     core_targets, _ = coverage.expected_targets(support, releases)
     core_downloads, extension_downloads = coverage.inventory_targets(inventory)
     records = coverage.verification_records(root, support)
+    cached_candidates, rejected_candidates = ({}, [])
+    if candidate_manifest is not None:
+        cached_candidates, rejected_candidates = candidate_cache.load_candidates(
+            candidate_manifest, support)
     groups = archive_plan.plan(support, snapshot)["candidate_archives"]
     items = {}
     unresolved = []
@@ -59,16 +64,21 @@ def build_queue(root):
         if key not in core_targets:
             continue
         download = core_downloads.get(key)
+        cached_core = cached_candidates.get(("postgresql", pg, group["platform"]))
         build_id = _id("build-core", pg, group["platform"])
         if build_id not in items:
             add({"id": build_id, "kind": "build-core", "component": "postgresql", "version": pg,
-                 "postgresql_version": pg, "platform": group["platform"], "status": "complete" if download else "needed",
-                 "evidence": "inventory" if download else None, "depends_on": []})
+                 "postgresql_version": pg, "platform": group["platform"],
+                 "status": "complete" if download or cached_core else "needed",
+                 "evidence": "inventory" if download else
+                 "retrieved-unpublished-candidate-archive" if cached_core else None,
+                 "candidate_archive": cached_core, "depends_on": []})
         os_endpoint = "current"
         verify_id = _id("verify-core", pg, group["platform"], os_endpoint)
         core_verify_ids[(pg, group["platform"], os_endpoint)] = verify_id
-        verified = bool(download and coverage.verified(records, download, "postgresql", pg,
-                                                         group["platform"], pg, os_endpoint))
+        verify_download = download or ({"sha256": cached_core["sha256"]} if cached_core else None)
+        verified = bool(verify_download and coverage.verified(records, verify_download, "postgresql", pg,
+                                                                group["platform"], pg, os_endpoint))
         seen = observed("postgresql", pg, pg, group["platform"], os_endpoint)
         if verify_id not in items:
             add({"id": verify_id, "kind": "verify-core", "component": "postgresql", "version": pg,
@@ -96,24 +106,31 @@ def build_queue(root):
         archive_bound = (all(len(downloads_by_name[name]) == 1 for name in sql_names)
                          and len(signatures) == 1)
         archive_download = next(iter(next(iter(downloads_by_name.values()))))[1] if archive_bound else None
+        cache_key = (project, version, platform, group["postgresql_major"])
+        cached_archive = None if archive_bound else cached_candidates.get(cache_key)
         group_id = _id("build-extension", project, version, platform, group["postgresql_major"])
         core_deps = [_id("build-core", pg, platform)]
         add({"id": group_id, "kind": "build-extension", "component": project, "project": project,
              "version": version, "platform": platform, "postgresql_major": group["postgresql_major"],
              "postgresql_version": pg,
              "sql_names": sql_names,
-             "status": "complete" if archive_bound else "needed",
-             "evidence": "inventory-project-archive-bound" if archive_bound else None,
+             "status": "complete" if archive_bound or cached_archive else "needed",
+             "evidence": ("inventory-project-archive-bound" if archive_bound else
+                          "retrieved-unpublished-candidate-archive" if cached_archive else None),
+             "candidate_archive": cached_archive,
              "verification_status": "unverified",
              "depends_on": sorted(set(core_deps))})
 
         # Each SQL name is checked against the exact selected PostgreSQL minor and OS endpoint.
         for name in sql_names:
-            exact_download = downloads_by_name[name][0][1] if archive_bound else None
+            exact_download = (downloads_by_name[name][0][1] if archive_bound else
+                              {"sha256": cached_archive["sha256"]} if cached_archive else None)
             os_endpoint = "current"
             verify_id = _id("verify-extension", project, version, platform, group["postgresql_major"],
                             name, pg, os_endpoint)
-            core_dl = core_downloads.get((pg, platform))
+            core_dl = core_downloads.get((pg, platform)) or (
+                {"sha256": cached_candidates[("postgresql", pg, platform)]["sha256"]}
+                if ("postgresql", pg, platform) in cached_candidates else None)
             prereqs = coverage.expected_prerequisite_archives(
                 support, extension_downloads, project, pg, platform)
             verified = bool(exact_download and core_dl and prereqs is not None and coverage.verified(
@@ -183,7 +200,8 @@ def build_queue(root):
                   and item.get("version") == version and item.get("platform") == platform
                   and item.get("postgresql_major") == group["postgresql_major"]
                   and item.get("kind") == "verify-extension"]
-        items[group_id]["verification_status"] = ("complete" if archive_bound and not prerequisite_ambiguous and checks
+        items[group_id]["verification_status"] = ("complete" if (archive_bound or cached_archive)
+                                            and not prerequisite_ambiguous and checks
                                             and all(item["status"] == "complete" for item in checks)
                                             else "unverified")
 
@@ -195,6 +213,7 @@ def build_queue(root):
         item.get("endpoint", ""), item["id"]))
     return {"snapshot_as_of": snapshot["as_of"], "work_items": ordered,
             "unresolved_prerequisites": unresolved,
+            "unavailable_candidate_archives": rejected_candidates,
             "scope": "project archive groups target exact selected PostgreSQL minors; routine verification uses the current OS endpoint"}
 
 
@@ -285,11 +304,13 @@ def main(argv=None):
     parser.add_argument("--project", help="focus on one declared extension project or SQL name")
     parser.add_argument("--platform", help="focus on one declared platform, such as linux-x86_64")
     parser.add_argument("--postgresql-major", type=int, help="focus on one declared PostgreSQL major")
+    parser.add_argument("--candidate-manifest", type=Path,
+                        help="local manifest of retrieved unpublished Actions archives eligible for reuse")
     parser.add_argument("--item-id", help="select one exact work item with its complete dependency closure")
     parser.add_argument("--all", action="store_true", help="display the full graph")
     args = parser.parse_args(argv)
     try:
-        queue = build_queue(args.root)
+        queue = build_queue(args.root, args.candidate_manifest)
         if args.item_id and (args.all or args.project or args.platform or args.postgresql_major):
             raise ValueError("--item-id cannot be combined with --all or target filters")
         if args.item_id:

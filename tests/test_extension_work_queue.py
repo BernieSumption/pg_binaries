@@ -1,5 +1,8 @@
 import importlib.util
+import hashlib
+import io
 import json
+import tarfile
 import tempfile
 import unittest
 from pathlib import Path
@@ -51,6 +54,48 @@ class ExtensionWorkQueueTests(unittest.TestCase):
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps(data), encoding="utf-8")
 
+    def candidate_manifest(self, *, expires_at="2099-01-01T00:00:00Z", mutate_bytes=False):
+        archive_path = self.root / "cache" / "postgis-3.6.4-postgresql-18.5-linux-x86_64.tar.gz"
+        archive_path.parent.mkdir(parents=True, exist_ok=True)
+        metadata = {"project": "postgis", "version": "3.6.4",
+                    "sql_names": ["postgis", "postgis_raster"], "platform": "linux",
+                    "architecture": "x86_64", "postgresql_version": "18.5"}
+        with tarfile.open(archive_path, "w:gz") as archive:
+            payload = json.dumps(metadata).encode()
+            member = tarfile.TarInfo("metadata.json")
+            member.size = len(payload)
+            archive.addfile(member, io.BytesIO(payload))
+        data = archive_path.read_bytes()
+        expected = hashlib.sha256(data).hexdigest()
+        if mutate_bytes:
+            archive_path.write_bytes(data + b"changed")
+        self.write("cache/candidates.json", {"schema_version": 1, "archives": [{
+            "project": "PostGIS", "version": "3.6.4", "platform": "linux-x86_64",
+            "postgresql_version": "18.5", "path": archive_path.name, "sha256": expected,
+            "source": {"provider": "github-actions", "run_id": "123456",
+                       "artifact_name": "postgis-candidate-123456", "expires_at": expires_at},
+        }]})
+        return self.root / "cache/candidates.json"
+
+    def core_candidate_manifest(self, *, archive_version="18.6"):
+        archive_path = self.root / "cache" / "postgresql-18.6-linux-x86_64.tar.gz"
+        archive_path.parent.mkdir(parents=True, exist_ok=True)
+        manifest = {"schema_version": 1, "component": "postgresql", "version": archive_version,
+                    "postgresql_version": archive_version, "platform": "linux", "architecture": "x86_64"}
+        with tarfile.open(archive_path, "w:gz") as archive:
+            payload = json.dumps(manifest).encode()
+            member = tarfile.TarInfo("postgresql/manifest.json")
+            member.size = len(payload)
+            archive.addfile(member, io.BytesIO(payload))
+        digest = hashlib.sha256(archive_path.read_bytes()).hexdigest()
+        self.write("cache/candidates.json", {"schema_version": 1, "archives": [{
+            "component": "postgresql", "version": "18.6", "platform": "linux-x86_64",
+            "postgresql_version": "18.6", "path": archive_path.name, "sha256": digest,
+            "source": {"provider": "github-actions", "run_id": "123457",
+                       "artifact_name": "postgresql-candidate-123457", "expires_at": "2099-01-01T00:00:00Z"},
+        }]})
+        return self.root / "cache/candidates.json", archive_path
+
     def test_ids_and_order_are_stable_and_batch_is_bounded(self):
         first = queue_tool.build_queue(self.root)
         second = queue_tool.build_queue(self.root)
@@ -60,6 +105,75 @@ class ExtensionWorkQueueTests(unittest.TestCase):
         known = {item["id"] for item in first["work_items"]}
         self.assertTrue(all(dep in known for item in first["work_items"] for dep in item["depends_on"]))
         self.assertEqual(len({item["id"] for item in first["work_items"]}), len(first["work_items"]))
+
+    def test_adding_project_schedules_its_targets_without_changing_existing_ids(self):
+        before = queue_tool.build_queue(self.root)
+        support = json.loads((self.root / "support.json").read_text())
+        support["extensions"]["Example"] = {
+            "sql_names": ["example"], "requires": [],
+            "versions": {"1.0": {"postgresql_minimum_major": 18,
+                                  "postgresql_maximum_major": 18}},
+        }
+        self.write("support.json", support)
+        (self.root / "policies/extensions.md").write_text(
+            "## PostGIS — include\n## PostGIS TIGER Geocoder — include\n"
+            "## Example — include\n", encoding="utf-8")
+
+        after = queue_tool.build_queue(self.root)
+        previous = {item["id"]: item for item in before["work_items"]}
+        current = {item["id"]: item for item in after["work_items"]}
+        self.assertTrue(previous.keys() <= current.keys())
+        self.assertTrue(all(current[key] == item for key, item in previous.items()))
+        added = [item for key, item in current.items() if key not in previous]
+        self.assertEqual(len(added), 10)
+        self.assertEqual({item["kind"] for item in added},
+                         {"build-extension", "verify-extension"})
+        self.assertEqual({item["postgresql_version"] for item in added}, {"18.6"})
+        self.assertTrue(all(item["status"] == "needed" for item in added))
+
+    def test_new_extension_can_use_cached_core_but_core_verification_stays_pending(self):
+        support = json.loads((self.root / "support.json").read_text())
+        support["extensions"]["Example"] = {
+            "sql_names": ["example"], "requires": [],
+            "versions": {"1.0": {"postgresql_minimum_major": 18,
+                                  "postgresql_maximum_major": 18}},
+        }
+        self.write("support.json", support)
+        (self.root / "policies/extensions.md").write_text(
+            "## PostGIS — include\n## PostGIS TIGER Geocoder — include\n## Example — include\n",
+            encoding="utf-8")
+        manifest, core_path = self.core_candidate_manifest()
+        queue = queue_tool.build_queue(self.root, manifest)
+        core_build = next(item for item in queue["work_items"] if item["kind"] == "build-core"
+                          and item["postgresql_version"] == "18.6"
+                          and item["platform"] == "linux-x86_64")
+        self.assertEqual(core_build["status"], "complete")
+        self.assertEqual(core_build["evidence"], "retrieved-unpublished-candidate-archive")
+        core_verify = next(item for item in queue["work_items"] if item["kind"] == "verify-core"
+                           and item["postgresql_version"] == "18.6"
+                           and item["platform"] == "linux-x86_64")
+        self.assertEqual(core_verify["status"], "needed")
+        example_build = next(item for item in queue["work_items"] if item.get("project") == "Example"
+                             and item["kind"] == "build-extension"
+                             and item["platform"] == "linux-x86_64")
+        self.assertEqual(example_build["status"], "needed")
+        self.assertIn(core_build["id"], example_build["depends_on"])
+
+        manifest, _ = self.core_candidate_manifest(archive_version="18.5")
+        queue = queue_tool.build_queue(self.root, manifest)
+        core_build = next(item for item in queue["work_items"] if item["kind"] == "build-core"
+                          and item["postgresql_version"] == "18.6"
+                          and item["platform"] == "linux-x86_64")
+        self.assertEqual(core_build["status"], "needed")
+        self.assertIn("manifest does not match", queue["unavailable_candidate_archives"][0]["reason"])
+
+        core_path.unlink()
+        queue = queue_tool.build_queue(self.root, manifest)
+        core_build = next(item for item in queue["work_items"] if item["kind"] == "build-core"
+                          and item["postgresql_version"] == "18.6"
+                          and item["platform"] == "linux-x86_64")
+        self.assertEqual(core_build["status"], "needed")
+        self.assertIn("bytes are unavailable", queue["unavailable_candidate_archives"][0]["reason"])
 
     def test_project_archive_group_has_one_exact_build_and_current_checks(self):
         items = queue_tool.build_queue(self.root)["work_items"]
@@ -105,6 +219,62 @@ class ExtensionWorkQueueTests(unittest.TestCase):
                      and item["kind"] == "build-extension")
         self.assertEqual(group["status"], "complete")
         self.assertEqual(group["verification_status"], "unverified")
+
+    def test_retrieved_candidate_archive_is_reused_and_verified_against_new_minor(self):
+        manifest = self.candidate_manifest()
+        queue = queue_tool.build_queue(self.root, manifest)
+        group = next(item for item in queue["work_items"]
+                     if item.get("project") == "PostGIS" and item.get("version") == "3.6.4"
+                     and item.get("platform") == "linux-x86_64" and item.get("postgresql_major") == 18
+                     and item["kind"] == "build-extension")
+        self.assertEqual(group["status"], "complete")
+        self.assertEqual(group["evidence"], "retrieved-unpublished-candidate-archive")
+        self.assertEqual(group["candidate_archive"]["postgresql_version"], "18.5")
+        checks = [item for item in queue["work_items"] if item.get("project") == "PostGIS"
+                  and item.get("version") == "3.6.4" and item.get("platform") == "linux-x86_64"
+                  and item.get("postgresql_major") == 18 and item["kind"] == "verify-extension"]
+        self.assertEqual({item["postgresql_version"] for item in checks}, {"18.6"})
+        self.assertEqual({item["status"] for item in checks}, {"needed"})
+        core_verify_id = queue_tool._id("verify-core", "18.6", "linux-x86_64", "current")
+        self.assertTrue(all(core_verify_id in item["depends_on"] for item in checks))
+
+    def test_cached_bytes_survive_source_expiry_but_missing_or_changed_bytes_require_rebuild(self):
+        manifest = self.candidate_manifest(expires_at="2000-01-01T00:00:00Z")
+        queue = queue_tool.build_queue(self.root, manifest)
+        group = next(item for item in queue["work_items"] if item.get("project") == "PostGIS"
+                     and item.get("version") == "3.6.4" and item.get("platform") == "linux-x86_64"
+                     and item.get("postgresql_major") == 18 and item["kind"] == "build-extension")
+        self.assertEqual(group["status"], "complete")
+        self.assertEqual(group["candidate_archive"]["source_expiry_status"], "expired")
+
+        manifest = self.candidate_manifest(mutate_bytes=True)
+        queue = queue_tool.build_queue(self.root, manifest)
+        group = next(item for item in queue["work_items"] if item.get("project") == "PostGIS"
+                     and item.get("version") == "3.6.4" and item.get("platform") == "linux-x86_64"
+                     and item.get("postgresql_major") == 18 and item["kind"] == "build-extension")
+        self.assertEqual(group["status"], "needed")
+        self.assertIn("checksum differs", queue["unavailable_candidate_archives"][0]["reason"])
+
+        manifest = self.candidate_manifest()
+        archive_path = manifest.parent / "postgis-3.6.4-postgresql-18.5-linux-x86_64.tar.gz"
+        archive_path.unlink()
+        queue = queue_tool.build_queue(self.root, manifest)
+        group = next(item for item in queue["work_items"] if item.get("project") == "PostGIS"
+                     and item.get("version") == "3.6.4" and item.get("platform") == "linux-x86_64"
+                     and item.get("postgresql_major") == 18 and item["kind"] == "build-extension")
+        self.assertEqual(group["status"], "needed")
+        self.assertIn("bytes are unavailable", queue["unavailable_candidate_archives"][0]["reason"])
+
+    def test_malformed_candidate_manifest_is_reported_and_queue_still_builds(self):
+        manifest = self.root / "cache/candidates.json"
+        manifest.parent.mkdir(parents=True)
+        manifest.write_text('{"schema_version": 1, "archives": [null]}', encoding="utf-8")
+        queue = queue_tool.build_queue(self.root, manifest)
+        group = next(item for item in queue["work_items"] if item.get("project") == "PostGIS"
+                     and item.get("version") == "3.6.4" and item.get("platform") == "linux-x86_64"
+                     and item.get("postgresql_major") == 18 and item["kind"] == "build-extension")
+        self.assertEqual(group["status"], "needed")
+        self.assertEqual(queue["unavailable_candidate_archives"][0]["entry"], 0)
 
     def test_tiger_dependency_selects_structured_minimum_version_candidate(self):
         items = {item["id"]: item for item in queue_tool.build_queue(self.root)["work_items"]}
