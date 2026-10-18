@@ -1,0 +1,62 @@
+{
+  "ci": {
+    "build_revision": "bbc22fa958fc544ce0e4410f1c6848d1dd2d0058",
+    "provider": "github-actions",
+    "run_id": "39114879217",
+    "run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/39114879217",
+    "source_revision": "bbc22fa958fc544ce0e4410f1c6848d1dd2d0058",
+    "test_revision": "bbc22fa958fc544ce0e4410f1c6848d1dd2d0058"
+  },
+  "component": "vector",
+  "environment": {
+    "architecture": "x86_64",
+    "clean_system": true,
+    "dependency_check_profile": "windows-runtime-v1",
+    "dependency_checks_passed": false,
+    "endpoint": "current",
+    "image_id": "win22/20261012.333.1",
+    "os": "windows",
+    "os_version": "10.0.20348.0"
+  },
+  "outcome": "failed",
+  "platform": "windows-x86_64",
+  "postgresql_version": "15.19",
+  "profile_id": "windows-pilot-x86_64",
+  "profile_revision": "7bbca99b99937bffacdcf1dc38a611cdff3f9ea6c099d1cfdb24628b80180781",
+  "schema_version": 2,
+  "scope": "pilot-smoke",
+  "sha256": "be0471192b5616d38fcb05a44bcdafa5873385a986bd99a6bdbf2b3cc2521ace",
+  "test_cases": [
+    "archive-assembly",
+    "built-in-extension-smoke",
+    "core-schema-smoke",
+    "debug-symbol-linkage",
+    "diagnostic-collection",
+    "pgvector-ddl-smoke",
+    "relocation"
+  ],
+  "test_revision": "bbc22fa958fc544ce0e4410f1c6848d1dd2d0058",
+  "verification_profile": {
+    "case_ids": [
+      "archive-assembly",
+      "built-in-extension-smoke",
+      "core-schema-smoke",
+      "debug-symbol-linkage",
+      "diagnostic-collection",
+      "pgvector-ddl-smoke",
+      "relocation"
+    ],
+    "compatible_profile_revisions": [
+      "7bbca99b99937bffacdcf1dc38a611cdff3f9ea6c099d1cfdb24628b80180781",
+      "ff752f930bc23de91664f24aebf9ac2bf7550e17cc38c5e001a3bb27d7b8e4d8"
+    ],
+    "platforms": [
+      "windows-x86_64"
+    ],
+    "profile_id": "windows-pilot-x86_64",
+    "profile_revision": "7bbca99b99937bffacdcf1dc38a611cdff3f9ea6c099d1cfdb24628b80180781",
+    "scope": "pilot-smoke",
+    "sources_available": true
+  },
+  "version": "0.8.7"
+}

@@ -1,0 +1,1 @@
+Run 39114879217: final verification failed in tests/builtins/coverage.sql because PostgreSQL 15.19's Windows MSVC install exposes regression-test SQL extensions with no pilot cases. The preceding relocated archive, SQL, PE-dependency and compression checks completed; the static-analysis report passed. See the sibling README for archive hashes and the full extension names.

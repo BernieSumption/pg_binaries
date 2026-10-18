@@ -1,0 +1,9 @@
+{
+  "run_id": "39114879217",
+  "source_revision": "bbc22fa958fc544ce0e4410f1c6848d1dd2d0058",
+  "steps": {
+    "archive-suite": "failure",
+    "symbols": "skipped",
+    "diagnostics": "skipped"
+  }
+}
