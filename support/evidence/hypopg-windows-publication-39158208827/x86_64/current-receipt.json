@@ -1,0 +1,53 @@
+{
+  "architecture": "x86_64",
+  "archives": {
+    "hypopg-1.4.3-postgresql-15.19-windows-x86_64.tar.gz": "9001402e5c1ed2b4041c3b8db2589d3a619429467ee3b2ebece126be978b3686",
+    "postgresql-15.19-windows-x86_64.tar.gz": "7ffadf8bfb0b122a37759dec7eff1dd7e5307997d74791a6d84fa3f4a47bb02b"
+  },
+  "case_results": {
+    "archive-suite": "passed",
+    "static-analysis": "passed"
+  },
+  "ci": {
+    "build_revision": "ce36ed3245973d772f0f6c09a077c14b5dcd3201",
+    "provider": "github-actions",
+    "run_id": "39158208827",
+    "run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/39158208827",
+    "source_revision": "ce36ed3245973d772f0f6c09a077c14b5dcd3201",
+    "test_revision": "ce36ed3245973d772f0f6c09a077c14b5dcd3201"
+  },
+  "clean_system": true,
+  "core_status": "current-profile-core-redistribution-pending",
+  "dependency_check_profile": "windows-pe-archive-relocation-v1",
+  "dependency_checks_passed": true,
+  "endpoint": "current",
+  "environment": {
+    "architecture": "x86_64",
+    "image_id": "win22/20261012.333.1",
+    "os": "windows",
+    "os_version": "10.0.20348"
+  },
+  "extension_archive": "hypopg-1.4.3-postgresql-15.19-windows-x86_64.tar.gz",
+  "platform": "windows-x86_64",
+  "postgresql_version": "15.19",
+  "profile_id": "hypopg-publication-windows-x86_64-15.19",
+  "profile_revision": "07406d1789cd0fd0a5d3f3b8d7f606d339089ef25405786539c8260c148ee855",
+  "project": "HypoPG",
+  "release_eligible": false,
+  "reports": {
+    "pe_dependency_analysis": "b0ee9dabf7fd3d6efc04308734e8a6589a0acf7aed4a30d812fb8f125c16128f",
+    "probe_output": "ada22ddfbc80c4dfe15d9a8f8d74565e7c7f170dbd147323d9798f2f3bf78838",
+    "static_analysis": "b090b49321c9c4a4defbd7c181c798a85ccf89f6c63fb4c6bc8753522e7e3424"
+  },
+  "schema_version": 1,
+  "symbols": {
+    "module": "hypopg/lib/hypopg.dll",
+    "module_sha256": "efc16c70110b0faeb35719bf9e14d8e5b4f4a492a08e0e4e6b97bc367ed50044",
+    "pdb_basename": "hypopg.pdb",
+    "pdb_sha256": "475ef4a405f2a0b4071628bdb2a909c46bb27517977507acc7b1d939424dff4c",
+    "rsds_age": 1,
+    "rsds_guid": "430d1ca4e1d048cd97f38cecd7ae992d"
+  },
+  "test_revision": "ce36ed3245973d772f0f6c09a077c14b5dcd3201",
+  "version": "1.4.3"
+}
