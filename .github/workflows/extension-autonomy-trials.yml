@@ -6,6 +6,9 @@ on:
     branches: [spike]
     paths:
       - .github/workflows/extension-autonomy-trials.yml
+      - scripts/pg_repack/**
+      - scripts/pg_partman/**
+      - scripts/pg_squeeze/**
 
 permissions:
   actions: read
@@ -16,7 +19,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        project: [pg_repack, pg_partman]
+        project: [pg_repack, pg_partman, pg_squeeze]
     runs-on: ubuntu-22.04
     timeout-minutes: 35
     steps:

@@ -4,7 +4,7 @@ pg_version=${PG_VERSION:-18.6}
 architecture=${PG_ARCHITECTURE:-x86_64}
 test "$architecture" = x86_64 && test "$(uname -m)" = x86_64
 extension_version=5.5.0
-source_url="https://api.pgxn.org/dist/pg_partman/pg_partman-${extension_version}.zip"
+source_url="https://api.pgxn.org/dist/pg_partman/${extension_version}/pg_partman-${extension_version}.zip"
 pg_archive="postgresql-${pg_version}-linux-${architecture}.tar.gz"
 cd /input
 sha256sum -c "$pg_archive.sha256"
