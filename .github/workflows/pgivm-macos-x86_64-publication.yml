@@ -95,8 +95,8 @@ jobs:
         run: |
           if [[ -f "$RUNNER_TEMP/pgivm-publication/publication/attempt.json" ]]; then
             python3 tools/import_pgivm_macos_x86_64_publication.py \
-              --core-archives "$RUNNER_TEMP/core-archives" \
-              --archives "$RUNNER_TEMP/pgivm-publication" \
+              --core-artifact "$RUNNER_TEMP/core-archives" \
+              --pgivm-artifact "$RUNNER_TEMP/pgivm-publication" \
               --run-id "$GITHUB_RUN_ID"
           fi
       - uses: actions/upload-artifact@v4
