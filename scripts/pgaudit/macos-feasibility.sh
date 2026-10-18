@@ -178,6 +178,7 @@ shasum -a 256 "$extension_name" > "$extension_name.sha256"
 
 # Test only the extracted archive contents after moving the assembled tree.
 shasum -a 256 -c "$extension_name.sha256"
+python3 "$repo/tools/check_extension_redistribution.py" "$output/$extension_name"
 tar -xzf "$output/$extension_name" -C "$work/extension"
 python3 - "$work/extension/pgaudit" "$pgroot" <<'PY'
 from pathlib import Path

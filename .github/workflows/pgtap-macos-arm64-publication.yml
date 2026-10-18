@@ -9,6 +9,8 @@ on:
       - scripts/pgtap/macos-feasibility.sh
       - scripts/pgtap/probe.sql
       - scripts/macos/static_analysis.py
+      - tools/check_extension_redistribution.py
+      - tools/publication_preflight.py
       - tools/emit_pgtap_macos_publication.py
       - tools/import_pgtap_macos_publication.py
       - tests/test_emit_pgtap_macos_publication.py

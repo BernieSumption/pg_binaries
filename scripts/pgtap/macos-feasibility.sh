@@ -121,6 +121,7 @@ tar -C "$package" -czf "$output/$extension_name" pgtap metadata.json
 cd "$output"
 shasum -a 256 "$extension_name" > "$extension_name.sha256"
 shasum -a 256 -c "$extension_name.sha256"
+python3 "$repo/tools/check_extension_redistribution.py" "$output/$extension_name"
 tar -xzf "$extension_name" -C "$work/extension"
 extroot="$work/extension/pgtap"
 python3 - "$work/extension" "$extroot" <<'PY'

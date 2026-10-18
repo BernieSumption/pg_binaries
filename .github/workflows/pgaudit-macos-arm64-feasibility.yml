@@ -12,6 +12,8 @@ on:
       - scripts/macos/build-source-dependencies.sh
       - scripts/macos/static_analysis.py
       - tools/create_macos_symbols.py
+      - tools/check_extension_redistribution.py
+      - tools/publication_preflight.py
       - tools/emit_pgaudit_macos_publication.py
       - tools/import_pgaudit_macos_publication.py
       - tests/test_create_macos_symbols.py
