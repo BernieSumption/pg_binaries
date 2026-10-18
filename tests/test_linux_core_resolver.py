@@ -44,7 +44,9 @@ elif a and a[0] == "run":
     values = [a[i + 1] for i, x in enumerate(a[:-1]) if x in ("-e", "-v")]
     version = next((x.split("=", 1)[1] for x in values if x.startswith("PG_VERSION=")), "18.6")
     arch = next((x.split("=", 1)[1] for x in values if x.startswith("PG_ARCHITECTURE=")), "x86_64")
+    mode = next((x.split("=", 1)[1] for x in values if x.startswith("CORE_ONLY=")), "")
     mount = next(x.split(":", 1)[0] for x in values if x.endswith(":/out"))
+    (pathlib.Path(mount) / "build-mode.txt").write_text(mode)
     target = pathlib.Path(mount) / f"postgresql-{{version}}-linux-{{arch}}.tar.gz"
     target.write_bytes(b"built")
     target.with_name(target.name + ".sha256").write_text("built\\n")
@@ -68,12 +70,14 @@ elif a and a[0] == "run":
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("Using a checksum-verified core candidate", result.stdout)
         self.assertEqual((out / "postgresql-18.6-linux-x86_64.tar.gz").read_bytes(), b"candidate")
+        self.assertFalse((out / "build-mode.txt").exists())
 
     def test_rejected_candidate_falls_back_to_docker_build(self):
         result, out = self.run_resolver(validation_status="1")
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("building the selected PostgreSQL core in Docker", result.stdout)
         self.assertEqual((out / "postgresql-18.6-linux-x86_64.tar.gz").read_bytes(), b"built")
+        self.assertEqual((out / "build-mode.txt").read_text(), "1")
 
     def test_arm64_candidate_uses_arm64_archive_name(self):
         result, out = self.run_resolver(architecture="arm64")
