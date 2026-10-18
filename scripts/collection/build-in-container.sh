@@ -38,8 +38,7 @@ build_one() {
   test "$(sed -n 's/^EXTVERSION = //p' "$source_root/Makefile")" = "$version"
   make -C "$source_root" PG_CONFIG="$pgroot/bin/pg_config" -j 4
   make -C "$source_root" PG_CONFIG="$pgroot/bin/pg_config" install DESTDIR="$stage_root"
-  prefix=$("$pgroot/bin/pg_config" --prefix)
-  install_root="$stage_root$prefix"
+  install_root="$stage_root/opt/postgresql"
   mkdir -p "$package_root/collection/lib" "$package_root/collection/share/extension" "$package_root/collection/LICENSES"
   test -f "$install_root/lib/collection.so"
   cp "$install_root/lib/collection.so" "$package_root/collection/lib/"
