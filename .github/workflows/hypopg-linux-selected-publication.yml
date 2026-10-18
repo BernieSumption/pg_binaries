@@ -1,6 +1,20 @@
 name: HypoPG selected PostgreSQL Linux publication
 
 on:
+  workflow_call:
+    inputs:
+      postgresql_version:
+        description: Exact selected PostgreSQL release
+        required: true
+        type: string
+      architecture:
+        description: Exact selected Linux architecture
+        required: true
+        type: string
+      extension_version:
+        description: Exact selected HypoPG release
+        required: true
+        type: string
   workflow_dispatch:
     inputs:
       postgresql_version:
@@ -21,8 +35,6 @@ on:
   push:
     branches: [spike]
     paths:
-      - '.github/workflows/hypopg-linux-selected-publication.yml'
-      - 'experiments/hypopg-linux-target-trial/target.json'
       - 'scripts/linux/resolve-core.sh'
       - 'scripts/linux/build.sh'
       - 'scripts/linux/build-in-container.sh'
@@ -82,12 +94,19 @@ jobs:
         continue-on-error: true
         env:
           GH_TOKEN: ${{ github.token }}
+          CALLER_WORKFLOW_REF: ${{ github.workflow_ref }}
         run: |
           set -euo pipefail
           sources=(
             hypopg-linux-selected-publication.yml
             "hypopg-linux-$PG_VERSION-$PG_ARCHITECTURE-trial-{run_id}"
           )
+          if [[ "$CALLER_WORKFLOW_REF" == */.github/workflows/planner-dispatch-trial.yml@* ]]; then
+            sources+=(
+              planner-dispatch-trial.yml
+              "hypopg-linux-$PG_VERSION-$PG_ARCHITECTURE-trial-{run_id}"
+            )
+          fi
           if [[ "$PG_ARCHITECTURE" == x86_64 ]]; then
             sources+=(
               pgvector-linux-selected-trial.yml

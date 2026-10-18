@@ -43,7 +43,7 @@ A selected macOS Intel HypoPG workflow now targets the declared PostgreSQL 18.6 
 
 The shared macOS evidence helper passed its first selected-target trial in [pgTAP arm64 run 39177424611](support/evidence/pgtap-macos-shared-evidence-39177424611.md). The final archive record was independently imported and matches the CI artifact. HypoPG now uses the same low-level helpers in its emitter and importer. The profiles now track the helper source, so earlier pgTAP and HypoPG records are historical; refresh affected selected paths in migration batches. Migrate other macOS adapters while retaining their project-specific probes and profiles.
 
-The pure one-target dispatcher plan now validates an exact declared extension request, includes its prerequisite closure in dependency order, and distinguishes an ordinary no-op from an explicit retry. Its fixture tests cover a newly declared PostgreSQL release and extension project. Connect this plan to a narrowly triggered same-commit reusable workflow; candidate retrieval, rebuild, and measured CI retry remain to be proved.
+The pure one-target dispatcher plan now validates an exact declared extension request, includes its prerequisite closure in dependency order, and distinguishes an ordinary no-op from an explicit retry. Its fixture tests cover a newly declared PostgreSQL release and extension project. A narrowly triggered coordinator candidate now routes one HypoPG Linux request to the same-commit reusable selected workflow. CI must prove the route, archive retrieval or rebuild, and measured retry cost before this trial can replace any active entry path.
 
 ### Migrate active paths
 
