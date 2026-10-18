@@ -125,6 +125,20 @@ class HypoPGMacOSIntelPublicationTests(unittest.TestCase):
         self.assertIn("support/verification/hypopg-1.4.3-postgresql-${{ needs.select.outputs.postgresql_version }}-macos-x86_64-current-${{ github.run_id }}.json", workflow)
         self.assertNotIn("macos-arm64", workflow)
 
+    def test_profile_tracks_selected_workflow_inputs(self):
+        profile = json.loads(Path("support/verification-profiles.json").read_text())["profiles"][emitter.PROFILE_ID]
+        sources = set(profile["sources"])
+        self.assertTrue({
+            ".github/workflows/hypopg-macos-x86_64-selected-publication.yml",
+            "tools/hypopg_macos_pins/18.6-x86_64-selected.json",
+            "scripts/macos/resolve-core.sh",
+            "scripts/hypopg/verify-macos-publication.sh",
+            "tools/emit_hypopg_macos_x86_64_publication.py",
+            "tools/import_hypopg_macos_x86_64_publication.py",
+        } <= sources)
+        self.assertNotIn(".github/workflows/hypopg-macos-x86_64-publication.yml", sources)
+        self.assertNotIn("scripts/hypopg/macos-x86_64-feasibility.sh", sources)
+
     def test_core_resolver_selects_candidate_workflow_by_architecture(self):
         resolver = Path("scripts/macos/resolve-core.sh").read_text()
         self.assertIn('target.get("architecture")', resolver)
