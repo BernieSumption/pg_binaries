@@ -99,9 +99,9 @@ try {
   $actualCommit = (& git -C $source rev-parse HEAD).Trim()
   if ($actualCommit -cne $extensionCommit) { throw "Unexpected pg_jsonschema source commit: $actualCommit" }
   $cargoManifest = Get-Content (Join-Path $source 'Cargo.toml') -Raw
-  if ($cargoManifest -notmatch '(?m)^version = "0\.3\.4"$') { throw 'Cargo.toml version does not match pg_jsonschema 0.3.4' }
-  if ($cargoManifest -notmatch '(?m)^edition = "2024"$') { throw 'Cargo.toml edition differs from the reviewed pinned source' }
-  if ($cargoManifest -notmatch '(?m)^pg18 = \["pgrx/pg18", "pgrx-tests/pg18"\]$') { throw 'The source has no expected PostgreSQL 18 feature' }
+  if ($cargoManifest -notmatch '(?m)^version = "0\.3\.4"\r?$') { throw 'Cargo.toml version does not match pg_jsonschema 0.3.4' }
+  if ($cargoManifest -notmatch '(?m)^edition = "2024"\r?$') { throw 'Cargo.toml edition differs from the reviewed pinned source' }
+  if ($cargoManifest -notmatch '(?m)^pg18 = \["pgrx/pg18", "pgrx-tests/pg18"\]\r?$') { throw 'The source has no expected PostgreSQL 18 feature' }
   $cargoLock = Join-Path $source 'Cargo.lock'
   if (-not (Test-Path $cargoLock -PathType Leaf)) { throw 'Cargo.lock is missing from the pinned source' }
   $actualLockSha256 = (Get-FileHash $cargoLock -Algorithm SHA256).Hash.ToLowerInvariant()
