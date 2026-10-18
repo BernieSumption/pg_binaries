@@ -71,13 +71,17 @@ def validate_candidate(manifest_path, archive_path, version, builder_image_id, r
             or row.get("postgresql_version") != version
             or Path(str(row.get("path", ""))).name != archive_path.name):
         raise ValueError("discovered archive target does not match selected PostgreSQL core")
+    run_id = str(source.get("run_id", "")) if isinstance(source, dict) else ""
+    artifact_name = source.get("artifact_name") if isinstance(source, dict) else None
+    publication_artifact = artifact_name == "linux-publication-x86_64-evidence"
+    selected_artifact = artifact_name == f"pgvector-linux-selected-{version}-{run_id}"
     if (not isinstance(source, dict) or source.get("provider") != "github-actions"
-            or not re.fullmatch(r"[1-9][0-9]*", str(source.get("run_id", "")))
+            or not re.fullmatch(r"[1-9][0-9]*", run_id)
             or not isinstance(source.get("run_attempt"), int)
-            or source["run_attempt"] < 1
-            or source.get("artifact_name") != "linux-publication-x86_64-evidence"
+            or isinstance(source.get("run_attempt"), bool) or source["run_attempt"] < 1
+            or not (publication_artifact or selected_artifact)
             or not SHA.fullmatch(str(source.get("head_sha", "")))):
-        raise ValueError("candidate lacks a checked Linux publication run identity")
+        raise ValueError("candidate lacks a checked matching Linux run and artifact identity")
     if not archive_path.is_file() or row.get("sha256") != _sha256(archive_path):
         raise ValueError("candidate archive bytes differ from discovery identity")
     try:

@@ -120,6 +120,17 @@ class ActionsCandidateDiscoveryTests(unittest.TestCase):
             self.assertEqual(self.invoke(), [])
         self.assertEqual((self.root / "out" / self.archive_name).read_bytes(), self.archive)
 
+    def test_deep_archive_pair_is_extracted_flattened(self):
+        buffer = io.BytesIO()
+        with zipfile.ZipFile(buffer, "w") as z:
+            z.writestr("_temp/bundle/pilot/" + self.archive_name, self.archive)
+            z.writestr("_temp/bundle/pilot/" + self.archive_name + ".sha256", self.sidecar)
+        self.zip_bytes = buffer.getvalue()
+        self.artifact["digest"] = "sha256:" + hashlib.sha256(self.zip_bytes).hexdigest()
+        with patch.object(discovery.subprocess, "run", side_effect=self.fake_run):
+            self.assertEqual(self.invoke(), [])
+        self.assertEqual((self.root / "out" / self.archive_name).read_bytes(), self.archive)
+
     def test_ambiguous_archive_pairs_are_rejected(self):
         buffer = io.BytesIO()
         with zipfile.ZipFile(buffer, "w") as z:

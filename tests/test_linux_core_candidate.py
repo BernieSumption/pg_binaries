@@ -43,7 +43,7 @@ class LinuxCoreCandidateTests(unittest.TestCase):
     def tearDown(self):
         self.temp.cleanup()
 
-    def write_candidate(self, *, producer_revision=None):
+    def write_candidate(self, *, producer_revision=None, artifact_name="linux-publication-x86_64-evidence"):
         source = source_archive.source_archive("postgresql", "17.11", "tar.bz2", self.root)
         metadata = {"component": "postgresql", "version": "17.11", "platform": "linux",
                     "architecture": "x86_64", "source_revision": producer_revision or self.revision,
@@ -57,7 +57,7 @@ class LinuxCoreCandidateTests(unittest.TestCase):
                "postgresql_version": "17.11", "path": str(self.archive_path),
                "sha256": hashlib.sha256(self.archive_path.read_bytes()).hexdigest(),
                "source": {"provider": "github-actions", "run_id": "1234", "run_attempt": 2,
-                          "head_sha": self.revision, "artifact_name": "linux-publication-x86_64-evidence"}}
+                          "head_sha": self.revision, "artifact_name": artifact_name}}
         self.manifest_path.write_text(json.dumps({"schema_version": 1, "archives": [row]}))
 
     def test_accepts_candidate_with_matching_run_manifest_and_current_recipe(self):
@@ -83,6 +83,20 @@ class LinuxCoreCandidateTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "builder image differs"):
             candidate.validate_candidate(
                 self.manifest_path, self.archive_path, "17.11", "sha256:" + "c" * 64, self.root)
+
+    def test_accepts_selected_workflow_artifact_bound_to_version_and_run(self):
+        self.write_candidate(artifact_name="pgvector-linux-selected-17.11-1234")
+        result = candidate.validate_candidate(
+            self.manifest_path, self.archive_path, "17.11", self.BUILDER_IMAGE_ID, self.root)
+        self.assertEqual(result["run_id"], "1234")
+
+    def test_rejects_selected_artifact_with_mismatched_version_or_run(self):
+        for name in ("pgvector-linux-selected-18.0-1234", "pgvector-linux-selected-17.11-9876"):
+            with self.subTest(name=name):
+                self.write_candidate(artifact_name=name)
+                with self.assertRaisesRegex(ValueError, "artifact identity"):
+                    candidate.validate_candidate(
+                        self.manifest_path, self.archive_path, "17.11", self.BUILDER_IMAGE_ID, self.root)
 
 
 if __name__ == "__main__":

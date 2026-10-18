@@ -18,6 +18,7 @@ on:
       - 'tools/select_extension_work.py'
       - 'tools/extension_work_queue.py'
       - 'tools/linux_core_candidate.py'
+      - 'tools/actions_candidate_discovery.py'
       - 'tools/source_archive.py'
       - 'tools/coverage.py'
       - 'tools/plan_work.py'
@@ -72,26 +73,36 @@ jobs:
           set -euo pipefail
           core_name="postgresql-$PG_VERSION-linux-x86_64.tar.gz"
           mkdir -p "$RUNNER_TEMP/core"
-          python3 tools/actions_candidate_discovery.py \
-            --repository "$GITHUB_REPOSITORY" --workflow linux-publication.yml \
-            --branch "$GITHUB_REF_NAME" --current-run-id "$GITHUB_RUN_ID" \
-            --artifact-name-template linux-publication-x86_64-evidence \
-            --archive-basename "$core_name" --project postgresql --version "$PG_VERSION" \
-            --platform linux-x86_64 --postgresql-version "$PG_VERSION" \
-            --output-directory "$RUNNER_TEMP/core" \
-            --manifest-path "$RUNNER_TEMP/core-candidate-manifest.json"
           candidate_fresh=false
-          if [[ -s "$RUNNER_TEMP/core/$core_name" && -s "$RUNNER_TEMP/core/$core_name.sha256" ]]; then
-            docker build --platform linux/amd64 -f scripts/linux/Dockerfile \
-              -t pg-binaries-linux-pilot .
-            builder_image_id=$(docker image inspect pg-binaries-linux-pilot --format '{{.Id}}')
-            if python3 tools/linux_core_candidate.py \
-              --manifest "$RUNNER_TEMP/core-candidate-manifest.json" \
-              --archive "$RUNNER_TEMP/core/$core_name" --postgresql-version "$PG_VERSION" \
-              --builder-image-id "$builder_image_id"; then
-              candidate_fresh=true
+          docker build --platform linux/amd64 -f scripts/linux/Dockerfile \
+            -t pg-binaries-linux-pilot .
+          builder_image_id=$(docker image inspect pg-binaries-linux-pilot --format '{{.Id}}')
+          for candidate_source in selected publication; do
+            if [[ "$candidate_source" == selected ]]; then
+              source_workflow=pgvector-linux-selected-trial.yml
+              artifact_template="pgvector-linux-selected-$PG_VERSION-{run_id}"
+            else
+              source_workflow=linux-publication.yml
+              artifact_template=linux-publication-x86_64-evidence
             fi
-          fi
+            python3 tools/actions_candidate_discovery.py \
+              --repository "$GITHUB_REPOSITORY" --workflow "$source_workflow" \
+              --branch "$GITHUB_REF_NAME" --current-run-id "$GITHUB_RUN_ID" \
+              --artifact-name-template "$artifact_template" \
+              --archive-basename "$core_name" --project postgresql --version "$PG_VERSION" \
+              --platform linux-x86_64 --postgresql-version "$PG_VERSION" \
+              --output-directory "$RUNNER_TEMP/core" \
+              --manifest-path "$RUNNER_TEMP/core-candidate-manifest.json"
+            if [[ -s "$RUNNER_TEMP/core/$core_name" && -s "$RUNNER_TEMP/core/$core_name.sha256" ]] && \
+               python3 tools/linux_core_candidate.py \
+                 --manifest "$RUNNER_TEMP/core-candidate-manifest.json" \
+                 --archive "$RUNNER_TEMP/core/$core_name" --postgresql-version "$PG_VERSION" \
+                 --builder-image-id "$builder_image_id"; then
+              candidate_fresh=true
+              break
+            fi
+            rm -f "$RUNNER_TEMP/core/$core_name" "$RUNNER_TEMP/core/$core_name.sha256"
+          done
           if [[ "$candidate_fresh" == true ]] && \
              [[ -s "$RUNNER_TEMP/core/$core_name" ]]; then
             echo 'Using a checksum-verified core candidate with matching source/run identity, recipe inputs, and builder image.'
@@ -266,11 +277,6 @@ jobs:
         with:
           name: pgvector-linux-selected-${{ steps.target.outputs.postgresql_version }}-${{ github.run_id }}
           path: |
-            ${{ runner.temp }}/archives/*.tar.gz
-            ${{ runner.temp }}/archives/*.sha256
-            ${{ runner.temp }}/archives/publication/static-analysis/**
-            ${{ runner.temp }}/archives/debug-symbols/**
-            ${{ runner.temp }}/diagnostics-evidence/**
             ${{ runner.temp }}/bundle/**
             support/evidence/linux-publication-${{ github.run_id }}/**
             support/verification/postgresql-${{ steps.target.outputs.postgresql_version }}-linux-x86_64-current-${{ github.run_id }}.json

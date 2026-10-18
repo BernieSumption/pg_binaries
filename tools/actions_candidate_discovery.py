@@ -226,8 +226,6 @@ def _extract(zip_path, basename, output_directory):
                 raise DiscoveryError("artifact ZIP contains an unsafe path")
             if member_path.name in candidates:
                 parent = member_path.parent
-                if len(parent.parts) > 1:
-                    continue
                 if item.is_dir():
                     raise DiscoveryError("artifact ZIP has a non-file candidate entry")
                 candidates[member_path.name].append((parent.as_posix(), item))
