@@ -43,6 +43,7 @@ jobs:
         with:
           name: autonomy-${{ matrix.project }}-${{ github.run_id }}
           path: |
+            ${{ runner.temp }}/extension/*.tar.gz
             ${{ runner.temp }}/extension/*.sha256
             ${{ runner.temp }}/extension/static-analysis/*.json
           if-no-files-found: warn

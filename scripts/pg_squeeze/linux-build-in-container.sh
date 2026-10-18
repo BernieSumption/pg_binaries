@@ -36,7 +36,8 @@ version, pg, arch, url, commit = sys.argv[1:]
 meta = {
     'project': 'pg_squeeze', 'version': version, 'sql_names': ['pg_squeeze'],
     'requires': [],
-    'configuration_prerequisites': ['shared_preload_libraries=pg_squeeze', 'wal_level=logical'],
+    'configuration_prerequisites': ['shared_preload_libraries=pg_squeeze', 'wal_level=logical',
+                                    'output_plugin_libraries=pgoutput, test_decoding, pg_squeeze'],
     'runtime_prerequisites': [], 'postgresql_version': pg,
     'platform': 'linux', 'architecture': arch,
     'source': {'repository': url, 'commit': commit},

@@ -51,6 +51,7 @@ configure() {
 shared_preload_libraries = 'pg_squeeze'
 wal_level = logical
 max_replication_slots = 2
+output_plugin_libraries = 'pgoutput, test_decoding, pg_squeeze'
 EOF
 }
 configure /tmp/data
