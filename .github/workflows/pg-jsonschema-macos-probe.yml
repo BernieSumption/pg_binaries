@@ -2,11 +2,6 @@ name: pg_jsonschema macOS source feasibility probe
 
 on:
   workflow_dispatch:
-  push:
-    branches: [spike]
-    paths:
-      - '.github/workflows/pg-jsonschema-macos-probe.yml'
-      - 'scripts/pg_jsonschema/**'
 
 permissions:
   contents: read
