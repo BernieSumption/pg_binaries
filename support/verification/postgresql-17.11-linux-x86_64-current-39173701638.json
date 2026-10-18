@@ -1,0 +1,44 @@
+{
+  "case_results": {
+    "archive-suite": "passed",
+    "diagnostics": "passed",
+    "no-host-userspace": "passed"
+  },
+  "ci": {
+    "build_revision": "d31463ae24d7fca45cc4be3bc2db98fbedb3447f",
+    "provider": "github-actions",
+    "run_id": "39173701638",
+    "run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/39173701638",
+    "source_revision": "d31463ae24d7fca45cc4be3bc2db98fbedb3447f",
+    "test_revision": "d31463ae24d7fca45cc4be3bc2db98fbedb3447f"
+  },
+  "component": "postgresql",
+  "environment": {
+    "architecture": "x86_64",
+    "clean_system": true,
+    "dependency_check_profile": "linux-runtime-v1",
+    "dependency_checks_passed": true,
+    "distribution": "Alpine Linux",
+    "distribution_version": "3.22.6",
+    "endpoint": "current",
+    "image_id": "sha256:e62797447f4774b2e05aded814ae13ec4d2bb86a74952a38a1faa6786944e688",
+    "kernel_release": "6.17.0-1022-azure",
+    "os": "linux",
+    "os_version": "6.17.0"
+  },
+  "outcome": "passed",
+  "platform": "linux-x86_64",
+  "postgresql_version": "17.11",
+  "profile_id": "linux-publication-current-x86_64",
+  "profile_revision": "46898f825bff62cfa774a85fe6808652dc7d580cac3a5eb04eb99b10feff6d68",
+  "schema_version": 2,
+  "scope": "publication",
+  "sha256": "d1ef75a08576335c36a6388b6d916d7e22c51c3a4b0ae74c50a07e1fc931c792",
+  "test_cases": [
+    "archive-suite",
+    "diagnostics",
+    "no-host-userspace"
+  ],
+  "test_revision": "d31463ae24d7fca45cc4be3bc2db98fbedb3447f",
+  "version": "17.11"
+}
