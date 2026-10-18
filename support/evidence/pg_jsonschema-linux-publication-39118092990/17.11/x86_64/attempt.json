@@ -1,0 +1,34 @@
+{
+  "architecture": "x86_64",
+  "archives": {
+    "pg_jsonschema-0.3.4-postgresql-17.11-linux-x86_64.tar.gz": "a351b80e9f4f9e4e9042963fca92a4e11178752361f1967b68b0338ec5a340df",
+    "postgresql-17.11-linux-x86_64.tar.gz": "ffc3160481f8d0cd5f7c14bd95f0e3964242ac78b01f6d4b0e3b03806d4b34dc"
+  },
+  "archives_present": {
+    "pg_jsonschema-0.3.4-postgresql-17.11-linux-x86_64.tar.gz": true,
+    "postgresql-17.11-linux-x86_64.tar.gz": true
+  },
+  "core_run_id": "39082111630",
+  "pg_jsonschema_version": "0.3.4",
+  "postgresql_version": "17.11",
+  "profile_id": "pg-jsonschema-publication-linux-x86_64-17.11",
+  "redistribution_status": "seahash-4.1.0-notice-unresolved",
+  "release_eligible": false,
+  "reports": {
+    "build_evidence": "2b01e32f6d90383c678a2bf791b573526f82eade353de20f70937fad469b1de2",
+    "cargo_license_inventory": "42a6c31255c6849d0078edf157dfde0c43389319a1634c9d3d2cc1ccc3991ccc",
+    "elf_closure": "797b8cf7e922db409844fa54226dae4e352d1aefa4e87ba0cd049a7d63642c1a",
+    "probe_output": "67e29d310902660d0551fb4f59edc1be3586bd423987836d061e7aa0bbcd3db0"
+  },
+  "run_id": "39118092990",
+  "schema_version": 1,
+  "source_revision": "441df52292bc8a6dfe48989f48ff0fb6df546470",
+  "steps": {
+    "archive-suite": "success",
+    "elf-closure": "success"
+  },
+  "workflow_steps": {
+    "build": "success",
+    "verify": "success"
+  }
+}

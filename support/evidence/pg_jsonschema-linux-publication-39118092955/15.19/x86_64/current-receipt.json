@@ -1,0 +1,51 @@
+{
+  "architecture": "x86_64",
+  "archives": {
+    "pg_jsonschema-0.3.4-postgresql-15.19-linux-x86_64.tar.gz": "945724cff14f8f682b556b3a748677f249a2535955c9ee848811578c2d5b3d61",
+    "postgresql-15.19-linux-x86_64.tar.gz": "f538b0f41d25b8eea530ce59897248e83dfe770265c7a53698e7a9c2bef45db5"
+  },
+  "case_results": {
+    "archive-suite": "passed",
+    "elf-closure": "passed"
+  },
+  "ci": {
+    "build_revision": "441df52292bc8a6dfe48989f48ff0fb6df546470",
+    "provider": "github-actions",
+    "run_id": "39118092955",
+    "run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/39118092955",
+    "source_revision": "441df52292bc8a6dfe48989f48ff0fb6df546470",
+    "test_revision": "441df52292bc8a6dfe48989f48ff0fb6df546470"
+  },
+  "clean_system": true,
+  "dependency_check_profile": "linux-elf-alpine-relocation-v1",
+  "dependency_checks_passed": true,
+  "endpoint": "current",
+  "environment": {
+    "architecture": "x86_64",
+    "clean_system": true,
+    "dependency_check_profile": "linux-elf-alpine-relocation-v1",
+    "dependency_checks_passed": true,
+    "distribution": "Alpine Linux 3.22",
+    "endpoint": "current",
+    "image_id": "sha256:67efb86a9d3e962ebe695e16f1e6f3ee3244cc83a78a62dfdb73b7751389df9c",
+    "os": "linux",
+    "os_version": "6.17.0"
+  },
+  "extension_archive": "pg_jsonschema-0.3.4-postgresql-15.19-linux-x86_64.tar.gz",
+  "platform": "linux-x86_64",
+  "postgresql_version": "15.19",
+  "profile_id": "pg-jsonschema-publication-linux-x86_64-15.19",
+  "profile_revision": "dbe09bc2ea2349966b71f2e908e4316f3570bccdd2a6c45d280bd35a255af4ab",
+  "project": "pg_jsonschema",
+  "redistribution_status": "seahash-4.1.0-notice-unresolved",
+  "release_eligible": false,
+  "reports": {
+    "build_evidence": "b60d04b5f8d9fa03d4125b4da35c1b6c6bbb1f5bd5a42c5b7ea790b79a833535",
+    "cargo_license_inventory": "42a6c31255c6849d0078edf157dfde0c43389319a1634c9d3d2cc1ccc3991ccc",
+    "elf_closure": "4fa27a6543ca9bbd62a774e1aafd9a932d5b75205cd7f38774bfd3ed8dd0ae2b",
+    "probe_output": "6789b413e0e987eb319594eee4b6a7024ce9aaa13eea5aa1dc0781f13fed408a"
+  },
+  "schema_version": 1,
+  "test_revision": "441df52292bc8a6dfe48989f48ff0fb6df546470",
+  "version": "0.3.4"
+}
