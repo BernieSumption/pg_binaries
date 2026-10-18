@@ -29,7 +29,8 @@ class ActionsCandidateDiscoveryTests(unittest.TestCase):
             z.writestr(self.archive_name + ".sha256", self.sidecar)
         self.zip_bytes = buffer.getvalue()
         self.repo = "example/project"
-        self.run = {"id": 123, "run_number": 8, "repository": {"full_name": self.repo},
+        self.run = {"id": 123, "run_number": 8, "run_attempt": 1,
+                    "repository": {"full_name": self.repo},
                     "head_repository": {"full_name": self.repo},
                     "head_sha": "a" * 40,
                     "path": ".github/workflows/build.yml", "head_branch": "spike", "event": "push",
@@ -76,6 +77,7 @@ class ActionsCandidateDiscoveryTests(unittest.TestCase):
         data = json.loads((self.root / "manifest.json").read_text())
         row = data["archives"][0]
         self.assertEqual(row["source"]["run_id"], "123")
+        self.assertEqual(row["source"]["run_attempt"], 1)
         self.assertEqual(row["source"]["head_sha"], "a" * 40)
         self.assertEqual(row["source"]["artifact_name"], "candidate-123")
         self.assertEqual(row["sha256"], hashlib.sha256(self.archive).hexdigest())
@@ -142,6 +144,15 @@ class ActionsCandidateDiscoveryTests(unittest.TestCase):
                 self.assertEqual(json.loads((self.root / "manifest.json").read_text())["archives"], [])
                 self.run[field] = {"head_branch": "spike", "head_sha": "a" * 40,
                                    "event": "push", "conclusion": "success", "id": 123}[field]
+
+    def test_rejects_missing_or_invalid_run_attempt(self):
+        for value in (None, 0, -1, "2", True):
+            with self.subTest(run_attempt=value):
+                self.run["run_attempt"] = value
+                with patch.object(discovery.subprocess, "run", side_effect=self.fake_run):
+                    self.invoke()
+                self.assertEqual(json.loads((self.root / "manifest.json").read_text())["archives"], [])
+        self.run["run_attempt"] = 1
 
     def test_accepts_checked_manual_dispatch_run(self):
         self.run["event"] = "workflow_dispatch"

@@ -51,7 +51,7 @@ PY
 candidate_usable=false
 candidate_run_id=none
 try_source() {
-  local workflow=$1 artifact_template=$2 run_id head_sha source_revision
+  local workflow=$1 artifact_template=$2 run_id run_attempt head_sha source_revision
   rm -f "$output/$core_name" "$output/$core_name.sha256" "$target"
   if ! python3 "$repo/tools/actions_candidate_discovery.py" \
       --repository "$GITHUB_REPOSITORY" --workflow "$workflow" \
@@ -63,22 +63,24 @@ try_source() {
     echo "Cannot inspect checked macOS core candidates from $workflow" >&2
     exit 1
   fi
-  read -r run_id head_sha < <(python3 - "$candidate_manifest" <<'PY'
+  read -r run_id run_attempt head_sha < <(python3 - "$candidate_manifest" <<'PY'
 import json
 import sys
 rows = json.load(open(sys.argv[1], encoding="utf-8"))["archives"]
 if len(rows) > 1:
     raise SystemExit("candidate discovery returned more than one core archive")
 if rows:
-    print(rows[0]["source"]["run_id"], rows[0]["source"]["head_sha"])
+    source = rows[0]["source"]
+    print(source["run_id"], source["run_attempt"], source["head_sha"])
 else:
-    print("none none")
+    print("none none none")
 PY
 )
   [[ $run_id != none ]] || return 1
   if ! python3 "$repo/tools/macos_core_target_config.py" \
       --base-target "$base_target" --core-archive "$output/$core_name" \
-      --source-run-id "$run_id" --output "$target"; then
+      --source-run-id "$run_id" --source-run-attempt "$run_attempt" \
+      --output "$target"; then
     return 1
   fi
   source_revision=$(python3 - "$target" <<'PY'

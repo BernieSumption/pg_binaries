@@ -67,6 +67,8 @@ def _run_matches(run, repository, workflow, branch, current_run_id):
             and str(run.get("path", "")).rsplit("/", 1)[-1] == workflow
             and isinstance(run.get("head_sha"), str)
             and re.fullmatch(r"[0-9a-f]{40}", run["head_sha"]) is not None
+            and isinstance(run.get("run_attempt"), int) and not isinstance(run.get("run_attempt"), bool)
+            and run["run_attempt"] > 0
             and run.get("head_branch") == branch
             and run.get("event") in {"push", "workflow_dispatch"}
             and run.get("status") == "completed" and run.get("conclusion") == "success"
@@ -169,6 +171,7 @@ def discover(*, repository, workflow, branch, current_run_id, artifact_name_temp
                     "postgresql_version": postgresql_version, "path": str(archive_path),
                     "sha256": archive_digest,
                     "source": {"provider": "github-actions", "run_id": run_id,
+                               "run_attempt": run["run_attempt"],
                                "head_sha": run["head_sha"], "artifact_name": expected_name,
                                "expires_at": artifact["expires_at"]},
                 })
