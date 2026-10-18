@@ -74,7 +74,8 @@ def import_run(root, core_artifact, extension_artifact, run_id, target=None):
                    for value in raw_steps.values())):
         raise coverage.CoverageError("raw attempt must retain each publication case outcome")
     results = {case: publication._step(value, case) for case, value in raw_steps.items()}
-    evidence = root / "support/evidence" / f"hypopg-windows-publication-{run_id}" / publication.ARCHITECTURE
+    evidence = (root / "support/evidence" / f"hypopg-windows-publication-{run_id}"
+                / publication.ARCHITECTURE / target.PG_VERSION)
     copies = []
     _retain(attempt_path, evidence / "attempt.json", copies)
     core_name = f"postgresql-{target.PG_VERSION}-{publication.PLATFORM}.tar.gz"

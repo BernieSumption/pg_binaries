@@ -51,4 +51,3 @@ jobs:
     uses: ./.github/workflows/hypopg-windows-selected-publication.yml
     with:
       postgresql_version: ${{ matrix.postgresql_version }}
-      extension_version: '1.4.3'

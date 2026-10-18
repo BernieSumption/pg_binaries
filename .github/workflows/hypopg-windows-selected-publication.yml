@@ -9,7 +9,7 @@ on:
         type: string
       extension_version:
         description: Exact selected HypoPG release
-        required: true
+        required: false
         type: string
   workflow_dispatch:
     inputs:

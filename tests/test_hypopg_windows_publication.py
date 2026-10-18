@@ -209,10 +209,10 @@ class HypopgWindowsArchiveTests(unittest.TestCase):
             with self.assertRaisesRegex(Exception, "licence inventory"):
                 checker.inspect(self.core, self.extension, self.root / "report.json")
 
-    def test_importer_persists_validated_record_to_verification_directory(self, target=publication):
+    def test_importer_persists_validated_record_to_verification_directory(self, target=publication, repo=None):
         self.core = self.root / f"postgresql-{target.PG_VERSION}-windows-x86_64.tar.gz"
         self.extension = self.root / f"hypopg-1.4.3-postgresql-{target.PG_VERSION}-windows-x86_64.tar.gz"
-        repo = self.root / "repo"
+        repo = self.root / "repo" if repo is None else Path(repo)
         for relative in ("support.json", "support/verification-profiles.json",
                          "support/postgresql-releases.json"):
             destination = repo / relative
@@ -283,7 +283,7 @@ class HypopgWindowsArchiveTests(unittest.TestCase):
         self.assertTrue(retained.is_file())
         imported = [path.replace("\\", "/") for path in imported]
         self.assertIn(f"support/verification/{record_name}", imported)
-        evidence_record = (repo / "support/evidence/hypopg-windows-publication-123/x86_64/"
+        evidence_record = (repo / f"support/evidence/hypopg-windows-publication-123/x86_64/{target.PG_VERSION}/"
                           / "verification-record.json")
         self.assertEqual(retained.read_bytes(), evidence_record.read_bytes())
         record = json.loads(retained.read_text())
@@ -296,12 +296,13 @@ class HypopgWindowsArchiveTests(unittest.TestCase):
 
     def test_all_selected_targets_emit_import_and_bind_final_symbols(self):
         original_root = self.root
+        shared_repo = original_root / "shared-repo"
         for version in ("15.19", "16.15", "17.11", "18.6"):
             with self.subTest(postgresql_version=version):
                 self.root = original_root / version
                 self.root.mkdir()
                 self.test_importer_persists_validated_record_to_verification_directory(
-                    target=publication.load_target(version))
+                    target=publication.load_target(version), repo=shared_repo)
 
     def test_archive_checker_uses_selected_target_and_rejects_another_core(self):
         from dataclasses import replace

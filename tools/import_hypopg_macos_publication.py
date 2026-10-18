@@ -63,7 +63,8 @@ def import_run(root, core_artifact, hypopg_artifact, run_id, target=None):
                for case in sorted(publication.CASES)}
     outcome = ("failed" if "failed" in results.values()
                else "skipped" if "skipped" in results.values() else "passed")
-    evidence_dir = root / "support/evidence" / f"hypopg-macos-publication-{run_id}" / target.architecture
+    evidence_dir = (root / "support/evidence" / f"hypopg-macos-publication-{run_id}"
+                    / target.architecture / target.postgresql_version)
     copies = []
     _retain(attempt_path, evidence_dir / "attempt.json", copies)
 

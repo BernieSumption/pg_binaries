@@ -26,6 +26,8 @@ Each project supplies SQL probes that create its advertised extensions and check
 
 A verification profile defines the cases required for a particular claim. A verification record stores their outcomes and identifies the archive hashes, exact PostgreSQL and prerequisite archives, environment and test revision. Profiles and records must use shared formats. Common tools must write and validate records; project-specific code may supply additional checks and data. Failed and skipped cases must remain visible. Changes to a profile must invalidate affected evidence. Prefer invalidation by project and platform profile; rerunning a small suite is acceptable when finer dependency tracking would cost more to maintain. Refine this grouping where repeated checks become materially expensive.
 
+Retained evidence paths must distinguish selected targets when one CI run covers several targets. An importer must reject conflicting bytes rather than overwrite evidence from another target.
+
 ## Archive and evidence reuse
 
 The planner must recognise archives and verification records that remain applicable under [the delivery](delivery-process.md) and [testing](testing.md) policies. Matching a target's version and platform is insufficient: reuse must also account for relevant source, dependency, build-configuration and recipe changes. Retain enough build-input information to determine whether an archive still represents the intended build; rebuild when that cannot be established. Editorial changes need not invalidate a build.
