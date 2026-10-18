@@ -76,7 +76,26 @@ jobs:
       - name: Build exact PostgreSQL core archive
         id: core_build
         continue-on-error: true
-        run: scripts/linux/build.sh "$RUNNER_TEMP/bundle/pilot"
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          sources=(
+            hypopg-linux-selected-publication.yml
+            "hypopg-linux-$PG_VERSION-$PG_ARCHITECTURE-trial-{run_id}"
+          )
+          if [[ "$PG_ARCHITECTURE" == x86_64 ]]; then
+            sources+=(
+              pgvector-linux-selected-trial.yml
+              "pgvector-linux-selected-$PG_VERSION-{run_id}"
+            )
+          fi
+          sources+=(
+            linux-publication.yml
+            "linux-publication-$PG_ARCHITECTURE-evidence"
+          )
+          scripts/linux/resolve-core.sh "$PG_VERSION" "$PG_ARCHITECTURE" \
+            "$RUNNER_TEMP/bundle/pilot" "${sources[@]}"
       - name: Build selected HypoPG archive against that core
         id: extension_build
         if: always() && steps.core_build.outcome == 'success'
