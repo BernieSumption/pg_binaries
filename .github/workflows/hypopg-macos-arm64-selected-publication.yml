@@ -27,6 +27,8 @@ on:
     branches: [spike]
     paths:
       - 'experiments/hypopg-macos-target-trial/target.json'
+      - 'scripts/hypopg/macos-feasibility.sh'
+      - 'scripts/macos/core-prefix.sh'
 
 permissions:
   actions: read

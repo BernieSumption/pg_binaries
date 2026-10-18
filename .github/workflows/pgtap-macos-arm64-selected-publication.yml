@@ -18,6 +18,8 @@ on:
     paths:
       - '.github/workflows/pgtap-macos-arm64-selected-publication.yml'
       - 'experiments/pgtap-macos-arm64-target-trial/target.json'
+      - 'scripts/pgtap/macos-feasibility.sh'
+      - 'scripts/macos/core-prefix.sh'
 
 permissions:
   actions: read
