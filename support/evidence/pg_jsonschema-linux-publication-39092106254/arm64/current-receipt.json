@@ -1,0 +1,51 @@
+{
+  "architecture": "arm64",
+  "archives": {
+    "pg_jsonschema-0.3.4-postgresql-18.6-linux-arm64.tar.gz": "792e933ca94cf4db17720567450c1cb47770b637095dafa29cb0a1f04c0cebd6",
+    "postgresql-18.6-linux-arm64.tar.gz": "0eb9c0144fd0b1669c594ce1ebcf7abdf4e1ae3f8e29e59a92833e476001e42b"
+  },
+  "case_results": {
+    "archive-suite": "passed",
+    "elf-closure": "passed"
+  },
+  "ci": {
+    "build_revision": "b1a29588bab989da1d456d6c598f2f4bcf1d25fd",
+    "provider": "github-actions",
+    "run_id": "39092106254",
+    "run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/39092106254",
+    "source_revision": "b1a29588bab989da1d456d6c598f2f4bcf1d25fd",
+    "test_revision": "b1a29588bab989da1d456d6c598f2f4bcf1d25fd"
+  },
+  "clean_system": true,
+  "dependency_check_profile": "linux-elf-alpine-relocation-v1",
+  "dependency_checks_passed": true,
+  "endpoint": "current",
+  "environment": {
+    "architecture": "arm64",
+    "clean_system": true,
+    "dependency_check_profile": "linux-elf-alpine-relocation-v1",
+    "dependency_checks_passed": true,
+    "distribution": "Alpine Linux",
+    "endpoint": "current",
+    "image_id": "sha256:468fb8cc66ac8382d24a8c8d33f2cb7878818a240cf0fc1cce04ef0e40872114",
+    "os": "linux",
+    "os_version": "3.22"
+  },
+  "extension_archive": "pg_jsonschema-0.3.4-postgresql-18.6-linux-arm64.tar.gz",
+  "platform": "linux-arm64",
+  "postgresql_version": "18.6",
+  "profile_id": "pg-jsonschema-publication-linux-arm64-18.6",
+  "profile_revision": "5faa88fa0436b376e9fcf652a3280160cc094678a31b7cb7795d41976105aa1c",
+  "project": "pg_jsonschema",
+  "redistribution_status": "seahash-4.1.0-notice-unresolved",
+  "release_eligible": false,
+  "reports": {
+    "build_evidence": "3b69cebf932e85c80ebcf65094f7a018057c2f0f816c04e4b469ebf43bd7d972",
+    "cargo_license_inventory": "7f11d0f50b003c9d879caf922d4e55c59b4e72aefc901b59a24224a6c2354877",
+    "elf_closure": "d88148214ffb800bd8ee2d2ca6da6b9b36fdadbaab84a3750c2d396a82eea6c1",
+    "probe_output": "59bd0e44702adb3aa5169e006457b49e1df2d415e0b9c0b386f78953ec7204a7"
+  },
+  "schema_version": 1,
+  "test_revision": "b1a29588bab989da1d456d6c598f2f4bcf1d25fd",
+  "version": "0.3.4"
+}
