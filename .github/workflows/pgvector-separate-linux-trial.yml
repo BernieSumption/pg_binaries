@@ -16,6 +16,7 @@ on:
       - 'tools/candidate_archive_cache.py'
       - 'tools/coverage.py'
       - 'tools/extension_archive_plan.py'
+      - 'tools/actions_candidate_discovery.py'
       - 'scripts/linux/verify.sh'
       - 'scripts/linux/verify-in-container.sh'
       - 'tests/extensions/pgvector.sql'
@@ -46,19 +47,24 @@ jobs:
           set -euo pipefail
           source_url=$(python3 tools/source_archive.py pgvector 0.8.7 tar.gz --field url)
           curl --fail --location --retry 3 "$source_url" --output "$RUNNER_TEMP/pgvector-v0.8.7.tar.gz"
-      - name: Download temporary prior pgvector candidate
-        id: prior_candidate
-        continue-on-error: true
-        uses: actions/download-artifact@v4
-        with:
-          name: pgvector-separate-linux-build-39164539225
-          run-id: 39164539225
-          github-token: ${{ github.token }}
-          path: ${{ runner.temp }}/candidate
+      - name: Discover a checked prior pgvector candidate
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 tools/actions_candidate_discovery.py \
+            --repository "$GITHUB_REPOSITORY" \
+            --workflow pgvector-separate-linux-trial.yml \
+            --branch "$GITHUB_REF_NAME" \
+            --current-run-id "$GITHUB_RUN_ID" \
+            --artifact-name-template 'pgvector-separate-linux-build-{run_id}' \
+            --archive-basename pgvector-0.8.7-postgresql-18.6-linux-x86_64.tar.gz \
+            --project pgvector --version 0.8.7 --platform linux-x86_64 \
+            --postgresql-version 18.6 \
+            --output-directory "$RUNNER_TEMP/candidate" \
+            --manifest-path "$RUNNER_TEMP/candidate-manifest.json"
       - name: Check inputs and decide whether the prior archive is reusable
         env:
           CORE_SHA256: e532b07c29904db82d1681f1a4ab815364b769a4e1f277c9de9bcd45d0cdc7c6
-          CANDIDATE_SHA256: d5a65571417532cc9eef2ebf1eeaa564640f01583a68d057ebbec269aed682c2
         run: |
           set -euo pipefail
           core_name=postgresql-18.6-linux-x86_64.tar.gz
@@ -76,16 +82,14 @@ jobs:
           fi
           candidate_name=pgvector-0.8.7-postgresql-18.6-linux-x86_64.tar.gz
           candidate="$RUNNER_TEMP/candidate/$candidate_name"
-          if [[ '${{ steps.prior_candidate.outcome }}' != success ]]; then
-            echo "Prior Actions artifact is unavailable; building a fresh archive in Docker."
+          if [[ ! -s "$candidate" ]]; then
+            echo "No retrievable prior Actions candidate; building a fresh archive in Docker."
             scripts/pgvector/linux-build.sh "$core" "$CORE_SHA256" \
               "$RUNNER_TEMP/pgvector-v0.8.7.tar.gz" "$RUNNER_TEMP/pgvector-output"
             exit 0
           fi
-          test -s "$candidate"
           test -s "$candidate.sha256"
-          printf '%s  %s\n' "$CANDIDATE_SHA256" "$candidate_name" > "$RUNNER_TEMP/candidate/pinned.sha256"
-          (cd "$RUNNER_TEMP/candidate" && sha256sum --check pinned.sha256 "$candidate_name.sha256")
+          (cd "$RUNNER_TEMP/candidate" && sha256sum --check "$candidate_name.sha256")
 
           # Rebuild the exact builder image before computing the expected identity.
           docker build --platform linux/amd64 -f scripts/pgvector/linux-build.Dockerfile \
@@ -106,9 +110,6 @@ jobs:
                    "postgresql_major": 18, "identity": identity}
           pathlib.Path(sys.argv[2]).write_text(json.dumps({"schema_version": 1, "entries": [entry]}))
           PY
-          cat > "$RUNNER_TEMP/candidate-manifest.json" <<JSON
-          {"schema_version":1,"archives":[{"project":"pgvector","version":"0.8.7","platform":"linux-x86_64","postgresql_version":"18.6","sha256":"$CANDIDATE_SHA256","path":"$candidate","source":{"provider":"github-actions","run_id":"39164539225","artifact_name":"pgvector-separate-linux-build-39164539225","expires_at":"2026-10-25T20:43:29Z"}}]}
-          JSON
           python3 tools/extension_work_queue.py --all \
             --candidate-manifest "$RUNNER_TEMP/candidate-manifest.json" \
             --expected-build-inputs "$RUNNER_TEMP/expected-build-inputs.json" \
