@@ -6,6 +6,7 @@ on:
     paths:
       - '.github/workflows/pgvector-separate-linux-trial.yml'
       - 'scripts/pgvector/linux-build.sh'
+      - 'scripts/pgvector/builder-packages.sh'
       - 'scripts/pgvector/linux-build.Dockerfile'
       - 'scripts/pgvector/linux-build-in-container.sh'
       - 'scripts/pgvector/archive_input.py'
@@ -89,13 +90,14 @@ jobs:
           # Rebuild the exact builder image before computing the expected identity.
           docker build --platform linux/amd64 -f scripts/pgvector/linux-build.Dockerfile \
             -t pg-binaries-pgvector-separate-linux .
-          image_id=$(docker image inspect pg-binaries-pgvector-separate-linux --format '{{.Id}}')
+          scripts/pgvector/builder-packages.sh "$RUNNER_TEMP/current-builder-packages.tsv"
+          builder_packages_sha=$(sha256sum "$RUNNER_TEMP/current-builder-packages.tsv" | awk '{print $1}')
           python3 scripts/pgvector/archive_input.py validate-source \
             "$RUNNER_TEMP/pgvector-v0.8.7.tar.gz" \
             "$(python3 tools/source_archive.py pgvector 0.8.7 tar.gz --field sha256)"
           python3 scripts/pgvector/archive_input.py validate-core \
             "$core" "$core.sha256" "$CORE_SHA256" 18.6 x86_64
-          python3 tools/selected_build_inputs.py --builder-image-id "$image_id" \
+          python3 tools/selected_build_inputs.py --builder-packages-sha256 "$builder_packages_sha" \
             > "$RUNNER_TEMP/expected-build-inputs-raw.json"
           python3 - "$RUNNER_TEMP/expected-build-inputs-raw.json" "$RUNNER_TEMP/expected-build-inputs.json" <<'PY'
           import json, pathlib, sys
@@ -143,7 +145,9 @@ jobs:
           test -s "$archive"
           test -s "$archive.sha256"
           (cd "$(dirname "$archive")" && sha256sum --check "$(basename "$archive").sha256")
-          python3 - "$archive" <<'PY'
+          scripts/pgvector/builder-packages.sh "$RUNNER_TEMP/final-builder-packages.tsv"
+          builder_packages_sha=$(sha256sum "$RUNNER_TEMP/final-builder-packages.tsv" | awk '{print $1}')
+          python3 - "$archive" "$builder_packages_sha" <<'PY'
           import json, sys, tarfile
           sys.path.insert(0, 'tools')
           from build_input_identity import assess_reuse
@@ -167,7 +171,7 @@ jobs:
               }:
                   raise SystemExit("archive metadata does not identify the pinned core input")
               assessment = assess_reuse(
-                  selected_identity(metadata["builder_image_id"]), metadata.get("build_inputs"))
+                  selected_identity(sys.argv[2]), metadata.get("build_inputs"))
               if not assessment["reusable"]:
                   raise SystemExit(f"archive build inputs are not current: {assessment['reason']}")
           PY
