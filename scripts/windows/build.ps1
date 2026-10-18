@@ -29,7 +29,11 @@ $vcpkgRevision = (& git -C $vcpkgRoot rev-parse HEAD).Trim()
 if ($vcpkgRevision -ne '9e593bb18ea69cc5095e012465dcd675a822ed0d') {
   throw "VCPKG_INSTALLATION_ROOT is not the pinned vcpkg revision: $vcpkgRevision"
 }
-$buildConfiguration = "postgresql-$pgVersion;pgvector-$vectorVersion;builder=windows-runner;meson=debugoptimized;postgresql=icu,lz4,zstd,zlib,openssl,libxml,libxslt,no-uuid,no-readline;compiler=MSVC;pgvector=debug-symbols;vcpkg=$vcpkgRevision;runtime=vcpkg-and-msvc-dlls"
+if ($pgVersion -eq '15.19') {
+  $buildConfiguration = "postgresql-$pgVersion;pgvector-$vectorVersion;builder=windows-runner;postgresql-builder=msvc-release;dependency-layout=staged-vcpkg-import-libraries;postgresql=icu,lz4,zstd,zlib,openssl,libxml,libxslt,no-uuid,no-readline;compiler=MSVC;pgvector=debug-symbols;vcpkg=$vcpkgRevision;runtime=vcpkg-and-msvc-dlls"
+} else {
+  $buildConfiguration = "postgresql-$pgVersion;pgvector-$vectorVersion;builder=windows-runner;meson=debugoptimized;postgresql=icu,lz4,zstd,zlib,openssl,libxml,libxslt,no-uuid,no-readline;compiler=MSVC;pgvector=debug-symbols;vcpkg=$vcpkgRevision;runtime=vcpkg-and-msvc-dlls"
+}
 $work = Join-Path $env:RUNNER_TEMP 'pg-binaries-windows-build'
 $dist = Join-Path $repo 'dist/windows'
 $vcpkg = Join-Path $vcpkgRoot 'installed/x64-windows'
@@ -80,19 +84,24 @@ $env:PKG_CONFIG_PATH = (Join-Path $vcpkg 'lib/pkgconfig')
 $env:CMAKE_PREFIX_PATH = $vcpkg
 $env:PATH = "$(Join-Path $vcpkg 'bin');$env:PATH"
 
-$mesonArgs = @(
-  'setup', $pgBuild, $pgSource,
-  "--prefix=$pgInstall", '--buildtype=debugoptimized',
-  '-Dicu=enabled', '-Dlz4=enabled', '-Dzstd=enabled',
-  '-Dzlib=enabled', '-Dssl=openssl', '-Dlibxml=enabled', '-Dlibxslt=enabled',
-  '-Duuid=none', '-Dreadline=disabled',
-  '-Dplperl=disabled', '-Dplpython=disabled', '-Dpltcl=disabled',
-  "-Dextra_include_dirs=$(Join-Path $vcpkg 'include')",
-  "-Dextra_lib_dirs=$(Join-Path $vcpkg 'lib')"
-)
-meson @mesonArgs
-meson compile -C $pgBuild
-meson install -C $pgBuild
+if ($pgVersion -eq '15.19') {
+  $pg15Dependencies = Join-Path $work 'postgresql-15-msvc-dependencies'
+  & (Join-Path $PSScriptRoot 'build-postgresql-15-msvc.ps1') -SourceRoot $pgSource -InstallRoot $pgInstall -VcpkgRoot $vcpkgRoot -StagingRoot $pg15Dependencies
+} else {
+  $mesonArgs = @(
+    'setup', $pgBuild, $pgSource,
+    "--prefix=$pgInstall", '--buildtype=debugoptimized',
+    '-Dicu=enabled', '-Dlz4=enabled', '-Dzstd=enabled',
+    '-Dzlib=enabled', '-Dssl=openssl', '-Dlibxml=enabled', '-Dlibxslt=enabled',
+    '-Duuid=none', '-Dreadline=disabled',
+    '-Dplperl=disabled', '-Dplpython=disabled', '-Dpltcl=disabled',
+    "-Dextra_include_dirs=$(Join-Path $vcpkg 'include')",
+    "-Dextra_lib_dirs=$(Join-Path $vcpkg 'lib')"
+  )
+  meson @mesonArgs
+  meson compile -C $pgBuild
+  meson install -C $pgBuild
+}
 
 # Place redistributable dependency DLLs with PostgreSQL binaries, where the
 # Windows loader will find them without vcpkg or the builder's PATH.
@@ -266,6 +275,7 @@ foreach ($archive in @($pgArchive, $vectorArchive)) {
   $hash = (Get-FileHash $archive -Algorithm SHA256).Hash.ToLowerInvariant()
   "$hash  $(Split-Path $archive -Leaf)" | Set-Content -Encoding ascii "$archive.sha256"
 }
-python (Join-Path $repo 'tools/create_windows_symbols.py') $pgArchive $vectorArchive --staged-pdbs $pgBuild $vectorSource --output-dir (Join-Path $dist 'debug-symbols')
+$postgresqlPdbRoot = if ($pgVersion -eq '15.19') { $pgSource } else { $pgBuild }
+python (Join-Path $repo 'tools/create_windows_symbols.py') $pgArchive $vectorArchive --staged-pdbs $postgresqlPdbRoot $vectorSource --output-dir (Join-Path $dist 'debug-symbols')
 if ($LASTEXITCODE -ne 0) { throw 'Failed to index matching Windows PDB files' }
 Write-Host "Built $pgArchive and $vectorArchive"
