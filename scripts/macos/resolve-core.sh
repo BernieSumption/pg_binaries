@@ -12,7 +12,7 @@ output=$(cd "$output" && pwd)
 : "${GITHUB_RUN_ID:?required for Actions candidate discovery}"
 : "${GITHUB_RUN_ATTEMPT:?required for Actions candidate discovery}"
 
-read -r version architecture core_name < <(python3 - "$base_target" <<'PY'
+selection=$(python3 - "$base_target" <<'PY'
 import json
 import sys
 
@@ -27,6 +27,7 @@ if target["core_archive"]["basename"] != basename:
 print(version, architecture, basename)
 PY
 )
+read -r version architecture core_name <<< "$selection"
 
 candidate_manifest="$output/candidate-manifest.json"
 target="$output/target.json"
