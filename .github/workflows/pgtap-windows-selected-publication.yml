@@ -1,0 +1,191 @@
+name: pgTAP selected PostgreSQL Windows x86-64 publication
+
+on:
+  workflow_dispatch:
+    inputs:
+      postgresql_version:
+        description: Selected PostgreSQL release
+        required: true
+        type: string
+        default: '18.6'
+      extension_version:
+        description: Optional pgTAP version selector
+        required: false
+        type: string
+        default: ''
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  select:
+    runs-on: ubuntu-latest
+    outputs:
+      postgresql_version: ${{ steps.plan.outputs.postgresql_version }}
+      extension_version: ${{ steps.plan.outputs.selected_version }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate the requested selected target
+        id: plan
+        env:
+          POSTGRESQL_VERSION: ${{ inputs.postgresql_version }}
+          EXTENSION_VERSION: ${{ inputs.extension_version }}
+        run: |
+          args=(--project pgtap --platform windows-x86_64 \
+            --postgresql-version "$POSTGRESQL_VERSION")
+          if [[ -n "$EXTENSION_VERSION" ]]; then
+            args+=(--extension-version "$EXTENSION_VERSION")
+          fi
+          python3 tools/extension_archive_plan.py "${args[@]}" --github-output "$GITHUB_OUTPUT" > "$RUNNER_TEMP/selection.json"
+          selected_version=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["selected_version"])' "$RUNNER_TEMP/selection.json")
+          if [[ "$selected_version" != '1.3.4' ]]; then
+            echo "The selected pgTAP release is $selected_version; the current Windows recipe and publication emitter support only 1.3.4." >&2
+            exit 1
+          fi
+
+  profile_scope:
+    needs: select
+    uses: ./.github/workflows/profile-change-scope.yml
+    with:
+      profile_id: ${{ format('pgtap-publication-windows-x86_64-{0}', needs.select.outputs.postgresql_version) }}
+
+  build:
+    needs: [select, profile_scope]
+    if: needs.profile_scope.outputs.should_run == 'true'
+    runs-on: windows-2022
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Load pinned PostgreSQL core identity
+        id: core_pin
+        run: python tools/windows_core_pin.py --postgresql-version '${{ needs.select.outputs.postgresql_version }}' --github-output >> $env:GITHUB_OUTPUT
+      - name: Check pgTAP publication evidence tooling
+        run: python -B -m unittest tests/test_pgtap_windows_publication.py
+      - name: Download the pinned PostgreSQL core archive
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-postgresql-${{ needs.select.outputs.postgresql_version }}-pilot
+          run-id: ${{ steps.core_pin.outputs.run_id }}
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/core-archives
+      - name: Build and package pgTAP from pinned upstream source
+        id: archive
+        continue-on-error: true
+        run: ./scripts/pgtap/windows-feasibility.ps1 -PostgreSQLVersion '${{ needs.select.outputs.postgresql_version }}' -CoreArchiveDirectory "$env:RUNNER_TEMP/core-archives" -OutputDirectory "$env:RUNNER_TEMP/pgtap-build" -BuildOnly
+      - name: Upload final core and extension archives
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pgtap-windows-${{ needs.select.outputs.postgresql_version }}-build-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/core-archives/**
+            ${{ runner.temp }}/pgtap-build/**
+          if-no-files-found: warn
+          retention-days: 7
+      - name: Require package build to pass
+        if: always()
+        run: |
+          if ('${{ steps.archive.outcome }}' -ne 'success') { throw 'pgTAP Windows archive build failed.' }
+
+  verify:
+    needs: [select, profile_scope, build]
+    if: always() && needs.profile_scope.outputs.should_run == 'true'
+    runs-on: windows-2022
+    timeout-minutes: 25
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Download final archives from the build runner
+        id: download
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: pgtap-windows-${{ needs.select.outputs.postgresql_version }}-build-${{ github.run_id }}
+          path: ${{ runner.temp }}/pgtap-bundle
+      - name: Prepare verification inputs
+        if: always()
+        run: |
+          $coreDir = Join-Path $env:RUNNER_TEMP 'core-archives'
+          $extensionDir = Join-Path $env:RUNNER_TEMP 'pgtap-extension'
+          New-Item -ItemType Directory -Force $coreDir,$extensionDir | Out-Null
+          $bundleCore = Join-Path $env:RUNNER_TEMP 'pgtap-bundle/core-archives'
+          $bundleExtension = Join-Path $env:RUNNER_TEMP 'pgtap-bundle/pgtap-build'
+          if (Test-Path $bundleCore) { Copy-Item (Join-Path $bundleCore '*') $coreDir -Force }
+          if (Test-Path $bundleExtension) { Copy-Item (Join-Path $bundleExtension '*') $extensionDir -Force }
+      - name: Inspect exact core and final pgTAP archives
+        id: static
+        if: always() && steps.download.outcome == 'success'
+        continue-on-error: true
+        env:
+          POSTGRESQL_VERSION: ${{ needs.select.outputs.postgresql_version }}
+        run: |
+          $dir = Join-Path $env:RUNNER_TEMP 'pgtap-verification'
+          New-Item -ItemType Directory -Force $dir | Out-Null
+          $core = Join-Path $env:RUNNER_TEMP "core-archives/postgresql-$env:POSTGRESQL_VERSION-windows-x86_64.tar.gz"
+          $extension = Join-Path $env:RUNNER_TEMP "pgtap-extension/pgtap-1.3.4-postgresql-$env:POSTGRESQL_VERSION-windows-x86_64.tar.gz"
+          if (-not (Test-Path $extension -PathType Leaf)) { throw 'Final pgTAP archive is missing' }
+          python tools/check_pgtap_windows_archive.py --postgresql-version $env:POSTGRESQL_VERSION --core-archive $core --extension-archive $extension --output (Join-Path $dir 'static-analysis.json')
+      - name: Inspect and exercise downloaded archives after relocation
+        id: verification
+        if: always() && needs.build.result == 'success' && steps.download.outcome == 'success'
+        continue-on-error: true
+        run: ./scripts/pgtap/verify-windows-publication.ps1 -CoreArchiveDirectory "$env:RUNNER_TEMP/core-archives" -ExtensionArchiveDirectory "$env:RUNNER_TEMP/pgtap-extension" -OutputDirectory "$env:RUNNER_TEMP/pgtap-verification" -PostgreSQLVersion '${{ needs.select.outputs.postgresql_version }}'
+      - name: Emit archive-bound attempt and publication record
+        if: always()
+        env:
+          ARCHIVE_RESULT: ${{ needs.build.result == 'success' && steps.verification.outcome || needs.build.result }}
+          STATIC_RESULT: ${{ steps.static.outcome }}
+          POSTGRESQL_VERSION: ${{ needs.select.outputs.postgresql_version }}
+        run: |
+          $dir = Join-Path $env:RUNNER_TEMP 'pgtap-verification'
+          New-Item -ItemType Directory -Force $dir | Out-Null
+          $version = (Get-CimInstance Win32_OperatingSystem).Version
+          $image = "$([Environment]::GetEnvironmentVariable('ImageOS'))/$([Environment]::GetEnvironmentVariable('ImageVersion'))"
+          python tools/emit_pgtap_windows_publication.py --postgresql-version $env:POSTGRESQL_VERSION --core-archives (Join-Path $env:RUNNER_TEMP 'core-archives') --archives (Join-Path $env:RUNNER_TEMP 'pgtap-extension') --output $dir --os-version $version --image-id $image --archive-suite-result $env:ARCHIVE_RESULT --static-analysis-result $env:STATIC_RESULT
+      - name: Validate and retain publication evidence
+        if: always()
+        env:
+          POSTGRESQL_VERSION: ${{ needs.select.outputs.postgresql_version }}
+        run: |
+          $dir = Join-Path $env:RUNNER_TEMP 'pgtap-verification'
+          $attemptPath = Join-Path $dir 'publication/attempt.json'
+          if (Test-Path $attemptPath) {
+            $attempt = Get-Content $attemptPath -Raw | ConvertFrom-Json
+            if ($attempt.archives) {
+              $extensionDir = Join-Path $env:RUNNER_TEMP 'pgtap-extension'
+              Copy-Item (Join-Path $dir '*') $extensionDir -Recurse -Force
+              python tools/import_pgtap_windows_publication.py --postgresql-version $env:POSTGRESQL_VERSION --core-artifact (Join-Path $env:RUNNER_TEMP 'core-archives') --pgtap-artifact $extensionDir --run-id $env:GITHUB_RUN_ID
+            }
+          }
+      - name: Upload candidate archive and verification evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pgtap-1.3.4-postgresql-${{ needs.select.outputs.postgresql_version }}-windows-x86_64-candidate-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/core-archives/*.tar.gz
+            ${{ runner.temp }}/core-archives/*.sha256
+            ${{ runner.temp }}/pgtap-extension/*
+            ${{ runner.temp }}/pgtap-verification/*
+            support/evidence/pgtap-windows-publication-${{ github.run_id }}/**
+            support/verification/pgtap-1.3.4-postgresql-${{ needs.select.outputs.postgresql_version }}-windows-x86_64-current-${{ github.run_id }}.json
+          if-no-files-found: warn
+          retention-days: 7
+      - name: Require fresh-runner verification to pass
+        if: always()
+        run: |
+          if ('${{ needs.build.result }}' -ne 'success' -or '${{ steps.download.outcome }}' -ne 'success' -or '${{ steps.static.outcome }}' -ne 'success' -or '${{ steps.verification.outcome }}' -ne 'success') {
+            throw 'pgTAP Windows fresh-runner verification failed.'
+          }
