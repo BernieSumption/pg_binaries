@@ -118,7 +118,7 @@ class HypoPGMacOSPublicationTests(unittest.TestCase):
         script = (root / "scripts/hypopg/macos-feasibility.sh").read_text()
         emitter_source = (root / "tools/emit_hypopg_macos_publication.py").read_text()
         pin = json.loads((root / "tools/hypopg_macos_pins/18.6-arm64.json").read_text())
-        self.assertIn("run-id: ${{ needs.select.outputs.core_run_id }}", workflow)
+        self.assertIn("scripts/macos/resolve-core.sh", workflow)
         self.assertEqual(pin["core_archive"]["run_id"], run_id)
         self.assertEqual(pin["core_archive"]["build_id"], f"github-{run_id}-1")
         self.assertEqual(pin["core_archive"]["source_revision"], source_revision)
