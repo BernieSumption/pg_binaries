@@ -11,6 +11,7 @@ on:
   push:
     branches: [spike]
     paths:
+      - 'experiments/pgvector-selected-target/target.json'
       - '.github/workflows/pgvector-linux-selected-trial.yml'
       - 'scripts/pgvector/**'
       - 'scripts/linux/**'
@@ -54,7 +55,19 @@ jobs:
         run: |
           set -euo pipefail
           pg_version="$REQUESTED_POSTGRESQL_VERSION"
-          if [[ -z "$pg_version" ]]; then pg_version=17.11; fi
+          if [[ -z "$pg_version" ]]; then
+            pg_version=$(python3 - <<'PY'
+          import json
+          from pathlib import Path
+          request = json.loads(Path('experiments/pgvector-selected-target/target.json').read_text())
+          if (set(request) != {'postgresql_version', 'attempt'}
+                  or not isinstance(request['attempt'], int) or isinstance(request['attempt'], bool)
+                  or request['attempt'] < 1):
+              raise SystemExit('invalid selected pgvector trial request')
+          print(request['postgresql_version'])
+          PY
+            )
+          fi
           python3 tools/extension_archive_plan.py \
             --project pgvector --platform linux-x86_64 --postgresql-version "$pg_version" \
             --github-output "$GITHUB_OUTPUT" > "$RUNNER_TEMP/extension-target.json"
