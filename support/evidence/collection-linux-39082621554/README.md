@@ -1,0 +1,5 @@
+# collection 1.1.1 and 2.1.3 Linux feasibility
+
+[Run 39082621554](https://github.com/BernieSumption/pg_binaries/actions/runs/39082621554) passed on a standard x86-64 Linux runner at source revision `2d9d29ed9c8f320e257ccd9c8447847aa58758c0`. The workflow built both selected releases from checksum-pinned, unmodified upstream source against PostgreSQL 18.6. It checked final archive hashes, relocated each archive with its exact core into Alpine 3.22, inspected ELF dependency closure, created the SQL extension, and exercised associative-array operations and persistence across connections. The 2.1.3 probe also exercised sparse integer keys. Both versions passed.
+
+The [attempt manifest](attempt.json) binds the core and extension archive hashes to the source revision and step outcomes. The [1.1.1](collection-1.1.1-static-analysis.json) and [2.1.3](collection-2.1.3-static-analysis.json) static reports retain the dependency inspection. This is feasibility evidence; publication profiles and other target combinations remain open.
