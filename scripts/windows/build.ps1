@@ -164,6 +164,17 @@ if ($pgGitSource) {
 $env:PGROOT = $pgInstall
 $vectorMakefile = Join-Path $vectorSource 'Makefile.win'
 $vectorMakefileHash = (Get-FileHash $vectorMakefile -Algorithm SHA256).Hash
+$pgImportAlias = $null
+if ($pgVersion -eq '16.15') {
+  $pgImportAlias = Join-Path $pgInstall 'lib/postgres.lib'
+  & python (Join-Path $repo 'tools/stage_windows_postgres_import_library.py') --library-directory (Join-Path $pgInstall 'lib')
+  if ($LASTEXITCODE -ne 0) { throw 'Cannot stage the PostgreSQL 16 Meson import library for pgvector' }
+  $pgManifest.windows_import_library = [ordered]@{
+    filename = 'postgres.lib'
+    alias_of = 'postgres.exe.lib'
+    sha256 = (Get-FileHash $pgImportAlias -Algorithm SHA256).Hash.ToLowerInvariant()
+  }
+}
 $previousLink = $env:LINK
 $env:LINK = if ($previousLink) { "$previousLink /DEBUG" } else { '/DEBUG' }
 Push-Location $vectorSource

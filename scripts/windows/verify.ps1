@@ -61,6 +61,12 @@ if ($pgVersion -eq '16.15') {
   & $python (Join-Path $repo 'tools/check_source_identity.py') --platform windows --postgresql-version $pgVersion --core-manifest (Join-Path $pgRoot 'manifest.json') --vector-metadata $metadataPath
   if ($LASTEXITCODE -ne 0) { throw 'Packaged source identity differs from the selected archives' }
 }
+if ($pgVersion -eq '16.15') {
+  & $python (Join-Path $repo 'tools/stage_windows_postgres_import_library.py') --library-directory (Join-Path $pgRoot 'lib') --verify-manifest (Join-Path $pgRoot 'manifest.json')
+  if ($LASTEXITCODE -ne 0) { throw 'The PostgreSQL 16 Windows import-library alias is missing or mismatched' }
+} elseif ($null -ne $pgManifest.windows_import_library) {
+  throw 'Unexpected Windows import-library alias metadata for this PostgreSQL version'
+}
 foreach ($field in @('project', 'version', 'sql_names', 'requires', 'configuration_prerequisites', 'runtime_prerequisites')) {
   if ($null -eq $vectorMetadata.$field) { throw "pgvector metadata is missing $field" }
 }

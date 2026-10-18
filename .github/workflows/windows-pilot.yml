@@ -23,6 +23,7 @@ on:
       - 'tools/check_source_identity.py'
       - 'tools/postgresql_git_source.py'
       - 'tools/check_windows_git_source_identity.py'
+      - 'tools/stage_windows_postgres_import_library.py'
       - 'tools/discover_builtins.py'
       - 'tools/create_windows_symbols.py'
       - 'tools/emit_windows_pilot_records.py'
@@ -37,6 +38,7 @@ on:
       - 'tests/test_map_vcpkg_dlls.py'
       - 'tests/test_prepare_postgresql_15_msvc.py'
       - 'tests/test_windows_git_source_identity.py'
+      - 'tests/test_stage_windows_postgres_import_library.py'
       - 'tests/test_profile_change_gate.py'
       - 'tools/profile_change_gate.py'
 
@@ -126,7 +128,7 @@ jobs:
         with:
           python-version: '3.12'
       - name: Check Windows build evidence helpers
-        run: python -m unittest tests/test_create_windows_symbols.py tests/test_map_vcpkg_dlls.py tests/test_prepare_postgresql_15_msvc.py
+        run: python -m unittest tests/test_create_windows_symbols.py tests/test_map_vcpkg_dlls.py tests/test_prepare_postgresql_15_msvc.py tests/test_stage_windows_postgres_import_library.py
       - name: Install Meson and Ninja
         run: python -m pip install --disable-pip-version-check meson ninja
       - name: Provide Flex and Bison for the PostgreSQL build
