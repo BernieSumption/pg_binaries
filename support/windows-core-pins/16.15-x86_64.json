@@ -1,0 +1,14 @@
+{
+  "schema_version": 1,
+  "postgresql_version": "16.15",
+  "platform": "windows-x86_64",
+  "architecture": "x86_64",
+  "artifact_name": "windows-postgresql-16.15-pilot",
+  "archive_name": "postgresql-16.15-windows-x86_64.tar.gz",
+  "run_id": "39119075111",
+  "build_id": "github-39119075111-1",
+  "source_revision": "eecefcbb0362a602afb136b5ee8769113c6a47f2",
+  "sha256": "a4a368282a2f89a6e85bc81cfbf0a73e5c1a1a9ef4c813c681698a9af0d50bb0",
+  "profile_id": "windows-publication-current-x86_64",
+  "status": "current-profile-core-redistribution-pending"
+}

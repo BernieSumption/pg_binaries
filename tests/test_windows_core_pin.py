@@ -15,6 +15,19 @@ class WindowsCorePinTests(unittest.TestCase):
         self.assertEqual(identity["build_id"], "github-39119078655-1")
         self.assertEqual(identity["archive_name"], "postgresql-18.6-windows-x86_64.tar.gz")
 
+    def test_each_pin_matches_its_imported_current_core_record(self):
+        root = PIN_PATH.parents[2]
+        for version in ("15.19", "16.15", "17.11", "18.6"):
+            with self.subTest(postgresql_version=version):
+                identity = load_identity(pg_version=version)
+                record = json.loads((root / "support/verification" /
+                    f"postgresql-{version}-windows-x86_64-current-{identity['run_id']}.json").read_text())
+                self.assertEqual(identity["sha256"], record["sha256"])
+                self.assertEqual(identity["source_revision"], record["ci"]["build_revision"])
+                self.assertEqual(identity["profile_id"], record["profile_id"])
+                with self.assertRaisesRegex(ValueError, "expected"):
+                    load_identity(PIN_PATH, pg_version=version if version != "18.6" else "15.19")
+
     def test_fails_closed_for_missing_or_incomplete_identity(self):
         with self.assertRaisesRegex(ValueError, "missing or invalid"):
             load_identity(PIN_PATH.parent / "absent.json")

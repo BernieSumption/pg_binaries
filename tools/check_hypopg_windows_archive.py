@@ -21,16 +21,17 @@ def sha256_file(path):
     return digest.hexdigest()
 
 
-def inspect(core_archive, extension_archive, report_path, pe_report_path=None, pdb_path=None):
+def inspect(core_archive, extension_archive, report_path, pe_report_path=None, pdb_path=None, target=None):
+    target = publication if target is None else target
     core_archive, extension_archive, report_path = map(Path, (core_archive, extension_archive, report_path))
-    expected_core = f"postgresql-{publication.PG_VERSION}-{publication.PLATFORM}.tar.gz"
+    expected_core = f"postgresql-{target.PG_VERSION}-{publication.PLATFORM}.tar.gz"
     expected_extension = (f"hypopg-{publication.HYPOPG_VERSION}-postgresql-"
-                          f"{publication.PG_VERSION}-{publication.PLATFORM}.tar.gz")
+                          f"{target.PG_VERSION}-{publication.PLATFORM}.tar.gz")
     if core_archive.name != expected_core or extension_archive.name != expected_extension:
         raise coverage.CoverageError("archive basenames do not match the pinned target")
     digests = {core_archive.name: sha256_file(core_archive),
                extension_archive.name: sha256_file(extension_archive)}
-    if digests[core_archive.name] != publication.CORE_SHA256:
+    if digests[core_archive.name] != target.CORE_SHA256:
         raise coverage.CoverageError("core archive checksum differs from the pinned input")
     inspected = []
     native = []
@@ -50,10 +51,10 @@ def inspect(core_archive, extension_archive, report_path, pe_report_path=None, p
                 raise coverage.CoverageError("core archive manifest is missing")
             core = json.loads(archive.extractfile(manifest).read().decode("utf-8"))
             expected_manifest = {
-                "component": "postgresql", "version": publication.PG_VERSION,
-                "postgresql_version": publication.PG_VERSION, "platform": "windows",
-                "architecture": publication.ARCHITECTURE, "build_id": publication.CORE_BUILD_ID,
-                "source_revision": publication.CORE_SOURCE_REVISION,
+                "component": "postgresql", "version": target.PG_VERSION,
+                "postgresql_version": target.PG_VERSION, "platform": "windows",
+                "architecture": publication.ARCHITECTURE, "build_id": target.CORE_BUILD_ID,
+                "source_revision": target.CORE_SOURCE_REVISION,
             }
             if not isinstance(core, dict) or any(core.get(key) != value for key, value in expected_manifest.items()):
                 raise coverage.CoverageError("core archive manifest differs from the pinned build")
@@ -81,12 +82,12 @@ def inspect(core_archive, extension_archive, report_path, pe_report_path=None, p
             metadata = json.loads(archive.extractfile(metadata_member).read().decode("utf-8"))
             expected = {
                 "project": "hypopg", "version": publication.HYPOPG_VERSION, "sql_names": ["hypopg"],
-                "postgresql_version": publication.PG_VERSION, "platform": "windows",
+                "postgresql_version": target.PG_VERSION, "platform": "windows",
                 "architecture": publication.ARCHITECTURE,
                 "source": {"url": publication.SOURCE_URL, "sha256": publication.SOURCE_SHA256},
-                "core_archive": {"basename": expected_core, "sha256": publication.CORE_SHA256},
+                "core_archive": {"basename": expected_core, "sha256": target.CORE_SHA256},
                 "release_eligible": False,
-                "core_status": publication.CORE_STATUS,
+                "core_status": target.CORE_STATUS,
             }
             if not isinstance(metadata, dict) or any(metadata.get(key) != value for key, value in expected.items()):
                 raise coverage.CoverageError("hypopg metadata does not bind the exact source and core inputs")
@@ -144,6 +145,7 @@ def inspect(core_archive, extension_archive, report_path, pe_report_path=None, p
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--postgresql-version", choices=publication.PG_VERSIONS, default="18.6")
     parser.add_argument("--core-archive", type=Path, required=True)
     parser.add_argument("--extension-archive", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
@@ -151,7 +153,7 @@ def main():
     parser.add_argument("--pdb", type=Path, required=True)
     args = parser.parse_args()
     try:
-        report = inspect(args.core_archive, args.extension_archive, args.output, args.pe_report, args.pdb)
+        report = inspect(args.core_archive, args.extension_archive, args.output, args.pe_report, args.pdb, target=publication.load_target(args.postgresql_version))
         print(f"PASS: inspected {len(report['inspected_files'])} archive files")
         return 0
     except (coverage.CoverageError, OSError, ValueError, TypeError, RuntimeError) as exc:

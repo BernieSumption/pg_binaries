@@ -47,21 +47,21 @@ class HypopgWindowsArchiveTests(unittest.TestCase):
                 info.size = len(data)
                 archive.addfile(info, io.BytesIO(data))
 
-    def _archives(self, release_eligible=False, unsafe=False, inventory=True):
+    def _archives(self, release_eligible=False, unsafe=False, inventory=True, target=publication):
         manifest = {
-            "component": "postgresql", "version": "18.6", "postgresql_version": "18.6",
-            "platform": "windows", "architecture": "x86_64", "build_id": publication.CORE_BUILD_ID,
-            "source_revision": publication.CORE_SOURCE_REVISION,
+            "component": "postgresql", "version": target.PG_VERSION, "postgresql_version": target.PG_VERSION,
+            "platform": "windows", "architecture": "x86_64", "build_id": target.CORE_BUILD_ID,
+            "source_revision": target.CORE_SOURCE_REVISION,
         }
         self._tar(self.core, [("postgresql/manifest.json", json.dumps(manifest))])
         core_hash = hashlib.sha256(self.core.read_bytes()).hexdigest()
         metadata = {
             "project": "hypopg", "version": "1.4.3", "sql_names": ["hypopg"],
-            "postgresql_version": "18.6", "platform": "windows", "architecture": "x86_64",
+            "postgresql_version": target.PG_VERSION, "platform": "windows", "architecture": "x86_64",
             "source": {"url": publication.SOURCE_URL, "sha256": publication.SOURCE_SHA256},
             "core_archive": {"basename": self.core.name, "sha256": core_hash},
             "release_eligible": release_eligible,
-            "core_status": publication.CORE_STATUS,
+            "core_status": target.CORE_STATUS,
         }
         prefix = "../escape" if unsafe else "hypopg"
         entries = [
@@ -196,7 +196,9 @@ class HypopgWindowsArchiveTests(unittest.TestCase):
             with self.assertRaisesRegex(Exception, "licence inventory"):
                 checker.inspect(self.core, self.extension, self.root / "report.json")
 
-    def test_importer_persists_validated_record_to_verification_directory(self):
+    def test_importer_persists_validated_record_to_verification_directory(self, target=publication):
+        self.core = self.root / f"postgresql-{target.PG_VERSION}-windows-x86_64.tar.gz"
+        self.extension = self.root / f"hypopg-1.4.3-postgresql-{target.PG_VERSION}-windows-x86_64.tar.gz"
         repo = self.root / "repo"
         for relative in ("support.json", "support/verification-profiles.json",
                          "support/postgresql-releases.json"):
@@ -204,7 +206,7 @@ class HypopgWindowsArchiveTests(unittest.TestCase):
             destination.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(relative, destination)
         profiles = json.loads((repo / "support/verification-profiles.json").read_text())["profiles"]
-        for relative in profiles[publication.PROFILE_ID]["sources"]:
+        for relative in profiles[target.PROFILE_ID]["sources"]:
             destination = repo / relative
             destination.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(relative, destination)
@@ -214,7 +216,7 @@ class HypopgWindowsArchiveTests(unittest.TestCase):
         output.mkdir()
         self.core = core_dir / self.core.name
         self.extension = output / self.extension.name
-        core_hash = self._archives()
+        core_hash = self._archives(target=target)
         extension_hash = hashlib.sha256(self.extension.read_bytes()).hexdigest()
         for archive, digest in ((self.core, core_hash), (self.extension, extension_hash)):
             Path(str(archive) + ".sha256").write_text(f"{digest}  {archive.name}\n")
@@ -235,14 +237,17 @@ class HypopgWindowsArchiveTests(unittest.TestCase):
         }
         (output / "static-analysis.json").write_text(json.dumps(static))
 
+        if target is not publication:
+            from dataclasses import replace
+            target = replace(target, CORE_SHA256=core_hash)
         with patch.object(publication, "CORE_SHA256", core_hash):
             publication.emit(
                 repo, core_dir, output, output,
                 {"archive-suite": "success", "static-analysis": "success"},
                 "10.0.20348.0", "windows-2022/test-image",
                 {"GITHUB_SHA": "a" * 40, "GITHUB_RUN_ID": "123",
-                 "GITHUB_REPOSITORY": "owner/repo", "GITHUB_SERVER_URL": "https://github.com"})
-            imported = importer.import_run(repo, core_dir, output, "123")
+                 "GITHUB_REPOSITORY": "owner/repo", "GITHUB_SERVER_URL": "https://github.com"}, target=target)
+            imported = importer.import_run(repo, core_dir, output, "123", target=target)
 
         receipt_path = output / "publication/current-receipt.json"
         receipt = json.loads(receipt_path.read_text())
@@ -252,15 +257,15 @@ class HypopgWindowsArchiveTests(unittest.TestCase):
         receipt_path.write_text(json.dumps(receipt))
         with patch.object(publication, "CORE_SHA256", core_hash):
             with self.assertRaisesRegex(Exception, "receipt symbols differ"):
-                importer.import_run(repo, core_dir, output, "123")
+                importer.import_run(repo, core_dir, output, "123", target=target)
         receipt_path.write_text(original_receipt)
         pdb = output / "hypopg.pdb"
         pdb.write_bytes(pdb.read_bytes() + b"changed")
         with patch.object(publication, "CORE_SHA256", core_hash):
             with self.assertRaisesRegex(Exception, "receipt symbols differ"):
-                importer.import_run(repo, core_dir, output, "123")
+                importer.import_run(repo, core_dir, output, "123", target=target)
 
-        record_name = ("hypopg-1.4.3-postgresql-18.6-windows-x86_64-current-123.json")
+        record_name = (f"hypopg-1.4.3-postgresql-{target.PG_VERSION}-windows-x86_64-current-123.json")
         retained = repo / "support/verification" / record_name
         self.assertTrue(retained.is_file())
         imported = [path.replace("\\", "/") for path in imported]
@@ -275,6 +280,41 @@ class HypopgWindowsArchiveTests(unittest.TestCase):
             import coverage as coverage_module
         self.assertTrue(coverage_module.validate_verification_record(
             record, coverage_module.load_json(repo / "support.json"), repo))
+
+    def test_all_selected_targets_emit_import_and_bind_final_symbols(self):
+        original_root = self.root
+        for version in ("15.19", "16.15", "17.11", "18.6"):
+            with self.subTest(postgresql_version=version):
+                self.root = original_root / version
+                self.root.mkdir()
+                self.test_importer_persists_validated_record_to_verification_directory(
+                    target=publication.load_target(version))
+
+    def test_archive_checker_uses_selected_target_and_rejects_another_core(self):
+        from dataclasses import replace
+        for version in ("15.19", "16.15", "17.11", "18.6"):
+            with self.subTest(postgresql_version=version):
+                target = publication.load_target(version)
+                self.core = self.root / f"postgresql-{version}-windows-x86_64.tar.gz"
+                self.extension = self.root / f"hypopg-1.4.3-postgresql-{version}-windows-x86_64.tar.gz"
+                digest = self._archives(target=target)
+                fixture_target = replace(target, CORE_SHA256=digest)
+                report = checker.inspect(self.core, self.extension, self.root / "report.json",
+                                         target=fixture_target)
+                self.assertTrue(report["passed"])
+                self.assertEqual(report["archives"][self.core.name], digest)
+                with self.assertRaisesRegex(Exception, "basenames"):
+                    checker.inspect(self.core, self.extension, self.root / "wrong.json",
+                                    target=publication.load_target(
+                                        "15.19" if version != "15.19" else "18.6"))
+
+    def test_target_configs_are_immutable_and_reject_unknown_versions(self):
+        from dataclasses import FrozenInstanceError
+        target = publication.load_target("15.19")
+        with self.assertRaises(FrozenInstanceError):
+            target.PG_VERSION = "18.6"
+        with self.assertRaisesRegex(ValueError, "unsupported"):
+            publication.load_target("14.20")
 
     def test_importer_rejects_attempt_for_a_different_run(self):
         repo = self.root / "repo"

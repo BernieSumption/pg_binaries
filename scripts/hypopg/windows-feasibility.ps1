@@ -1,13 +1,14 @@
 param(
   [Parameter(Mandatory = $true)][string]$CoreArchiveDirectory,
-  [Parameter(Mandatory = $true)][string]$OutputDirectory
+  [Parameter(Mandatory = $true)][string]$OutputDirectory,
+  [ValidateSet("15.19", "16.15", "17.11", "18.6")][string]$PostgreSQLVersion = "18.6"
 )
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 
 $repo = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
 $pythonExe = (Get-Command 'python.exe' -ErrorAction Stop).Source
-$coreIdentity = (& $pythonExe (Join-Path $repo 'tools/windows_core_pin.py') | ConvertFrom-Json)
+$coreIdentity = (& $pythonExe (Join-Path $repo 'tools/windows_core_pin.py') --postgresql-version $PostgreSQLVersion | ConvertFrom-Json)
 if ($LASTEXITCODE -ne 0 -or -not $coreIdentity) { throw 'Cannot load the pinned Windows PostgreSQL core identity' }
 $version = '1.4.3'
 $pgVersion = $coreIdentity.postgresql_version
@@ -71,7 +72,7 @@ try {
   if ($manifest.component -cne 'postgresql' -or $manifest.version -cne $pgVersion -or
       $manifest.platform -cne 'windows' -or $manifest.architecture -cne $architecture -or
       $manifest.build_id -cne $coreIdentity.build_id -or $manifest.source_revision -cne $coreIdentity.source_revision) {
-    throw 'The core archive manifest does not match the pinned Windows PostgreSQL 18.6 build.'
+    throw 'The core archive manifest does not match the pinned Windows PostgreSQL build.'
   }
   $pgConfig = Join-Path $pgRoot 'bin/pg_config.exe'
   foreach ($exe in @($pgConfig,(Join-Path $pgRoot 'bin/initdb.exe'),(Join-Path $pgRoot 'bin/pg_ctl.exe'),(Join-Path $pgRoot 'bin/psql.exe'))) {
