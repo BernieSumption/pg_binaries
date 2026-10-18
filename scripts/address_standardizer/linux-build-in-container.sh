@@ -46,8 +46,12 @@ sharedir=$("$pgroot/bin/pg_config" --sharedir)
 pkglib_rel=${pkglibdir#"$pgroot"/}
 test "$pkglib_rel" != "$pkglibdir"
 lib_rel=$(realpath --relative-to="$pkglibdir" "$pgroot/lib")
-module_rpath='\$ORIGIN'
-if [[ $lib_rel != . ]]; then module_rpath+="/$lib_rel"; fi
+module_rpath='\$$ORIGIN'
+expected_module_rpath='$ORIGIN'
+if [[ $lib_rel != . ]]; then
+  module_rpath+="/$lib_rel"
+  expected_module_rpath+="/$lib_rel"
+fi
 make -s PG_CONFIG="$pgroot/bin/pg_config" \
   PG_CPPFLAGS="-I/work/pcre2/include -DAS_VERSION=\\\"3.7\\\" -DPCRE_VERSION=2" \
   PG_LDFLAGS="-L/work/pcre2/lib -Wl,-rpath,$module_rpath" -j"$(nproc)"
@@ -56,6 +60,7 @@ make -s PG_CONFIG="$pgroot/bin/pg_config" \
   PG_LDFLAGS="-L/work/pcre2/lib -Wl,-rpath,$module_rpath" install
 
 test -s "$pkglibdir/address_standardizer.so"
+readelf -dW "$pkglibdir/address_standardizer.so" | grep -Fq "[$expected_module_rpath]"
 test -s "$sharedir/extension/address_standardizer.control"
 test -s "$sharedir/extension/address_standardizer_data_us.control"
 test -s "$sharedir/extension/address_standardizer_data_us--${extension_sql_version}.sql"
@@ -78,9 +83,8 @@ cat > "$package/LICENSES/license-inventory.json" <<EOF
   ]
 }
 EOF
-configured_prefix=$("$pgroot/bin/pg_config" --prefix)
 cat > /work/package/metadata.json <<EOF
-{"project":"Address Standardizer","version":"${extension_version}","sql_names":["address_standardizer","address_standardizer_data_us"],"requires":[],"configuration_prerequisites":[],"runtime_prerequisites":[],"postgresql_version":"${pg_version}","platform":"linux","architecture":"${architecture}","postgresql_prefix":"${configured_prefix}","payload_paths":["address_standardizer/${pkglib_rel}/address_standardizer.so","address_standardizer/lib/libpcre2-8.so","address_standardizer/share/extension","address_standardizer/LICENSES"],"source":{"url":"https://github.com/postgis/address_standardizer/tree/v3.7.0","commit":"${extension_commit}"},"dependencies":[{"name":"PCRE2","version":"${pcre2_version}","sha256":"${pcre2_sha256}"}],"license_inventory":"address_standardizer/LICENSES/license-inventory.json"}
+{"project":"Address Standardizer","version":"${extension_version}","sql_names":["address_standardizer","address_standardizer_data_us"],"requires":[],"configuration_prerequisites":[],"runtime_prerequisites":[],"postgresql_version":"${pg_version}","platform":"linux","architecture":"${architecture}","payload_paths":["address_standardizer/${pkglib_rel}/address_standardizer.so","address_standardizer/lib/libpcre2-8.so","address_standardizer/share/extension","address_standardizer/LICENSES"],"source":{"url":"https://github.com/postgis/address_standardizer/tree/v3.7.0","commit":"${extension_commit}"},"dependencies":[{"name":"PCRE2","version":"${pcre2_version}","sha256":"${pcre2_sha256}"}],"license_inventory":"address_standardizer/LICENSES/license-inventory.json"}
 EOF
 cp -a "$package/$pkglib_rel/address_standardizer.so" "$pkglibdir/"
 cp -a "$package/share/extension/." "$sharedir/extension/"

@@ -21,15 +21,13 @@ import json, pathlib, sys
 import subprocess
 root, payload, metadata_path = map(pathlib.Path, sys.argv[1:4])
 metadata = json.loads(metadata_path.read_text())
-configured_prefix = pathlib.Path(subprocess.check_output([str(root / 'bin/pg_config'), '--prefix'], text=True).strip())
 configured_pkglibdir = pathlib.Path(subprocess.check_output([str(root / 'bin/pg_config'), '--pkglibdir'], text=True).strip())
-module_rel = configured_pkglibdir.relative_to(configured_prefix)
+module_rel = configured_pkglibdir.relative_to(root)
 assert metadata == {
     'project': 'Address Standardizer', 'version': '3.7.0',
     'sql_names': ['address_standardizer', 'address_standardizer_data_us'], 'requires': [],
     'configuration_prerequisites': [], 'runtime_prerequisites': [],
     'postgresql_version': sys.argv[5], 'platform': 'linux', 'architecture': sys.argv[4],
-    'postgresql_prefix': str(configured_prefix),
     'payload_paths': [f'address_standardizer/{module_rel}/address_standardizer.so',
                       'address_standardizer/lib/libpcre2-8.so', 'address_standardizer/share/extension',
                       'address_standardizer/LICENSES'],
