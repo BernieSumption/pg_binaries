@@ -1,6 +1,5 @@
 param(
   [Parameter(Mandatory = $true)][string]$CoreArchiveDirectory,
-  [Parameter(Mandatory = $true)][string]$SourcePackageDirectory,
   [Parameter(Mandatory = $true)][string]$OutputDirectory
 )
 $ErrorActionPreference = 'Stop'
@@ -13,13 +12,10 @@ $runId = '39077749917'
 $coreName = "postgresql-$pgVersion-windows-$architecture.tar.gz"
 $archiveName = "pgtap-$version-postgresql-$pgVersion-windows-$architecture.tar.gz"
 $coreSha256 = '2e48881e4b5c3289bc9526ee846685d62f6cfa4fff2539cb6393f36f605fcceb'
-$sourcePackageName = 'pgtap-1.3.4-postgresql-18.6-macos-arm64.tar.gz'
-$sourcePackageSha256 = '81e422272da2fecc9d74fe1479c6df8d960f797d3eb51111db377f0e0daef0e2'
 $sourceUrl = 'https://github.com/theory/pgtap/archive/refs/tags/v1.3.4.tar.gz'
 $sourceSha256 = 'd2c951afb296a001d21785611a8e966e3f8fa3f5bfbd929396a5130c0152f314'
 $repo = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
 $coreArchiveDirectory = (Resolve-Path $CoreArchiveDirectory).Path
-$SourcePackageDirectory = (Resolve-Path $SourcePackageDirectory).Path
 New-Item -ItemType Directory -Force $OutputDirectory | Out-Null
 $OutputDirectory = (Resolve-Path $OutputDirectory).Path
 
@@ -38,6 +34,8 @@ $first = Join-Path $work 'first'
 $stage = Join-Path $work 'stage'
 $moved = Join-Path $work 'moved'
 $sourceUnpacked = Join-Path $work 'source-package'
+$sourceArchive = Join-Path $work 'pgtap-1.3.4.tar.gz'
+$pgxsShim = Join-Path $work 'pgxs-empty.mk'
 $packageUnpacked = Join-Path $work 'final-package'
 $data = Join-Path $work 'data'
 New-Item -ItemType Directory -Force $first,$stage,$moved,$sourceUnpacked,$packageUnpacked | Out-Null
@@ -65,30 +63,124 @@ try {
   foreach ($path in @($pgConfig,$initdb,$pgCtl,$psql)) { if (-not (Test-Path $path)) { throw "Core executable missing: $path" } }
   if ((& $pgConfig --version) -cne "PostgreSQL $pgVersion") { throw 'PostgreSQL version mismatch' }
 
-$sourcePackage = Join-Path $SourcePackageDirectory $sourcePackageName
-  if (-not (Test-Path $sourcePackage -PathType Leaf)) { throw "Missing passed pgTAP source package: $sourcePackageName" }
-  $actualSourcePackageHash = (Get-FileHash $sourcePackage -Algorithm SHA256).Hash.ToLowerInvariant()
-  if ($actualSourcePackageHash -ne $sourcePackageSha256) { throw "Passed pgTAP archive checksum mismatch: $actualSourcePackageHash" }
-  $sourceSidecar = Join-Path $SourcePackageDirectory "$sourcePackageName.sha256"
-  if (((Get-Content $sourceSidecar -Raw) -split '\s+')[0].ToLowerInvariant() -ne $sourcePackageSha256) { throw 'pgTAP archive checksum sidecar mismatch' }
-  tar.exe -xzf $sourcePackage -C $sourceUnpacked
-  if ($LASTEXITCODE -ne 0) { throw 'Could not extract passed pgTAP source package' }
-  $sourceMeta = Get-Content (Join-Path $sourceUnpacked 'metadata.json') -Raw | ConvertFrom-Json
-  if ($sourceMeta.project -cne 'pgtap' -or $sourceMeta.version -cne $version -or $sourceMeta.sql_names.Count -ne 1 -or $sourceMeta.sql_names[0] -cne 'pgtap') { throw 'Passed pgTAP package identity mismatch' }
-  if ($sourceMeta.source.url -cne $sourceUrl -or $sourceMeta.source.sha256 -cne $sourceSha256) { throw 'Passed package does not identify the pinned upstream source archive' }
-  if ($sourceMeta.platform -cne 'macos' -or $sourceMeta.architecture -cne 'arm64' -or $sourceMeta.postgresql_version -cne $pgVersion) { throw 'Unexpected source package build platform identity' }
-  $payload = Join-Path $sourceUnpacked 'pgtap'
-  if (-not (Test-Path (Join-Path $payload 'share/extension/pgtap.control') -PathType Leaf)) { throw 'Passed pgTAP control file missing' }
+  & curl.exe -fL --retry 3 -o $sourceArchive $sourceUrl
+  if ($LASTEXITCODE -ne 0) { throw 'Could not download pinned pgTAP source archive' }
+  $actualSourceHash = (Get-FileHash $sourceArchive -Algorithm SHA256).Hash.ToLowerInvariant()
+  if ($actualSourceHash -ne $sourceSha256) { throw "Pinned pgTAP source checksum mismatch: $actualSourceHash" }
+  tar.exe -xzf $sourceArchive -C $sourceUnpacked
+  if ($LASTEXITCODE -ne 0) { throw 'Could not extract pinned pgTAP source archive' }
+  $sourceRoot = Join-Path $sourceUnpacked "pgtap-$version"
+  if (-not (Test-Path (Join-Path $sourceRoot 'Makefile') -PathType Leaf)) { throw 'Pinned source archive has an unexpected root layout' }
+  if ((Get-Content (Join-Path $sourceRoot 'pgtap.control') -Raw) -notmatch "(?m)^default_version\s*=\s*'$version'$" ) { throw 'Upstream pgTAP control version mismatch' }
+
+  $msysBash = 'C:\msys64\usr\bin\bash.exe'
+  if (-not (Test-Path $msysBash -PathType Leaf)) { throw 'Windows runner MSYS2 Bash is unavailable' }
+  [IO.File]::WriteAllText($pgxsShim, "`n", [Text.UTF8Encoding]::new($false))
+  $sourcePosix = (& $msysBash -lc "cygpath -u '$($sourceRoot -replace '\\','/')'").Trim()
+  $shimPosix = (& $msysBash -lc "cygpath -u '$($pgxsShim -replace '\\','/')'").Trim()
+  $pgConfigPosix = (& $msysBash -lc "cygpath -u '$($pgConfig -replace '\\','/')'").Trim()
+  if ($LASTEXITCODE -ne 0 -or -not $sourcePosix -or -not $shimPosix -or -not $pgConfigPosix) { throw 'Could not map pgTAP generation paths into MSYS2' }
+  $env:MSYS2_PATH_TYPE = 'inherit'
+  & $msysBash -lc 'pacman -S --needed --noconfirm make patch grep sed gawk'
+  if ($LASTEXITCODE -ne 0) { throw 'Could not provide GNU make and SQL-generation tools on the disposable runner' }
+  & $msysBash -lc "cd '$sourcePosix' && make all PG_CONFIG='$pgConfigPosix' PGXS='$shimPosix' OSNAME=windows"
+  if ($LASTEXITCODE -ne 0) { throw 'Upstream pgTAP SQL generation failed' }
+
+  $payload = Join-Path $stage 'pgtap'
   $extensionDir = Join-Path $payload 'share/extension'
-  foreach ($name in @('pgtap--1.3.4.sql','pgtap-core--1.3.4.sql','pgtap-schema--1.3.4.sql','pgtap--1.3.3--1.3.4.sql')) {
-    if (-not (Test-Path (Join-Path $extensionDir $name) -PathType Leaf)) { throw "Passed generated SQL file missing: $name" }
+  $documentationDir = Join-Path $payload 'share/doc/extension'
+  $licenseDir = Join-Path $payload 'LICENSES'
+  New-Item -ItemType Directory -Force $extensionDir,$documentationDir,$licenseDir | Out-Null
+  Copy-Item (Join-Path $sourceRoot 'pgtap.control') $extensionDir
+  $baseSql = @('pgtap.sql','pgtap-core.sql','pgtap-schema.sql','uninstall_pgtap.sql',
+    'pgtap--1.3.4.sql','pgtap-core--1.3.4.sql','pgtap-schema--1.3.4.sql')
+  $installSql = @(Get-ChildItem (Join-Path $sourceRoot 'sql') -File -Filter '*.sql' |
+    Where-Object { $_.Name -like '*--*.sql' -or $_.Name -in $baseSql })
+  if (-not $installSql.Count) { throw 'Upstream pgTAP SQL generation produced no install files' }
+  $expectedSqlNames = @(
+    'pgtap--0.90.0--0.91.0.sql','pgtap--0.91.0--0.92.0.sql','pgtap--0.92.0--0.93.0.sql',
+    'pgtap--0.93.0--0.94.0.sql','pgtap--0.94.0--0.95.0.sql','pgtap--0.95.0--0.96.0.sql',
+    'pgtap--0.96.0--0.97.0.sql','pgtap--0.97.0--0.98.0.sql','pgtap--0.98.0--0.99.0.sql',
+    'pgtap--0.99.0--1.0.0.sql','pgtap--1.0.0--1.1.0.sql','pgtap--1.1.0--1.2.0.sql',
+    'pgtap--1.2.0--1.3.0.sql','pgtap--1.3.0--1.3.1.sql','pgtap--1.3.1--1.3.2.sql',
+    'pgtap--1.3.2--1.3.3.sql','pgtap--1.3.3--1.3.4.sql','pgtap--1.3.4.sql',
+    'pgtap--unpackaged--0.91.0.sql','pgtap-core--1.3.4.sql','pgtap-core.sql',
+    'pgtap-schema--1.3.4.sql','pgtap-schema.sql','pgtap.sql','uninstall_pgtap.sql'
+  )
+  $actualSqlNames = @($installSql | ForEach-Object { $_.Name } | Sort-Object)
+  $expectedSqlNames = @($expectedSqlNames | Sort-Object)
+  if (Compare-Object $expectedSqlNames $actualSqlNames) { throw 'Upstream pgTAP SQL install file set differs from the passing payload' }
+  Copy-Item $installSql.FullName $extensionDir
+  Copy-Item (Join-Path $sourceRoot 'doc/pgtap.mmd') $documentationDir
+  $licenseText = Get-Content (Join-Path $sourceRoot 'README.md') -Raw
+  $licenseMatch = [regex]::Match($licenseText, '(?m)^Copyright and License\r?\n[^\r\n]*\r?\n')
+  if (-not $licenseMatch.Success) { throw 'Could not extract the upstream pgTAP redistribution notice' }
+  $licenseText = $licenseText.Substring($licenseMatch.Index + $licenseMatch.Length) -replace "`r`n", "`n"
+  [IO.File]::WriteAllText((Join-Path $licenseDir 'pgTAP.txt'), $licenseText, [Text.UTF8Encoding]::new($false))
+  if (-not (Select-String -Path (Join-Path $licenseDir 'pgTAP.txt') -SimpleMatch 'Copyright (c) 2008-2025 David E. Wheeler. Some rights reserved.' -Quiet)) { throw 'Upstream pgTAP redistribution notice is unexpected' }
+  $inventory = @'
+{
+  "schema_version": 1,
+  "components": [{
+    "component": "pgtap", "version": "1.3.4",
+    "payload_paths": ["share/extension", "share/doc/extension"],
+    "license_file": "pgTAP.txt",
+    "license_source": "https://github.com/theory/pgtap/tree/v1.3.4",
+    "redistribution_review": {
+      "status": "resolved",
+      "basis": "The pgTAP v1.3.4 source distribution applies the included permissive copyright notice to the project files and generated SQL and documentation payload. The notice permits redistribution with its attribution and disclaimer retained.",
+      "source_obligation": "none"
+    }
+  }]
+}
+'@
+  $inventory = $inventory -replace "`r`n", "`n"
+  [IO.File]::WriteAllText((Join-Path $licenseDir 'pgtap-inventory.json'), $inventory, [Text.UTF8Encoding]::new($false))
+
+  # The two main install scripts embed os_name(); their Windows-specific text is checked below.
+  $knownPayloadHashes = @{
+    'share/doc/extension/pgtap.mmd' = '5385c92afec570063687bf710a68b6cb8a9afa64fe73552406518fbd49109a9d'
+    'share/extension/pgtap.control' = 'b073089908333a1522c925ca9968cebb04d9fa0b1f99e932bda635ffaecdca55'
+    'share/extension/pgtap--0.90.0--0.91.0.sql' = 'd7059b8aa56ca0fdc8cb420ab2e8fe4de6bdbafc59267ee75fe2c7ba9017edb1'
+    'share/extension/pgtap--0.91.0--0.92.0.sql' = 'f30a22e4713c2c85f3950b7c88ab205707539c82826fa144d5b5537327d2229c'
+    'share/extension/pgtap--0.92.0--0.93.0.sql' = '109077aa07701914cc76c1155eafdd6137a2a44cf7df0e2fad7bef5e7c701b0b'
+    'share/extension/pgtap--0.93.0--0.94.0.sql' = '47fdaa53f1483d1bb1550051acd85ad1daaf140433a6eb3dfdbfb4cbd090dab6'
+    'share/extension/pgtap--0.94.0--0.95.0.sql' = '4db21faaba46babcd90ca61df413dc35030888b188fdd22d2fa7ae32a0c2eee2'
+    'share/extension/pgtap--0.95.0--0.96.0.sql' = 'd3ffb0f71447e46d7c0669390115b7919875b54761300a067585a085346c12e1'
   }
-  if (-not (Test-Path (Join-Path $payload 'share/doc/extension/pgtap.mmd') -PathType Leaf)) { throw 'Passed pgTAP documentation missing' }
-  if (-not (Test-Path (Join-Path $payload 'LICENSES/pgTAP.txt') -PathType Leaf) -or -not (Test-Path (Join-Path $payload 'LICENSES/pgtap-inventory.json') -PathType Leaf)) { throw 'Passed pgTAP licence payload missing' }
+  $knownPayloadHashes['share/extension/pgtap--0.96.0--0.97.0.sql'] = '68a1b15159c75615f26d4f3b5cda22a104cd5aeb05d66e158767aad11b436153'
+  $knownPayloadHashes['share/extension/pgtap--0.97.0--0.98.0.sql'] = 'b7d0fb5784d8bc866ea2e6abad2d5c9178b353eff42fd98c6687b35cb954ce6'
+  $knownPayloadHashes['share/extension/pgtap--0.98.0--0.99.0.sql'] = '14b307769e0d932db20859d23c36148ada3639df3cf03e19fc38e3edcd268100'
+  $knownPayloadHashes['share/extension/pgtap--0.99.0--1.0.0.sql'] = '54a2d55f6fe046af7836aa0ce110b46fd818834650c1f788d5fb5f12f2abbf50'
+  $knownPayloadHashes['share/extension/pgtap--1.0.0--1.1.0.sql'] = 'bd86f1cda33574fc287ef05114968456f7ef28b5bfe1a874e93bcc118b734fb0'
+  $knownPayloadHashes['share/extension/pgtap--1.1.0--1.2.0.sql'] = '847fe2fb52c38947c8c2231c26c793643e9327f518499a9a97b564356dcc915e'
+  $knownPayloadHashes['share/extension/pgtap--1.2.0--1.3.0.sql'] = '552ee1cf56f50c7254d71b245d56c5b0c4f388a4ef46ff53a44084dd1116dc2b'
+  $knownPayloadHashes['share/extension/pgtap--1.3.0--1.3.1.sql'] = '296ed8441e9b2cece84b3b825450ba8c9aa0683745464963dbc2538f51df078c'
+  $knownPayloadHashes['share/extension/pgtap--1.3.1--1.3.2.sql'] = '4a0a8c5641eb1e41319ca44aa59000550ff5d67bab8d8f28db9553553becdc0e'
+  $knownPayloadHashes['share/extension/pgtap--1.3.2--1.3.3.sql'] = '21f3ae58ae773b68a1a1d7bd81d183cbcb0308ddd3881dd00b430ce8b14f0316'
+  $knownPayloadHashes['share/extension/pgtap--1.3.3--1.3.4.sql'] = 'a4380c7e22ce67eb69aaefeb4afd642cf7e8176afaafb61c678d8a6ae8b32635'
+  $knownPayloadHashes['share/extension/pgtap-core.sql'] = 'b28437925b37a1adcebe03a080c39391a76e634302aff7307bebb65c29ce27fd'
+  $knownPayloadHashes['share/extension/pgtap-core--1.3.4.sql'] = 'b28437925b37a1adcebe03a080c39391a76e634302aff7307bebb65c29ce27fd'
+  $knownPayloadHashes['share/extension/pgtap-schema.sql'] = 'c4fb7daf5b6d69e5a5db261ddfae5c68563cfafac767f9b403cea783d74f6fca'
+  $knownPayloadHashes['share/extension/pgtap-schema--1.3.4.sql'] = 'c4fb7daf5b6d69e5a5db261ddfae5c68563cfafac767f9b403cea783d74f6fca'
+  $knownPayloadHashes['share/extension/pgtap--unpackaged--0.91.0.sql'] = '5fa57e41b46b37ecff55c17214beb159fe2250a1ececd58f3f54c4746e06e36a'
+  $knownPayloadHashes['share/extension/uninstall_pgtap.sql'] = 'c824e2e4e65f7d7021be0f169dc95e45b992c2a46528f927e7734d2b3a806650'
+  $knownPayloadHashes['LICENSES/pgTAP.txt'] = '2aa8da4a27c1cf4003064dbc5d3096700f38f84b3193137de4f662bf4b80b0e6'
+  $knownPayloadHashes['LICENSES/pgtap-inventory.json'] = 'ae338745180c70d51f209fcc24f2c79c12cff49e66d5074f88180680b554ccb6'
+  foreach ($relative in $knownPayloadHashes.Keys) {
+    $path = Join-Path $payload ($relative -replace '/', '\')
+    if (-not (Test-Path $path -PathType Leaf)) { throw "Generated pgTAP source file missing: $relative" }
+    $actual = (Get-FileHash $path -Algorithm SHA256).Hash.ToLowerInvariant()
+    if ($actual -ne $knownPayloadHashes[$relative]) { throw "Generated pgTAP source file differs from passing source payload: $relative ($actual)" }
+  }
+  foreach ($name in @('pgtap.sql','pgtap--1.3.4.sql')) {
+    $generatedMain = Get-Content (Join-Path $extensionDir $name) -Raw
+    if ($generatedMain -notmatch "RETURNS TEXT AS 'SELECT ''windows''::text;'" -or $generatedMain.Contains('darwin')) {
+      throw "Generated $name does not identify the Windows build target"
+    }
+  }
   if (@(Get-ChildItem $payload -Recurse -File | Where-Object { $_.Extension -in @('.dll','.so','.dylib','.exe') }).Count) { throw 'SQL-only pgTAP payload unexpectedly contains native code' }
-  $stagedPayload = Join-Path $stage 'pgtap'
-  New-Item -ItemType Directory -Force $stagedPayload | Out-Null
-  Copy-Item (Join-Path $payload '*') $stagedPayload -Recurse
+
   $metadata = @{
     project = 'pgtap'; version = $version; sql_names = @('pgtap'); requires = @()
     configuration_prerequisites = @(@{ type = 'sql_extension'; name = 'plpgsql'; value = 'CREATE EXTENSION plpgsql' })
@@ -100,7 +192,6 @@ $sourcePackage = Join-Path $SourcePackageDirectory $sourcePackageName
 
   $controlFiles = @(Get-ChildItem $extensionDir -Filter '*.control' -File)
   if ($controlFiles.Count -ne 1 -or $controlFiles[0].Name -cne 'pgtap.control') { throw 'Package must expose only the pgtap extension identity' }
-  if (@(Get-ChildItem $payload -Recurse -File | Where-Object { $_.Extension -in @('.dll','.so','.dylib','.exe') }).Count) { throw 'SQL-only pgTAP payload unexpectedly contains native code' }
   $packagePath = Join-Path $OutputDirectory $archiveName
   tar.exe -czf $packagePath -C $stage pgtap metadata.json
   if ($LASTEXITCODE -ne 0) { throw 'Could not create pgTAP archive' }
