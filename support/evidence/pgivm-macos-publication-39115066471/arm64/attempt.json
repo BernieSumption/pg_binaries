@@ -1,0 +1,21 @@
+{
+  "architecture": "arm64",
+  "archives": {
+    "pg_ivm-1.16-postgresql-17.11-macos-arm64.tar.gz": "da7ee460a3b512ee4666473e8f91ab9dc67734f982f07be2f3769d189a332903",
+    "postgresql-17.11-macos-arm64.tar.gz": "d9ac809946cd87bbb585135d0ff329d33d5563047b9caaa312aea9116a8d9eaa"
+  },
+  "archives_present": {
+    "pg_ivm-1.16-postgresql-17.11-macos-arm64.tar.gz": true,
+    "postgresql-17.11-macos-arm64.tar.gz": true
+  },
+  "pg_ivm_version": "1.16",
+  "postgresql_version": "17.11",
+  "profile_id": "pgivm-publication-macos-arm64-17.11",
+  "run_id": "39115066471",
+  "schema_version": 1,
+  "source_revision": "376cd056b9c49bd0db571506bd1253394b286874",
+  "steps": {
+    "archive-suite": "success",
+    "static-analysis": "success"
+  }
+}
