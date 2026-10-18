@@ -136,7 +136,7 @@ try {
 }
 '@
   $inventory = $inventory -replace "`r`n", "`n"
-  [IO.File]::WriteAllText((Join-Path $licenseDir 'pgtap-inventory.json'), $inventory, [Text.UTF8Encoding]::new($false))
+  [IO.File]::WriteAllText((Join-Path $licenseDir 'pgtap-inventory.json'), ($inventory + "`n"), [Text.UTF8Encoding]::new($false))
 
   # The two main install scripts embed os_name(); their Windows-specific text is checked below.
   $knownPayloadHashes = @{
