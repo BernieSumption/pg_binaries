@@ -1,0 +1,60 @@
+name: Profile change scope
+
+on:
+  workflow_call:
+    inputs:
+      profile_id:
+        description: Verification profile whose source revision controls the caller
+        required: true
+        type: string
+    outputs:
+      should_run:
+        description: Whether the caller should run
+        value: ${{ jobs.scope.outputs.should_run }}
+
+permissions:
+  contents: read
+
+jobs:
+  scope:
+    runs-on: ubuntu-latest
+    outputs:
+      should_run: ${{ steps.compare.outputs.should_run }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Check profile change gate behavior
+        run: python3 -m unittest tests/test_profile_change_gate.py
+      - id: compare
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_BEFORE: ${{ github.event.before }}
+          PROFILE_ID: ${{ inputs.profile_id }}
+        run: |
+          if [[ "$EVENT_NAME" == workflow_dispatch || -z "$EVENT_BEFORE" || "$EVENT_BEFORE" =~ ^0+$ ]]; then
+            echo 'should_run=true' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          before_root="$RUNNER_TEMP/profile-before"
+          if ! git worktree add --detach "$before_root" "$EVENT_BEFORE"; then
+            echo 'Could not materialize the event base; running fail-open.' >&2
+            echo 'should_run=true' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          set +e
+          result="$(python3 tools/profile_change_gate.py \
+            --before-root "$before_root" \
+            --current-root "$GITHUB_WORKSPACE" \
+            --profile-id "$PROFILE_ID")"
+          status=$?
+          set -e
+          if (( status != 0 )); then
+            echo 'Profile comparison failed; running fail-open.' >&2
+            echo 'should_run=true' >> "$GITHUB_OUTPUT"
+          elif [[ "$result" == 'should_run=true' || "$result" == 'should_run=false' ]]; then
+            echo "$result" >> "$GITHUB_OUTPUT"
+          else
+            echo 'Profile comparison returned an invalid result; running fail-open.' >&2
+            echo 'should_run=true' >> "$GITHUB_OUTPUT"
+          fi
