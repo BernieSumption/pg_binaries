@@ -1,0 +1,10 @@
+# pgTAP macOS arm64 selected-target migration
+
+The selected-target workflow builds pgTAP 1.3.4 for one declared PostgreSQL release, packages the extension, then verifies the final PostgreSQL and pgTAP archives on a fresh macOS 15 arm64 runner. It replaces four workflows that each fixed one PostgreSQL release. The verifier merges the archive payload without overwriting core files, relocates the installation, inspects Mach-O dependencies and runs four SQL assertions. The independent archive-bound records below passed `archive-suite` and `static-analysis` and match their current verification profiles.
+
+- PostgreSQL 15.19: [run 39160766228](https://github.com/BernieSumption/pg_binaries/actions/runs/39160766228), [record](../verification/pgtap-1.3.4-postgresql-15.19-macos-arm64-current-39160766228.json), 68 runner-seconds.
+- PostgreSQL 16.15: [run 39160906551](https://github.com/BernieSumption/pg_binaries/actions/runs/39160906551), [record](../verification/pgtap-1.3.4-postgresql-16.15-macos-arm64-current-39160906551.json), 70 runner-seconds.
+- PostgreSQL 17.11: [run 39161338940](https://github.com/BernieSumption/pg_binaries/actions/runs/39161338940), [record](../verification/pgtap-1.3.4-postgresql-17.11-macos-arm64-current-39161338940.json), 76 runner-seconds.
+- PostgreSQL 18.6: [run 39160983138](https://github.com/BernieSumption/pg_binaries/actions/runs/39160983138), [record](../verification/pgtap-1.3.4-postgresql-18.6-macos-arm64-current-39160983138.json), 68 runner-seconds.
+
+The downloaded build and publication artifacts were independently re-imported for all four runs. Their records bind each pgTAP archive to its exact selected PostgreSQL core archive. Build and verification are separate jobs; the verifier uses only downloaded archives. The selected workflow still obtains core bytes through temporary run-ID pins and uses a scoped experiment request for `spike` pushes. General planner dispatch and checked retrieval or rebuild remain open in the architecture backlog. These runs do not test an older macOS endpoint or public-release bytes.
