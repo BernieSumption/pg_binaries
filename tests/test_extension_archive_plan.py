@@ -43,7 +43,6 @@ class ExtensionArchivePlanTests(unittest.TestCase):
         self.assertEqual(set(by_major), {15, 16})
         group = by_major[15]
         self.assertEqual(group["postgresql_version"], "15.10")
-        self.assertEqual(group["postgresql_version"], "15.10")
         self.assertEqual(group["sql_names"], ["range_a", "range_b"])
         self.assertEqual(group["covered_target_tuple_count"], 2)
         self.assertEqual(by_major[16]["postgresql_version"], "16.6")
@@ -61,6 +60,29 @@ class ExtensionArchivePlanTests(unittest.TestCase):
         self.assertTrue(all(item["postgresql_version"] == "15.10"
                             for item in restricted))
         self.assertFalse(any("17." in str(item) for item in result["candidate_archives"]))
+
+    def test_select_exact_target_and_reject_unsupported_combination(self):
+        result = extension_archive_plan.plan(self.support, self.snapshot)
+        selected = extension_archive_plan.select_target(
+            result, "RangeProject", "macos-arm64", "16.6")
+        self.assertEqual(selected["selected_version"], "3.0")
+        self.assertEqual(selected["sql_names"], ["range_a", "range_b"])
+        with self.assertRaisesRegex(ValueError, "found 0"):
+            extension_archive_plan.select_target(
+                result, "RestrictedProject", "windows-x86_64", "15.10")
+
+    def test_ambiguous_extension_release_requires_explicit_version(self):
+        self.support["extensions"]["RangeProject"]["versions"]["2.9"] = {
+            "postgresql_minimum_major": 15, "postgresql_maximum_major": 16}
+        self.support["extensions"]["RangeProject"]["major_first_releases"] = {
+            "2": {"date": "2026-01-01", "source": "https://example.test/range-2"}}
+        result = extension_archive_plan.plan(self.support, self.snapshot)
+        with self.assertRaisesRegex(ValueError, "found 2"):
+            extension_archive_plan.select_target(
+                result, "RangeProject", "linux-x86_64", "15.10")
+        selected = extension_archive_plan.select_target(
+            result, "RangeProject", "linux-x86_64", "15.10", "2.9")
+        self.assertEqual(selected["selected_version"], "2.9")
 
     def test_current_repository_plan_is_small_and_explicitly_unverified(self):
         root = Path(__file__).resolve().parents[1]

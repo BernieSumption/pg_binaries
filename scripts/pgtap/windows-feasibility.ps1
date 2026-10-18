@@ -1,7 +1,8 @@
 param(
   [Parameter(Mandatory = $true)][string]$CoreArchiveDirectory,
   [Parameter(Mandatory = $true)][string]$OutputDirectory,
-  [ValidateSet('15.19','16.15','17.11','18.6')][string]$PostgreSQLVersion = '18.6'
+  [ValidateSet('15.19','16.15','17.11','18.6')][string]$PostgreSQLVersion = '18.6',
+  [switch]$BuildOnly
 )
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
@@ -213,6 +214,10 @@ try {
   if ($LASTEXITCODE -ne 0) { throw 'Could not create pgTAP archive' }
   $packageHash = (Get-FileHash $packagePath -Algorithm SHA256).Hash.ToLowerInvariant()
   [IO.File]::WriteAllText("$packagePath.sha256", "$packageHash  $archiveName`n", [Text.UTF8Encoding]::new($false))
+  if ($BuildOnly) {
+    Write-Output "PASS: built pgTAP $version archive for PostgreSQL $pgVersion on Windows x86-64 ($packageHash)"
+    return
+  }
   tar.exe -xzf $packagePath -C $packageUnpacked
   if ($LASTEXITCODE -ne 0) { throw 'Could not reopen pgTAP package archive' }
   $packagedMetadata = Get-Content (Join-Path $packageUnpacked 'metadata.json') -Raw | ConvertFrom-Json

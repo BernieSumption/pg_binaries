@@ -233,3 +233,9 @@ Anticipate these errors, and document how to capture them. This will partly be t
 How can we enable an excellent feedback loop where issues in our binaries can be fed back to us, with appropriate information for us to eg resolve symbols in stack traces.
 
 Document the plan to achieve this in `policies/debugging.md`
+
+### Use a coherent architecture
+
+Design and adopt an architecture that optimises for understandable code layout and ease of extending and modifying the software. Periodically assess and consider updating the architecture if it is causing genuine problems and inefficiencies during development. If such an architectural change would itself be a large project involving huge amounts of retesting and rebuilding, then propose it via the human review queue, Otherwise, feel free to make similar architectural changes whenever they would be useful. Be pragmatic: Balance the requirements of elegant architecture and not fixing what isn't broken.
+
+Document this architecture in `policies/architecture.md`

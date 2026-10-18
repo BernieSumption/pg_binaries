@@ -62,14 +62,47 @@ def plan(support, snapshot):
     }
 
 
+def select_target(result, project, platform, postgresql_version, extension_version=None):
+    matches = [item for item in result["candidate_archives"]
+               if item["project"] == project and item["platform"] == platform
+               and item["postgresql_version"] == postgresql_version
+               and (extension_version is None or item["selected_version"] == extension_version)]
+    if len(matches) != 1:
+        raise ValueError(f"expected one selected target for {project}, {platform}, "
+                         f"PostgreSQL {postgresql_version}, extension version "
+                         f"{extension_version or 'unspecified'}; found {len(matches)}")
+    return matches[0]
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[1])
     parser.add_argument("--output", type=Path, help="write JSON here; stdout is used when omitted")
+    parser.add_argument("--project", help="select one declared extension project")
+    parser.add_argument("--platform", help="select one declared OS and architecture")
+    parser.add_argument("--postgresql-version", help="select one exact PostgreSQL release")
+    parser.add_argument("--extension-version", help="disambiguate selected extension releases")
+    parser.add_argument("--github-output", type=Path,
+                        help="append selected target fields to a GitHub Actions output file")
     args = parser.parse_args(argv)
     try:
         result = plan(_coverage.load_json(args.root / "support.json"),
                       _coverage.load_json(args.root / "support" / "postgresql-releases.json"))
+        selection = (args.project, args.platform, args.postgresql_version)
+        if args.extension_version and not all(selection):
+            raise ValueError("extension-version requires project, platform and postgresql-version")
+        if any(selection):
+            if not all(selection):
+                raise ValueError("project, platform and postgresql-version must be selected together")
+            result = select_target(result, *selection, args.extension_version)
+        if args.github_output:
+            if not all(selection):
+                raise ValueError("github-output requires an exact selected target")
+            with args.github_output.open("a", encoding="utf-8") as stream:
+                for key in ("project", "selected_version", "platform", "postgresql_version",
+                            "postgresql_major"):
+                    stream.write(f"{key}={result[key]}\n")
+                stream.write(f"sql_names={json.dumps(result['sql_names'], separators=(',', ':'))}\n")
         rendered = json.dumps(result, indent=2, sort_keys=True) + "\n"
         if args.output:
             args.output.write_text(rendered, encoding="utf-8")
