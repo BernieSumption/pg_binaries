@@ -1,0 +1,14 @@
+{
+  "architecture": "arm64",
+  "pg_cron_version": "1.6.8",
+  "postgresql_version": "18.6",
+  "run_id": "39083843193",
+  "schema_version": 1,
+  "source_revision": "63fad1f4c3d8607446ae369dd877d562c50f219f",
+  "steps": {
+    "core_build": "success",
+    "pgcron_build": "success",
+    "pgcron_verify": "success"
+  },
+  "verifier_image_id": "sha256:fd43408e3ee65cb7f2fcd738083767bf3886f751511931644de061e066765cfe"
+}
