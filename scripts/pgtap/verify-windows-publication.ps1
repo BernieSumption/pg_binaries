@@ -41,9 +41,10 @@ foreach ($entry in @(@("$coreArchive.sha256", $coreHash), @("$extensionArchive.s
 }
 
 $staticReport = Join-Path $OutputDirectory 'static-analysis.json'
-& python (Join-Path $repo 'tools/check_pgtap_windows_archive.py') `
-  --postgresql-version $pgVersion --core-archive $coreArchive `
-  --extension-archive $extensionArchive --output $staticReport
+$archiveArguments = @('--postgresql-version', $pgVersion, '--core-archive', $coreArchive,
+  '--extension-archive', $extensionArchive, '--output', $staticReport)
+if ($CoreIdentityPath) { $archiveArguments += @('--core-identity-path', (Resolve-Path $CoreIdentityPath).Path) }
+& python (Join-Path $repo 'tools/check_pgtap_windows_archive.py') @archiveArguments
 if ($LASTEXITCODE -ne 0) { throw 'Final core and pgTAP archive inspection failed' }
 
 $work = Join-Path $env:RUNNER_TEMP ("pgtap-windows-verify-" + [guid]::NewGuid().ToString('N'))

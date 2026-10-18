@@ -20,8 +20,8 @@ def sha256_file(path):
     return digest.hexdigest()
 
 
-def inspect(core_archive, extension_archive, report_path, pg_version="18.6"):
-    target = publication.target_for(pg_version)
+def inspect(core_archive, extension_archive, report_path, pg_version="18.6", core_identity_path=None):
+    target = publication.target_for(pg_version, core_identity_path)
     core_archive, extension_archive, report_path = map(Path, (core_archive, extension_archive, report_path))
     expected_core = f"postgresql-{target.pg_version}-{publication.PLATFORM}.tar.gz"
     expected_extension = (f"pgtap-{publication.PGTAP_VERSION}-postgresql-"
@@ -111,9 +111,11 @@ def main():
     parser.add_argument("--extension-archive", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--postgresql-version", choices=publication.SUPPORTED_PG_VERSIONS, default="18.6")
+    parser.add_argument("--core-identity-path", type=Path)
     args = parser.parse_args()
     try:
-        report = inspect(args.core_archive, args.extension_archive, args.output, args.postgresql_version)
+        report = inspect(args.core_archive, args.extension_archive, args.output,
+                         args.postgresql_version, args.core_identity_path)
         print(f"PASS: inspected {len(report['inspected_files'])} archive files")
         return 0
     except (coverage.CoverageError, OSError, ValueError, TypeError) as exc:
