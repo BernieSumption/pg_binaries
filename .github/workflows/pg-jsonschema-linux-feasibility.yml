@@ -1,0 +1,39 @@
+name: pg_jsonschema Linux x86-64 feasibility
+on:
+  push:
+    branches: [spike]
+    paths:
+      - '.github/workflows/pg-jsonschema-linux-feasibility.yml'
+      - 'scripts/pg_jsonschema/linux-*'
+      - 'scripts/pg_jsonschema/probe.sql'
+      - 'scripts/linux/**'
+      - 'tools/check_elf_dependencies.py'
+      - 'support.json'
+      - 'support/postgresql-releases.json'
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build PostgreSQL 18.6 Linux x86-64
+        run: scripts/linux/build.sh "$RUNNER_TEMP/core"
+      - name: Build pg_jsonschema 0.3.4 from pinned upstream source
+        run: bash scripts/pg_jsonschema/linux-build.sh "$RUNNER_TEMP/core" "$RUNNER_TEMP/pg_jsonschema"
+      - name: Verify ELF closure and runtime in relocated Alpine 3.22
+        run: bash scripts/pg_jsonschema/linux-verify.sh "$RUNNER_TEMP/pg_jsonschema"
+      - name: Upload feasibility evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pg-jsonschema-linux-x86_64-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/pg_jsonschema/*.tar.gz
+            ${{ runner.temp }}/pg_jsonschema/*.sha256
+            ${{ runner.temp }}/pg_jsonschema/build-evidence.txt
+            ${{ runner.temp }}/pg_jsonschema/static-analysis/*.json
+            ${{ runner.temp }}/pg_jsonschema/static-analysis/*.txt
+          if-no-files-found: warn
+          retention-days: 3
