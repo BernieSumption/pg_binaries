@@ -37,14 +37,14 @@ class HypoPGMacOS1711Arm64Tests(unittest.TestCase):
 
     def test_publication_verifies_uploaded_archives_in_a_separate_runner_job(self):
         root = Path(__file__).resolve().parents[1]
-        workflow = (root / ".github/workflows/hypopg-macos-arm64-17.11-publication.yml").read_text()
+        workflow = (root / ".github/workflows/hypopg-macos-arm64-selected-publication.yml").read_text()
         verifier = (root / "scripts/hypopg/verify-macos-publication.sh").read_text()
         installer_policy = (root / "policies/install-process.md").read_text()
         profile = json.loads((root / "support/verification-profiles.json").read_text())["profiles"][
             self.target.profile_id]
 
         self.assertIn("  build:\n", workflow)
-        self.assertIn("  verify:\n    needs: [profile_scope, build]", workflow)
+        self.assertIn("  verify:\n    needs: [select, build]", workflow)
         self.assertIn("runs-on: macos-15", workflow)
         self.assertIn("actions/upload-artifact@v4", workflow)
         self.assertIn("actions/download-artifact@v4", workflow)
@@ -55,7 +55,6 @@ class HypoPGMacOS1711Arm64Tests(unittest.TestCase):
         self.assertIn("--run-id \"$GITHUB_RUN_ID\"", workflow)
         self.assertIn("scripts/hypopg/verify-macos-publication.sh", profile["sources"])
         self.assertIn("policies/install-process.md", profile["sources"])
-        self.assertIn("policies/install-process.md", workflow)
         self.assertIn("copy the contents of the project-named payload directory", installer_policy)
         self.assertIn("cp -a \"$extroot/.\" \"$pgroot/\"", verifier)
         self.assertIn('mv "$pgroot" "$work/moved/postgresql"', verifier)

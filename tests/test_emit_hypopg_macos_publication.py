@@ -114,11 +114,11 @@ class HypoPGMacOSPublicationTests(unittest.TestCase):
         core = json.loads((root / "support/verification/postgresql-18.6-macos-arm64-current-39093804232.json").read_text())
         run_id = core["ci"]["run_id"]
         source_revision = core["ci"]["source_revision"]
-        workflow = (root / ".github/workflows/hypopg-macos-arm64-feasibility.yml").read_text()
+        workflow = (root / ".github/workflows/hypopg-macos-arm64-selected-publication.yml").read_text()
         script = (root / "scripts/hypopg/macos-feasibility.sh").read_text()
         emitter_source = (root / "tools/emit_hypopg_macos_publication.py").read_text()
         pin = json.loads((root / "tools/hypopg_macos_pins/18.6-arm64.json").read_text())
-        self.assertIn(f"run-id: {run_id}", workflow)
+        self.assertIn("run-id: ${{ needs.select.outputs.core_run_id }}", workflow)
         self.assertEqual(pin["core_archive"]["run_id"], run_id)
         self.assertEqual(pin["core_archive"]["build_id"], f"github-{run_id}-1")
         self.assertEqual(pin["core_archive"]["source_revision"], source_revision)
