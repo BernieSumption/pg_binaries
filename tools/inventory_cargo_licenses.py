@@ -24,8 +24,65 @@ def file_inventory(root):
     return files
 
 
+def _proc_macro(package):
+    return any("proc-macro" in target.get("kind", [])
+               or "proc-macro" in target.get("crate_types", [])
+               for target in package.get("targets", []))
+
+
+def dependency_roles(metadata):
+    """Classify resolved packages by whether their code is linked or host tooling."""
+    resolve = metadata.get("resolve")
+    if not isinstance(resolve, dict) or not resolve.get("root"):
+        raise ValueError("Cargo metadata must include a resolved root package")
+
+    packages = {package["id"]: package for package in metadata.get("packages", []) if "id" in package}
+    nodes = {node["id"]: node for node in resolve.get("nodes", []) if "id" in node}
+    root = resolve["root"]
+    if root not in packages or root not in nodes:
+        raise ValueError("Cargo metadata resolved root is missing from packages or resolve.nodes")
+
+    roles = {package_id: set() for package_id in packages}
+    roles[root].update(("root", "shipped"))
+    pending = [(root, "shipped")]
+    visited = set()
+    while pending:
+        package_id, context = pending.pop()
+        state = (package_id, context)
+        if state in visited:
+            continue
+        visited.add(state)
+        node = nodes.get(package_id)
+        if node is None:
+            continue
+        for dep in node.get("deps", []):
+            target_id = dep.get("pkg")
+            target = packages.get(target_id)
+            if target is None:
+                continue
+            kinds = dep.get("dep_kinds") or [{"kind": None}]
+            for dep_kind in kinds:
+                kind = dep_kind.get("kind")
+                if context == "shipped" and kind not in (None, "normal"):
+                    roles[target_id].update(("host_tooling", f"{kind}_dependency"))
+                    pending.append((target_id, "host"))
+                elif context == "shipped" and _proc_macro(target):
+                    roles[target_id].update(("host_tooling", "proc_macro"))
+                    pending.append((target_id, "host"))
+                elif context == "shipped":
+                    roles[target_id].add("shipped")
+                    pending.append((target_id, "shipped"))
+                else:
+                    roles[target_id].update(("host_tooling", f"{kind or 'normal'}_dependency"))
+                    if _proc_macro(target):
+                        roles[target_id].add("proc_macro")
+                    pending.append((target_id, "host"))
+    return roles
+
+
 def inventory(source_root, metadata):
     source_root = source_root.resolve()
+    roles = dependency_roles(metadata)
     packages = []
     for package in sorted(metadata.get("packages", []), key=lambda p: (p["name"], p["version"], p.get("source") or "")):
         manifest = Path(package["manifest_path"]).resolve()
@@ -45,6 +102,7 @@ def inventory(source_root, metadata):
             "license_file": Path(license_file).as_posix() if license_file else None,
             "license_metadata_missing": not declared and not license_file,
             "license_notice_files": files,
+            "dependency_roles": sorted(roles.get(package.get("id"), {"unreachable"})),
         })
     return {
         "schema_version": 1,
