@@ -11,6 +11,7 @@ import sys
 import tarfile
 
 import coverage
+from hypopg_windows_symbols import verify_symbols
 from windows_core_pin import load_identity
 
 PROFILE_ID = "hypopg-publication-windows-x86_64-18.6"
@@ -150,9 +151,11 @@ def emit(root, core_dir, archives, output, step_results, os_version, image_id, e
             _fail("archive suite did not retain its hypopg output")
         if "Index Scan using" not in probe_path.read_text(encoding="utf-8"):
             _fail("archive suite output does not show the hypothetical index plan")
+    symbols = None
     if results["static-analysis"] == "passed":
+        symbols = verify_symbols(extension_archive, output / "hypopg.pdb")
         static = _json(static_path, "static analysis")
-        if (static.get("passed") is not True or static.get("architecture") != ARCHITECTURE
+        if (static.get("symbols") != symbols or static.get("passed") is not True or static.get("architecture") != ARCHITECTURE
                 or static.get("archives") != digests or not static.get("inspected_files")
                 or static.get("native_extension_files") != ["hypopg/lib/hypopg.dll"]
                 or static.get("pe_dependency_analysis_sha256") != reports.get("pe_dependency_analysis")):
@@ -172,7 +175,7 @@ def emit(root, core_dir, archives, output, step_results, os_version, image_id, e
         "test_revision": revision, "project": "HypoPG", "version": HYPOPG_VERSION,
         "postgresql_version": PG_VERSION, "architecture": ARCHITECTURE, "platform": PLATFORM,
         "endpoint": "current", "case_results": results, "archives": digests,
-        "extension_archive": extension_name, "reports": reports, "clean_system": True,
+        "symbols": symbols, "extension_archive": extension_name, "reports": reports, "clean_system": True,
         "dependency_check_profile": "windows-pe-archive-relocation-v1",
         "dependency_checks_passed": results["static-analysis"] == "passed",
         "release_eligible": False, "core_status": CORE_STATUS,
@@ -222,7 +225,7 @@ def main():
                          args.os_version, args.image_id):
             print(path)
         return 0
-    except (coverage.CoverageError, OSError, ValueError, TypeError, KeyError) as exc:
+    except (coverage.CoverageError, OSError, ValueError, TypeError, KeyError, RuntimeError) as exc:
         print(f"hypopg Windows publication evidence: {exc}", file=sys.stderr)
         return 2
 

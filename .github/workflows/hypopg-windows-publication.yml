@@ -73,7 +73,7 @@ jobs:
           $core = Join-Path $env:RUNNER_TEMP 'core-archives/postgresql-18.6-windows-x86_64.tar.gz'
           $extension = Join-Path $dir 'hypopg-1.4.3-postgresql-18.6-windows-x86_64.tar.gz'
           if (-not (Test-Path $extension -PathType Leaf)) { throw 'Final hypopg archive is missing' }
-          python tools/check_hypopg_windows_archive.py --core-archive $core --extension-archive $extension --pe-report (Join-Path $dir 'pe-dependency-analysis.json') --output (Join-Path $dir 'static-analysis.json')
+          python tools/check_hypopg_windows_archive.py --core-archive $core --extension-archive $extension --pdb (Join-Path $dir 'hypopg.pdb') --pe-report (Join-Path $dir 'pe-dependency-analysis.json') --output (Join-Path $dir 'static-analysis.json')
           if ($LASTEXITCODE -ne 0) { throw 'Final archive structural analysis failed' }
           $pe = Get-Content (Join-Path $dir 'pe-dependency-analysis.json') -Raw | ConvertFrom-Json
           if ($pe.outcome -ne 'passed' -or $pe.archives.Count -ne 2) { throw 'PE dependency analysis did not pass for both archives' }

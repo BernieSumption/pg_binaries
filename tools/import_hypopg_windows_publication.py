@@ -8,6 +8,7 @@ import shutil
 import sys
 
 import coverage
+from hypopg_windows_symbols import verify_symbols
 import emit_hypopg_windows_publication as publication
 
 MAX_EVIDENCE_BYTES = 1024 * 1024
@@ -139,6 +140,9 @@ def import_run(root, core_artifact, extension_artifact, run_id):
     static_path = extension_artifact / "static-analysis.json"
     if results["static-analysis"] == "passed":
         static = _read(static_path)
+        symbols = verify_symbols(extension_archive, extension_artifact / "hypopg.pdb")
+        if static.get("symbols") != symbols or receipt.get("symbols") != symbols:
+            raise coverage.CoverageError("static report or receipt symbols differ from archived DLL and retained PDB")
         if (static.get("passed") is not True or static.get("archives") != digests
                 or static.get("native_extension_files") != ["hypopg/lib/hypopg.dll"]
                 or not static.get("inspected_files")
@@ -202,7 +206,7 @@ def main():
     try:
         print("\n".join(import_run(args.root, args.core_artifact, args.extension_artifact, args.run_id)))
         return 0
-    except (coverage.CoverageError, OSError, ValueError, TypeError, KeyError) as exc:
+    except (coverage.CoverageError, OSError, ValueError, TypeError, KeyError, RuntimeError) as exc:
         print(f"hypopg Windows publication import: {exc}", file=sys.stderr)
         return 2
 

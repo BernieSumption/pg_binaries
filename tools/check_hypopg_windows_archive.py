@@ -9,6 +9,7 @@ import sys
 import tarfile
 
 import coverage
+from hypopg_windows_symbols import verify_symbols
 import emit_hypopg_windows_publication as publication
 
 
@@ -20,7 +21,7 @@ def sha256_file(path):
     return digest.hexdigest()
 
 
-def inspect(core_archive, extension_archive, report_path, pe_report_path=None):
+def inspect(core_archive, extension_archive, report_path, pe_report_path=None, pdb_path=None):
     core_archive, extension_archive, report_path = map(Path, (core_archive, extension_archive, report_path))
     expected_core = f"postgresql-{publication.PG_VERSION}-{publication.PLATFORM}.tar.gz"
     expected_extension = (f"hypopg-{publication.HYPOPG_VERSION}-postgresql-"
@@ -124,14 +125,16 @@ def inspect(core_archive, extension_archive, report_path, pe_report_path=None):
                 or "lib/hypopg.dll" not in pe_report.get("inspected_files", [])):
             raise coverage.CoverageError("PE dependency report does not pass for the exact core and extension archives")
         pe_digest = sha256_file(pe_report_path)
+    symbols = verify_symbols(extension_archive, pdb_path or extension_archive.parent / "hypopg.pdb")
     report = {
+        "symbols": symbols,
         "schema_version": 1, "passed": True, "platform": "windows",
         "architecture": publication.ARCHITECTURE, "archives": digests,
         "inspected_files": sorted(inspected), "native_extension_files": sorted(native),
         "pe_dependency_analysis_sha256": pe_digest,
         "checks": ["current-profile-core-manifest", "safe-archive-paths", "source-and-core-metadata",
                    "project-named-licence-inventory", "native-extension-identity",
-                   "archive-bound-pe-dependency-analysis"],
+                   "archive-bound-pe-dependency-analysis", "archive-bound-pdb-identity"],
         "limits": ["The PostgreSQL PE dependency checker separately inspects the relocated core plus extension DLL."],
     }
     report_path.parent.mkdir(parents=True, exist_ok=True)
@@ -145,12 +148,13 @@ def main():
     parser.add_argument("--extension-archive", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--pe-report", type=Path, required=True)
+    parser.add_argument("--pdb", type=Path, required=True)
     args = parser.parse_args()
     try:
-        report = inspect(args.core_archive, args.extension_archive, args.output, args.pe_report)
+        report = inspect(args.core_archive, args.extension_archive, args.output, args.pe_report, args.pdb)
         print(f"PASS: inspected {len(report['inspected_files'])} archive files")
         return 0
-    except (coverage.CoverageError, OSError, ValueError, TypeError) as exc:
+    except (coverage.CoverageError, OSError, ValueError, TypeError, RuntimeError) as exc:
         print(f"hypopg Windows archive analysis: {exc}", file=sys.stderr)
         return 2
 

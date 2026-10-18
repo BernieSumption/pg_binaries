@@ -12,9 +12,11 @@ import unittest
 from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 import check_hypopg_windows_archive as checker
 import emit_hypopg_windows_publication as publication
 import import_hypopg_windows_publication as importer
+from test_create_windows_symbols import make_pe, make_pdb
 
 
 class HypopgWindowsArchiveTests(unittest.TestCase):
@@ -41,7 +43,7 @@ class HypopgWindowsArchiveTests(unittest.TestCase):
                     info.type = tarfile.DIRTYPE
                     archive.addfile(info)
                     continue
-                data = content.encode()
+                data = content.encode() if isinstance(content, str) else content
                 info.size = len(data)
                 archive.addfile(info, io.BytesIO(data))
 
@@ -64,7 +66,7 @@ class HypopgWindowsArchiveTests(unittest.TestCase):
         prefix = "../escape" if unsafe else "hypopg"
         entries = [
             ("metadata.json", json.dumps(metadata)),
-            (f"{prefix}/lib/hypopg.dll", "MZ-test-binary"),
+            (f"{prefix}/lib/hypopg.dll", make_pe()),
             ("hypopg/share/extension/hypopg.control", "default_version = '1.4.3'"),
             ("hypopg/share/extension/hypopg--1.4.3.sql", "SELECT 1;"),
             ("hypopg/LICENSES/", None),
@@ -74,6 +76,7 @@ class HypopgWindowsArchiveTests(unittest.TestCase):
             entries.append(("hypopg/LICENSES/hypopg-inventory.json",
                             '{"schema_version":1,"source_files":[],"components":[{"component":"hypopg"}]}'))
         self._tar(self.extension, entries)
+        (self.extension.parent / "hypopg.pdb").write_bytes(make_pdb())
         return core_hash
 
     def test_inspects_native_extension_and_current_profile_core_metadata(self):
@@ -92,6 +95,28 @@ class HypopgWindowsArchiveTests(unittest.TestCase):
         self.assertEqual(report["native_extension_files"], ["hypopg/lib/hypopg.dll"])
         self.assertIn("project-named-licence-inventory", report["checks"])
         self.assertEqual(report["pe_dependency_analysis_sha256"], hashlib.sha256(pe_report.read_bytes()).hexdigest())
+
+    def test_rejects_pdb_identity_mismatch(self):
+        core_hash = self._archives()
+        pdb = self.root / "hypopg.pdb"
+        data = bytearray(pdb.read_bytes())
+        from test_create_windows_symbols import GUID
+        offset = data.index(GUID)
+        data[offset] ^= 1
+        pdb.write_bytes(data)
+        with patch.object(publication, "CORE_SHA256", core_hash):
+            with self.assertRaisesRegex(RuntimeError, "GUID/age mismatch"):
+                checker.inspect(self.core, self.extension, self.root / "report.json")
+        self.assertFalse((self.root / "report.json").exists())
+
+    def test_symbol_binding_changes_when_pdb_bytes_change(self):
+        self._archives()
+        pdb = self.root / "hypopg.pdb"
+        original = checker.verify_symbols(self.extension, pdb)
+        pdb.write_bytes(pdb.read_bytes() + b"changed")
+        changed = checker.verify_symbols(self.extension, pdb)
+        self.assertEqual(original["rsds_guid"], changed["rsds_guid"])
+        self.assertNotEqual(original["pdb_sha256"], changed["pdb_sha256"])
 
     def test_rejects_pe_report_bound_to_different_archive(self):
         core_hash = self._archives()
@@ -201,6 +226,7 @@ class HypopgWindowsArchiveTests(unittest.TestCase):
                 {"basename": self.core.name, "sha256": core_hash},
                 {"basename": self.extension.name, "sha256": extension_hash}]}))
         static = {
+            "symbols": checker.verify_symbols(self.extension, output / "hypopg.pdb"),
             "passed": True, "architecture": publication.ARCHITECTURE,
             "archives": {self.core.name: core_hash, self.extension.name: extension_hash},
             "inspected_files": ["hypopg/lib/hypopg.dll"],
@@ -217,6 +243,22 @@ class HypopgWindowsArchiveTests(unittest.TestCase):
                 {"GITHUB_SHA": "a" * 40, "GITHUB_RUN_ID": "123",
                  "GITHUB_REPOSITORY": "owner/repo", "GITHUB_SERVER_URL": "https://github.com"})
             imported = importer.import_run(repo, core_dir, output, "123")
+
+        receipt_path = output / "publication/current-receipt.json"
+        receipt = json.loads(receipt_path.read_text())
+        self.assertEqual(receipt["symbols"], static["symbols"])
+        original_receipt = receipt_path.read_text()
+        receipt["symbols"]["pdb_sha256"] = "0" * 64
+        receipt_path.write_text(json.dumps(receipt))
+        with patch.object(publication, "CORE_SHA256", core_hash):
+            with self.assertRaisesRegex(Exception, "receipt symbols differ"):
+                importer.import_run(repo, core_dir, output, "123")
+        receipt_path.write_text(original_receipt)
+        pdb = output / "hypopg.pdb"
+        pdb.write_bytes(pdb.read_bytes() + b"changed")
+        with patch.object(publication, "CORE_SHA256", core_hash):
+            with self.assertRaisesRegex(Exception, "receipt symbols differ"):
+                importer.import_run(repo, core_dir, output, "123")
 
         record_name = ("hypopg-1.4.3-postgresql-18.6-windows-x86_64-current-123.json")
         retained = repo / "support/verification" / record_name
