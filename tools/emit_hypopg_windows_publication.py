@@ -40,8 +40,10 @@ class Target:
     CORE_STATUS: str
 
 
-def load_target(pg_version):
-    core = load_identity(pg_version=pg_version)
+def load_target(pg_version, core_identity_path=None):
+    if core_identity_path is None:
+        core_identity_path = os.environ.get("HYPOPG_WINDOWS_CORE_IDENTITY_PATH")
+    core = load_identity(path=core_identity_path, pg_version=pg_version)
     return Target(pg_version, f"hypopg-publication-windows-x86_64-{pg_version}",
                   core["sha256"], core["build_id"], core["source_revision"], core["status"])
 
@@ -148,6 +150,7 @@ def emit(root, core_dir, archives, output, step_results, os_version, image_id, e
         "profile_id": target.PROFILE_ID, "postgresql_version": target.PG_VERSION, "hypopg_version": HYPOPG_VERSION,
         "architecture": ARCHITECTURE, "steps": {c: step_results[c] for c in sorted(CASES)},
         "release_eligible": False, "core_status": target.CORE_STATUS,
+        "core_build_id": target.CORE_BUILD_ID, "core_source_revision": target.CORE_SOURCE_REVISION,
         "archives_present": {core_name: core_archive.is_file(), extension_name: extension_archive.is_file()},
     }
     attempt_path.write_text(json.dumps(attempt, indent=2, sort_keys=True) + "\n", encoding="utf-8")
@@ -229,6 +232,7 @@ def emit(root, core_dir, archives, output, step_results, os_version, image_id, e
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--postgresql-version", choices=PG_VERSIONS, default="18.6")
+    parser.add_argument("--core-identity-path", type=Path)
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[1])
     parser.add_argument("--core-archives", type=Path, required=True)
     parser.add_argument("--archives", type=Path, required=True)
@@ -242,7 +246,8 @@ def main():
         for path in emit(args.root, args.core_archives, args.archives, args.output,
                          {"archive-suite": args.archive_suite_result,
                           "static-analysis": args.static_analysis_result},
-                         args.os_version, args.image_id, target=load_target(args.postgresql_version)):
+                         args.os_version, args.image_id,
+                         target=load_target(args.postgresql_version, args.core_identity_path)):
             print(path)
         return 0
     except (coverage.CoverageError, OSError, ValueError, TypeError, KeyError, RuntimeError) as exc:

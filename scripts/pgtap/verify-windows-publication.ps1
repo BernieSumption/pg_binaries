@@ -2,7 +2,8 @@ param(
   [Parameter(Mandatory = $true)][string]$CoreArchiveDirectory,
   [Parameter(Mandatory = $true)][string]$ExtensionArchiveDirectory,
   [Parameter(Mandatory = $true)][string]$OutputDirectory,
-  [ValidateSet('15.19','16.15','17.11','18.6')][string]$PostgreSQLVersion = '18.6'
+  [ValidateSet('15.19','16.15','17.11','18.6')][string]$PostgreSQLVersion = '18.6',
+  [string]$CoreIdentityPath
 )
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
@@ -16,8 +17,9 @@ $extensionArchiveDirectory = (Resolve-Path $ExtensionArchiveDirectory).Path
 New-Item -ItemType Directory -Force $OutputDirectory | Out-Null
 $OutputDirectory = (Resolve-Path $OutputDirectory).Path
 
-$identityTool = Join-Path $repo 'tools/windows_core_pin.py'
-$coreIdentity = (& python $identityTool --postgresql-version $PostgreSQLVersion | ConvertFrom-Json)
+$identityArguments = @('--postgresql-version', $PostgreSQLVersion)
+if ($CoreIdentityPath) { $identityArguments += @('--path', (Resolve-Path $CoreIdentityPath).Path) }
+$coreIdentity = (& python (Join-Path $repo 'tools/windows_core_pin.py') @identityArguments | ConvertFrom-Json)
 if ($LASTEXITCODE -ne 0 -or -not $coreIdentity) { throw 'Cannot load the pinned Windows PostgreSQL core identity' }
 $pgVersion = $coreIdentity.postgresql_version
 $version = '1.3.4'

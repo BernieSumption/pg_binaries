@@ -2,6 +2,7 @@ param(
   [Parameter(Mandatory = $true)][string]$CoreArchiveDirectory,
   [Parameter(Mandatory = $true)][string]$OutputDirectory,
   [ValidateSet("15.19", "16.15", "17.11", "18.6")][string]$PostgreSQLVersion = "18.6",
+  [string]$CoreIdentityPath,
   [switch]$BuildOnly
 )
 $ErrorActionPreference = 'Stop'
@@ -9,7 +10,9 @@ Set-StrictMode -Version Latest
 
 $repo = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
 $pythonExe = (Get-Command 'python.exe' -ErrorAction Stop).Source
-$coreIdentity = (& $pythonExe (Join-Path $repo 'tools/windows_core_pin.py') --postgresql-version $PostgreSQLVersion | ConvertFrom-Json)
+$identityArguments = @('--postgresql-version', $PostgreSQLVersion)
+if ($CoreIdentityPath) { $identityArguments += @('--path', (Resolve-Path $CoreIdentityPath).Path) }
+$coreIdentity = (& $pythonExe (Join-Path $repo 'tools/windows_core_pin.py') @identityArguments | ConvertFrom-Json)
 if ($LASTEXITCODE -ne 0 -or -not $coreIdentity) { throw 'Cannot load the pinned Windows PostgreSQL core identity' }
 $version = '1.4.3'
 $pgVersion = $coreIdentity.postgresql_version

@@ -330,6 +330,23 @@ class HypopgWindowsArchiveTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "unsupported"):
             publication.load_target("14.20")
 
+    def test_explicit_core_identity_path_selects_generated_identity(self):
+        identity = json.loads(Path("support/windows-core-pins/18.6-x86_64.json").read_text())
+        identity["sha256"] = "b" * 64
+        identity["run_id"] = "987"
+        identity["build_id"] = "github-987-4"
+        identity["source_revision"] = "c" * 40
+        path = self.root / "generated-core-identity.json"
+        path.write_text(json.dumps(identity))
+
+        target = publication.load_target("18.6", path)
+        self.assertEqual(target.CORE_SHA256, "b" * 64)
+        self.assertEqual(target.CORE_BUILD_ID, "github-987-4")
+        self.assertEqual(target.CORE_SOURCE_REVISION, "c" * 40)
+
+        with self.assertRaisesRegex(ValueError, "missing or invalid"):
+            publication.load_target("18.6", self.root / "missing.json")
+
     def test_importer_rejects_attempt_for_a_different_run(self):
         repo = self.root / "repo"
         (repo / "support").mkdir(parents=True)

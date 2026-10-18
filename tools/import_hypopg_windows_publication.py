@@ -66,6 +66,8 @@ def import_run(root, core_artifact, extension_artifact, run_id, target=None):
             or attempt.get("hypopg_version") != publication.HYPOPG_VERSION
             or attempt.get("release_eligible") is not False
             or attempt.get("core_status") != target.CORE_STATUS
+            or attempt.get("core_build_id") != target.CORE_BUILD_ID
+            or attempt.get("core_source_revision") != target.CORE_SOURCE_REVISION
             or not coverage.REVISION.fullmatch(str(attempt.get("source_revision", "")))):
         raise coverage.CoverageError("raw attempt identity does not match the requested run and profile")
     raw_steps = attempt.get("steps")
@@ -201,6 +203,7 @@ def import_run(root, core_artifact, extension_artifact, run_id, target=None):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--postgresql-version", choices=publication.PG_VERSIONS, default="18.6")
+    parser.add_argument("--core-identity-path", type=Path)
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[1])
     parser.add_argument("--core-artifact", type=Path, required=True)
     parser.add_argument("--extension-artifact", type=Path, required=True)
@@ -208,7 +211,7 @@ def main():
     args = parser.parse_args()
     try:
         print("\n".join(import_run(args.root, args.core_artifact, args.extension_artifact, args.run_id,
-                                   target=publication.load_target(args.postgresql_version))))
+                                   target=publication.load_target(args.postgresql_version, args.core_identity_path))))
         return 0
     except (coverage.CoverageError, OSError, ValueError, TypeError, KeyError, RuntimeError) as exc:
         print(f"hypopg Windows publication import: {exc}", file=sys.stderr)

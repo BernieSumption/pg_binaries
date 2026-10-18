@@ -35,8 +35,8 @@ def _copy(copies):
         shutil.copyfile(source, destination)
 
 
-def import_run(root, core_artifact, pgtap_artifact, run_id, pg_version="18.6"):
-    target = publication.target_for(pg_version)
+def import_run(root, core_artifact, pgtap_artifact, run_id, pg_version="18.6", core_identity_path=None):
+    target = publication.target_for(pg_version, core_identity_path)
     root, core_artifact, pgtap_artifact = map(Path, (root, core_artifact, pgtap_artifact))
     run_id = str(run_id)
     if not run_id.isdigit():
@@ -170,10 +170,11 @@ def main():
     parser.add_argument("--pgtap-artifact", type=Path, required=True)
     parser.add_argument("--run-id", required=True)
     parser.add_argument("--postgresql-version", choices=publication.SUPPORTED_PG_VERSIONS, default="18.6")
+    parser.add_argument("--core-identity-path", type=Path)
     args = parser.parse_args()
     try:
         print("\n".join(import_run(args.root, args.core_artifact, args.pgtap_artifact, args.run_id,
-                                 args.postgresql_version)))
+                                 args.postgresql_version, args.core_identity_path)))
         return 0
     except (coverage.CoverageError, OSError, ValueError, TypeError, KeyError) as exc:
         print(f"pgTAP Windows publication import: {exc}", file=sys.stderr)

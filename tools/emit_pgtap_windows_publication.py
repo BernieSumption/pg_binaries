@@ -27,10 +27,10 @@ class Target:
     core_source_revision: str
 
 
-def target_for(pg_version="18.6"):
+def target_for(pg_version="18.6", core_identity_path=None):
     if pg_version not in SUPPORTED_PG_VERSIONS:
         _fail("unsupported PostgreSQL target")
-    identity = load_identity(pg_version=pg_version)
+    identity = load_identity(path=core_identity_path, pg_version=pg_version)
     return Target(pg_version, f"pgtap-publication-windows-x86_64-{pg_version}",
                   identity["sha256"], identity["build_id"], identity["source_revision"])
 SOURCE_URL = "https://github.com/theory/pgtap/archive/refs/tags/v1.3.4.tar.gz"
@@ -117,8 +117,9 @@ def _step(value, name):
     return mapping[value]
 
 
-def emit(root, core_dir, archives, output, step_results, os_version, image_id, environ=None, pg_version="18.6"):
-    target = target_for(pg_version)
+def emit(root, core_dir, archives, output, step_results, os_version, image_id, environ=None,
+         pg_version="18.6", core_identity_path=None):
+    target = target_for(pg_version, core_identity_path)
     root, core_dir, archives, output = map(Path, (root, core_dir, archives, output))
     environ = os.environ if environ is None else environ
     if not isinstance(step_results, dict) or set(step_results) != CASES:
@@ -222,12 +223,14 @@ def main():
     parser.add_argument("--archive-suite-result", required=True)
     parser.add_argument("--static-analysis-result", required=True)
     parser.add_argument("--postgresql-version", choices=SUPPORTED_PG_VERSIONS, default="18.6")
+    parser.add_argument("--core-identity-path", type=Path)
     args = parser.parse_args()
     try:
         for path in emit(args.root, args.core_archives, args.archives, args.output,
                          {"archive-suite": args.archive_suite_result,
                           "static-analysis": args.static_analysis_result},
-                         args.os_version, args.image_id, pg_version=args.postgresql_version):
+                         args.os_version, args.image_id, pg_version=args.postgresql_version,
+                         core_identity_path=args.core_identity_path):
             print(path)
         return 0
     except (coverage.CoverageError, OSError, ValueError, TypeError, KeyError) as exc:

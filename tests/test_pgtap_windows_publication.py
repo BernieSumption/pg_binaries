@@ -32,7 +32,7 @@ class PgTapWindowsArchiveTests(unittest.TestCase):
     def test_candidate_pins_current_core_identity(self):
         script = Path("scripts/pgtap/windows-feasibility.ps1").read_text()
         workflow = Path(".github/workflows/pgtap-windows-selected-publication.yml").read_text()
-        self.assertIn("windows_core_pin.py", script)
+        self.assertIn("windows_core_pin", script)
         self.assertIn("windows_core_pin.py", workflow)
         self.assertIn("run-id: ${{ steps.core_pin.outputs.run_id }}", workflow)
 
@@ -48,6 +48,19 @@ class PgTapWindowsArchiveTests(unittest.TestCase):
                 self.assertEqual(target.core_source_revision, pin["source_revision"])
         with self.assertRaisesRegex(Exception, "unsupported PostgreSQL target"):
             publication.target_for("15.20")
+
+    def test_explicit_core_identity_path_selects_dynamic_identity(self):
+        identity = json.loads(Path("support/windows-core-pins/18.6-x86_64.json").read_text())
+        identity["run_id"] = "987654"
+        identity["build_id"] = "github-987654-2"
+        identity["source_revision"] = "b" * 40
+        path = self.root / "selected-core.json"
+        path.write_text(json.dumps(identity))
+        target = publication.target_for("18.6", path)
+        self.assertEqual(target.core_build_id, "github-987654-2")
+        self.assertEqual(target.core_source_revision, "b" * 40)
+        self.assertIn("CoreIdentityPath", Path("scripts/pgtap/windows-feasibility.ps1").read_text())
+        self.assertIn("CoreIdentityPath", Path("scripts/pgtap/verify-windows-publication.ps1").read_text())
 
     def test_archive_checker_rejects_a_different_selected_target(self):
         with self.assertRaisesRegex(Exception, "basenames do not match"):

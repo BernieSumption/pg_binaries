@@ -43,10 +43,11 @@ def load_identity(path=None, pg_version="18.6"):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--postgresql-version", choices=PG_VERSIONS, default="18.6")
+    parser.add_argument("--path", type=Path)
     parser.add_argument("--field", choices=sorted(REQUIRED))
     parser.add_argument("--github-output", action="store_true")
     args = parser.parse_args()
-    identity = load_identity(pg_version=args.postgresql_version)
+    identity = load_identity(path=args.path, pg_version=args.postgresql_version)
     if args.github_output:
         for key in ("run_id", "artifact_name", "archive_name", "sha256", "build_id", "source_revision"):
             print(f"{key}={identity[key]}")
