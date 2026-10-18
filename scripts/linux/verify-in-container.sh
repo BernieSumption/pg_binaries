@@ -2,6 +2,8 @@
 set -euo pipefail
 pg_version=${PG_VERSION:-18.6}
 architecture=${PG_ARCHITECTURE:-x86_64}
+vector_version=${PGVECTOR_VERSION:-0.8.7}
+[[ $vector_version =~ ^[0-9]+(\.[0-9]+)+$ ]] || { echo "Invalid pgvector release: $vector_version" >&2; exit 2; }
 case "$architecture" in x86_64|arm64) ;; *) echo "Unsupported Linux architecture: $architecture" >&2; exit 2 ;; esac
 case "$architecture:$(uname -m)" in
   x86_64:x86_64|arm64:aarch64) ;;
@@ -12,14 +14,14 @@ if [[ ! $pg_version =~ ^(15|16|17|18)\.[0-9]+$ ]]; then
   exit 2
 fi
 pg="postgresql-${pg_version}-linux-${architecture}.tar.gz"
-vector="pgvector-0.8.7-postgresql-${pg_version}-linux-${architecture}.tar.gz"
+vector="pgvector-${vector_version}-postgresql-${pg_version}-linux-${architecture}.tar.gz"
 cd /out
 sha256sum -c "$pg.sha256" "$vector.sha256"
 useradd -m postgres
 install -d -o postgres -g postgres /tmp/first /tmp/moved /tmp/vector
 runuser -u postgres -- tar -xzf "$pg" -C /tmp/first
 runuser -u postgres -- tar -xzf "$vector" -C /tmp/vector
-python3 - "$pg_version" "$architecture" <<'PY'
+python3 - "$pg_version" "$architecture" "$vector_version" <<'PY'
 import hashlib
 import json
 from pathlib import Path
@@ -27,6 +29,7 @@ import re
 import sys
 version = sys.argv[1]
 architecture = sys.argv[2]
+vector_version = sys.argv[3]
 with open('/tmp/first/postgresql/manifest.json') as f:
     m = json.load(f)
 assert (m['schema_version'], m['component'], m['version'],
@@ -106,7 +109,7 @@ with open('/tmp/vector/metadata.json') as f:
     m = json.load(f)
 expected_vector = {
     'project': 'pgvector',
-    'version': '0.8.7',
+    'version': vector_version,
     'sql_names': ['vector'],
     'requires': [],
     'configuration_prerequisites': [],
@@ -138,7 +141,7 @@ inventory = json.loads((vector_root / 'LICENSES/pgvector-inventory.json').read_t
 assert inventory.get('schema_version') == 1 and len(inventory.get('components', [])) == 1, inventory
 vector = inventory['components'][0]
 assert all(vector.get(key) == value for key, value in {
-    'component': 'pgvector', 'version': '0.8.7',
+    'component': 'pgvector', 'version': vector_version,
     'payload_paths': ['lib/vector.so', 'share/extension'],
     'license_file': 'pgvector.txt',
     'source_url': m['source_archive']['url'],
@@ -147,7 +150,7 @@ assert all(vector.get(key) == value for key, value in {
 assert vector.get('redistribution_review', {}).get('status') == 'resolved', vector
 PY
 python3 /verification/tools/check_source_identity.py --root /verification --platform linux \
-  --postgresql-version "$pg_version" \
+  --postgresql-version "$pg_version" --pgvector-version "$vector_version" \
   --core-manifest /tmp/first/postgresql/manifest.json --vector-metadata /tmp/vector/metadata.json
 test -s /tmp/vector/pgvector/LICENSES/pgvector.txt
 pgroot=/tmp/first/postgresql
@@ -264,16 +267,17 @@ DO $$ BEGIN
       AND x.indisvalid AND x.indpred IS NOT NULL
   ) THEN RAISE EXCEPTION 'restored partial index missing'; END IF;
   IF (SELECT count(*) FROM pilot.events_2026) <> 1 THEN RAISE EXCEPTION 'restored partition data missing'; END IF;
-  IF (SELECT extversion FROM pg_extension WHERE extname = 'vector') <> '0.8.7' THEN
+  IF NOT EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'vector') THEN
     RAISE EXCEPTION 'restored pgvector missing'; END IF;
   IF (SELECT embedding <-> '[1,0,0]'::vector FROM pilot_vectors WHERE id = 1) <> 0 THEN
     RAISE EXCEPTION 'restored vector data missing'; END IF;
 END $$;
 SQL
+test "$("${psql[@]}" -Atqc "SELECT extversion FROM pg_extension WHERE extname = 'vector'")" = "$vector_version"
 "${psql[@]}" -c 'CREATE DATABASE surgery_check'
 surgery=(runuser -u postgres -- "$pgroot/bin/psql" -X -v ON_ERROR_STOP=1 -h /tmp/pgsocket -p 55431 -d surgery_check)
 "${surgery[@]}" -f /tests/builtins/surgery.sql
 runuser -u postgres -- "$pgroot/bin/pg_ctl" -D /tmp/pgdata -m fast -w stop
 trap - EXIT
 . /etc/os-release
-echo "PASS: moved PostgreSQL $pg_version archive and pgvector 0.8.7 archive on $PRETTY_NAME"
+echo "PASS: moved PostgreSQL $pg_version archive and pgvector $vector_version archive on $PRETTY_NAME"
