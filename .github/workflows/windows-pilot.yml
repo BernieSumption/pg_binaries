@@ -131,38 +131,8 @@ jobs:
           python-version: '3.12'
       - name: Check Windows build evidence helpers
         run: python -m unittest tests/test_create_windows_symbols.py tests/test_map_vcpkg_dlls.py tests/test_prepare_postgresql_15_msvc.py tests/test_stage_windows_postgres_import_library.py tests/test_package_windows_postgresql_test_fixtures.py
-      - name: Install Meson and Ninja
-        run: python -m pip install --disable-pip-version-check meson ninja
-      - name: Provide Flex and Bison for the PostgreSQL build
-        run: |
-          $archive = Join-Path $env:RUNNER_TEMP 'win_flex_bison-2.5.25.zip'
-          $tools = Join-Path $env:RUNNER_TEMP 'win_flex_bison-2.5.25'
-          Invoke-WebRequest 'https://github.com/lexxmark/winflexbison/releases/download/v2.5.25/win_flex_bison-2.5.25.zip' -OutFile $archive
-          $actual = (Get-FileHash $archive -Algorithm SHA256).Hash.ToLowerInvariant()
-          if ($actual -ne '8d324b62be33604b2c45ad1dd34ab93d722534448f55a16ca7292de32b6ac135') {
-            throw "WinFlexBison checksum mismatch: $actual"
-          }
-          Expand-Archive $archive -DestinationPath $tools
-          $flex = Get-ChildItem $tools -Recurse -Filter win_flex.exe | Select-Object -First 1
-          if (-not $flex -or -not (Test-Path (Join-Path $flex.DirectoryName 'win_bison.exe'))) {
-            throw 'WinFlexBison executables missing from archive'
-          }
-          Add-Content -Path $env:GITHUB_PATH -Value $flex.DirectoryName
-      - name: Install PostgreSQL libraries
-        run: |
-          $vcpkgRevision = '9e593bb18ea69cc5095e012465dcd675a822ed0d'
-          $vcpkgRoot = Join-Path $env:RUNNER_TEMP "vcpkg-$vcpkgRevision"
-          git init $vcpkgRoot
-          git -C $vcpkgRoot remote add origin https://github.com/microsoft/vcpkg.git
-          git -C $vcpkgRoot fetch --depth=1 origin $vcpkgRevision
-          git -C $vcpkgRoot checkout --detach FETCH_HEAD
-          $actualRevision = (git -C $vcpkgRoot rev-parse HEAD).Trim()
-          if ($actualRevision -ne $vcpkgRevision) { throw "vcpkg checkout revision mismatch: $actualRevision" }
-          & (Join-Path $vcpkgRoot 'bootstrap-vcpkg.bat') -disableMetrics
-          $env:VCPKG_INSTALLATION_ROOT = $vcpkgRoot
-          Add-Content -Path $env:GITHUB_ENV -Value "VCPKG_INSTALLATION_ROOT=$vcpkgRoot"
-          $opensslPort = if ($env:PG_VERSION -eq '15.19') { 'openssl[tools]:x64-windows' } else { 'openssl:x64-windows' }
-          & (Join-Path $vcpkgRoot 'vcpkg.exe') install icu:x64-windows zlib:x64-windows lz4:x64-windows zstd:x64-windows $opensslPort libxml2:x64-windows libxslt:x64-windows
+      - name: Set up PostgreSQL build dependencies
+        run: ./scripts/windows/setup-core-dependencies.ps1 -PostgreSQLVersion $env:PG_VERSION
       - name: Build and package
         shell: cmd
         run: scripts\windows\build.cmd
