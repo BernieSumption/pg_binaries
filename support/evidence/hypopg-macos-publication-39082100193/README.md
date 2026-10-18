@@ -1,0 +1,3 @@
+# HypoPG 1.4.3 macOS Apple Silicon publication evidence
+
+[Run 39082100193](https://github.com/BernieSumption/pg_binaries/actions/runs/39082100193) passed the HypoPG 1.4.3 publication profile against the exact archived PostgreSQL 18.6 Apple Silicon core at revision `d92c851fed340a407d0b09ecd879c13ecbfba983`. The importer checked the final archive sidecars, project-named licence inventory and native payload mapping, source and core identities, static-analysis and probe reports, receipt, and verification record. The retained [record](../../verification/hypopg-1.4.3-postgresql-18.6-macos-arm64-current-39082100193.json) binds the extension and core archive hashes and profile revision.
