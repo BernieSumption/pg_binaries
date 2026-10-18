@@ -70,7 +70,9 @@ jobs:
         id: verify
         if: always() && steps.build.outcome == 'success'
         continue-on-error: true
-        run: PG_VERSION=17.11 bash scripts/pg_jsonschema/linux-verify.sh "$RUNNER_TEMP/pg_jsonschema" "$RUNNER_TEMP/core/pilot" 2>&1 | tee "$RUNNER_TEMP/pg_jsonschema/probe-output.txt"
+        run: |
+          set -o pipefail
+          PG_VERSION=17.11 bash scripts/pg_jsonschema/linux-verify.sh "$RUNNER_TEMP/pg_jsonschema" "$RUNNER_TEMP/core/pilot" 2>&1 | tee "$RUNNER_TEMP/pg_jsonschema/probe-output.txt"
       - name: Emit attempt and archive-bound verification record
         if: always()
         env:
@@ -135,7 +137,9 @@ jobs:
         id: verify
         if: always() && steps.build.outcome == 'success'
         continue-on-error: true
-        run: PG_VERSION=17.11 bash scripts/pg_jsonschema/linux-verify.sh "$RUNNER_TEMP/pg_jsonschema" "$RUNNER_TEMP/core/pilot" 2>&1 | tee "$RUNNER_TEMP/pg_jsonschema/probe-output.txt"
+        run: |
+          set -o pipefail
+          PG_VERSION=17.11 bash scripts/pg_jsonschema/linux-verify.sh "$RUNNER_TEMP/pg_jsonschema" "$RUNNER_TEMP/core/pilot" 2>&1 | tee "$RUNNER_TEMP/pg_jsonschema/probe-output.txt"
       - name: Emit attempt and archive-bound verification record
         if: always()
         env:

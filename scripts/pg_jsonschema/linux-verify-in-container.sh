@@ -55,6 +55,7 @@ while IFS= read -r -d '' source; do
   fi
 done < <(find "$extroot" -mindepth 1 -print0)
 cp -a "$extroot/." "$pgroot/"
+chown -R postgres:postgres /tmp/first
 chown postgres:postgres /tmp/data /tmp/socket
 runuser -u postgres -- "$pgroot/bin/initdb" -D /tmp/data --encoding=UTF8 --locale=C --no-instructions
 runuser -u postgres -- "$pgroot/bin/pg_ctl" -D /tmp/data -o '-k /tmp/socket -p 55432 -h ""' -w start
