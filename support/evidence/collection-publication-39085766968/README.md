@@ -1,0 +1,3 @@
+# collection Linux publication verification for PostgreSQL 17.11
+
+[Run 39085766968](https://github.com/BernieSumption/pg_binaries/actions/runs/39085766968) passed on 2026-10-18 for collection 1.1.1 and 2.1.3 against PostgreSQL 17.11 on native Linux x86-64 and arm64 runners. The importer checked each final extension archive, checksum sidecar, receipt, relocated Alpine SQL probe and ELF report against the exact architecture-matched PostgreSQL core archive. Four passing current-profile records are retained under [verification](../../verification/), with the raw attempts, receipts and static reports under [x86-64](x86_64/) and [arm64](arm64/). This is publication-profile behavior evidence; core dependency redistribution remains under human review.

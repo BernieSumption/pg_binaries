@@ -162,7 +162,7 @@ try {
   if (-not (Test-Path $upstreamLicense -PathType Leaf)) { throw 'Pinned pg_jsonschema source LICENSE is missing' }
   Copy-Item $upstreamLicense (Join-Path $licenseDir 'pg_jsonschema.txt')
   $cargoMetadata = Join-Path $work 'cargo-metadata.json'
-  & cargo metadata --locked --format-version 1 --filter-platform x86_64-pc-windows-msvc --no-default-features --features pg18 | Set-Content -Encoding utf8 $cargoMetadata
+  & cargo metadata --manifest-path (Join-Path $source 'Cargo.toml') --locked --format-version 1 --filter-platform x86_64-pc-windows-msvc --no-default-features --features pg18 | Set-Content -Encoding utf8 $cargoMetadata
   if ($LASTEXITCODE -ne 0) { throw 'Could not resolve the locked Windows Cargo package inventory' }
   python (Join-Path $repo 'tools/inventory_cargo_licenses.py') $source $cargoMetadata (Join-Path $licenseDir 'pg_jsonschema-cargo-license-inventory.json')
   if ($LASTEXITCODE -ne 0) { throw 'Could not create the project-named Cargo licence inventory' }
