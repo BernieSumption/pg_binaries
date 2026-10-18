@@ -1,11 +1,6 @@
 name: Windows 10 SDK floor probe
 
 on:
-  push:
-    branches: [spike]
-    paths:
-      - '.github/workflows/windows-sdk-floor-probe.yml'
-      - 'tools/probe_sdk_10240.ps1'
   workflow_dispatch:
 
 permissions:

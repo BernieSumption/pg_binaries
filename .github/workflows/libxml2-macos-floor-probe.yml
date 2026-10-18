@@ -2,11 +2,6 @@ name: libxml2 macOS 11 dependency-floor feasibility probe
 
 on:
   workflow_dispatch:
-  push:
-    branches: [spike]
-    paths:
-      - '.github/workflows/libxml2-macos-floor-probe.yml'
-      - 'scripts/dependency_probes/libxml2-macos-floor-probe.sh'
 
 permissions:
   contents: read

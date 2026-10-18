@@ -8,17 +8,6 @@ on:
         options: [x86_64, arm64]
         default: x86_64
         required: true
-  push:
-    branches: [spike]
-    paths:
-      - '.github/workflows/pg-jsonschema-linux-feasibility.yml'
-      - 'scripts/pg_jsonschema/linux-*'
-      - 'scripts/pg_jsonschema/probe.sql'
-      - 'scripts/linux/**'
-      - 'tools/check_elf_dependencies.py'
-      - 'tools/inventory_cargo_licenses.py'
-      - 'support.json'
-      - 'support/postgresql-releases.json'
 jobs:
   probe:
     runs-on: ${{ github.event_name == 'workflow_dispatch' && inputs.architecture == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-24.04' }}

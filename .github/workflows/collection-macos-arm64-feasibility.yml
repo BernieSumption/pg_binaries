@@ -2,17 +2,6 @@ name: collection macOS arm64 feasibility
 
 on:
   workflow_dispatch:
-  push:
-    branches: [spike]
-    paths:
-      - .github/workflows/collection-macos-arm64-feasibility.yml
-      - scripts/collection/macos-feasibility.sh
-      - scripts/collection/check_macos_evidence.py
-      - scripts/collection/probe.sql
-      - scripts/macos/static_analysis.py
-      - tools/check_extension_redistribution.py
-      - tools/publication_preflight.py
-      - tests/test_collection_macos_evidence.py
 
 permissions:
   actions: read

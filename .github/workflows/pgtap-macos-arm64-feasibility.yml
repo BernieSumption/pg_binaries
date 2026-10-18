@@ -2,16 +2,6 @@ name: pgTAP macOS arm64 feasibility
 
 on:
   workflow_dispatch:
-  push:
-    branches: [spike]
-    paths:
-      - .github/workflows/pgtap-macos-arm64-feasibility.yml
-      - scripts/pgtap/macos-feasibility.sh
-      - scripts/macos/core-prefix.sh
-      - scripts/pgtap/probe.sql
-      - tools/pgtap_macos_target.py
-      - tools/pgtap_macos_pins/18.6-arm64.json
-      - scripts/macos/static_analysis.py
 permissions:
   actions: read
   contents: read
