@@ -47,6 +47,8 @@ class PlannerDispatchWorkflowContractTests(unittest.TestCase):
         self.assertIn("*/.github/workflows/planner-dispatch-trial.yml@*", SELECTED)
         self.assertIn("planner-dispatch-trial.yml", SELECTED)
         self.assertIn('"hypopg-linux-$PG_VERSION-$PG_ARCHITECTURE-trial-{run_id}"', SELECTED)
+        self.assertLess(SELECTED.index("planner-dispatch-trial.yml\n"),
+                        SELECTED.index("hypopg-linux-selected-publication.yml\n"))
 
 
 if __name__ == "__main__":

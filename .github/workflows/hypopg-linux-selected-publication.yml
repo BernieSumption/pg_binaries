@@ -97,16 +97,17 @@ jobs:
           CALLER_WORKFLOW_REF: ${{ github.workflow_ref }}
         run: |
           set -euo pipefail
-          sources=(
-            hypopg-linux-selected-publication.yml
-            "hypopg-linux-$PG_VERSION-$PG_ARCHITECTURE-trial-{run_id}"
-          )
+          sources=()
           if [[ "$CALLER_WORKFLOW_REF" == */.github/workflows/planner-dispatch-trial.yml@* ]]; then
             sources+=(
               planner-dispatch-trial.yml
               "hypopg-linux-$PG_VERSION-$PG_ARCHITECTURE-trial-{run_id}"
             )
           fi
+          sources+=(
+            hypopg-linux-selected-publication.yml
+            "hypopg-linux-$PG_VERSION-$PG_ARCHITECTURE-trial-{run_id}"
+          )
           if [[ "$PG_ARCHITECTURE" == x86_64 ]]; then
             sources+=(
               pgvector-linux-selected-trial.yml
