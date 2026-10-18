@@ -120,10 +120,83 @@ while IFS= read -r -d '' source; do
 done < <(find "$extroot" -mindepth 1 -print0)
 mv "$pgroot" "$work/moved/postgresql"
 pgroot="$work/moved/postgresql"
-cp -a "$extroot/." "$pgroot/"
 python3 "$repo/scripts/macos/static_analysis.py" "$pgroot" "$architecture" \
-  --archive "$core_archives/$core_name" --archive "$output/$extension_name" \
+  --archive "$core_archives/$core_name" \
   --report "$output/static-analysis.json"
+cp -a "$extroot/." "$pgroot/"
+python3 - "$pgroot" "$architecture" <<'PY' | tee "$output/pg-cron-macho-inspection.json"
+import json
+import pathlib
+import re
+import subprocess
+import sys
+
+root = pathlib.Path(sys.argv[1]).resolve()
+architecture = sys.argv[2]
+module = root / "lib/pg_cron.dylib"
+postgres = root / "bin/postgres"
+
+def run(*args):
+    result = subprocess.run(args, capture_output=True, text=True)
+    if result.returncode:
+        raise SystemExit(f"command failed: {' '.join(args)}: {result.stderr}")
+    return result.stdout
+
+def rpaths(binary):
+    lines = run("otool", "-l", str(binary)).splitlines()
+    values = []
+    for index, line in enumerate(lines):
+        if line.strip() == "cmd LC_RPATH":
+            match = re.search(r"^\s*path (.+?) \(offset ", lines[index + 2])
+            if match:
+                values.append(match.group(1))
+    return values
+
+if architecture not in run("lipo", "-archs", str(module)).split():
+    raise SystemExit("pg_cron.dylib lacks the required arm64 architecture")
+load = run("otool", "-l", str(module))
+minimum = re.search(r"\bminos (\d+(?:\.\d+){0,2})", load)
+if not minimum or tuple(map(int, minimum.group(1).split(".")))[:2] > (11, 0):
+    raise SystemExit("pg_cron.dylib lacks compatible minimum macOS metadata")
+dependencies = [line.strip().split(" (compatibility version", 1)[0]
+                for line in run("otool", "-L", str(module)).splitlines()[1:] if line.strip()]
+executable_rpaths = rpaths(postgres)
+module_rpaths = rpaths(module)
+resolved = {}
+for dependency in dependencies:
+    if dependency.startswith(("/usr/lib/", "/System/Library/")):
+        resolved[dependency] = dependency
+    elif dependency.startswith("@rpath/"):
+        suffix = dependency.removeprefix("@rpath/")
+        candidates = []
+        for value in module_rpaths + executable_rpaths:
+            if value.startswith("@loader_path"):
+                base = module.parent / value.removeprefix("@loader_path").lstrip("/")
+            elif value.startswith("@executable_path"):
+                base = postgres.parent / value.removeprefix("@executable_path").lstrip("/")
+            elif value.startswith("/"):
+                base = pathlib.Path(value)
+            else:
+                continue
+            candidate = (base / suffix).resolve()
+            if candidate.is_file() and candidate.is_relative_to(root):
+                candidates.append(candidate)
+        if not candidates:
+            raise SystemExit(f"unresolved pg_cron dependency: {dependency}")
+        resolved[dependency] = str(candidates[0].relative_to(root))
+    else:
+        raise SystemExit(f"unsupported pg_cron dependency token: {dependency}")
+report = {
+    "architecture": architecture,
+    "file": "lib/pg_cron.dylib",
+    "minimum_os": minimum.group(1),
+    "dependencies": resolved,
+    "module_rpaths": module_rpaths,
+    "postgres_executable_rpaths": executable_rpaths,
+    "resolution_note": "@rpath dependencies use the dyld run-path stack, which includes run paths from the executable loading the extension.",
+}
+print(json.dumps(report, indent=2, sort_keys=True))
+PY
 
 data_dir="$work/data"
 pg_ctl="$pgroot/bin/pg_ctl"

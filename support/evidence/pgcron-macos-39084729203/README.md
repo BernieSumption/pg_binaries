@@ -1,0 +1,3 @@
+# pg_cron Apple Silicon macOS first source feasibility attempt
+
+[Run 39084729203](https://github.com/BernieSumption/pg_binaries/actions/runs/39084729203) built and packaged unmodified pg_cron 1.6.8 against the checksum-pinned PostgreSQL 18.6 Apple Silicon core from run 39079982683. The archive hash is retained in its [sidecar](pg_cron-1.6.8-postgresql-18.6-macos-arm64.tar.gz.sha256). The relocated-tree [static report](static-analysis.json) stopped before runtime because its dependency resolver did not model the executable run-path stack for `@rpath/libpq.5.dylib` in `pg_cron.dylib`. This result establishes source build feasibility, not extension creation or scheduled-job behavior.

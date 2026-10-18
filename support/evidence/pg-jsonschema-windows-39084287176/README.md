@@ -1,0 +1,5 @@
+# pg_jsonschema 0.3.4 Windows source feasibility
+
+[Run 39084287176](https://github.com/BernieSumption/pg_binaries/actions/runs/39084287176) built unmodified pg_jsonschema 0.3.4 at commit `cbe74b570d38aa0c4d42914e7a118bcb3adaee7a` with pgrx 0.16.1 against the checksum-pinned PostgreSQL 18.6 Windows x86-64 core from run 39077749917. It preserved the reviewed Cargo lock bytes, installed the module into that core, then moved the core and passed `CREATE EXTENSION`, JSON-schema table DDL and row checks with a restricted runtime PATH. The [build identity](build-identity.txt), [SQL output](probe-output.txt), [result](result.txt), [server log](server.log) and [payload hashes](payload.sha256) are retained from the CI artifact.
+
+This proves source and relocated SQL feasibility for that core and runner. The probe does not produce a final extension archive, inspect PE dependency closure, or establish a publication profile. The core input is an expiring CI artifact and its redistribution eligibility remains under human review.

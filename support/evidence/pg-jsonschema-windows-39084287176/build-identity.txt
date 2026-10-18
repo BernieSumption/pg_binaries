@@ -1,0 +1,12 @@
+pg_jsonschema_source_url=https://github.com/supabase/pg_jsonschema.git
+pg_jsonschema_source_commit=cbe74b570d38aa0c4d42914e7a118bcb3adaee7a
+cargo_lock_sha256=ab865dc25d9eea4bf7dbfaf8fae13283e5c0bce4bca460fe10464c6716e67028
+postgresql_core_sha256=2e48881e4b5c3289bc9526ee846685d62f6cfa4fff2539cb6393f36f605fcceb
+postgresql_build_id=github-39077749917-1
+libclang_path=C:\Program Files\LLVM\bin
+rustc 1.90.0 (1159e78c4 2025-09-14)
+cargo 1.90.0 (840b83a10 2025-07-30)
+msvc_compiler_path=C:\Program Files\Microsoft Visual Studio\2022\Enterprise\VC\Tools\MSVC\14.44.35207\bin\HostX64\x64\cl.exe
+windows_version=10.0.20348.0
+runner_image=win22/20261012.333.1
+PostgreSQL 18.6

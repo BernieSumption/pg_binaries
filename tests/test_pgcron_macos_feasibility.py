@@ -25,6 +25,9 @@ class PgCronMacOSFeasibilityTests(unittest.TestCase):
         self.assertIn("cron.use_background_workers=on", script)
         self.assertIn('[[ "$status" == succeeded ]]', script)
         self.assertIn("static_analysis.py", script)
+        self.assertIn("pg-cron-macho-inspection.json", script)
+        self.assertIn("postgres_executable_rpaths", script)
+        self.assertNotIn("install_name_tool", script)
 
 
 if __name__ == "__main__":

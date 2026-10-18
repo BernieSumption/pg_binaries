@@ -1,0 +1,43 @@
+{
+  "architecture": "x86_64",
+  "archives": {
+    "pgtap-1.3.4-postgresql-18.6-macos-x86_64.tar.gz": "b72e018b082778bedfabc80d869ea27be67ad19a82a4f8f28e7877ad9396557e",
+    "postgresql-18.6-macos-x86_64.tar.gz": "5ec45e48bad1439860f0143fd6f2cbc04a86cfa456beef8c5ca9040960ea3f40"
+  },
+  "case_results": {
+    "archive-suite": "passed",
+    "static-analysis": "passed"
+  },
+  "ci": {
+    "build_revision": "a43c2b8acf9d28d7997e3ecf5b8f4718b2d2af73",
+    "provider": "github-actions",
+    "run_id": "39084652009",
+    "run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/39084652009",
+    "source_revision": "a43c2b8acf9d28d7997e3ecf5b8f4718b2d2af73",
+    "test_revision": "a43c2b8acf9d28d7997e3ecf5b8f4718b2d2af73"
+  },
+  "clean_system": true,
+  "dependency_check_profile": "macho-system-dependencies-v1",
+  "dependency_checks_passed": true,
+  "endpoint": "current",
+  "environment": {
+    "architecture": "x86_64",
+    "image_id": "macos15/20260824.0482.1",
+    "os": "macos",
+    "os_version": "15.7.9"
+  },
+  "extension_archive": "pgtap-1.3.4-postgresql-18.6-macos-x86_64.tar.gz",
+  "platform": "macos-x86_64",
+  "postgresql_version": "18.6",
+  "profile_id": "pgtap-publication-macos-x86_64-18.6",
+  "profile_revision": "c35b8815784bfb2d6b86936dcc30f349adc1330ef334334f082f3c7e6fc94f2c",
+  "project": "pgtap",
+  "reports": {
+    "build_log": "55748a9cf7f35f77411f933edff44134faaf853011c6bcefacefe7bb95460bac",
+    "probe_output": "2fe4134b93da9610a35d47edb16e12a1048469f9beb1ac5ad8870ca380f37db0",
+    "static_analysis": "ec5c3ca0fe5c547431de875fdb536467196dabf2e815909aac0000eeb9232ffb"
+  },
+  "schema_version": 1,
+  "test_revision": "a43c2b8acf9d28d7997e3ecf5b8f4718b2d2af73",
+  "version": "1.3.4"
+}

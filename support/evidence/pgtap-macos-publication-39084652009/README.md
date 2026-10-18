@@ -1,0 +1,3 @@
+# pgTAP 1.3.4 Intel macOS publication verification
+
+[Run 39084652009](https://github.com/BernieSumption/pg_binaries/actions/runs/39084652009) passed the pgTAP 1.3.4 final-archive publication profile on Intel macOS against the exact PostgreSQL 18.6 core archive from [run 39079982747](../macos-publication-39079982747/README.md). The job checked final archive hashes and redistribution inventory, relocated both archives, created pgTAP, ran four assertions, and inspected Mach-O dependencies. The [receipt](x86_64/current-receipt.json), [attempt](x86_64/attempt.json), [SQL output](x86_64/probe-output.txt) and imported verification record bind the result to the final archive hashes and current profile.
