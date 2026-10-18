@@ -32,6 +32,37 @@ class HypoPGMacOS1711Arm64Tests(unittest.TestCase):
         self.assertEqual(profile["platforms"], ["macos-arm64"])
         self.assertIn("tools/hypopg_macos_target.py", profile["sources"])
         self.assertIn("scripts/hypopg/macos-feasibility.sh", profile["sources"])
+        self.assertIn("scripts/hypopg/verify-macos-publication.sh", profile["sources"])
+        self.assertIn("policies/install-process.md", profile["sources"])
+
+    def test_publication_verifies_uploaded_archives_in_a_separate_runner_job(self):
+        root = Path(__file__).resolve().parents[1]
+        workflow = (root / ".github/workflows/hypopg-macos-arm64-17.11-publication.yml").read_text()
+        verifier = (root / "scripts/hypopg/verify-macos-publication.sh").read_text()
+        installer_policy = (root / "policies/install-process.md").read_text()
+        profile = json.loads((root / "support/verification-profiles.json").read_text())["profiles"][
+            self.target.profile_id]
+
+        self.assertIn("  build:\n", workflow)
+        self.assertIn("  verify:\n    needs: [profile_scope, build]", workflow)
+        self.assertIn("runs-on: macos-15", workflow)
+        self.assertIn("actions/upload-artifact@v4", workflow)
+        self.assertIn("actions/download-artifact@v4", workflow)
+        self.assertIn("verify-macos-publication.sh static-analysis", workflow)
+        self.assertIn("verify-macos-publication.sh archive-suite", workflow)
+        self.assertIn("if: always() && steps.download.outcome == 'success'", workflow)
+        self.assertIn("if [[ -f \"$RUNNER_TEMP/hypopg-publication/publication/attempt.json\" ]]", workflow)
+        self.assertIn("--run-id \"$GITHUB_RUN_ID\"", workflow)
+        self.assertIn("scripts/hypopg/verify-macos-publication.sh", profile["sources"])
+        self.assertIn("policies/install-process.md", profile["sources"])
+        self.assertIn("policies/install-process.md", workflow)
+        self.assertIn("copy the contents of the project-named payload directory", installer_policy)
+        self.assertIn("cp -a \"$extroot/.\" \"$pgroot/\"", verifier)
+        self.assertIn('mv "$pgroot" "$work/moved/postgresql"', verifier)
+        self.assertIn("static_analysis.py", verifier)
+        self.assertIn("macos-probe.sql", verifier)
+        self.assertNotIn("make USE_PGXS", verifier)
+        self.assertNotIn("curl ", verifier)
 
     def test_emit_and_import_bind_pg17_core_and_restore_pg18_default(self):
         original = (emitter.PROFILE_ID, emitter.PG_VERSION, emitter.ARCHITECTURE,

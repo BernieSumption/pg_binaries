@@ -138,6 +138,10 @@ cd "$output"
 shasum -a 256 "$extension_name" > "$extension_name.sha256"
 shasum -a 256 -c "$extension_name.sha256"
 python3 "$repo/tools/check_macos_extension_license_inventory.py" "$output/$extension_name"
+if [[ ${HYPOPG_BUILD_ONLY:-false} == true ]]; then
+  echo "PASS: built HypoPG $hypopg_version archive for PostgreSQL $pg_version on macOS $architecture"
+  exit 0
+fi
 tar -xzf "$extension_name" -C "$work/extension"
 extroot="$work/extension/hypopg"
 while IFS= read -r -d '' source; do
