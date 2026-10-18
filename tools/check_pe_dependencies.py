@@ -201,17 +201,22 @@ def inspect(prefix, dumpbin, report):
     prefix = Path(prefix).resolve(strict=True)
     if not Path(dumpbin).is_file():
         raise ValueError(f"explicit dumpbin executable does not exist: {dumpbin}")
-    by_name = {}
-    for path in prefix.rglob("*"):
+    by_name, pe_files = {}, []
+    for path in sorted(prefix.rglob("*"), key=lambda item: item.as_posix().lower()):
         if path.is_file() and path.suffix.lower() in (".exe", ".dll"):
             key = path.name.lower()
-            if key in by_name:
-                raise ValueError(f"case-insensitive PE basename collision: {path.name} and {by_name[key]}")
-            by_name[key] = path
+            digest = hashlib.sha256(path.read_bytes()).hexdigest()
+            previous = by_name.get(key, [])
+            if previous and any(previous_digest != digest for _, previous_digest in previous):
+                raise ValueError(
+                    f"case-insensitive PE basename collision with different contents: "
+                    f"{previous[0][0]} and {path}")
+            by_name.setdefault(key, []).append((path, digest))
+            pe_files.append(path)
     if not by_name:
         raise ValueError("no .exe or .dll files found in assembled installation")
     report["inspected_files"] = []
-    for path in sorted(by_name.values(), key=lambda p: p.as_posix().lower()):
+    for path in pe_files:
         relative = path.relative_to(prefix).as_posix()
         report["inspected_files"].append(relative)
         def run(option):
@@ -238,8 +243,9 @@ def inspect(prefix, dumpbin, report):
         resolved = []
         detail_by_name = {entry["name"].lower(): entry for entry in import_details} if imports else {}
         for name in imports:
-            candidate = by_name.get(name.lower())
-            if candidate:
+            candidates = by_name.get(name.lower())
+            if candidates:
+                candidate = candidates[0][0]
                 resolution = {"name": name, "resolution": "package",
                               "path": candidate.relative_to(prefix).as_posix()}
             elif is_system_dll(name):
@@ -251,7 +257,7 @@ def inspect(prefix, dumpbin, report):
             resolution["delay_functions"] = detail["delay_functions"]
             resolved.append(resolution)
         report["files"].append({"path": relative, **header, "imports": resolved})
-    return len(by_name)
+    return len(pe_files)
 
 
 def main():

@@ -152,6 +152,50 @@ class DumpbinParserTests(unittest.TestCase):
 
 
 class PackageInspectionTests(unittest.TestCase):
+    def test_inspects_byte_identical_duplicate_basename_files(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            app = root / "bin" / "app.exe"
+            first = root / "bin" / "libecpg.dll"
+            second = root / "lib" / "libecpg.dll"
+            app.parent.mkdir()
+            first.parent.mkdir(exist_ok=True)
+            second.parent.mkdir()
+            app.write_bytes(make_pe32_plus())
+            first.write_bytes(make_pe32_plus())
+            second.write_bytes(make_pe32_plus())
+            dumpbin = root.parent / "dumpbin.exe"
+            dumpbin.touch()
+            header = "8664 machine (x64)\n20B magic # (PE32+)\n10.00 operating system version\n6.00 subsystem version\n"
+
+            def run(command, **kwargs):
+                return subprocess.CompletedProcess(command, 0,
+                    header if command[1] == "/headers" else
+                    ("Section contains the following imports:\n    libecpg.dll\n      0 ecpg_connect\n"
+                     if Path(command[-1]).name == "app.exe" else "no imports"), "")
+
+            report = {"inspected_files": [], "files": []}
+            with patch.object(checker.subprocess, "run", side_effect=run):
+                self.assertEqual(checker.inspect(root, dumpbin, report), 3)
+            self.assertEqual(report["inspected_files"], [
+                "bin/app.exe", "bin/libecpg.dll", "lib/libecpg.dll"])
+            self.assertEqual([item["path"] for item in report["files"]], report["inspected_files"])
+            self.assertEqual(report["files"][0]["imports"][0]["path"], "bin/libecpg.dll")
+
+    def test_rejects_different_contents_for_duplicate_basename_files(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            first = root / "bin" / "libecpg.dll"
+            second = root / "lib" / "libecpg.dll"
+            first.parent.mkdir()
+            second.parent.mkdir()
+            first.write_bytes(make_pe32_plus())
+            second.write_bytes(make_pe32_plus() + b"different")
+            dumpbin = root.parent / "dumpbin.exe"
+            dumpbin.touch()
+            with self.assertRaisesRegex(ValueError, "basename collision with different contents"):
+                checker.inspect(root, dumpbin, {"inspected_files": [], "files": []})
+
     def test_unknown_import_output_requires_zero_import_directories(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)

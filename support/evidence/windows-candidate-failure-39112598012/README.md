@@ -1,0 +1,5 @@
+# Windows PostgreSQL 15.19 verification failure 39112598012
+
+Run [39112598012](https://github.com/BernieSumption/pg_binaries/actions/runs/39112598012) built and packaged PostgreSQL 15.19 and pgvector 0.8.7 successfully. The relocated database and pgvector SQL checks passed. Final PE inspection stopped on the duplicate basename `libecpg.dll` before symbol and diagnostics checks ran.
+
+The core archive SHA-256 is `83b877940602b7ecd200363460c279a36accca5c01953b409a8e0f1795aac7c4`; the pgvector archive SHA-256 is `bde14f62cbe04dcb4a6b61e04eb5231df8355d560d0ba5bb07afbf1a5d8020d3`. Archive inspection confirms both `postgresql/bin/libecpg.dll` and `postgresql/lib/libecpg.dll` are present and byte-identical (SHA-256 `2ae2a118bc7146e3372af9a80749dfdaef90518d8095a6583873bbe1ff22d792`). The checker treated that upstream layout as a collision. The retained failure records are not current verification evidence; rerun after the shared checker accepts byte-identical copies and rejects differing copies.
