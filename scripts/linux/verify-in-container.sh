@@ -20,6 +20,7 @@ install -d -o postgres -g postgres /tmp/first /tmp/moved /tmp/vector
 runuser -u postgres -- tar -xzf "$pg" -C /tmp/first
 runuser -u postgres -- tar -xzf "$vector" -C /tmp/vector
 python3 - "$pg_version" "$architecture" <<'PY'
+import hashlib
 import json
 from pathlib import Path
 import re
@@ -112,7 +113,26 @@ expected_vector = {
     'runtime_prerequisites': [],
 }
 assert all(m.get(key) == value for key, value in expected_vector.items()), m
-assert {field: m[field] for field in provenance_fields} == provenance, m
+extension_provenance = {field: m[field] for field in provenance_fields}
+if 'core_archive' not in m:
+    assert extension_provenance == provenance, m
+else:
+    core_archive = Path('/out') / f'postgresql-{version}-linux-{architecture}.tar.gz'
+    digest = hashlib.sha256()
+    with core_archive.open('rb') as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b''):
+            digest.update(chunk)
+    assert m['core_archive'] == {
+        'basename': core_archive.name,
+        'sha256': digest.hexdigest(),
+    }, m
+    assert re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9._-]*', extension_provenance['build_id']), m
+    assert re.fullmatch(r'[0-9a-fA-F]{40}|[0-9a-fA-F]{64}', extension_provenance['source_revision']), m
+    assert re.fullmatch(r'sha256:[0-9a-f]{64}', extension_provenance['builder_image_id']), m
+    assert isinstance(extension_provenance['build_configuration'], str) and extension_provenance['build_configuration'], m
+    assert (extension_provenance['platform'], extension_provenance['architecture']) == (
+        'linux', architecture
+    ), m
 vector_root = Path('/tmp/vector/pgvector')
 inventory = json.loads((vector_root / 'LICENSES/pgvector-inventory.json').read_text())
 assert inventory.get('schema_version') == 1 and len(inventory.get('components', [])) == 1, inventory

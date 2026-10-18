@@ -9,6 +9,9 @@ on:
       - 'scripts/pgvector/linux-build.Dockerfile'
       - 'scripts/pgvector/linux-build-in-container.sh'
       - 'scripts/pgvector/archive_input.py'
+      - 'scripts/linux/verify.sh'
+      - 'scripts/linux/verify-in-container.sh'
+      - 'tests/extensions/pgvector.sql'
       - 'tools/source_archive.py'
       - 'support.json'
 
@@ -94,3 +97,58 @@ jobs:
             ${{ runner.temp }}/pgvector-output/*.sha256
           if-no-files-found: warn
           retention-days: 7
+
+  verify:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 70
+    env:
+      PG_VERSION: 18.6
+      PG_ARCHITECTURE: x86_64
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download this run's separate-build output
+        uses: actions/download-artifact@v4
+        with:
+          name: pgvector-separate-linux-build-${{ github.run_id }}
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/extension
+      - name: Download the pinned historical core archive
+        uses: actions/download-artifact@v4
+        with:
+          name: linux-publication-x86_64-evidence
+          run-id: 39061346204
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/core
+      - name: Assemble exact core and extension archives for verification
+        run: |
+          set -euo pipefail
+          archive_dir="$RUNNER_TEMP/archives"
+          mkdir -p "$archive_dir"
+          core_name=postgresql-18.6-linux-x86_64.tar.gz
+          vector_name=pgvector-0.8.7-postgresql-18.6-linux-x86_64.tar.gz
+          core="$RUNNER_TEMP/core/pilot/$core_name"
+          vector="$RUNNER_TEMP/extension/$vector_name"
+          for input in "$core" "$core.sha256" "$vector" "$vector.sha256"; do
+            if [[ ! -s "$input" ]]; then
+              echo "Missing required verification input: $input. Downloaded layout:" >&2
+              find "$RUNNER_TEMP/core" "$RUNNER_TEMP/extension" -maxdepth 5 -type f -print | sort >&2
+              exit 1
+            fi
+          done
+          cp "$core" "$core.sha256" "$vector" "$vector.sha256" "$archive_dir/"
+          (cd "$archive_dir" && sha256sum --check "$core_name.sha256" "$vector_name.sha256")
+      - name: Run full Alpine relocation, dependency, and SQL verification suite
+        id: verify_archives
+        run: scripts/linux/verify.sh "$RUNNER_TEMP/archives"
+      - name: Retain verifier static analysis report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pgvector-separate-linux-verification-${{ github.run_id }}
+          path: ${{ runner.temp }}/archives/publication/static-analysis/core-pgvector.json
+          if-no-files-found: warn
+          retention-days: 7
+      - name: Require full verification to pass
+        if: always()
+        run: test '${{ steps.verify_archives.outcome }}' = success
