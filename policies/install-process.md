@@ -48,6 +48,8 @@ When an extension needs a built-in SQL extension that has no separate project ar
 
 All packaged programs, support files, and extensions must continue to work after the installation prefix is moved. Do not encode the build path or require the original extraction location. Resolve PostgreSQL support files relative to the executable or through PostgreSQL's standard relocatable installation behaviour. Bundled shared libraries must be found using platform mechanisms that work from the relocated prefix.
 
+Packaging may rewrite binary loader paths to make the installed files relocatable; this changes installation metadata, not upstream source. Use source supplied by upstream or by a distribution or package manager, including patches they apply. Do not develop project-specific source patches to make a dependency or extension build.
+
 Tests must make the original prefix unavailable before exercising the relocated installation, following `specs/testing.md`. Installation guidance and client implementations must preserve the archive layout and use the same copy process tested there.
 
 ## Current spike evidence

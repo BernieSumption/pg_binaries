@@ -20,7 +20,8 @@
       "sql_names": ["address_standardizer", "address_standardizer_data_us"],
       "requires": [],
       "versions": {
-        "3.7.0": { "postgresql_minimum_major": 15, "postgresql_maximum_major": 19 }
+        "3.7.0": { "postgresql_minimum_major": 15, "postgresql_maximum_major": 19,
+                   "operating_systems": ["macos", "linux"] }
       }
     },
     "pgvector": {

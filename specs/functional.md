@@ -37,7 +37,7 @@ Factors against support:
 
 - Unmaintained, deprecated, or abandoned project
 - New project either not recommended for production use by its creators, or in an unstable and early iteration phase - major hosts sometimes support their own experimental projects so it is possible for a project to be both experimental and unsuitable for general use, and supported by a major Postgres hosting provider 
-- Incompatible with our supported OS or Postgres versions (extensions that explicitly declare support for a subset of our OSs or Postgres versions but are otherwise worth including are acceptable)
+- Incompatible with our supported OS or Postgres versions (extensions that only support a subset of our OSs or Postgres versions but are otherwise worth including are acceptable)
 - High cost of supporting eg long build times, fiddly dependencies
 - Major hosts have dropped support for it
 - License that prevents redistribution, or merely executing `CREATE EXTENSION x` and using the extension's objects in a schema definition depends on data files can't can't be redistributed. Note that we take the license declared by a source repo at face value. If the source repo contains data files that are not explicitly put under a separate licence, they are assumed to be distributed under the same licence as the source code. We have hard prohibition on supporting extensions that Are not licensed for free redistribution.
@@ -58,11 +58,11 @@ Always research the documented compatibility of each extension version.
 
 The claimed compatibility for a build output should be the smaller of the documented compatibility and the actual compatibility as checked by tests. For example, if an extension version claims to support Postgres 17.0 - 17.6, and tests indicate that 17.7 also works fine, do not widen the claim made by the documentation.
 
-### Never patch or modify extensions or dependencies
+### Do not devleop our own patches or modifications to extensions or dependencies
 
-We intend to ship straightforward builds of upstream packages, without porting, patching or otherwise changing them to meet our goals. The extensions we support are expected to be well maintained packages that will build correctly for all of our target platforms and Postgres versions.
+We intend to ship straightforward builds of upstream packages, without porting, patching or otherwise changing them to meet our goals. The extensions we support are expected to be well maintained packages that will build correctly for all of our target platforms and Postgres versions. Patches or modifications applied by a distribution or package manager are acceptable - This rule merely bans developing our own patches.
 
-If an extension doesn't intend to support certain OS's or Postgres versions, our inventory should reflect that lack of support. If there are other issues that we could work around by modifying source, add an item to HUMAN_REVIEW_QUEUE.md
+If an extension doesn't support certain OS's or Postgres versions, our inventory should reflect that lack of support. If an extension explicitly claims support for a platform, but we are unable to build it on that platform without modifying source, add an item to HUMAN_REVIEW_QUEUE.md
 
 This also applies to Postgres' own dependencies required to enable certain build options.
 
