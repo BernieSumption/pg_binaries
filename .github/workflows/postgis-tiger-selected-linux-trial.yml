@@ -80,6 +80,11 @@ jobs:
               shutil.copyfile(source, destination)
               shutil.copyfile(sidecar, destination.with_name(destination.name + ".sha256"))
 
+          symbol_indexes = list((downloaded / "core").rglob("debug-symbols/index.json"))
+          if len(symbol_indexes) != 1:
+              raise SystemExit(f"Expected one core debug-symbols index; found {len(symbol_indexes)}")
+          shutil.copytree(symbol_indexes[0].parent, output / "core/debug-symbols")
+
           vector_name = "pgvector-0.8.7-postgresql-18.6-linux-x86_64.tar.gz"
           vector_sha256 = "c94c26bb5eb07fe479d182e2b02c823bd8674698c8a3629d7fcc15b9fba67ccb"
           vector_matches = list((downloaded / "core").rglob(vector_name))
