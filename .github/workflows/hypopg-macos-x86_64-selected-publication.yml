@@ -33,6 +33,7 @@ on:
       - 'scripts/macos/resolve-core.sh'
       - 'tools/macos_core_target_config.py'
       - 'tools/actions_candidate_discovery.py'
+      - 'experiments/hypopg-macos-intel-target/target.json'
 
 permissions:
   actions: read
@@ -53,10 +54,35 @@ jobs:
         env:
           POSTGRESQL_VERSION: ${{ inputs.postgresql_version }}
           EXTENSION_VERSION: ${{ inputs.extension_version }}
+          EVENT_NAME: ${{ github.event_name }}
         run: |
           set -euo pipefail
           if [[ -z "$POSTGRESQL_VERSION" ]]; then
-            POSTGRESQL_VERSION=18.6
+            if [[ "$EVENT_NAME" != push ]]; then
+              echo 'A PostgreSQL version is required for this workflow event.' >&2
+              exit 1
+            fi
+            POSTGRESQL_VERSION=$(python3 - <<'PY'
+          import json
+          import re
+          from pathlib import Path
+
+          path = Path("experiments/hypopg-macos-intel-target/target.json")
+          try:
+              target = json.loads(path.read_text(encoding="utf-8"))
+          except (OSError, json.JSONDecodeError) as exc:
+              raise SystemExit(f"cannot read retry target: {exc}")
+          if not isinstance(target, dict) or set(target) != {"postgresql_version", "attempt"}:
+              raise SystemExit("retry target must contain exactly postgresql_version and attempt")
+          version = target["postgresql_version"]
+          attempt = target["attempt"]
+          if not isinstance(version, str) or not re.fullmatch(r"[0-9]+\.[0-9]+", version):
+              raise SystemExit("retry target postgresql_version must be an exact major.minor release")
+          if type(attempt) is not int or attempt < 1:
+              raise SystemExit("retry target attempt must be a positive integer")
+          print(version)
+          PY
+            )
           fi
           args=(--project HypoPG --platform macos-x86_64 --postgresql-version "$POSTGRESQL_VERSION")
           if [[ -n "$EXTENSION_VERSION" ]]; then args+=(--extension-version "$EXTENSION_VERSION"); fi
