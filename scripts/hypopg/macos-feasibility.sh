@@ -8,7 +8,7 @@ pg_version=18.6
 hypopg_version=1.4.3
 source_url='https://github.com/HypoPG/hypopg/archive/refs/tags/1.4.3.tar.gz'
 source_sha256=498a961d88cf37057fd9e98027d06fe805c8959d51895c3d9b94c9eb4e14f706
-core_sha256=853e0eafb3570378225d2ea16247c9de31770f85df5230509885df2ca5e89d67
+core_sha256=ec3f624ecfbea6dad20672106ec11bfafadde42e0454bc90bef992caa4be0033
 core_name="postgresql-${pg_version}-macos-${architecture}.tar.gz"
 extension_name="hypopg-${hypopg_version}-postgresql-${pg_version}-macos-${architecture}.tar.gz"
 repo=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
@@ -53,7 +53,7 @@ root = pathlib.Path(sys.argv[1])
 manifest = json.loads((root / "manifest.json").read_text())
 expected = {
     "component": "postgresql", "version": "18.6", "postgresql_version": "18.6",
-    "platform": "macos", "architecture": "arm64", "build_id": "github-39075939632-1",
+    "platform": "macos", "architecture": "arm64", "build_id": "github-39093804232-1",
     "source_revision": "457919a19e43687a9615697a751454e3c055c593",
 }
 for key, value in expected.items():
