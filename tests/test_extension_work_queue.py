@@ -2,6 +2,7 @@ import importlib.util
 import hashlib
 import io
 import json
+import contextlib
 import tarfile
 import tempfile
 import unittest
@@ -419,6 +420,45 @@ class ExtensionWorkQueueTests(unittest.TestCase):
             queue_tool.select_item_closure(queue, item_id, len(closure) - 1)
         with self.assertRaisesRegex(ValueError, "unknown work item"):
             queue_tool.select_item_closure(queue, "missing", 16)
+
+    def expected_inputs_file(self, entries):
+        path = self.root / "expected-build-inputs.json"
+        path.write_text(json.dumps({"schema_version": 1, "entries": entries}), encoding="utf-8")
+        return path
+
+    def test_cli_loads_expected_build_inputs_for_candidate_reuse(self):
+        manifest = self.candidate_manifest()
+        identity = self.build_identity("postgis")
+        expected = self.expected_inputs_file([{
+            "project": "PostGIS", "version": "3.6.4", "platform": "linux-x86_64",
+            "postgresql_major": 18, "identity": identity,
+        }])
+        output, errors = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(output), contextlib.redirect_stderr(errors):
+            code = queue_tool.main(["--root", str(self.root), "--candidate-manifest", str(manifest),
+                                    "--expected-build-inputs", str(expected), "--all"])
+        self.assertEqual(code, 0, errors.getvalue())
+        queue = json.loads(output.getvalue())
+        group = next(item for item in queue["work_items"]
+                     if item["kind"] == "build-extension" and item["project"] == "PostGIS"
+                     and item["version"] == "3.6.4" and item["platform"] == "linux-x86_64"
+                     and item["postgresql_major"] == 18)
+        self.assertEqual(group["status"], "complete")
+        self.assertEqual(group["candidate_archive"]["build_input_sha256"], identity["sha256"])
+
+    def test_expected_build_inputs_reject_duplicate_keys(self):
+        entry = {"project": "PostGIS", "version": "3.6.4", "platform": "linux-x86_64",
+                 "postgresql_major": 18, "identity": self.build_identity("postgis")}
+        path = self.expected_inputs_file([entry, entry])
+        with self.assertRaisesRegex(ValueError, "duplicate expected build input key"):
+            queue_tool.load_expected_build_inputs(path)
+
+    def test_expected_build_inputs_reject_invalid_identity(self):
+        entry = {"component": "postgresql", "version": "18.6", "platform": "linux-x86_64",
+                 "identity": {"schema_version": 1}}
+        path = self.expected_inputs_file([entry])
+        with self.assertRaisesRegex(ValueError, "identity is invalid"):
+            queue_tool.load_expected_build_inputs(path)
 
     def test_ambiguous_prerequisite_versions_are_reported_without_selecting_one(self):
         del self.support["extensions"]["PostGIS TIGER Geocoder"]["requires_versions"]

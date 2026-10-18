@@ -19,11 +19,53 @@ def _load(name, filename):
 coverage = _load("work_queue_coverage", "coverage.py")
 archive_plan = _load("work_queue_archive_plan", "extension_archive_plan.py")
 candidate_cache = _load("work_queue_candidate_cache", "candidate_archive_cache.py")
+build_input_identity = _load("work_queue_build_input_identity", "build_input_identity.py")
 
 
 def _id(kind, *key):
     digest = hashlib.sha256(json.dumps([kind, *key], separators=(",", ":")).encode()).hexdigest()[:16]
     return f"{kind}:{digest}"
+
+
+def load_expected_build_inputs(path):
+    """Load identities keyed by declared project and exact archive target."""
+    data = json.loads(Path(path).read_text(encoding="utf-8"))
+    if not isinstance(data, dict) or set(data) != {"schema_version", "entries"} or data["schema_version"] != 1:
+        raise ValueError("expected build inputs must be an object with schema_version 1 and entries")
+    if not isinstance(data["entries"], list):
+        raise ValueError("expected build inputs entries must be an array")
+    result = {}
+    for index, entry in enumerate(data["entries"]):
+        label = f"expected build input entry {index}"
+        if not isinstance(entry, dict):
+            raise ValueError(f"{label} must be an object")
+        allowed = {"component", "project", "version", "platform", "postgresql_major", "identity"}
+        if set(entry) - allowed:
+            raise ValueError(f"{label} has unknown fields")
+        owner = entry.get("project", entry.get("component"))
+        if "project" in entry and "component" in entry:
+            raise ValueError(f"{label} must use project or component, not both")
+        version, platform, identity = entry.get("version"), entry.get("platform"), entry.get("identity")
+        if not all(isinstance(value, str) and value for value in (owner, version, platform)):
+            raise ValueError(f"{label} requires non-empty project/component, version, and platform strings")
+        major = entry.get("postgresql_major")
+        if owner == "postgresql":
+            if "postgresql_major" in entry:
+                raise ValueError(f"{label} core entry must not include postgresql_major")
+            key = (owner, version, platform)
+        else:
+            if isinstance(major, bool) or not isinstance(major, int) or major < 1:
+                raise ValueError(f"{label} extension entry requires a positive integer postgresql_major")
+            key = (owner, version, platform, major)
+        if key in result:
+            raise ValueError(f"duplicate expected build input key: {key}")
+        if not isinstance(identity, dict):
+            raise ValueError(f"{label} identity must be an object")
+        assessment = build_input_identity.assess_reuse(identity, identity)
+        if not assessment["reusable"]:
+            raise ValueError(f"{label} identity is invalid: {assessment['reason']}")
+        result[key] = identity
+    return result
 
 
 def build_queue(root, candidate_manifest=None, expected_build_inputs=None):
@@ -306,11 +348,15 @@ def main(argv=None):
     parser.add_argument("--postgresql-major", type=int, help="focus on one declared PostgreSQL major")
     parser.add_argument("--candidate-manifest", type=Path,
                         help="local manifest of retrieved unpublished Actions archives eligible for reuse")
+    parser.add_argument("--expected-build-inputs", type=Path,
+                        help="JSON identities for exact candidate archive targets")
     parser.add_argument("--item-id", help="select one exact work item with its complete dependency closure")
     parser.add_argument("--all", action="store_true", help="display the full graph")
     args = parser.parse_args(argv)
     try:
-        queue = build_queue(args.root, args.candidate_manifest)
+        expected_inputs = (load_expected_build_inputs(args.expected_build_inputs)
+                           if args.expected_build_inputs else None)
+        queue = build_queue(args.root, args.candidate_manifest, expected_inputs)
         if args.item_id and (args.all or args.project or args.platform or args.postgresql_major):
             raise ValueError("--item-id cannot be combined with --all or target filters")
         if args.item_id:
