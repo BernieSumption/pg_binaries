@@ -11,16 +11,9 @@ import sys
 import tarfile
 
 import coverage
+from pgtap_macos_target import load_target_config
 
 
-PROFILE_ID = "pgtap-publication-macos-arm64-18.6"
-PG_VERSION = "18.6"
-PGTAP_VERSION = "1.3.4"
-ARCHITECTURE = "arm64"
-PLATFORM = "macos-arm64"
-CORE_SHA256 = "853e0eafb3570378225d2ea16247c9de31770f85df5230509885df2ca5e89d67"
-SOURCE_URL = "https://github.com/theory/pgtap/archive/refs/tags/v1.3.4.tar.gz"
-SOURCE_SHA256 = "d2c951afb296a001d21785611a8e966e3f8fa3f5bfbd929396a5130c0152f314"
 CASES = {"archive-suite", "static-analysis"}
 
 
@@ -58,7 +51,7 @@ def _json(path, label):
     return value
 
 
-def _archive_metadata(path):
+def _archive_metadata(path, target):
     try:
         with tarfile.open(path, "r:gz") as archive:
             member = next((item for item in archive.getmembers()
@@ -70,11 +63,11 @@ def _archive_metadata(path):
     except (OSError, tarfile.TarError, UnicodeError, json.JSONDecodeError) as exc:
         _fail(f"cannot read pgTAP archive metadata: {exc}")
     expected = {
-        "project": "pgtap", "version": PGTAP_VERSION, "sql_names": ["pgtap"],
-        "postgresql_version": PG_VERSION, "platform": "macos", "architecture": ARCHITECTURE,
-        "source": {"url": SOURCE_URL, "sha256": SOURCE_SHA256},
-        "core_archive": {"basename": f"postgresql-{PG_VERSION}-{PLATFORM}.tar.gz",
-                         "sha256": CORE_SHA256},
+        "project": "pgtap", "version": target.pgtap_version, "sql_names": ["pgtap"],
+        "postgresql_version": target.postgresql_version, "platform": "macos",
+        "architecture": target.architecture,
+        "source": {"url": target.source_url, "sha256": target.source_sha256},
+        "core_archive": {"basename": target.core_basename, "sha256": target.core_sha256},
     }
     if not isinstance(value, dict) or any(value.get(key) != item for key, item in expected.items()):
         _fail("pgTAP metadata does not match the pinned publication target")
@@ -100,8 +93,13 @@ def _step_result(value, name):
     return mapping[value]
 
 
-def emit(root, core_dir, archives, output, step_results, os_version, image_id, environ=None):
+def emit(root, core_dir, archives, output, step_results, os_version, image_id,
+         target_config, environ=None):
     root, core_dir, archives, output = map(Path, (root, core_dir, archives, output))
+    target_config = Path(target_config)
+    if not target_config.is_absolute():
+        target_config = root / target_config
+    target = load_target_config(target_config)
     environ = os.environ if environ is None else environ
     if not isinstance(step_results, dict) or set(step_results) != CASES:
         _fail("step_results must identify archive-suite and static-analysis")
@@ -118,17 +116,17 @@ def emit(root, core_dir, archives, output, step_results, os_version, image_id, e
     if not re.fullmatch(r"\d+(?:\.\d+)*", os_version or "") or not image_id:
         _fail("macOS runner version and image identifier are required")
 
-    profile = coverage.verification_profile(root, PROFILE_ID)
-    if (profile["scope"] != "publication" or profile["platforms"] != [PLATFORM]
+    profile = coverage.verification_profile(root, target.profile_id)
+    if (profile["scope"] != "publication" or profile["platforms"] != [target.platform]
             or profile["case_ids"] != sorted(CASES) or not profile["sources_available"]):
         _fail("registered profile does not match this pgTAP publication suite")
-    core_name = f"postgresql-{PG_VERSION}-{PLATFORM}.tar.gz"
-    extension_name = f"pgtap-{PGTAP_VERSION}-postgresql-{PG_VERSION}-{PLATFORM}.tar.gz"
+    core_name = target.core_basename
+    extension_name = target.extension_basename
     core_archive, extension_archive = core_dir / core_name, archives / extension_name
     attempt = {
         "schema_version": 1, "run_id": run_id, "source_revision": revision,
-        "profile_id": PROFILE_ID, "postgresql_version": PG_VERSION,
-        "pgtap_version": PGTAP_VERSION, "architecture": ARCHITECTURE,
+        "profile_id": target.profile_id, "postgresql_version": target.postgresql_version,
+        "pgtap_version": target.pgtap_version, "architecture": target.architecture,
         "steps": {case: step_results[case] for case in sorted(CASES)},
         "archives_present": {core_name: core_archive.is_file(), extension_name: extension_archive.is_file()},
     }
@@ -144,9 +142,9 @@ def emit(root, core_dir, archives, output, step_results, os_version, image_id, e
     digests = {core_name: sha256_file(core_archive), extension_name: sha256_file(extension_archive)}
     _sidecar(core_archive, digests[core_name])
     _sidecar(extension_archive, digests[extension_name])
-    if digests[core_name] != CORE_SHA256:
+    if digests[core_name] != target.core_sha256:
         _fail("PostgreSQL core archive does not match the selected successful build")
-    _archive_metadata(extension_archive)
+    _archive_metadata(extension_archive, target)
     attempt["archives"] = digests
     attempt_path.write_text(json.dumps(attempt, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
@@ -167,22 +165,22 @@ def emit(root, core_dir, archives, output, step_results, os_version, image_id, e
     if results["static-analysis"] == "passed":
         static = _json(static_path, "static analysis")
         _report_archives(static, digests, "static analysis")
-        if (static.get("passed") is not True or static.get("architecture") != ARCHITECTURE
+        if (static.get("passed") is not True or static.get("architecture") != target.architecture
                 or not static.get("inspected_files")):
             _fail("static analysis did not pass over the assembled archive")
 
     receipt = {
-        "schema_version": 1, "profile_id": PROFILE_ID,
+        "schema_version": 1, "profile_id": target.profile_id,
         "profile_revision": profile["profile_revision"], "test_revision": revision,
-        "project": "pgtap", "version": PGTAP_VERSION,
-        "postgresql_version": PG_VERSION, "architecture": ARCHITECTURE,
-        "platform": PLATFORM, "endpoint": "current", "case_results": results,
+        "project": "pgtap", "version": target.pgtap_version,
+        "postgresql_version": target.postgresql_version, "architecture": target.architecture,
+        "platform": target.platform, "endpoint": "current", "case_results": results,
         "archives": digests, "extension_archive": extension_name, "reports": report_digests,
         "clean_system": True, "dependency_check_profile": "macho-system-dependencies-v1",
         "dependency_checks_passed": (_json(static_path, "static analysis").get("passed") is True
                                       if static_path.is_file() else False),
         "environment": {"os": "macos", "os_version": os_version,
-                        "architecture": ARCHITECTURE, "image_id": image_id},
+                        "architecture": target.architecture, "image_id": image_id},
         "ci": {"provider": "github-actions", "run_id": run_id,
                "run_url": f"{server_url.rstrip('/')}/{repository}/actions/runs/{run_id}",
                "source_revision": revision, "build_revision": revision, "test_revision": revision},
@@ -190,16 +188,17 @@ def emit(root, core_dir, archives, output, step_results, os_version, image_id, e
     receipt_path = publication / "current-receipt.json"
     receipt_path.write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     record = {
-        "schema_version": 2, "scope": "publication", "profile_id": PROFILE_ID,
+        "schema_version": 2, "scope": "publication", "profile_id": target.profile_id,
         "profile_revision": profile["profile_revision"], "test_cases": profile["case_ids"],
         "case_results": results, "test_revision": revision, "ci": receipt["ci"],
         "outcome": outcome, "sha256": digests[extension_name],
-        "component": "pgtap", "project": "pgtap", "version": PGTAP_VERSION,
-        "platform": PLATFORM, "postgresql_version": PG_VERSION,
-        "assembled_core": {"archive": core_name, "sha256": digests[core_name], "version": PG_VERSION},
+        "component": "pgtap", "project": "pgtap", "version": target.pgtap_version,
+        "platform": target.platform, "postgresql_version": target.postgresql_version,
+        "assembled_core": {"archive": core_name, "sha256": digests[core_name],
+                            "version": target.postgresql_version},
         "prerequisite_archives": [],
         "environment": {"os": "macos", "os_version": os_version,
-                        "architecture": ARCHITECTURE, "clean_system": True,
+                        "architecture": target.architecture, "clean_system": True,
                         "endpoint": "current", "image_id": image_id,
                         "dependency_check_profile": receipt["dependency_check_profile"],
                         "dependency_checks_passed": receipt["dependency_checks_passed"]},
@@ -207,7 +206,9 @@ def emit(root, core_dir, archives, output, step_results, os_version, image_id, e
     coverage.validate_verification_record(record, coverage.load_json(root / "support.json"), root)
     records = publication / "records"
     records.mkdir(parents=True, exist_ok=True)
-    record_path = records / f"pgtap-{PGTAP_VERSION}-postgresql-{PG_VERSION}-{PLATFORM}-current-{run_id}.json"
+    record_path = records / (
+        f"pgtap-{target.pgtap_version}-postgresql-{target.postgresql_version}-"
+        f"{target.platform}-current-{run_id}.json")
     record_path.write_text(json.dumps(record, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     return [attempt_path, receipt_path, record_path]
 
@@ -222,12 +223,13 @@ def main():
     parser.add_argument("--image-id", required=True)
     parser.add_argument("--archive-suite-result", required=True)
     parser.add_argument("--static-analysis-result", required=True)
+    parser.add_argument("--target-config", type=Path, required=True)
     args = parser.parse_args()
     try:
         for path in emit(args.root, args.core_archives, args.archives, args.output,
                          {"archive-suite": args.archive_suite_result,
                           "static-analysis": args.static_analysis_result},
-                         args.os_version, args.image_id):
+                         args.os_version, args.image_id, args.target_config):
             print(path)
         return 0
     except (coverage.CoverageError, OSError, ValueError, TypeError, KeyError) as exc:

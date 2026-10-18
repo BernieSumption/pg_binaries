@@ -1,4 +1,4 @@
-name: pgTAP macOS arm64 publication
+name: pgTAP macOS arm64 PostgreSQL 18.6 publication
 
 on:
   workflow_dispatch:
@@ -11,13 +11,14 @@ on:
       - .github/workflows/pgtap-macos-arm64-publication.yml
       - scripts/pgtap/macos-feasibility.sh
       - scripts/pgtap/probe.sql
+      - tools/pgtap_macos_target.py
+      - tools/pgtap_macos_pins/18.6-arm64.json
       - scripts/macos/static_analysis.py
       - tools/check_extension_redistribution.py
       - tools/publication_preflight.py
       - tools/emit_pgtap_macos_publication.py
       - tools/import_pgtap_macos_publication.py
-      - tests/test_emit_pgtap_macos_publication.py
-      - tests/test_import_pgtap_macos_publication.py
+      - tests/test_pgtap_macos_publication.py
       - support/verification-profiles.json
 permissions:
   actions: read
@@ -36,13 +37,13 @@ jobs:
     timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
-      - name: Check pgTAP publication evidence helpers
-        run: python3 -m unittest tests/test_emit_pgtap_macos_publication.py tests/test_import_pgtap_macos_publication.py
-      - name: Download the successful PostgreSQL 18.6 Apple Silicon artifact
+      - name: Check pgTAP publication target validation
+        run: python3 -m unittest tests/test_pgtap_macos_publication.py
+      - name: Download the successful PostgreSQL 18.6 arm64 artifact
         uses: actions/download-artifact@v4
         with:
           name: macos-arm64-pilot-archives
-          run-id: 39075939632
+          run-id: 39093804232
           github-token: ${{ github.token }}
           path: ${{ runner.temp }}/core-archives
       - name: Prepare the exact core archive for publication
@@ -54,11 +55,11 @@ jobs:
         id: archive_suite
         run: |
           set -o pipefail
-          bash scripts/pgtap/macos-feasibility.sh "$RUNNER_TEMP/core-archives" "$RUNNER_TEMP/pgTAP-publication" 2>&1 | tee "$RUNNER_TEMP/pgTAP-publication/build-log.txt"
+          bash scripts/pgtap/macos-feasibility.sh "$RUNNER_TEMP/core-archives" "$RUNNER_TEMP/pgTAP-publication" "tools/pgtap_macos_pins/18.6-arm64.json" 2>&1 | tee "$RUNNER_TEMP/pgTAP-publication/build-log.txt"
       - name: Validate static analysis against the final archive bytes
         id: static_analysis
         run: |
-          python3 - "$RUNNER_TEMP/pgTAP-publication/static-analysis.json" "$RUNNER_TEMP/pgTAP-publication/postgresql-18.6-macos-arm64.tar.gz" "$RUNNER_TEMP/pgTAP-publication/pgtap-1.3.4-postgresql-18.6-macos-arm64.tar.gz" <<'PY'
+          python3 - "$RUNNER_TEMP/pgTAP-publication/static-analysis.json" "$RUNNER_TEMP/pgTAP-publication/postgresql-18.6-macos-arm64.tar.gz" "$RUNNER_TEMP/pgTAP-publication/pgtap-1.3.4-postgresql-18.6-macos-arm64.tar.gz" <<'PYCODE'
           import hashlib
           import json
           import pathlib
@@ -72,7 +73,7 @@ jobs:
               actual = {item["basename"]: item["sha256"] for item in actual}
           if report.get("passed") is not True or not report.get("inspected_files") or actual != expected:
               raise SystemExit("static analysis did not pass against the final archive bytes")
-          PY
+          PYCODE
       - name: Finalize pgTAP archive receipt and verification record
         if: always()
         env:
@@ -83,21 +84,34 @@ jobs:
           image_id="${ImageOS:?runner image OS missing}/${ImageVersion:?runner image version missing}"
           os_version="$(sw_vers -productVersion)"
           python3 tools/emit_pgtap_macos_publication.py \
+            --target-config "tools/pgtap_macos_pins/18.6-arm64.json" \
             --core-archives "$RUNNER_TEMP/core-archives" \
             --archives "$RUNNER_TEMP/pgTAP-publication" \
             --output "$RUNNER_TEMP/pgTAP-publication" \
             --os-version "$os_version" --image-id "$image_id" \
             --archive-suite-result "$ARCHIVE_SUITE_OUTCOME" \
             --static-analysis-result "$STATIC_ANALYSIS_OUTCOME"
+      - name: Validate and retain archive-bound publication evidence
+        if: always()
+        run: |
+          if [[ -f "$RUNNER_TEMP/pgTAP-publication/publication/attempt.json" ]]; then
+            python3 tools/import_pgtap_macos_publication.py \
+              --target-config "tools/pgtap_macos_pins/18.6-arm64.json" \
+              --core-artifact "$RUNNER_TEMP/core-archives" \
+              --pgtap-artifact "$RUNNER_TEMP/pgTAP-publication" \
+              --run-id "$GITHUB_RUN_ID"
+          fi
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: pgtap-macos-arm64-publication-${{ github.run_id }}
+          name: pgtap-macos-arm64-18.6-publication-${{ github.run_id }}
           path: |
             ${{ runner.temp }}/pgTAP-publication/*.tar.gz
             ${{ runner.temp }}/pgTAP-publication/*.sha256
             ${{ runner.temp }}/pgTAP-publication/*.json
             ${{ runner.temp }}/pgTAP-publication/*.txt
             ${{ runner.temp }}/pgTAP-publication/publication/**
+            support/evidence/pgtap-macos-publication-${{ github.run_id }}/arm64/**
+            support/verification/pgtap-1.3.4-postgresql-18.6-macos-arm64-current-${{ github.run_id }}.json
           if-no-files-found: warn
           retention-days: 7

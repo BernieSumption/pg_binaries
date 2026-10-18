@@ -8,20 +8,17 @@ on:
       - .github/workflows/profile-change-scope.yml
       - tools/profile_change_gate.py
       - tests/test_profile_change_gate.py
+      - tests/test_pgtap_macos_publication.py
+      - tools/emit_pgtap_macos_publication.py
+      - tools/import_pgtap_macos_publication.py
       - .github/workflows/pgtap-macos-x86_64-17.11-publication.yml
-      - scripts/pgtap/macos-17.11-x86_64-feasibility.sh
+      - scripts/pgtap/macos-feasibility.sh
+      - tools/pgtap_macos_target.py
       - scripts/pgtap/probe.sql
       - tools/pgtap_macos_pins/17.11-x86_64.json
       - scripts/macos/static_analysis.py
       - tools/check_extension_redistribution.py
       - tools/publication_preflight.py
-      - tools/emit_pgtap_macos_x86_64_17_11_publication.py
-      - tools/import_pgtap_macos_x86_64_17_11_publication.py
-      - tests/test_pgtap_macos_17_11_publication.py
-      - tests/test_emit_pgtap_macos_publication.py
-      - tests/test_emit_pgtap_macos_x86_64_publication.py
-      - tools/emit_pgtap_macos_x86_64_publication.py
-      - tools/import_pgtap_macos_x86_64_publication.py
       - support/verification-profiles.json
 permissions:
   actions: read
@@ -41,7 +38,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Check Intel pgTAP publication evidence helpers
-        run: python3 -m unittest tests/test_pgtap_macos_17_11_publication.py
+        run: python3 -m unittest tests/test_pgtap_macos_publication.py
       - name: Download the successful PostgreSQL 17.11 Intel artifact
         uses: actions/download-artifact@v4
         with:
@@ -58,7 +55,7 @@ jobs:
         id: archive_suite
         run: |
           set -o pipefail
-          bash scripts/pgtap/macos-17.11-x86_64-feasibility.sh "$RUNNER_TEMP/core-archives" "$RUNNER_TEMP/pgTAP-publication" 2>&1 | tee "$RUNNER_TEMP/pgTAP-publication/build-log.txt"
+          bash scripts/pgtap/macos-feasibility.sh "$RUNNER_TEMP/core-archives" "$RUNNER_TEMP/pgTAP-publication" "tools/pgtap_macos_pins/17.11-x86_64.json" 2>&1 | tee "$RUNNER_TEMP/pgTAP-publication/build-log.txt"
       - name: Validate static analysis against the final archive bytes
         id: static_analysis
         run: |
@@ -86,7 +83,8 @@ jobs:
         run: |
           image_id="${ImageOS:?runner image OS missing}/${ImageVersion:?runner image version missing}"
           os_version="$(sw_vers -productVersion)"
-          python3 tools/emit_pgtap_macos_x86_64_17_11_publication.py \
+          python3 tools/emit_pgtap_macos_publication.py \
+            --target-config "tools/pgtap_macos_pins/17.11-x86_64.json" \
             --core-archives "$RUNNER_TEMP/core-archives" \
             --archives "$RUNNER_TEMP/pgTAP-publication" \
             --output "$RUNNER_TEMP/pgTAP-publication" \
@@ -97,7 +95,8 @@ jobs:
         if: always()
         run: |
           if [[ -f "$RUNNER_TEMP/pgTAP-publication/publication/attempt.json" ]]; then
-            python3 tools/import_pgtap_macos_x86_64_17_11_publication.py \
+            python3 tools/import_pgtap_macos_publication.py \
+              --target-config "tools/pgtap_macos_pins/17.11-x86_64.json" \
               --core-artifact "$RUNNER_TEMP/core-archives" \
               --pgtap-artifact "$RUNNER_TEMP/pgTAP-publication" \
               --run-id "$GITHUB_RUN_ID"

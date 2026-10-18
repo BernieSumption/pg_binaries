@@ -1,17 +1,23 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-core_archives=${1:?usage: macos-feasibility.sh CORE_ARCHIVE_DIRECTORY OUTPUT_DIRECTORY}
-output=${2:?usage: macos-feasibility.sh CORE_ARCHIVE_DIRECTORY OUTPUT_DIRECTORY}
-architecture=arm64
-pg_version=18.6
-version=1.3.4
-source_url='https://github.com/theory/pgtap/archive/refs/tags/v1.3.4.tar.gz'
-source_sha256=d2c951afb296a001d21785611a8e966e3f8fa3f5bfbd929396a5130c0152f314
-core_sha256=853e0eafb3570378225d2ea16247c9de31770f85df5230509885df2ca5e89d67
-core_name="postgresql-${pg_version}-macos-${architecture}.tar.gz"
-extension_name="pgtap-${version}-postgresql-${pg_version}-macos-${architecture}.tar.gz"
+core_archives=${1:?usage: macos-feasibility.sh CORE_ARCHIVE_DIRECTORY OUTPUT_DIRECTORY TARGET_CONFIG}
+output=${2:?usage: macos-feasibility.sh CORE_ARCHIVE_DIRECTORY OUTPUT_DIRECTORY TARGET_CONFIG}
+target_config=${3:?usage: macos-feasibility.sh CORE_ARCHIVE_DIRECTORY OUTPUT_DIRECTORY TARGET_CONFIG}
 repo=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
+if [[ $target_config != /* ]]; then
+  target_config="$repo/$target_config"
+fi
+target_values=$(python3 - "$repo/tools" "$target_config" <<'PY'
+import sys
+sys.path.insert(0, sys.argv[1])
+from pgtap_macos_target import load_target_config
+print("\t".join(load_target_config(sys.argv[2]).shell_values()))
+PY
+)
+IFS=$'\t' read -r pg_version version architecture platform profile_id core_name core_run_id \
+  core_sha256 core_build_id core_source_revision source_url source_sha256 <<< "$target_values"
+extension_name="pgtap-${version}-postgresql-${pg_version}-${platform}.tar.gz"
 core_archives=$(cd "$core_archives" && pwd)
 mkdir -p "$output"
 output=$(cd "$output" && pwd)
@@ -43,18 +49,19 @@ pgroot="$work/first/postgresql"
 test -s "$pgroot/include/server/pg_config.h"
 test -s "$pgroot/lib/pgxs/src/makefiles/pgxs.mk"
 
-python3 - "$pgroot" > "$work/prefix" <<'PY'
+python3 - "$pgroot" "$pg_version" "$architecture" "$core_build_id" "$core_source_revision" > "$work/prefix" <<'PY'
 import json
 import pathlib
 import re
 import sys
 
 root = pathlib.Path(sys.argv[1])
+pg_version, architecture, build_id, source_revision = sys.argv[2:]
 manifest = json.loads((root / "manifest.json").read_text())
 expected = {
-    "component": "postgresql", "version": "18.6", "postgresql_version": "18.6",
-    "platform": "macos", "architecture": "arm64", "build_id": "github-39075939632-1",
-    "source_revision": "457919a19e43687a9615697a751454e3c055c593",
+    "component": "postgresql", "version": pg_version, "postgresql_version": pg_version,
+    "platform": "macos", "architecture": architecture, "build_id": build_id,
+    "source_revision": source_revision,
 }
 for key, value in expected.items():
     if manifest.get(key) != value:
@@ -124,16 +131,17 @@ shasum -a 256 -c "$extension_name.sha256"
 python3 "$repo/tools/check_extension_redistribution.py" "$output/$extension_name"
 tar -xzf "$extension_name" -C "$work/extension"
 extroot="$work/extension/pgtap"
-python3 - "$work/extension" "$extroot" <<'PY'
+python3 - "$work/extension" "$extroot" "$pg_version" "$version" "$architecture" <<'PY'
 import json
 import pathlib
 import sys
 
-root, payload = map(pathlib.Path, sys.argv[1:])
+root, payload = map(pathlib.Path, sys.argv[1:3])
+pg_version, version, architecture = sys.argv[3:]
 if {p.name for p in root.iterdir()} != {"pgtap", "metadata.json"}:
     raise SystemExit("pgTAP archive must contain only pgtap and metadata.json")
 meta = json.loads((root / "metadata.json").read_text())
-if (meta.get("project"), meta.get("version"), meta.get("sql_names"), meta.get("platform"), meta.get("architecture")) != ("pgtap", "1.3.4", ["pgtap"], "macos", "arm64"):
+if (meta.get("project"), meta.get("version"), meta.get("sql_names"), meta.get("postgresql_version"), meta.get("platform"), meta.get("architecture")) != ("pgtap", version, ["pgtap"], pg_version, "macos", architecture):
     raise SystemExit("pgTAP package metadata identity mismatch")
 required = ["pgtap--1.3.4.sql", "pgtap-core--1.3.4.sql", "pgtap-schema--1.3.4.sql", "pgtap--1.3.3--1.3.4.sql"]
 sql = payload / "share/extension"
@@ -179,4 +187,4 @@ test "$(grep -Ec '^ok [1-4]( -|$)' "$output/probe-output.txt")" -eq 4
 "$pg_ctl" -D "$data_dir" -m fast -w stop
 data_dir=
 pg_ctl=
-echo "PASS: pgTAP $version source package installed, relocated, statically analysed, and exercised with PostgreSQL $pg_version on macOS $architecture"
+echo "PASS: pgTAP $version source package installed, relocated, statically analysed, and exercised with PostgreSQL $pg_version on macOS $architecture using $profile_id core run $core_run_id"
