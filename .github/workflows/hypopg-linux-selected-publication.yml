@@ -1,0 +1,180 @@
+name: HypoPG selected PostgreSQL Linux x86-64 publication
+
+on:
+  workflow_dispatch:
+    inputs:
+      postgresql_version:
+        description: Selected PostgreSQL release
+        required: true
+        type: string
+        default: ''
+      extension_version:
+        description: Optional HypoPG version selector
+        required: false
+        type: string
+        default: ''
+  push:
+    branches: [spike]
+    paths:
+      - '.github/workflows/hypopg-linux-selected-publication.yml'
+      - 'experiments/hypopg-linux-target-trial/target.json'
+
+permissions:
+  contents: read
+
+jobs:
+  select:
+    runs-on: ubuntu-latest
+    outputs:
+      postgresql_version: ${{ steps.plan.outputs.postgresql_version }}
+      extension_version: ${{ steps.plan.outputs.selected_version }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate the requested selected target
+        id: plan
+        env:
+          POSTGRESQL_VERSION: ${{ inputs.postgresql_version }}
+          EXTENSION_VERSION: ${{ inputs.extension_version }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$POSTGRESQL_VERSION" ]]; then
+            POSTGRESQL_VERSION=$(python3 -c 'import json; print(json.load(open("experiments/hypopg-linux-target-trial/target.json"))["postgresql_version"])')
+          fi
+          args=(--project HypoPG --platform linux-x86_64 --postgresql-version "$POSTGRESQL_VERSION")
+          if [[ -n "$EXTENSION_VERSION" ]]; then args+=(--extension-version "$EXTENSION_VERSION"); fi
+          python3 tools/extension_archive_plan.py "${args[@]}" --github-output "$GITHUB_OUTPUT" > "$RUNNER_TEMP/selection.json"
+          selected_version=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["selected_version"])' "$RUNNER_TEMP/selection.json")
+          if [[ "$selected_version" != '1.4.3' ]]; then
+            echo "The selected HypoPG release is $selected_version; the Linux recipe and importer support only 1.4.3." >&2
+            exit 1
+          fi
+
+  build_verify_import:
+    needs: select
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    env:
+      PG_VERSION: ${{ needs.select.outputs.postgresql_version }}
+      PG_ARCHITECTURE: x86_64
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Build exact PostgreSQL core archive
+        id: core_build
+        continue-on-error: true
+        run: scripts/linux/build.sh "$RUNNER_TEMP/bundle/pilot"
+      - name: Build selected HypoPG archive against that core
+        id: extension_build
+        if: always() && steps.core_build.outcome == 'success'
+        continue-on-error: true
+        run: scripts/hypopg/build.sh "$RUNNER_TEMP/bundle/pilot" "$RUNNER_TEMP/bundle/hypopg"
+      - name: Verify final archives in Alpine 3.22
+        id: verification
+        if: always() && steps.core_build.outcome == 'success' && steps.extension_build.outcome == 'success'
+        continue-on-error: true
+        run: scripts/hypopg/verify.sh "$RUNNER_TEMP/bundle/pilot" "$RUNNER_TEMP/bundle/hypopg"
+      - name: Record build and verification outcomes
+        if: always()
+        env:
+          CORE_BUILD: ${{ steps.core_build.outcome }}
+          EXTENSION_BUILD: ${{ steps.extension_build.outcome }}
+          VERIFICATION: ${{ steps.verification.outcome }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/bundle/hypopg-publication"
+          python3 - "$RUNNER_TEMP/bundle/hypopg-publication/current-steps.json" <<'PY'
+          import json, os, sys
+          with open(sys.argv[1], "w", encoding="utf-8") as stream:
+              json.dump({"archive-suite": os.environ["VERIFICATION"]}, stream, indent=2, sort_keys=True)
+              stream.write("\n")
+          values = {
+              "core-build": os.environ["CORE_BUILD"],
+              "extension-build": os.environ["EXTENSION_BUILD"],
+              "archive-suite": os.environ["VERIFICATION"],
+          }
+          with open(sys.argv[1].replace("current-steps.json", "build-outcomes.json"), "w", encoding="utf-8") as stream:
+              json.dump(values, stream, indent=2, sort_keys=True)
+              stream.write("\n")
+          PY
+      - name: Create checksum-bound receipt and verification record
+        id: receipt
+        if: always()
+        continue-on-error: true
+        env:
+          VERIFY_OUTCOME: ${{ steps.verification.outcome }}
+        run: |
+          set -euo pipefail
+          core="$RUNNER_TEMP/bundle/pilot/postgresql-$PG_VERSION-linux-x86_64.tar.gz"
+          extension="$RUNNER_TEMP/bundle/hypopg/hypopg-1.4.3-postgresql-$PG_VERSION-linux-x86_64.tar.gz"
+          if [[ ! -f "$core" || ! -f "$core.sha256" || ! -f "$extension" || ! -f "$extension.sha256" ]]; then
+            echo 'Archives are unavailable; retaining step outcomes without a receipt.'
+            echo 'has_receipt=false' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          image=$(docker image inspect --format '{{.Id}}' pg-binaries-hypopg-verifier 2>/dev/null || true)
+          if [[ ! "$image" =~ ^sha256:[0-9a-f]{64}$ ]]; then
+            echo 'Verifier image identity is unavailable; retaining step outcomes without a receipt.' >&2
+            echo 'has_receipt=false' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          clean=false
+          dependencies=failure
+          if [[ "$VERIFY_OUTCOME" == success ]]; then clean=true; dependencies=success; fi
+          distribution=$(docker run --rm --platform linux/amd64 --entrypoint sh pg-binaries-hypopg-verifier -c '. /etc/os-release; printf "%s" "$NAME"')
+          distribution_version=$(docker run --rm --platform linux/amd64 --entrypoint sh pg-binaries-hypopg-verifier -c '. /etc/os-release; printf "%s" "$VERSION_ID"')
+          python3 tools/create_extension_publication_receipt.py \
+            --archives "$RUNNER_TEMP/bundle/hypopg" --core-archives "$RUNNER_TEMP/bundle/pilot" \
+            --receipt "$RUNNER_TEMP/bundle/hypopg-publication/current-receipt.json" \
+            --profile-id hypopg-publication-current-x86_64 --project HypoPG --version 1.4.3 \
+            --postgresql-version "$PG_VERSION" --architecture x86_64 --endpoint current \
+            --kernel-release "$(uname -r)" --distribution "$distribution" \
+            --distribution-version "$distribution_version" --image-id "$image" \
+            --dependency-check-result "$dependencies" --clean-system "$clean" \
+            --step-results "$RUNNER_TEMP/bundle/hypopg-publication/current-steps.json"
+          python3 tools/emit_extension_publication_records.py \
+            --archives "$RUNNER_TEMP/bundle/hypopg" --core-archives "$RUNNER_TEMP/bundle/pilot" \
+            --receipt "$RUNNER_TEMP/bundle/hypopg-publication/current-receipt.json" \
+            --output "$RUNNER_TEMP/bundle/hypopg-publication/records"
+          echo 'has_receipt=true' >> "$GITHUB_OUTPUT"
+      - name: Import and validate exact publication evidence
+        id: import
+        if: always() && steps.receipt.outcome == 'success' && steps.receipt.outputs.has_receipt == 'true'
+        run: |
+          set -euo pipefail
+          python3 tools/import_linux_hypopg_publication.py \
+            --core-artifact "$RUNNER_TEMP/bundle" --hypopg-artifact "$RUNNER_TEMP/bundle" \
+            --run-id "$GITHUB_RUN_ID" --architecture x86_64 --postgresql-version "$PG_VERSION"
+      - name: Upload exact archives and all available outcomes
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: hypopg-linux-${{ needs.select.outputs.postgresql_version }}-x86_64-trial-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/bundle/pilot/*.tar.gz
+            ${{ runner.temp }}/bundle/pilot/*.sha256
+            ${{ runner.temp }}/bundle/hypopg/*.tar.gz
+            ${{ runner.temp }}/bundle/hypopg/*.sha256
+            ${{ runner.temp }}/bundle/hypopg/static-analysis/**
+            ${{ runner.temp }}/bundle/hypopg-publication/**
+            support/evidence/hypopg-publication-${{ github.run_id }}/x86_64/**
+            support/verification/hypopg-1.4.3-postgresql-${{ needs.select.outputs.postgresql_version }}-linux-x86_64-current-${{ github.run_id }}.json
+          if-no-files-found: warn
+          retention-days: 7
+      - name: Require build, verification, receipt and import to pass
+        if: always()
+        env:
+          CORE_BUILD: ${{ steps.core_build.outcome }}
+          EXTENSION_BUILD: ${{ steps.extension_build.outcome }}
+          VERIFICATION: ${{ steps.verification.outcome }}
+          RECEIPT: ${{ steps.receipt.outcome }}
+          IMPORT: ${{ steps.import.outcome }}
+        run: |
+          set -euo pipefail
+          for result in "$CORE_BUILD" "$EXTENSION_BUILD" "$VERIFICATION" "$RECEIPT" "$IMPORT"; do
+            if [[ "$result" != success ]]; then
+              echo "Selected HypoPG Linux publication did not pass: $CORE_BUILD/$EXTENSION_BUILD/$VERIFICATION/$RECEIPT/$IMPORT" >&2
+              exit 1
+            fi
+          done
