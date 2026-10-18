@@ -17,7 +17,7 @@ on:
     branches: [spike]
     paths:
       - '.github/workflows/pgtap-windows-selected-publication.yml'
-      - 'support/verification-profiles.json'
+      - 'experiments/pgtap-windows-target-trial/target.json'
 
 permissions:
   actions: read
@@ -34,9 +34,12 @@ jobs:
       - name: Validate the requested selected target
         id: plan
         env:
-          POSTGRESQL_VERSION: ${{ inputs.postgresql_version || '17.11' }}
+          POSTGRESQL_VERSION: ${{ inputs.postgresql_version }}
           EXTENSION_VERSION: ${{ inputs.extension_version }}
         run: |
+          if [[ -z "$POSTGRESQL_VERSION" ]]; then
+            POSTGRESQL_VERSION=$(python3 -c 'import json; print(json.load(open("experiments/pgtap-windows-target-trial/target.json"))["postgresql_version"])')
+          fi
           args=(--project pgtap --platform windows-x86_64 \
             --postgresql-version "$POSTGRESQL_VERSION")
           if [[ -n "$EXTENSION_VERSION" ]]; then
@@ -49,15 +52,8 @@ jobs:
             exit 1
           fi
 
-  profile_scope:
-    needs: select
-    uses: ./.github/workflows/profile-change-scope.yml
-    with:
-      profile_id: ${{ format('pgtap-publication-windows-x86_64-{0}', needs.select.outputs.postgresql_version) }}
-
   build:
-    needs: [select, profile_scope]
-    if: needs.profile_scope.outputs.should_run == 'true'
+    needs: select
     runs-on: windows-2022
     timeout-minutes: 30
     defaults:
@@ -100,8 +96,8 @@ jobs:
           if ('${{ steps.archive.outcome }}' -ne 'success') { throw 'pgTAP Windows archive build failed.' }
 
   verify:
-    needs: [select, profile_scope, build]
-    if: always() && needs.profile_scope.outputs.should_run == 'true'
+    needs: [select, build]
+    if: always() && needs.select.result == 'success'
     runs-on: windows-2022
     timeout-minutes: 25
     defaults:
