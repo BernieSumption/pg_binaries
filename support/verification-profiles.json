@@ -413,7 +413,7 @@
       "scope": "publication",
       "platforms": ["windows-x86_64"],
       "case_ids": ["archive-suite", "static-analysis"],
-      "sources": [".github/workflows/pg-jsonschema-windows-publication.yml", "scripts/pg_jsonschema/probe.sql", "scripts/pg_jsonschema/windows-feasibility.ps1", "support.json", "support/postgresql-releases.json", "support/windows-core-pins/18.6-x86_64.json", "tests/test_pg_jsonschema_windows_publication.py", "tests/test_windows_core_pin.py", "tools/check_pe_dependencies.py", "tools/check_pg_jsonschema_windows_archive.py", "tools/coverage.py", "tools/emit_pg_jsonschema_windows_publication.py", "tools/import_pg_jsonschema_windows_publication.py", "tools/inventory_cargo_licenses.py", "tools/windows_core_pin.py"]
+      "sources": [".gitattributes", ".github/workflows/pg-jsonschema-windows-publication.yml", "scripts/pg_jsonschema/probe.sql", "scripts/pg_jsonschema/windows-feasibility.ps1", "support.json", "support/postgresql-releases.json", "support/windows-core-pins/18.6-x86_64.json", "tests/test_pg_jsonschema_windows_publication.py", "tests/test_windows_core_pin.py", "tools/check_pe_dependencies.py", "tools/check_pg_jsonschema_windows_archive.py", "tools/coverage.py", "tools/emit_pg_jsonschema_windows_publication.py", "tools/import_pg_jsonschema_windows_publication.py", "tools/inventory_cargo_licenses.py", "tools/windows_core_pin.py"]
     }
   }
 }

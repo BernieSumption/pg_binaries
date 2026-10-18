@@ -5,6 +5,7 @@ on:
   push:
     branches: [spike]
     paths:
+      - '.gitattributes'
       - '.github/workflows/profile-change-scope.yml'
       - 'tools/profile_change_gate.py'
       - 'tests/test_profile_change_gate.py'
