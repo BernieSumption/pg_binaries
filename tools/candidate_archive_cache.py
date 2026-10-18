@@ -6,19 +6,24 @@ import json
 from pathlib import Path
 import re
 import tarfile
+import importlib.util
+
+_identity_spec = importlib.util.spec_from_file_location(
+    "candidate_build_input_identity", Path(__file__).with_name("build_input_identity.py"))
+_identity = importlib.util.module_from_spec(_identity_spec)
+_identity_spec.loader.exec_module(_identity)
 
 
 def _version_key(value):
     return tuple(int(part) for part in value.split("."))
 
 
-def load_candidates(manifest_path, support):
+def load_candidates(manifest_path, support, expected_build_inputs=None):
     """Return retrieved candidates keyed by project, version, platform and PG major.
 
     Source run, artifact and expiry values are manifest claims. Expiry describes
-    whether the source may still be fetched; cached bytes remain usable after it.
-    A row is useful when the local archive is present and its digest and embedded
-    package metadata agree with the declared target.
+    whether the source may still be fetched; cached bytes remain usable after it
+    when the embedded and current checked build-input identities match.
     """
     try:
         manifest_path = Path(manifest_path)
@@ -119,9 +124,16 @@ def load_candidates(manifest_path, support):
                         or metadata.get("sql_names") != extension["sql_names"]):
                     raise ValueError("embedded extension metadata does not match the candidate target")
                 key = (project, version, platform, int(pg.split(".", 1)[0]))
+            expected_identity = (expected_build_inputs or {}).get(key)
+            if expected_identity is None:
+                raise ValueError("expected current build input identity is missing")
+            assessment = _identity.assess_reuse(expected_identity, metadata.get("build_inputs"))
+            if not assessment["reusable"]:
+                raise ValueError(assessment["reason"])
             candidate = {"path": str(archive_path), "sha256": digest, "postgresql_version": pg,
                          "source_claims": source, "source_expiry_status": expiry_status,
-                         "archive_name": archive_path.name}
+                         "archive_name": archive_path.name,
+                         "build_input_sha256": expected_identity["sha256"]}
             previous = valid.get(key)
             if previous is None or _version_key(pg) > _version_key(previous["postgresql_version"]) or (
                     pg == previous["postgresql_version"] and digest < previous["sha256"]):

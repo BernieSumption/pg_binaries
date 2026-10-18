@@ -26,7 +26,7 @@ def _id(kind, *key):
     return f"{kind}:{digest}"
 
 
-def build_queue(root, candidate_manifest=None):
+def build_queue(root, candidate_manifest=None, expected_build_inputs=None):
     """Build project-level archive candidates and exact endpoint verification tasks."""
     root = Path(root)
     support = coverage.load_json(root / "support.json")
@@ -41,7 +41,7 @@ def build_queue(root, candidate_manifest=None):
     cached_candidates, rejected_candidates = ({}, [])
     if candidate_manifest is not None:
         cached_candidates, rejected_candidates = candidate_cache.load_candidates(
-            candidate_manifest, support)
+            candidate_manifest, support, expected_build_inputs)
     groups = archive_plan.plan(support, snapshot)["candidate_archives"]
     items = {}
     unresolved = []
