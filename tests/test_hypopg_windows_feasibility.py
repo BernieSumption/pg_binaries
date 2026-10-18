@@ -10,8 +10,7 @@ class HypoPGWindowsFeasibilityTests(unittest.TestCase):
     def test_workflow_is_scoped_and_uses_the_shared_pinned_core(self):
         workflow = (ROOT / ".github/workflows/hypopg-windows-feasibility.yml").read_text()
         self.assertIn("workflow_dispatch:", workflow)
-        self.assertIn("push:", workflow)
-        self.assertIn("support/windows-core-pins/18.6-x86_64.json", workflow)
+        self.assertNotIn("push:", workflow)
         self.assertIn("windows-2022", workflow)
         self.assertIn("tools/windows_core_pin.py --github-output", workflow)
         self.assertIn("windows-postgresql-18.6-pilot", workflow)

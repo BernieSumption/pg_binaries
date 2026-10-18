@@ -2,28 +2,6 @@ name: pgvector separate Linux build trial
 
 on:
   workflow_dispatch:
-  push:
-    branches: [spike]
-    paths:
-      - '.github/workflows/pgvector-separate-linux-trial.yml'
-      - 'scripts/pgvector/linux-build.sh'
-      - 'scripts/pgvector/builder-packages.sh'
-      - 'scripts/pgvector/linux-build.Dockerfile'
-      - 'scripts/pgvector/linux-build-in-container.sh'
-      - 'scripts/pgvector/archive_input.py'
-      - 'tools/build_input_identity.py'
-      - 'tools/selected_build_inputs.py'
-      - 'tools/extension_work_queue.py'
-      - 'tools/candidate_archive_cache.py'
-      - 'tools/coverage.py'
-      - 'tools/extension_archive_plan.py'
-      - 'tools/actions_candidate_discovery.py'
-      - 'scripts/pgvector/archive_input.py'
-      - 'scripts/linux/verify.sh'
-      - 'scripts/linux/verify-in-container.sh'
-      - 'tests/extensions/pgvector.sql'
-      - 'tools/source_archive.py'
-      - 'support.json'
 
 permissions:
   actions: read
