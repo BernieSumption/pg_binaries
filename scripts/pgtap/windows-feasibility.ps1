@@ -74,16 +74,17 @@ try {
   if ((Get-Content (Join-Path $sourceRoot 'pgtap.control') -Raw) -notmatch "(?m)^default_version\s*=\s*'$version'$" ) { throw 'Upstream pgTAP control version mismatch' }
 
   $msysBash = 'C:\msys64\usr\bin\bash.exe'
-  if (-not (Test-Path $msysBash -PathType Leaf)) { throw 'Windows runner MSYS2 Bash is unavailable' }
+  $msysCygpath = 'C:\msys64\usr\bin\cygpath.exe'
+  if (-not (Test-Path $msysBash -PathType Leaf) -or -not (Test-Path $msysCygpath -PathType Leaf)) { throw 'Windows runner MSYS2 tools are unavailable' }
   [IO.File]::WriteAllText($pgxsShim, "`n", [Text.UTF8Encoding]::new($false))
-  $sourcePosix = (& $msysBash -lc "cygpath -u '$($sourceRoot -replace '\\','/')'").Trim()
-  $shimPosix = (& $msysBash -lc "cygpath -u '$($pgxsShim -replace '\\','/')'").Trim()
-  $pgConfigPosix = (& $msysBash -lc "cygpath -u '$($pgConfig -replace '\\','/')'").Trim()
+  $sourcePosix = (& $msysCygpath -u $sourceRoot).Trim()
+  $shimPosix = (& $msysCygpath -u $pgxsShim).Trim()
+  $pgConfigPosix = (& $msysCygpath -u $pgConfig).Trim()
   if ($LASTEXITCODE -ne 0 -or -not $sourcePosix -or -not $shimPosix -or -not $pgConfigPosix) { throw 'Could not map pgTAP generation paths into MSYS2' }
   $env:MSYS2_PATH_TYPE = 'inherit'
-  & $msysBash -lc 'pacman -S --needed --noconfirm make patch grep sed gawk'
+  & $msysBash --noprofile --norc -c 'pacman -S --needed --noconfirm make patch grep sed gawk'
   if ($LASTEXITCODE -ne 0) { throw 'Could not provide GNU make and SQL-generation tools on the disposable runner' }
-  & $msysBash -lc "cd '$sourcePosix' && make all PG_CONFIG='$pgConfigPosix' PGXS='$shimPosix' OSNAME=windows"
+  & $msysBash --noprofile --norc -c "cd '$sourcePosix' && make all PG_CONFIG='$pgConfigPosix' PGXS='$shimPosix' OSNAME=windows"
   if ($LASTEXITCODE -ne 0) { throw 'Upstream pgTAP SQL generation failed' }
 
   $payload = Join-Path $stage 'pgtap'
