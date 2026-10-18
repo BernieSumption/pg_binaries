@@ -4,6 +4,11 @@ set -euo pipefail
 core_archives=${1:?usage: macos-feasibility.sh CORE_ARCHIVE_DIRECTORY OUTPUT_DIRECTORY TARGET_CONFIG}
 output=${2:?usage: macos-feasibility.sh CORE_ARCHIVE_DIRECTORY OUTPUT_DIRECTORY TARGET_CONFIG}
 target_config=${3:?usage: macos-feasibility.sh CORE_ARCHIVE_DIRECTORY OUTPUT_DIRECTORY TARGET_CONFIG}
+build_only=${4:-}
+if [[ -n $build_only && $build_only != --build-only ]]; then
+  echo "Unknown option: $build_only" >&2
+  exit 2
+fi
 repo=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 if [[ $target_config != /* ]]; then
   target_config="$repo/$target_config"
@@ -129,6 +134,10 @@ cd "$output"
 shasum -a 256 "$extension_name" > "$extension_name.sha256"
 shasum -a 256 -c "$extension_name.sha256"
 python3 "$repo/tools/check_extension_redistribution.py" "$output/$extension_name"
+if [[ $build_only == --build-only ]]; then
+  echo "PASS: pgTAP $version archive packaged and checked for PostgreSQL $pg_version on macOS $architecture"
+  exit 0
+fi
 tar -xzf "$extension_name" -C "$work/extension"
 extroot="$work/extension/pgtap"
 python3 - "$work/extension" "$extroot" "$pg_version" "$version" "$architecture" <<'PY'

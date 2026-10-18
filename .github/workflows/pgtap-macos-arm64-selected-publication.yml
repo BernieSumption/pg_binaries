@@ -1,0 +1,195 @@
+name: pgTAP selected PostgreSQL macOS arm64 publication
+
+on:
+  workflow_dispatch:
+    inputs:
+      postgresql_version:
+        description: Selected PostgreSQL release
+        required: true
+        type: string
+        default: '18.6'
+      extension_version:
+        description: Optional pgTAP release selector
+        required: false
+        type: string
+        default: ''
+  push:
+    branches: [spike]
+    paths:
+      - '.github/workflows/pgtap-macos-arm64-selected-publication.yml'
+      - 'experiments/pgtap-macos-arm64-target-trial/target.json'
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  select:
+    runs-on: ubuntu-latest
+    outputs:
+      postgresql_version: ${{ steps.plan.outputs.postgresql_version }}
+      extension_version: ${{ steps.plan.outputs.selected_version }}
+      pin_path: ${{ steps.plan.outputs.pin_path }}
+      core_run_id: ${{ steps.plan.outputs.core_run_id }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate the selected target and load its pinned core archive
+        id: plan
+        env:
+          POSTGRESQL_VERSION: ${{ inputs.postgresql_version }}
+          EXTENSION_VERSION: ${{ inputs.extension_version }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$POSTGRESQL_VERSION" ]]; then
+            POSTGRESQL_VERSION=$(python3 -c 'import json; print(json.load(open("experiments/pgtap-macos-arm64-target-trial/target.json"))["postgresql_version"])')
+          fi
+          args=(--project pgtap --platform macos-arm64 --postgresql-version "$POSTGRESQL_VERSION")
+          if [[ -n "$EXTENSION_VERSION" ]]; then args+=(--extension-version "$EXTENSION_VERSION"); fi
+          python3 tools/extension_archive_plan.py "${args[@]}" --github-output "$GITHUB_OUTPUT" > "$RUNNER_TEMP/selection.json"
+          selected_version=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["selected_version"])' "$RUNNER_TEMP/selection.json")
+          if [[ "$selected_version" != '1.3.4' ]]; then
+            echo "The selected pgTAP release is $selected_version; the macOS recipe and publication tools support only 1.3.4." >&2
+            exit 1
+          fi
+          pin_path="tools/pgtap_macos_pins/${POSTGRESQL_VERSION}-arm64.json"
+          if [[ ! -f "$pin_path" ]]; then
+            echo "No pinned macOS arm64 PostgreSQL core archive is configured for $POSTGRESQL_VERSION." >&2
+            exit 1
+          fi
+          core_run_id=$(python3 - "$pin_path" "$POSTGRESQL_VERSION" <<'PY'
+          import sys
+          from pathlib import Path
+          sys.path.insert(0, "tools")
+          from pgtap_macos_target import load_target_config
+          target = load_target_config(Path(sys.argv[1]))
+          if target.postgresql_version != sys.argv[2] or target.architecture != "arm64":
+              raise SystemExit("pinned core target does not match the selected request")
+          print(target.core_run_id)
+          PY
+          )
+          echo "pin_path=$pin_path" >> "$GITHUB_OUTPUT"
+          echo "core_run_id=$core_run_id" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: select
+    if: needs.select.result == 'success'
+    runs-on: macos-15
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download the selected successful PostgreSQL arm64 artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: macos-arm64-pilot-archives
+          run-id: ${{ needs.select.outputs.core_run_id }}
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/core-archives
+      - name: Build and package pgTAP against the selected core archive
+        id: package
+        continue-on-error: true
+        env:
+          PIN_PATH: ${{ needs.select.outputs.pin_path }}
+        run: |
+          set -o pipefail
+          mkdir -p "$RUNNER_TEMP/pgtap-build"
+          bash scripts/pgtap/macos-feasibility.sh "$RUNNER_TEMP/core-archives" "$RUNNER_TEMP/pgtap-build" "$PIN_PATH" --build-only 2>&1 | tee "$RUNNER_TEMP/pgtap-build/build-log.txt"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pgtap-macos-arm64-${{ needs.select.outputs.postgresql_version }}-build-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/core-archives/**
+            ${{ runner.temp }}/pgtap-build/**
+          if-no-files-found: warn
+          retention-days: 7
+      - name: Require package build to pass
+        if: always()
+        run: test '${{ steps.package.outcome }}' = success
+
+  verify:
+    needs: [select, build]
+    if: always() && needs.select.result == 'success'
+    runs-on: macos-15
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check pgTAP publication evidence tooling
+        run: python3 -m unittest tests/test_pgtap_macos_publication.py tests/test_pgtap_macos_fresh_runner_boundary.py
+      - name: Download final core and pgTAP archives from the build runner
+        id: download
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: pgtap-macos-arm64-${{ needs.select.outputs.postgresql_version }}-build-${{ github.run_id }}
+          path: ${{ runner.temp }}/pgtap-bundle
+      - name: Prepare verification inputs
+        if: always()
+        run: |
+          mkdir -p "$RUNNER_TEMP/core-archives" "$RUNNER_TEMP/pgTAP-publication"
+          if [[ -d "$RUNNER_TEMP/pgtap-bundle/core-archives" ]]; then cp -a "$RUNNER_TEMP/pgtap-bundle/core-archives/." "$RUNNER_TEMP/core-archives/"; fi
+          if [[ -d "$RUNNER_TEMP/pgtap-bundle/pgtap-build" ]]; then cp -a "$RUNNER_TEMP/pgtap-bundle/pgtap-build/." "$RUNNER_TEMP/pgTAP-publication/"; fi
+      - name: Inspect final core and pgTAP archives on the fresh runner
+        id: static_analysis
+        if: always() && steps.download.outcome == 'success'
+        continue-on-error: true
+        env:
+          PIN_PATH: ${{ needs.select.outputs.pin_path }}
+        run: bash scripts/pgtap/verify-macos-publication.sh static-analysis "$RUNNER_TEMP/core-archives" "$RUNNER_TEMP/pgTAP-publication" "$RUNNER_TEMP/pgTAP-publication" "$PIN_PATH"
+      - name: Assemble and exercise the final archives on the fresh runner
+        id: archive_suite
+        if: always() && steps.download.outcome == 'success'
+        continue-on-error: true
+        env:
+          PIN_PATH: ${{ needs.select.outputs.pin_path }}
+        run: bash scripts/pgtap/verify-macos-publication.sh archive-suite "$RUNNER_TEMP/core-archives" "$RUNNER_TEMP/pgTAP-publication" "$RUNNER_TEMP/pgTAP-publication" "$PIN_PATH"
+      - name: Finalize archive receipt and verification record
+        if: always()
+        env:
+          ARCHIVE_SUITE_OUTCOME: ${{ steps.archive_suite.outcome }}
+          STATIC_ANALYSIS_OUTCOME: ${{ steps.static_analysis.outcome }}
+          GITHUB_SHA: ${{ github.sha }}
+          PIN_PATH: ${{ needs.select.outputs.pin_path }}
+        run: |
+          image_id="${ImageOS:?runner image OS missing}/${ImageVersion:?runner image version missing}"
+          os_version="$(sw_vers -productVersion)"
+          python3 tools/emit_pgtap_macos_publication.py \
+            --target-config "$PIN_PATH" \
+            --core-archives "$RUNNER_TEMP/core-archives" \
+            --archives "$RUNNER_TEMP/pgTAP-publication" \
+            --output "$RUNNER_TEMP/pgTAP-publication" \
+            --os-version "$os_version" --image-id "$image_id" \
+            --archive-suite-result "$ARCHIVE_SUITE_OUTCOME" \
+            --static-analysis-result "$STATIC_ANALYSIS_OUTCOME"
+      - name: Validate and retain archive-bound publication evidence
+        if: always()
+        env:
+          PIN_PATH: ${{ needs.select.outputs.pin_path }}
+        run: |
+          if [[ -f "$RUNNER_TEMP/pgTAP-publication/publication/attempt.json" ]]; then
+            python3 tools/import_pgtap_macos_publication.py \
+              --target-config "$PIN_PATH" \
+              --core-artifact "$RUNNER_TEMP/core-archives" \
+              --pgtap-artifact "$RUNNER_TEMP/pgTAP-publication" \
+              --run-id "$GITHUB_RUN_ID"
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pgtap-macos-arm64-${{ needs.select.outputs.postgresql_version }}-publication-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/pgTAP-publication/*.tar.gz
+            ${{ runner.temp }}/pgTAP-publication/*.sha256
+            ${{ runner.temp }}/pgTAP-publication/*.json
+            ${{ runner.temp }}/pgTAP-publication/*.txt
+            ${{ runner.temp }}/pgTAP-publication/publication/**
+            support/evidence/pgtap-macos-publication-${{ github.run_id }}/arm64/**
+            support/verification/pgtap-1.3.4-postgresql-${{ needs.select.outputs.postgresql_version }}-macos-arm64-current-${{ github.run_id }}.json
+          if-no-files-found: warn
+          retention-days: 7
+      - name: Require both fresh-runner verification cases to pass
+        if: always()
+        run: |
+          if [[ '${{ needs.build.result }}' != success || '${{ steps.download.outcome }}' != success || '${{ steps.archive_suite.outcome }}' != success || '${{ steps.static_analysis.outcome }}' != success ]]; then
+            echo 'pgTAP macOS archive-suite and static-analysis cases must both pass on the fresh runner.' >&2
+            exit 1
+          fi
