@@ -24,19 +24,28 @@ def _retain(source, destination, copies):
     source = Path(source)
     if source.is_symlink() or not source.is_file() or source.stat().st_size > MAX_EVIDENCE_BYTES:
         raise coverage.CoverageError(f"evidence must be a regular file no larger than {MAX_EVIDENCE_BYTES} bytes: {source}")
-    if destination.exists() and destination.read_bytes() != source.read_bytes():
+    if destination.is_symlink() or (destination.exists() and destination.read_bytes() != source.read_bytes()):
         raise coverage.CoverageError(f"refusing to replace retained evidence {destination}")
     copies.append((source, destination))
 
 
-def _copy(copies):
+def _copy(copies, root):
+    root = Path(root).resolve()
     for source, destination in copies:
+        if not destination.parent.resolve().is_relative_to(root):
+            raise coverage.CoverageError(f"retained evidence path escapes repository root: {destination}")
+        parent = destination.parent
+        while parent != root and parent != parent.parent:
+            if parent.is_symlink():
+                raise coverage.CoverageError(f"retained evidence path crosses a symbolic link: {parent}")
+            parent = parent.parent
         destination.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(source, destination)
 
 
 def import_run(root, core_artifact, extension_artifact, run_id):
     root, core_artifact, extension_artifact = map(Path, (root, core_artifact, extension_artifact))
+    root = root.resolve()
     run_id = str(run_id)
     if not run_id.isdigit():
         raise coverage.CoverageError("run_id must be numeric")
@@ -78,7 +87,7 @@ def import_run(root, core_artifact, extension_artifact, run_id):
             source = extension_artifact / name
             if source.is_file():
                 _retain(source, evidence / name, copies)
-        _copy(copies)
+        _copy(copies, root)
         return [str(dest.relative_to(root)) for _, dest in copies]
 
     digests = {core_name: publication.sha256_file(core_archive),
@@ -179,7 +188,7 @@ def import_run(root, core_artifact, extension_artifact, run_id):
                            if source == record_path else evidence / source.name)
             _retain(source, destination, copies)
     _retain(record_path, root / "support/verification" / record_path.name, copies)
-    _copy(copies)
+    _copy(copies, root)
     return [str(dest.relative_to(root)) for _, dest in copies]
 
 

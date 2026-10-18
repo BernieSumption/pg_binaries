@@ -123,6 +123,26 @@ class HypopgWindowsArchiveTests(unittest.TestCase):
             with self.assertRaisesRegex(Exception, "unsafe path"):
                 checker.inspect(self.core, self.extension, self.root / "report.json")
 
+    def test_importer_refuses_symlinked_evidence_destination(self):
+        source = self.root / "source.txt"
+        source.write_text("evidence")
+        repository = self.root / "repository"
+        repository.mkdir()
+        outside = self.root / "outside"
+        outside.mkdir()
+        (repository / "support").symlink_to(outside, target_is_directory=True)
+        with self.assertRaisesRegex(Exception, "escapes repository root"):
+            importer._copy([(source, repository / "support/evidence.txt")], repository)
+        self.assertFalse((outside / "evidence.txt").exists())
+
+    def test_importer_refuses_existing_symlink(self):
+        source = self.root / "source.txt"
+        source.write_text("evidence")
+        destination = self.root / "destination.txt"
+        destination.symlink_to(self.root / "missing.txt")
+        with self.assertRaisesRegex(Exception, "refusing to replace"):
+            importer._retain(source, destination, [])
+
     def test_emit_does_not_require_a_separate_current_core_profile_record(self):
         repo = self.root / "repo"
         for relative in ("support.json", "support/verification-profiles.json",
