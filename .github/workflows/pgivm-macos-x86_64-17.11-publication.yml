@@ -1,0 +1,115 @@
+name: pg_ivm macOS x86_64 PostgreSQL 17.11 publication
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [spike]
+    paths:
+      - .github/workflows/profile-change-scope.yml
+      - tools/profile_change_gate.py
+      - tests/test_profile_change_gate.py
+      - '.github/workflows/pgivm-macos-x86_64-17.11-publication.yml'
+      - 'scripts/pgivm/macos-17.11-x86_64-feasibility.sh'
+      - 'scripts/macos/compiled-prefix-relocation.sh'
+      - 'scripts/pg_ivm/probe.sql'
+      - 'scripts/macos/static_analysis.py'
+      - 'tools/check_macos_extension_license_inventory.py'
+      - 'tools/publication_preflight.py'
+      - 'tools/emit_pgivm_macos_x86_64_17_11_publication.py'
+      - 'tools/import_pgivm_macos_x86_64_17_11_publication.py'
+      - 'tests/test_emit_pgivm_macos_x86_64_17_11_publication.py'
+      - 'tests/test_import_pgivm_macos_x86_64_17_11_publication.py'
+      - 'support.json'
+      - 'support/postgresql-releases.json'
+      - 'tools/coverage.py'
+      - 'support/verification-profiles.json'
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  profile_scope:
+    uses: ./.github/workflows/profile-change-scope.yml
+    with:
+      profile_id: pgivm-publication-macos-x86_64-17.11
+
+  verify:
+    needs: profile_scope
+    if: needs.profile_scope.outputs.should_run == 'true'
+    runs-on: macos-15-intel
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check pg_ivm publication evidence helpers
+        run: python3 -m unittest tests/test_emit_pgivm_macos_x86_64_17_11_publication.py tests/test_import_pgivm_macos_x86_64_17_11_publication.py
+      - name: Download the passed PostgreSQL 17.11 Intel core archive
+        uses: actions/download-artifact@v4
+        with:
+          name: macos-pilot-archives
+          run-id: 39093802542
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/core-archives
+      - name: Build and verify pg_ivm against the archived core
+        id: archive_suite
+        run: |
+          set -o pipefail
+          mkdir -p "$RUNNER_TEMP/pgivm-publication"
+          bash scripts/pgivm/macos-17.11-x86_64-feasibility.sh "$RUNNER_TEMP/core-archives" "$RUNNER_TEMP/pgivm-publication" 2>&1 | tee "$RUNNER_TEMP/pgivm-publication/build-log.txt"
+      - name: Validate static analysis against the final archive bytes
+        id: static_analysis
+        run: |
+          python3 - "$RUNNER_TEMP/pgivm-publication/static-analysis.json" "$RUNNER_TEMP/core-archives/postgresql-17.11-macos-x86_64.tar.gz" "$RUNNER_TEMP/pgivm-publication/pg_ivm-1.16-postgresql-17.11-macos-x86_64.tar.gz" <<'PY'
+          import hashlib
+          import json
+          import pathlib
+          import sys
+
+          report_path, *archives = map(pathlib.Path, sys.argv[1:])
+          report = json.loads(report_path.read_text())
+          expected = {path.name: hashlib.sha256(path.read_bytes()).hexdigest() for path in archives}
+          actual = report.get("archives", [])
+          if isinstance(actual, list):
+              actual = {item["basename"]: item["sha256"] for item in actual}
+          if report.get("passed") is not True or not report.get("inspected_files") or actual != expected:
+              raise SystemExit("static analysis did not pass against the final archive bytes")
+          PY
+      - name: Finalize pg_ivm archive receipt and verification record
+        if: always()
+        env:
+          ARCHIVE_SUITE_OUTCOME: ${{ steps.archive_suite.outcome }}
+          STATIC_ANALYSIS_OUTCOME: ${{ steps.static_analysis.outcome }}
+          GITHUB_SHA: ${{ github.sha }}
+        run: |
+          image_id="${ImageOS:?runner image OS missing}/${ImageVersion:?runner image version missing}"
+          os_version="$(sw_vers -productVersion)"
+          python3 tools/emit_pgivm_macos_x86_64_17_11_publication.py \
+            --core-archives "$RUNNER_TEMP/core-archives" \
+            --archives "$RUNNER_TEMP/pgivm-publication" \
+            --output "$RUNNER_TEMP/pgivm-publication" \
+            --os-version "$os_version" --image-id "$image_id" \
+            --archive-suite-result "$ARCHIVE_SUITE_OUTCOME" \
+            --static-analysis-result "$STATIC_ANALYSIS_OUTCOME"
+      - name: Validate and retain candidate evidence
+        if: always()
+        run: |
+          if [[ -f "$RUNNER_TEMP/pgivm-publication/publication/attempt.json" ]]; then
+            python3 tools/import_pgivm_macos_x86_64_17_11_publication.py \
+              --core-artifact "$RUNNER_TEMP/core-archives" \
+              --pgivm-artifact "$RUNNER_TEMP/pgivm-publication" \
+              --run-id "$GITHUB_RUN_ID"
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pgivm-macos-x86_64-17.11-publication-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/pgivm-publication/*.tar.gz
+            ${{ runner.temp }}/pgivm-publication/*.sha256
+            ${{ runner.temp }}/pgivm-publication/*.json
+            ${{ runner.temp }}/pgivm-publication/*.txt
+            ${{ runner.temp }}/pgivm-publication/publication/**
+            support/evidence/pgivm-macos-publication-${{ github.run_id }}/**
+            support/verification/pg_ivm-*.json
+          if-no-files-found: warn
+          retention-days: 7
