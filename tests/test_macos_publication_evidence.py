@@ -1,5 +1,6 @@
 """Tests for shared macOS publication evidence primitives."""
 
+import json
 from pathlib import Path
 import sys
 import tempfile
@@ -12,6 +13,19 @@ import macos_publication_evidence as evidence
 
 
 class MacOSPublicationEvidenceTests(unittest.TestCase):
+    def test_profiles_using_shared_helpers_track_their_source(self):
+        profiles = json.loads((ROOT / "support/verification-profiles.json").read_text())["profiles"]
+        for profile_id, profile in profiles.items():
+            sources = profile["sources"]
+            if any(source in sources for source in (
+                    "tools/emit_pgtap_macos_publication.py",
+                    "tools/import_pgtap_macos_publication.py",
+                    "tools/emit_hypopg_macos_publication.py",
+                    "tools/import_hypopg_macos_publication.py")):
+                with self.subTest(profile_id=profile_id):
+                    self.assertIn("tools/macos_publication_evidence.py", sources)
+                    self.assertEqual(sources, sorted(set(sources)))
+
     def test_sidecar_binds_archive_name_and_digest(self):
         with tempfile.TemporaryDirectory() as directory:
             archive = Path(directory) / "postgresql.tar.gz"

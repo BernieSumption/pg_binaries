@@ -3,7 +3,6 @@
 
 import argparse
 from dataclasses import replace
-import hashlib
 import json
 import os
 from pathlib import Path
@@ -12,6 +11,7 @@ import sys
 import tarfile
 
 import coverage
+import macos_publication_evidence as evidence
 from check_macos_extension_license_inventory import check_archive
 from hypopg_macos_target import (HYPOPG_VERSION, SOURCE_SHA256, SOURCE_URL,
                                 HypoPGMacosTarget, load_target_config)
@@ -40,23 +40,11 @@ def _fail(message):
 
 
 def sha256_file(path):
-    digest = hashlib.sha256()
-    with Path(path).open("rb") as stream:
-        for block in iter(lambda: stream.read(1024 * 1024), b""):
-            digest.update(block)
-    return digest.hexdigest()
+    return evidence.sha256_file(path)
 
 
 def _sidecar(path, digest):
-    path = Path(path)
-    try:
-        lines = path.with_name(path.name + ".sha256").read_text(encoding="utf-8").splitlines()
-    except OSError as exc:
-        _fail(f"missing checksum sidecar for {path.name}")
-    if (len(lines) != 1
-            or not re.fullmatch(rf"[0-9a-fA-F]{{64}}\s+\*?{re.escape(path.name)}", lines[0])
-            or lines[0].split()[0].lower() != digest):
-        _fail(f"checksum sidecar does not match {path.name}")
+    evidence.check_sidecar(path, digest, "missing checksum sidecar for {name}")
 
 
 def _metadata(path, target=None):

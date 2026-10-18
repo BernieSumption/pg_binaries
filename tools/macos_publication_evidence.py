@@ -63,7 +63,8 @@ def copy_retained(copies, max_bytes=MAX_EVIDENCE_BYTES):
         pending[destination] = content
     for source, destination in copies:
         destination.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copyfile(source, destination)
+        if not destination.exists():
+            shutil.copyfile(source, destination)
 
 
 def _validate_file(path, max_bytes, size_phrase="at most"):

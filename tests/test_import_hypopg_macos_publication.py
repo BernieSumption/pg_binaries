@@ -41,6 +41,17 @@ class ImportHypoPGMacOSPublicationTests(unittest.TestCase):
         self.assertTrue(any(path.endswith("attempt.json") for path in retained))
         self.assertFalse((self.fixture.root / "support/verification").exists())
 
+    def test_import_refuses_to_replace_conflicting_retained_evidence(self):
+        self.fixture.emit()
+        destination = (self.fixture.root / "support/evidence/hypopg-macos-publication-"
+                       "12345678901/arm64/18.6/attempt.json")
+        destination.parent.mkdir(parents=True)
+        destination.write_text("existing evidence\n")
+
+        with self.assertRaisesRegex(Exception, "refusing to replace retained evidence"):
+            self.fixture.import_run()
+        self.assertEqual(destination.read_text(), "existing evidence\n")
+
     def test_same_run_imports_for_two_postgresql_versions_have_separate_evidence(self):
         root = Path(__file__).resolve().parents[1]
         target_17 = load_target_config(root / "tools/hypopg_macos_pins/17.11-arm64.json")
