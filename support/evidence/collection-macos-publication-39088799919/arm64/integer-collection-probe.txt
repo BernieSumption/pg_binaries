@@ -1,0 +1,8 @@
+DO
+DO
+DROP TABLE
+             outcome             
+---------------------------------
+ integer collection probe passed
+(1 row)
+

@@ -1,0 +1,20 @@
+{
+  "architecture": "arm64",
+  "archives": {
+    "pg_cron-1.6.8-postgresql-18.6-macos-arm64.tar.gz": "3dc2d7e16d018dab7ca8aaace1db6d8b80a08f74b468ac215bfc93a609200352",
+    "postgresql-18.6-macos-arm64.tar.gz": "bc543b0d54a8a33b3b737eab74d7f185035f01e5c2db4eb48be049996eee4440"
+  },
+  "dependencies": {
+    "/usr/lib/libSystem.B.dylib": "/usr/lib/libSystem.B.dylib",
+    "@rpath/libpq.5.dylib": "lib/libpq.5.dylib"
+  },
+  "file": "lib/pg_cron.dylib",
+  "findings": [],
+  "minimum_os": "11.0",
+  "module_rpaths": [
+    "@loader_path"
+  ],
+  "passed": true,
+  "postgres_executable_rpaths": [],
+  "resolution_note": "@rpath dependencies use the dyld run-path stack, which includes run paths from the executable loading the extension."
+}

@@ -1,0 +1,17 @@
+installation_relocated=true
+job_execution_mode=background_worker
+CREATE EXTENSION
+CREATE TABLE
+ schedule 
+----------
+        1
+(1 row)
+
+scheduled_job_status=succeeded
+scheduled_job_rows=1
+DO
+ unschedule 
+------------
+ t
+(1 row)
+
