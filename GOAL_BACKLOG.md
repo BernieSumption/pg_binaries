@@ -17,6 +17,7 @@ Follow-up implementation after the architecture review:
 - [ ] Move the remaining macOS and Windows extension publication paths to fresh-runner verification where `policies/testing.md` requires it; retain final-archive hashes and failed/skipped attempts. Apply the pattern validated on HypoPG 17.11 to other profiles after reviewing their inputs.
 - [ ] Connect selected planner items to bounded GitHub workflow dispatch and a durable candidate-archive retrieval or rebuild path. Temporary Actions artifact pins can expire before the next support update.
 - [ ] Before advertising any extension from the Luna trials, complete source and redistribution review, support metadata, publication-profile checks and the selected platform/PostgreSQL matrix. Keep feasibility results separate from release eligibility.
+- [ ] Reuse the [fixed-verifier Luna trial](support/evidence/pg-stat-monitor-luna-build-trial-39138856521.md) with another extension before making its verifier a general template. The pg_stat_monitor build loop passed after four Luna-diagnosed CI failures, but root prepared the target-specific archive and SQL verifier; separate that setup cost from build-script iteration when planning wider agent work.
 
 ## Existing implementation and coverage work
 
