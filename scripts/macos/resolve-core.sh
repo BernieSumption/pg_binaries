@@ -51,7 +51,7 @@ PY
 candidate_usable=false
 candidate_run_id=none
 try_source() {
-  local workflow=$1 artifact_template=$2 run_id run_attempt head_sha source_revision
+  local workflow=$1 artifact_template=$2 uploader_run_id builder_run_id builder_attempt source_revision builder_json
   rm -f "$output/$core_name" "$output/$core_name.sha256" "$target"
   if ! python3 "$repo/tools/actions_candidate_discovery.py" \
       --repository "$GITHUB_REPOSITORY" --workflow "$workflow" \
@@ -63,7 +63,7 @@ try_source() {
     echo "Cannot inspect checked macOS core candidates from $workflow" >&2
     exit 1
   fi
-  read -r run_id run_attempt head_sha < <(python3 - "$candidate_manifest" <<'PY'
+  read -r uploader_run_id < <(python3 - "$candidate_manifest" <<'PY'
 import json
 import sys
 rows = json.load(open(sys.argv[1], encoding="utf-8"))["archives"]
@@ -71,26 +71,79 @@ if len(rows) > 1:
     raise SystemExit("candidate discovery returned more than one core archive")
 if rows:
     source = rows[0]["source"]
-    print(source["run_id"], source["run_attempt"], source["head_sha"])
+    print(source["run_id"])
 else:
-    print("none none none")
+    print("none")
 PY
 )
-  [[ $run_id != none ]] || return 1
+  [[ $uploader_run_id != none ]] || return 1
+  local builder_provenance
+  if ! builder_provenance=$(python3 - "$output/$core_name" <<'PY'
+import json
+import re
+import sys
+import tarfile
+
+with tarfile.open(sys.argv[1], "r:gz") as archive:
+    members = archive.getmembers()
+    if len(members) > 100_000:
+        raise SystemExit("core archive has too many entries")
+    names = [m.name for m in members]
+    if len(names) != len(set(names)):
+        raise SystemExit("core archive contains duplicate paths")
+    matches = [m for m in members if m.name == "postgresql/manifest.json"]
+    if len(matches) != 1 or not matches[0].isfile() or matches[0].size > 1024 * 1024:
+        raise SystemExit("core archive must contain one bounded regular manifest")
+    stream = archive.extractfile(matches[0])
+    manifest = json.loads(stream.read(1024 * 1024 + 1).decode("utf-8"))
+build_id = manifest.get("build_id") if isinstance(manifest, dict) else None
+revision = manifest.get("source_revision") if isinstance(manifest, dict) else None
+match = re.fullmatch(r"github-([1-9][0-9]*)-([1-9][0-9]*)", build_id or "")
+if not match or not re.fullmatch(r"[0-9a-f]{40}", revision or ""):
+    raise SystemExit("core archive manifest has invalid builder provenance")
+print(match.group(1), match.group(2), revision)
+PY
+  ); then
+    return 1
+  fi
+  read -r builder_run_id builder_attempt source_revision <<<"$builder_provenance"
+  if ! builder_json=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$builder_run_id"); then
+    echo "Cannot inspect macOS core builder run $builder_run_id" >&2
+    exit 1
+  fi
+  if ! python3 - "$builder_json" "$GITHUB_REPOSITORY" "$GITHUB_REF_NAME" \
+      "$builder_run_id" "$builder_attempt" "$source_revision" <<'PY'
+import json
+import re
+import sys
+
+run = json.loads(sys.argv[1])
+repository, branch, run_id, attempt, revision = sys.argv[2:]
+allowed = {"macos-arm64-pilot.yml", "hypopg-macos-arm64-selected-publication.yml",
+           "pgtap-macos-arm64-selected-publication.yml"}
+repo = run.get("repository") if isinstance(run, dict) else None
+head_repo = run.get("head_repository") if isinstance(run, dict) else None
+valid = (isinstance(repo, dict) and str(repo.get("full_name", "")).casefold() == repository.casefold()
+         and isinstance(head_repo, dict) and str(head_repo.get("full_name", "")).casefold() == repository.casefold()
+         and str(run.get("id")) == run_id
+         and isinstance(run.get("run_attempt"), int) and not isinstance(run.get("run_attempt"), bool)
+         and run.get("run_attempt") == int(attempt)
+         and run.get("head_branch") == branch and run.get("event") in {"push", "workflow_dispatch"}
+         and run.get("status") == "completed" and run.get("conclusion") == "success"
+         and str(run.get("path", "")).rsplit("/", 1)[-1] in allowed
+         and run.get("head_sha") == revision and re.fullmatch(r"[0-9a-f]{40}", revision) is not None)
+if not valid:
+    raise SystemExit("core builder run identity, status, workflow, or revision does not match its manifest")
+PY
+  then
+    return 1
+  fi
   if ! python3 "$repo/tools/macos_core_target_config.py" \
       --base-target "$base_target" --core-archive "$output/$core_name" \
-      --source-run-id "$run_id" --source-run-attempt "$run_attempt" \
+      --source-run-id "$builder_run_id" --source-run-attempt "$builder_attempt" \
       --output "$target"; then
     return 1
   fi
-  source_revision=$(python3 - "$target" <<'PY'
-import json
-import sys
-
-print(json.load(open(sys.argv[1], encoding="utf-8"))["core_archive"]["source_revision"])
-PY
-)
-  [[ $source_revision == "$head_sha" ]] || return 1
   if ! git -C "$repo" cat-file -e "$source_revision^{commit}" 2>/dev/null \
       && ! git -C "$repo" fetch --no-tags --depth=1 origin "$source_revision"; then
     return 1
@@ -100,7 +153,7 @@ PY
     scripts/macos/bundle.py scripts/macos/licenses.py \
     tools/source_archive.py tools/discover_builtins.py \
     tools/create_macos_symbols.py && check_source_archive || return 1
-  candidate_run_id=$run_id
+  candidate_run_id=$builder_run_id
   return 0
 }
 
