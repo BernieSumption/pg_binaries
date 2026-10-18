@@ -1,0 +1,178 @@
+name: HypoPG selected PostgreSQL Windows x86-64 publication
+
+on:
+  workflow_dispatch:
+    inputs:
+      postgresql_version:
+        description: Selected PostgreSQL release
+        required: true
+        type: string
+        default: '18.6'
+      extension_version:
+        description: Optional HypoPG version selector
+        required: false
+        type: string
+        default: ''
+  push:
+    branches: [spike]
+    paths:
+      - '.github/workflows/hypopg-windows-selected-publication.yml'
+      - 'experiments/hypopg-windows-target-trial/target.json'
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  select:
+    runs-on: ubuntu-latest
+    outputs:
+      postgresql_version: ${{ steps.plan.outputs.postgresql_version }}
+      extension_version: ${{ steps.plan.outputs.selected_version }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate the requested selected target
+        id: plan
+        env:
+          POSTGRESQL_VERSION: ${{ inputs.postgresql_version }}
+          EXTENSION_VERSION: ${{ inputs.extension_version }}
+        run: |
+          if [[ -z "$POSTGRESQL_VERSION" ]]; then
+            POSTGRESQL_VERSION=$(python3 -c 'import json; print(json.load(open("experiments/hypopg-windows-target-trial/target.json"))["postgresql_version"])')
+          fi
+          args=(--project HypoPG --platform windows-x86_64 \
+            --postgresql-version "$POSTGRESQL_VERSION")
+          if [[ -n "$EXTENSION_VERSION" ]]; then
+            args+=(--extension-version "$EXTENSION_VERSION")
+          fi
+          python3 tools/extension_archive_plan.py "${args[@]}" --github-output "$GITHUB_OUTPUT" > "$RUNNER_TEMP/selection.json"
+          selected_version=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["selected_version"])' "$RUNNER_TEMP/selection.json")
+          if [[ "$selected_version" != '1.4.3' ]]; then
+            echo "The selected HypoPG release is $selected_version; the current Windows recipe and publication tools support only 1.4.3." >&2
+            exit 1
+          fi
+
+  build:
+    needs: select
+    if: needs.select.result == 'success'
+    runs-on: windows-2022
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Load pinned PostgreSQL core identity
+        id: core_pin
+        run: python tools/windows_core_pin.py --postgresql-version '${{ needs.select.outputs.postgresql_version }}' --github-output >> $env:GITHUB_OUTPUT
+      - name: Check HypoPG publication evidence tooling
+        run: python -B -m unittest tests/test_hypopg_windows_publication.py
+      - name: Download the pinned PostgreSQL core archive
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-postgresql-${{ needs.select.outputs.postgresql_version }}-pilot
+          run-id: ${{ steps.core_pin.outputs.run_id }}
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/core-archives
+      - name: Build and package HypoPG from pinned upstream source
+        id: archive
+        continue-on-error: true
+        run: ./scripts/hypopg/windows-feasibility.ps1 -CoreArchiveDirectory "$env:RUNNER_TEMP/core-archives" -OutputDirectory "$env:RUNNER_TEMP/hypopg-build" -PostgreSQLVersion '${{ needs.select.outputs.postgresql_version }}' -BuildOnly
+      - name: Upload final core and extension archives
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: hypopg-windows-${{ needs.select.outputs.postgresql_version }}-build-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/core-archives/**
+            ${{ runner.temp }}/hypopg-build/**
+          if-no-files-found: warn
+          retention-days: 7
+      - name: Require package build to pass
+        if: always()
+        run: |
+          if ('${{ steps.archive.outcome }}' -ne 'success') { throw 'HypoPG Windows archive build failed.' }
+
+  verify:
+    needs: [select, build]
+    if: always() && needs.select.result == 'success'
+    runs-on: windows-2022
+    timeout-minutes: 25
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Download final archives from the build runner
+        id: download
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: hypopg-windows-${{ needs.select.outputs.postgresql_version }}-build-${{ github.run_id }}
+          path: ${{ runner.temp }}/hypopg-bundle
+      - name: Prepare verification inputs
+        if: always()
+        run: |
+          $coreDir = Join-Path $env:RUNNER_TEMP 'core-archives'
+          $extensionDir = Join-Path $env:RUNNER_TEMP 'hypopg-extension'
+          New-Item -ItemType Directory -Force $coreDir,$extensionDir | Out-Null
+          $bundleCore = Join-Path $env:RUNNER_TEMP 'hypopg-bundle/core-archives'
+          $bundleExtension = Join-Path $env:RUNNER_TEMP 'hypopg-bundle/hypopg-build'
+          if (Test-Path $bundleCore) { Copy-Item (Join-Path $bundleCore '*') $coreDir -Force }
+          if (Test-Path $bundleExtension) { Copy-Item (Join-Path $bundleExtension '*') $extensionDir -Force }
+      - name: Inspect and exercise downloaded archives after relocation
+        id: verification
+        if: always() && needs.build.result == 'success' && steps.download.outcome == 'success'
+        continue-on-error: true
+        run: ./scripts/hypopg/verify-windows-publication.ps1 -CoreArchiveDirectory "$env:RUNNER_TEMP/core-archives" -ExtensionArchiveDirectory "$env:RUNNER_TEMP/hypopg-extension" -OutputDirectory "$env:RUNNER_TEMP/hypopg-verification" -PostgreSQLVersion '${{ needs.select.outputs.postgresql_version }}'
+      - name: Emit archive-bound attempt and verification record
+        if: always()
+        env:
+          ARCHIVE_RESULT: ${{ needs.build.result == 'success' && steps.verification.outcome || needs.build.result }}
+          STATIC_RESULT: ${{ steps.verification.outcome }}
+          POSTGRESQL_VERSION: ${{ needs.select.outputs.postgresql_version }}
+        run: |
+          $dir = Join-Path $env:RUNNER_TEMP 'hypopg-verification'
+          New-Item -ItemType Directory -Force $dir | Out-Null
+          $version = (Get-CimInstance Win32_OperatingSystem).Version
+          $image = "$([Environment]::GetEnvironmentVariable('ImageOS'))/$([Environment]::GetEnvironmentVariable('ImageVersion'))"
+          python tools/emit_hypopg_windows_publication.py --postgresql-version $env:POSTGRESQL_VERSION --core-archives (Join-Path $env:RUNNER_TEMP 'core-archives') --archives (Join-Path $env:RUNNER_TEMP 'hypopg-extension') --output $dir --os-version $version --image-id $image --archive-suite-result $env:ARCHIVE_RESULT --static-analysis-result $env:STATIC_RESULT
+      - name: Validate and retain publication evidence
+        if: always()
+        env:
+          POSTGRESQL_VERSION: ${{ needs.select.outputs.postgresql_version }}
+        run: |
+          $dir = Join-Path $env:RUNNER_TEMP 'hypopg-verification'
+          $attemptPath = Join-Path $dir 'publication/attempt.json'
+          if (Test-Path $attemptPath) {
+            $attempt = Get-Content $attemptPath -Raw | ConvertFrom-Json
+            if ($attempt.archives) {
+              $extensionDir = Join-Path $env:RUNNER_TEMP 'hypopg-extension'
+              Copy-Item (Join-Path $dir '*') $extensionDir -Recurse -Force
+              python tools/import_hypopg_windows_publication.py --postgresql-version $env:POSTGRESQL_VERSION --core-artifact (Join-Path $env:RUNNER_TEMP 'core-archives') --extension-artifact $extensionDir --run-id $env:GITHUB_RUN_ID
+            }
+          }
+      - name: Upload candidate archive and verification evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: hypopg-1.4.3-postgresql-${{ needs.select.outputs.postgresql_version }}-windows-x86_64-candidate-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/core-archives/*.tar.gz
+            ${{ runner.temp }}/core-archives/*.sha256
+            ${{ runner.temp }}/hypopg-extension/*
+            ${{ runner.temp }}/hypopg-verification/*
+            support/evidence/hypopg-windows-publication-${{ github.run_id }}/**
+            support/verification/hypopg-1.4.3-postgresql-${{ needs.select.outputs.postgresql_version }}-windows-x86_64-current-${{ github.run_id }}.json
+          if-no-files-found: warn
+          retention-days: 7
+      - name: Require fresh-runner verification to pass
+        if: always()
+        run: |
+          if ('${{ needs.build.result }}' -ne 'success' -or '${{ steps.download.outcome }}' -ne 'success' -or '${{ steps.verification.outcome }}' -ne 'success') { throw 'HypoPG Windows fresh-runner verification failed.' }
