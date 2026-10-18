@@ -1,0 +1,5 @@
+# pg_jsonschema 0.3.4 Linux arm64 feasibility
+
+[Run 39083762269](https://github.com/BernieSumption/pg_binaries/actions/runs/39083762269) passed on a native arm64 Linux runner at source revision `888c63976c7cdc07bcf6bf5883bea94a340df26a`. It built upstream pg_jsonschema commit `cbe74b570d38aa0c4d42914e7a118bcb3adaee7a` against PostgreSQL 18.6 with pgrx's `pg18` feature. The [build identity](build-evidence.txt) records the Cargo lock hash and Rust toolchain.
+
+The job assembled archive SHA-256 `31af0b5dc8efc067590fb716d7e1b278765599162f5903a459d7d2cad75eeb8c`, relocated it with the exact PostgreSQL core into Alpine 3.22, and passed `CREATE EXTENSION` and valid/invalid JSON schema probes. [ELF analysis](pg_jsonschema.json) passed architecture, runtime-path and dependency-closure checks on 185 native files. The [source identity](source-identity.txt) and [archive checksum](pg_jsonschema-0.3.4-postgresql-18.6-linux-arm64.tar.gz.sha256) are retained. This is feasibility evidence, not an archive-bound publication record; the other selected PostgreSQL versions remain unverified.
