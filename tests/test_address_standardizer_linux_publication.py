@@ -36,6 +36,11 @@ class AddressStandardizerLinuxPublication(unittest.TestCase):
         self.assertEqual(publication._case_results("failure", "passed"),
                          {"archive-suite": "failed", "elf-closure": "passed"})
 
+    def test_core_artifact_download_preserves_its_pilot_subdirectory(self):
+        workflow = (ROOT / ".github/workflows/address-standardizer-linux-publication.yml").read_text()
+        self.assertEqual(workflow.count("path: ${{ runner.temp }}/core\n"), 2)
+        self.assertEqual(workflow.count('"$RUNNER_TEMP/core/pilot"'), 8)
+
     def test_emit_and_import_bind_candidate_to_both_archive_hashes(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary) / "root"

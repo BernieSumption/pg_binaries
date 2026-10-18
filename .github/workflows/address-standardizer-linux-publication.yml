@@ -51,7 +51,7 @@ jobs:
           name: linux-publication-x86_64-evidence
           run-id: 39081368117
           github-token: ${{ github.token }}
-          path: ${{ runner.temp }}/core/pilot
+          path: ${{ runner.temp }}/core
       - name: Build final archive from pinned upstream sources
         id: build
         continue-on-error: true
@@ -116,7 +116,7 @@ jobs:
           name: linux-publication-arm64-evidence
           run-id: 39081368117
           github-token: ${{ github.token }}
-          path: ${{ runner.temp }}/core/pilot
+          path: ${{ runner.temp }}/core
       - name: Build final archive from pinned upstream sources
         id: build
         continue-on-error: true
