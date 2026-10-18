@@ -1,0 +1,3 @@
+# collection 1.1.1 and 2.1.3 Linux feasibility attempt
+
+[Run 39082331551](https://github.com/BernieSumption/pg_binaries/actions/runs/39082331551) built both unmodified collection releases against PostgreSQL 18.6 on x86-64. Each archive and the PostgreSQL core passed SHA-256 checks; the relocated Alpine 3.22 verifier passed ELF dependency closure and started PostgreSQL. The shared SQL probe then failed before executing because it declared `icollection`, a type introduced in the selected 2.x release and absent from 1.1.1. The probe now tests common `collection` operations for both releases and runs sparse integer-key `icollection` checks only for 2.1.3. No complete runtime result came from this run.

@@ -104,11 +104,9 @@ PY
 DO $$
 DECLARE
     c collection;
-    i icollection('text');
 BEGIN
-    SELECT value, integer_value INTO c, i FROM public.collection_persist_probe;
-    IF count(c) <> 2 OR find(c, 'alpha') <> 'one'
-       OR count(i) <> 2 OR find(i, 1000000) <> 'millionth' THEN
+    SELECT value INTO c FROM public.collection_persist_probe;
+    IF count(c) <> 2 OR find(c, 'alpha') <> 'one' THEN
         RAISE EXCEPTION 'collection persisted datum did not survive a new connection';
     END IF;
 END;
@@ -122,7 +120,21 @@ DO $$
 DECLARE
     i icollection('text');
     result text[];
+    result_count integer;
 BEGIN
+    i[1] := 'first';
+    i[1000000] := 'millionth';
+    IF count(i) <> 2 OR NOT exist(i, 1) OR exist(i, 500)
+       OR find(i, 1000000) <> 'millionth' THEN
+        RAISE EXCEPTION 'integer-key collection sparse lookup/count failed';
+    END IF;
+    SELECT count(*) INTO result_count FROM to_table(i) AS item(key, value);
+    IF result_count <> 2 OR value_type(i) <> 'text'::regtype THEN
+        RAISE EXCEPTION 'integer-key collection table or type metadata failed';
+    END IF;
+    CREATE TABLE public.collection_integer_probe (value icollection('text') NOT NULL);
+    INSERT INTO public.collection_integer_probe VALUES (i);
+    i := NULL;
     i[4] := 'four';
     result := to_array(i, NULL::text);
     IF result IS NULL OR result[4] <> 'four' THEN
@@ -130,6 +142,20 @@ BEGIN
     END IF;
 END;
 $$;
+SQL
+    runuser -u postgres -- "$pgroot/bin/psql" -X -v ON_ERROR_STOP=1 \
+      -h "$work/socket" -p 55433 -d postgres <<'SQL'
+DO $$
+DECLARE
+    i icollection('text');
+BEGIN
+    SELECT value INTO i FROM public.collection_integer_probe;
+    IF count(i) <> 2 OR find(i, 1000000) <> 'millionth' THEN
+        RAISE EXCEPTION 'integer-key collection persisted datum failed';
+    END IF;
+END;
+$$;
+DROP TABLE public.collection_integer_probe;
 SQL
   fi
   runuser -u postgres -- "$pgroot/bin/pg_ctl" -D "$work/data" -m fast -w stop
