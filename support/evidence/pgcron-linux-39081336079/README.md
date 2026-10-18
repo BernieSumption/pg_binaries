@@ -1,0 +1,5 @@
+# pg_cron 1.6.8 Linux arm64 feasibility result
+
+[Run 39081336079](https://github.com/BernieSumption/pg_binaries/actions/runs/39081336079) built unmodified pg_cron 1.6.8 against PostgreSQL 18.6 on a native arm64 runner. The final extension SHA-256 is `b71f8cb5267eea0ad315001a3ee6d5b133ae292ca9dc286159cdac48ca186164`; the exact core SHA-256 is `610869799e058b4717c890757229d9b2f9d3f8c74ff388023dd67a843c5cf10e`. The downloaded extension sidecar matched the archive, and its licence inventory passed the release preflight's structural check.
+
+The [raw attempt](arm64/attempt.json) records passed source build and relocated Alpine 3.22 verification. The [static report](arm64/static-analysis.json) binds both archive hashes and reports ELF dependency closure. The runtime probe created the extension and observed a scheduled background-worker job complete. The binary archives remain temporary CI artifacts. Together with the [x86-64 result](../pgcron-linux-39081052929/README.md), this establishes feasibility on both Linux architectures for PostgreSQL 18.6. Publication-profile records and other selected versions and platforms remain open.
