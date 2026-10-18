@@ -121,10 +121,11 @@ done < <(find "$extroot" -mindepth 1 -print0)
 mv "$pgroot" "$work/moved/postgresql"
 pgroot="$work/moved/postgresql"
 python3 "$repo/scripts/macos/static_analysis.py" "$pgroot" "$architecture" \
-  --archive "$core_archives/$core_name" \
+  --archive "$core_archives/$core_name" --archive "$output/$extension_name" \
   --report "$output/static-analysis.json"
 cp -a "$extroot/." "$pgroot/"
-python3 - "$pgroot" "$architecture" <<'PY' | tee "$output/pg-cron-macho-inspection.json"
+python3 - "$pgroot" "$architecture" "$core_archives/$core_name" "$output/$extension_name" <<'PY' | tee "$output/pg-cron-macho-inspection.json"
+import hashlib
 import json
 import pathlib
 import re
@@ -133,6 +134,7 @@ import sys
 
 root = pathlib.Path(sys.argv[1]).resolve()
 architecture = sys.argv[2]
+archives = [pathlib.Path(value) for value in sys.argv[3:]]
 module = root / "lib/pg_cron.dylib"
 postgres = root / "bin/postgres"
 
@@ -196,6 +198,8 @@ report = {
     "module_rpaths": module_rpaths,
     "postgres_executable_rpaths": executable_rpaths,
     "resolution_note": "@rpath dependencies use the dyld run-path stack, which includes run paths from the executable loading the extension.",
+    "archives": {archive.name: hashlib.sha256(archive.read_bytes()).hexdigest()
+                 for archive in archives},
     "findings": findings,
     "passed": not findings,
 }
@@ -207,10 +211,12 @@ PY
 data_dir="$work/data"
 pg_ctl="$pgroot/bin/pg_ctl"
 export DYLD_LIBRARY_PATH= DYLD_FALLBACK_LIBRARY_PATH=
+printf 'installation_relocated=true\njob_execution_mode=background_worker\n' \
+  | tee "$output/probe-output.txt"
 "$pgroot/bin/initdb" -D "$data_dir" --encoding=UTF8 --locale=C --no-instructions >/dev/null
 "$pg_ctl" -D "$data_dir" -l "$work/server.log" -o \
   "-k $work/socket -p 55432 -h '' -c shared_preload_libraries=pg_cron -c cron.use_background_workers=on -c max_worker_processes=20 -c cron.database_name=postgres" -w start
-"$pgroot/bin/psql" -X -v ON_ERROR_STOP=1 -h "$work/socket" -p 55432 -d postgres <<'SQL' | tee "$output/probe-output.txt"
+"$pgroot/bin/psql" -X -v ON_ERROR_STOP=1 -h "$work/socket" -p 55432 -d postgres <<'SQL' | tee -a "$output/probe-output.txt"
 CREATE EXTENSION pg_cron;
 CREATE TABLE public.pg_cron_probe (ran_at timestamptz NOT NULL);
 SELECT cron.schedule('feasibility-probe', '* * * * *',
@@ -231,6 +237,11 @@ if [[ ${status:-} != succeeded ]]; then
   echo 'pg_cron did not complete the scheduled command before timeout' >&2
   exit 1
 fi
+rows=$("$pgroot/bin/psql" -X -At -h "$work/socket" -p 55432 -d postgres \
+  -c 'SELECT count(*) FROM public.pg_cron_probe')
+[[ $rows =~ ^[0-9]+$ ]] && (( rows > 0 ))
+printf 'scheduled_job_status=%s\nscheduled_job_rows=%s\n' "$status" "$rows" \
+  | tee -a "$output/probe-output.txt"
 "$pgroot/bin/psql" -X -v ON_ERROR_STOP=1 -h "$work/socket" -p 55432 -d postgres \
   -c "DO \$\$ BEGIN IF (SELECT count(*) FROM public.pg_cron_probe) < 1 THEN RAISE EXCEPTION 'scheduled command did not insert a row'; END IF; END \$\$; SELECT cron.unschedule($job_id);" \
   | tee -a "$output/probe-output.txt"

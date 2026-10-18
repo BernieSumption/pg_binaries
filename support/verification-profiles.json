@@ -181,6 +181,12 @@
       "case_ids": ["archive-suite", "static-analysis"],
       "sources": [".github/workflows/pgivm-macos-arm64-publication.yml", "scripts/macos/static_analysis.py", "scripts/pg_ivm/probe.sql", "scripts/pgivm/macos-feasibility.sh", "support.json", "support/postgresql-releases.json", "tests/test_emit_pgivm_macos_publication.py", "tests/test_import_pgivm_macos_publication.py", "tools/check_macos_extension_license_inventory.py", "tools/coverage.py", "tools/emit_pgivm_macos_publication.py", "tools/import_pgivm_macos_publication.py", "tools/publication_preflight.py"]
     },
+    "pgcron-publication-macos-arm64-18.6": {
+      "scope": "publication",
+      "platforms": ["macos-arm64"],
+      "case_ids": ["archive-suite", "static-analysis"],
+      "sources": [".github/workflows/pgcron-macos-arm64-publication.yml", "scripts/macos/static_analysis.py", "scripts/pg_cron/macos-feasibility.sh", "support.json", "support/postgresql-releases.json", "tests/test_emit_pgcron_macos_publication.py", "tests/test_import_pgcron_macos_publication.py", "tools/check_extension_redistribution.py", "tools/check_macos_extension_license_inventory.py", "tools/coverage.py", "tools/emit_pgcron_macos_publication.py", "tools/import_pgcron_macos_publication.py", "tools/publication_preflight.py"]
+    },
     "macos-publication-current-x86_64": {
       "scope": "publication",
       "platforms": ["macos-x86_64"],
