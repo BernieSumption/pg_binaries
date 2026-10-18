@@ -53,16 +53,18 @@ class LinuxPublicationRunImportTests(unittest.TestCase):
         self.run_id = "7654321"
         self.architecture = "x86_64"
         self.platform = "linux-x86_64"
+        self.vector_version = self._selected_version("pgvector", "18.6")
+        self.postgis_version = self._selected_version("PostGIS", "18.6")
         self.core_name = f"postgresql-18.6-{self.platform}.tar.gz"
-        self.vector_name = f"pgvector-0.8.7-postgresql-18.6-{self.platform}.tar.gz"
-        self.postgis_name = f"postgis-3.6.4-postgresql-18.6-{self.platform}.tar.gz"
+        self.vector_name = f"pgvector-{self.vector_version}-postgresql-18.6-{self.platform}.tar.gz"
+        self.postgis_name = f"postgis-{self.postgis_version}-postgresql-18.6-{self.platform}.tar.gz"
         self.core_archive = self.core_dir / self.core_name
         self.vector_archive = self.core_dir / self.vector_name
         self.postgis_archive = self.postgis_dir / self.postgis_name
         self.core_archive.write_bytes(b"postgresql archive fixture")
         self.vector_archive.write_bytes(b"pgvector archive fixture")
         self._metadata_archive(self.postgis_archive, {
-            "project": "postgis", "version": "3.6.4", "postgresql_version": "18.6",
+            "project": "postgis", "version": self.postgis_version, "postgresql_version": "18.6",
             "platform": "linux", "architecture": "x86_64",
             "sql_names": coverage.load_json(self.root / "support.json")["extensions"]["PostGIS"]["sql_names"],
             "requires": [],
@@ -90,6 +92,13 @@ class LinuxPublicationRunImportTests(unittest.TestCase):
     @staticmethod
     def _sha(path):
         return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+
+    def _selected_version(self, project, postgresql_version):
+        support = coverage.load_json(self.root / "support.json")
+        releases = coverage.release_snapshot(
+            coverage.load_json(self.root / "support/postgresql-releases.json"), support)
+        return importer._selected_extension_version(
+            support, releases, project, postgresql_version, self.platform)
 
     @classmethod
     def _write_sidecar(cls, archive):
@@ -134,7 +143,7 @@ class LinuxPublicationRunImportTests(unittest.TestCase):
         postgis_receipt_path = self.postgis_publication / f"{endpoint}-receipt.json"
         extension_receipts.create(
             self.root, self.postgis_dir, self.core_dir, postgis_receipt_path,
-            postgis_profile, "PostGIS", "3.6.4", "18.6", "18.6",
+            postgis_profile, "PostGIS", self.postgis_version, "18.6", "18.6",
             self.architecture, endpoint, kernel, distribution,
             "3.22.6", image,
             "success", True, postgis_steps, environ=environ,
@@ -251,7 +260,8 @@ class LinuxPublicationRunImportTests(unittest.TestCase):
         records = publication / "records"
         records.mkdir(parents=True)
         core = archives / f"postgresql-{postgresql_version}-{self.platform}.tar.gz"
-        vector = archives / f"pgvector-{importer.VECTOR_VERSION}-postgresql-{postgresql_version}-{self.platform}.tar.gz"
+        vector_version = self._selected_version("pgvector", postgresql_version)
+        vector = archives / f"pgvector-{vector_version}-postgresql-{postgresql_version}-{self.platform}.tar.gz"
         core.write_bytes(f"core {postgresql_version}".encode())
         vector.write_bytes(f"vector {postgresql_version}".encode())
         for archive in (core, vector):
@@ -293,7 +303,7 @@ class LinuxPublicationRunImportTests(unittest.TestCase):
                 self.assertEqual(len(core_records), 2)
                 self.assertTrue(any(name.startswith(f"postgresql-{version}-")
                                     for name in core_records))
-                self.assertTrue(any(name.startswith(f"pgvector-{importer.VECTOR_VERSION}-postgresql-{version}-")
+                self.assertTrue(any(name.startswith(f"pgvector-{self._selected_version('pgvector', version)}-postgresql-{version}-")
                                     for name in core_records))
                 evidence = self.root / "support/evidence" / f"linux-publication-{self.run_id}"
                 if version == "18.6":
@@ -304,16 +314,25 @@ class LinuxPublicationRunImportTests(unittest.TestCase):
 
     def test_imports_postgis_against_selected_pg17_core(self):
         version = "17.11"
+        postgis_version = self._selected_version("PostGIS", version)
+        core_artifact, postgis_artifact = self._postgis_artifact_for_core(version, postgis_version)
+        retained = importer.import_run(self.root, core_artifact, postgis_artifact,
+                                       self.run_id, self.architecture, version)
+        self.assertEqual(sum("/support/verification/" in f"/{path}" for path in retained), 6)
+        self.assertTrue((self.root / "support/verification" /
+                         f"postgis-{postgis_version}-postgresql-{version}-{self.platform}-current-{self.run_id}.json").is_file())
+
+    def _postgis_artifact_for_core(self, version, postgis_version):
         core_artifact = self._core_only_artifact(version)
-        postgis_artifact = Path(self.temporary.name) / "postgis-17.11"
+        postgis_artifact = Path(self.temporary.name) / f"postgis-{version}"
         extension_dir = postgis_artifact / "postgis"
         publication = postgis_artifact / "postgis-publication"
         records = publication / "records"
         records.mkdir(parents=True)
-        archive = extension_dir / f"postgis-3.6.4-postgresql-{version}-{self.platform}.tar.gz"
+        archive = extension_dir / f"postgis-{postgis_version}-postgresql-{version}-{self.platform}.tar.gz"
         extension_dir.mkdir()
         self._metadata_archive(archive, {
-            "project": "postgis", "version": "3.6.4", "postgresql_version": version,
+            "project": "postgis", "version": postgis_version, "postgresql_version": version,
             "platform": "linux", "architecture": self.architecture,
             "sql_names": coverage.load_json(self.root / "support.json")["extensions"]["PostGIS"]["sql_names"],
             "requires": [],
@@ -330,7 +349,7 @@ class LinuxPublicationRunImportTests(unittest.TestCase):
         }
         extension_receipts.create(
             self.root, extension_dir, core_artifact / "pilot", receipt,
-            profile_id, "PostGIS", "3.6.4", version, version,
+            profile_id, "PostGIS", postgis_version, version, version,
             self.architecture, "current", "6.8.0-test-kernel", "Alpine Linux",
             "3.22.6", "sha256:" + "b" * 64, "success", True, steps,
             environ=environ, prerequisite_archives={})
@@ -345,11 +364,27 @@ class LinuxPublicationRunImportTests(unittest.TestCase):
             "archives": [{"basename": item.name, "sha256": self._sha(item)}
                          for item in (core, archive)],
         }))
-        retained = importer.import_run(self.root, core_artifact, postgis_artifact,
-                                       self.run_id, self.architecture, version)
-        self.assertEqual(sum("/support/verification/" in f"/{path}" for path in retained), 6)
-        self.assertTrue((self.root / "support/verification" /
-                         f"postgis-3.6.4-postgresql-{version}-{self.platform}-current-{self.run_id}.json").is_file())
+        return core_artifact, postgis_artifact
+
+    def test_importer_uses_alternate_versions_selected_in_support(self):
+        support_path = self.root / "support.json"
+        support = coverage.load_json(support_path)
+        support["extensions"]["pgvector"]["versions"] = {
+            "0.8.8": {"postgresql_minimum_major": 15}}
+        support["extensions"]["PostGIS"]["versions"] = {
+            "3.6.5": {"postgresql_minimum_major": 15, "postgresql_maximum_major": 18}}
+        support_path.write_text(json.dumps(support), encoding="utf-8")
+        self.assertEqual(self._selected_version("pgvector", "17.11"), "0.8.8")
+        self.assertEqual(self._selected_version("PostGIS", "17.11"), "3.6.5")
+
+        self.run_id = "7654322"
+        artifact, postgis_artifact = self._postgis_artifact_for_core("17.11", "3.6.5")
+        retained = importer.import_run(
+            self.root, artifact, postgis_artifact, self.run_id, self.architecture, "17.11")
+        self.assertTrue(any(Path(path).name.startswith(
+            f"pgvector-0.8.8-postgresql-17.11-{self.platform}-current-") for path in retained))
+        self.assertTrue(any(Path(path).name.startswith(
+            f"postgis-3.6.5-postgresql-17.11-{self.platform}-current-") for path in retained))
 
     def test_rejects_unselected_postgresql_minor(self):
         with self.assertRaisesRegex(coverage.CoverageError, "18.5.*not selected"):
