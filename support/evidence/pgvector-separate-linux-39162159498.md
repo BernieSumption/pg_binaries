@@ -1,0 +1,5 @@
+# pgvector separate Linux verification attempt
+
+[Run 39162159498](https://github.com/BernieSumption/pg_binaries/actions/runs/39162159498) on 2026-10-18 built the pgvector 0.8.7 archive against the PostgreSQL 18.6 Linux x86-64 core from run 39061346204. The build job passed in 38 seconds. A fresh Ubuntu runner checked both archive sidecars and entered the Alpine verification container; its verification job failed after 16 seconds, before static analysis or SQL execution.
+
+The failure was `PostgreSQL packaged source identity differs from selected archive` in `tools/check_source_identity.py`. Inspection of the downloaded core archive's `postgresql/manifest.json` found no `source_archive` field. The selected source pin is the PostgreSQL 18.6 tar.bz2 SHA-256 `555610c24d53e4316da5b7d3fc25c279d96856d5e0e23ee308c328c5fa881d9f`. This older core archive predates the exact-source manifest check, so this run makes no final-archive verification claim. The trial now pins the later core from run 39075939610, whose downloaded manifest identifies that exact source archive.

@@ -31,7 +31,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: linux-publication-x86_64-evidence
-          run-id: 39061346204
+          run-id: 39075939610
           github-token: ${{ github.token }}
           path: ${{ runner.temp }}/core
       - name: Download pgvector source selected by the repository pin
@@ -41,7 +41,7 @@ jobs:
           curl --fail --location --retry 3 "$source_url" --output "$RUNNER_TEMP/pgvector-v0.8.7.tar.gz"
       - name: Validate inputs and build extension archive in Docker
         env:
-          CORE_SHA256: ca1773eeca3e083cf1c170e76d3e2191391ac3cac405b7db737a548a2a00c2df
+          CORE_SHA256: e532b07c29904db82d1681f1a4ab815364b769a4e1f277c9de9bcd45d0cdc7c6
         run: |
           set -euo pipefail
           core_name=postgresql-18.6-linux-x86_64.tar.gz
@@ -83,7 +83,7 @@ jobs:
               metadata = json.load(archive.extractfile("metadata.json"))
               if metadata.get("core_archive") != {
                   "basename": "postgresql-18.6-linux-x86_64.tar.gz",
-                  "sha256": "ca1773eeca3e083cf1c170e76d3e2191391ac3cac405b7db737a548a2a00c2df",
+                  "sha256": "e532b07c29904db82d1681f1a4ab815364b769a4e1f277c9de9bcd45d0cdc7c6",
               }:
                   raise SystemExit("archive metadata does not identify the pinned core input")
           PY
@@ -117,7 +117,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: linux-publication-x86_64-evidence
-          run-id: 39061346204
+          run-id: 39075939610
           github-token: ${{ github.token }}
           path: ${{ runner.temp }}/core
       - name: Assemble exact core and extension archives for verification

@@ -1,0 +1,115 @@
+name: PostGIS and TIGER selected Linux trial
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [spike]
+    paths:
+      - '.github/workflows/postgis-tiger-selected-linux-trial.yml'
+      - 'experiments/postgis-tiger-selected/README.md'
+      - 'scripts/linux/verify-combined.sh'
+      - 'scripts/linux/combined-verify-in-container.sh'
+      - 'scripts/linux/combined-verify.Dockerfile'
+      - 'scripts/linux/verify-in-container.sh'
+      - 'scripts/postgis/verify-in-container.sh'
+      - 'scripts/tiger/verify-in-container.sh'
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      PG_VERSION: 18.6
+      PG_ARCHITECTURE: x86_64
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download historical PostgreSQL evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: linux-publication-x86_64-evidence
+          run-id: 39075939610
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/download/core
+      - name: Download historical PostGIS evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: postgis-publication-x86_64-evidence
+          run-id: 39075939610
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/download/postgis
+      - name: Download historical TIGER evidence
+        uses: actions/download-artifact@v4
+        with:
+          name: tiger-publication-x86_64-evidence
+          run-id: 39075939610
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/download/tiger
+      - name: Select and verify pinned final archives
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/archives/core" "$RUNNER_TEMP/archives/postgis" "$RUNNER_TEMP/archives/tiger"
+          python3 - "$RUNNER_TEMP/download" "$RUNNER_TEMP/archives" <<'PY'
+          from pathlib import Path
+          import hashlib
+          import shutil
+          import sys
+
+          downloaded = Path(sys.argv[1])
+          output = Path(sys.argv[2])
+          pinned = {
+              "core": ("postgresql-18.6-linux-x86_64.tar.gz", "e532b07c29904db82d1681f1a4ab815364b769a4e1f277c9de9bcd45d0cdc7c6"),
+              "postgis": ("postgis-3.6.4-postgresql-18.6-linux-x86_64.tar.gz", "8afe3bb3e27e483e8b54943eec89c65737b32a57b58f4fdf14abfa7ee67f6465"),
+              "tiger": ("postgis_tiger_geocoder-2025.2-postgresql-18.6-linux-x86_64.tar.gz", "208c0e68f10d44d4b5e764627be488464329573907efcd346f167e2c7f9ef149"),
+          }
+          for component, (name, expected) in pinned.items():
+              matches = list((downloaded / component).rglob(name))
+              if len(matches) != 1:
+                  raise SystemExit(f"Expected exactly one {name} in {component} artifact; found {len(matches)}")
+              source = matches[0]
+              actual = hashlib.sha256(source.read_bytes()).hexdigest()
+              if actual != expected:
+                  raise SystemExit(f"SHA-256 mismatch for {name}: expected {expected}, got {actual}")
+              sidecar = source.with_name(source.name + ".sha256")
+              if not sidecar.is_file():
+                  raise SystemExit(f"Missing checksum sidecar for {name}")
+              destination = output / component / name
+              shutil.copyfile(source, destination)
+              shutil.copyfile(sidecar, destination.with_name(destination.name + ".sha256"))
+
+          vector_name = "pgvector-0.8.7-postgresql-18.6-linux-x86_64.tar.gz"
+          vector_sha256 = "c94c26bb5eb07fe479d182e2b02c823bd8674698c8a3629d7fcc15b9fba67ccb"
+          vector_matches = list((downloaded / "core").rglob(vector_name))
+          if len(vector_matches) != 1:
+              raise SystemExit(f"Expected the core verifier prerequisite {vector_name}; found {len(vector_matches)}")
+          vector = vector_matches[0]
+          vector_actual = hashlib.sha256(vector.read_bytes()).hexdigest()
+          if vector_actual != vector_sha256:
+              raise SystemExit(f"SHA-256 mismatch for core verifier prerequisite {vector_name}: expected {vector_sha256}, got {vector_actual}")
+          vector_sidecar = vector.with_name(vector.name + ".sha256")
+          if not vector_sidecar.is_file():
+              raise SystemExit(f"Missing checksum sidecar for core verifier prerequisite {vector_name}")
+          shutil.copyfile(vector, output / "core" / vector_name)
+          shutil.copyfile(vector_sidecar, output / "core" / (vector_name + ".sha256"))
+          PY
+          (cd "$RUNNER_TEMP/archives/core" && sha256sum --check postgresql-18.6-linux-x86_64.tar.gz.sha256 pgvector-0.8.7-postgresql-18.6-linux-x86_64.tar.gz.sha256)
+          (cd "$RUNNER_TEMP/archives/postgis" && sha256sum --check postgis-3.6.4-postgresql-18.6-linux-x86_64.tar.gz.sha256)
+          (cd "$RUNNER_TEMP/archives/tiger" && sha256sum --check postgis_tiger_geocoder-2025.2-postgresql-18.6-linux-x86_64.tar.gz.sha256)
+      - name: Run combined Alpine verification
+        id: combined
+        run: scripts/linux/verify-combined.sh "$RUNNER_TEMP/archives/core" "$RUNNER_TEMP/archives/postgis" "$RUNNER_TEMP/archives/tiger" "$RUNNER_TEMP/results"
+      - name: Retain verification reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: postgis-tiger-selected-linux-trial-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/archives/**/*.tar.gz
+            ${{ runner.temp }}/archives/**/*.sha256
+            ${{ runner.temp }}/archives/**/static-analysis/**
+            ${{ runner.temp }}/results/**
+          if-no-files-found: warn
+          retention-days: 7
