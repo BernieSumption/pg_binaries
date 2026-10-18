@@ -45,7 +45,8 @@ class LinuxCoreCandidateTests(unittest.TestCase):
     def tearDown(self):
         self.temp.cleanup()
 
-    def write_candidate(self, *, producer_revision=None, artifact_name="linux-publication-x86_64-evidence",
+    def write_candidate(self, *, producer_revision=None, run_revision=None,
+                        artifact_name="linux-publication-x86_64-evidence",
                         builder_image_id=BUILDER_IMAGE_ID, architecture="x86_64"):
         source = source_archive.source_archive("postgresql", "17.11", "tar.bz2", self.root)
         metadata = {"component": "postgresql", "version": "17.11", "platform": "linux",
@@ -63,7 +64,7 @@ class LinuxCoreCandidateTests(unittest.TestCase):
                "postgresql_version": "17.11", "path": str(self.archive_path),
                "sha256": hashlib.sha256(self.archive_path.read_bytes()).hexdigest(),
                "source": {"provider": "github-actions", "run_id": "1234", "run_attempt": 2,
-                          "head_sha": self.revision, "artifact_name": artifact_name}}
+                          "head_sha": run_revision or self.revision, "artifact_name": artifact_name}}
         self.manifest_path.write_text(json.dumps({"schema_version": 1, "archives": [row]}))
 
     def test_accepts_candidate_with_matching_run_manifest_and_current_recipe(self):
@@ -81,12 +82,25 @@ class LinuxCoreCandidateTests(unittest.TestCase):
                 self.manifest_path, self.archive_path, "17.11", self.BASE_IMAGE_DIGEST,
                 self.BUILDER_PACKAGES_SHA256, self.root)
 
-    def test_rejects_run_manifest_source_revision_mismatch(self):
+    def test_rejects_unknown_core_build_revision(self):
         self.write_candidate(producer_revision="c" * 40)
-        with self.assertRaisesRegex(ValueError, "source revision differs"):
+        with self.assertRaisesRegex(ValueError, "source revision is unavailable"):
             candidate.validate_candidate(
                 self.manifest_path, self.archive_path, "17.11", self.BASE_IMAGE_DIGEST,
                 self.BUILDER_PACKAGES_SHA256, self.root)
+
+    def test_accepts_archive_republished_by_later_run_with_unchanged_core_inputs(self):
+        (self.root / "readme.txt").write_text("new workflow packaging\n")
+        subprocess.run(["git", "add", "readme.txt"], cwd=self.root, check=True)
+        subprocess.run(["git", "commit", "-qm", "repackage unchanged core"], cwd=self.root, check=True)
+        later_run = subprocess.check_output(
+            ["git", "rev-parse", "HEAD"], cwd=self.root, text=True).strip()
+        self.write_candidate(run_revision=later_run)
+        result = candidate.validate_candidate(
+            self.manifest_path, self.archive_path, "17.11", self.BASE_IMAGE_DIGEST,
+            self.BUILDER_PACKAGES_SHA256, self.root)
+        self.assertEqual(result["source_revision"], self.revision)
+        self.assertEqual(result["artifact_revision"], later_run)
 
     def test_accepts_same_builder_inputs_with_a_different_docker_image_id(self):
         self.write_candidate(builder_image_id="sha256:" + "e" * 64)

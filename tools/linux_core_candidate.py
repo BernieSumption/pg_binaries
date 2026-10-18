@@ -100,11 +100,12 @@ def validate_candidate(manifest_path, archive_path, version, base_image_digest,
             metadata = json.load(member)
     except (OSError, tarfile.TarError, json.JSONDecodeError) as exc:
         raise ValueError(f"cannot read candidate PostgreSQL manifest: {exc}") from exc
+    build_revision = metadata.get("source_revision")
     if (metadata.get("component") != "postgresql" or metadata.get("version") != version
             or metadata.get("platform") != "linux" or metadata.get("architecture") != architecture
-            or metadata.get("source_revision") != source["head_sha"]
+            or not SHA.fullmatch(str(build_revision))
             or not re.fullmatch(r"sha256:[0-9a-f]{64}", str(metadata.get("builder_image_id", "")))):
-        raise ValueError("core manifest target or source revision differs from producer run")
+        raise ValueError("core manifest lacks a valid target or build revision")
     builder_inputs = metadata.get("builder_inputs")
     if (not isinstance(builder_inputs, dict)
             or builder_inputs.get("base_image") != "ubuntu:22.04"
@@ -118,10 +119,11 @@ def validate_candidate(manifest_path, archive_path, version, base_image_digest,
     expected_source = source_archive.source_archive("postgresql", version, "tar.bz2", root)
     if metadata.get("source_archive") != expected_source:
         raise ValueError("core manifest source archive identity differs from selected release")
-    if not relevant_inputs_match(source["head_sha"], root):
+    if not relevant_inputs_match(build_revision, root):
         raise ValueError("PostgreSQL core build inputs changed after candidate source revision")
     return {"run_id": source["run_id"], "run_attempt": source["run_attempt"],
-            "source_revision": source["head_sha"], "sha256": row["sha256"]}
+            "source_revision": build_revision, "artifact_revision": source["head_sha"],
+            "sha256": row["sha256"]}
 
 
 def _sha256(path):
