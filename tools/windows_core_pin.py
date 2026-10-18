@@ -33,7 +33,7 @@ def load_identity(path=None, pg_version="18.6"):
             or identity["profile_id"] != "windows-publication-current-x86_64"
             or identity["status"] != "current-profile-core-redistribution-pending"
             or not re.fullmatch(r"[1-9][0-9]*", str(identity["run_id"]))
-            or identity["build_id"] != f"github-{identity['run_id']}-1"
+            or not re.fullmatch(rf"github-{identity['run_id']}-[1-9][0-9]*", str(identity["build_id"]))
             or not re.fullmatch(r"[0-9a-f]{40}", str(identity["source_revision"]))
             or not re.fullmatch(r"[0-9a-f]{64}", str(identity["sha256"]))):
         raise ValueError(f"Windows core identity pin does not match the expected {pg_version} x86-64 shape")
