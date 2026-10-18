@@ -126,6 +126,12 @@ jobs:
           $bundleExtension = Join-Path $env:RUNNER_TEMP 'hypopg-bundle/hypopg-build'
           if (Test-Path $bundleCore) { Copy-Item (Join-Path $bundleCore '*') $coreDir -Force }
           if (Test-Path $bundleExtension) { Copy-Item (Join-Path $bundleExtension '*') $extensionDir -Force }
+          $symbols = Join-Path $extensionDir 'hypopg.pdb'
+          if (Test-Path $symbols -PathType Leaf) {
+            $verificationDir = Join-Path $env:RUNNER_TEMP 'hypopg-verification'
+            New-Item -ItemType Directory -Force $verificationDir | Out-Null
+            Copy-Item $symbols $verificationDir -Force
+          }
       - name: Inspect and exercise downloaded archives after relocation
         id: verification
         if: always() && needs.build.result == 'success' && steps.download.outcome == 'success'
