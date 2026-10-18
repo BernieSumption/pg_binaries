@@ -1,0 +1,21 @@
+{
+  "architecture": "x86_64",
+  "archives": {
+    "pgtap-1.3.4-postgresql-15.19-macos-x86_64.tar.gz": "6dc16b2c22dd7dbe95b3269ed2731326484a970f1ca863a1914fe64b22e57b68",
+    "postgresql-15.19-macos-x86_64.tar.gz": "8356f1793fb88c7713627bd1f05d95325fc013aed47be08bb0fb29c7180aef08"
+  },
+  "archives_present": {
+    "pgtap-1.3.4-postgresql-15.19-macos-x86_64.tar.gz": true,
+    "postgresql-15.19-macos-x86_64.tar.gz": true
+  },
+  "pgtap_version": "1.3.4",
+  "postgresql_version": "15.19",
+  "profile_id": "pgtap-publication-macos-x86_64-15.19",
+  "run_id": "39122055786",
+  "schema_version": 1,
+  "source_revision": "742ebceafb8fbdde3461e1dfb523464c01c7d63f",
+  "steps": {
+    "archive-suite": "success",
+    "static-analysis": "success"
+  }
+}
