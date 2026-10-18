@@ -40,6 +40,7 @@ jobs:
       extension_version: ${{ steps.plan.outputs.selected_version }}
       pin_path: ${{ steps.plan.outputs.pin_path }}
       core_run_id: ${{ steps.plan.outputs.core_run_id }}
+      work_group_id: ${{ steps.work.outputs.group_id }}
     steps:
       - uses: actions/checkout@v4
       - name: Validate the requested target and its pinned core archive
@@ -78,6 +79,17 @@ jobs:
           )
           echo "pin_path=$pin_path" >> "$GITHUB_OUTPUT"
           echo "core_run_id=$core_run_id" >> "$GITHUB_OUTPUT"
+      - name: Resolve selected build work and prerequisites
+        id: work
+        env:
+          POSTGRESQL_VERSION: ${{ steps.plan.outputs.postgresql_version }}
+          EXTENSION_VERSION: ${{ steps.plan.outputs.selected_version }}
+        run: |
+          set -euo pipefail
+          python3 tools/select_extension_work.py \
+            --project HypoPG --version "$EXTENSION_VERSION" \
+            --platform macos-arm64 --postgresql-major "${POSTGRESQL_VERSION%%.*}" \
+            --github-output "$GITHUB_OUTPUT" > "$RUNNER_TEMP/selected-work.json"
 
   build:
     needs: select

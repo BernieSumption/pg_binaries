@@ -38,6 +38,7 @@ jobs:
     outputs:
       postgresql_version: ${{ steps.plan.outputs.postgresql_version }}
       extension_version: ${{ steps.plan.outputs.selected_version }}
+      work_group_id: ${{ steps.work.outputs.group_id }}
     steps:
       - uses: actions/checkout@v4
       - name: Validate the requested selected target
@@ -60,6 +61,17 @@ jobs:
             echo "The selected HypoPG release is $selected_version; the current Windows recipe and publication tools support only 1.4.3." >&2
             exit 1
           fi
+      - name: Resolve selected build work and prerequisites
+        id: work
+        env:
+          POSTGRESQL_VERSION: ${{ steps.plan.outputs.postgresql_version }}
+          EXTENSION_VERSION: ${{ steps.plan.outputs.selected_version }}
+        run: |
+          set -euo pipefail
+          python3 tools/select_extension_work.py \
+            --project HypoPG --version "$EXTENSION_VERSION" \
+            --platform windows-x86_64 --postgresql-major "${POSTGRESQL_VERSION%%.*}" \
+            --github-output "$GITHUB_OUTPUT" > "$RUNNER_TEMP/selected-work.json"
 
   build:
     needs: select

@@ -1,7 +1,9 @@
 import importlib.util
+import io
 import json
 import tempfile
 import unittest
+from contextlib import redirect_stderr, redirect_stdout
 from pathlib import Path
 
 
@@ -20,8 +22,8 @@ class SelectExtensionWorkTests(unittest.TestCase):
         self.assertEqual(result["postgresql_major"], selection["postgresql_major"])
         self.assertEqual(result["postgresql_version"], "17.11")
         self.assertEqual((result["range_from"], result["range_to"]), ("17.11", "17.11"))
-        self.assertEqual(result["architecture"], selection["platform"].removeprefix("linux-"))
-        self.assertEqual(result["runner"], tool.RUNNERS[result["architecture"]])
+        self.assertEqual(result["architecture"], selection["platform"].split("-", 1)[1])
+        self.assertEqual(result["runner"], tool.RUNNERS[selection["platform"]])
         self.assertEqual(result["verification_status"], "unverified")
         self.assertEqual(result["build_postgresql_version"], result["postgresql_version"])
         self.assertEqual(len(result["closure_ids"]), 2)
@@ -34,13 +36,72 @@ class SelectExtensionWorkTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "found 0"):
             tool.resolve(ROOT, selection)
 
-    def test_rejects_non_linux_and_malformed_selection(self):
-        selection = {"project": "PostGIS", "version": "3.6.4", "platform": "macos-x86_64",
+    def test_resolves_declared_hypopg_macos_arm64_and_windows_groups(self):
+        for platform, runner in (("macos-arm64", "macos-15"), ("windows-x86_64", "windows-2022")):
+            with self.subTest(platform=platform):
+                result = tool.resolve(ROOT, {
+                    "project": "HypoPG",
+                    "version": "1.4.3",
+                    "platform": platform,
+                    "postgresql_major": 17,
+                })
+                self.assertEqual(result["platform"], platform)
+                self.assertEqual(result["architecture"], platform.split("-", 1)[1])
+                self.assertEqual(result["runner"], runner)
+                self.assertEqual(result["postgresql_major"], 17)
+                self.assertEqual(result["closure_ids"][-1], result["group_id"])
+
+    def test_rejects_undeclared_platform_architecture_and_malformed_selection(self):
+        selection = {"project": "NoSuchExtension", "version": "3.6.4", "platform": "macos-x86_64",
                      "postgresql_major": 17}
-        with self.assertRaisesRegex(ValueError, "Linux"):
+        with self.assertRaisesRegex(ValueError, "found 0"):
             tool.resolve(ROOT, selection)
+        for platform in ("freebsd-x86_64", "macos-riscv64", "windows-arm64"):
+            with self.subTest(platform=platform), self.assertRaisesRegex(ValueError, "declared platform"):
+                tool.resolve(ROOT, {**selection, "platform": platform})
         with self.assertRaisesRegex(ValueError, "exactly"):
             tool.resolve(ROOT, {**selection, "extra": True})
+        with self.assertRaisesRegex(ValueError, "exactly"):
+            tool.resolve(ROOT, {"project": "HypoPG", "version": "1.4.3", "platform": "macos-arm64"})
+
+    def test_cli_resolves_direct_macos_and_windows_targets(self):
+        for platform, runner in (("macos-arm64", "macos-15"), ("windows-x86_64", "windows-2022")):
+            with self.subTest(platform=platform):
+                output = io.StringIO()
+                with redirect_stdout(output):
+                    status = tool.main([
+                        "--root", str(ROOT), "--project", "HypoPG", "--version", "1.4.3",
+                        "--platform", platform, "--postgresql-major", "17",
+                    ])
+                result = json.loads(output.getvalue())
+                self.assertEqual(status, 0)
+                self.assertEqual(result["platform"], platform)
+                self.assertEqual(result["runner"], runner)
+
+    def test_cli_keeps_json_selection_path(self):
+        selection = json.loads((ROOT / "support/selected-extension-work.json").read_text())
+        with tempfile.TemporaryDirectory() as directory:
+            selection_path = Path(directory) / "selection.json"
+            selection_path.write_text(json.dumps(selection))
+            output = io.StringIO()
+            with redirect_stdout(output):
+                status = tool.main(["--root", str(ROOT), "--selection", str(selection_path)])
+        self.assertEqual(status, 0)
+        self.assertEqual(json.loads(output.getvalue())["group_id"], tool.resolve(ROOT, selection)["group_id"])
+
+    def test_cli_requires_exactly_one_complete_selection_form(self):
+        direct = ["--project", "HypoPG", "--version", "1.4.3", "--platform", "macos-arm64",
+                  "--postgresql-major", "17"]
+        invalid_args = (
+            ["--project", "HypoPG"],
+            ["--selection", "selection.json", *direct],
+            ["--version", "1.4.3", "--platform", "macos-arm64", "--postgresql-major", "17"],
+        )
+        for argv in invalid_args:
+            with self.subTest(argv=argv), redirect_stderr(io.StringIO()):
+                with self.assertRaises(SystemExit) as error:
+                    tool.main(argv)
+                self.assertEqual(error.exception.code, 2)
 
     def test_rejects_ambiguous_queue_match(self):
         selection = {"project": "PostGIS", "version": "3.6.4", "platform": "linux-x86_64",

@@ -13,7 +13,13 @@ extension_work_queue = importlib.util.module_from_spec(_queue_spec)
 _queue_spec.loader.exec_module(extension_work_queue)
 
 
-RUNNERS = {"x86_64": "ubuntu-24.04", "arm64": "ubuntu-24.04-arm"}
+RUNNERS = {
+    "linux-x86_64": "ubuntu-24.04",
+    "linux-arm64": "ubuntu-24.04-arm",
+    "macos-x86_64": "macos-15-intel",
+    "macos-arm64": "macos-15",
+    "windows-x86_64": "windows-2022",
+}
 REQUIRED = {"project", "version", "platform", "postgresql_major"}
 
 
@@ -23,11 +29,9 @@ def resolve(root, selection):
     if not isinstance(selection["postgresql_major"], int) or isinstance(selection["postgresql_major"], bool):
         raise ValueError("postgresql_major must be an integer")
     platform = selection["platform"]
-    if not isinstance(platform, str) or not platform.startswith("linux-"):
-        raise ValueError("selected target must be a declared Linux platform")
-    architecture = platform.removeprefix("linux-")
-    if architecture not in RUNNERS:
-        raise ValueError(f"no standard Linux runner mapping for architecture: {architecture}")
+    if not isinstance(platform, str) or platform not in RUNNERS:
+        raise ValueError(f"selected target must be a declared platform with a standard runner: {platform}")
+    architecture = platform.split("-", 1)[1]
 
     queue = extension_work_queue.build_queue(root)
     matches = [item for item in queue["work_items"]
@@ -40,7 +44,7 @@ def resolve(root, selection):
             unresolved.get("item_id") == item["id"] for unresolved in queue["unresolved_prerequisites"]):
         raise ValueError(f"selected group has an unresolved prerequisite: {item['id']}")
     if item.get("platform") != platform or item.get("verification_status") not in {"unverified", "complete"}:
-        raise ValueError("selected target is inconsistent with the declared Linux group")
+        raise ValueError("selected target is inconsistent with the declared platform group")
     closure = extension_work_queue.select_item_closure(queue, item["id"], 8)
     if closure[-1]["id"] != item["id"]:
         raise ValueError("selected group is not the final item in its dependency closure")
@@ -50,7 +54,7 @@ def resolve(root, selection):
         "platform": item["platform"],
         "postgresql_major": item["postgresql_major"],
         "architecture": architecture,
-        "runner": RUNNERS[architecture],
+        "runner": RUNNERS[platform],
         "group_id": item["id"],
         "closure_ids": [entry["id"] for entry in closure],
         "postgresql_version": item["postgresql_version"],
@@ -63,13 +67,29 @@ def resolve(root, selection):
 
 
 def main(argv=None):
-    parser = argparse.ArgumentParser(description=__doc__)
+    parser = argparse.ArgumentParser(description="Resolve one declared extension build target against the work queue.")
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[1])
-    parser.add_argument("--selection", type=Path, required=True, help="checked-in JSON target selection")
+    parser.add_argument("--selection", type=Path, help="checked-in JSON target selection")
+    parser.add_argument("--project", help="extension project name")
+    parser.add_argument("--version", help="extension version")
+    parser.add_argument("--platform", help="declared target platform, such as macos-arm64")
+    parser.add_argument("--postgresql-major", type=int, help="PostgreSQL major version")
     parser.add_argument("--github-output", type=Path, help="append resolved values to a GitHub Actions output file")
     args = parser.parse_args(argv)
+    direct_values = (args.project, args.version, args.platform, args.postgresql_major)
+    if args.selection is not None:
+        if any(value is not None for value in direct_values):
+            parser.error("--selection cannot be combined with direct target options")
+    elif any(value is None for value in direct_values):
+        parser.error("provide --selection or all of --project, --version, --platform, and --postgresql-major")
     try:
-        result = resolve(args.root, json.loads(args.selection.read_text()))
+        selection = (json.loads(args.selection.read_text()) if args.selection is not None else {
+            "project": args.project,
+            "version": args.version,
+            "platform": args.platform,
+            "postgresql_major": args.postgresql_major,
+        })
+        result = resolve(args.root, selection)
         print(json.dumps(result, indent=2, sort_keys=True))
         if args.github_output:
             with args.github_output.open("a") as output:
