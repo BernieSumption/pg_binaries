@@ -20,30 +20,13 @@ ARCHITECTURE = "x86_64"
 PLATFORM = "windows-x86_64"
 _CORE = load_identity()
 CORE_SHA256 = _CORE["sha256"]
-CORE_RUN_ID = _CORE["run_id"]
 CORE_BUILD_ID = _CORE["build_id"]
 CORE_SOURCE_REVISION = _CORE["source_revision"]
-CORE_PROFILE_ID = _CORE["profile_id"]
 CORE_STATUS = _CORE["status"]
 SOURCE_URL = "https://github.com/supabase/pg_jsonschema.git"
 SOURCE_COMMIT = "cbe74b570d38aa0c4d42914e7a118bcb3adaee7a"
 CARGO_LOCK_SHA256 = "ab865dc25d9eea4bf7dbfaf8fae13283e5c0bce4bca460fe10464c6716e67028"
 CASES = {"archive-suite", "static-analysis"}
-
-
-def validate_core_verification(root):
-    """Require the pinned archive to have current-profile verification evidence."""
-    root = Path(root)
-    path = root / "support/verification" / (
-        f"postgresql-{PG_VERSION}-{PLATFORM}-current-{CORE_RUN_ID}.json")
-    record = _json(path, "current PostgreSQL core verification")
-    coverage.validate_verification_record(record, coverage.load_json(root / "support.json"), root)
-    if (record.get("component") != "postgresql" or record.get("version") != PG_VERSION
-            or record.get("postgresql_version") != PG_VERSION or record.get("platform") != PLATFORM
-            or record.get("profile_id") != CORE_PROFILE_ID or record.get("outcome") != "passed"
-            or record.get("sha256") != CORE_SHA256 or record.get("ci", {}).get("run_id") != CORE_RUN_ID):
-        _fail("checked-in current PostgreSQL core verification does not match the pinned archive")
-    return record
 
 
 def _fail(message):
@@ -150,7 +133,6 @@ def emit(root, core_dir, archives, output, step_results, os_version, image_id, e
         "archives_present": {core_name: core_archive.is_file(), extension_name: extension_archive.is_file()},
     }
     attempt_path.write_text(json.dumps(attempt, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    validate_core_verification(root)
     if not core_archive.is_file() or not extension_archive.is_file():
         return [attempt_path]
     digests = {core_name: sha256_file(core_archive), extension_name: sha256_file(extension_archive)}

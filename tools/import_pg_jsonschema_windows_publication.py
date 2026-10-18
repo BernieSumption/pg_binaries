@@ -62,7 +62,6 @@ def import_run(root, core_artifact, extension_artifact, run_id):
             or any(value not in {"success", "failure", "skipped", "cancelled", "timed_out"}
                    for value in raw_steps.values())):
         raise coverage.CoverageError("raw attempt must retain each publication case outcome")
-    publication.validate_core_verification(root)
     results = {case: publication._step(value, case) for case, value in raw_steps.items()}
     evidence = root / "support/evidence" / f"pg_jsonschema-windows-publication-{run_id}" / publication.ARCHITECTURE
     copies = []

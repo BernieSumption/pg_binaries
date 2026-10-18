@@ -1,0 +1,46 @@
+{
+  "assembled_core": {
+    "archive": "postgresql-18.6-windows-x86_64.tar.gz",
+    "sha256": "acba200dc61234fce48f75b0dd57b6e4392ca0c56ffe59448b8d1fe8b5d21b27",
+    "version": "18.6"
+  },
+  "case_results": {
+    "archive-suite": "passed",
+    "static-analysis": "passed"
+  },
+  "ci": {
+    "build_revision": "90837a1ff8dcb62f5b7ca3306a59932fc12af092",
+    "provider": "github-actions",
+    "run_id": "39112577945",
+    "run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/39112577945",
+    "source_revision": "90837a1ff8dcb62f5b7ca3306a59932fc12af092",
+    "test_revision": "90837a1ff8dcb62f5b7ca3306a59932fc12af092"
+  },
+  "component": "pgtap",
+  "environment": {
+    "architecture": "x86_64",
+    "clean_system": true,
+    "dependency_check_profile": "windows-sql-archive-relocation-v1",
+    "dependency_checks_passed": true,
+    "endpoint": "current",
+    "image_id": "win22/20261012.333.1",
+    "os": "windows",
+    "os_version": "10.0.20348"
+  },
+  "outcome": "passed",
+  "platform": "windows-x86_64",
+  "postgresql_version": "18.6",
+  "prerequisite_archives": [],
+  "profile_id": "pgtap-publication-windows-x86_64-18.6",
+  "profile_revision": "91bb0efb8e9b0c374e3da82c42334454227e1f21607b40c7d9513edad11a602b",
+  "project": "pgtap",
+  "schema_version": 2,
+  "scope": "publication",
+  "sha256": "da913efb244a0ce6aab290d640e03c2ca86cbdc7dec84e78f4f4d65fe1b816e0",
+  "test_cases": [
+    "archive-suite",
+    "static-analysis"
+  ],
+  "test_revision": "90837a1ff8dcb62f5b7ca3306a59932fc12af092",
+  "version": "1.3.4"
+}
