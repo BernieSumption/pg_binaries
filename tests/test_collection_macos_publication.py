@@ -38,7 +38,7 @@ class CollectionMacosPublicationTests(unittest.TestCase):
         sources = registry["profiles"][emitter.PROFILE_ID]["sources"]
         pin_source = f"tools/collection_macos_pins/{emitter.PG_VERSION}-{emitter.ARCHITECTURE}.json"
         self.assertIn(pin_source, sources)
-        for version in ("17.11", "18.6"):
+        for version in ("15.19", "16.15", "17.11", "18.6"):
             for architecture in ("arm64", "x86_64"):
                 candidate = f"tools/collection_macos_pins/{version}-{architecture}.json"
                 self.assertEqual(candidate in sources, candidate == pin_source)

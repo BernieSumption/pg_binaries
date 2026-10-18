@@ -1,0 +1,115 @@
+name: collection macOS arm64 PostgreSQL 16.15 publication evidence
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [spike]
+    paths:
+      - .github/workflows/profile-change-scope.yml
+      - tools/profile_change_gate.py
+      - tests/test_profile_change_gate.py
+      - .github/workflows/collection-macos-arm64-16.15-publication.yml
+      - scripts/collection/macos-feasibility.sh
+      - scripts/collection/check_macos_evidence.py
+      - scripts/collection/probe.sql
+      - scripts/macos/static_analysis.py
+      - tools/check_extension_redistribution.py
+      - tools/emit_collection_macos_publication.py
+      - tools/import_collection_macos_publication.py
+      - tools/collection_macos_identity.py
+      - tools/collection_macos_pins/16.15-arm64.json
+      - tests/test_collection_macos_evidence.py
+      - tests/test_collection_macos_publication.py
+      - support/verification-profiles.json
+      - tools/coverage.py
+      - support.json
+      - support/postgresql-releases.json
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  profile_scope:
+    uses: ./.github/workflows/profile-change-scope.yml
+    with:
+      profile_id: collection-publication-macos-arm64-16.15
+
+  verify:
+    needs: profile_scope
+    if: needs.profile_scope.outputs.should_run == 'true'
+    runs-on: macos-15
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check collection macOS publication evidence helpers
+        run: python3 -m unittest tests/test_collection_macos_evidence.py tests/test_collection_macos_publication.py
+        env:
+          COLLECTION_MACOS_ARCHITECTURE: arm64
+          COLLECTION_POSTGRESQL_VERSION: "16.15"
+      - name: Download the selected PostgreSQL 16.15 Apple Silicon archive
+        uses: actions/download-artifact@v4
+        with:
+          name: macos-arm64-pilot-archives
+          run-id: 39093805055
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/core-archives
+      - name: Prepare collection publication output
+        run: mkdir -p "$RUNNER_TEMP/collection-publication"
+      - name: Build, relocate, analyse and exercise both collection releases
+        id: archive_suite
+        env:
+          COLLECTION_POSTGRESQL_VERSION: "16.15"
+        run: |
+          set -o pipefail
+          bash scripts/collection/macos-feasibility.sh \
+            "$RUNNER_TEMP/core-archives" "$RUNNER_TEMP/collection-publication" arm64 2>&1 \
+            | tee "$RUNNER_TEMP/collection-publication/build-log.txt"
+      - name: Validate archive checksums, metadata and Mach-O reports
+        id: static_analysis
+        if: ${{ always() && steps.archive_suite.outcome == 'success' }}
+        run: COLLECTION_MACOS_ARCHITECTURE=arm64 COLLECTION_POSTGRESQL_VERSION="16.15" python3 scripts/collection/check_macos_evidence.py "$RUNNER_TEMP/core-archives" "$RUNNER_TEMP/collection-publication"
+      - name: Finalize collection archive receipts and verification records
+        if: always()
+        env:
+          COLLECTION_MACOS_ARCHITECTURE: arm64
+          COLLECTION_POSTGRESQL_VERSION: "16.15"
+          ARCHIVE_SUITE_OUTCOME: ${{ steps.archive_suite.outcome }}
+          STATIC_ANALYSIS_OUTCOME: ${{ steps.static_analysis.outcome }}
+          GITHUB_SHA: ${{ github.sha }}
+        run: |
+          image_id="${ImageOS:?runner image OS missing}/${ImageVersion:?runner image version missing}"
+          os_version="$(sw_vers -productVersion)"
+          python3 tools/emit_collection_macos_publication.py \
+            --core-archives "$RUNNER_TEMP/core-archives" \
+            --archives "$RUNNER_TEMP/collection-publication" \
+            --output "$RUNNER_TEMP/collection-publication" \
+            --os-version "$os_version" --image-id "$image_id" \
+            --archive-suite-result "$ARCHIVE_SUITE_OUTCOME" \
+            --static-analysis-result "$STATIC_ANALYSIS_OUTCOME"
+      - name: Validate and retain archive-bound publication evidence
+        if: always()
+        env:
+          COLLECTION_MACOS_ARCHITECTURE: arm64
+          COLLECTION_POSTGRESQL_VERSION: "16.15"
+        run: |
+          if [[ -f "$RUNNER_TEMP/collection-publication/publication/attempt.json" ]]; then
+            python3 tools/import_collection_macos_publication.py \
+              --core-artifact "$RUNNER_TEMP/core-archives" \
+              --collection-artifact "$RUNNER_TEMP/collection-publication" \
+              --run-id "$GITHUB_RUN_ID"
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: collection-macos-arm64-publication-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/collection-publication/*.tar.gz
+            ${{ runner.temp }}/collection-publication/*.sha256
+            ${{ runner.temp }}/collection-publication/*.json
+            ${{ runner.temp }}/collection-publication/*.txt
+            ${{ runner.temp }}/collection-publication/*.log
+            ${{ runner.temp }}/collection-publication/publication/**
+            support/evidence/collection-macos-publication-${{ github.run_id }}/**
+          if-no-files-found: warn
+          retention-days: 7
