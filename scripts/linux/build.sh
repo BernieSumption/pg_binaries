@@ -40,7 +40,14 @@ vector_source_url=$(python3 "$repo/tools/source_archive.py" pgvector 0.8.7 tar.g
 vector_source_sha256=$(python3 "$repo/tools/source_archive.py" pgvector 0.8.7 tar.gz --field sha256)
 mkdir -p "$out"
 out=$(cd "$out" && pwd)
-docker build --platform "$docker_platform" -f "$repo/scripts/linux/Dockerfile" -t pg-binaries-linux-pilot "$repo"
+docker pull --platform "$docker_platform" ubuntu:22.04
+base_image_ref=$(docker image inspect ubuntu:22.04 --format '{{index .RepoDigests 0}}')
+base_image_digest=${base_image_ref##*@}
+if [[ ! $base_image_digest =~ ^sha256:[0-9a-f]{64}$ ]]; then
+  echo "Docker did not provide Ubuntu base image provenance" >&2
+  exit 2
+fi
+docker build --pull --platform "$docker_platform" -f "$repo/scripts/linux/Dockerfile" -t pg-binaries-linux-pilot "$repo"
 builder_image_id=$(docker image inspect pg-binaries-linux-pilot --format '{{.Id}}')
 if [[ ! $builder_image_id =~ ^sha256:[0-9a-f]{64}$ ]]; then
   echo "Docker did not provide a content-addressed Linux builder image ID" >&2
@@ -51,5 +58,5 @@ docker run --rm --platform "$docker_platform" \
   -e PG_SOURCE_URL="$pg_source_url" -e PG_SOURCE_SHA256="$pg_source_sha256" \
   -e VECTOR_SOURCE_URL="$vector_source_url" -e VECTOR_SOURCE_SHA256="$vector_source_sha256" \
   -e BUILD_ID="$build_id" -e SOURCE_REVISION="$source_revision" \
-  -e BUILDER_IMAGE_ID="$builder_image_id" \
+  -e BUILDER_IMAGE_ID="$builder_image_id" -e BASE_IMAGE_DIGEST="$base_image_digest" \
   -v "$out:/out" pg-binaries-linux-pilot

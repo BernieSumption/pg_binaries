@@ -19,7 +19,9 @@ vector_source_sha256=${VECTOR_SOURCE_SHA256:?VECTOR_SOURCE_SHA256 is required}
 build_id=${BUILD_ID:?BUILD_ID is required}
 source_revision=${SOURCE_REVISION:?SOURCE_REVISION is required}
 builder_image_id=${BUILDER_IMAGE_ID:?BUILDER_IMAGE_ID is required}
-if [[ ! $build_id =~ ^[A-Za-z0-9][A-Za-z0-9._-]*$ || ! $source_revision =~ ^([0-9a-fA-F]{40}|[0-9a-fA-F]{64})$ || ! $builder_image_id =~ ^sha256:[0-9a-f]{64}$ ]]; then
+base_image_digest=${BASE_IMAGE_DIGEST:?BASE_IMAGE_DIGEST is required}
+builder_packages_sha256=$(dpkg-query -W -f='${binary:Package}\t${Version}\t${Architecture}\t${db:Status-Abbrev}\n' | LC_ALL=C sort | sha256sum | awk '{print $1}')
+if [[ ! $build_id =~ ^[A-Za-z0-9][A-Za-z0-9._-]*$ || ! $source_revision =~ ^([0-9a-fA-F]{40}|[0-9a-fA-F]{64})$ || ! $builder_image_id =~ ^sha256:[0-9a-f]{64}$ || ! $base_image_digest =~ ^sha256:[0-9a-f]{64}$ || ! $builder_packages_sha256 =~ ^[0-9a-f]{64}$ ]]; then
   echo "Invalid Linux build provenance" >&2
   exit 2
 fi
@@ -126,7 +128,7 @@ python3 /usr/local/bin/write-linux-license-inventory \
   "$root" "$pg_version" /work/runtime-packages.tsv
 
 cat > "$root/manifest.json" <<EOF
-{"schema_version":1,"component":"postgresql","version":"${pg_version}","postgresql_version":"${pg_version}","platform":"linux","architecture":"${architecture}","build_id":"${build_id}","source_revision":"${source_revision}","source_archive":{"url":"${pg_source_url}","sha256":"${pg_source_sha256}"},"build_configuration":"${build_configuration}","builder_image_id":"${builder_image_id}","bundled_glibc_version":"$(dpkg-query -W -f='${Version}' libc6)","included_extensions":${builtins},"capabilities":{"icu":true,"libc_collations":true,"lz4":true,"zstd":true}}
+{"schema_version":1,"component":"postgresql","version":"${pg_version}","postgresql_version":"${pg_version}","platform":"linux","architecture":"${architecture}","build_id":"${build_id}","source_revision":"${source_revision}","source_archive":{"url":"${pg_source_url}","sha256":"${pg_source_sha256}"},"build_configuration":"${build_configuration}","builder_image_id":"${builder_image_id}","builder_inputs":{"base_image":"ubuntu:22.04","base_image_digest":"${base_image_digest}","packages_sha256":"${builder_packages_sha256}"},"bundled_glibc_version":"$(dpkg-query -W -f='${Version}' libc6)","included_extensions":${builtins},"capabilities":{"icu":true,"libc_collations":true,"lz4":true,"zstd":true}}
 EOF
 
 cat > /work/stage/metadata.json <<EOF

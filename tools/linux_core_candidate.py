@@ -53,7 +53,8 @@ def relevant_inputs_match(revision, root=ROOT):
     return not changed.stdout.strip()
 
 
-def validate_candidate(manifest_path, archive_path, version, builder_image_id, root=ROOT):
+def validate_candidate(manifest_path, archive_path, version, base_image_digest,
+                       builder_packages_sha256, root=ROOT):
     """Require a discovered core archive to match target, producer and current recipe inputs."""
     root, archive_path = Path(root), Path(archive_path)
     try:
@@ -97,8 +98,16 @@ def validate_candidate(manifest_path, archive_path, version, builder_image_id, r
             or metadata.get("source_revision") != source["head_sha"]
             or not re.fullmatch(r"sha256:[0-9a-f]{64}", str(metadata.get("builder_image_id", "")))):
         raise ValueError("core manifest target or source revision differs from producer run")
-    if metadata["builder_image_id"] != builder_image_id:
-        raise ValueError("core candidate builder image differs from the current Linux builder image")
+    builder_inputs = metadata.get("builder_inputs")
+    if (not isinstance(builder_inputs, dict)
+            or builder_inputs.get("base_image") != "ubuntu:22.04"
+            or not re.fullmatch(r"sha256:[0-9a-f]{64}", str(builder_inputs.get("base_image_digest", "")))
+            or not re.fullmatch(r"[0-9a-f]{64}", str(builder_inputs.get("packages_sha256", "")))):
+        raise ValueError("core manifest lacks checked builder input identity")
+    if (base_image_digest is None or builder_packages_sha256 is None
+            or builder_inputs["base_image_digest"] != base_image_digest
+            or builder_inputs["packages_sha256"] != builder_packages_sha256):
+        raise ValueError("core candidate builder inputs differ from the current Linux builder")
     expected_source = source_archive.source_archive("postgresql", version, "tar.bz2", root)
     if metadata.get("source_archive") != expected_source:
         raise ValueError("core manifest source archive identity differs from selected release")
@@ -123,12 +132,13 @@ def main(argv=None):
     parser.add_argument("--manifest", type=Path, required=True)
     parser.add_argument("--archive", type=Path, required=True)
     parser.add_argument("--postgresql-version", required=True)
-    parser.add_argument("--builder-image-id", required=True)
+    parser.add_argument("--base-image-digest", required=True)
+    parser.add_argument("--builder-packages-sha256", required=True)
     parser.add_argument("--root", type=Path, default=ROOT)
     args = parser.parse_args(argv)
     try:
         result = validate_candidate(args.manifest, args.archive, args.postgresql_version,
-                                   args.builder_image_id, args.root)
+                                    args.base_image_digest, args.builder_packages_sha256, args.root)
     except (OSError, ValueError, TypeError, KeyError, source_archive.SourceArchiveError) as exc:
         print(f"Rejected core candidate: {exc}", file=sys.stderr)
         return 1
