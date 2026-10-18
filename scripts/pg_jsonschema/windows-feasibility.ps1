@@ -90,6 +90,8 @@ try {
 
   & git -C $source init -q
   if ($LASTEXITCODE -ne 0) { throw 'Could not initialize the pg_jsonschema source checkout' }
+  & git -C $source config core.autocrlf false
+  if ($LASTEXITCODE -ne 0) { throw 'Could not preserve upstream source line endings' }
   & git -C $source remote add origin https://github.com/supabase/pg_jsonschema.git
   if ($LASTEXITCODE -ne 0) { throw 'Could not configure the pg_jsonschema upstream remote' }
   & git -C $source fetch --depth 1 origin $extensionCommit
