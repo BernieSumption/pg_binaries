@@ -8,14 +8,16 @@ import sys
 import tarfile
 import tempfile
 import unittest
-from unittest.mock import patch
+from dataclasses import replace
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
 import emit_hypopg_macos_publication as emitter
+from hypopg_macos_target import load_target_config
 
 
 class HypoPGMacOSFixture:
-    def __init__(self):
+    def __init__(self, target=None):
+        self.target = target or emitter._default_target()
         self.temp = tempfile.TemporaryDirectory()
         self.base = Path(self.temp.name)
         self.root = self.base / "repo"
@@ -24,7 +26,7 @@ class HypoPGMacOSFixture:
         for directory in (self.root, self.core, self.output):
             directory.mkdir()
         registry = json.loads(Path("support/verification-profiles.json").read_text())
-        profile = registry["profiles"][emitter.PROFILE_ID]
+        profile = registry["profiles"][self.target.profile_id]
         for relative in profile["sources"]:
             source = Path(relative)
             destination = self.root / source
@@ -33,14 +35,12 @@ class HypoPGMacOSFixture:
         shutil.copyfile("support.json", self.root / "support.json")
         shutil.copyfile("support/postgresql-releases.json", self.root / "support/postgresql-releases.json")
         shutil.copyfile("support/verification-profiles.json", self.root / "support/verification-profiles.json")
-        self.core_name = f"postgresql-{emitter.PG_VERSION}-{emitter.PLATFORM}.tar.gz"
-        self.extension_name = (f"hypopg-{emitter.HYPOPG_VERSION}-postgresql-"
-                               f"{emitter.PG_VERSION}-{emitter.PLATFORM}.tar.gz")
+        self.core_name = self.target.core_basename
+        self.extension_name = self.target.extension_basename
         self.core_archive = self.core / self.core_name
         self.core_archive.write_bytes(b"fixture core bytes")
         self.core_digest = self.digest(self.core_archive)
-        self.core_patch = patch.object(emitter, "CORE_SHA256", self.core_digest)
-        self.core_patch.start()
+        self.target = replace(self.target, core_sha256=self.core_digest)
         self.extension = self.output / self.extension_name
         self._archive_extension()
         self.environ = {"GITHUB_SHA": "a" * 40, "GITHUB_RUN_ID": "12345678901",
@@ -57,8 +57,8 @@ class HypoPGMacOSFixture:
     def _archive_extension(self):
         metadata = {
             "project": "hypopg", "version": emitter.HYPOPG_VERSION,
-            "sql_names": ["hypopg"], "postgresql_version": emitter.PG_VERSION,
-            "platform": "macos", "architecture": "arm64",
+            "sql_names": ["hypopg"], "postgresql_version": self.target.postgresql_version,
+            "platform": "macos", "architecture": self.target.architecture,
             "source": {"url": emitter.SOURCE_URL, "sha256": emitter.SOURCE_SHA256},
             "core_archive": {"basename": self.core_name, "sha256": self.core_digest},
         }
@@ -96,11 +96,14 @@ class HypoPGMacOSFixture:
         return emitter.emit(
             self.root, self.core, self.output, self.output,
             cases or {"archive-suite": "success", "static-analysis": "success"},
-            "15.7.9", "macos15/20261017.1", self.environ,
+            "15.7.9", "macos15/20261017.1", self.environ, target=self.target,
         )
 
+    def import_run(self, run_id="12345678901"):
+        import import_hypopg_macos_publication as importer
+        return importer.import_run(self.root, self.core, self.output, run_id, self.target)
+
     def close(self):
-        self.core_patch.stop()
         self.temp.cleanup()
 
 
@@ -113,10 +116,13 @@ class HypoPGMacOSPublicationTests(unittest.TestCase):
         workflow = (root / ".github/workflows/hypopg-macos-arm64-feasibility.yml").read_text()
         script = (root / "scripts/hypopg/macos-feasibility.sh").read_text()
         emitter_source = (root / "tools/emit_hypopg_macos_publication.py").read_text()
+        pin = json.loads((root / "tools/hypopg_macos_pins/18.6-arm64.json").read_text())
         self.assertIn(f"run-id: {run_id}", workflow)
-        self.assertIn(f"github-{run_id}-1", script)
-        self.assertIn(f'"source_revision": "{source_revision}"', script)
-        self.assertIn(core["sha256"], script)
+        self.assertEqual(pin["core_archive"]["run_id"], run_id)
+        self.assertEqual(pin["core_archive"]["build_id"], f"github-{run_id}-1")
+        self.assertEqual(pin["core_archive"]["source_revision"], source_revision)
+        self.assertEqual(pin["core_archive"]["sha256"], core["sha256"])
+        self.assertIn("load_target_config", script)
         self.assertIn(f'CORE_SHA256 = "{core["sha256"]}"', emitter_source)
 
     def setUp(self):

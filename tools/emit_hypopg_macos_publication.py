@@ -2,6 +2,7 @@
 """Bind the HypoPG macOS arm64 archive and feasibility checks into records."""
 
 import argparse
+from dataclasses import replace
 import hashlib
 import json
 import os
@@ -12,6 +13,8 @@ import tarfile
 
 import coverage
 from check_macos_extension_license_inventory import check_archive
+from hypopg_macos_target import (HYPOPG_VERSION, SOURCE_SHA256, SOURCE_URL,
+                                HypoPGMacosTarget, load_target_config)
 
 
 PROFILE_ID = "hypopg-publication-macos-arm64-18.6"
@@ -20,9 +23,25 @@ HYPOPG_VERSION = "1.4.3"
 ARCHITECTURE = "arm64"
 PLATFORM = "macos-arm64"
 CORE_SHA256 = "ec3f624ecfbea6dad20672106ec11bfafadde42e0454bc90bef992caa4be0033"
-SOURCE_URL = "https://github.com/HypoPG/hypopg/archive/refs/tags/1.4.3.tar.gz"
-SOURCE_SHA256 = "498a961d88cf37057fd9e98027d06fe805c8959d51895c3d9b94c9eb4e14f706"
 CASES = {"archive-suite", "static-analysis"}
+
+
+def _default_target():
+    pins = Path(__file__).parent / "hypopg_macos_pins"
+    if ARCHITECTURE == "arm64":
+        target = load_target_config(pins / f"{PG_VERSION}-arm64.json")
+        return replace(target, profile_id=PROFILE_ID, core_sha256=CORE_SHA256)
+    value = json.loads((pins / f"{PG_VERSION}-{ARCHITECTURE}.json").read_text(encoding="utf-8"))
+    if (value.get("postgresql_version") != PG_VERSION or value.get("architecture") != ARCHITECTURE
+            or value.get("platform") != PLATFORM
+            or not re.fullmatch(r"[0-9a-f]{64}", str(value.get("core_sha256", "")))
+            or value.get("core_build_id") != f"github-{value.get('core_run_id')}-1"):
+        raise ValueError("Intel HypoPG target pin is inconsistent")
+    return HypoPGMacosTarget(
+        PROFILE_ID, PG_VERSION, ARCHITECTURE, PLATFORM,
+        f"postgresql-{PG_VERSION}-{PLATFORM}.tar.gz", value["core_run_id"], CORE_SHA256,
+        value["core_build_id"], value["core_source_revision"],
+    )
 
 
 def _fail(message):
@@ -49,7 +68,8 @@ def _sidecar(path, digest):
         _fail(f"checksum sidecar does not match {path.name}")
 
 
-def _metadata(path):
+def _metadata(path, target=None):
+    target = target or _default_target()
     try:
         with tarfile.open(path, "r:gz") as archive:
             member = next((item for item in archive.getmembers()
@@ -62,10 +82,9 @@ def _metadata(path):
         _fail(f"cannot read HypoPG archive metadata: {exc}")
     expected = {
         "project": "hypopg", "version": HYPOPG_VERSION, "sql_names": ["hypopg"],
-        "postgresql_version": PG_VERSION, "platform": "macos", "architecture": ARCHITECTURE,
+        "postgresql_version": target.postgresql_version, "platform": "macos", "architecture": target.architecture,
         "source": {"url": SOURCE_URL, "sha256": SOURCE_SHA256},
-        "core_archive": {"basename": f"postgresql-{PG_VERSION}-{PLATFORM}.tar.gz",
-                         "sha256": CORE_SHA256},
+        "core_archive": {"basename": target.core_basename, "sha256": target.core_sha256},
     }
     if not isinstance(value, dict) or any(value.get(key) != item for key, item in expected.items()):
         _fail("HypoPG metadata does not match the pinned publication target")
@@ -89,9 +108,10 @@ def _step_result(value, name):
     return mapping[value]
 
 
-def emit(root, core_dir, archives, output, step_results, os_version, image_id, environ=None):
+def emit(root, core_dir, archives, output, step_results, os_version, image_id, environ=None, target=None):
     root, core_dir, archives, output = map(Path, (root, core_dir, archives, output))
     environ = os.environ if environ is None else environ
+    target = target or _default_target()
     if not isinstance(step_results, dict) or set(step_results) != CASES:
         _fail("step_results must identify archive-suite and static-analysis")
     results = {case: _step_result(step_results[case], case) for case in sorted(CASES)}
@@ -107,17 +127,17 @@ def emit(root, core_dir, archives, output, step_results, os_version, image_id, e
     if not re.fullmatch(r"\d+(?:\.\d+)*", os_version or "") or not image_id:
         _fail("macOS runner version and image identifier are required")
 
-    profile = coverage.verification_profile(root, PROFILE_ID)
-    if (profile["scope"] != "publication" or profile["platforms"] != [PLATFORM]
+    profile = coverage.verification_profile(root, target.profile_id)
+    if (profile["scope"] != "publication" or profile["platforms"] != [target.platform]
             or profile["case_ids"] != sorted(CASES) or not profile["sources_available"]):
         _fail("registered profile does not match this HypoPG publication suite")
-    core_name = f"postgresql-{PG_VERSION}-{PLATFORM}.tar.gz"
-    extension_name = f"hypopg-{HYPOPG_VERSION}-postgresql-{PG_VERSION}-{PLATFORM}.tar.gz"
+    core_name = target.core_basename
+    extension_name = target.extension_basename
     core_archive, extension_archive = core_dir / core_name, archives / extension_name
     attempt = {
         "schema_version": 1, "run_id": run_id, "source_revision": revision,
-        "profile_id": PROFILE_ID, "postgresql_version": PG_VERSION,
-        "hypopg_version": HYPOPG_VERSION, "architecture": ARCHITECTURE,
+        "profile_id": target.profile_id, "postgresql_version": target.postgresql_version,
+        "hypopg_version": HYPOPG_VERSION, "architecture": target.architecture,
         "steps": {case: step_results[case] for case in sorted(CASES)},
         "archives_present": {core_name: core_archive.is_file(), extension_name: extension_archive.is_file()},
     }
@@ -131,9 +151,9 @@ def emit(root, core_dir, archives, output, step_results, os_version, image_id, e
     digests = {core_name: sha256_file(core_archive), extension_name: sha256_file(extension_archive)}
     _sidecar(core_archive, digests[core_name])
     _sidecar(extension_archive, digests[extension_name])
-    if digests[core_name] != CORE_SHA256:
+    if digests[core_name] != target.core_sha256:
         _fail("PostgreSQL core archive does not match the selected passed build")
-    _metadata(extension_archive)
+    _metadata(extension_archive, target)
     try:
         components, native_files = check_archive(extension_archive)
     except (OSError, ValueError) as exc:
@@ -164,7 +184,7 @@ def emit(root, core_dir, archives, output, step_results, os_version, image_id, e
             except (KeyError, TypeError):
                 actual = None
         if (actual != digests or static.get("passed") is not True
-                or static.get("architecture") != ARCHITECTURE
+                or static.get("architecture") != target.architecture
                 or not static.get("inspected_files")):
             _fail("static analysis did not pass over the final assembled archives")
 
@@ -172,32 +192,32 @@ def emit(root, core_dir, archives, output, step_results, os_version, image_id, e
           "run_url": f"{server_url.rstrip('/')}/{repository}/actions/runs/{run_id}",
           "source_revision": revision, "build_revision": revision, "test_revision": revision}
     receipt = {
-        "schema_version": 1, "profile_id": PROFILE_ID,
+        "schema_version": 1, "profile_id": target.profile_id,
         "profile_revision": profile["profile_revision"], "test_revision": revision,
         "project": "HypoPG", "version": HYPOPG_VERSION,
-        "postgresql_version": PG_VERSION, "architecture": ARCHITECTURE,
-        "platform": PLATFORM, "endpoint": "current", "case_results": results,
+        "postgresql_version": target.postgresql_version, "architecture": target.architecture,
+        "platform": target.platform, "endpoint": "current", "case_results": results,
         "archives": digests, "extension_archive": extension_name, "reports": report_digests,
         "clean_system": True, "dependency_check_profile": "macho-system-dependencies-v1",
         "dependency_checks_passed": (_json(static_path, "static analysis").get("passed") is True
                                       if static_path.is_file() else False),
         "environment": {"os": "macos", "os_version": os_version,
-                        "architecture": ARCHITECTURE, "image_id": image_id},
+                        "architecture": target.architecture, "image_id": image_id},
         "ci": ci,
     }
     receipt_path = publication / "current-receipt.json"
     receipt_path.write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     record = {
-        "schema_version": 2, "scope": "publication", "profile_id": PROFILE_ID,
+        "schema_version": 2, "scope": "publication", "profile_id": target.profile_id,
         "profile_revision": profile["profile_revision"], "test_cases": profile["case_ids"],
         "case_results": results, "test_revision": revision, "ci": ci,
         "outcome": outcome, "sha256": digests[extension_name],
         "component": "hypopg", "project": "HypoPG", "version": HYPOPG_VERSION,
-        "platform": PLATFORM, "postgresql_version": PG_VERSION,
-        "assembled_core": {"archive": core_name, "sha256": digests[core_name], "version": PG_VERSION},
+        "platform": target.platform, "postgresql_version": target.postgresql_version,
+        "assembled_core": {"archive": core_name, "sha256": digests[core_name], "version": target.postgresql_version},
         "prerequisite_archives": [],
         "environment": {"os": "macos", "os_version": os_version,
-                        "architecture": ARCHITECTURE, "clean_system": True,
+                        "architecture": target.architecture, "clean_system": True,
                         "endpoint": "current", "image_id": image_id,
                         "dependency_check_profile": receipt["dependency_check_profile"],
                         "dependency_checks_passed": receipt["dependency_checks_passed"]},
@@ -205,14 +225,15 @@ def emit(root, core_dir, archives, output, step_results, os_version, image_id, e
     coverage.validate_verification_record(record, coverage.load_json(root / "support.json"), root)
     records = publication / "records"
     records.mkdir(parents=True, exist_ok=True)
-    record_path = records / f"hypopg-{HYPOPG_VERSION}-postgresql-{PG_VERSION}-{PLATFORM}-current-{run_id}.json"
+    record_path = records / f"hypopg-{HYPOPG_VERSION}-postgresql-{target.postgresql_version}-{target.platform}-current-{run_id}.json"
     record_path.write_text(json.dumps(record, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     return [attempt_path, receipt_path, record_path]
 
 
-def main():
+def main(target=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[1])
+    parser.add_argument("--target-config", type=Path)
     parser.add_argument("--core-archives", type=Path, required=True)
     parser.add_argument("--archives", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
@@ -222,10 +243,12 @@ def main():
     parser.add_argument("--static-analysis-result", required=True)
     args = parser.parse_args()
     try:
+        target = target or (load_target_config(args.target_config)
+                            if args.target_config else _default_target())
         for path in emit(args.root, args.core_archives, args.archives, args.output,
                          {"archive-suite": args.archive_suite_result,
                           "static-analysis": args.static_analysis_result},
-                         args.os_version, args.image_id):
+                         args.os_version, args.image_id, target=target):
             print(path)
         return 0
     except (coverage.CoverageError, OSError, ValueError, TypeError, KeyError) as exc:

@@ -1,17 +1,21 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-core_archives=${1:?usage: macos-feasibility.sh CORE_ARCHIVE_DIRECTORY OUTPUT_DIRECTORY}
-output=${2:?usage: macos-feasibility.sh CORE_ARCHIVE_DIRECTORY OUTPUT_DIRECTORY}
-architecture=arm64
-pg_version=18.6
-hypopg_version=1.4.3
-source_url='https://github.com/HypoPG/hypopg/archive/refs/tags/1.4.3.tar.gz'
-source_sha256=498a961d88cf37057fd9e98027d06fe805c8959d51895c3d9b94c9eb4e14f706
-core_sha256=ec3f624ecfbea6dad20672106ec11bfafadde42e0454bc90bef992caa4be0033
-core_name="postgresql-${pg_version}-macos-${architecture}.tar.gz"
-extension_name="hypopg-${hypopg_version}-postgresql-${pg_version}-macos-${architecture}.tar.gz"
+core_archives=${1:?usage: macos-feasibility.sh CORE_ARCHIVE_DIRECTORY OUTPUT_DIRECTORY [TARGET_CONFIG]}
+output=${2:?usage: macos-feasibility.sh CORE_ARCHIVE_DIRECTORY OUTPUT_DIRECTORY [TARGET_CONFIG]}
 repo=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
+target_config=${3:-$repo/tools/hypopg_macos_pins/18.6-arm64.json}
+target_values=$(PYTHONPATH="$repo/tools" python3 - "$target_config" <<'PY'
+import sys
+from hypopg_macos_target import load_target_config
+
+target = load_target_config(sys.argv[1])
+print("\t".join(target.shell_values()))
+PY
+)
+IFS=$'\t' read -r pg_version architecture platform profile_id core_name core_run_id core_sha256 core_build_id core_source_revision source_url source_sha256 <<< "$target_values"
+hypopg_version=1.4.3
+extension_name="hypopg-${hypopg_version}-postgresql-${pg_version}-${platform}.tar.gz"
 core_archives=$(cd "$core_archives" && pwd)
 mkdir -p "$output"
 output=$(cd "$output" && pwd)
@@ -43,7 +47,7 @@ pgroot="$work/first/postgresql"
 test -s "$pgroot/include/server/pg_config.h"
 test -s "$pgroot/lib/pgxs/src/makefiles/pgxs.mk"
 
-python3 - "$pgroot" > "$work/prefix" <<'PY'
+python3 - "$pgroot" "$pg_version" "$architecture" "$core_build_id" "$core_source_revision" <<'PY' > "$work/prefix"
 import json
 import pathlib
 import re
@@ -52,9 +56,9 @@ import sys
 root = pathlib.Path(sys.argv[1])
 manifest = json.loads((root / "manifest.json").read_text())
 expected = {
-    "component": "postgresql", "version": "18.6", "postgresql_version": "18.6",
-    "platform": "macos", "architecture": "arm64", "build_id": "github-39093804232-1",
-    "source_revision": "42082a506adfca1628c509f2c7b17037b9a12123",
+    "component": "postgresql", "version": sys.argv[2], "postgresql_version": sys.argv[2],
+    "platform": "macos", "architecture": sys.argv[3], "build_id": sys.argv[4],
+    "source_revision": sys.argv[5],
 }
 for key, value in expected.items():
     if manifest.get(key) != value:

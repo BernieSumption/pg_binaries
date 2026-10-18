@@ -1,0 +1,81 @@
+name: HypoPG macOS arm64 PostgreSQL 17.11 publication
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [spike]
+    paths:
+      - .github/workflows/profile-change-scope.yml
+      - tools/profile_change_gate.py
+      - tests/test_profile_change_gate.py
+      - '.github/workflows/hypopg-macos-arm64-17.11-publication.yml'
+      - 'scripts/hypopg/macos-feasibility.sh'
+      - 'scripts/hypopg/macos-probe.sql'
+      - 'scripts/macos/static_analysis.py'
+      - 'tools/check_macos_extension_license_inventory.py'
+      - 'tools/publication_preflight.py'
+      - 'tools/emit_hypopg_macos_publication.py'
+      - 'tools/import_hypopg_macos_publication.py'
+      - 'tools/hypopg_macos_pins/17.11-arm64.json'
+      - 'tools/hypopg_macos_target.py'
+      - 'tests/test_hypopg_macos_17_11_arm64_publication.py'
+      - 'support/verification-profiles.json'
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  profile_scope:
+    uses: ./.github/workflows/profile-change-scope.yml
+    with:
+      profile_id: hypopg-publication-macos-arm64-17.11
+
+  publication_candidate:
+    needs: profile_scope
+    if: needs.profile_scope.outputs.should_run == 'true'
+    runs-on: macos-15
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check HypoPG macOS publication helpers
+        run: python3 -m unittest tests/test_hypopg_macos_17_11_arm64_publication.py
+      - name: Download the passed PostgreSQL 17.11 Apple Silicon artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: macos-arm64-pilot-archives
+          run-id: 39093804725
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/core-archives
+      - name: Build and verify HypoPG against the archived core
+        id: archive_suite
+        run: bash scripts/hypopg/macos-feasibility.sh "$RUNNER_TEMP/core-archives" "$RUNNER_TEMP/hypopg-publication" tools/hypopg_macos_pins/17.11-arm64.json
+      - name: Finalize HypoPG archive receipt and verification record
+        if: always()
+        env:
+          ARCHIVE_SUITE_OUTCOME: ${{ steps.archive_suite.outcome }}
+          STATIC_ANALYSIS_OUTCOME: ${{ steps.archive_suite.outcome }}
+          GITHUB_SHA: ${{ github.sha }}
+        run: |
+          image_id="${ImageOS:?runner image OS missing}/${ImageVersion:?runner image version missing}"
+          os_version="$(sw_vers -productVersion)"
+          python3 tools/emit_hypopg_macos_publication.py \
+            --target-config tools/hypopg_macos_pins/17.11-arm64.json \
+            --core-archives "$RUNNER_TEMP/core-archives" \
+            --archives "$RUNNER_TEMP/hypopg-publication" \
+            --output "$RUNNER_TEMP/hypopg-publication" \
+            --os-version "$os_version" --image-id "$image_id" \
+            --archive-suite-result "$ARCHIVE_SUITE_OUTCOME" \
+            --static-analysis-result "$STATIC_ANALYSIS_OUTCOME"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: hypopg-macos-arm64-17.11-publication-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/hypopg-publication/*.tar.gz
+            ${{ runner.temp }}/hypopg-publication/*.sha256
+            ${{ runner.temp }}/hypopg-publication/*.json
+            ${{ runner.temp }}/hypopg-publication/*.txt
+            ${{ runner.temp }}/hypopg-publication/publication/**
+          if-no-files-found: warn
+          retention-days: 7

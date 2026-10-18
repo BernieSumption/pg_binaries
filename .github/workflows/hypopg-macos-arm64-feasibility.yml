@@ -16,6 +16,8 @@ on:
       - 'tools/check_macos_extension_license_inventory.py'
       - 'tools/publication_preflight.py'
       - 'tools/emit_hypopg_macos_publication.py'
+      - 'tools/hypopg_macos_target.py'
+      - 'tools/hypopg_macos_pins/18.6-arm64.json'
       - 'tools/import_hypopg_macos_publication.py'
       - 'tests/test_emit_hypopg_macos_publication.py'
       - 'tests/test_import_hypopg_macos_publication.py'

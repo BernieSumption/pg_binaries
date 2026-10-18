@@ -7,7 +7,6 @@ import unittest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from test_emit_hypopg_macos_publication import HypoPGMacOSFixture
-import import_hypopg_macos_publication as importer
 
 
 class ImportHypoPGMacOSPublicationTests(unittest.TestCase):
@@ -17,8 +16,7 @@ class ImportHypoPGMacOSPublicationTests(unittest.TestCase):
 
     def test_import_retains_receipt_record_and_final_archive_reports(self):
         self.fixture.emit()
-        retained = importer.import_run(self.fixture.root, self.fixture.core,
-                                       self.fixture.output, "12345678901")
+        retained = self.fixture.import_run()
         self.assertTrue(any(path.endswith("current-receipt.json") for path in retained))
         self.assertTrue(any(path.startswith("support/verification/") for path in retained))
         evidence = (self.fixture.root / "support/evidence/hypopg-macos-publication-"
@@ -31,14 +29,12 @@ class ImportHypoPGMacOSPublicationTests(unittest.TestCase):
         self.fixture.emit()
         self.fixture.extension.write_bytes(self.fixture.extension.read_bytes() + b"tamper")
         with self.assertRaisesRegex(Exception, "checksum sidecar"):
-            importer.import_run(self.fixture.root, self.fixture.core,
-                                self.fixture.output, "12345678901")
+            self.fixture.import_run()
 
     def test_import_retains_incomplete_raw_attempt(self):
         self.fixture.extension.unlink()
         self.fixture.emit({"archive-suite": "failure", "static-analysis": "skipped"})
-        retained = importer.import_run(self.fixture.root, self.fixture.core,
-                                       self.fixture.output, "12345678901")
+        retained = self.fixture.import_run()
         self.assertTrue(any(path.endswith("attempt.json") for path in retained))
         self.assertFalse((self.fixture.root / "support/verification").exists())
 

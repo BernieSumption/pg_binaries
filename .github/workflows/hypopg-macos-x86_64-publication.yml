@@ -16,6 +16,7 @@ on:
       - 'tools/check_macos_extension_license_inventory.py'
       - 'tools/publication_preflight.py'
       - 'tools/emit_hypopg_macos_publication.py'
+      - 'tools/hypopg_macos_target.py'
       - 'tools/emit_hypopg_macos_x86_64_publication.py'
       - 'tools/import_hypopg_macos_publication.py'
       - 'tools/import_hypopg_macos_x86_64_publication.py'
