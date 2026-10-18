@@ -3,6 +3,8 @@ $PSNativeCommandUseErrorActionPreference = $true
 
 $pgVersion = $env:PG_VERSION
 if (-not $pgVersion -or $pgVersion -notmatch '^\d+\.\d+$') { throw 'PG_VERSION must be set to a PostgreSQL minor version selected by tools/plan_work.py' }
+$buildMode = if ($env:BUILD_MODE) { $env:BUILD_MODE } else { 'combined' }
+if ($buildMode -notin @('combined', 'core-only')) { throw 'BUILD_MODE must be combined or core-only' }
 $vectorVersion = '0.8.7'
 $repo = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
 $sourceRevision = $env:SOURCE_REVISION
@@ -30,9 +32,14 @@ if ($vcpkgRevision -ne '9e593bb18ea69cc5095e012465dcd675a822ed0d') {
   throw "VCPKG_INSTALLATION_ROOT is not the pinned vcpkg revision: $vcpkgRevision"
 }
 if ($pgVersion -eq '15.19') {
-  $buildConfiguration = "postgresql-$pgVersion;pgvector-$vectorVersion;builder=windows-runner;postgresql-builder=msvc-release;dependency-layout=staged-vcpkg-import-libraries;postgresql=icu,lz4,zstd,zlib,openssl,libxml,libxslt,no-uuid,no-readline;compiler=MSVC;pgvector=debug-symbols;vcpkg=$vcpkgRevision;runtime=vcpkg-and-msvc-dlls"
+  $buildConfiguration = "postgresql-$pgVersion;builder=windows-runner;postgresql-builder=msvc-release;dependency-layout=staged-vcpkg-import-libraries;postgresql=icu,lz4,zstd,zlib,openssl,libxml,libxslt,no-uuid,no-readline;compiler=MSVC"
 } else {
-  $buildConfiguration = "postgresql-$pgVersion;pgvector-$vectorVersion;builder=windows-runner;meson=debugoptimized;postgresql=icu,lz4,zstd,zlib,openssl,libxml,libxslt,no-uuid,no-readline;compiler=MSVC;pgvector=debug-symbols;vcpkg=$vcpkgRevision;runtime=vcpkg-and-msvc-dlls"
+  $buildConfiguration = "postgresql-$pgVersion;builder=windows-runner;meson=debugoptimized;postgresql=icu,lz4,zstd,zlib,openssl,libxml,libxslt,no-uuid,no-readline;compiler=MSVC"
+}
+if ($buildMode -eq 'combined') {
+  $buildConfiguration = $buildConfiguration.Replace("postgresql-$pgVersion;", "postgresql-$pgVersion;pgvector-$vectorVersion;") + ";pgvector=debug-symbols;vcpkg=$vcpkgRevision;runtime=vcpkg-and-msvc-dlls"
+} else {
+  $buildConfiguration += ";vcpkg=$vcpkgRevision;runtime=vcpkg-and-msvc-dlls"
 }
 $work = Join-Path $env:RUNNER_TEMP 'pg-binaries-windows-build'
 $dist = Join-Path $repo 'dist/windows'
@@ -72,13 +79,15 @@ if ($pgVersion -eq '16.15') {
   }
   tar -xzf $pgSourceArchive -C $work
 }
-$vectorSourceUrl = (& python $sourceTool pgvector $vectorVersion tar.gz --field url).Trim()
-$vectorSourceSha256 = (& python $sourceTool pgvector $vectorVersion tar.gz --field sha256).Trim()
-Invoke-WebRequest $vectorSourceUrl -OutFile $vectorSourceArchive
-if ((Get-FileHash $vectorSourceArchive -Algorithm SHA256).Hash.ToLowerInvariant() -ne $vectorSourceSha256) {
-  throw 'pgvector source archive SHA-256 differs from selected source identity'
+if ($buildMode -eq 'combined') {
+  $vectorSourceUrl = (& python $sourceTool pgvector $vectorVersion tar.gz --field url).Trim()
+  $vectorSourceSha256 = (& python $sourceTool pgvector $vectorVersion tar.gz --field sha256).Trim()
+  Invoke-WebRequest $vectorSourceUrl -OutFile $vectorSourceArchive
+  if ((Get-FileHash $vectorSourceArchive -Algorithm SHA256).Hash.ToLowerInvariant() -ne $vectorSourceSha256) {
+    throw 'pgvector source archive SHA-256 differs from selected source identity'
+  }
+  tar -xzf $vectorSourceArchive -C $work
 }
-tar -xzf $vectorSourceArchive -C $work
 
 $env:PKG_CONFIG_PATH = (Join-Path $vcpkg 'lib/pkgconfig')
 $env:CMAKE_PREFIX_PATH = $vcpkg
@@ -167,8 +176,6 @@ if ($pgGitSource) {
 if ($fixtureReport) { $pgManifest.windows_test_fixture_exclusions = $fixtureReport }
 
 $env:PGROOT = $pgInstall
-$vectorMakefile = Join-Path $vectorSource 'Makefile.win'
-$vectorMakefileHash = (Get-FileHash $vectorMakefile -Algorithm SHA256).Hash
 $pgImportAlias = $null
 if ($pgVersion -eq '16.15') {
   $pgImportAlias = Join-Path $pgInstall 'lib/postgres.lib'
@@ -180,6 +187,9 @@ if ($pgVersion -eq '16.15') {
     sha256 = (Get-FileHash $pgImportAlias -Algorithm SHA256).Hash.ToLowerInvariant()
   }
 }
+if ($buildMode -eq 'combined') {
+$vectorMakefile = Join-Path $vectorSource 'Makefile.win'
+$vectorMakefileHash = (Get-FileHash $vectorMakefile -Algorithm SHA256).Hash
 $previousLink = $env:LINK
 $env:LINK = if ($previousLink) { "$previousLink /DEBUG" } else { '/DEBUG' }
 Push-Location $vectorSource
@@ -219,8 +229,10 @@ $vectorMetadata | ConvertTo-Json -Depth 5 | Set-Content -Encoding utf8 (Join-Pat
 New-Item -ItemType Directory -Force $vectorArchiveRoot | Out-Null
 Move-Item $vectorPackage (Join-Path $vectorArchiveRoot 'pgvector')
 Move-Item (Join-Path $work 'metadata.json') (Join-Path $vectorArchiveRoot 'metadata.json')
+}
 
-$msvcRuntimeDlls = @(& (Join-Path $PSScriptRoot 'bundle-msvc-runtime.ps1') -PostgresRoot $pgInstall -ExtensionRoot (Join-Path $vectorArchiveRoot 'pgvector') -NoticeTemplate (Join-Path $PSScriptRoot 'MSVC-RUNTIME.md'))
+$runtimeScanRoot = if ($buildMode -eq 'combined') { Join-Path $vectorArchiveRoot 'pgvector' } else { $pgInstall }
+$msvcRuntimeDlls = @(& (Join-Path $PSScriptRoot 'bundle-msvc-runtime.ps1') -PostgresRoot $pgInstall -ExtensionRoot $runtimeScanRoot -NoticeTemplate (Join-Path $PSScriptRoot 'MSVC-RUNTIME.md'))
 $pgManifest['bundled_msvc_runtime_dlls'] = $msvcRuntimeDlls
 $pgLicenseInventory = [ordered]@{
   schema_version = 1
@@ -262,6 +274,7 @@ $pgLicenseInventory = [ordered]@{
   )
 }
 $pgLicenseInventory | ConvertTo-Json -Depth 8 | Set-Content -Encoding utf8 (Join-Path $pgLicenses 'inventory.json')
+if ($buildMode -eq 'combined') {
 $vectorLicenseInventory = [ordered]@{
   schema_version = 1
   components = @([ordered]@{
@@ -277,21 +290,33 @@ $vectorLicenseInventory = [ordered]@{
   })
 }
 $vectorLicenseInventory | ConvertTo-Json -Depth 8 | Set-Content -Encoding utf8 (Join-Path $vectorArchiveRoot 'pgvector/LICENSES/pgvector-inventory.json')
+}
 $pgManifest | ConvertTo-Json -Depth 5 | Set-Content -Encoding utf8 (Join-Path $pgInstall 'manifest.json')
 
 $pgArchive = Join-Path $dist "postgresql-$pgVersion-windows-x86_64.tar.gz"
 $vectorArchive = Join-Path $dist "pgvector-$vectorVersion-postgresql-$pgVersion-windows-x86_64.tar.gz"
 if (Test-Path $pgArchive) { Remove-Item $pgArchive -Force }
 if (Test-Path $vectorArchive) { Remove-Item $vectorArchive -Force }
+if (Test-Path "$vectorArchive.sha256") { Remove-Item "$vectorArchive.sha256" -Force }
 tar.exe -czf $pgArchive -C $work postgresql
 if ($LASTEXITCODE -ne 0) { throw 'Failed to create PostgreSQL tar.gz archive' }
-tar.exe -czf $vectorArchive -C $vectorArchiveRoot pgvector metadata.json
-if ($LASTEXITCODE -ne 0) { throw 'Failed to create pgvector tar.gz archive' }
-foreach ($archive in @($pgArchive, $vectorArchive)) {
+if ($buildMode -eq 'combined') {
+  tar.exe -czf $vectorArchive -C $vectorArchiveRoot pgvector metadata.json
+  if ($LASTEXITCODE -ne 0) { throw 'Failed to create pgvector tar.gz archive' }
+}
+$archives = @($pgArchive)
+if ($buildMode -eq 'combined') { $archives += $vectorArchive }
+foreach ($archive in $archives) {
   $hash = (Get-FileHash $archive -Algorithm SHA256).Hash.ToLowerInvariant()
   "$hash  $(Split-Path $archive -Leaf)" | Set-Content -Encoding ascii "$archive.sha256"
 }
 $postgresqlPdbRoot = if ($pgVersion -eq '15.19') { $pgSource } else { $pgBuild }
-python (Join-Path $repo 'tools/create_windows_symbols.py') $pgArchive $vectorArchive --staged-pdbs $postgresqlPdbRoot $vectorSource --output-dir (Join-Path $dist 'debug-symbols')
+$symbolOutput = Join-Path $dist 'debug-symbols'
+if (Test-Path $symbolOutput) { Remove-Item $symbolOutput -Recurse -Force }
+if ($buildMode -eq 'combined') {
+  python (Join-Path $repo 'tools/create_windows_symbols.py') $pgArchive $vectorArchive --staged-pdbs $postgresqlPdbRoot $vectorSource --output-dir $symbolOutput
+} else {
+  python (Join-Path $repo 'tools/create_windows_symbols.py') $pgArchive --staged-pdbs $postgresqlPdbRoot --output-dir $symbolOutput
+}
 if ($LASTEXITCODE -ne 0) { throw 'Failed to index matching Windows PDB files' }
-Write-Host "Built $pgArchive and $vectorArchive"
+Write-Host "Built $($archives -join ' and ')"
