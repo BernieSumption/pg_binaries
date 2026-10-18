@@ -1,0 +1,12 @@
+# Selected-target Windows pgTAP migration, 18 October 2026
+
+The four Windows pgTAP publication workflows were replaced by `.github/workflows/pgtap-windows-selected-publication.yml`. Its planner validates each requested target against `support.json`; one Windows runner packages pgTAP 1.3.4 and a separate runner downloads and verifies the final archive with the exact PostgreSQL core archive. The old workflow files were removed before these final runs. All four current PostgreSQL targets passed both publication-profile cases:
+
+- PostgreSQL 15.19: [run 39156646041](https://github.com/BernieSumption/pg_binaries/actions/runs/39156646041), [record](../verification/pgtap-1.3.4-postgresql-15.19-windows-x86_64-current-39156646041.json).
+- PostgreSQL 16.15: [run 39156727630](https://github.com/BernieSumption/pg_binaries/actions/runs/39156727630), [record](../verification/pgtap-1.3.4-postgresql-16.15-windows-x86_64-current-39156727630.json).
+- PostgreSQL 17.11: [run 39156739902](https://github.com/BernieSumption/pg_binaries/actions/runs/39156739902), [record](../verification/pgtap-1.3.4-postgresql-17.11-windows-x86_64-current-39156739902.json).
+- PostgreSQL 18.6: [run 39156756135](https://github.com/BernieSumption/pg_binaries/actions/runs/39156756135), [record](../verification/pgtap-1.3.4-postgresql-18.6-windows-x86_64-current-39156756135.json).
+
+The importer independently checked each downloaded Actions artifact's final archive bytes, checksum sidecars, receipt, profile revision, SQL output and static-analysis report before retaining its record and evidence folder. Each record's profile revision is current after the old workflows' removal. Each run used 76–82 seconds of runner time across select, build and verify jobs, excluding queue time. The selection job used 4–7 seconds, the build job 38–45 seconds, and the fresh verifier 30–33 seconds.
+
+This batch proves selected-target execution and fresh-runner verification for a SQL-only extension on Windows. Core retrieval still depends on fixed run IDs in `support/windows-core-pins/`; candidate retrieval and build-input freshness remain architecture migration work. The branch-only trial uses `experiments/pgtap-windows-target-trial/target.json` until the new workflow can be dispatched normally.
