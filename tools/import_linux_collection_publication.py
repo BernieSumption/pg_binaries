@@ -15,7 +15,6 @@ from import_linux_tiger_publication import _sidecar
 
 
 ARCHITECTURES = {"x86_64", "arm64"}
-POSTGRESQL_VERSION = "18.6"
 VERSIONS = ("1.1.1", "2.1.3")
 SOURCE_SHA256 = {
     "1.1.1": "ab99a969334442e4a3c77405bc9ffed0083595d18f3898d64a731353a32bec5e",
@@ -25,7 +24,7 @@ STEP_NAMES = {"core_build", "collection_build", "collection_verify"}
 MAX_EVIDENCE_BYTES = 1024 * 1024
 
 
-def _metadata(path, version, architecture):
+def _metadata(path, version, architecture, postgresql_version):
     try:
         with tarfile.open(path, "r:gz") as archive:
             member = next((item for item in archive.getmembers()
@@ -40,21 +39,21 @@ def _metadata(path, version, architecture):
     expected_url = f"https://github.com/aws/pgcollection/archive/refs/tags/v{version}.tar.gz"
     if (not isinstance(metadata, dict) or metadata.get("project") != "collection"
             or metadata.get("version") != version or metadata.get("sql_names") != ["collection"]
-            or metadata.get("requires") != [] or metadata.get("postgresql_version") != POSTGRESQL_VERSION
+            or metadata.get("requires") != [] or metadata.get("postgresql_version") != postgresql_version
             or metadata.get("platform") != "linux" or metadata.get("architecture") != architecture
             or source != {"url": expected_url, "sha256": SOURCE_SHA256[version]}):
         raise coverage.CoverageError("collection archive metadata or pinned source identity is invalid")
 
 
-def import_run(root, core_artifact, collection_artifact, run_id, architecture):
+def import_run(root, core_artifact, collection_artifact, run_id, architecture, postgresql_version="18.6"):
     root, core_artifact, collection_artifact = map(Path, (root, core_artifact, collection_artifact))
     run_id = str(run_id)
     if not re.fullmatch(r"\d+", run_id) or architecture not in ARCHITECTURES:
         raise coverage.CoverageError("expected numeric run_id and x86_64 or arm64 architecture")
     support = coverage.load_json(root / "support.json")
     snapshot = coverage.load_json(root / "support/postgresql-releases.json")
-    if POSTGRESQL_VERSION not in coverage.release_snapshot(snapshot, support):
-        raise coverage.CoverageError("PostgreSQL 18.6 is not selected")
+    if postgresql_version not in coverage.release_snapshot(snapshot, support):
+        raise coverage.CoverageError(f"PostgreSQL {postgresql_version} is not selected")
     platform = f"linux-{architecture}"
     profile_id = f"collection-publication-current-{architecture}"
     profile = coverage.verification_profile(root, profile_id)
@@ -73,7 +72,7 @@ def import_run(root, core_artifact, collection_artifact, run_id, architecture):
             or str(attempt.get("run_id")) != run_id
             or not coverage.REVISION.fullmatch(str(attempt.get("source_revision", "")))
             or attempt.get("architecture") != architecture
-            or attempt.get("postgresql_version") != POSTGRESQL_VERSION
+            or attempt.get("postgresql_version") != postgresql_version
             or attempt.get("collection_versions") != list(VERSIONS)
             or attempt.get("source_sha256") != SOURCE_SHA256
             or not isinstance(attempt.get("steps"), dict)
@@ -90,11 +89,11 @@ def import_run(root, core_artifact, collection_artifact, run_id, architecture):
     if steps != {"collection-archive-suite": suite}:
         raise coverage.CoverageError("publication case outcome differs from raw attempt outcomes")
 
-    core_name = f"postgresql-{POSTGRESQL_VERSION}-{platform}.tar.gz"
+    core_name = f"postgresql-{postgresql_version}-{platform}.tar.gz"
     core_dir = core_artifact / "pilot"
     if not core_dir.is_dir():
         core_dir = core_artifact
-    extension_names = {version: f"collection-{version}-postgresql-{POSTGRESQL_VERSION}-{platform}.tar.gz"
+    extension_names = {version: f"collection-{version}-postgresql-{postgresql_version}-{platform}.tar.gz"
                        for version in VERSIONS}
     receipt_paths = {version: publication / f"current-receipt-{version}.json" for version in VERSIONS}
     records = sorted((publication / "records").glob("*.json"))
@@ -111,14 +110,14 @@ def import_run(root, core_artifact, collection_artifact, run_id, architecture):
         raise coverage.CoverageError("receipt or records exist but referenced archives are missing")
     for version, name in extension_names.items():
         if name in digests:
-            _metadata(archive_paths[name], version, architecture)
+            _metadata(archive_paths[name], version, architecture, postgresql_version)
 
     target = root / "support/evidence" / f"collection-publication-{run_id}" / architecture
     copies = [(steps_path, target / steps_path.name), (attempt_path, target / attempt_path.name)]
     for version, receipt in receipt_data.items():
         extension_name = extension_names[version]
         expected = {"profile_id": profile_id, "project": "collection", "version": version,
-                    "postgresql_version": POSTGRESQL_VERSION, "architecture": architecture,
+                    "postgresql_version": postgresql_version, "architecture": architecture,
                     "endpoint": "current", "case_results": _case_results(steps),
                     "extension_archive": extension_name, "prerequisite_archives": [],
                     "archives": {core_name: digests[core_name], extension_name: digests[extension_name]}}
@@ -156,13 +155,13 @@ def import_run(root, core_artifact, collection_artifact, run_id, architecture):
         extension_name = extension_names[version]
         results = _case_results(steps)
         expected = {"profile_id": profile_id, "component": "collection", "project": "collection",
-                    "version": version, "postgresql_version": POSTGRESQL_VERSION,
+                    "version": version, "postgresql_version": postgresql_version,
                     "platform": platform, "case_results": results, "outcome": _outcome(results),
                     "test_cases": profile["case_ids"], "ci": receipt["ci"],
                     "test_revision": receipt["test_revision"], "sha256": digests[extension_name],
                     "assembled_core": {"archive": core_name, "sha256": digests[core_name],
-                                       "version": POSTGRESQL_VERSION}, "prerequisite_archives": []}
-        expected_filename = f"collection-{version}-postgresql-{POSTGRESQL_VERSION}-{platform}-current-{run_id}.json"
+                                       "version": postgresql_version}, "prerequisite_archives": []}
+        expected_filename = f"collection-{version}-postgresql-{postgresql_version}-{platform}-current-{run_id}.json"
         if (any(record.get(key) != value for key, value in expected.items())
                 or source.name != expected_filename
                 or record.get("profile_revision") != receipt.get("profile_revision")
@@ -199,10 +198,11 @@ def main():
     parser.add_argument("--collection-artifact", type=Path, required=True)
     parser.add_argument("--run-id", required=True)
     parser.add_argument("--architecture", choices=sorted(ARCHITECTURES), required=True)
+    parser.add_argument("--postgresql-version", default="18.6")
     args = parser.parse_args()
     try:
         print("\n".join(import_run(args.root, args.core_artifact, args.collection_artifact,
-                                   args.run_id, args.architecture)))
+                                   args.run_id, args.architecture, args.postgresql_version)))
         return 0
     except (coverage.CoverageError, OSError, ValueError, TypeError) as exc:
         print(f"Linux collection publication import: {exc}", file=sys.stderr)

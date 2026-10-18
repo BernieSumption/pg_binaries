@@ -6,7 +6,11 @@ case "$architecture:$(uname -m)" in
   x86_64:x86_64|arm64:aarch64) ;;
   *) echo "Build container architecture does not match $architecture: $(uname -m)" >&2; exit 2 ;;
 esac
-pg_version=18.6
+pg_version=${PG_VERSION:-18.6}
+case "$pg_version" in
+  15.19|16.15|17.11|18.6) ;;
+  *) echo "Unsupported PostgreSQL version: $pg_version" >&2; exit 2 ;;
+esac
 core_archive="postgresql-${pg_version}-linux-${architecture}.tar.gz"
 cd /input
 sha256sum -c "$core_archive.sha256"

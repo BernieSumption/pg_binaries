@@ -5,7 +5,11 @@ case "$architecture:$(uname -m)" in
   x86_64:x86_64|arm64:aarch64) ;;
   *) echo "Verifier architecture does not match $architecture: $(uname -m)" >&2; exit 2 ;;
 esac
-pg_version=18.6
+pg_version=${PG_VERSION:-18.6}
+case "$pg_version" in
+  15.19|16.15|17.11|18.6) ;;
+  *) echo "Unsupported PostgreSQL version: $pg_version" >&2; exit 2 ;;
+esac
 core_archive="postgresql-${pg_version}-linux-${architecture}.tar.gz"
 cd /input
 sha256sum -c "$core_archive.sha256"
@@ -24,12 +28,12 @@ for version in 1.1.1 2.1.3; do
   pgroot="$work/first/postgresql"
   extroot="$work/package/collection"
   test "$("$pgroot/bin/pg_config" --version)" = "PostgreSQL $pg_version"
-  python3 - "$work/package" "$version" "$architecture" <<'PY'
+  python3 - "$work/package" "$version" "$architecture" "$pg_version" <<'PY'
 import json, sys
 import re
 from pathlib import Path
 root = Path(sys.argv[1])
-version, architecture = sys.argv[2:]
+version, architecture, pg_version = sys.argv[2:]
 pins = {
     "1.1.1": "ab99a969334442e4a3c77405bc9ffed0083595d18f3898d64a731353a32bec5e",
     "2.1.3": "a6b07864e5893d3b682bb3223fd6d33015709765c9d40d415c85112358f0e3e4",
@@ -42,7 +46,7 @@ metadata = json.loads((root / "metadata.json").read_text())
 expected = {
     "project": "collection", "version": version, "sql_names": ["collection"],
     "requires": [], "configuration_prerequisites": [], "runtime_prerequisites": [],
-    "postgresql_version": "18.6", "platform": "linux", "architecture": architecture,
+    "postgresql_version": pg_version, "platform": "linux", "architecture": architecture,
 }
 for key, value in expected.items():
     if metadata.get(key) != value:

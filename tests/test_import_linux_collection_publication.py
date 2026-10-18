@@ -152,6 +152,11 @@ class CollectionPublicationImportTests(unittest.TestCase):
         with self.assertRaisesRegex(coverage.CoverageError, "receipt identity or archive hashes"):
             self._import()
 
+    def test_rejects_a_postgresql_version_outside_the_selected_release_set(self):
+        with self.assertRaisesRegex(coverage.CoverageError, "PostgreSQL 18.7 is not selected"):
+            importer.import_run(self.root, self.core_artifact, self.collection_artifact,
+                                self.run_id, self.architecture, "18.7")
+
     def test_rejects_record_with_a_different_archive_checksum(self):
         path = next(self.records.glob("collection-1.1.1-*.json"))
         record = json.loads(path.read_text())
