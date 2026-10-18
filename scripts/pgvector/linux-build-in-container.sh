@@ -4,13 +4,14 @@ pg_version=${PG_VERSION:?}; architecture=${PG_ARCHITECTURE:?}
 [[ "$pg_version:$architecture" == 18.6:x86_64 ]] || { echo "Trial supports PostgreSQL 18.6 x86_64 only" >&2; exit 2; }
 core_archive=${CORE_ARCHIVE:?}; source_archive=${SOURCE_ARCHIVE:?}; source_sha=${VECTOR_SOURCE_SHA256:?}
 expected_core_sha=${EXPECTED_CORE_SHA256:?}
+core_source_sha=${CORE_SOURCE_SHA256:?}
 build_id=${BUILD_ID:?}; source_revision=${SOURCE_REVISION:?}; builder_image_id=${BUILDER_IMAGE_ID:?}
 builder_packages_sha=${BUILDER_PACKAGES_SHA256:?}
 [[ "$build_id" =~ ^[A-Za-z0-9][A-Za-z0-9._-]*$ ]] || { echo "Invalid BUILD_ID" >&2; exit 2; }
 [[ "$source_revision" =~ ^([0-9a-fA-F]{40}|[0-9a-fA-F]{64})$ ]] || { echo "Invalid SOURCE_REVISION" >&2; exit 2; }
 [[ "$builder_image_id" =~ ^sha256:[0-9a-f]{64}$ ]] || { echo "Invalid builder image ID" >&2; exit 2; }
 [[ "$builder_packages_sha" =~ ^[0-9a-f]{64}$ ]] || { echo "Invalid builder package inventory SHA-256" >&2; exit 2; }
-python3 /usr/local/bin/archive-input validate-core "/input/$core_archive" "/input/$core_archive.sha256" "$expected_core_sha" "$pg_version" "$architecture"
+python3 /usr/local/bin/archive-input validate-core "/input/$core_archive" "/input/$core_archive.sha256" "$expected_core_sha" "$pg_version" "$architecture" "$core_source_sha"
 python3 /usr/local/bin/archive-input validate-source "/source/$source_archive" "$source_sha"
 mkdir -p /work/core /work/source /work/stage/pgvector/lib /work/stage/pgvector/share/extension /work/stage/pgvector/LICENSES /out
 tar -xzf "/input/$core_archive" -C /work/core

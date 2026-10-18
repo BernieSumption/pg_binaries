@@ -19,7 +19,7 @@ def validate_source(path, expected):
     if roots != {"pgvector-0.8.7"}:
         raise ValueError("source archive does not contain pgvector-0.8.7 root")
 
-def validate_core(path, sidecar, expected_sha, version, architecture):
+def validate_core(path, sidecar, expected_sha, version, architecture, expected_source_sha):
     path = Path(path)
     expected_name = f"postgresql-{version}-linux-{architecture}.tar.gz"
     if path.name != expected_name or version != "18.6" or architecture != "x86_64":
@@ -40,6 +40,11 @@ def validate_core(path, sidecar, expected_sha, version, architecture):
     if (manifest.get("component"), manifest.get("version"), manifest.get("platform"),
         manifest.get("architecture")) != ("postgresql", version, "linux", architecture):
         raise ValueError("core manifest identity does not match trial")
+    source = manifest.get("source_archive")
+    if (not re.fullmatch(r"[0-9a-f]{64}", expected_source_sha)
+            or not isinstance(source, dict)
+            or source.get("sha256") != expected_source_sha):
+        raise ValueError("core source archive does not match the selected PostgreSQL release")
     return actual
 
 def main(argv):

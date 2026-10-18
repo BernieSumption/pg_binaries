@@ -72,7 +72,8 @@ jobs:
             "$RUNNER_TEMP/core/postgresql-18.6-linux-x86_64.tar.gz" \
             "$RUNNER_TEMP/core/postgresql-18.6-linux-x86_64.tar.gz.sha256" \
             "$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["archives"][0]["sha256"])' "$RUNNER_TEMP/core-candidate-manifest.json")" \
-            18.6 x86_64
+            18.6 x86_64 \
+            "$(python3 tools/source_archive.py postgresql 18.6 tar.bz2 --field sha256)"
       - name: Download pgvector source selected by the repository pin
         run: |
           set -euo pipefail
@@ -126,7 +127,8 @@ jobs:
             "$RUNNER_TEMP/pgvector-v0.8.7.tar.gz" \
             "$(python3 tools/source_archive.py pgvector 0.8.7 tar.gz --field sha256)"
           python3 scripts/pgvector/archive_input.py validate-core \
-            "$core" "$core.sha256" "$CORE_SHA256" 18.6 x86_64
+            "$core" "$core.sha256" "$CORE_SHA256" 18.6 x86_64 \
+            "$(python3 tools/source_archive.py postgresql 18.6 tar.bz2 --field sha256)"
           python3 tools/selected_build_inputs.py --builder-packages-sha256 "$builder_packages_sha" \
             --core-sha256 "$CORE_SHA256" \
             > "$RUNNER_TEMP/expected-build-inputs-raw.json"
