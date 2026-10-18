@@ -151,12 +151,50 @@ try {
   $control = Join-Path $extensionDir 'pg_jsonschema.control'
   if (-not (Test-Path $dll -PathType Leaf)) { throw 'pgrx did not install pg_jsonschema.dll' }
   if (-not (Test-Path $control -PathType Leaf)) { throw 'pgrx did not install pg_jsonschema.control' }
-  Copy-Item $dll (Join-Path $OutputDirectory 'pg_jsonschema.dll') -Force
-  Copy-Item $control (Join-Path $OutputDirectory 'pg_jsonschema.control') -Force
-  Get-ChildItem $extensionDir -Filter 'pg_jsonschema*.sql' -File | Copy-Item -Destination $OutputDirectory -Force
+  $stage = Join-Path $work 'package'
+  $payload = Join-Path $stage 'pg_jsonschema'
+  $licenseDir = Join-Path $payload 'LICENSES'
+  New-Item -ItemType Directory -Force (Join-Path $payload 'lib'),(Join-Path $payload 'share/extension'),$licenseDir | Out-Null
+  Copy-Item $dll (Join-Path $payload 'lib/pg_jsonschema.dll')
+  Copy-Item $control (Join-Path $payload 'share/extension/pg_jsonschema.control')
+  Get-ChildItem $extensionDir -Filter 'pg_jsonschema*.sql' -File | Copy-Item -Destination (Join-Path $payload 'share/extension')
+  $upstreamLicense = Join-Path $source 'LICENSE'
+  if (-not (Test-Path $upstreamLicense -PathType Leaf)) { throw 'Pinned pg_jsonschema source LICENSE is missing' }
+  Copy-Item $upstreamLicense (Join-Path $licenseDir 'pg_jsonschema.txt')
+  $cargoMetadata = Join-Path $work 'cargo-metadata.json'
+  & cargo metadata --locked --format-version 1 --filter-platform x86_64-pc-windows-msvc --no-default-features --features pg18 | Set-Content -Encoding utf8 $cargoMetadata
+  if ($LASTEXITCODE -ne 0) { throw 'Could not resolve the locked Windows Cargo package inventory' }
+  python (Join-Path $repo 'tools/inventory_cargo_licenses.py') $source $cargoMetadata (Join-Path $licenseDir 'pg_jsonschema-cargo-license-inventory.json')
+  if ($LASTEXITCODE -ne 0) { throw 'Could not create the project-named Cargo licence inventory' }
+  $archiveName = "pg_jsonschema-$extensionVersion-postgresql-$pgVersion-windows-x86_64.tar.gz"
+  $extensionArchive = Join-Path $OutputDirectory $archiveName
+  $metadata = @{
+    project = 'pg_jsonschema'; version = $extensionVersion; sql_names = @('pg_jsonschema'); requires = @()
+    postgresql_version = $pgVersion; platform = 'windows'; architecture = 'x86_64'
+    source = @{ url = 'https://github.com/supabase/pg_jsonschema.git'; commit = $actualCommit; cargo_lock_sha256 = $cargoLockSha256 }
+    core_archive = @{ basename = $coreName; sha256 = $coreSha256 }
+    release_eligible = $false; core_status = 'temporary-development-core'
+  }
+  $metadata | ConvertTo-Json -Depth 8 | Set-Content -Encoding utf8 (Join-Path $stage 'metadata.json')
+  & tar.exe -czf $extensionArchive -C $stage pg_jsonschema metadata.json
+  if ($LASTEXITCODE -ne 0) { throw 'Could not create the pg_jsonschema extension archive' }
+  $extensionHash = (Get-FileHash $extensionArchive -Algorithm SHA256).Hash.ToLowerInvariant()
+  [IO.File]::WriteAllText("$extensionArchive.sha256", "$extensionHash  $archiveName`n", [Text.UTF8Encoding]::new($false))
 
   Move-Item $pgRoot $moved
   $pgRoot = $moved
+  Remove-Item (Join-Path $pgRoot 'lib/pg_jsonschema.dll') -Force
+  Remove-Item (Join-Path $pgRoot 'share/extension/pg_jsonschema*') -Force
+  $unpacked = Join-Path $work 'unpacked-extension'
+  New-Item -ItemType Directory -Force $unpacked | Out-Null
+  & tar.exe -xzf $extensionArchive -C $unpacked
+  if ($LASTEXITCODE -ne 0) { throw 'Could not unpack the final extension archive' }
+  foreach ($file in Get-ChildItem (Join-Path $unpacked 'pg_jsonschema') -Recurse -File) {
+    $relative = $file.FullName.Substring((Join-Path $unpacked 'pg_jsonschema').Length).TrimStart('\','/')
+    $destination = Join-Path $pgRoot $relative
+    New-Item -ItemType Directory -Force (Split-Path $destination -Parent) | Out-Null
+    Copy-Item $file.FullName $destination
+  }
   $env:PATH = "$(Join-Path $pgRoot 'bin');$env:SystemRoot\System32;$env:SystemRoot"
   $initdb = Join-Path $pgRoot 'bin/initdb.exe'
   $pgCtl = Join-Path $pgRoot 'bin/pg_ctl.exe'
@@ -171,6 +209,10 @@ try {
   & $psql -X -A -t -v ON_ERROR_STOP=1 -h 127.0.0.1 -p 55432 -U postgres -d postgres -f (Join-Path $repo 'scripts/pg_jsonschema/probe.sql') 2>&1 | Tee-Object -FilePath $probeOutput
   if ($LASTEXITCODE -ne 0) { throw 'The relocated Windows pg_jsonschema SQL probe failed' }
   if (-not (Select-String -Path $probeOutput -SimpleMatch 'pg_jsonschema' -Quiet)) { throw 'The SQL probe did not report the installed extension' }
+  $dumpbin = Join-Path (Split-Path $clVersion -Parent) 'dumpbin.exe'
+  if (-not (Test-Path $dumpbin -PathType Leaf)) { throw 'Visual Studio dumpbin.exe was not found beside cl.exe' }
+  & python (Join-Path $repo 'tools/check_pe_dependencies.py') $pgRoot --dumpbin $dumpbin --archive $coreArchive --archive $extensionArchive --report (Join-Path $OutputDirectory 'pe-dependency-analysis.json')
+  if ($LASTEXITCODE -ne 0) { throw 'PE dependency closure check failed on the relocated archive installation' }
   & $pgCtl -D $data -m fast -w stop
   if ($LASTEXITCODE -ne 0) { throw 'Relocated PostgreSQL did not stop cleanly' }
   $serverStarted = $false

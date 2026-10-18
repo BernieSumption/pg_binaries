@@ -1,0 +1,95 @@
+name: pg_jsonschema 0.3.4 PostgreSQL 18.6 Windows x86-64 candidate publication
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [spike]
+    paths:
+      - '.github/workflows/pg-jsonschema-windows-publication.yml'
+      - 'scripts/pg_jsonschema/windows-feasibility.ps1'
+      - 'scripts/pg_jsonschema/probe.sql'
+      - 'tools/check_pg_jsonschema_windows_archive.py'
+      - 'tools/emit_pg_jsonschema_windows_publication.py'
+      - 'tools/import_pg_jsonschema_windows_publication.py'
+      - 'tests/test_pg_jsonschema_windows_publication.py'
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  publish-candidate:
+    runs-on: windows-2022
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test archive inspection and evidence import
+        run: python -B -m unittest tests/test_pg_jsonschema_windows_publication.py
+      - name: Download the pinned temporary PostgreSQL 18.6 core archive
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-postgresql-18.6-pilot
+          run-id: 39077749917
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/core-archives
+      - name: Build upstream source, package extension and run relocated SQL probe
+        id: archive
+        continue-on-error: true
+        run: ./scripts/pg_jsonschema/windows-feasibility.ps1 -CoreArchiveDirectory "$env:RUNNER_TEMP/core-archives" -OutputDirectory "$env:RUNNER_TEMP/pg-jsonschema-windows-publication"
+      - name: Inspect exact core and extension archives and dependency report
+        id: static
+        if: always()
+        continue-on-error: true
+        run: |
+          $dir = Join-Path $env:RUNNER_TEMP 'pg-jsonschema-windows-publication'
+          $core = Join-Path $env:RUNNER_TEMP 'core-archives/postgresql-18.6-windows-x86_64.tar.gz'
+          $extension = Join-Path $dir 'pg_jsonschema-0.3.4-postgresql-18.6-windows-x86_64.tar.gz'
+          if (-not (Test-Path $extension -PathType Leaf)) { throw 'Final pg_jsonschema archive is missing' }
+          python tools/check_pg_jsonschema_windows_archive.py --core-archive $core --extension-archive $extension --pe-report (Join-Path $dir 'pe-dependency-analysis.json') --output (Join-Path $dir 'static-analysis.json')
+          if ($LASTEXITCODE -ne 0) { throw 'Final archive structural analysis failed' }
+          $pe = Get-Content (Join-Path $dir 'pe-dependency-analysis.json') -Raw | ConvertFrom-Json
+          if ($pe.outcome -ne 'passed' -or $pe.archives.Count -ne 2) { throw 'PE dependency analysis did not pass for both archives' }
+      - name: Emit archive-bound attempt, receipt and verification record
+        if: always()
+        env:
+          ARCHIVE_RESULT: ${{ steps.archive.outcome }}
+          STATIC_RESULT: ${{ steps.static.outcome }}
+        run: |
+          $dir = Join-Path $env:RUNNER_TEMP 'pg-jsonschema-windows-publication'
+          New-Item -ItemType Directory -Force $dir | Out-Null
+          $version = (Get-CimInstance Win32_OperatingSystem).Version
+          $image = "$([Environment]::GetEnvironmentVariable('ImageOS'))/$([Environment]::GetEnvironmentVariable('ImageVersion'))"
+          python tools/emit_pg_jsonschema_windows_publication.py --core-archives (Join-Path $env:RUNNER_TEMP 'core-archives') --archives $dir --output $dir --os-version $version --image-id $image --archive-suite-result $env:ARCHIVE_RESULT --static-analysis-result $env:STATIC_RESULT
+      - name: Validate and retain publication evidence
+        if: always()
+        run: |
+          $dir = Join-Path $env:RUNNER_TEMP 'pg-jsonschema-windows-publication'
+          if (Test-Path (Join-Path $dir 'publication/attempt.json')) {
+            python tools/import_pg_jsonschema_windows_publication.py --core-artifact (Join-Path $env:RUNNER_TEMP 'core-archives') --extension-artifact $dir --run-id $env:GITHUB_RUN_ID
+          }
+      - name: Upload candidate archive and verification evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pg-jsonschema-0.3.4-postgresql-18.6-windows-x86_64-candidate-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/pg-jsonschema-windows-publication/*.tar.gz
+            ${{ runner.temp }}/pg-jsonschema-windows-publication/*.sha256
+            ${{ runner.temp }}/pg-jsonschema-windows-publication/*.json
+            ${{ runner.temp }}/pg-jsonschema-windows-publication/*.txt
+            ${{ runner.temp }}/pg-jsonschema-windows-publication/publication/**
+            support/evidence/pg_jsonschema-windows-publication-${{ github.run_id }}/**
+          if-no-files-found: warn
+          retention-days: 7
+      - name: Require archive suite and static checks to pass
+        if: always()
+        run: |
+          if ('${{ steps.archive.outcome }}' -ne 'success' -or '${{ steps.static.outcome }}' -ne 'success') {
+            throw 'pg_jsonschema Windows archive-suite and static-analysis cases must both pass.'
+          }
