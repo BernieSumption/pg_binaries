@@ -44,19 +44,36 @@ $vectorArchiveRoot = Join-Path $work 'pgvector-archive'
 
 New-Item -ItemType Directory -Force $work, $dist | Out-Null
 $sourceTool = Join-Path $repo 'tools/source_archive.py'
-$pgSourceUrl = (& python $sourceTool postgresql $pgVersion tar.gz --field url).Trim()
-$pgSourceSha256 = (& python $sourceTool postgresql $pgVersion tar.gz --field sha256).Trim()
+$pgGitSource = $null
+$pgSourceUrl = $null
+$pgSourceSha256 = $null
+if ($pgVersion -eq '16.15') {
+  $gitSourceTool = Join-Path $repo 'tools/postgresql_git_source.py'
+  $pgGitSource = (& python $gitSourceTool $pgVersion | ConvertFrom-Json)
+  git init $pgSource
+  git -C $pgSource remote add origin $pgGitSource.repository
+  git -C $pgSource fetch --depth=1 origin $pgGitSource.ref
+  git -C $pgSource checkout --detach FETCH_HEAD
+  $actualCommit = (git -C $pgSource rev-parse HEAD).Trim()
+  $actualTree = (git -C $pgSource rev-parse 'HEAD^{tree}').Trim()
+  if ($actualCommit -ne $pgGitSource.commit -or $actualTree -ne $pgGitSource.tree) {
+    throw "PostgreSQL Git checkout identity mismatch: commit=$actualCommit tree=$actualTree"
+  }
+} else {
+  $pgSourceUrl = (& python $sourceTool postgresql $pgVersion tar.gz --field url).Trim()
+  $pgSourceSha256 = (& python $sourceTool postgresql $pgVersion tar.gz --field sha256).Trim()
+  Invoke-WebRequest $pgSourceUrl -OutFile $pgSourceArchive
+  if ((Get-FileHash $pgSourceArchive -Algorithm SHA256).Hash.ToLowerInvariant() -ne $pgSourceSha256) {
+    throw 'PostgreSQL source archive SHA-256 differs from selected source identity'
+  }
+  tar -xzf $pgSourceArchive -C $work
+}
 $vectorSourceUrl = (& python $sourceTool pgvector $vectorVersion tar.gz --field url).Trim()
 $vectorSourceSha256 = (& python $sourceTool pgvector $vectorVersion tar.gz --field sha256).Trim()
-Invoke-WebRequest $pgSourceUrl -OutFile $pgSourceArchive
 Invoke-WebRequest $vectorSourceUrl -OutFile $vectorSourceArchive
-if ((Get-FileHash $pgSourceArchive -Algorithm SHA256).Hash.ToLowerInvariant() -ne $pgSourceSha256) {
-  throw 'PostgreSQL source archive SHA-256 differs from selected source identity'
-}
 if ((Get-FileHash $vectorSourceArchive -Algorithm SHA256).Hash.ToLowerInvariant() -ne $vectorSourceSha256) {
   throw 'pgvector source archive SHA-256 differs from selected source identity'
 }
-tar -xzf $pgSourceArchive -C $work
 tar -xzf $vectorSourceArchive -C $work
 
 $env:PKG_CONFIG_PATH = (Join-Path $vcpkg 'lib/pkgconfig')
@@ -119,13 +136,20 @@ $pgManifest = [ordered]@{
   architecture = 'x86_64'
   build_id = $buildId
   source_revision = $sourceRevision
-  source_archive = [ordered]@{ url = $pgSourceUrl; sha256 = $pgSourceSha256 }
   build_configuration = $buildConfiguration
   included_extensions = $builtins
-  source_sha256 = $pgSourceSha256
   runtime_dependencies = @('ICU', 'LZ4', 'Zstandard', 'zlib', 'OpenSSL')
   bundled_runtime_dlls = $bundledRuntimeDlls
   os_prerequisites = @()
+}
+if ($pgGitSource) {
+  $pgManifest.source_checkout = [ordered]@{
+    repository = $pgGitSource.repository; ref = $pgGitSource.ref
+    commit = $pgGitSource.commit; tree = $pgGitSource.tree
+  }
+} else {
+  $pgManifest.source_archive = [ordered]@{ url = $pgSourceUrl; sha256 = $pgSourceSha256 }
+  $pgManifest.source_sha256 = $pgSourceSha256
 }
 
 $env:PGROOT = $pgInstall
@@ -183,7 +207,7 @@ $pgLicenseInventory = [ordered]@{
       license_file = 'PostgreSQL.txt'
       redistribution_review = [ordered]@{
         status = 'resolved'
-        basis = 'The PostgreSQL source archive includes COPYRIGHT, which applies to the PostgreSQL distribution. Its permissive PostgreSQL licence imposes no source-delivery obligation for this distribution.'
+        basis = 'The pinned PostgreSQL source includes COPYRIGHT, which applies to the PostgreSQL distribution. Its permissive PostgreSQL licence imposes no source-delivery obligation for this distribution.'
         source_obligation = 'none'
       }
     },
