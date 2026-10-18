@@ -215,8 +215,8 @@ def import_run(root, core_archives, archives, run_id):
                     (record_path, "verification-record.json"))
     for source, name in output_names:
         _retain(source, evidence / name, copies)
-    _retain(Path(str(archives / archive_name) + ".sha256"), evidence / f"{archive_name}.sha256", copies)
-    _retain(Path(str(core_archive) + ".sha256"), evidence / f"{core_name}.sha256", copies)
+    _retain(record_path, root / "support/verification" /
+            f"pg_jsonschema-{publication.EXTENSION_VERSION}-postgresql-{publication.PG_VERSION}-{platform}-current-{run_id}.json", copies)
     _copy(copies, root)
     return [str(destination.relative_to(root)) for _, destination in copies]
 

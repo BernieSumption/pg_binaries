@@ -1,0 +1,34 @@
+{
+  "architecture": "x86_64",
+  "archives": {
+    "pg_jsonschema-0.3.4-postgresql-18.6-linux-x86_64.tar.gz": "fa656f90cded75bf0cbc52fc0b8cf813c03b3d1087fe4028d913b1e96d1b2ff0",
+    "postgresql-18.6-linux-x86_64.tar.gz": "f89a7047812324b85c3b0bb29a3118fc55a492b17956f1fe0d74d1788d33d680"
+  },
+  "archives_present": {
+    "pg_jsonschema-0.3.4-postgresql-18.6-linux-x86_64.tar.gz": true,
+    "postgresql-18.6-linux-x86_64.tar.gz": true
+  },
+  "core_run_id": "39081368117",
+  "pg_jsonschema_version": "0.3.4",
+  "postgresql_version": "18.6",
+  "profile_id": "pg-jsonschema-publication-linux-x86_64-18.6",
+  "redistribution_status": "seahash-4.1.0-notice-unresolved",
+  "release_eligible": false,
+  "reports": {
+    "build_evidence": "3b69cebf932e85c80ebcf65094f7a018057c2f0f816c04e4b469ebf43bd7d972",
+    "cargo_license_inventory": "7f11d0f50b003c9d879caf922d4e55c59b4e72aefc901b59a24224a6c2354877",
+    "elf_closure": "bbca35c4ad9484903badb30bd8cf51927384a9480bd984e0eb3e1b31be233143",
+    "probe_output": "d0a36de766d914583956c4b2c15975a634587f8af4a87afc7006fc73a181f283"
+  },
+  "run_id": "39091662464",
+  "schema_version": 1,
+  "source_revision": "6c38b2b52136abd7c1ccaf32871252f16af11a9f",
+  "steps": {
+    "archive-suite": "success",
+    "elf-closure": "success"
+  },
+  "workflow_steps": {
+    "build": "success",
+    "verify": "success"
+  }
+}

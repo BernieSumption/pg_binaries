@@ -119,6 +119,7 @@ class LinuxPublicationHelpers(unittest.TestCase):
                 retained = importer.import_run(temporary_root, core_dir, archives, "12345")
             self.assertTrue(any(name.endswith("/attempt.json") for name in retained))
             self.assertTrue(any(name.endswith("/verification-record.json") for name in retained))
+            self.assertTrue((temporary_root / "support/verification/pg_jsonschema-0.3.4-postgresql-18.6-linux-x86_64-current-12345.json").is_file())
             self.assertTrue(any(name.endswith("/pg_jsonschema-0.3.4-postgresql-18.6-linux-x86_64.tar.gz.sha256")
                                 for name in retained))
             original_archive = archive.read_bytes()
