@@ -1,14 +1,5 @@
 name: pg_cron Linux feasibility
 on:
-  push:
-    branches: [spike]
-    paths:
-      - '.github/workflows/pgcron-linux-feasibility.yml'
-      - 'scripts/pg_cron/**'
-      - 'scripts/linux/**'
-      - 'tools/check_elf_dependencies.py'
-      - 'support.json'
-      - 'support/postgresql-releases.json'
   workflow_dispatch:
     inputs:
       architecture:

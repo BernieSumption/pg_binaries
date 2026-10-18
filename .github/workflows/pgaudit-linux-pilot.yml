@@ -14,28 +14,6 @@ on:
         default: x86_64
         type: choice
         options: [x86_64, arm64]
-  push:
-    branches: [spike]
-    paths:
-      - '.github/workflows/pgaudit-linux-pilot.yml'
-      - 'scripts/pgaudit/build*'
-      - 'scripts/pgaudit/verify*'
-      - 'scripts/pgaudit/Dockerfile'
-      - 'scripts/pgaudit/probe.sql'
-      - 'scripts/linux/**'
-      - 'tools/check_elf_dependencies.py'
-      - 'tools/source_archive.py'
-      - 'tools/create_extension_publication_receipt.py'
-      - 'tools/emit_extension_publication_records.py'
-      - 'tools/import_linux_pgaudit_publication.py'
-      - 'tools/import_linux_publication_run.py'
-      - 'tools/import_linux_tiger_publication.py'
-      - 'tools/coverage.py'
-      - 'tools/profile_change_gate.py'
-      - 'tests/test_profile_change_gate.py'
-      - 'support/verification-profiles.json'
-      - 'support.json'
-      - 'support/postgresql-releases.json'
 
 permissions:
   contents: read

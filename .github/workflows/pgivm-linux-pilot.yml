@@ -1,14 +1,6 @@
 name: pg_ivm Linux feasibility pilot
 on:
-  push:
-    branches: [spike]
-    paths:
-      - '.github/workflows/pgivm-linux-pilot.yml'
-      - 'scripts/pg_ivm/**'
-      - 'scripts/linux/**'
-      - 'tools/check_elf_dependencies.py'
-      - 'support.json'
-      - 'support/postgresql-releases.json'
+  workflow_dispatch:
 jobs:
   verify:
     strategy:
