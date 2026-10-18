@@ -54,7 +54,7 @@ manifest = json.loads((root / "manifest.json").read_text())
 expected = {
     "component": "postgresql", "version": "18.6", "postgresql_version": "18.6",
     "platform": "macos", "architecture": "arm64", "build_id": "github-39093804232-1",
-    "source_revision": "457919a19e43687a9615697a751454e3c055c593",
+    "source_revision": "42082a506adfca1628c509f2c7b17037b9a12123",
 }
 for key, value in expected.items():
     if manifest.get(key) != value:

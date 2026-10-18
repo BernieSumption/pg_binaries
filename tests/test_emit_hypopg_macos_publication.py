@@ -105,6 +105,20 @@ class HypoPGMacOSFixture:
 
 
 class HypoPGMacOSPublicationTests(unittest.TestCase):
+    def test_arm64_pins_match_current_core_record(self):
+        root = Path(__file__).resolve().parents[1]
+        core = json.loads((root / "support/verification/postgresql-18.6-macos-arm64-current-39093804232.json").read_text())
+        run_id = core["ci"]["run_id"]
+        source_revision = core["ci"]["source_revision"]
+        workflow = (root / ".github/workflows/hypopg-macos-arm64-feasibility.yml").read_text()
+        script = (root / "scripts/hypopg/macos-feasibility.sh").read_text()
+        emitter_source = (root / "tools/emit_hypopg_macos_publication.py").read_text()
+        self.assertIn(f"run-id: {run_id}", workflow)
+        self.assertIn(f"github-{run_id}-1", script)
+        self.assertIn(f'"source_revision": "{source_revision}"', script)
+        self.assertIn(core["sha256"], script)
+        self.assertIn(f'CORE_SHA256 = "{core["sha256"]}"', emitter_source)
+
     def setUp(self):
         self.fixture = HypoPGMacOSFixture()
         self.addCleanup(self.fixture.close)
