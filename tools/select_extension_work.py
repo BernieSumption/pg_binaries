@@ -20,14 +20,23 @@ RUNNERS = {
     "macos-arm64": "macos-15",
     "windows-x86_64": "windows-2022",
 }
-REQUIRED = {"project", "version", "platform", "postgresql_major"}
+REQUIRED = {"project", "version", "platform"}
 
 
 def resolve(root, selection):
-    if not isinstance(selection, dict) or set(selection) != REQUIRED:
-        raise ValueError("selection must contain exactly project, version, platform, and postgresql_major")
-    if not isinstance(selection["postgresql_major"], int) or isinstance(selection["postgresql_major"], bool):
-        raise ValueError("postgresql_major must be an integer")
+    if (not isinstance(selection, dict) or not REQUIRED <= set(selection)
+            or set(selection) not in (REQUIRED | {"postgresql_major"},
+                                     REQUIRED | {"postgresql_version"})):
+        raise ValueError("selection must contain project, version, platform, and exactly one PostgreSQL major or exact version")
+    if "postgresql_major" in selection:
+        if not isinstance(selection["postgresql_major"], int) or isinstance(selection["postgresql_major"], bool):
+            raise ValueError("postgresql_major must be an integer")
+        target_match = lambda item: item.get("postgresql_major") == selection["postgresql_major"]
+    else:
+        pg_version = selection["postgresql_version"]
+        if not isinstance(pg_version, str) or not pg_version:
+            raise ValueError("postgresql_version must be a non-empty exact release")
+        target_match = lambda item: item.get("postgresql_version") == pg_version
     platform = selection["platform"]
     if not isinstance(platform, str) or platform not in RUNNERS:
         raise ValueError(f"selected target must be a declared platform with a standard runner: {platform}")
@@ -36,7 +45,8 @@ def resolve(root, selection):
     queue = extension_work_queue.build_queue(root)
     matches = [item for item in queue["work_items"]
                if item.get("kind") == "build-extension"
-               and all(item.get(key) == selection[key] for key in REQUIRED)]
+               and all(item.get(key) == selection[key] for key in REQUIRED)
+               and target_match(item)]
     if len(matches) != 1:
         raise ValueError(f"selection must resolve exactly one declared build-extension group; found {len(matches)}")
     item = matches[0]
@@ -74,20 +84,24 @@ def main(argv=None):
     parser.add_argument("--version", help="extension version")
     parser.add_argument("--platform", help="declared target platform, such as macos-arm64")
     parser.add_argument("--postgresql-major", type=int, help="PostgreSQL major version")
+    parser.add_argument("--postgresql-version", help="exact selected PostgreSQL release, such as 17.11")
     parser.add_argument("--github-output", type=Path, help="append resolved values to a GitHub Actions output file")
     args = parser.parse_args(argv)
-    direct_values = (args.project, args.version, args.platform, args.postgresql_major)
+    direct_values = (args.project, args.version, args.platform, args.postgresql_major,
+                     args.postgresql_version)
     if args.selection is not None:
         if any(value is not None for value in direct_values):
             parser.error("--selection cannot be combined with direct target options")
-    elif any(value is None for value in direct_values):
-        parser.error("provide --selection or all of --project, --version, --platform, and --postgresql-major")
+    elif (any(value is None for value in (args.project, args.version, args.platform))
+          or (args.postgresql_major is None) == (args.postgresql_version is None)):
+        parser.error("provide --selection or project, version, platform, and exactly one PostgreSQL major or exact version")
     try:
         selection = (json.loads(args.selection.read_text()) if args.selection is not None else {
             "project": args.project,
             "version": args.version,
             "platform": args.platform,
-            "postgresql_major": args.postgresql_major,
+            **({"postgresql_major": args.postgresql_major} if args.postgresql_major is not None
+               else {"postgresql_version": args.postgresql_version}),
         })
         result = resolve(args.root, selection)
         print(json.dumps(result, indent=2, sort_keys=True))

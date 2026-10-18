@@ -61,6 +61,33 @@ class SelectExtensionWorkTests(unittest.TestCase):
         self.assertEqual(len(result["closure_ids"]), 2)
         self.assertTrue(result["closure_ids"][0].startswith("build-core:"))
 
+    def test_resolves_pgvector_by_exact_postgresql_release(self):
+        result = tool.resolve(ROOT, {
+            "project": "pgvector", "version": "0.8.7", "platform": "linux-x86_64",
+            "postgresql_version": "17.11",
+        })
+        self.assertEqual(result["postgresql_version"], "17.11")
+        self.assertEqual(result["postgresql_major"], 17)
+
+    def test_cli_accepts_exact_postgresql_release(self):
+        output = io.StringIO()
+        with redirect_stdout(output):
+            status = tool.main([
+                "--root", str(ROOT), "--project", "pgvector", "--version", "0.8.7",
+                "--platform", "linux-x86_64", "--postgresql-version", "17.11",
+            ])
+        self.assertEqual(status, 0)
+        self.assertEqual(json.loads(output.getvalue())["postgresql_version"], "17.11")
+
+    def test_linux_selected_trial_uses_planned_extension_and_selected_postgresql_outputs(self):
+        workflow = (ROOT / ".github/workflows/pgvector-linux-selected-trial.yml").read_text()
+        self.assertIn("REQUESTED_POSTGRESQL_VERSION: ${{ inputs.postgresql_version }}", workflow)
+        self.assertIn("--postgresql-version \"$pg_version\"", workflow)
+        self.assertIn("PG_VERSION: ${{ steps.target.outputs.postgresql_version }}", workflow)
+        self.assertIn("PGVECTOR_VERSION: ${{ steps.target.outputs.version }}", workflow)
+        self.assertNotIn("0.8.7", workflow)
+        self.assertNotIn('test "$PG_VERSION" = 17.11', workflow)
+
     def test_rejects_undeclared_platform_architecture_and_malformed_selection(self):
         selection = {"project": "NoSuchExtension", "version": "3.6.4", "platform": "macos-x86_64",
                      "postgresql_major": 17}
@@ -106,6 +133,8 @@ class SelectExtensionWorkTests(unittest.TestCase):
             ["--project", "HypoPG"],
             ["--selection", "selection.json", *direct],
             ["--version", "1.4.3", "--platform", "macos-arm64", "--postgresql-major", "17"],
+            ["--project", "HypoPG", "--version", "1.4.3", "--platform", "macos-arm64",
+             "--postgresql-major", "17", "--postgresql-version", "17.11"],
         )
         for argv in invalid_args:
             with self.subTest(argv=argv), redirect_stderr(io.StringIO()):

@@ -1,15 +1,16 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-archives=${1:?usage: diagnostics-in-container.sh ARCHIVE_DIRECTORY POSTGRESQL_VERSION ARCHITECTURE}
+archives=${1:?usage: diagnostics-in-container.sh ARCHIVE_DIRECTORY POSTGRESQL_VERSION ARCHITECTURE [PGVECTOR_VERSION]}
 pg_version=${2:?}
 architecture=${3:?}
+vector_version=${4:-0.8.7}
 case "$architecture:$(uname -m)" in
   x86_64:x86_64|arm64:aarch64) ;;
   *) echo "Diagnostic container architecture does not match $architecture: $(uname -m)" >&2; exit 2 ;;
 esac
 pg_archive="postgresql-${pg_version}-linux-${architecture}.tar.gz"
-vector_archive="pgvector-0.8.7-postgresql-${pg_version}-linux-${architecture}.tar.gz"
+vector_archive="pgvector-${vector_version}-postgresql-${pg_version}-linux-${architecture}.tar.gz"
 pg_sha_file="$archives/$pg_archive.sha256"
 vector_sha_file="$archives/$vector_archive.sha256"
 index="$archives/debug-symbols/index.json"
