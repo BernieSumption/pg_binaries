@@ -20,6 +20,9 @@ on:
       - 'experiments/pgtap-macos-arm64-target-trial/target.json'
       - 'scripts/pgtap/macos-feasibility.sh'
       - 'scripts/macos/core-prefix.sh'
+      - 'scripts/macos/resolve-core.sh'
+      - 'tools/macos_core_target_config.py'
+      - 'tools/actions_candidate_discovery.py'
 
 permissions:
   actions: read
@@ -32,7 +35,6 @@ jobs:
       postgresql_version: ${{ steps.plan.outputs.postgresql_version }}
       extension_version: ${{ steps.plan.outputs.selected_version }}
       pin_path: ${{ steps.plan.outputs.pin_path }}
-      core_run_id: ${{ steps.plan.outputs.core_run_id }}
       work_group_id: ${{ steps.work.outputs.group_id }}
     steps:
       - uses: actions/checkout@v4
@@ -59,7 +61,7 @@ jobs:
             echo "No pinned macOS arm64 PostgreSQL core archive is configured for $POSTGRESQL_VERSION." >&2
             exit 1
           fi
-          core_run_id=$(python3 - "$pin_path" "$POSTGRESQL_VERSION" <<'PY'
+          python3 - "$pin_path" "$POSTGRESQL_VERSION" <<'PY'
           import sys
           from pathlib import Path
           sys.path.insert(0, "tools")
@@ -67,11 +69,8 @@ jobs:
           target = load_target_config(Path(sys.argv[1]))
           if target.postgresql_version != sys.argv[2] or target.architecture != "arm64":
               raise SystemExit("pinned core target does not match the selected request")
-          print(target.core_run_id)
           PY
-          )
           echo "pin_path=$pin_path" >> "$GITHUB_OUTPUT"
-          echo "core_run_id=$core_run_id" >> "$GITHUB_OUTPUT"
       - name: Resolve selected build work and prerequisites
         id: work
         env:
@@ -88,25 +87,20 @@ jobs:
     needs: select
     if: needs.select.result == 'success'
     runs-on: macos-15
-    timeout-minutes: 25
+    timeout-minutes: 100
     steps:
       - uses: actions/checkout@v4
-      - name: Download the selected successful PostgreSQL arm64 artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: macos-arm64-pilot-archives
-          run-id: ${{ needs.select.outputs.core_run_id }}
-          github-token: ${{ github.token }}
-          path: ${{ runner.temp }}/core-archives
+      - name: Retrieve a checked core archive or build the selected PostgreSQL release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash scripts/macos/resolve-core.sh "${{ needs.select.outputs.pin_path }}" "$RUNNER_TEMP/core-archives"
       - name: Build and package pgTAP against the selected core archive
         id: package
         continue-on-error: true
-        env:
-          PIN_PATH: ${{ needs.select.outputs.pin_path }}
         run: |
           set -o pipefail
           mkdir -p "$RUNNER_TEMP/pgtap-build"
-          bash scripts/pgtap/macos-feasibility.sh "$RUNNER_TEMP/core-archives" "$RUNNER_TEMP/pgtap-build" "$PIN_PATH" --build-only 2>&1 | tee "$RUNNER_TEMP/pgtap-build/build-log.txt"
+          bash scripts/pgtap/macos-feasibility.sh "$RUNNER_TEMP/core-archives" "$RUNNER_TEMP/pgtap-build" "$RUNNER_TEMP/core-archives/target.json" --build-only 2>&1 | tee "$RUNNER_TEMP/pgtap-build/build-log.txt"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -146,28 +140,23 @@ jobs:
         id: static_analysis
         if: always() && steps.download.outcome == 'success'
         continue-on-error: true
-        env:
-          PIN_PATH: ${{ needs.select.outputs.pin_path }}
-        run: bash scripts/pgtap/verify-macos-publication.sh static-analysis "$RUNNER_TEMP/core-archives" "$RUNNER_TEMP/pgTAP-publication" "$RUNNER_TEMP/pgTAP-publication" "$PIN_PATH"
+        run: bash scripts/pgtap/verify-macos-publication.sh static-analysis "$RUNNER_TEMP/core-archives" "$RUNNER_TEMP/pgTAP-publication" "$RUNNER_TEMP/pgTAP-publication" "$RUNNER_TEMP/core-archives/target.json"
       - name: Assemble and exercise the final archives on the fresh runner
         id: archive_suite
         if: always() && steps.download.outcome == 'success'
         continue-on-error: true
-        env:
-          PIN_PATH: ${{ needs.select.outputs.pin_path }}
-        run: bash scripts/pgtap/verify-macos-publication.sh archive-suite "$RUNNER_TEMP/core-archives" "$RUNNER_TEMP/pgTAP-publication" "$RUNNER_TEMP/pgTAP-publication" "$PIN_PATH"
+        run: bash scripts/pgtap/verify-macos-publication.sh archive-suite "$RUNNER_TEMP/core-archives" "$RUNNER_TEMP/pgTAP-publication" "$RUNNER_TEMP/pgTAP-publication" "$RUNNER_TEMP/core-archives/target.json"
       - name: Finalize archive receipt and verification record
         if: always()
         env:
           ARCHIVE_SUITE_OUTCOME: ${{ steps.archive_suite.outcome }}
           STATIC_ANALYSIS_OUTCOME: ${{ steps.static_analysis.outcome }}
           GITHUB_SHA: ${{ github.sha }}
-          PIN_PATH: ${{ needs.select.outputs.pin_path }}
         run: |
           image_id="${ImageOS:?runner image OS missing}/${ImageVersion:?runner image version missing}"
           os_version="$(sw_vers -productVersion)"
           python3 tools/emit_pgtap_macos_publication.py \
-            --target-config "$PIN_PATH" \
+            --target-config "$RUNNER_TEMP/core-archives/target.json" \
             --core-archives "$RUNNER_TEMP/core-archives" \
             --archives "$RUNNER_TEMP/pgTAP-publication" \
             --output "$RUNNER_TEMP/pgTAP-publication" \
@@ -176,12 +165,10 @@ jobs:
             --static-analysis-result "$STATIC_ANALYSIS_OUTCOME"
       - name: Validate and retain archive-bound publication evidence
         if: always()
-        env:
-          PIN_PATH: ${{ needs.select.outputs.pin_path }}
         run: |
           if [[ -f "$RUNNER_TEMP/pgTAP-publication/publication/attempt.json" ]]; then
             python3 tools/import_pgtap_macos_publication.py \
-              --target-config "$PIN_PATH" \
+              --target-config "$RUNNER_TEMP/core-archives/target.json" \
               --core-artifact "$RUNNER_TEMP/core-archives" \
               --pgtap-artifact "$RUNNER_TEMP/pgTAP-publication" \
               --run-id "$GITHUB_RUN_ID"

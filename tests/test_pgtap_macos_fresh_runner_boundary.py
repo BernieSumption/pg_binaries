@@ -33,6 +33,14 @@ class PgtapMacosFreshRunnerBoundaryTests(unittest.TestCase):
         self.assertIn("actions/download-artifact@v4", workflow)
         self.assertIn("verify-macos-publication.sh static-analysis", workflow)
         self.assertIn("verify-macos-publication.sh archive-suite", workflow)
+        self.assertIn("scripts/macos/resolve-core.sh", workflow)
+        self.assertIn("GH_TOKEN: ${{ github.token }}", workflow)
+        self.assertNotIn("core_run_id", workflow)
+        self.assertNotIn("run-id:", workflow)
+        self.assertIn('"$RUNNER_TEMP/core-archives/target.json" --build-only', workflow)
+        self.assertIn('--target-config "$RUNNER_TEMP/core-archives/target.json"', workflow)
+        self.assertIn("tools/macos_core_target_config.py", workflow)
+        self.assertIn("tools/actions_candidate_discovery.py", workflow)
 
 
 if __name__ == "__main__":
