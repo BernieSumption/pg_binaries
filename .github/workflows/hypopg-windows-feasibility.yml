@@ -2,6 +2,17 @@ name: HypoPG Windows x86-64 feasibility
 
 on:
   workflow_dispatch:
+  push:
+    branches: [spike]
+    paths:
+      - '.github/workflows/hypopg-windows-feasibility.yml'
+      - 'scripts/hypopg/windows-feasibility.ps1'
+      - 'scripts/hypopg/probe.sql'
+      - 'support/windows-core-pins/18.6-x86_64.json'
+      - 'tools/windows_core_pin.py'
+      - 'tools/check_extension_redistribution.py'
+      - 'tools/check_pe_dependencies.py'
+      - 'tests/test_hypopg_windows_feasibility.py'
 
 permissions:
   actions: read
