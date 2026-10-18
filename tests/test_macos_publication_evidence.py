@@ -17,11 +17,12 @@ class MacOSPublicationEvidenceTests(unittest.TestCase):
         profiles = json.loads((ROOT / "support/verification-profiles.json").read_text())["profiles"]
         for profile_id, profile in profiles.items():
             sources = profile["sources"]
-            if any(source in sources for source in (
-                    "tools/emit_pgtap_macos_publication.py",
-                    "tools/import_pgtap_macos_publication.py",
-                    "tools/emit_hypopg_macos_publication.py",
-                    "tools/import_hypopg_macos_publication.py")):
+            if any(source.startswith((
+                    "tools/emit_pgtap_macos", "tools/import_pgtap_macos",
+                    "tools/emit_hypopg_macos", "tools/import_hypopg_macos",
+                    "tools/emit_pgcron_macos", "tools/import_pgcron_macos",
+                    "tools/emit_pgivm_macos", "tools/import_pgivm_macos"))
+                    for source in sources):
                 with self.subTest(profile_id=profile_id):
                     self.assertIn("tools/macos_publication_evidence.py", sources)
                     self.assertEqual(sources, sorted(set(sources)))

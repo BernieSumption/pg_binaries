@@ -2,7 +2,6 @@
 """Bind a pg_cron macOS archive and its checks into publication evidence."""
 
 import argparse
-import hashlib
 import json
 import os
 from pathlib import Path
@@ -11,6 +10,7 @@ import sys
 import tarfile
 
 import coverage
+import macos_publication_evidence as evidence
 from check_macos_extension_license_inventory import check_archive
 
 
@@ -38,23 +38,11 @@ def _fail(message):
 
 
 def sha256_file(path):
-    digest = hashlib.sha256()
-    with Path(path).open("rb") as stream:
-        for block in iter(lambda: stream.read(1024 * 1024), b""):
-            digest.update(block)
-    return digest.hexdigest()
+    return evidence.sha256_file(path)
 
 
 def _sidecar(path, digest):
-    path = Path(path)
-    try:
-        lines = path.with_name(path.name + ".sha256").read_text(encoding="utf-8").splitlines()
-    except OSError as exc:
-        _fail(f"missing checksum sidecar for {path.name}")
-    if (len(lines) != 1
-            or not re.fullmatch(rf"[0-9a-fA-F]{{64}}\s+\*?{re.escape(path.name)}", lines[0])
-            or lines[0].split()[0].lower() != digest):
-        _fail(f"checksum sidecar does not match {path.name}")
+    evidence.check_sidecar(path, digest, "missing checksum sidecar for {name}")
 
 
 def _metadata(path):
@@ -95,12 +83,9 @@ def _metadata(path):
 
 def _json(path, label):
     try:
-        value = json.loads(Path(path).read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError) as exc:
+        return evidence.read_json_object(path)
+    except coverage.CoverageError:
         _fail(f"{label} report is missing or invalid")
-    if not isinstance(value, dict):
-        _fail(f"{label} report must be a JSON object")
-    return value
 
 
 def _step_result(value, name):

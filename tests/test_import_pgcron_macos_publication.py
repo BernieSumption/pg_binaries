@@ -35,6 +35,14 @@ class ImportPgCronMacOSPublicationTests(unittest.TestCase):
             importer.import_run(self.fixture.root, self.fixture.core,
                                 self.fixture.output, "12345678901")
 
+    def test_import_rejects_oversized_raw_attempt(self):
+        self.fixture.emit()
+        attempt = self.fixture.output / "publication/attempt.json"
+        attempt.write_bytes(b" " * (importer.MAX_EVIDENCE_BYTES + 1))
+        with self.assertRaisesRegex(Exception, "regular file of at most"):
+            importer.import_run(self.fixture.root, self.fixture.core,
+                                self.fixture.output, "12345678901")
+
     def test_import_retains_incomplete_raw_attempt(self):
         self.fixture.extension.unlink()
         self.fixture.emit({"archive-suite": "failure", "static-analysis": "skipped"})

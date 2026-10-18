@@ -2,33 +2,24 @@
 """Validate and retain one pg_ivm macOS x86_64 publication attempt."""
 
 import argparse
-import json
 from pathlib import Path
 import re
-import shutil
 import sys
 
 import coverage
+import macos_publication_evidence as evidence
 import emit_pgivm_macos_x86_64_17_11_publication as publication
 
 
-MAX_EVIDENCE_BYTES = 1024 * 1024
+MAX_EVIDENCE_BYTES = evidence.MAX_EVIDENCE_BYTES
 
 
 def _read(path):
-    value = coverage.load_json(path)
-    if not isinstance(value, dict):
-        raise coverage.CoverageError(f"{path}: expected JSON object")
-    return value
+    return evidence.read_json_object(path)
 
 
 def _retain(source, destination, copies):
-    source = Path(source)
-    if source.is_symlink() or not source.is_file() or source.stat().st_size > MAX_EVIDENCE_BYTES:
-        raise coverage.CoverageError(f"evidence must be a regular file no larger than {MAX_EVIDENCE_BYTES} bytes: {source}")
-    if destination.exists() and destination.read_bytes() != source.read_bytes():
-        raise coverage.CoverageError(f"refusing to replace retained evidence {destination}")
-    copies.append((source, destination))
+    evidence.retain(source, destination, copies)
 
 
 def import_run(root, core_artifact, pgivm_artifact, run_id):
@@ -185,15 +176,7 @@ def import_run(root, core_artifact, pgivm_artifact, run_id):
 
 
 def _copy(copies):
-    for source, destination in copies:
-        if source.is_symlink() or not source.is_file() or source.stat().st_size > MAX_EVIDENCE_BYTES:
-            raise coverage.CoverageError(f"evidence must be a regular file of at most {MAX_EVIDENCE_BYTES} bytes: {source}")
-        if destination.exists() and destination.read_bytes() != source.read_bytes():
-            raise coverage.CoverageError(f"refusing to replace retained evidence {destination}")
-    for source, destination in copies:
-        destination.parent.mkdir(parents=True, exist_ok=True)
-        if not destination.exists():
-            shutil.copyfile(source, destination)
+    evidence.copy_retained(copies)
 
 
 def main():
