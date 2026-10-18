@@ -1,0 +1,31 @@
+{
+  "architecture": "x86_64",
+  "archives": {
+    "collection-1.1.1-postgresql-15.19-macos-x86_64.tar.gz": "5b61b8c4e38bae8f4668c29c5855fd02ce498dbdacd91f87505e7015e448bc61",
+    "collection-2.1.3-postgresql-15.19-macos-x86_64.tar.gz": "30179cf16192189f0ab1f95df98495a7b3256a554fcdb9f273e3f36f2a8701d0",
+    "postgresql-15.19-macos-x86_64.tar.gz": "8356f1793fb88c7713627bd1f05d95325fc013aed47be08bb0fb29c7180aef08"
+  },
+  "archives_present": {
+    "collection-1.1.1-postgresql-15.19-macos-x86_64.tar.gz": true,
+    "collection-2.1.3-postgresql-15.19-macos-x86_64.tar.gz": true,
+    "postgresql-15.19-macos-x86_64.tar.gz": true
+  },
+  "collection_versions": [
+    "1.1.1",
+    "2.1.3"
+  ],
+  "postgresql_version": "15.19",
+  "profile_id": "collection-publication-macos-x86_64-15.19",
+  "release_eligibility": "blocked-pending-dependency-review",
+  "run_id": "39114243692",
+  "schema_version": 1,
+  "source_revision": "1991312c1440ad8a8b733a225a94c98c7477c710",
+  "source_sha256": {
+    "1.1.1": "ab99a969334442e4a3c77405bc9ffed0083595d18f3898d64a731353a32bec5e",
+    "2.1.3": "a6b07864e5893d3b682bb3223fd6d33015709765c9d40d415c85112358f0e3e4"
+  },
+  "steps": {
+    "archive-suite": "success",
+    "static-analysis": "success"
+  }
+}
