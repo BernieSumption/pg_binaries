@@ -204,6 +204,18 @@
       "platforms": ["linux-arm64"],
       "case_ids": ["pgcron-archive-suite"],
       "sources": [".github/workflows/linux-publication.yml#profile-section=archive-builds", ".github/workflows/linux-publication.yml#profile-section=job-setup", ".github/workflows/linux-publication.yml#profile-section=pgcron-build", ".github/workflows/linux-publication.yml#profile-section=pgcron-report", ".github/workflows/linux-publication.yml#profile-section=pgcron-verify", "scripts/linux/Dockerfile", "scripts/linux/build-in-container.sh", "scripts/linux/build.sh", "scripts/linux/bundle-glibc-in-container.sh", "scripts/linux/launcher.c", "scripts/pg_cron/Dockerfile", "scripts/pg_cron/build-in-container.sh", "scripts/pg_cron/build.sh", "scripts/pg_cron/verify-in-container.sh", "scripts/pg_cron/verify.Dockerfile", "scripts/pg_cron/verify.sh", "support.json", "support/postgresql-releases.json", "tools/check_elf_dependencies.py", "tools/check_source_identity.py", "tools/create_extension_publication_receipt.py", "tools/emit_extension_publication_records.py", "tools/source_archive.py"]
+    },
+    "collection-publication-current-x86_64": {
+      "scope": "publication",
+      "platforms": ["linux-x86_64"],
+      "case_ids": ["collection-archive-suite"],
+      "sources": [".github/workflows/linux-publication.yml#profile-section=archive-builds", ".github/workflows/linux-publication.yml#profile-section=collection-build", ".github/workflows/linux-publication.yml#profile-section=collection-report", ".github/workflows/linux-publication.yml#profile-section=collection-verify", ".github/workflows/linux-publication.yml#profile-section=job-setup", "scripts/collection/Dockerfile", "scripts/collection/build-in-container.sh", "scripts/collection/build.sh", "scripts/collection/probe.sql", "scripts/collection/verify-in-container.sh", "scripts/collection/verify.Dockerfile", "scripts/collection/verify.sh", "support.json", "support/postgresql-releases.json", "tests/test_import_linux_collection_publication.py", "tools/check_elf_dependencies.py", "tools/create_extension_publication_receipt.py", "tools/emit_extension_publication_records.py", "tools/import_linux_collection_publication.py"]
+    },
+    "collection-publication-current-arm64": {
+      "scope": "publication",
+      "platforms": ["linux-arm64"],
+      "case_ids": ["collection-archive-suite"],
+      "sources": [".github/workflows/linux-publication.yml#profile-section=archive-builds", ".github/workflows/linux-publication.yml#profile-section=collection-build", ".github/workflows/linux-publication.yml#profile-section=collection-report", ".github/workflows/linux-publication.yml#profile-section=collection-verify", ".github/workflows/linux-publication.yml#profile-section=job-setup", "scripts/collection/Dockerfile", "scripts/collection/build-in-container.sh", "scripts/collection/build.sh", "scripts/collection/probe.sql", "scripts/collection/verify-in-container.sh", "scripts/collection/verify.Dockerfile", "scripts/collection/verify.sh", "support.json", "support/postgresql-releases.json", "tests/test_import_linux_collection_publication.py", "tools/check_elf_dependencies.py", "tools/create_extension_publication_receipt.py", "tools/emit_extension_publication_records.py", "tools/import_linux_collection_publication.py"]
     }
   }
 }
