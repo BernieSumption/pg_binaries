@@ -241,6 +241,12 @@
       "case_ids": ["archive-suite", "elf-closure"],
       "sources": [".github/workflows/pg-jsonschema-linux-publication.yml", "scripts/pg_jsonschema/linux-build-in-container.sh", "scripts/pg_jsonschema/linux-build.Dockerfile", "scripts/pg_jsonschema/linux-build.sh", "scripts/pg_jsonschema/linux-probe.sql", "scripts/pg_jsonschema/linux-verify-in-container.sh", "scripts/pg_jsonschema/linux-verify.Dockerfile", "scripts/pg_jsonschema/linux-verify.sh", "support.json", "support/postgresql-releases.json", "tests/test_pg_jsonschema_linux_publication.py", "tools/check_elf_dependencies.py", "tools/coverage.py", "tools/emit_pg_jsonschema_linux_publication.py", "tools/import_pg_jsonschema_linux_publication.py", "tools/inventory_cargo_licenses.py"]
     },
+    "pg-jsonschema-publication-macos-arm64-18.6": {
+      "scope": "publication",
+      "platforms": ["macos-arm64"],
+      "case_ids": ["archive-suite", "static-analysis"],
+      "sources": [".github/workflows/pg-jsonschema-macos-arm64-publication.yml", "scripts/macos/static_analysis.py", "scripts/pg_jsonschema/macos-publication.sh", "scripts/pg_jsonschema/probe.sql", "support.json", "support/postgresql-releases.json", "tests/test_pg_jsonschema_macos_publication.py", "tools/coverage.py", "tools/emit_pg_jsonschema_macos_publication.py", "tools/import_pg_jsonschema_macos_publication.py", "tools/inventory_cargo_licenses.py"]
+    },
     "collection-publication-macos-arm64-18.6": {
       "scope": "publication",
       "platforms": ["macos-arm64"],
