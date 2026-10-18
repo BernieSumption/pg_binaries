@@ -10,13 +10,13 @@ TARGET = json.loads((ROOT / "experiments/planner-dispatch-trial/target.json").re
 
 
 class PlannerDispatchWorkflowContractTests(unittest.TestCase):
-    def test_trial_declares_exact_retry_target(self):
+    def test_trial_declares_exact_target(self):
         self.assertEqual(TARGET, {
             "project": "HypoPG",
             "version": "1.4.3",
             "postgresql_version": "17.11",
             "platform": "linux-x86_64",
-            "retry": True,
+            "retry": False,
         })
 
     def test_dispatch_is_scoped_read_only_and_uses_planner_outputs(self):
