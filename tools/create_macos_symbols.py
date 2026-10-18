@@ -53,7 +53,8 @@ def module_member(name: str, bundled_dependencies: set[str]) -> bool:
         return False
     if parts[0] != "postgresql":
         return (len(parts) == 3 and parts[1] == "lib"
-                and parts[2].endswith(".dylib") and parts[2] not in bundled_dependencies)
+                and parts[2].endswith((".dylib", ".so"))
+                and parts[2] not in bundled_dependencies)
     if len(parts) < 3:
         return False
     return (parts[1] in {"bin", "lib", "libexec"}

@@ -19,6 +19,7 @@ class CreateMacosSymbolsTests(unittest.TestCase):
         self.assertTrue(symbols.module_member("postgresql/lib/libpq.5.dylib", set()))
         self.assertTrue(symbols.module_member("pgaudit/lib/pgaudit.dylib", set()))
         self.assertTrue(symbols.module_member("hypopg/lib/hypopg.dylib", set()))
+        self.assertTrue(symbols.module_member("pgvector/lib/vector.so", set()))
         self.assertFalse(symbols.module_member("pgaudit/share/unexpected.dylib", set()))
         self.assertFalse(symbols.module_member("hypopg/lib/libfoo.a", set()))
         self.assertFalse(symbols.module_member("hypopg/lib/dependency.dylib", {"dependency.dylib"}))
@@ -44,7 +45,7 @@ class CreateMacosSymbolsTests(unittest.TestCase):
             archive = self.make_archive(root, {
                 "postgresql/bin/postgres": b"final postgres bytes",
                 "postgresql/share/postgresql.conf.sample": b"not a binary",
-                "pgvector/lib/vector.dylib": b"final vector bytes",
+                "pgvector/lib/vector.so": b"final vector bytes",
             })
             staged = root / "staged"
             dwarf = self.make_dsym(staged)
@@ -63,7 +64,7 @@ class CreateMacosSymbolsTests(unittest.TestCase):
                 index = symbols.extract([archive], staged, output)
 
             self.assertEqual([item["module_path"] for item in index["files"]], [
-                "postgresql/bin/postgres", "pgvector/lib/vector.dylib"
+                "postgresql/bin/postgres", "pgvector/lib/vector.so"
             ])
             first = index["files"][0]
             self.assertEqual(first["archive_sha256"], hashlib.sha256(archive.read_bytes()).hexdigest())

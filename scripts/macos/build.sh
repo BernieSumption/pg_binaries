@@ -106,7 +106,21 @@ cd "$work_dir/pgvector-${vector_version}"
 echo "Building pgvector $vector_version" >&2
 make PG_CONFIG="$install_dir/bin/pg_config" OPTFLAGS='-O2 -g' -j "$(sysctl -n hw.ncpu)"
 make PG_CONFIG="$install_dir/bin/pg_config" OPTFLAGS= install
-cp "$install_dir/lib/vector.dylib" "$package_dir/pgvector/lib/"
+vector_library=
+for candidate in vector.dylib vector.so; do
+  if [[ -s "$install_dir/lib/$candidate" ]]; then
+    if [[ -n $vector_library ]]; then
+      echo "Multiple pgvector modules installed for PostgreSQL $pg_version" >&2
+      exit 1
+    fi
+    vector_library="$install_dir/lib/$candidate"
+  fi
+done
+if [[ -z $vector_library ]]; then
+  echo "No pgvector module installed for PostgreSQL $pg_version" >&2
+  exit 1
+fi
+cp "$vector_library" "$package_dir/pgvector/lib/"
 cp "$install_dir/share/extension/vector"* "$package_dir/pgvector/share/extension/"
 cp LICENSE "$package_dir/pgvector/LICENSES/pgvector.txt"
 python3 "$script_dir/bundle.py" "$package_dir/pgvector" "$architecture"
