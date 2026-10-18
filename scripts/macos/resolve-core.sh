@@ -17,13 +17,14 @@ import json
 import sys
 
 target = json.load(open(sys.argv[1], encoding="utf-8"))
-if target.get("platform") != "macos-arm64" or target.get("architecture") != "arm64":
-    raise SystemExit("macOS core resolver currently supports only arm64")
+architecture = target.get("architecture")
+if architecture not in {"arm64", "x86_64"} or target.get("platform") != f"macos-{architecture}":
+    raise SystemExit("macOS core resolver supports only arm64 and x86_64")
 version = target["postgresql_version"]
-basename = f"postgresql-{version}-macos-arm64.tar.gz"
+basename = f"postgresql-{version}-macos-{architecture}.tar.gz"
 if target["core_archive"]["basename"] != basename:
     raise SystemExit("base target core archive name differs from selected version")
-print(version, "arm64", basename)
+print(version, architecture, basename)
 PY
 )
 
@@ -57,7 +58,7 @@ try_source() {
       --repository "$GITHUB_REPOSITORY" --workflow "$workflow" \
       --branch "$GITHUB_REF_NAME" --current-run-id "$GITHUB_RUN_ID" \
       --artifact-name-template "$artifact_template" --archive-basename "$core_name" \
-      --project postgresql --version "$version" --platform macos-arm64 \
+      --project postgresql --version "$version" --platform "macos-$architecture" \
       --postgresql-version "$version" --output-directory "$output" \
       --manifest-path "$candidate_manifest"; then
     echo "Cannot inspect checked macOS core candidates from $workflow" >&2
@@ -112,15 +113,18 @@ PY
     exit 1
   fi
   if ! python3 - "$builder_json" "$GITHUB_REPOSITORY" "$GITHUB_REF_NAME" \
-      "$builder_run_id" "$builder_attempt" "$source_revision" <<'PY'
+      "$builder_run_id" "$builder_attempt" "$source_revision" "$architecture" <<'PY'
 import json
 import re
 import sys
 
 run = json.loads(sys.argv[1])
-repository, branch, run_id, attempt, revision = sys.argv[2:]
-allowed = {"macos-arm64-pilot.yml", "hypopg-macos-arm64-selected-publication.yml",
-           "pgtap-macos-arm64-selected-publication.yml"}
+repository, branch, run_id, attempt, revision, architecture = sys.argv[2:]
+suffix = "arm64" if architecture == "arm64" else "x86_64"
+pilot = f"macos-{suffix}-pilot.yml" if architecture == "arm64" else "macos-pilot.yml"
+allowed = {pilot, f"hypopg-macos-{suffix}-selected-publication.yml"}
+if architecture == "arm64":
+    allowed.add("pgtap-macos-arm64-selected-publication.yml")
 repo = run.get("repository") if isinstance(run, dict) else None
 head_repo = run.get("head_repository") if isinstance(run, dict) else None
 valid = (isinstance(repo, dict) and str(repo.get("full_name", "")).casefold() == repository.casefold()
@@ -157,10 +161,19 @@ PY
   return 0
 }
 
-if try_source hypopg-macos-arm64-selected-publication.yml \
-    "hypopg-macos-arm64-${version}-candidate-{run_id}"; then
+if [[ $architecture == arm64 ]]; then
+  selected_workflow=hypopg-macos-arm64-selected-publication.yml
+  selected_artifact="hypopg-macos-arm64-${version}-candidate-{run_id}"
+  pilot_workflow=macos-arm64-pilot.yml
+else
+  selected_workflow=hypopg-macos-x86_64-selected-publication.yml
+  selected_artifact="hypopg-macos-x86_64-${version}-candidate-{run_id}"
+  pilot_workflow=macos-pilot.yml
+fi
+
+if try_source "$selected_workflow" "$selected_artifact"; then
   candidate_usable=true
-elif try_source macos-arm64-pilot.yml macos-arm64-pilot-archives; then
+elif try_source "$pilot_workflow" macos-pilot-archives; then
   candidate_usable=true
 fi
 

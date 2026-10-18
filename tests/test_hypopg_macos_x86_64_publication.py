@@ -111,6 +111,24 @@ class HypoPGMacOSIntelPublicationTests(unittest.TestCase):
         self.assertEqual(arm64.ARCHITECTURE, "arm64")
         self.assertEqual(arm64.PROFILE_ID, "hypopg-publication-macos-arm64-18.6")
 
+    def test_selected_workflow_uses_intel_target_and_shared_verification_path(self):
+        workflow = Path(".github/workflows/hypopg-macos-x86_64-selected-publication.yml").read_text()
+        self.assertIn("runs-on: macos-15-intel", workflow)
+        self.assertIn("--platform macos-x86_64", workflow)
+        self.assertIn('${POSTGRESQL_VERSION}-x86_64.json', workflow)
+        self.assertIn("scripts/macos/resolve-core.sh", workflow)
+        self.assertIn("tools/emit_hypopg_macos_x86_64_publication.py", workflow)
+        self.assertIn("tools/import_hypopg_macos_x86_64_publication.py", workflow)
+        self.assertIn("support/verification/hypopg-1.4.3-postgresql-${{ needs.select.outputs.postgresql_version }}-macos-x86_64-current-${{ github.run_id }}.json", workflow)
+        self.assertNotIn("macos-arm64", workflow)
+
+    def test_core_resolver_selects_candidate_workflow_by_architecture(self):
+        resolver = Path("scripts/macos/resolve-core.sh").read_text()
+        self.assertIn('target.get("architecture")', resolver)
+        self.assertIn('"x86_64"', resolver)
+        self.assertIn('hypopg-macos-x86_64-selected-publication.yml', resolver)
+        self.assertIn('hypopg-macos-arm64-selected-publication.yml', resolver)
+
     def test_emits_and_imports_archive_bound_intel_record(self):
         legacy = emitter.implementation
         original = (legacy.PROFILE_ID, legacy.ARCHITECTURE, legacy.PLATFORM, legacy.CORE_SHA256)
@@ -122,7 +140,7 @@ class HypoPGMacOSIntelPublicationTests(unittest.TestCase):
         self.assertEqual(record["assembled_core"]["sha256"], self.core_digest)
         retained = importer.import_run(self.root, self.core, self.output, "12345678901")
         self.assertTrue(any(path.startswith("support/verification/") for path in retained))
-        evidence = self.root / "support/evidence/hypopg-macos-publication-12345678901/x86_64"
+        evidence = self.root / "support/evidence/hypopg-macos-publication-12345678901/x86_64/18.6"
         self.assertTrue((evidence / "current-receipt.json").is_file())
         self.assertTrue((evidence / "probe-output.txt").is_file())
 
