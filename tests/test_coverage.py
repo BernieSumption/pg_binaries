@@ -540,13 +540,16 @@ class CoverageTests(unittest.TestCase):
                 ("unclean-pass", {}, {"clean_system": False}, "5.15", "minimum"),
                 ("minimum-too-new", {}, {}, "5.16", "minimum"),
                 ("current-older", {}, {}, "5.14", "current"),
+                ("non-numeric-kernel", {}, {}, "Alpine 3.22", "current"),
             ]
             for name, record_changes, environment_changes, version, endpoint in cases:
                 with self.subTest(name=name):
                     environment = dict(record["environment"], **environment_changes,
                                        os_version=version, endpoint=endpoint)
-                    (directory / "record.json").write_text(
-                        json.dumps(dict(record, **record_changes, environment=environment)), encoding="utf-8")
+                    invalid = dict(record, **record_changes, environment=environment)
+                    (directory / "record.json").write_text(json.dumps(invalid), encoding="utf-8")
+                    with self.assertRaises(coverage.CoverageError):
+                        coverage.validate_verification_record(invalid, self.support, root)
                     with self.assertRaises(coverage.CoverageError):
                         coverage.verification_records(root, self.support)
 
@@ -705,6 +708,7 @@ class CoverageTests(unittest.TestCase):
                       "outcome": "passed", "sha256": "a" * 64, "test_revision": "a" * 40,
                       "test_cases": definition["case_ids"], "platform": "windows-x86_64",
                       "environment": {"os": "windows", "architecture": "x86_64",
+                                      "os_version": "10.0", "endpoint": "minimum",
                                       "image_id": "windows-test", "dependency_check_profile": "test",
                                       "dependency_checks_passed": True, "clean_system": True}}
             self.assertTrue(coverage.validate_verification_record(record, self.support, root))

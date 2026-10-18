@@ -454,22 +454,6 @@ def verification_records(root, support):
         if (not separator or os_name not in support["os_support"]
                 or architecture not in support["platform_architectures"][os_name]):
             raise CoverageError(f"verification record {path}: invalid platform")
-        environment = data.get("environment")
-        if (not isinstance(environment, dict)
-                or not isinstance(environment.get("os_version"), str) or not environment["os_version"]
-                or environment.get("os") != os_name
-                or environment.get("architecture") != architecture
-                or not isinstance(environment.get("clean_system"), bool)
-                or (data.get("outcome") == "passed" and environment["clean_system"] is not True)
-                or environment.get("endpoint") not in {"minimum", "current"}):
-            raise CoverageError(f"verification record {path}: invalid environment")
-        actual = _os_version_parts(environment["os_version"], f"verification record {path}")
-        minimum = _os_version_parts(support["os_support"][os_name]["minimum_version"],
-                                    f"support {os_name} minimum_version")
-        endpoint = environment["endpoint"]
-        if ((endpoint == "minimum" and actual != minimum)
-                or (endpoint == "current" and actual < minimum)):
-            raise CoverageError(f"verification record {path}: OS version does not match {endpoint} endpoint")
         current_profile = validate_verification_record(
             data, support, root, f"verification record {path}", allow_stale=True)
         data["_profile_current"] = current_profile
@@ -546,6 +530,17 @@ def validate_verification_record(data, support, root, label="verification record
             or environment.get("os") != os_name
             or environment.get("architecture") != architecture):
         raise CoverageError(f"{label}: environment identity does not match platform")
+    if (not isinstance(environment.get("clean_system"), bool)
+            or (data["outcome"] == "passed" and environment["clean_system"] is not True)
+            or environment.get("endpoint") not in {"minimum", "current"}):
+        raise CoverageError(f"{label}: invalid environment")
+    actual = _os_version_parts(environment.get("os_version"), label)
+    minimum = _os_version_parts(support["os_support"][os_name]["minimum_version"],
+                                f"support {os_name} minimum_version")
+    endpoint = environment["endpoint"]
+    if ((endpoint == "minimum" and actual != minimum)
+            or (endpoint == "current" and actual < minimum)):
+        raise CoverageError(f"{label}: OS version does not match {endpoint} endpoint")
     if scope == "publication" and data.get("component") != "postgresql":
         pg_version = data.get("postgresql_version")
         assembled_core = data.get("assembled_core")

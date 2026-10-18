@@ -14,11 +14,11 @@ useradd -m postgres
 chown -R postgres:postgres /tmp/first /tmp/moved
 pgroot=/tmp/first/postgresql
 test "$("$pgroot/bin/postgres" --version)" = "postgres (PostgreSQL) $pg_version"
-python3 - "$pgroot" "$extension_commit" "$architecture" <<'PY'
+python3 - "$pgroot" "$extension_commit" "$architecture" "$pg_version" <<'PY'
 import json, pathlib, sys
 root = pathlib.Path(sys.argv[1])
 manifest = json.loads((root / 'manifest.json').read_text())
-assert manifest['version'] == '18.6' and manifest['architecture'] == sys.argv[3], manifest
+assert manifest['version'] == sys.argv[4] and manifest['architecture'] == sys.argv[3], manifest
 assert (root / 'lib/pg_jsonschema.so').is_file()
 assert (root / 'share/extension/pg_jsonschema.control').is_file()
 (pathlib.Path('/analysis/source-identity.txt')).write_text(
