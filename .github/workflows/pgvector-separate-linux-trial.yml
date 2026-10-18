@@ -51,14 +51,14 @@ jobs:
         continue-on-error: true
         uses: actions/download-artifact@v4
         with:
-          name: pgvector-separate-linux-build-39163686051
-          run-id: 39163686051
+          name: pgvector-separate-linux-build-39164539225
+          run-id: 39164539225
           github-token: ${{ github.token }}
           path: ${{ runner.temp }}/candidate
       - name: Check inputs and decide whether the prior archive is reusable
         env:
           CORE_SHA256: e532b07c29904db82d1681f1a4ab815364b769a4e1f277c9de9bcd45d0cdc7c6
-          CANDIDATE_SHA256: 7a2618daf5e0fa93269546a2b78c46140760f97d51cce2b582b48b0ee9cfa665
+          CANDIDATE_SHA256: d5a65571417532cc9eef2ebf1eeaa564640f01583a68d057ebbec269aed682c2
         run: |
           set -euo pipefail
           core_name=postgresql-18.6-linux-x86_64.tar.gz
@@ -107,7 +107,7 @@ jobs:
           pathlib.Path(sys.argv[2]).write_text(json.dumps({"schema_version": 1, "entries": [entry]}))
           PY
           cat > "$RUNNER_TEMP/candidate-manifest.json" <<JSON
-          {"schema_version":1,"archives":[{"project":"pgvector","version":"0.8.7","platform":"linux-x86_64","postgresql_version":"18.6","sha256":"$CANDIDATE_SHA256","path":"$candidate","source":{"provider":"github-actions","run_id":"39163686051","artifact_name":"pgvector-separate-linux-build-39163686051","expires_at":"2026-10-25T20:31:59Z"}}]}
+          {"schema_version":1,"archives":[{"project":"pgvector","version":"0.8.7","platform":"linux-x86_64","postgresql_version":"18.6","sha256":"$CANDIDATE_SHA256","path":"$candidate","source":{"provider":"github-actions","run_id":"39164539225","artifact_name":"pgvector-separate-linux-build-39164539225","expires_at":"2026-10-25T20:43:29Z"}}]}
           JSON
           python3 tools/extension_work_queue.py --all \
             --candidate-manifest "$RUNNER_TEMP/candidate-manifest.json" \
