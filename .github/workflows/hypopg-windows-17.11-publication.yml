@@ -141,7 +141,9 @@ jobs:
           if (Test-Path $attemptPath) {
             $attempt = Get-Content $attemptPath -Raw | ConvertFrom-Json
             if ($attempt.archives) {
-              python tools/import_hypopg_windows_publication.py --postgresql-version 17.11 --core-artifact (Join-Path $env:RUNNER_TEMP 'core-archives') --extension-artifact (Join-Path $env:RUNNER_TEMP 'hypopg-extension') --run-id $env:GITHUB_RUN_ID
+              $extensionDir = Join-Path $env:RUNNER_TEMP 'hypopg-extension'
+              Copy-Item (Join-Path $dir '*') $extensionDir -Recurse -Force
+              python tools/import_hypopg_windows_publication.py --postgresql-version 17.11 --core-artifact (Join-Path $env:RUNNER_TEMP 'core-archives') --extension-artifact $extensionDir --run-id $env:GITHUB_RUN_ID
             }
           }
       - name: Upload candidate archive and verification evidence
