@@ -168,11 +168,22 @@ try {
   $knownPayloadHashes['share/extension/uninstall_pgtap.sql'] = 'c824e2e4e65f7d7021be0f169dc95e45b992c2a46528f927e7734d2b3a806650'
   $knownPayloadHashes['LICENSES/pgTAP.txt'] = '2aa8da4a27c1cf4003064dbc5d3096700f38f84b3193137de4f662bf4b80b0e6'
   $knownPayloadHashes['LICENSES/pgtap-inventory.json'] = 'ae338745180c70d51f209fcc24f2c79c12cff49e66d5074f88180680b554ccb6'
+  # Upstream's Perl generators can write CRLF on Windows; pin those exact alternatives.
+  $windowsGeneratedHashes = @{
+    'share/extension/pgtap-core.sql' = '4877caff5cd5939114662163c02d85b5ed20392657581563dd6469b3a24650cf'
+    'share/extension/pgtap-core--1.3.4.sql' = '4877caff5cd5939114662163c02d85b5ed20392657581563dd6469b3a24650cf'
+    'share/extension/pgtap-schema.sql' = '4aa2ff9328dd8ef573ba9dba738b292c5b6ab9f9bb3b7bce0b10f53a4ab05137'
+    'share/extension/pgtap-schema--1.3.4.sql' = '4aa2ff9328dd8ef573ba9dba738b292c5b6ab9f9bb3b7bce0b10f53a4ab05137'
+    'share/extension/uninstall_pgtap.sql' = 'a4661804c071619144ea2f004fdb17740859aa24ebc9388d8434c6a98ba62417'
+  }
   foreach ($relative in $knownPayloadHashes.Keys) {
     $path = Join-Path $payload ($relative -replace '/', '\')
     if (-not (Test-Path $path -PathType Leaf)) { throw "Generated pgTAP source file missing: $relative" }
     $actual = (Get-FileHash $path -Algorithm SHA256).Hash.ToLowerInvariant()
-    if ($actual -ne $knownPayloadHashes[$relative]) { throw "Generated pgTAP source file differs from passing source payload: $relative ($actual)" }
+    if ($actual -ne $knownPayloadHashes[$relative] -and
+        (-not $windowsGeneratedHashes.ContainsKey($relative) -or $actual -ne $windowsGeneratedHashes[$relative])) {
+      throw "Generated pgTAP source file differs from passing source payload: $relative ($actual)"
+    }
   }
   foreach ($name in @('pgtap.sql','pgtap--1.3.4.sql')) {
     $generatedMain = Get-Content (Join-Path $extensionDir $name) -Raw
