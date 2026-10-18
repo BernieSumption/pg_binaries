@@ -95,7 +95,9 @@ def inspect(core_archive, extension_archive, report_path, pe_report_path=None):
             inventory_names = [member.name for member in members if member.isfile()
                                and member.name.startswith("pg_jsonschema/LICENSES/")]
             expected_inventory = "pg_jsonschema/LICENSES/pg_jsonschema-cargo-license-inventory.json"
-            if set(inventory_names) != {expected_inventory, "pg_jsonschema/LICENSES/pg_jsonschema.txt"}:
+            if (not {expected_inventory, "pg_jsonschema/LICENSES/pg_jsonschema.txt"} <= set(inventory_names)
+                    or any(name not in {expected_inventory, "pg_jsonschema/LICENSES/pg_jsonschema.txt"}
+                           and not name.startswith("pg_jsonschema/LICENSES/cargo/") for name in inventory_names)):
                 raise coverage.CoverageError("archive requires the project-named Cargo licence inventory")
             required = {"pg_jsonschema/lib/pg_jsonschema.dll",
                         "pg_jsonschema/share/extension/pg_jsonschema.control"}

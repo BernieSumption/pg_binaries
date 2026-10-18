@@ -48,31 +48,13 @@ sql_files=("$pgroot/share/extension/pg_jsonschema--"*.sql)
 (( ${#sql_files[@]} > 0 ))
 install -m 644 "${sql_files[@]}" "$package/share/extension/"
 if [[ -f /work/source/LICENSE ]]; then install -m 644 /work/source/LICENSE "$package/LICENSES/pg_jsonschema/LICENSE"; fi
+python3 /usr/local/bin/inventory-cargo-licenses /work/source /work/cargo-metadata.json \
+  /out/cargo-license-inventory.json --package-root "$package" --supplements /opt/cargo-license-supplements
 cp /out/cargo-license-inventory.json "$package/LICENSES/cargo/cargo-license-inventory.json"
-python3 - "$package" /work/source /work/cargo-metadata.json /out/cargo-license-inventory.json \
-  "$extension_version" "$pg_version" "$architecture" "$extension_commit" "$lock_sha256" <<'PY'
-import json, pathlib, shutil, sys
+python3 - "$extension_version" "$pg_version" "$architecture" "$extension_commit" "$lock_sha256" <<'PY'
+import json, pathlib, sys
 
-package, source = pathlib.Path(sys.argv[1]), pathlib.Path(sys.argv[2])
-metadata_path, inventory_path = pathlib.Path(sys.argv[3]), pathlib.Path(sys.argv[4])
-version, pg_version, architecture, commit, lock_sha = sys.argv[5:]
-cargo = json.loads(metadata_path.read_text())
-inventory = json.loads(inventory_path.read_text())
-by_package = {(item['name'], item['version'], item.get('source')): pathlib.Path(item['manifest_path']).parent
-              for item in cargo['packages']}
-for item in inventory['packages']:
-    crate = by_package[(item['name'], item['version'], item.get('source'))]
-    target = package / 'LICENSES' / 'cargo' / f"{item['name']}-{item['version']}"
-    for notice in item['license_notice_files']:
-        relative = pathlib.Path(notice['path'])
-        destination = target / relative
-        destination.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copyfile(crate / relative, destination)
-for notice in inventory['source_files']:
-    relative = pathlib.Path(notice['path'])
-    destination = package / 'LICENSES' / 'pg_jsonschema' / relative
-    destination.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copyfile(source / relative, destination)
+version, pg_version, architecture, commit, lock_sha = sys.argv[1:]
 metadata = {
     'project': 'pg_jsonschema', 'version': version, 'sql_names': ['pg_jsonschema'],
     'requires': [], 'configuration_prerequisites': [], 'runtime_prerequisites': [],
@@ -84,6 +66,8 @@ metadata = {
 pathlib.Path('/work/package/metadata.json').write_text(json.dumps(metadata, indent=2, sort_keys=True) + '\n')
 PY
 tar -C /work/package -czf "/out/$output_archive" pg_jsonschema metadata.json
+python3 /usr/local/bin/inventory-cargo-licenses --check-archive "/out/$output_archive" \
+  --archive-inventory pg_jsonschema/LICENSES/cargo/cargo-license-inventory.json
 cd /out
 sha256sum "$output_archive" > "$output_archive.sha256"
 {

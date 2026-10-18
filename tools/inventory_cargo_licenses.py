@@ -5,6 +5,7 @@ import argparse
 import hashlib
 import json
 import re
+import tarfile
 from pathlib import Path
 
 
@@ -96,6 +97,10 @@ def inventory(source_root, metadata):
             if not license_path.is_relative_to(crate_root) or not license_path.is_file() or not license_path.stat().st_size:
                 raise ValueError(f"invalid or missing license_file for {package['name']} {package['version']}: {license_file}")
         files = file_inventory(crate_root)
+        if license_file and Path(license_file).as_posix() not in {item["path"] for item in files}:
+            files.append({"path": Path(license_file).as_posix(),
+                          "sha256": hashlib.sha256(license_path.read_bytes()).hexdigest()})
+            files.sort(key=lambda item: item["path"])
         packages.append({
             "name": package["name"],
             "version": package["version"],
@@ -113,14 +118,130 @@ def inventory(source_root, metadata):
     }
 
 
+SUPPLEMENTS = {
+    "pgrx": ("0.16.1", "2e515ae3fe3d350258ce9cd492ce41a7afcbaaef", "pgrx-v0.16.1-LICENSE",
+             "074f7499b019ffe4bc37b61842f709ccd8bf9800c456e6a2d14f0353c4973fe3", "https://github.com/pgcentralfoundation/pgrx"),
+    "uuid-simd": ("0.8.0", "d74c030d9dc4f3cae02146d1f497ff62726ef09a", "simd-v0.8.0-LICENSE",
+                  "71674605ec4c087fe9eb534e3e4f9e26eb2e4aabcd76a29fd156c6a844d44b3d", "https://github.com/Nugine/simd"),
+}
+SUPPLEMENTS["pgrx-pg-sys"] = SUPPLEMENTS["pgrx"]
+SUPPLEMENTS["pgrx-sql-entity-graph"] = SUPPLEMENTS["pgrx"]
+SUPPLEMENTS["vsimd"] = SUPPLEMENTS["uuid-simd"]
+
+
+def _safe_relative(value):
+    path = Path(value)
+    if path.is_absolute() or ".." in path.parts or "\\" in value or not path.parts:
+        raise ValueError(f"unsafe licence path: {value}")
+    return path
+
+
+def package_notices(result, metadata, payload, supplements):
+    """Copy shipped-package texts, retaining provenance and unresolved packages."""
+    by_package = {(p["name"], p["version"], p.get("source")): Path(p["manifest_path"]).resolve().parent
+                  for p in metadata["packages"]}
+    missing = []
+    for package in result["packages"]:
+        if "shipped" not in package["dependency_roles"]:
+            continue
+        name, version = package["name"], package["version"]
+        crate = by_package[(name, version, package.get("source"))]
+        target = Path("cargo") / _safe_relative(f"{name}-{version}")
+        notices = []
+        for notice in package["license_notice_files"]:
+            relative = _safe_relative(notice["path"])
+            source = (crate / relative).resolve()
+            if not source.is_relative_to(crate):
+                raise ValueError(f"licence escapes crate: {name}/{relative}")
+            notices.append((source, target / relative, notice["sha256"], {"crate_path": notice["path"]}))
+        if name in SUPPLEMENTS:
+            expected_version, commit, filename, digest, repository = SUPPLEMENTS[name]
+            vcs = json.loads((crate / ".cargo_vcs_info.json").read_text(encoding="utf-8"))
+            if (version != expected_version or vcs.get("git", {}).get("sha1") != commit
+                    or package.get("source") != "registry+https://github.com/rust-lang/crates.io-index"):
+                raise ValueError(f"supplement source identity mismatch: {name} {version}")
+            notices.append((supplements / filename, target / "upstream-LICENSE", digest,
+                            {"source_url": f"{repository}/blob/{commit}/LICENSE", "source_commit": commit}))
+        package["packaged_license_notice_files"] = []
+        for source, relative, digest, provenance in notices:
+            content = source.read_bytes()
+            if not content or hashlib.sha256(content).hexdigest() != digest:
+                raise ValueError(f"licence content missing or changed: {source}")
+            destination = payload / "LICENSES" / relative
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            destination.write_bytes(content)
+            package["packaged_license_notice_files"].append(
+                {"path": relative.as_posix(), "sha256": digest, **provenance})
+        if not notices:
+            missing.append({"name": name, "version": version, "source": package.get("source")})
+    result["packaging"] = {"scope": "shipped normal dependency closure including root",
+                           "missing_notice_packages": missing, "redistribution_review": "pending"}
+    if missing != [{"name": "seahash", "version": "4.1.0",
+                    "source": "registry+https://github.com/rust-lang/crates.io-index"}]:
+        raise ValueError(f"unexpected unresolved shipped-package notices: {missing}")
+
+
+def check_packaged_notices(archive, inventory_name):
+    """Check the final archive against the mapped notice bytes without extraction."""
+    members = archive.getmembers()
+    names = [member.name for member in members]
+    if len(names) != len(set(names)):
+        raise ValueError("duplicate archive members")
+    result = json.load(archive.extractfile(inventory_name))
+    if result.get("packaging", {}).get("redistribution_review") != "pending":
+        raise ValueError("missing pending Cargo notice packaging record")
+    if not result.get("packages"):
+        raise ValueError("empty Cargo package inventory")
+    for package in result["packages"]:
+        if "shipped" not in package["dependency_roles"]:
+            continue
+        notices = package.get("packaged_license_notice_files", [])
+        if not notices and (package["name"], package["version"]) != ("seahash", "4.1.0"):
+            raise ValueError(f"missing shipped-package notices: {package['name']}")
+        prefix = f"cargo/{package['name']}-{package['version']}/"
+        expected = {prefix + notice["path"]: notice["sha256"]
+                    for notice in package["license_notice_files"]}
+        if package["name"] in SUPPLEMENTS:
+            expected_version, commit, filename, digest, repository = SUPPLEMENTS[package["name"]]
+            if package["version"] != expected_version:
+                raise ValueError("supplement version mismatch")
+            expected[prefix + "upstream-LICENSE"] = digest
+        if {notice["path"]: notice["sha256"] for notice in notices} != expected:
+            raise ValueError(f"notice mapping differs from source inventory: {package['name']}")
+        for notice in notices:
+            relative = _safe_relative(notice["path"])
+            member = archive.getmember("pg_jsonschema/LICENSES/" + relative.as_posix())
+            if not member.isfile() or not member.size:
+                raise ValueError(f"missing regular notice: {member.name}")
+            if hashlib.sha256(archive.extractfile(member).read()).hexdigest() != notice["sha256"]:
+                raise ValueError(f"changed notice: {member.name}")
+    return result
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("source_root", type=Path)
-    parser.add_argument("cargo_metadata", type=Path, help="JSON from cargo metadata --locked --format-version 1")
-    parser.add_argument("output", type=Path)
+    parser.add_argument("--check-archive", type=Path)
+    parser.add_argument("--archive-inventory")
+    parser.add_argument("source_root", type=Path, nargs="?")
+    parser.add_argument("cargo_metadata", type=Path, nargs="?", help="JSON from cargo metadata --locked --format-version 1")
+    parser.add_argument("output", type=Path, nargs="?")
+    parser.add_argument("--package-root", type=Path)
+    parser.add_argument("--supplements", type=Path)
     args = parser.parse_args()
+    if args.check_archive:
+        if not args.archive_inventory:
+            parser.error("--check-archive requires --archive-inventory")
+        with tarfile.open(args.check_archive, "r:gz") as archive:
+            check_packaged_notices(archive, args.archive_inventory)
+        return
+    if not all((args.source_root, args.cargo_metadata, args.output)):
+        parser.error("source_root, cargo_metadata and output are required")
+    if bool(args.package_root) != bool(args.supplements):
+        parser.error("--package-root and --supplements must be supplied together")
     metadata = json.loads(args.cargo_metadata.read_text(encoding="utf-8"))
     result = inventory(args.source_root, metadata)
+    if args.package_root:
+        package_notices(result, metadata, args.package_root, args.supplements)
     args.output.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
 

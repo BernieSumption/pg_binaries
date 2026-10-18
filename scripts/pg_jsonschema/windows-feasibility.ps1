@@ -168,7 +168,7 @@ try {
   $cargoMetadata = Join-Path $work 'cargo-metadata.json'
   & cargo metadata --manifest-path (Join-Path $source 'Cargo.toml') --locked --format-version 1 --filter-platform x86_64-pc-windows-msvc --no-default-features --features pg18 | Set-Content -Encoding utf8 $cargoMetadata
   if ($LASTEXITCODE -ne 0) { throw 'Could not resolve the locked Windows Cargo package inventory' }
-  python (Join-Path $repo 'tools/inventory_cargo_licenses.py') $source $cargoMetadata (Join-Path $licenseDir 'pg_jsonschema-cargo-license-inventory.json')
+  python (Join-Path $repo 'tools/inventory_cargo_licenses.py') $source $cargoMetadata (Join-Path $licenseDir 'pg_jsonschema-cargo-license-inventory.json') --package-root $payload --supplements (Join-Path $repo 'support/evidence/pg-jsonschema-crate-licenses-2026-10-18')
   if ($LASTEXITCODE -ne 0) { throw 'Could not create the project-named Cargo licence inventory' }
   $archiveName = "pg_jsonschema-$extensionVersion-postgresql-$pgVersion-windows-x86_64.tar.gz"
   $extensionArchive = Join-Path $OutputDirectory $archiveName
@@ -182,6 +182,8 @@ try {
   $metadata | ConvertTo-Json -Depth 8 | Set-Content -Encoding utf8 (Join-Path $stage 'metadata.json')
   & tar.exe -czf $extensionArchive -C $stage pg_jsonschema metadata.json
   if ($LASTEXITCODE -ne 0) { throw 'Could not create the pg_jsonschema extension archive' }
+  python (Join-Path $repo 'tools/inventory_cargo_licenses.py') --check-archive $extensionArchive --archive-inventory pg_jsonschema/LICENSES/pg_jsonschema-cargo-license-inventory.json
+  if ($LASTEXITCODE -ne 0) { throw 'Final archive Cargo notices failed verification' }
   $extensionHash = (Get-FileHash $extensionArchive -Algorithm SHA256).Hash.ToLowerInvariant()
   [IO.File]::WriteAllText("$extensionArchive.sha256", "$extensionHash  $archiveName`n", [Text.UTF8Encoding]::new($false))
 

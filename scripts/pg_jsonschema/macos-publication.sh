@@ -126,6 +126,10 @@ cp "$extension_dylib" "$work/package/pg_jsonschema/lib/pg_jsonschema.dylib"
 cp "$extensiondir/pg_jsonschema.control" "$work/package/pg_jsonschema/share/extension/"
 find "$extensiondir" -maxdepth 1 -type f -name 'pg_jsonschema*.sql' -exec cp {} "$work/package/pg_jsonschema/share/extension/" \;
 cp "$work/source/pg_jsonschema/LICENSE" "$work/package/pg_jsonschema/LICENSES/pg_jsonschema.txt"
+python3 "$repo/tools/inventory_cargo_licenses.py" "$work/source/pg_jsonschema" \
+  "$work/cargo-metadata.json" "$output/cargo-license-inventory.json" \
+  --package-root "$work/package/pg_jsonschema" \
+  --supplements "$repo/support/evidence/pg-jsonschema-crate-licenses-2026-10-18"
 cp "$output/cargo-license-inventory.json" \
   "$work/package/pg_jsonschema/LICENSES/pg_jsonschema-cargo-license-inventory.json"
 
@@ -149,6 +153,8 @@ metadata = {
 (root / "metadata.json").write_text(json.dumps(metadata, indent=2, sort_keys=True) + "\n")
 PY
 tar -C "$work/package" -czf "$output/$extension_name" pg_jsonschema metadata.json
+python3 "$repo/tools/inventory_cargo_licenses.py" --check-archive "$output/$extension_name" \
+  --archive-inventory pg_jsonschema/LICENSES/pg_jsonschema-cargo-license-inventory.json
 (cd "$output" && shasum -a 256 "$extension_name" > "$extension_name.sha256")
 
 python3 - "$work/package" "$work/test-core" "$core_archives/$core_name" "$output/$extension_name" <<'PY'
