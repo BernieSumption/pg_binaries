@@ -182,6 +182,7 @@ class PgJsonschemaWindowsArchiveTests(unittest.TestCase):
         record_name = ("pg_jsonschema-0.3.4-postgresql-18.6-windows-x86_64-current-123.json")
         retained = repo / "support/verification" / record_name
         self.assertTrue(retained.is_file())
+        imported = [path.replace("\\", "/") for path in imported]
         self.assertIn(f"support/verification/{record_name}", imported)
         evidence_record = (repo / "support/evidence/pg_jsonschema-windows-publication-123/x86_64/"
                           / "verification-record.json")
