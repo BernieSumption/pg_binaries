@@ -1,0 +1,35 @@
+{
+  "architecture": "x86_64",
+  "archives": {
+    "address-standardizer-3.7.0-postgresql-18.6-linux-x86_64.tar.gz": "24241422dcb554866eb4d2f6890a3bb492694a0c88302dff291e5d30a77dbb4e",
+    "postgresql-18.6-linux-x86_64.tar.gz": "f89a7047812324b85c3b0bb29a3118fc55a492b17956f1fe0d74d1788d33d680"
+  },
+  "archives_present": {
+    "address-standardizer-3.7.0-postgresql-18.6-linux-x86_64.tar.gz": true,
+    "postgresql-18.6-linux-x86_64.tar.gz": true
+  },
+  "core_run_id": "39081368117",
+  "postgresql_version": "18.6",
+  "profile_id": "address-standardizer-publication-linux-x86_64-18.6",
+  "redistribution_status": "pending-human-review-of-upstream-only-source-and-runtime-load-path-policy",
+  "release_eligible": false,
+  "reports": {
+    "address_standardizer_license": "70a4997d7edd308495346ba51bcf472b1abbe0dbabe8b42bd91ae0b0fa0053c5",
+    "build_evidence": "ebfdab75e856093d7fd0d35ec01946f8ec89dc87e2074f33a966e3a61d935f13",
+    "elf_closure": "a49a400b09e04f79cedfb076faa5dd3cedaadd7858edecf089b5de2cadccbaa2",
+    "pcre2_license": "99272c55f3dcfa07a8a7e15a5c1a33096e4727de74241d65fa049fccfdd59507",
+    "probe_output": "1a6548c433dc23c053dfabeddb6b70f3f2fa359a740a5c83cddc55c52d7ad60a"
+  },
+  "run_id": "39112435932",
+  "schema_version": 1,
+  "source_revision": "cc883dae1343e1af58fefcfb0f1d5d9fa3870c43",
+  "steps": {
+    "archive-suite": "success",
+    "elf-closure": "success"
+  },
+  "version": "3.7.0",
+  "workflow_steps": {
+    "build": "success",
+    "verify": "success"
+  }
+}
