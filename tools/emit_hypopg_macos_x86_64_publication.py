@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
 """Emit checksum-bound HypoPG macOS PostgreSQL 18.6 Intel publication evidence."""
 
-import json
 from pathlib import Path
 
 import emit_hypopg_macos_publication as implementation
+from hypopg_macos_target import load_target_config
 
 
 PG_VERSION = "18.6"
 ARCHITECTURE = "x86_64"
 PLATFORM = f"macos-{ARCHITECTURE}"
 PROFILE_ID = f"hypopg-publication-macos-{ARCHITECTURE}-{PG_VERSION}"
-PIN = json.loads((Path(__file__).parent / "hypopg_macos_pins" / f"{PG_VERSION}-{ARCHITECTURE}.json").read_text())
-CORE_SHA256 = PIN["core_sha256"]
+PIN = load_target_config(Path(__file__).parent / "hypopg_macos_pins" / f"{PG_VERSION}-{ARCHITECTURE}-selected.json", allow_base=True)
+CORE_SHA256 = PIN.core_sha256
 
 
 def _invoke(function, *args, **kwargs):

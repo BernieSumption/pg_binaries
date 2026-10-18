@@ -4,6 +4,7 @@ from dataclasses import dataclass
 import json
 from pathlib import Path
 import re
+from typing import Optional
 
 
 HYPOPG_VERSION = "1.4.3"
@@ -20,16 +21,18 @@ class HypoPGMacosTarget:
     architecture: str
     platform: str
     core_basename: str
-    core_run_id: str
+    core_run_id: Optional[str]
     core_sha256: str
-    core_build_id: str
-    core_source_revision: str
+    core_build_id: Optional[str]
+    core_source_revision: Optional[str]
 
     @property
     def extension_basename(self):
         return f"hypopg-{HYPOPG_VERSION}-postgresql-{self.postgresql_version}-{self.platform}.tar.gz"
 
     def shell_values(self):
+        if not all((self.core_run_id, self.core_build_id, self.core_source_revision)):
+            raise ValueError("HypoPG runtime target requires complete core build provenance")
         return (self.postgresql_version, self.architecture, self.platform, self.profile_id,
                 self.core_basename, self.core_run_id, self.core_sha256, self.core_build_id,
                 self.core_source_revision, SOURCE_URL, SOURCE_SHA256)
@@ -44,7 +47,7 @@ def _unique_object(pairs):
     return result
 
 
-def load_target_config(path):
+def load_target_config(path, allow_base=False):
     path = Path(path)
     try:
         value = json.loads(path.read_text(encoding="utf-8"), object_pairs_hook=_unique_object)
@@ -53,7 +56,10 @@ def load_target_config(path):
     if not isinstance(value, dict) or set(value) != EXPECTED_KEYS:
         raise ValueError("HypoPG target config has an unexpected field set")
     core, source = value.get("core_archive"), value.get("source")
-    if not isinstance(core, dict) or set(core) != {"basename", "run_id", "sha256", "build_id", "source_revision"}:
+    stable_fields = {"basename", "sha256"}
+    provenance_fields = stable_fields | {"run_id", "build_id", "source_revision"}
+    allowed_core_fields = (stable_fields, provenance_fields) if allow_base else (provenance_fields,)
+    if not isinstance(core, dict) or set(core) not in allowed_core_fields:
         raise ValueError("HypoPG target core_archive has an unexpected field set")
     if not isinstance(source, dict) or set(source) != {"url", "sha256"}:
         raise ValueError("HypoPG target source has an unexpected field set")
@@ -72,6 +78,13 @@ def load_target_config(path):
         raise ValueError("HypoPG target profile or archive identity is inconsistent")
     run_id, digest = core.get("run_id"), core.get("sha256")
     build_id, source_revision = core.get("build_id"), core.get("source_revision")
+    if allow_base and set(core) == stable_fields:
+        if not isinstance(digest, str) or not re.fullmatch(r"[0-9a-f]{64}", digest):
+            raise ValueError("HypoPG target core checksum is invalid")
+        if source != {"url": SOURCE_URL, "sha256": SOURCE_SHA256}:
+            raise ValueError("HypoPG target source must match the pinned 1.4.3 source archive")
+        return HypoPGMacosTarget(profile_id, version, architecture, platform, core_basename,
+                                 None, digest, None, None)
     if (not isinstance(run_id, str) or not run_id.isdigit()
             or not isinstance(digest, str) or not re.fullmatch(r"[0-9a-f]{64}", digest)
             or not isinstance(build_id, str)

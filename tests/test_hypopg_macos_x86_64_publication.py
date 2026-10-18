@@ -106,15 +106,18 @@ class HypoPGMacOSIntelPublicationTests(unittest.TestCase):
         import emit_hypopg_macos_publication as arm64
         self.assertEqual(emitter.ARCHITECTURE, "x86_64")
         self.assertEqual(emitter.PROFILE_ID, "hypopg-publication-macos-x86_64-18.6")
-        self.assertEqual(emitter.PIN["core_run_id"], "39093802497")
-        self.assertEqual(emitter.PIN["core_sha256"], "898256ad26f29cc055208ab443aff9ef9813bc5cbf150539b15dfce7e4ad017d")
+        self.assertIsNone(emitter.PIN.core_run_id)
+        self.assertEqual(emitter.PIN.core_sha256, "898256ad26f29cc055208ab443aff9ef9813bc5cbf150539b15dfce7e4ad017d")
         self.assertEqual(arm64.ARCHITECTURE, "arm64")
         self.assertEqual(arm64.PROFILE_ID, "hypopg-publication-macos-arm64-18.6")
 
     def test_selected_workflow_uses_intel_target_and_shared_verification_path(self):
         from hypopg_macos_target import load_target_config
-        target = load_target_config(Path("tools/hypopg_macos_pins/18.6-x86_64-selected.json"))
+        target = load_target_config(Path("tools/hypopg_macos_pins/18.6-x86_64-selected.json"), allow_base=True)
         self.assertEqual((target.postgresql_version, target.architecture), ("18.6", "x86_64"))
+        self.assertIsNone(target.core_run_id)
+        with self.assertRaisesRegex(ValueError, "unexpected field set"):
+            load_target_config(Path("tools/hypopg_macos_pins/18.6-x86_64-selected.json"))
         workflow = Path(".github/workflows/hypopg-macos-x86_64-selected-publication.yml").read_text()
         self.assertIn("runs-on: macos-15-intel", workflow)
         self.assertIn("--platform macos-x86_64", workflow)
@@ -136,6 +139,7 @@ class HypoPGMacOSIntelPublicationTests(unittest.TestCase):
             "tools/emit_hypopg_macos_x86_64_publication.py",
             "tools/import_hypopg_macos_x86_64_publication.py",
         } <= sources)
+        self.assertNotIn("tools/hypopg_macos_pins/18.6-x86_64.json", sources)
         self.assertNotIn(".github/workflows/hypopg-macos-x86_64-publication.yml", sources)
         self.assertNotIn("scripts/hypopg/macos-x86_64-feasibility.sh", sources)
 

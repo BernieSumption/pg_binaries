@@ -31,19 +31,8 @@ def _default_target():
     if ARCHITECTURE == "arm64":
         target = load_target_config(pins / f"{PG_VERSION}-arm64.json")
         return replace(target, profile_id=PROFILE_ID, core_sha256=CORE_SHA256)
-    value = json.loads((pins / f"{PG_VERSION}-{ARCHITECTURE}.json").read_text(encoding="utf-8"))
-    if (value.get("postgresql_version") != PG_VERSION or value.get("architecture") != ARCHITECTURE
-            or value.get("platform") != PLATFORM
-            or not re.fullmatch(r"[0-9a-f]{64}", str(value.get("core_sha256", "")))
-            or not re.fullmatch(
-                rf"github-{re.escape(str(value.get('core_run_id', '')))}-[1-9][0-9]*",
-                str(value.get("core_build_id", "")))):
-        raise ValueError("Intel HypoPG target pin is inconsistent")
-    return HypoPGMacosTarget(
-        PROFILE_ID, PG_VERSION, ARCHITECTURE, PLATFORM,
-        f"postgresql-{PG_VERSION}-{PLATFORM}.tar.gz", value["core_run_id"], CORE_SHA256,
-        value["core_build_id"], value["core_source_revision"],
-    )
+    target = load_target_config(pins / f"{PG_VERSION}-{ARCHITECTURE}-selected.json", allow_base=True)
+    return replace(target, core_sha256=CORE_SHA256)
 
 
 def _fail(message):

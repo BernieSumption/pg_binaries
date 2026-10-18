@@ -102,7 +102,7 @@ jobs:
           from pathlib import Path
           sys.path.insert(0, "tools")
           from hypopg_macos_target import load_target_config
-          target = load_target_config(Path(sys.argv[1]))
+          target = load_target_config(Path(sys.argv[1]), allow_base=True)
           if target.postgresql_version != sys.argv[2] or target.architecture != "x86_64":
               raise SystemExit("pinned core target does not match the selected request")
           PY

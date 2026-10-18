@@ -81,6 +81,18 @@ class MacosCoreTargetConfigTests(unittest.TestCase):
             "build_id": f"github-{self.run_id}-1", "source_revision": self.revision})
         self.assertEqual(json.loads(output.read_text()), result)
 
+    def test_accepts_stable_base_without_run_provenance(self):
+        base_path, original = self.base("hypopg")
+        original["core_archive"] = {
+            "basename": original["core_archive"]["basename"],
+            "sha256": "b" * 64,
+        }
+        base_path.write_text(json.dumps(original), encoding="utf-8")
+        archive = self.archive(original)
+        result = config.create_target(base_path, archive, self.run_id, self.root / "out.json")
+        self.assertEqual(result["core_archive"]["run_id"], self.run_id)
+        self.assertEqual(result["core_archive"]["source_revision"], self.revision)
+
     def test_accepts_positive_rerun_attempt(self):
         base_path, original = self.base("hypopg")
         archive = self.archive(original, attempt="3")
