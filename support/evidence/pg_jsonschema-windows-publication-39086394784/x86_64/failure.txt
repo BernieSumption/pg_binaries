@@ -1,0 +1,8 @@
+&: D:\a\pg_binaries\pg_binaries\scripts\pg_jsonschema\windows-feasibility.ps1:214
+Line |
+ 214 |    & python (Join-Path $repo 'tools/check_pe_dependencies.py') $pgRoot …
+     |      ~~~~~~
+     | The term 'python' is not recognized as a name of a cmdlet, function, script file, or executable program. Check
+     | the spelling of the name, or if a path was included, verify that the path is correct and try again.
+
+

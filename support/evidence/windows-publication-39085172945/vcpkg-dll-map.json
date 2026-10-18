@@ -1,0 +1,165 @@
+{
+  "schema_version": 1,
+  "components": [
+    {
+      "dll": "charset-1.dll",
+      "dll_sha256": "fcbbb35b21f40cd01d98b7a01a1d82f752ad59f8e1472259a4d5ac0be1f48d3f",
+      "port": "libiconv",
+      "triplet": "x64-windows",
+      "version": "1.19",
+      "port_version": "0",
+      "copyright_file": "share/libiconv/copyright",
+      "copyright_sha256": "57242af4e5f8e054ab14ecacf99c88ddc49a6543318601ba75ba996a93ad4bc4"
+    },
+    {
+      "dll": "iconv-2.dll",
+      "dll_sha256": "e0f51f3276e42b9f5018d684da8244bf627717934aec04d3e3159bf156a8f164",
+      "port": "libiconv",
+      "triplet": "x64-windows",
+      "version": "1.19",
+      "port_version": "0",
+      "copyright_file": "share/libiconv/copyright",
+      "copyright_sha256": "57242af4e5f8e054ab14ecacf99c88ddc49a6543318601ba75ba996a93ad4bc4"
+    },
+    {
+      "dll": "icudt78.dll",
+      "dll_sha256": "5cde1aa86b6fc9925955548d8f99fef55c60e6c93fe7c10acfc4994fed859a89",
+      "port": "icu",
+      "triplet": "x64-windows",
+      "version": "78.3",
+      "port_version": "2",
+      "copyright_file": "share/icu/copyright",
+      "copyright_sha256": "e55522d81edc687a341a4411e0776e54ca654e90147f354a90458aaced4116af"
+    },
+    {
+      "dll": "icuin78.dll",
+      "dll_sha256": "000d1cd00ab2276835730438b8d3508e27885291ef3288e1fc6cf64df7259651",
+      "port": "icu",
+      "triplet": "x64-windows",
+      "version": "78.3",
+      "port_version": "2",
+      "copyright_file": "share/icu/copyright",
+      "copyright_sha256": "e55522d81edc687a341a4411e0776e54ca654e90147f354a90458aaced4116af"
+    },
+    {
+      "dll": "icuio78.dll",
+      "dll_sha256": "55cb8a2fc505b4d204e3edcd64f24ec266161fc132efca4495a92d5c16d1f39c",
+      "port": "icu",
+      "triplet": "x64-windows",
+      "version": "78.3",
+      "port_version": "2",
+      "copyright_file": "share/icu/copyright",
+      "copyright_sha256": "e55522d81edc687a341a4411e0776e54ca654e90147f354a90458aaced4116af"
+    },
+    {
+      "dll": "icutu78.dll",
+      "dll_sha256": "b2fd33088620d90b16d3f492970ba7ae938deeeefdc106957a4bfdd483a7f6c6",
+      "port": "icu",
+      "triplet": "x64-windows",
+      "version": "78.3",
+      "port_version": "2",
+      "copyright_file": "share/icu/copyright",
+      "copyright_sha256": "e55522d81edc687a341a4411e0776e54ca654e90147f354a90458aaced4116af"
+    },
+    {
+      "dll": "icuuc78.dll",
+      "dll_sha256": "98b00fce5f2cc5edcffd0c027ba1eefb0421bdc43739c0dd5b0a51a63cd08af9",
+      "port": "icu",
+      "triplet": "x64-windows",
+      "version": "78.3",
+      "port_version": "2",
+      "copyright_file": "share/icu/copyright",
+      "copyright_sha256": "e55522d81edc687a341a4411e0776e54ca654e90147f354a90458aaced4116af"
+    },
+    {
+      "dll": "legacy.dll",
+      "dll_sha256": "26d43731c2b52a618601bc83e93ecb031c1a2c0a88dc5b03e3f0fbc18d26d93e",
+      "port": "openssl",
+      "triplet": "x64-windows",
+      "version": "3.6.5",
+      "port_version": "1",
+      "copyright_file": "share/openssl/copyright",
+      "copyright_sha256": "7d5450cb2d142651b8afa315b5f238efc805dad827d91ba367d8516bc9d49e7a"
+    },
+    {
+      "dll": "libcrypto-3-x64.dll",
+      "dll_sha256": "070d606785d9a3119c658c2f51deb935b47aa88acc464fc5c3a4e9d4ddc1d5a8",
+      "port": "openssl",
+      "triplet": "x64-windows",
+      "version": "3.6.5",
+      "port_version": "1",
+      "copyright_file": "share/openssl/copyright",
+      "copyright_sha256": "7d5450cb2d142651b8afa315b5f238efc805dad827d91ba367d8516bc9d49e7a"
+    },
+    {
+      "dll": "libexslt.dll",
+      "dll_sha256": "9ef8c38620cf86be61a75ffaa610e92efae211ff4fcb85b111c8781d52ea9067",
+      "port": "libxslt",
+      "triplet": "x64-windows",
+      "version": "1.1.45",
+      "port_version": "0",
+      "copyright_file": "share/libxslt/copyright",
+      "copyright_sha256": "7e48e290b6bfccc2ec1b297023a1d77f2fd87417f71fbb9f50aabef40a851819"
+    },
+    {
+      "dll": "libssl-3-x64.dll",
+      "dll_sha256": "7ee234ae171be87f3aade3fe45acdb9c03a3337bf1da6a4f888a4607830b54fd",
+      "port": "openssl",
+      "triplet": "x64-windows",
+      "version": "3.6.5",
+      "port_version": "1",
+      "copyright_file": "share/openssl/copyright",
+      "copyright_sha256": "7d5450cb2d142651b8afa315b5f238efc805dad827d91ba367d8516bc9d49e7a"
+    },
+    {
+      "dll": "libxml2.dll",
+      "dll_sha256": "c4baabd9505ac710e0760cdc8b28ea4d0110293c408987dfbc2ba5a20b750244",
+      "port": "libxml2",
+      "triplet": "x64-windows",
+      "version": "2.15.4",
+      "port_version": "0",
+      "copyright_file": "share/libxml2/copyright",
+      "copyright_sha256": "5d4873884a890122a4b9b20ad56ac6f7da1d796a5bfcf04a427970ac96217626"
+    },
+    {
+      "dll": "libxslt.dll",
+      "dll_sha256": "43650fc95561ac3f44d17106c3bdf1e7bd3a3774260bf513f05001e1f31c1db7",
+      "port": "libxslt",
+      "triplet": "x64-windows",
+      "version": "1.1.45",
+      "port_version": "0",
+      "copyright_file": "share/libxslt/copyright",
+      "copyright_sha256": "7e48e290b6bfccc2ec1b297023a1d77f2fd87417f71fbb9f50aabef40a851819"
+    },
+    {
+      "dll": "lz4.dll",
+      "dll_sha256": "d8e39c11d863edfa8ca8b4dc05c616ed2d5147028b1e81ba2f26d58858f8651b",
+      "port": "lz4",
+      "triplet": "x64-windows",
+      "version": "1.10.0",
+      "port_version": "0",
+      "copyright_file": "share/lz4/copyright",
+      "copyright_sha256": "8b58c446121a109ccf32edc094bba3010a3d85e4ee3702950db55e4d3e87736c"
+    },
+    {
+      "dll": "z.dll",
+      "dll_sha256": "6978bcda61413ddee4a2aa5fdca5357fefd2c97cfdb5588ee04adc7ad92a5162",
+      "port": "zlib",
+      "triplet": "x64-windows",
+      "version": "1.3.2",
+      "port_version": "2",
+      "copyright_file": "share/zlib/copyright",
+      "copyright_sha256": "e32ff4e00d9d94930537635291da39e7e612703334bf6fde8c7f1686fe8a45a2"
+    },
+    {
+      "dll": "zstd.dll",
+      "dll_sha256": "f7bcd5c19417c6962c13ce636b70077f387e7d0fbf6287f8918755f7d40a884b",
+      "port": "zstd",
+      "triplet": "x64-windows",
+      "version": "1.5.7",
+      "port_version": "0",
+      "copyright_file": "share/zstd/copyright",
+      "copyright_sha256": "434dca949c6da7c500413aef694539fe37f867dd1a94d83d4ed1d260194e2660"
+    }
+  ]
+}

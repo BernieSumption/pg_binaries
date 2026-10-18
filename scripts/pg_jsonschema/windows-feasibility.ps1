@@ -23,6 +23,7 @@ $source = Join-Path $work 'source'
 $data = Join-Path $work 'data'
 $serverStarted = $false
 $originalPath = $env:PATH
+$python = (Get-Command python -ErrorAction Stop).Source
 $transcript = Join-Path $OutputDirectory 'windows-build.log'
 Start-Transcript -Path $transcript -Force | Out-Null
 
@@ -211,7 +212,7 @@ try {
   if (-not (Select-String -Path $probeOutput -SimpleMatch 'pg_jsonschema' -Quiet)) { throw 'The SQL probe did not report the installed extension' }
   $dumpbin = Join-Path (Split-Path $clVersion -Parent) 'dumpbin.exe'
   if (-not (Test-Path $dumpbin -PathType Leaf)) { throw 'Visual Studio dumpbin.exe was not found beside cl.exe' }
-  & python (Join-Path $repo 'tools/check_pe_dependencies.py') $pgRoot --dumpbin $dumpbin --archive $coreArchive --archive $extensionArchive --report (Join-Path $OutputDirectory 'pe-dependency-analysis.json')
+  & $python (Join-Path $repo 'tools/check_pe_dependencies.py') $pgRoot --dumpbin $dumpbin --archive $coreArchive --archive $extensionArchive --report (Join-Path $OutputDirectory 'pe-dependency-analysis.json')
   if ($LASTEXITCODE -ne 0) { throw 'PE dependency closure check failed on the relocated archive installation' }
   & $pgCtl -D $data -m fast -w stop
   if ($LASTEXITCODE -ne 0) { throw 'Relocated PostgreSQL did not stop cleanly' }
