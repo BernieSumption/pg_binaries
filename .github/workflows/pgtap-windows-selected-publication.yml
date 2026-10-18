@@ -17,6 +17,7 @@ on:
     branches: [spike]
     paths:
       - '.github/workflows/pgtap-windows-selected-publication.yml'
+      - 'support/verification-profiles.json'
 
 permissions:
   actions: read
