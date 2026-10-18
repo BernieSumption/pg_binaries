@@ -1,6 +1,16 @@
 name: HypoPG selected PostgreSQL Windows x86-64 publication
 
 on:
+  workflow_call:
+    inputs:
+      postgresql_version:
+        description: Exact selected PostgreSQL release
+        required: true
+        type: string
+      extension_version:
+        description: Exact selected HypoPG release
+        required: true
+        type: string
   workflow_dispatch:
     inputs:
       postgresql_version:
@@ -16,7 +26,6 @@ on:
   push:
     branches: [spike]
     paths:
-      - '.github/workflows/hypopg-windows-selected-publication.yml'
       - 'experiments/hypopg-windows-target-trial/target.json'
 
 permissions:
