@@ -1,0 +1,126 @@
+name: pg_jsonschema macOS x86_64 PostgreSQL 16.15 publication
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [spike]
+    paths:
+      - .github/workflows/profile-change-scope.yml
+      - tools/profile_change_gate.py
+      - tests/test_profile_change_gate.py
+      - '.github/workflows/pg-jsonschema-macos-x86_64-16.15-publication.yml'
+      - 'scripts/pg_jsonschema/macos-publication.sh'
+      - 'scripts/macos/compiled-prefix-relocation.sh'
+      - 'scripts/pg_jsonschema/probe.sql'
+      - 'scripts/macos/static_analysis.py'
+      - 'tools/inventory_cargo_licenses.py'
+      - 'tools/emit_pg_jsonschema_macos_publication.py'
+      - 'tools/pg_jsonschema_macos_targets/16.15-x86_64.json'
+      - 'tools/import_pg_jsonschema_macos_publication.py'
+      - 'tests/test_pg_jsonschema_macos_publication.py'
+      - 'tests/test_macos_compiled_prefix_relocation.py'
+      - 'support.json'
+      - 'support/postgresql-releases.json'
+      - 'tools/coverage.py'
+      - 'tools/pg_jsonschema_macos_target.py'
+      - 'support/verification-profiles.json'
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  profile_scope:
+    uses: ./.github/workflows/profile-change-scope.yml
+    with:
+      profile_id: pg-jsonschema-publication-macos-x86_64-16.15
+
+  verify:
+    needs: profile_scope
+    if: needs.profile_scope.outputs.should_run == 'true'
+    runs-on: macos-15-intel
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.90.0
+      - name: Check publication evidence helpers
+        run: python3 -m unittest tests/test_pg_jsonschema_macos_publication.py tests/test_macos_compiled_prefix_relocation.py
+      - name: Download the passed PostgreSQL 16.15 Intel artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: macos-pilot-archives
+          run-id: 39093802500
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/core-archives
+      - name: Build and exercise the final archive against the passed core
+        id: archive_suite
+        run: |
+          set -o pipefail
+          mkdir -p "$RUNNER_TEMP/pg-jsonschema-macos"
+          bash scripts/pg_jsonschema/macos-publication.sh \
+            "$RUNNER_TEMP/core-archives" "$RUNNER_TEMP/pg-jsonschema-macos" \
+            tools/pg_jsonschema_macos_targets/16.15-x86_64.json 2>&1 \
+            | tee "$RUNNER_TEMP/pg-jsonschema-macos/build-log.txt"
+      - name: Validate Mach-O closure against final archive bytes
+        id: static_analysis
+        if: always()
+        run: |
+          python3 - "$RUNNER_TEMP/pg-jsonschema-macos/static-analysis.json" \
+            "$RUNNER_TEMP/core-archives/postgresql-16.15-macos-x86_64.tar.gz" \
+            "$RUNNER_TEMP/pg-jsonschema-macos/pg_jsonschema-0.3.4-postgresql-16.15-macos-x86_64.tar.gz" <<'PY'
+          import hashlib
+          import json
+          import pathlib
+          import sys
+
+          report_path, *archives = map(pathlib.Path, sys.argv[1:])
+          if not report_path.is_file() or any(not path.is_file() for path in archives):
+              raise SystemExit("static analysis or final archives are missing")
+          report = json.loads(report_path.read_text())
+          expected = {path.name: hashlib.sha256(path.read_bytes()).hexdigest() for path in archives}
+          actual = report.get("archives", [])
+          if isinstance(actual, list):
+              actual = {item["basename"]: item["sha256"] for item in actual}
+          if (report.get("passed") is not True or report.get("architecture") != "x86_64"
+                  or actual != expected
+                  or not any(item.get("file") == "lib/pg_jsonschema.dylib"
+                             for item in report.get("inspected_files", []) if isinstance(item, dict))):
+              raise SystemExit("Mach-O analysis did not pass for the final archives")
+          PY
+      - name: Finalize candidate evidence
+        if: always()
+        env:
+          ARCHIVE_SUITE_OUTCOME: ${{ steps.archive_suite.outcome }}
+          STATIC_ANALYSIS_OUTCOME: ${{ steps.static_analysis.outcome }}
+          GITHUB_SHA: ${{ github.sha }}
+        run: |
+          image_id="${ImageOS:?runner image OS missing}/${ImageVersion:?runner image version missing}"
+          python3 tools/emit_pg_jsonschema_macos_publication.py \
+            --target tools/pg_jsonschema_macos_targets/16.15-x86_64.json \
+            --core-archives "$RUNNER_TEMP/core-archives" \
+            --archives "$RUNNER_TEMP/pg-jsonschema-macos" \
+            --output "$RUNNER_TEMP/pg-jsonschema-macos" \
+            --os-version "$(sw_vers -productVersion)" --image-id "$image_id" \
+            --archive-suite-result "$ARCHIVE_SUITE_OUTCOME" \
+            --static-analysis-result "$STATIC_ANALYSIS_OUTCOME"
+      - name: Validate and retain candidate evidence
+        if: always()
+        run: |
+          python3 tools/import_pg_jsonschema_macos_publication.py \
+            --target tools/pg_jsonschema_macos_targets/16.15-x86_64.json \
+            --core-archives "$RUNNER_TEMP/core-archives" \
+            --archives "$RUNNER_TEMP/pg-jsonschema-macos" --run-id "$GITHUB_RUN_ID"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pg-jsonschema-macos-x86_64-16.15-publication-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/pg-jsonschema-macos/*.tar.gz
+            ${{ runner.temp }}/pg-jsonschema-macos/*.sha256
+            ${{ runner.temp }}/pg-jsonschema-macos/*.json
+            ${{ runner.temp }}/pg-jsonschema-macos/*.txt
+            ${{ runner.temp }}/pg-jsonschema-macos/publication/**
+            support/evidence/pg-jsonschema-macos-publication-${{ github.run_id }}/**
+            support/verification/pg_jsonschema-*.json
+          if-no-files-found: warn
+          retention-days: 7

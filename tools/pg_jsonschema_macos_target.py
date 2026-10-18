@@ -40,6 +40,11 @@ class Target:
         return f"pg{self.pg_major}"
 
     @property
+    def module_filename(self):
+        suffix = ".so" if self.postgresql_version == "15.19" else ".dylib"
+        return f"pg_jsonschema{suffix}"
+
+    @property
     def cargo_target(self):
         return "aarch64-apple-darwin" if self.architecture == "arm64" else "x86_64-apple-darwin"
 
@@ -52,7 +57,7 @@ class Target:
         return (self.postgresql_version, self.extension_version, self.architecture, self.platform,
                 self.profile_id, self.core_basename, self.core_run_id, self.core_sha256,
                 self.core_build_id, self.core_source_revision, self.source_url,
-                self.source_commit, self.cargo_lock_sha256)
+                self.source_commit, self.cargo_lock_sha256, self.module_filename)
 
 
 def _unique_object(pairs):
@@ -80,7 +85,7 @@ def load_target(path):
     pg_version = value.get("postgresql_version")
     version = value.get("pg_jsonschema_version")
     architecture = value.get("architecture")
-    if value.get("schema_version") != 1 or pg_version not in {"17.11", "18.6"} or version != "0.3.4":
+    if value.get("schema_version") != 1 or pg_version not in {"15.19", "16.15", "17.11", "18.6"} or version != "0.3.4":
         raise ValueError("unsupported pg_jsonschema macOS target version")
     if architecture not in {"arm64", "x86_64"}:
         raise ValueError("unsupported macOS architecture")

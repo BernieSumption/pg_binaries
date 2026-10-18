@@ -76,7 +76,7 @@ class PublicationFixture:
             (payload / "lib").mkdir(parents=True)
             (payload / "share/extension").mkdir(parents=True)
             (payload / "LICENSES").mkdir()
-            (payload / "lib/pg_jsonschema.dylib").write_bytes(b"Mach-O fixture")
+            (payload / "lib" / emitter.MODULE_FILENAME).write_bytes(b"Mach-O fixture")
             (payload / "share/extension/pg_jsonschema.control").write_text("default_version = '0.3.4'\n")
             (payload / "LICENSES/pg_jsonschema.txt").write_text("PostgreSQL License\n")
             (payload / "LICENSES/pg_jsonschema-cargo-license-inventory.json").write_text("{}\n")
@@ -88,7 +88,7 @@ class PublicationFixture:
         self.sidecar(self.extension)
         digests = {self.core_name: self.digest(self.core_archive), self.extension_name: self.digest(self.extension)}
         (self.output / "static-analysis.json").write_text(json.dumps({
-            "passed": True, "architecture": emitter.ARCHITECTURE, "inspected_files": [{"file": "lib/pg_jsonschema.dylib"}],
+            "passed": True, "architecture": emitter.ARCHITECTURE, "inspected_files": [{"file": emitter.MODULE_PATH}],
             "archives": digests,
         }))
         (self.output / "probe-output.txt").write_text("pg_jsonschema|0.3.4\n")
@@ -176,9 +176,13 @@ class PgJsonschemaMacOSPublicationTests(unittest.TestCase):
         with self.assertRaises(emitter.coverage.CoverageError):
             emitter._metadata(malformed)
 
-    def test_target_configs_bind_all_four_exact_core_identities(self):
+    def test_target_configs_bind_all_eight_exact_core_identities(self):
         root = Path(__file__).resolve().parents[1]
         expected = {
+            "15.19-arm64": ("39093804765", "856956cd7615bc56222de954c83f156fe5bc73d75512d230c6b91d386229f432"),
+            "15.19-x86_64": ("39093802499", "8356f1793fb88c7713627bd1f05d95325fc013aed47be08bb0fb29c7180aef08"),
+            "16.15-arm64": ("39093805055", "716083752061eebab60923ae2e8cb269bc2e4bdb7401d951465cd726a50e6cbf"),
+            "16.15-x86_64": ("39093802500", "958382229c95a440582dc34c83f7fdd8096f7247417b45f87046d716dff663cc"),
             "17.11-arm64": ("39093804725", "d9ac809946cd87bbb585135d0ff329d33d5563047b9caaa312aea9116a8d9eaa"),
             "17.11-x86_64": ("39093802542", "326b7b5763168794489a361f0b0c1e05f2bb619d6082d32881c65db5f872e061"),
             "18.6-arm64": ("39093804232", "ec3f624ecfbea6dad20672106ec11bfafadde42e0454bc90bef992caa4be0033"),
@@ -190,6 +194,26 @@ class PgJsonschemaMacOSPublicationTests(unittest.TestCase):
                 self.assertEqual((target.core_run_id, target.core_sha256), (run_id, digest))
                 self.assertEqual(target.core_build_id, f"github-{run_id}-1")
                 self.assertEqual(target.core_source_revision, "42082a506adfca1628c509f2c7b17037b9a12123")
+                self.assertEqual(target.module_filename, "pg_jsonschema.so" if name.startswith("15.")
+                                 else "pg_jsonschema.dylib")
+
+    def test_pg15_and_pg16_targets_emit_and_import_archive_bound_records(self):
+        for name in ("15.19-arm64", "15.19-x86_64", "16.15-arm64", "16.15-x86_64"):
+            with self.subTest(target=name):
+                fixture = PublicationFixture(name)
+                try:
+                    paths = fixture.emit()
+                    record = json.loads(paths[-1].read_text())
+                    self.assertEqual(record["postgresql_version"], name.split("-")[0])
+                    self.assertEqual(record["platform"], f"macos-{fixture.target.architecture}")
+                    self.assertEqual(record["assembled_core"]["sha256"], fixture.core_hash)
+                    with patch.object(importer.coverage, "verification_profile", return_value=fixture.profile), \
+                         patch.object(importer.coverage, "validate_verification_record"):
+                        retained = importer.import_run(fixture.root, fixture.core, fixture.output,
+                                                       "12345678901", fixture.target_config)
+                    self.assertTrue(any(path.endswith("current-receipt.json") for path in retained))
+                finally:
+                    fixture.close()
 
     def test_pg17_targets_emit_and_import_archive_bound_records(self):
         for name in ("17.11-arm64", "17.11-x86_64"):

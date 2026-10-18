@@ -26,6 +26,7 @@ def configure_target(path):
     global TARGET, PROFILE_ID, PG_VERSION, EXTENSION_VERSION, ARCHITECTURE, PLATFORM
     global SOURCE_URL, SOURCE_COMMIT, CARGO_LOCK_SHA256
     global CORE_RUN_ID, CORE_SHA256, CORE_BUILD_ID, CORE_SOURCE_REVISION
+    global MODULE_FILENAME, MODULE_PATH
     TARGET = load_target(path)
     PROFILE_ID, PG_VERSION, EXTENSION_VERSION = (TARGET.profile_id, TARGET.postgresql_version,
                                                   TARGET.extension_version)
@@ -34,6 +35,8 @@ def configure_target(path):
     CARGO_LOCK_SHA256 = TARGET.cargo_lock_sha256
     CORE_RUN_ID, CORE_SHA256 = TARGET.core_run_id, TARGET.core_sha256
     CORE_BUILD_ID, CORE_SOURCE_REVISION = TARGET.core_build_id, TARGET.core_source_revision
+    MODULE_FILENAME = TARGET.module_filename
+    MODULE_PATH = f"lib/{MODULE_FILENAME}"
     return TARGET
 
 
@@ -93,11 +96,11 @@ def _metadata(path):
             value = json.loads(archive.extractfile(metadata).read().decode("utf-8"))
             native = sorted(member.name for member in members if member.isfile()
                             and member.name.startswith("pg_jsonschema/lib/"))
-            required = {"pg_jsonschema/lib/pg_jsonschema.dylib",
+            required = {f"pg_jsonschema/{MODULE_PATH}",
                         "pg_jsonschema/share/extension/pg_jsonschema.control",
                         "pg_jsonschema/LICENSES/pg_jsonschema.txt",
                         "pg_jsonschema/LICENSES/pg_jsonschema-cargo-license-inventory.json"}
-            if not required <= set(names) or native != ["pg_jsonschema/lib/pg_jsonschema.dylib"]:
+            if not required <= set(names) or native != [f"pg_jsonschema/{MODULE_PATH}"]:
                 _fail("pg_jsonschema archive payload is incomplete or contains extra native code")
     except (OSError, tarfile.TarError, UnicodeError, json.JSONDecodeError) as exc:
         _fail(f"cannot inspect final pg_jsonschema archive: {exc}")
@@ -134,7 +137,7 @@ def _static_report(path, digests):
     files = report.get("inspected_files", [])
     if (report.get("passed") is not True or report.get("architecture") != ARCHITECTURE
             or actual != digests
-            or not any(item.get("file") == "lib/pg_jsonschema.dylib"
+            or not any(item.get("file") == MODULE_PATH
                        for item in files if isinstance(item, dict))):
         _fail("Mach-O static report does not pass for the exact core and extension archives")
     return report

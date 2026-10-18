@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "profile_id": "pg-jsonschema-publication-macos-x86_64-16.15",
+  "postgresql_version": "16.15",
+  "pg_jsonschema_version": "0.3.4",
+  "architecture": "x86_64",
+  "platform": "macos-x86_64",
+  "core_archive": {
+    "basename": "postgresql-16.15-macos-x86_64.tar.gz",
+    "run_id": "39093802500",
+    "sha256": "958382229c95a440582dc34c83f7fdd8096f7247417b45f87046d716dff663cc",
+    "build_id": "github-39093802500-1",
+    "source_revision": "42082a506adfca1628c509f2c7b17037b9a12123"
+  },
+  "source": {
+    "url": "https://github.com/supabase/pg_jsonschema.git",
+    "commit": "cbe74b570d38aa0c4d42914e7a118bcb3adaee7a",
+    "cargo_lock_sha256": "ab865dc25d9eea4bf7dbfaf8fae13283e5c0bce4bca460fe10464c6716e67028"
+  }
+}

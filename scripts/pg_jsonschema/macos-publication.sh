@@ -15,7 +15,7 @@ print("\t".join(load_target(sys.argv[2]).shell_values()))
 PYTARGET
 )
 IFS=$'\t' read -r pg_version extension_version architecture platform profile_id core_name core_run_id \
-  core_sha256 core_build_id core_revision source_url extension_commit cargo_lock_sha256 <<< "$target_values"
+  core_sha256 core_build_id core_revision source_url extension_commit cargo_lock_sha256 module_filename <<< "$target_values"
 pg_major=${pg_version%%.*}
 feature="pg$pg_major"
 cargo_target=$(python3 - "$repo/tools" "$target_config" <<'PYTARGET'
@@ -118,11 +118,11 @@ test "$(shasum -a 256 Cargo.lock | awk '{print $1}')" = "$cargo_lock_sha256"
 
 pkglibdir=$("$prefix/bin/pg_config" --pkglibdir)
 extensiondir=$("$prefix/bin/pg_config" --sharedir)/extension
-extension_dylib=$(find "$pkglibdir" -maxdepth 1 -type f \( -name 'pg_jsonschema.dylib' -o -name 'pg_jsonschema.so' \) -print -quit)
-test -n "$extension_dylib" && test -s "$extension_dylib"
+extension_module=$(find "$pkglibdir" -maxdepth 1 -type f \( -name 'pg_jsonschema.dylib' -o -name 'pg_jsonschema.so' \) -print -quit)
+test -n "$extension_module" && test -s "$extension_module"
 mkdir -p "$work/package/pg_jsonschema/lib" "$work/package/pg_jsonschema/share/extension" \
   "$work/package/pg_jsonschema/LICENSES"
-cp "$extension_dylib" "$work/package/pg_jsonschema/lib/pg_jsonschema.dylib"
+cp "$extension_module" "$work/package/pg_jsonschema/lib/$module_filename"
 cp "$extensiondir/pg_jsonschema.control" "$work/package/pg_jsonschema/share/extension/"
 find "$extensiondir" -maxdepth 1 -type f -name 'pg_jsonschema*.sql' -exec cp {} "$work/package/pg_jsonschema/share/extension/" \;
 cp "$work/source/pg_jsonschema/LICENSE" "$work/package/pg_jsonschema/LICENSES/pg_jsonschema.txt"
@@ -157,7 +157,7 @@ python3 "$repo/tools/inventory_cargo_licenses.py" --check-archive "$output/$exte
   --archive-inventory pg_jsonschema/LICENSES/pg_jsonschema-cargo-license-inventory.json
 (cd "$output" && shasum -a 256 "$extension_name" > "$extension_name.sha256")
 
-python3 - "$work/package" "$work/test-core" "$core_archives/$core_name" "$output/$extension_name" <<'PY'
+python3 - "$work/package" "$work/test-core" "$core_archives/$core_name" "$output/$extension_name" "$module_filename" <<'PY'
 import pathlib
 import sys
 import tarfile
@@ -173,7 +173,8 @@ with tarfile.open(extension_archive, "r:gz") as archive:
         seen.add(member.name)
     archive.extractall(extraction)
 payload = extraction / "pg_jsonschema"
-required = {"lib/pg_jsonschema.dylib", "share/extension/pg_jsonschema.control",
+module_filename = sys.argv[5]
+required = {f"lib/{module_filename}", "share/extension/pg_jsonschema.control",
             "LICENSES/pg_jsonschema.txt", "LICENSES/pg_jsonschema-cargo-license-inventory.json"}
 if not required <= {path.relative_to(payload).as_posix() for path in payload.rglob("*") if path.is_file()}:
     raise SystemExit("pg_jsonschema final archive is missing required payload files")
