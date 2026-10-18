@@ -18,7 +18,7 @@ useradd -m postgres
 chown -R postgres:postgres /tmp/first /tmp/moved
 pgroot=/tmp/first/postgresql
 test "$("$pgroot/bin/postgres" --version)" = "postgres (PostgreSQL) $pg_version"
-python3 - "/tmp/extension/$archive" "$extension_commit" "$architecture" "$pg_version" "$extension_version" <<'PY'
+python3 - "/extension/$archive" "$extension_commit" "$architecture" "$pg_version" "$extension_version" <<'PY'
 import json, pathlib, sys
 import tarfile
 archive, commit, architecture, pg_version, version = sys.argv[1:]
