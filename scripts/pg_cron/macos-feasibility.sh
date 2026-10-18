@@ -86,7 +86,7 @@ test "$(tar -tzf pg_cron.tar.gz | cut -d/ -f1 | sort -u)" = pg_cron-1.6.8
 tar -xzf pg_cron.tar.gz
 cd pg_cron-1.6.8
 test "$(sed -n "s/^default_version = '\\([^']*\\)'/\\1/p" pg_cron.control)" = 1.6
-make PG_CONFIG="$pg_config" -j "$(sysctl -n hw.ncpu)"
+make PG_CONFIG="$pg_config" PG_LDFLAGS='-Wl,-rpath,@loader_path' -j "$(sysctl -n hw.ncpu)"
 make PG_CONFIG="$pg_config" install DESTDIR="$work/stage"
 
 staged_root="$work/stage$(cd "$pgroot" && pwd -P)"
@@ -163,6 +163,7 @@ dependencies = [line.strip().split(" (compatibility version", 1)[0]
 executable_rpaths = rpaths(postgres)
 module_rpaths = rpaths(module)
 resolved = {}
+findings = []
 for dependency in dependencies:
     if dependency.startswith(("/usr/lib/", "/System/Library/")):
         resolved[dependency] = dependency
@@ -182,10 +183,11 @@ for dependency in dependencies:
             if candidate.is_file() and candidate.is_relative_to(root):
                 candidates.append(candidate)
         if not candidates:
-            raise SystemExit(f"unresolved pg_cron dependency: {dependency}")
-        resolved[dependency] = str(candidates[0].relative_to(root))
+            findings.append({"error": "unresolved dependency", "path": dependency})
+        else:
+            resolved[dependency] = str(candidates[0].relative_to(root))
     else:
-        raise SystemExit(f"unsupported pg_cron dependency token: {dependency}")
+        findings.append({"error": "unsupported dependency token", "path": dependency})
 report = {
     "architecture": architecture,
     "file": "lib/pg_cron.dylib",
@@ -194,8 +196,12 @@ report = {
     "module_rpaths": module_rpaths,
     "postgres_executable_rpaths": executable_rpaths,
     "resolution_note": "@rpath dependencies use the dyld run-path stack, which includes run paths from the executable loading the extension.",
+    "findings": findings,
+    "passed": not findings,
 }
 print(json.dumps(report, indent=2, sort_keys=True))
+if findings:
+    raise SystemExit("pg_cron Mach-O dependency inspection failed")
 PY
 
 data_dir="$work/data"

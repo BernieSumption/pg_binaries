@@ -20,6 +20,7 @@ class PgCronMacOSFeasibilityTests(unittest.TestCase):
         self.assertIn("github-39079982683-1", script)
         self.assertIn("c19ab9bb35406c60fb51ecda993737c083850abe424acb6c1030439d00a1f8e4", script)
         self.assertRegex(script, re.compile(r"make PG_CONFIG=\"\$pg_config\" install DESTDIR="))
+        self.assertIn("PG_LDFLAGS='-Wl,-rpath,@loader_path'", script)
         self.assertIn("mv \"$pgroot\" \"$work/moved/postgresql\"", script)
         self.assertIn("CREATE EXTENSION pg_cron", script)
         self.assertIn("cron.use_background_workers=on", script)
@@ -27,6 +28,9 @@ class PgCronMacOSFeasibilityTests(unittest.TestCase):
         self.assertIn("static_analysis.py", script)
         self.assertIn("pg-cron-macho-inspection.json", script)
         self.assertIn("postgres_executable_rpaths", script)
+        self.assertIn('"findings": findings', script)
+        self.assertLess(script.index('print(json.dumps(report, indent=2, sort_keys=True))'),
+                        script.index('raise SystemExit("pg_cron Mach-O dependency inspection failed")'))
         self.assertNotIn("install_name_tool", script)
 
 
