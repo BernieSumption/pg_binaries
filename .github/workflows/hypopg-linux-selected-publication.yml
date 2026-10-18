@@ -23,6 +23,10 @@ on:
     paths:
       - '.github/workflows/hypopg-linux-selected-publication.yml'
       - 'experiments/hypopg-linux-target-trial/target.json'
+      - 'scripts/linux/resolve-core.sh'
+      - 'scripts/linux/build.sh'
+      - 'scripts/linux/build-in-container.sh'
+      - 'tools/linux_core_candidate.py'
 
 permissions:
   contents: read
