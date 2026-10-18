@@ -12,6 +12,12 @@ The [functional specification](specs/functional.md#never-patch-or-modify-extensi
 
 Decision needed: Does the prohibition include source patches applied by a standard package manager or distribution before we receive its packages, and does it include post-build changes to binary load paths needed for relocation? Pending an answer, treat patched-source dependencies as ineligible for release evidence. Continue independent implementation and tests; do not claim the current platform archives meet the upstream-only rule.
 
+## seahash 4.1.0 redistribution notice
+
+The selected `pg_jsonschema` release depends on `seahash` 4.1.0. Its [published manifest](https://docs.rs/crate/seahash/4.1.0/source/Cargo.toml.orig) declares MIT and names two authors, but neither the [published crate](https://docs.rs/crate/seahash/4.1.0/source/) nor its exact [source revision](https://gitlab.redox-os.org/redox-os/seahash/-/tree/94b632aeac099031c373599313d5b5f0acbbaec0) supplies a licence text or copyright notice. [Retained source research](support/evidence/pg-jsonschema-crate-licenses-2026-10-18/README.md) recovered exact upstream notices for the other five missing Rust crate texts. The MIT form requires retention of its copyright and permission notices, but the authors field does not state a copyright holder or year.
+
+Decision needed: May the project use the standard MIT text with a notice explicitly attributed to the named authors despite the missing upstream notice, and if so what attribution should it print? Otherwise, keep `pg_jsonschema` redistribution review pending until upstream supplies a notice. Its builds and runtime tests may continue, but do not mark their archives eligible for publication.
+
 ## Backlog ideas
 
 From Bernie: Adding this here so that we don't forget it. Don't start work on this yet. I'd like to discuss the viability of these and specify them properly before we go ahead. If indeed we decide to go ahead at all.

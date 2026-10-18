@@ -23,11 +23,15 @@ if (-not $buildId) {
 if ($buildId -notmatch '^[A-Za-z0-9][A-Za-z0-9._-]*$') {
   throw 'BUILD_ID may contain only letters, digits, dot, underscore and hyphen'
 }
-$buildConfiguration = "postgresql-$pgVersion;pgvector-$vectorVersion;builder=windows-runner;meson=debugoptimized;postgresql=icu,lz4,zstd,zlib,openssl,libxml,libxslt,no-uuid,no-readline;compiler=MSVC;pgvector=debug-symbols;runtime=vcpkg-and-msvc-dlls"
-$work = Join-Path $env:RUNNER_TEMP 'pg-binaries-windows-build'
-$dist = Join-Path $repo 'dist/windows'
 $vcpkgRoot = $env:VCPKG_INSTALLATION_ROOT
 if (-not $vcpkgRoot) { throw 'VCPKG_INSTALLATION_ROOT is missing' }
+$vcpkgRevision = (& git -C $vcpkgRoot rev-parse HEAD).Trim()
+if ($vcpkgRevision -ne '9e593bb18ea69cc5095e012465dcd675a822ed0d') {
+  throw "VCPKG_INSTALLATION_ROOT is not the pinned vcpkg revision: $vcpkgRevision"
+}
+$buildConfiguration = "postgresql-$pgVersion;pgvector-$vectorVersion;builder=windows-runner;meson=debugoptimized;postgresql=icu,lz4,zstd,zlib,openssl,libxml,libxslt,no-uuid,no-readline;compiler=MSVC;pgvector=debug-symbols;vcpkg=$vcpkgRevision;runtime=vcpkg-and-msvc-dlls"
+$work = Join-Path $env:RUNNER_TEMP 'pg-binaries-windows-build'
+$dist = Join-Path $repo 'dist/windows'
 $vcpkg = Join-Path $vcpkgRoot 'installed/x64-windows'
 $pgSourceArchive = Join-Path $work "postgresql-$pgVersion.tar.gz"
 $vectorSourceArchive = Join-Path $work "pgvector-$vectorVersion.tar.gz"

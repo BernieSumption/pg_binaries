@@ -141,7 +141,18 @@ jobs:
           Add-Content -Path $env:GITHUB_PATH -Value $flex.DirectoryName
       - name: Install PostgreSQL libraries
         run: |
-          & "$env:VCPKG_INSTALLATION_ROOT\vcpkg.exe" install icu:x64-windows zlib:x64-windows lz4:x64-windows zstd:x64-windows openssl:x64-windows libxml2:x64-windows libxslt:x64-windows
+          $vcpkgRevision = '9e593bb18ea69cc5095e012465dcd675a822ed0d'
+          $vcpkgRoot = Join-Path $env:RUNNER_TEMP "vcpkg-$vcpkgRevision"
+          git init $vcpkgRoot
+          git -C $vcpkgRoot remote add origin https://github.com/microsoft/vcpkg.git
+          git -C $vcpkgRoot fetch --depth=1 origin $vcpkgRevision
+          git -C $vcpkgRoot checkout --detach FETCH_HEAD
+          $actualRevision = (git -C $vcpkgRoot rev-parse HEAD).Trim()
+          if ($actualRevision -ne $vcpkgRevision) { throw "vcpkg checkout revision mismatch: $actualRevision" }
+          & (Join-Path $vcpkgRoot 'bootstrap-vcpkg.bat') -disableMetrics
+          $env:VCPKG_INSTALLATION_ROOT = $vcpkgRoot
+          Add-Content -Path $env:GITHUB_ENV -Value "VCPKG_INSTALLATION_ROOT=$vcpkgRoot"
+          & (Join-Path $vcpkgRoot 'vcpkg.exe') install icu:x64-windows zlib:x64-windows lz4:x64-windows zstd:x64-windows openssl:x64-windows libxml2:x64-windows libxslt:x64-windows
       - name: Build and package
         shell: cmd
         run: scripts\windows\build.cmd
