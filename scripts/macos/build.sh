@@ -2,6 +2,11 @@
 set -euo pipefail
 
 pg_version=${3:-18.6}
+build_mode=${4:-combined}
+if [[ $build_mode != combined && $build_mode != core-only ]]; then
+  echo "Build mode must be combined or core-only: $build_mode" >&2
+  exit 2
+fi
 vector_version=0.8.7
 architecture=${2:-$(uname -m)}
 script_dir=$(cd "$(dirname "$0")" && pwd)
@@ -40,7 +45,11 @@ case "$architecture" in
   arm64) platform_arch=arm64 ;;
   *) echo "Unsupported macOS architecture: $architecture" >&2; exit 1 ;;
 esac
-build_configuration="postgresql-${pg_version};pgvector-${vector_version};builder=native-macos;deployment-target=11.0;configure=icu,openssl,lz4,zstd,libxml,libxslt,zlib,uuid-e2fs-interface-apple-system,no-readline;dependencies=pinned-upstream-source;cflags=-O2,-g;pgvector-optflags=-O2,-g;runtime=bundled-dylibs"
+if [[ $build_mode == combined ]]; then
+  build_configuration="postgresql-${pg_version};pgvector-${vector_version};builder=native-macos;deployment-target=11.0;configure=icu,openssl,lz4,zstd,libxml,libxslt,zlib,uuid-e2fs-interface-apple-system,no-readline;dependencies=pinned-upstream-source;cflags=-O2,-g;pgvector-optflags=-O2,-g;runtime=bundled-dylibs"
+else
+  build_configuration="postgresql-${pg_version};mode=core-only;builder=native-macos;deployment-target=11.0;configure=icu,openssl,lz4,zstd,libxml,libxslt,zlib,uuid-e2fs-interface-apple-system,no-readline;dependencies=pinned-upstream-source;cflags=-O2,-g;runtime=bundled-dylibs"
+fi
 
 source_prefix="$work_dir/dependencies"
 echo "Building pinned macOS dependencies" >&2
@@ -55,14 +64,16 @@ export MACOSX_DEPLOYMENT_TARGET=11.0
 
 pg_source_url=$(python3 "$repo/tools/source_archive.py" postgresql "$pg_version" tar.bz2 --field url)
 pg_source_sha256=$(python3 "$repo/tools/source_archive.py" postgresql "$pg_version" tar.bz2 --field sha256)
-vector_source_url=$(python3 "$repo/tools/source_archive.py" pgvector "$vector_version" tar.gz --field url)
-vector_source_sha256=$(python3 "$repo/tools/source_archive.py" pgvector "$vector_version" tar.gz --field sha256)
 curl -fL --retry 3 "$pg_source_url" -o "$work_dir/postgresql.tar.bz2"
-curl -fL --retry 3 "$vector_source_url" -o "$work_dir/pgvector.tar.gz"
 printf '%s  %s\n' "$pg_source_sha256" "$work_dir/postgresql.tar.bz2" | shasum -a 256 -c -
-printf '%s  %s\n' "$vector_source_sha256" "$work_dir/pgvector.tar.gz" | shasum -a 256 -c -
 tar -xjf "$work_dir/postgresql.tar.bz2" -C "$work_dir"
-tar -xzf "$work_dir/pgvector.tar.gz" -C "$work_dir"
+if [[ $build_mode == combined ]]; then
+  vector_source_url=$(python3 "$repo/tools/source_archive.py" pgvector "$vector_version" tar.gz --field url)
+  vector_source_sha256=$(python3 "$repo/tools/source_archive.py" pgvector "$vector_version" tar.gz --field sha256)
+  curl -fL --retry 3 "$vector_source_url" -o "$work_dir/pgvector.tar.gz"
+  printf '%s  %s\n' "$vector_source_sha256" "$work_dir/pgvector.tar.gz" | shasum -a 256 -c -
+  tar -xzf "$work_dir/pgvector.tar.gz" -C "$work_dir"
+fi
 
 install_dir="$work_dir/install/postgresql"
 cd "$work_dir/postgresql-${pg_version}"
@@ -78,7 +89,10 @@ make -C contrib install
 echo "PostgreSQL $pg_version installed" >&2
 
 package_dir="$work_dir/package"
-mkdir -p "$package_dir/postgresql/LICENSES" "$package_dir/pgvector/lib" "$package_dir/pgvector/share/extension" "$package_dir/pgvector/LICENSES"
+mkdir -p "$package_dir/postgresql/LICENSES"
+if [[ $build_mode == combined ]]; then
+  mkdir -p "$package_dir/pgvector/lib" "$package_dir/pgvector/share/extension" "$package_dir/pgvector/LICENSES"
+fi
 cp -R "$install_dir"/. "$package_dir/postgresql/"
 cp "$work_dir/postgresql-${pg_version}/COPYRIGHT" "$package_dir/postgresql/LICENSES/PostgreSQL.txt"
 python3 "$script_dir/bundle.py" "$package_dir/postgresql" "$architecture"
@@ -102,6 +116,7 @@ cat > "$package_dir/postgresql/manifest.json" <<EOF
 }
 EOF
 
+if [[ $build_mode == combined ]]; then
 cd "$work_dir/pgvector-${vector_version}"
 echo "Building pgvector $vector_version" >&2
 make PG_CONFIG="$install_dir/bin/pg_config" OPTFLAGS='-O2 -g' -j "$(sysctl -n hw.ncpu)"
@@ -132,15 +147,17 @@ echo "pgvector $vector_version packaged" >&2
 cat > "$package_dir/metadata.json" <<EOF
 {"project":"pgvector","version":"${vector_version}","sql_names":["vector"],"requires":[],"configuration_prerequisites":[],"runtime_prerequisites":[],"build_id":"${build_id}","source_revision":"${source_revision}","source_archive":{"url":"${vector_source_url}","sha256":"${vector_source_sha256}"},"build_configuration":"${build_configuration}","platform":"macos","architecture":"${platform_arch}"}
 EOF
+fi
 
-python3 - "$package_dir" > "$work_dir/macho-paths.bin" <<'PY'
+python3 - "$package_dir" "$build_mode" > "$work_dir/macho-paths.bin" <<'PY'
 import json
 import pathlib
 import subprocess
 import sys
 
 package = pathlib.Path(sys.argv[1])
-for component in ("postgresql", "pgvector"):
+components = ("postgresql", "pgvector") if sys.argv[2] == "combined" else ("postgresql",)
+for component in components:
     root = package / component
     dependency_file = root / ("bundled-dependencies.json" if component == "postgresql" else "LICENSES/pgvector-bundled-dependencies.json")
     external = set(json.loads(dependency_file.read_text()))
@@ -173,11 +190,18 @@ echo "Generated $dsym_count dSYM files" >&2
 pg_archive="postgresql-${pg_version}-macos-${platform_arch}.tar.gz"
 vector_archive="pgvector-${vector_version}-postgresql-${pg_version}-macos-${platform_arch}.tar.gz"
 tar -C "$package_dir" -czf "$output_dir/$pg_archive" postgresql
-tar -C "$package_dir" -czf "$output_dir/$vector_archive" pgvector metadata.json
 cd "$output_dir"
 shasum -a 256 "$pg_archive" > "$pg_archive.sha256"
-shasum -a 256 "$vector_archive" > "$vector_archive.sha256"
-python3 "$script_dir/../../tools/create_macos_symbols.py" \
-  "$output_dir/$pg_archive" "$output_dir/$vector_archive" \
-  --staged-dsyms "$dsyms" --output-dir "$output_dir/debug-symbols"
-ls -lh "$pg_archive" "$vector_archive"
+if [[ $build_mode == combined ]]; then
+  tar -C "$package_dir" -czf "$output_dir/$vector_archive" pgvector metadata.json
+  shasum -a 256 "$vector_archive" > "$vector_archive.sha256"
+  python3 "$script_dir/../../tools/create_macos_symbols.py" \
+    "$output_dir/$pg_archive" "$output_dir/$vector_archive" \
+    --staged-dsyms "$dsyms" --output-dir "$output_dir/debug-symbols"
+  ls -lh "$pg_archive" "$vector_archive"
+else
+  python3 "$script_dir/../../tools/create_macos_symbols.py" \
+    "$output_dir/$pg_archive" --staged-dsyms "$dsyms" \
+    --output-dir "$output_dir/debug-symbols"
+  ls -lh "$pg_archive"
+fi

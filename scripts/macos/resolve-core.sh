@@ -107,7 +107,7 @@ if [[ $candidate_usable == true ]]; then
 else
   echo "No current checked PostgreSQL $version core candidate; building on this macOS runner"
   rm -f "$output/$core_name" "$output/$core_name.sha256" "$target"
-  bash "$repo/scripts/macos/build.sh" "$output" "$architecture" "$version"
+  bash "$repo/scripts/macos/build.sh" "$output" "$architecture" "$version" core-only
   python3 "$repo/tools/macos_core_target_config.py" \
     --base-target "$base_target" --core-archive "$output/$core_name" \
     --source-run-id "$GITHUB_RUN_ID" --source-run-attempt "$GITHUB_RUN_ATTEMPT" \
