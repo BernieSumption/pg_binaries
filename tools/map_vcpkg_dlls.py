@@ -8,6 +8,8 @@ from pathlib import Path
 import re
 import sys
 
+VERSION_FIELDS = ("Version", "Version-String", "Version-Date", "Version-Semver")
+
 
 def sha256(path):
     digest = hashlib.sha256()
@@ -33,15 +35,19 @@ def parse_status(path):
         name, triplet = fields.get("Package"), fields.get("Architecture")
         if not name or not triplet:
             raise ValueError("installed vcpkg status record lacks Package or Architecture")
-        version = fields.get("Version") or fields.get("Version-String")
-        if not version or "Port-Version" not in fields:
-            raise ValueError(f"installed vcpkg status record lacks version metadata: {name}:{triplet}")
+        versions = [(field, fields[field]) for field in VERSION_FIELDS
+                    if fields.get(field)]
+        if len(versions) != 1:
+            raise ValueError(
+                f"installed vcpkg status record must contain exactly one nonempty version field: "
+                f"{name}:{triplet}")
+        version = versions[0][1]
         key = (name, triplet)
         record = {
             "port": name,
             "triplet": triplet,
             "version": version,
-            "port_version": fields["Port-Version"],
+            "port_version": fields.get("Port-Version", "0"),
         }
         if key in packages and packages[key] != record:
             raise ValueError(f"conflicting installed vcpkg status records: {name}:{triplet}")

@@ -78,6 +78,37 @@ class VcpkgDllMappingTests(unittest.TestCase):
         (self.dll_dir / "icuuc74.dll").write_bytes(b"icu")
         self.assertEqual(map_bundled_dlls(self.installed, self.dll_dir)["components"][0]["port"], "icu")
 
+    def test_defaults_omitted_port_version_to_zero(self):
+        status = self.root / "installed" / "vcpkg" / "status"
+        status.write_text(
+            "Package: icu\nVersion: 74.2\nArchitecture: x64-windows\n"
+            "Status: install ok installed\n\n", encoding="utf-8")
+        (self.dll_dir / "icuuc74.dll").write_bytes(b"icu")
+        item = map_bundled_dlls(self.installed, self.dll_dir)["components"][0]
+        self.assertEqual(item["port_version"], "0")
+
+    def test_accepts_each_vcpkg_version_field(self):
+        status = self.root / "installed" / "vcpkg" / "status"
+        (self.dll_dir / "icuuc74.dll").write_bytes(b"icu")
+        for field in ("Version", "Version-String", "Version-Date", "Version-Semver"):
+            with self.subTest(field=field):
+                status.write_text(
+                    f"Package: icu\n{field}: 74.2\nPort-Version: 0\n"
+                    "Architecture: x64-windows\nStatus: install ok installed\n\n",
+                    encoding="utf-8")
+                item = map_bundled_dlls(self.installed, self.dll_dir)["components"][0]
+                self.assertEqual(item["version"], "74.2")
+
+    def test_rejects_multiple_nonempty_vcpkg_version_fields(self):
+        status = self.root / "installed" / "vcpkg" / "status"
+        status.write_text(
+            "Package: icu\nVersion: 74.2\nVersion-Date: 74.2\n"
+            "Port-Version: 0\nArchitecture: x64-windows\nStatus: install ok installed\n\n",
+            encoding="utf-8")
+        (self.dll_dir / "icuuc74.dll").write_bytes(b"icu")
+        with self.assertRaisesRegex(ValueError, "exactly one nonempty version field"):
+            map_bundled_dlls(self.installed, self.dll_dir)
+
     def test_rejects_unowned_dll(self):
         (self.dll_dir / "other.dll").write_bytes(b"unknown")
         with self.assertRaisesRegex(ValueError, "exactly one vcpkg owner.*found 0"):
@@ -93,7 +124,7 @@ class VcpkgDllMappingTests(unittest.TestCase):
         status = self.root / "installed" / "vcpkg" / "status"
         status.write_text("Package: icu\nArchitecture: x64-windows\nStatus: install ok installed\n", encoding="utf-8")
         (self.dll_dir / "icuuc74.dll").write_bytes(b"icu")
-        with self.assertRaisesRegex(ValueError, "lacks version metadata"):
+        with self.assertRaisesRegex(ValueError, "exactly one nonempty version field"):
             map_bundled_dlls(self.installed, self.dll_dir)
 
     def test_rejects_missing_notice(self):
