@@ -4,7 +4,7 @@ import argparse
 from datetime import datetime, timezone
 import hashlib
 import json
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 import re
 import subprocess
 import sys
@@ -76,10 +76,14 @@ def discover(*, repository, workflow, branch, current_run_id, artifact_name_temp
     """Write a candidate manifest and retrieve the first usable matching artifact."""
     if not re.fullmatch(r"[A-Za-z0-9_.-]+", workflow) or "/" in archive_basename or archive_basename in ("", ".", ".."):
         raise DiscoveryError("workflow and archive basename must be simple filenames")
-    if (not isinstance(artifact_name_template, str)
-            or re.fullmatch(r"(?:[^{}]|\{run_id\})+", artifact_name_template) is None
-            or "{run_id}" not in artifact_name_template):
-        raise DiscoveryError("artifact name template must contain only a literal {run_id} placeholder")
+    fixed_name = (isinstance(artifact_name_template, str)
+                  and re.fullmatch(r"[A-Za-z0-9_.-]+", artifact_name_template) is not None
+                  and artifact_name_template not in (".", ".."))
+    templated_name = (isinstance(artifact_name_template, str)
+                      and re.fullmatch(r"(?:[^{}]|\{run_id\})+", artifact_name_template) is not None
+                      and "{run_id}" in artifact_name_template)
+    if not (fixed_name or templated_name):
+        raise DiscoveryError("artifact name must be a safe filename or contain a literal {run_id} placeholder")
     output_directory = Path(output_directory)
     output_directory.mkdir(parents=True, exist_ok=True)
     manifest_path = Path(manifest_path)
@@ -179,15 +183,29 @@ def _extract(zip_path, basename, output_directory):
         members = archive.infolist()
         if len(members) > 1000:
             raise DiscoveryError("artifact ZIP contains too many entries")
-        wanted = {basename: None, basename + ".sha256": None}
+        candidates = {basename: [], basename + ".sha256": []}
         for item in members:
-            if item.filename in wanted:
-                if wanted[item.filename] is not None or item.is_dir():
-                    raise DiscoveryError("artifact ZIP has duplicate or non-file candidate entries")
-                wanted[item.filename] = item
-        if any(item is None for item in wanted.values()):
+            name = item.filename
+            member_path = PurePosixPath(name)
+            if (member_path.is_absolute() or ".." in member_path.parts
+                    or "\\" in name or (member_path.parts and ":" in member_path.parts[0])):
+                raise DiscoveryError("artifact ZIP contains an unsafe path")
+            if member_path.name in candidates:
+                parent = member_path.parent
+                if len(parent.parts) > 1:
+                    continue
+                if item.is_dir():
+                    raise DiscoveryError("artifact ZIP has a non-file candidate entry")
+                candidates[member_path.name].append((parent.as_posix(), item))
+        archive_entries, sidecar_entries = candidates[basename], candidates[basename + ".sha256"]
+        if len(archive_entries) > 1 or len(sidecar_entries) > 1:
+            raise DiscoveryError("artifact ZIP has ambiguous duplicate candidate entries")
+        if not archive_entries or not sidecar_entries:
             raise DiscoveryError("artifact ZIP lacks the exact archive and adjacent .sha256 files")
-        archive_info, sidecar_info = wanted[basename], wanted[basename + ".sha256"]
+        archive_dir, archive_info = archive_entries[0]
+        sidecar_dir, sidecar_info = sidecar_entries[0]
+        if archive_dir != sidecar_dir:
+            raise DiscoveryError("artifact ZIP archive and checksum sidecar are in different directories")
         if archive_info.file_size > MAX_ARCHIVE_BYTES or sidecar_info.file_size > MAX_SIDECAR_BYTES:
             raise DiscoveryError("archive or checksum sidecar exceeds size limit")
         archive_path = output_directory / basename

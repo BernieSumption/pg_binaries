@@ -30,7 +30,7 @@ RECIPE_FILES = (
 )
 
 
-def selected_identity(builder_packages_sha256: str, postgresql_major: int = 18,
+def selected_identity(builder_packages_sha256: str, core_sha256: str, postgresql_major: int = 18,
                       root: str | Path = ROOT) -> dict:
     """Return the current identity for the supported Linux pgvector target."""
     root = Path(root)
@@ -48,6 +48,8 @@ def selected_identity(builder_packages_sha256: str, postgresql_major: int = 18,
     if (not isinstance(builder_packages_sha256, str)
             or not BUILDER_PACKAGES_SHA256.fullmatch(builder_packages_sha256)):
         raise ValueError("builder packages SHA-256 must be 64 lowercase hex digits")
+    if not isinstance(core_sha256, str) or not BUILDER_PACKAGES_SHA256.fullmatch(core_sha256):
+        raise ValueError("PostgreSQL core SHA-256 must be 64 lowercase hex digits")
     if postgresql_major != 18:
         raise ValueError("the current Linux pgvector recipe supports PostgreSQL major 18 only")
     minimum = support.get("postgresql", {}).get("minimum_major")
@@ -75,7 +77,7 @@ def selected_identity(builder_packages_sha256: str, postgresql_major: int = 18,
         target={"project": PROJECT, "version": VERSION, "platform": PLATFORM,
                 "postgresql_major": postgresql_major},
         upstream_sources={PROJECT: source},
-        dependencies={"postgresql": {"major": postgresql_major},
+        dependencies={"postgresql": {"major": postgresql_major, "sha256": core_sha256},
                       "builder_packages": {"sha256": builder_packages_sha256},
                       "builder_base": {"image": "ubuntu:22.04", "sha256": base_sha256,
                                        "platform": "linux/amd64"}},
@@ -89,10 +91,13 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--builder-packages-sha256", required=True,
                         help="bare lowercase SHA-256 digest of the builder package manifest")
+    parser.add_argument("--core-sha256", required=True,
+                        help="bare lowercase SHA-256 digest of the checked PostgreSQL core archive")
     parser.add_argument("--postgresql-major", type=int, default=18)
     args = parser.parse_args()
     try:
-        identity = selected_identity(args.builder_packages_sha256, args.postgresql_major)
+        identity = selected_identity(args.builder_packages_sha256, args.core_sha256,
+                                     args.postgresql_major)
     except (ValueError, source_archive_tool.SourceArchiveError) as exc:
         parser.error(str(exc))
     print(json.dumps(identity, sort_keys=True, indent=2))

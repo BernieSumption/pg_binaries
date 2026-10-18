@@ -17,6 +17,7 @@ image_id=$(docker image inspect pg-binaries-pgvector-separate-linux --format '{{
 "$repo/scripts/pgvector/builder-packages.sh" "$out/builder-packages.tsv"
 builder_packages_sha=$(sha256sum "$out/builder-packages.tsv" | awk '{print $1}')
 python3 "$repo/tools/selected_build_inputs.py" --builder-packages-sha256 "$builder_packages_sha" \
+  --core-sha256 "$expected_core_sha" \
   > "$out/build-input-identity.json"
 build_id=${BUILD_ID:-local-$(python3 -c 'import uuid; print(uuid.uuid4())')}
 revision=${SOURCE_REVISION:-${GITHUB_SHA:-$(git -C "$repo" rev-parse HEAD)}}

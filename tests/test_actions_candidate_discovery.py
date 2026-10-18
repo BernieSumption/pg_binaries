@@ -74,6 +74,42 @@ class ActionsCandidateDiscoveryTests(unittest.TestCase):
         self.assertEqual(Path(row["path"]).read_bytes(), self.archive)
         self.assertEqual(len(self.calls), 3)
 
+    def test_fixed_artifact_name_is_accepted(self):
+        self.artifact["name"] = "linux-core"
+        with patch.object(discovery.subprocess, "run", side_effect=self.fake_run):
+            reasons = discovery.discover(repository=self.repo, workflow="build.yml", branch="spike",
+                current_run_id="999", artifact_name_template="linux-core",
+                archive_basename=self.archive_name, project="PostgreSQL", version="15.10",
+                platform="linux-x86_64", postgresql_version="15.10",
+                output_directory=self.root / "out", manifest_path=self.root / "manifest.json")
+        self.assertEqual(reasons, [])
+        row = json.loads((self.root / "manifest.json").read_text())["archives"][0]
+        self.assertEqual(row["source"]["artifact_name"], "linux-core")
+
+    def test_nested_archive_pair_is_extracted_flattened(self):
+        buffer = io.BytesIO()
+        with zipfile.ZipFile(buffer, "w") as z:
+            z.writestr("pilot/" + self.archive_name, self.archive)
+            z.writestr("pilot/" + self.archive_name + ".sha256", self.sidecar)
+        self.zip_bytes = buffer.getvalue()
+        self.artifact["digest"] = "sha256:" + hashlib.sha256(self.zip_bytes).hexdigest()
+        with patch.object(discovery.subprocess, "run", side_effect=self.fake_run):
+            self.assertEqual(self.invoke(), [])
+        self.assertEqual((self.root / "out" / self.archive_name).read_bytes(), self.archive)
+
+    def test_ambiguous_archive_pairs_are_rejected(self):
+        buffer = io.BytesIO()
+        with zipfile.ZipFile(buffer, "w") as z:
+            for prefix in ("pilot", "other"):
+                z.writestr(prefix + "/" + self.archive_name, self.archive)
+                z.writestr(prefix + "/" + self.archive_name + ".sha256", self.sidecar)
+        self.zip_bytes = buffer.getvalue()
+        self.artifact["digest"] = "sha256:" + hashlib.sha256(self.zip_bytes).hexdigest()
+        with patch.object(discovery.subprocess, "run", side_effect=self.fake_run):
+            reasons = self.invoke()
+        self.assertTrue(any("ambiguous" in reason for reason in reasons))
+        self.assertEqual(json.loads((self.root / "manifest.json").read_text())["archives"], [])
+
     def test_rejects_wrong_run_identity_and_current_run(self):
         for field, value in (("head_branch", "main"), ("event", "workflow_dispatch"),
                              ("conclusion", "failure"), ("id", 999)):

@@ -13,6 +13,7 @@ import selected_build_inputs
 
 class SelectedBuildInputsTests(unittest.TestCase):
     PACKAGES_SHA256 = "c" * 64
+    CORE_SHA256 = "b" * 64
     BASE_SHA256 = "0a9887931b0e38af2e3487ed39e29436b0535c4f3f52e57745baaf79d1898956"
 
     def setUp(self):
@@ -28,9 +29,10 @@ class SelectedBuildInputsTests(unittest.TestCase):
     def tearDown(self):
         self.temp.cleanup()
 
-    def identity(self, major=18, packages_sha256=None):
+    def identity(self, major=18, packages_sha256=None, core_sha256=None):
         return selected_build_inputs.selected_identity(
-            packages_sha256 or self.PACKAGES_SHA256, major, self.root)
+            packages_sha256 or self.PACKAGES_SHA256, core_sha256 or self.CORE_SHA256,
+            major, self.root)
 
     def support(self):
         path = self.root / "support.json"
@@ -48,10 +50,12 @@ class SelectedBuildInputsTests(unittest.TestCase):
         first = self.identity()
         self.assertEqual(first["dependencies"]["builder_packages"]["sha256"],
                          self.PACKAGES_SHA256)
+        self.assertEqual(first["dependencies"]["postgresql"]["sha256"], self.CORE_SHA256)
         self.assertEqual(first["dependencies"]["builder_base"], {
             "image": "ubuntu:22.04", "sha256": self.BASE_SHA256, "platform": "linux/amd64"})
         self.assertEqual(first, self.identity())
         self.assertNotEqual(first, self.identity(packages_sha256="d" * 64))
+        self.assertNotEqual(first, self.identity(core_sha256="e" * 64))
 
         dockerfile = self.root / "scripts/pgvector/linux-build.Dockerfile"
         dockerfile.write_text(dockerfile.read_text(encoding="utf-8").replace(
@@ -96,7 +100,7 @@ class SelectedBuildInputsTests(unittest.TestCase):
             component="pgvector",
             target=dict(first["target"], postgresql_major=19),
             upstream_sources={"pgvector": source},
-            dependencies={"postgresql": {"major": 19},
+            dependencies={"postgresql": {"major": 19, "sha256": self.CORE_SHA256},
                           "builder_packages": {"sha256": self.PACKAGES_SHA256},
                           "builder_base": {"image": "ubuntu:22.04", "sha256": self.BASE_SHA256,
                                            "platform": "linux/amd64"}},
@@ -110,9 +114,12 @@ class SelectedBuildInputsTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "supports PostgreSQL major 18 only"):
             self.identity(major=14)
         with self.assertRaisesRegex(ValueError, "builder packages SHA-256"):
-            selected_build_inputs.selected_identity("ubuntu:22.04", root=self.root)
+            selected_build_inputs.selected_identity("ubuntu:22.04", self.CORE_SHA256, root=self.root)
         with self.assertRaisesRegex(ValueError, "builder packages SHA-256"):
             selected_build_inputs.selected_identity("sha256:" + self.PACKAGES_SHA256,
+                                                    self.CORE_SHA256, root=self.root)
+        with self.assertRaisesRegex(ValueError, "PostgreSQL core SHA-256"):
+            selected_build_inputs.selected_identity(self.PACKAGES_SHA256, "sha256:" + self.CORE_SHA256,
                                                     root=self.root)
 
 
