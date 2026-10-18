@@ -1,0 +1,3 @@
+# pg_ivm 1.16 macOS Apple Silicon publication evidence
+
+[Run 39082646994](https://github.com/BernieSumption/pg_binaries/actions/runs/39082646994) passed the pg_ivm 1.16 publication profile against the exact PostgreSQL 18.6 Apple Silicon core. The final archive passed project-named licence-inventory and native-payload checks, Mach-O static analysis, relocation, `CREATE EXTENSION`, and incremental materialized-view maintenance after INSERT and UPDATE. The importer checked the sidecars, archive identities, reports and receipt against the current profile and retained the [archive-bound record](../../verification/pg_ivm-1.16-postgresql-18.6-macos-arm64-current-39082646994.json).
