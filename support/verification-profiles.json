@@ -37,6 +37,42 @@
       "case_ids": ["archive-suite", "elf-closure"],
       "sources": [".github/workflows/address-standardizer-linux-publication.yml", "scripts/address_standardizer/linux-build-in-container.sh", "scripts/address_standardizer/linux-build.Dockerfile", "scripts/address_standardizer/linux-build.sh", "scripts/address_standardizer/linux-probe.sql", "scripts/address_standardizer/linux-verify-in-container.sh", "scripts/address_standardizer/linux-verify.Dockerfile", "scripts/address_standardizer/linux-verify.sh", "support.json", "support/postgresql-releases.json", "tests/test_address_standardizer_linux_publication.py", "tools/check_elf_dependencies.py", "tools/coverage.py", "tools/emit_address_standardizer_linux_publication.py", "tools/import_address_standardizer_linux_publication.py"]
     },
+    "address-standardizer-publication-linux-arm64-15.19": {
+      "scope": "publication",
+      "platforms": ["linux-arm64"],
+      "case_ids": ["archive-suite", "elf-closure"],
+      "sources": [".github/workflows/address-standardizer-linux-15-17-publication.yml", "scripts/address_standardizer/linux-build-in-container.sh", "scripts/address_standardizer/linux-build.Dockerfile", "scripts/address_standardizer/linux-build.sh", "scripts/address_standardizer/linux-probe.sql", "scripts/address_standardizer/linux-verify-in-container.sh", "scripts/address_standardizer/linux-verify.Dockerfile", "scripts/address_standardizer/linux-verify.sh", "support.json", "support/postgresql-releases.json", "tests/test_address_standardizer_linux_publication.py", "tools/check_elf_dependencies.py", "tools/coverage.py", "tools/emit_address_standardizer_linux_publication.py", "tools/import_address_standardizer_linux_publication.py"]
+    },
+    "address-standardizer-publication-linux-x86_64-15.19": {
+      "scope": "publication",
+      "platforms": ["linux-x86_64"],
+      "case_ids": ["archive-suite", "elf-closure"],
+      "sources": [".github/workflows/address-standardizer-linux-15-17-publication.yml", "scripts/address_standardizer/linux-build-in-container.sh", "scripts/address_standardizer/linux-build.Dockerfile", "scripts/address_standardizer/linux-build.sh", "scripts/address_standardizer/linux-probe.sql", "scripts/address_standardizer/linux-verify-in-container.sh", "scripts/address_standardizer/linux-verify.Dockerfile", "scripts/address_standardizer/linux-verify.sh", "support.json", "support/postgresql-releases.json", "tests/test_address_standardizer_linux_publication.py", "tools/check_elf_dependencies.py", "tools/coverage.py", "tools/emit_address_standardizer_linux_publication.py", "tools/import_address_standardizer_linux_publication.py"]
+    },
+    "address-standardizer-publication-linux-arm64-16.15": {
+      "scope": "publication",
+      "platforms": ["linux-arm64"],
+      "case_ids": ["archive-suite", "elf-closure"],
+      "sources": [".github/workflows/address-standardizer-linux-15-17-publication.yml", "scripts/address_standardizer/linux-build-in-container.sh", "scripts/address_standardizer/linux-build.Dockerfile", "scripts/address_standardizer/linux-build.sh", "scripts/address_standardizer/linux-probe.sql", "scripts/address_standardizer/linux-verify-in-container.sh", "scripts/address_standardizer/linux-verify.Dockerfile", "scripts/address_standardizer/linux-verify.sh", "support.json", "support/postgresql-releases.json", "tests/test_address_standardizer_linux_publication.py", "tools/check_elf_dependencies.py", "tools/coverage.py", "tools/emit_address_standardizer_linux_publication.py", "tools/import_address_standardizer_linux_publication.py"]
+    },
+    "address-standardizer-publication-linux-x86_64-16.15": {
+      "scope": "publication",
+      "platforms": ["linux-x86_64"],
+      "case_ids": ["archive-suite", "elf-closure"],
+      "sources": [".github/workflows/address-standardizer-linux-15-17-publication.yml", "scripts/address_standardizer/linux-build-in-container.sh", "scripts/address_standardizer/linux-build.Dockerfile", "scripts/address_standardizer/linux-build.sh", "scripts/address_standardizer/linux-probe.sql", "scripts/address_standardizer/linux-verify-in-container.sh", "scripts/address_standardizer/linux-verify.Dockerfile", "scripts/address_standardizer/linux-verify.sh", "support.json", "support/postgresql-releases.json", "tests/test_address_standardizer_linux_publication.py", "tools/check_elf_dependencies.py", "tools/coverage.py", "tools/emit_address_standardizer_linux_publication.py", "tools/import_address_standardizer_linux_publication.py"]
+    },
+    "address-standardizer-publication-linux-arm64-17.11": {
+      "scope": "publication",
+      "platforms": ["linux-arm64"],
+      "case_ids": ["archive-suite", "elf-closure"],
+      "sources": [".github/workflows/address-standardizer-linux-15-17-publication.yml", "scripts/address_standardizer/linux-build-in-container.sh", "scripts/address_standardizer/linux-build.Dockerfile", "scripts/address_standardizer/linux-build.sh", "scripts/address_standardizer/linux-probe.sql", "scripts/address_standardizer/linux-verify-in-container.sh", "scripts/address_standardizer/linux-verify.Dockerfile", "scripts/address_standardizer/linux-verify.sh", "support.json", "support/postgresql-releases.json", "tests/test_address_standardizer_linux_publication.py", "tools/check_elf_dependencies.py", "tools/coverage.py", "tools/emit_address_standardizer_linux_publication.py", "tools/import_address_standardizer_linux_publication.py"]
+    },
+    "address-standardizer-publication-linux-x86_64-17.11": {
+      "scope": "publication",
+      "platforms": ["linux-x86_64"],
+      "case_ids": ["archive-suite", "elf-closure"],
+      "sources": [".github/workflows/address-standardizer-linux-15-17-publication.yml", "scripts/address_standardizer/linux-build-in-container.sh", "scripts/address_standardizer/linux-build.Dockerfile", "scripts/address_standardizer/linux-build.sh", "scripts/address_standardizer/linux-probe.sql", "scripts/address_standardizer/linux-verify-in-container.sh", "scripts/address_standardizer/linux-verify.Dockerfile", "scripts/address_standardizer/linux-verify.sh", "support.json", "support/postgresql-releases.json", "tests/test_address_standardizer_linux_publication.py", "tools/check_elf_dependencies.py", "tools/coverage.py", "tools/emit_address_standardizer_linux_publication.py", "tools/import_address_standardizer_linux_publication.py"]
+    },
     "postgis-pilot-linux-arm64": {
       "scope": "pilot-smoke",
       "platforms": ["linux-arm64"],

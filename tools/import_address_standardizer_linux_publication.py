@@ -56,15 +56,17 @@ def import_run(root, core_archives, archives, run_id):
     attempt_path = archives / "publication" / "attempt.json"
     attempt = read_json(attempt_path)
     architecture = attempt.get("architecture")
-    if architecture not in publication.CORE_SHA256:
+    pg_version = attempt.get("postgresql_version")
+    if pg_version not in publication.CORE_PINS:
+        raise coverage.CoverageError("attempt PostgreSQL version is unsupported")
+    if architecture not in publication.CORE_PINS[pg_version][1]:
         raise coverage.CoverageError("attempt architecture is unsupported")
-    selected = publication.profile_id(architecture)
-    pg_version = publication.PG_VERSION
+    selected = publication.profile_id(architecture, pg_version)
     profile = coverage.verification_profile(root, selected)
     if (attempt.get("schema_version") != 1 or str(attempt.get("run_id")) != run_id
             or attempt.get("profile_id") != selected or attempt.get("postgresql_version") != pg_version
             or attempt.get("version") != publication.VERSION
-            or attempt.get("core_run_id") != publication.CORE_RUN
+            or attempt.get("core_run_id") != publication.CORE_PINS[pg_version][0]
             or attempt.get("release_eligible") is not False
             or attempt.get("redistribution_status") != publication.BLOCK
             or not coverage.REVISION.fullmatch(str(attempt.get("source_revision", "")))):
@@ -86,7 +88,10 @@ def import_run(root, core_archives, archives, run_id):
     archive, core = archives / archive_name, core_archives / core_name
     if attempt.get("archives_present") != {core_name: core.is_file(), archive_name: archive.is_file()}:
         raise coverage.CoverageError("raw attempt archive presence differs from downloaded files")
-    evidence = root / "support/evidence" / f"address-standardizer-linux-publication-{run_id}" / architecture
+    evidence = root / "support/evidence" / f"address-standardizer-linux-publication-{run_id}"
+    if pg_version != "18.6":
+        evidence /= pg_version
+    evidence /= architecture
     copies = []
     retain(attempt_path, evidence / "attempt.json", copies)
     if archive.is_symlink() or core.is_symlink():
@@ -98,8 +103,8 @@ def import_run(root, core_archives, archives, run_id):
         return [str(destination.relative_to(root)) for _, destination in copies]
 
     checksums = {archive_name: publication.digest(archive), core_name: publication.digest(core)}
-    if checksums[core_name] != publication.CORE_SHA256[architecture]:
-        raise coverage.CoverageError("core archive differs from the pinned current-profile bytes")
+    if checksums[core_name] != publication.CORE_PINS[pg_version][1][architecture]:
+        raise coverage.CoverageError(f"core archive differs from the pinned PostgreSQL {pg_version} bytes")
     for path in (archive, core):
         publication._sidecar(path, checksums[path.name])
     if attempt.get("archives") != checksums:
@@ -130,7 +135,7 @@ def import_run(root, core_archives, archives, run_id):
             raise coverage.CoverageError("ELF report is not bound to both final archives")
     if results["archive-suite"] == "passed":
         probe = report_names["probe_output"][0]
-        if not probe.is_file() or "PASS: Address Standardizer 3.7.0 with PostgreSQL 18.6" not in probe.read_text(encoding="utf-8"):
+        if not probe.is_file() or f"PASS: Address Standardizer 3.7.0 with PostgreSQL {pg_version}" not in probe.read_text(encoding="utf-8"):
             raise coverage.CoverageError("passed archive suite lacks relocated Alpine probe output")
 
     receipt_path = archives / "publication/current-receipt.json"
