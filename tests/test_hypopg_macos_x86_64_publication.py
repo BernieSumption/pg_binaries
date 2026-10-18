@@ -125,6 +125,7 @@ class HypoPGMacOSIntelPublicationTests(unittest.TestCase):
         self.assertIn("scripts/macos/resolve-core.sh", workflow)
         self.assertIn("tools/emit_hypopg_macos_x86_64_publication.py", workflow)
         self.assertIn("tools/import_hypopg_macos_x86_64_publication.py", workflow)
+        self.assertIn("'tools/macos_publication_evidence.py'", workflow)
         self.assertIn("support/verification/hypopg-1.4.3-postgresql-${{ needs.select.outputs.postgresql_version }}-macos-x86_64-current-${{ github.run_id }}.json", workflow)
         self.assertNotIn("macos-arm64", workflow)
 
