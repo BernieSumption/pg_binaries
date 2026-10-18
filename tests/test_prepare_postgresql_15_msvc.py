@@ -70,6 +70,16 @@ class PostgreSQL15MsvcDependencyTests(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "openssl import library"):
             stage(self.root / "vcpkg", self.staging, self.config)
 
+    def test_stages_zlib_132_cmake_library_names_for_upstream_msvc_layout(self):
+        (self.installed / "lib/zlib.lib").unlink()
+        (self.installed / "lib/z.lib").write_bytes(b"zlib 1.3.2 import library")
+        (self.installed / "bin/zlib1.dll").unlink()
+        (self.installed / "bin/z.dll").write_bytes(b"zlib 1.3.2 runtime")
+
+        roots = stage(self.root / "vcpkg", self.staging, self.config)
+
+        self.assertEqual((Path(roots["zlib"]) / "lib/zdll.lib").read_bytes(), b"zlib 1.3.2 import library")
+
     def test_refuses_to_overwrite_an_existing_msvc_configuration(self):
         self.config.parent.mkdir(parents=True)
         self.config.write_text("user config", encoding="ascii")

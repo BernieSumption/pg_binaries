@@ -29,9 +29,8 @@ class PgJsonschemaWindowsArchiveTests(unittest.TestCase):
     def test_candidate_pins_current_core_identity(self):
         script = Path("scripts/pg_jsonschema/windows-feasibility.ps1").read_text()
         workflow = Path(".github/workflows/pg-jsonschema-windows-publication.yml").read_text()
-        self.assertIn(f"$coreSha256 = '{publication.CORE_SHA256}'", script)
-        self.assertIn(f"$coreBuildId = '{publication.CORE_BUILD_ID}'", script)
-        self.assertIn("run-id: 39089826690", workflow)
+        self.assertIn("windows_core_pin.py", script)
+        self.assertIn("run-id: ${{ steps.core_pin.outputs.run_id }}", workflow)
 
     @staticmethod
     def _tar(path, entries):

@@ -31,10 +31,9 @@ class PgTapWindowsArchiveTests(unittest.TestCase):
     def test_candidate_pins_current_core_identity(self):
         script = Path("scripts/pgtap/windows-feasibility.ps1").read_text()
         workflow = Path(".github/workflows/pgtap-windows-publication.yml").read_text()
-        self.assertIn("$runId = '39089826690'", script)
-        self.assertIn(f"$coreSha256 = '{publication.CORE_SHA256}'", script)
-        self.assertIn("source_revision = '01fe5d267c30f73bb6e44d2b37c18f008223bc75'", script)
-        self.assertIn("run-id: 39089826690", workflow)
+        self.assertIn("windows_core_pin.py", script)
+        self.assertIn("windows_core_pin.py", workflow)
+        self.assertIn("run-id: ${{ steps.core_pin.outputs.run_id }}", workflow)
 
     def _tar(self, path, members):
         with tarfile.open(path, "w:gz") as archive:
@@ -52,8 +51,8 @@ class PgTapWindowsArchiveTests(unittest.TestCase):
     def _make_core(self):
         manifest = {
             "component": "postgresql", "version": "18.6", "postgresql_version": "18.6",
-            "platform": "windows", "architecture": "x86_64", "build_id": "github-39089826690-1",
-            "source_revision": "01fe5d267c30f73bb6e44d2b37c18f008223bc75",
+            "platform": "windows", "architecture": "x86_64", "build_id": publication.CORE_BUILD_ID,
+            "source_revision": publication.CORE_SOURCE_REVISION,
         }
         self._tar(self.core, [("postgresql/manifest.json", json.dumps(manifest))])
 
@@ -129,8 +128,8 @@ class PgTapWindowsArchiveTests(unittest.TestCase):
         core = core_dir / f"postgresql-18.6-{publication.PLATFORM}.tar.gz"
         manifest = {
             "component": "postgresql", "version": "18.6", "postgresql_version": "18.6",
-            "platform": "windows", "architecture": "x86_64", "build_id": "github-39089826690-1",
-            "source_revision": "01fe5d267c30f73bb6e44d2b37c18f008223bc75",
+            "platform": "windows", "architecture": "x86_64", "build_id": publication.CORE_BUILD_ID,
+            "source_revision": publication.CORE_SOURCE_REVISION,
         }
         with tarfile.open(core, "w:gz") as archive:
             data = json.dumps(manifest).encode()

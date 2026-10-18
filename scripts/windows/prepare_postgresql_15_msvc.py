@@ -17,7 +17,8 @@ DEPENDENCIES = {
     },
     "lz4": {"libraries": {"lib/liblz4.lib": ("liblz4.lib", "lz4.lib")}, "dll_patterns": ("*lz4*.dll",)},
     "zstd": {"libraries": {"lib/libzstd.lib": ("libzstd.lib", "zstd.lib")}, "dll_patterns": ("*zstd*.dll",)},
-    "zlib": {"libraries": {"lib/zdll.lib": ("zdll.lib", "zlib.lib")}, "dll_patterns": ("zlib*.dll",)},
+    "zlib": {"libraries": {"lib/zdll.lib": ("zdll.lib", "zlib.lib", "z.lib")},
+             "dll_patterns": (("zlib*.dll", "z.dll"),)},
     "openssl": {
         "libraries": {"lib/libssl.lib": ("libssl.lib",), "lib/libcrypto.lib": ("libcrypto.lib",)},
         "dll_patterns": ("libssl*.dll", "libcrypto*.dll"),
@@ -80,8 +81,10 @@ def stage(vcpkg_root: Path, staging_root: Path, config_path: Path) -> dict[str, 
 
     for name, dependency in DEPENDENCIES.items():
         for pattern in dependency["dll_patterns"]:
-            if not list((installed / "bin").glob(pattern)):
-                raise RuntimeError(f"Missing {name} runtime DLL matching {pattern} in {installed / 'bin'}")
+            alternatives = pattern if isinstance(pattern, tuple) else (pattern,)
+            if not any(list((installed / "bin").glob(candidate)) for candidate in alternatives):
+                choices = " or ".join(alternatives)
+                raise RuntimeError(f"Missing {name} runtime DLL matching {choices} in {installed / 'bin'}")
 
     config_path.parent.mkdir(parents=True, exist_ok=True)
     if config_path.exists():

@@ -5,13 +5,16 @@ param(
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 
-$pgVersion = '18.6'
+$coreIdentityTool = Join-Path $PSScriptRoot '../../tools/windows_core_pin.py'
+$coreIdentity = (& python $coreIdentityTool | ConvertFrom-Json)
+if ($LASTEXITCODE -ne 0 -or -not $coreIdentity) { throw 'Cannot load the pinned Windows PostgreSQL core identity' }
+$pgVersion = $coreIdentity.postgresql_version
 $version = '1.3.4'
 $architecture = 'x86_64'
-$runId = '39089826690'
-$coreName = "postgresql-$pgVersion-windows-$architecture.tar.gz"
+$runId = $coreIdentity.run_id
+$coreName = $coreIdentity.archive_name
 $archiveName = "pgtap-$version-postgresql-$pgVersion-windows-$architecture.tar.gz"
-$coreSha256 = 'ee0b6781299cc462ba4305ff4a318519fc61741d7b0f05988cf29030eafeedd2'
+$coreSha256 = $coreIdentity.sha256
 $sourceUrl = 'https://github.com/theory/pgtap/archive/refs/tags/v1.3.4.tar.gz'
 $sourceSha256 = 'd2c951afb296a001d21785611a8e966e3f8fa3f5bfbd929396a5130c0152f314'
 $repo = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
@@ -50,8 +53,8 @@ try {
   $manifest = Get-Content $manifestPath -Raw | ConvertFrom-Json
   $expected = @{
     component = 'postgresql'; version = $pgVersion; postgresql_version = $pgVersion
-    platform = 'windows'; architecture = $architecture; build_id = "github-$runId-1"
-    source_revision = '01fe5d267c30f73bb6e44d2b37c18f008223bc75'
+    platform = 'windows'; architecture = $architecture; build_id = $coreIdentity.build_id
+    source_revision = $coreIdentity.source_revision
   }
   foreach ($key in $expected.Keys) {
     if ($manifest.$key -cne $expected[$key]) { throw "Core manifest $key mismatch: $($manifest.$key)" }

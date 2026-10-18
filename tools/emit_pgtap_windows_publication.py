@@ -11,13 +11,19 @@ import sys
 import tarfile
 
 import coverage
+from windows_core_pin import load_identity
 
 PROFILE_ID = "pgtap-publication-windows-x86_64-18.6"
 PG_VERSION = "18.6"
 PGTAP_VERSION = "1.3.4"
 ARCHITECTURE = "x86_64"
 PLATFORM = "windows-x86_64"
-CORE_SHA256 = "ee0b6781299cc462ba4305ff4a318519fc61741d7b0f05988cf29030eafeedd2"
+_CORE = load_identity()
+CORE_SHA256 = _CORE["sha256"]
+CORE_RUN_ID = _CORE["run_id"]
+CORE_BUILD_ID = _CORE["build_id"]
+CORE_SOURCE_REVISION = _CORE["source_revision"]
+CORE_PROFILE_ID = _CORE["profile_id"]
 SOURCE_URL = "https://github.com/theory/pgtap/archive/refs/tags/v1.3.4.tar.gz"
 SOURCE_SHA256 = "d2c951afb296a001d21785611a8e966e3f8fa3f5bfbd929396a5130c0152f314"
 CASES = {"archive-suite", "static-analysis"}

@@ -5,13 +5,16 @@ param(
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 
-$pgVersion = '18.6'
+$coreIdentityTool = Join-Path $PSScriptRoot '../../tools/windows_core_pin.py'
+$coreIdentity = (& python $coreIdentityTool | ConvertFrom-Json)
+if ($LASTEXITCODE -ne 0 -or -not $coreIdentity) { throw 'Cannot load the pinned Windows PostgreSQL core identity' }
+$pgVersion = $coreIdentity.postgresql_version
 $extensionVersion = '0.3.4'
 $extensionCommit = 'cbe74b570d38aa0c4d42914e7a118bcb3adaee7a'
 $cargoLockSha256 = 'ab865dc25d9eea4bf7dbfaf8fae13283e5c0bce4bca460fe10464c6716e67028'
-$coreSha256 = 'ee0b6781299cc462ba4305ff4a318519fc61741d7b0f05988cf29030eafeedd2'
-$coreName = "postgresql-$pgVersion-windows-x86_64.tar.gz"
-$coreBuildId = 'github-39089826690-1'
+$coreSha256 = $coreIdentity.sha256
+$coreName = $coreIdentity.archive_name
+$coreBuildId = $coreIdentity.build_id
 $repo = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
 New-Item -ItemType Directory -Force $OutputDirectory | Out-Null
 $OutputDirectory = (Resolve-Path $OutputDirectory).Path
@@ -79,8 +82,8 @@ try {
   if (-not (Test-Path (Join-Path $pgRoot 'manifest.json') -PathType Leaf)) { throw 'PostgreSQL core manifest is missing' }
   $manifest = Get-Content (Join-Path $pgRoot 'manifest.json') -Raw | ConvertFrom-Json
   if ($manifest.component -cne 'postgresql' -or $manifest.version -cne $pgVersion -or
-      $manifest.platform -cne 'windows' -or $manifest.architecture -cne 'x86_64' -or
-      $manifest.build_id -cne $coreBuildId) {
+      $manifest.platform -cne 'windows' -or $manifest.architecture -cne $coreIdentity.architecture -or
+      $manifest.build_id -cne $coreBuildId -or $manifest.source_revision -cne $coreIdentity.source_revision) {
     throw 'The downloaded PostgreSQL archive manifest does not match the pinned current-profile Windows 18.6 build.'
   }
   $pgConfig = Join-Path $pgRoot 'bin/pg_config.exe'

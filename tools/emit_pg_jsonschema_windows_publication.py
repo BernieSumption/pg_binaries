@@ -11,18 +11,20 @@ import sys
 import tarfile
 
 import coverage
+from windows_core_pin import load_identity
 
 PROFILE_ID = "pg-jsonschema-publication-windows-x86_64-18.6"
 PG_VERSION = "18.6"
 PG_JSONSCHEMA_VERSION = "0.3.4"
 ARCHITECTURE = "x86_64"
 PLATFORM = "windows-x86_64"
-CORE_SHA256 = "ee0b6781299cc462ba4305ff4a318519fc61741d7b0f05988cf29030eafeedd2"
-CORE_RUN_ID = "39089826690"
-CORE_BUILD_ID = "github-39089826690-1"
-CORE_SOURCE_REVISION = "01fe5d267c30f73bb6e44d2b37c18f008223bc75"
-CORE_PROFILE_ID = "windows-publication-current-x86_64"
-CORE_STATUS = "current-profile-core-redistribution-pending"
+_CORE = load_identity()
+CORE_SHA256 = _CORE["sha256"]
+CORE_RUN_ID = _CORE["run_id"]
+CORE_BUILD_ID = _CORE["build_id"]
+CORE_SOURCE_REVISION = _CORE["source_revision"]
+CORE_PROFILE_ID = _CORE["profile_id"]
+CORE_STATUS = _CORE["status"]
 SOURCE_URL = "https://github.com/supabase/pg_jsonschema.git"
 SOURCE_COMMIT = "cbe74b570d38aa0c4d42914e7a118bcb3adaee7a"
 CARGO_LOCK_SHA256 = "ab865dc25d9eea4bf7dbfaf8fae13283e5c0bce4bca460fe10464c6716e67028"
