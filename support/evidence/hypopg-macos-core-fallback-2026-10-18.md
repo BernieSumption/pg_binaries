@@ -1,0 +1,7 @@
+# macOS PostgreSQL core rebuild trial, 18 October 2026
+
+[Run 39167311369](https://github.com/BernieSumption/pg_binaries/actions/runs/39167311369) selected HypoPG 1.4.3 with PostgreSQL 17.11 on macOS arm64. Its resolver found no checked core matching the changed build recipe, so the build job compiled PostgreSQL on that runner. This trial used the then-current combined macOS builder, which also packaged pgvector 0.8.7 before building HypoPG.
+
+The build artifact's PostgreSQL archive has SHA-256 `76583aa6a3693bdf196d15563319cea98ec3373e6f1c1cdc791cc1f3008cec3f`; its HypoPG archive has SHA-256 `f858f7219620fdfdec960d9729d808ed02def1eddc34dcd117cbd6f9b17225a1`. Both match independently downloaded bytes. A separate macOS 15.7.9 runner passed relocation, HypoPG SQL, and Mach-O static analysis. The imported [verification record](../verification/hypopg-1.4.3-postgresql-17.11-macos-arm64-current-39167311369.json) and receipt retain those archive identities. Import used the code and profile at the run's source revision `817642c50b2e86884358b35529878fd46b0d374f`; later profile revisions make this historical evidence.
+
+The select, build, and verify jobs took 5 seconds, 26 minutes 43 seconds, and 32 seconds. The build log records PostgreSQL installed at 21:30:20 UTC, pgvector packaged at 21:44:35, and HypoPG built at 21:46:11. This proves the missing-candidate fallback and fresh-runner verification, while the unrelated pgvector work accounts for a substantial part of the fallback cost.
