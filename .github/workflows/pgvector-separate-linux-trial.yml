@@ -41,9 +41,19 @@ jobs:
           CORE_SHA256: ca1773eeca3e083cf1c170e76d3e2191391ac3cac405b7db737a548a2a00c2df
         run: |
           set -euo pipefail
-          core="$RUNNER_TEMP/core/postgresql-18.6-linux-x86_64.tar.gz"
-          test -f "$core"
-          test -f "$core.sha256"
+          core_name=postgresql-18.6-linux-x86_64.tar.gz
+          mapfile -t core_files < <(find "$RUNNER_TEMP/core" -type f -name "$core_name" -print)
+          if [[ ${#core_files[@]} -ne 1 ]]; then
+            echo "Expected exactly one $core_name in downloaded artifact; found ${#core_files[@]}. Artifact layout:" >&2
+            find "$RUNNER_TEMP/core" -maxdepth 5 -type f -print | sort >&2
+            exit 1
+          fi
+          core=${core_files[0]}
+          if [[ ! -f "$core.sha256" ]]; then
+            echo "Missing sidecar for pinned core archive $core. Artifact layout:" >&2
+            find "$RUNNER_TEMP/core" -maxdepth 5 -type f -print | sort >&2
+            exit 1
+          fi
           scripts/pgvector/linux-build.sh "$core" "$CORE_SHA256" \
             "$RUNNER_TEMP/pgvector-v0.8.7.tar.gz" "$RUNNER_TEMP/pgvector-output"
       - name: Inspect final extension archive and checksum sidecar

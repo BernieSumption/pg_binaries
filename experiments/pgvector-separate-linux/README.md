@@ -6,7 +6,7 @@ Provide the core archive, its adjacent .sha256 sidecar, the independently truste
 
     scripts/pgvector/linux-build.sh /path/to/postgresql-18.6-linux-x86_64.tar.gz TRUSTED_CORE_SHA256 /path/to/pgvector-v0.8.7.tar.gz /path/to/output
 
-The source tarball must match the SHA-256 in support.json. The core bytes must match the separately supplied trusted digest and adjacent sidecar; the basename and embedded manifest must identify PostgreSQL 18.6 Linux x86-64. The output uses the existing pgvector-0.8.7-postgresql-18.6-linux-x86_64.tar.gz basename, with a checksum sidecar and pgvector/ plus metadata.json archive roots. Its metadata records the exact input core basename and SHA-256. The scoped GitHub Actions trial downloads core run 39061346204 and retains its output artifact for seven days; the workflow records this temporary run ID and expected core digest.
+The source tarball must match the SHA-256 in support.json. The core bytes must match the separately supplied trusted digest and adjacent sidecar; the basename and embedded manifest must identify PostgreSQL 18.6 Linux x86-64. The output uses the existing pgvector-0.8.7-postgresql-18.6-linux-x86_64.tar.gz basename, with a checksum sidecar and pgvector/ plus metadata.json archive roots. Its metadata records the exact input core basename and SHA-256. The scoped GitHub Actions trial downloads core run 39061346204 from the `pilot/` artifact directory and retains its output artifact for seven days; the workflow records this temporary run ID and expected core digest.
 
 Run the pure input checks with:
 
