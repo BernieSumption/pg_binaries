@@ -48,12 +48,13 @@ class WindowsCoreTargetConfigTests(unittest.TestCase):
     def test_generates_identity_and_loader_accepts_explicit_path(self):
         self.make_archive()
         output = self.root / "generated.json"
-        result = config.create_target(self.base, self.archive, self.run_id, output, self.attempt)
+        result = config.create_target(self.base, self.archive, self.run_id, output, self.attempt,
+                                      f"hypopg-windows-{self.version}-build-{self.run_id}")
         self.assertEqual(result["run_id"], self.run_id)
         self.assertEqual(result["build_id"], f"github-{self.run_id}-{self.attempt}")
         self.assertEqual(result["source_revision"], self.revision)
         self.assertEqual(result["sha256"], hashlib.sha256(self.archive.read_bytes()).hexdigest())
-        self.assertEqual(result["artifact_name"], f"windows-postgresql-{self.version}-pilot")
+        self.assertEqual(result["artifact_name"], f"hypopg-windows-{self.version}-build-{self.run_id}")
         self.assertEqual(load_identity(output, pg_version=self.version), result)
 
     def test_rejects_forged_sidecar_manifest_and_mismatched_attempt(self):
@@ -72,6 +73,9 @@ class WindowsCoreTargetConfigTests(unittest.TestCase):
             config.create_target(self.base, self.archive, self.run_id, self.root / "out.json", "2")
         with self.assertRaisesRegex(ValueError, "attempt"):
             config.create_target(self.base, self.archive, self.run_id, self.root / "out.json", "03")
+        with self.assertRaisesRegex(ValueError, "artifact name"):
+            config.create_target(self.base, self.archive, self.run_id, self.root / "out.json",
+                                 self.attempt, "../unexpected")
 
 
 if __name__ == "__main__":

@@ -73,12 +73,17 @@ def _manifest(archive_path):
         raise ValueError(f"cannot inspect core archive: {exc}") from exc
 
 
-def create_target(base_path, archive_path, source_run_id, output_path, source_run_attempt="1"):
+def create_target(base_path, archive_path, source_run_id, output_path, source_run_attempt="1",
+                  source_artifact_name=None):
     base_path, archive_path, output_path = map(Path, (base_path, archive_path, output_path))
     if not isinstance(source_run_id, str) or not re.fullmatch(r"[1-9][0-9]*", source_run_id):
         raise ValueError("source run ID must be a positive decimal integer")
     if not isinstance(source_run_attempt, str) or not re.fullmatch(r"[1-9][0-9]*", source_run_attempt):
         raise ValueError("source run attempt must be a positive integer")
+    if (source_artifact_name is not None and
+            (not isinstance(source_artifact_name, str) or
+             not re.fullmatch(r"[A-Za-z0-9_.-]+", source_artifact_name))):
+        raise ValueError("source artifact name must be a safe filename")
     target = _json_file(base_path, "base Windows core pin")
     if not isinstance(target, dict) or set(target) != REQUIRED:
         raise ValueError("base Windows core pin has missing or unexpected fields")
@@ -112,6 +117,8 @@ def create_target(base_path, archive_path, source_run_id, output_path, source_ru
         raise ValueError("core archive manifest has an invalid source revision")
     target.update({"run_id": source_run_id, "build_id": build_id,
                    "source_revision": revision, "sha256": digest})
+    if source_artifact_name is not None:
+        target["artifact_name"] = source_artifact_name
     output_path.parent.mkdir(parents=True, exist_ok=True)
     fd, temp_name = tempfile.mkstemp(prefix=f".{output_path.name}.", dir=output_path.parent)
     try:
@@ -135,11 +142,12 @@ def main():
     parser.add_argument("--core-archive", type=Path, required=True)
     parser.add_argument("--source-run-id", required=True)
     parser.add_argument("--source-run-attempt", default="1")
+    parser.add_argument("--source-artifact-name")
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     try:
         create_target(args.base_pin, args.core_archive, args.source_run_id, args.output,
-                      args.source_run_attempt)
+                      args.source_run_attempt, args.source_artifact_name)
         print(f"Wrote temporary Windows core identity: {args.output}")
         return 0
     except (OSError, ValueError, TypeError) as exc:

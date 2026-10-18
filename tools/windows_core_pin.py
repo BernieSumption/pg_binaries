@@ -28,7 +28,8 @@ def load_identity(path=None, pg_version="18.6"):
         raise ValueError("Windows core identity pin has missing or unexpected fields")
     if (identity["schema_version"] != 1 or identity["postgresql_version"] != pg_version
             or identity["platform"] != "windows-x86_64" or identity["architecture"] != "x86_64"
-            or identity["artifact_name"] != f"windows-postgresql-{pg_version}-pilot"
+            or not isinstance(identity["artifact_name"], str)
+            or not re.fullmatch(r"[A-Za-z0-9_.-]+", identity["artifact_name"])
             or identity["archive_name"] != f"postgresql-{pg_version}-windows-x86_64.tar.gz"
             or identity["profile_id"] != "windows-publication-current-x86_64"
             or identity["status"] != "current-profile-core-redistribution-pending"
