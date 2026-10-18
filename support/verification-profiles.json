@@ -161,7 +161,7 @@
       "scope": "publication",
       "platforms": ["linux-arm64"],
       "case_ids": ["archive-suite"],
-      "sources": [".github/workflows/linux-publication.yml#profile-section=hypopg-build", ".github/workflows/linux-publication.yml#profile-section=hypopg-report", ".github/workflows/linux-publication.yml#profile-section=hypopg-verify", ".github/workflows/linux-publication.yml#profile-section=job-setup", "scripts/hypopg/Dockerfile", "scripts/hypopg/build-in-container.sh", "scripts/hypopg/build.sh", "scripts/hypopg/probe.sql", "scripts/hypopg/verify-in-container.sh", "scripts/hypopg/verify.Dockerfile", "scripts/hypopg/verify.sh", "support.json", "tools/check_elf_dependencies.py", "tools/create_extension_publication_receipt.py", "tools/emit_extension_publication_records.py"]
+      "sources": [".github/workflows/hypopg-linux-selected-publication.yml", ".github/workflows/linux-publication.yml#profile-section=hypopg-build", ".github/workflows/linux-publication.yml#profile-section=hypopg-report", ".github/workflows/linux-publication.yml#profile-section=hypopg-verify", ".github/workflows/linux-publication.yml#profile-section=job-setup", "scripts/hypopg/Dockerfile", "scripts/hypopg/build-in-container.sh", "scripts/hypopg/build.sh", "scripts/hypopg/probe.sql", "scripts/hypopg/verify-in-container.sh", "scripts/hypopg/verify.Dockerfile", "scripts/hypopg/verify.sh", "support.json", "support/postgresql-releases.json", "tools/check_elf_dependencies.py", "tools/create_extension_publication_receipt.py", "tools/emit_extension_publication_records.py", "tools/extension_archive_plan.py", "tools/import_linux_hypopg_publication.py"]
     },
     "pgtap-publication-current-x86_64": {
       "scope": "publication",

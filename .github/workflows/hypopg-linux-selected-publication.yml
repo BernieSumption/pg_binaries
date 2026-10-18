@@ -1,4 +1,4 @@
-name: HypoPG selected PostgreSQL Linux x86-64 publication
+name: HypoPG selected PostgreSQL Linux publication
 
 on:
   workflow_dispatch:
@@ -6,6 +6,11 @@ on:
       postgresql_version:
         description: Selected PostgreSQL release
         required: true
+        type: string
+        default: ''
+      architecture:
+        description: Selected Linux architecture
+        required: false
         type: string
         default: ''
       extension_version:
@@ -28,6 +33,7 @@ jobs:
     outputs:
       postgresql_version: ${{ steps.plan.outputs.postgresql_version }}
       extension_version: ${{ steps.plan.outputs.selected_version }}
+      architecture: ${{ steps.plan.outputs.architecture }}
     steps:
       - uses: actions/checkout@v4
       - name: Validate the requested selected target
@@ -35,12 +41,18 @@ jobs:
         env:
           POSTGRESQL_VERSION: ${{ inputs.postgresql_version }}
           EXTENSION_VERSION: ${{ inputs.extension_version }}
+          REQUESTED_ARCHITECTURE: ${{ inputs.architecture }}
         run: |
           set -euo pipefail
           if [[ -z "$POSTGRESQL_VERSION" ]]; then
             POSTGRESQL_VERSION=$(python3 -c 'import json; print(json.load(open("experiments/hypopg-linux-target-trial/target.json"))["postgresql_version"])')
           fi
-          args=(--project HypoPG --platform linux-x86_64 --postgresql-version "$POSTGRESQL_VERSION")
+          if [[ -z "$REQUESTED_ARCHITECTURE" ]]; then
+            REQUESTED_ARCHITECTURE=$(python3 -c 'import json; print(json.load(open("experiments/hypopg-linux-target-trial/target.json"))["architecture"])')
+          fi
+          case "$REQUESTED_ARCHITECTURE" in x86_64|arm64) ;; *) echo "Unsupported Linux architecture: $REQUESTED_ARCHITECTURE" >&2; exit 2 ;; esac
+          echo "architecture=$REQUESTED_ARCHITECTURE" >> "$GITHUB_OUTPUT"
+          args=(--project HypoPG --platform "linux-$REQUESTED_ARCHITECTURE" --postgresql-version "$POSTGRESQL_VERSION")
           if [[ -n "$EXTENSION_VERSION" ]]; then args+=(--extension-version "$EXTENSION_VERSION"); fi
           python3 tools/extension_archive_plan.py "${args[@]}" --github-output "$GITHUB_OUTPUT" > "$RUNNER_TEMP/selection.json"
           selected_version=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["selected_version"])' "$RUNNER_TEMP/selection.json")
@@ -51,11 +63,11 @@ jobs:
 
   build_verify_import:
     needs: select
-    runs-on: ubuntu-24.04
+    runs-on: ${{ needs.select.outputs.architecture == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-24.04' }}
     timeout-minutes: 90
     env:
       PG_VERSION: ${{ needs.select.outputs.postgresql_version }}
-      PG_ARCHITECTURE: x86_64
+      PG_ARCHITECTURE: ${{ needs.select.outputs.architecture }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -106,8 +118,9 @@ jobs:
           VERIFY_OUTCOME: ${{ steps.verification.outcome }}
         run: |
           set -euo pipefail
-          core="$RUNNER_TEMP/bundle/pilot/postgresql-$PG_VERSION-linux-x86_64.tar.gz"
-          extension="$RUNNER_TEMP/bundle/hypopg/hypopg-1.4.3-postgresql-$PG_VERSION-linux-x86_64.tar.gz"
+          core="$RUNNER_TEMP/bundle/pilot/postgresql-$PG_VERSION-linux-$PG_ARCHITECTURE.tar.gz"
+          extension="$RUNNER_TEMP/bundle/hypopg/hypopg-1.4.3-postgresql-$PG_VERSION-linux-$PG_ARCHITECTURE.tar.gz"
+          case "$PG_ARCHITECTURE" in x86_64) docker_platform=linux/amd64 ;; arm64) docker_platform=linux/arm64 ;; esac
           if [[ ! -f "$core" || ! -f "$core.sha256" || ! -f "$extension" || ! -f "$extension.sha256" ]]; then
             echo 'Archives are unavailable; retaining step outcomes without a receipt.'
             echo 'has_receipt=false' >> "$GITHUB_OUTPUT"
@@ -122,13 +135,13 @@ jobs:
           clean=false
           dependencies=failure
           if [[ "$VERIFY_OUTCOME" == success ]]; then clean=true; dependencies=success; fi
-          distribution=$(docker run --rm --platform linux/amd64 --entrypoint sh pg-binaries-hypopg-verifier -c '. /etc/os-release; printf "%s" "$NAME"')
-          distribution_version=$(docker run --rm --platform linux/amd64 --entrypoint sh pg-binaries-hypopg-verifier -c '. /etc/os-release; printf "%s" "$VERSION_ID"')
+          distribution=$(docker run --rm --platform "$docker_platform" --entrypoint sh pg-binaries-hypopg-verifier -c '. /etc/os-release; printf "%s" "$NAME"')
+          distribution_version=$(docker run --rm --platform "$docker_platform" --entrypoint sh pg-binaries-hypopg-verifier -c '. /etc/os-release; printf "%s" "$VERSION_ID"')
           python3 tools/create_extension_publication_receipt.py \
             --archives "$RUNNER_TEMP/bundle/hypopg" --core-archives "$RUNNER_TEMP/bundle/pilot" \
             --receipt "$RUNNER_TEMP/bundle/hypopg-publication/current-receipt.json" \
-            --profile-id hypopg-publication-current-x86_64 --project HypoPG --version 1.4.3 \
-            --postgresql-version "$PG_VERSION" --architecture x86_64 --endpoint current \
+            --profile-id "hypopg-publication-current-$PG_ARCHITECTURE" --project HypoPG --version 1.4.3 \
+            --postgresql-version "$PG_VERSION" --architecture "$PG_ARCHITECTURE" --endpoint current \
             --kernel-release "$(uname -r)" --distribution "$distribution" \
             --distribution-version "$distribution_version" --image-id "$image" \
             --dependency-check-result "$dependencies" --clean-system "$clean" \
@@ -145,12 +158,12 @@ jobs:
           set -euo pipefail
           python3 tools/import_linux_hypopg_publication.py \
             --core-artifact "$RUNNER_TEMP/bundle" --hypopg-artifact "$RUNNER_TEMP/bundle" \
-            --run-id "$GITHUB_RUN_ID" --architecture x86_64 --postgresql-version "$PG_VERSION"
+            --run-id "$GITHUB_RUN_ID" --architecture "$PG_ARCHITECTURE" --postgresql-version "$PG_VERSION"
       - name: Upload exact archives and all available outcomes
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: hypopg-linux-${{ needs.select.outputs.postgresql_version }}-x86_64-trial-${{ github.run_id }}
+          name: hypopg-linux-${{ needs.select.outputs.postgresql_version }}-${{ needs.select.outputs.architecture }}-trial-${{ github.run_id }}
           path: |
             ${{ runner.temp }}/bundle/pilot/*.tar.gz
             ${{ runner.temp }}/bundle/pilot/*.sha256
@@ -158,8 +171,8 @@ jobs:
             ${{ runner.temp }}/bundle/hypopg/*.sha256
             ${{ runner.temp }}/bundle/hypopg/static-analysis/**
             ${{ runner.temp }}/bundle/hypopg-publication/**
-            support/evidence/hypopg-publication-${{ github.run_id }}/x86_64/**
-            support/verification/hypopg-1.4.3-postgresql-${{ needs.select.outputs.postgresql_version }}-linux-x86_64-current-${{ github.run_id }}.json
+            support/evidence/hypopg-publication-${{ github.run_id }}/${{ needs.select.outputs.architecture }}/**
+            support/verification/hypopg-1.4.3-postgresql-${{ needs.select.outputs.postgresql_version }}-linux-${{ needs.select.outputs.architecture }}-current-${{ github.run_id }}.json
           if-no-files-found: warn
           retention-days: 7
       - name: Require build, verification, receipt and import to pass
