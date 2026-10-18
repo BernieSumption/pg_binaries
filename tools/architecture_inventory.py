@@ -16,7 +16,7 @@ WORKFLOW_CALL = re.compile(r"(?m)^  workflow_call:\s*$")
 def category(name):
     if name.endswith("-publication.yml"):
         return "publication"
-    if name in {"support-coverage.yml", "profile-change-scope.yml"}:
+    if name in {"support-coverage.yml", "profile-change-scope.yml"} or name.endswith("-changed-profiles.yml"):
         return "infrastructure"
     if any(term in name for term in ("pilot", "feasibility", "probe", "qemu", "trial")):
         return "investigation"
