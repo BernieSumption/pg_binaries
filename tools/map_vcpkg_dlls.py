@@ -22,7 +22,8 @@ def sha256(path):
 def parse_status(path):
     """Read installed/vcpkg/status paragraphs keyed by package and triplet."""
     text = Path(path).read_text(encoding="utf-8")
-    packages = {}
+    bases = {}
+    features = []
     for paragraph in re.split(r"\n\s*\n", text.strip()):
         fields = {}
         for line in paragraph.splitlines():
@@ -37,21 +38,42 @@ def parse_status(path):
             raise ValueError("installed vcpkg status record lacks Package or Architecture")
         versions = [(field, fields[field]) for field in VERSION_FIELDS
                     if fields.get(field)]
+        key = (name, triplet)
+        if fields.get("Feature"):
+            features.append((key, versions, fields))
+            continue
         if not versions or len({value for _, value in versions}) != 1:
             raise ValueError(
                 f"installed vcpkg status record needs one unambiguous version: "
                 f"{name}:{triplet}; version fields={versions!r}; fields={sorted(fields)!r}")
         version = versions[0][1]
-        key = (name, triplet)
         record = {
             "port": name,
             "triplet": triplet,
             "version": version,
             "port_version": fields.get("Port-Version", "0"),
         }
-        if key in packages and packages[key] != record:
+        if key in bases and bases[key] != record:
             raise ValueError(f"conflicting installed vcpkg status records: {name}:{triplet}")
-        packages[key] = record
+        bases[key] = record
+    for key, versions, fields in features:
+        name, triplet = key
+        if key not in bases:
+            raise ValueError(
+                f"installed vcpkg feature has no unique base package: {name}:{triplet}; "
+                f"feature={fields['Feature']!r}")
+        base = bases[key]
+        if (versions and (len({value for _, value in versions}) != 1
+                          or versions[0][1] != base["version"])):
+            raise ValueError(
+                f"installed vcpkg feature version differs from base package: "
+                f"{name}:{triplet}; feature={fields['Feature']!r}; version fields={versions!r}")
+        if (fields.get("Port-Version") is not None
+                and fields["Port-Version"] != base["port_version"]):
+            raise ValueError(
+                f"installed vcpkg feature port version differs from base package: "
+                f"{name}:{triplet}; feature={fields['Feature']!r}")
+    packages = bases
     if not packages:
         raise ValueError(f"no installed vcpkg package records found in {path}")
     return packages

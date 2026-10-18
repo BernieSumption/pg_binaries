@@ -78,6 +78,35 @@ class VcpkgDllMappingTests(unittest.TestCase):
         (self.dll_dir / "icuuc74.dll").write_bytes(b"icu")
         self.assertEqual(map_bundled_dlls(self.installed, self.dll_dir)["components"][0]["port"], "icu")
 
+    def test_resolves_versionless_feature_from_base_package(self):
+        status = self.root / "installed" / "vcpkg" / "status"
+        status.write_text(status.read_text(encoding="utf-8") + (
+            "Package: icu\nFeature: tools\nDescription: ICU feature\n"
+            "Architecture: x64-windows\nStatus: install ok installed\n\n"
+        ), encoding="utf-8")
+        (self.dll_dir / "icuuc74.dll").write_bytes(b"icu")
+        item = map_bundled_dlls(self.installed, self.dll_dir)["components"][0]
+        self.assertEqual((item["port"], item["version"], item["port_version"]), ("icu", "74.2", "0"))
+
+    def test_rejects_feature_without_base_package(self):
+        status = self.root / "installed" / "vcpkg" / "status"
+        status.write_text(
+            "Package: icu\nFeature: tools\nArchitecture: x64-windows\n"
+            "Status: install ok installed\n\n", encoding="utf-8")
+        (self.dll_dir / "icuuc74.dll").write_bytes(b"icu")
+        with self.assertRaisesRegex(ValueError, "feature has no unique base package"):
+            map_bundled_dlls(self.installed, self.dll_dir)
+
+    def test_rejects_feature_with_version_conflicting_with_base(self):
+        status = self.root / "installed" / "vcpkg" / "status"
+        status.write_text(status.read_text(encoding="utf-8") + (
+            "Package: icu\nFeature: tools\nVersion: 75.1\nPort-Version: 0\n"
+            "Architecture: x64-windows\nStatus: install ok installed\n\n"
+        ), encoding="utf-8")
+        (self.dll_dir / "icuuc74.dll").write_bytes(b"icu")
+        with self.assertRaisesRegex(ValueError, "feature version differs from base package"):
+            map_bundled_dlls(self.installed, self.dll_dir)
+
     def test_defaults_omitted_port_version_to_zero(self):
         status = self.root / "installed" / "vcpkg" / "status"
         status.write_text(

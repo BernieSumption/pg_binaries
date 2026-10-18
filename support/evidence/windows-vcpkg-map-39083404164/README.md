@@ -1,0 +1,3 @@
+# Windows PostgreSQL 18.6 vcpkg ownership mapping attempt
+
+[Run 39083404164](https://github.com/BernieSumption/pg_binaries/actions/runs/39083404164) installed the selected vcpkg dependencies and compiled PostgreSQL 18.6, then stopped during archive assembly. `map_vcpkg_dlls.py` rejected an installed ICU feature stanza that had `Package`, `Feature`, `Architecture` and `Status` fields but no version field. A feature stanza identifies a feature of an installed base package; the mapper now inherits the base package's version only when that base record is unambiguous, and rejects conflicting feature metadata. No archive or verification record was produced by this run.
