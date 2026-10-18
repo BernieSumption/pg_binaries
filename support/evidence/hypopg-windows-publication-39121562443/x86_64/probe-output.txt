@@ -1,0 +1,9 @@
+18.6
+CREATE EXTENSION
+SELECT 100000
+ANALYZE
+SET
+t
+DO
+Index Scan using "<15131>btree_hypo_probe_id" on hypo_probe  (cost=0.04..8.06 rows=1 width=81)
+  Index Cond: (id = 4242)

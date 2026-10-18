@@ -1,0 +1,5 @@
+# HypoPG Windows publication candidate, run 39121562443
+
+The [Windows Server 2022 CI run](https://github.com/BernieSumption/pg_binaries/actions/runs/39121562443) passed the registered PostgreSQL 18.6 profile. The imported receipt and verification record bind HypoPG 1.4.3 archive SHA-256 `e1c53e3e8a6fce9c42657745c86e552e5d06522ddaf38281bb0be69d373d3d0f` to core SHA-256 `8679af38bfb384cf5f287575b8be4d7946490df14e0680674645d50d3646758d`. The relocated probe created a hypothetical btree index and showed its use in `EXPLAIN`; the PE report checked imports against both final archives.
+
+The CI artifact includes `hypopg.pdb` (SHA-256 `6ca8a39fe0a84a39a5d285b6fcbd13cd2252365bb2c90e9e0f4fa3c8411a0cde`). A local, non-executing inspection with `create_windows_symbols.pe_codeview` and `pdb_identity` matched the packaged DLL and PDB at RSDS GUID `03afb2e77a3142d59b9a9b6598e569d5`, age 1. This is additional evidence, not yet a routine publication case or durable symbol retention. The archive remains release-ineligible while core redistribution review is open.
