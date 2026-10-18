@@ -37,14 +37,13 @@ def inventory(source_root, metadata):
             if not license_path.is_relative_to(crate_root) or not license_path.is_file() or not license_path.stat().st_size:
                 raise ValueError(f"invalid or missing license_file for {package['name']} {package['version']}: {license_file}")
         files = file_inventory(crate_root)
-        if not declared and not license_file:
-            raise ValueError(f"no Cargo licence metadata for {package['name']} {package['version']}")
         packages.append({
             "name": package["name"],
             "version": package["version"],
             "source": package.get("source"),
             "license": declared,
             "license_file": Path(license_file).as_posix() if license_file else None,
+            "license_metadata_missing": not declared and not license_file,
             "license_notice_files": files,
         })
     return {

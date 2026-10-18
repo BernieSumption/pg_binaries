@@ -32,7 +32,7 @@ class CargoLicenseInventoryTests(unittest.TestCase):
             self.assertEqual([f["path"] for f in result["packages"][0]["license_notice_files"]], ["LICENSE-MIT", "NOTICE"])
             self.assertEqual(len(result["packages"][0]["license_notice_files"][0]["sha256"]), 64)
 
-    def test_rejects_package_without_license_metadata(self):
+    def test_records_package_without_license_metadata_for_review(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             crate = root / "crate"
@@ -41,8 +41,9 @@ class CargoLicenseInventoryTests(unittest.TestCase):
             manifest.touch()
             metadata = {"packages": [{"name": "missing", "version": "1", "manifest_path": str(manifest)}]}
 
-            with self.assertRaisesRegex(ValueError, "no Cargo licence metadata"):
-                checker.inventory(root, metadata)
+            result = checker.inventory(root, metadata)
+            self.assertTrue(result["packages"][0]["license_metadata_missing"])
+            self.assertEqual(result["packages"][0]["license_notice_files"], [])
 
     def test_rejects_missing_declared_license_file(self):
         with tempfile.TemporaryDirectory() as temporary:
