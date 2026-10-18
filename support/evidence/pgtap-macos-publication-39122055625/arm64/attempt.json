@@ -1,0 +1,21 @@
+{
+  "architecture": "arm64",
+  "archives": {
+    "pgtap-1.3.4-postgresql-18.6-macos-arm64.tar.gz": "884310ff78686fa2ec2b1511933c7db49c785d78d4073acca8b73f6c9a1fba00",
+    "postgresql-18.6-macos-arm64.tar.gz": "ec3f624ecfbea6dad20672106ec11bfafadde42e0454bc90bef992caa4be0033"
+  },
+  "archives_present": {
+    "pgtap-1.3.4-postgresql-18.6-macos-arm64.tar.gz": true,
+    "postgresql-18.6-macos-arm64.tar.gz": true
+  },
+  "pgtap_version": "1.3.4",
+  "postgresql_version": "18.6",
+  "profile_id": "pgtap-publication-macos-arm64-18.6",
+  "run_id": "39122055625",
+  "schema_version": 1,
+  "source_revision": "742ebceafb8fbdde3461e1dfb523464c01c7d63f",
+  "steps": {
+    "archive-suite": "success",
+    "static-analysis": "success"
+  }
+}

@@ -1,0 +1,9 @@
+CREATE EXTENSION
+CREATE TABLE
+INSERT 0 1
+1..4
+ok 1 - schema table exists
+ok 2 - id has integer type
+ok 3 - payload is required
+ok 4
+DROP TABLE
