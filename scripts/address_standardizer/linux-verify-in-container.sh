@@ -50,8 +50,16 @@ assert inventory['schema_version'] == 1 and len(inventory['components']) == 2
 assert (payload / 'LICENSES/Address-Standardizer.txt').is_file()
 assert (payload / 'LICENSES/PCRE2.txt').is_file()
 PY
-cp -a "$extroot/lib/." "$pgroot/lib/"
-cp -a "$extroot/share/extension/." "$pgroot/share/extension/"
+while IFS= read -r -d '' source; do
+  relative=${source#"$extroot/"}
+  destination="$pgroot/$relative"
+  if [[ -e "$destination" || -L "$destination" ]]; then
+    if [[ -d "$source" && ! -L "$source" && -d "$destination" && ! -L "$destination" ]]; then continue; fi
+    echo "Address Standardizer payload collision: $relative" >&2
+    exit 1
+  fi
+done < <(find "$extroot" -mindepth 1 -print0)
+cp -a "$extroot/." "$pgroot/"
 python3 /usr/local/bin/check-elf-dependencies "$pgroot" --architecture "$architecture" \
   --archive "/core/$core_archive" --archive "/archives/$archive" --report /analysis/address-standardizer.json
 useradd -m postgres
