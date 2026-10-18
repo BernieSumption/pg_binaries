@@ -9,9 +9,9 @@ $pgVersion = '18.6'
 $extensionVersion = '0.3.4'
 $extensionCommit = 'cbe74b570d38aa0c4d42914e7a118bcb3adaee7a'
 $cargoLockSha256 = 'ab865dc25d9eea4bf7dbfaf8fae13283e5c0bce4bca460fe10464c6716e67028'
-$coreSha256 = '19ee6d8c09136eacbeca353c9d4f71eca0104982dce632e10c723ebb63406712'
+$coreSha256 = 'ee0b6781299cc462ba4305ff4a318519fc61741d7b0f05988cf29030eafeedd2'
 $coreName = "postgresql-$pgVersion-windows-x86_64.tar.gz"
-$coreBuildId = 'github-39087778141-1'
+$coreBuildId = 'github-39089826690-1'
 $repo = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
 New-Item -ItemType Directory -Force $OutputDirectory | Out-Null
 $OutputDirectory = (Resolve-Path $OutputDirectory).Path

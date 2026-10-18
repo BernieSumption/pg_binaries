@@ -28,6 +28,14 @@ class PgTapWindowsArchiveTests(unittest.TestCase):
         self._make_core()
         self._make_extension()
 
+    def test_candidate_pins_current_core_identity(self):
+        script = Path("scripts/pgtap/windows-feasibility.ps1").read_text()
+        workflow = Path(".github/workflows/pgtap-windows-publication.yml").read_text()
+        self.assertIn("$runId = '39089826690'", script)
+        self.assertIn(f"$coreSha256 = '{publication.CORE_SHA256}'", script)
+        self.assertIn("source_revision = '01fe5d267c30f73bb6e44d2b37c18f008223bc75'", script)
+        self.assertIn("run-id: 39089826690", workflow)
+
     def _tar(self, path, members):
         with tarfile.open(path, "w:gz") as archive:
             for name, payload in members:

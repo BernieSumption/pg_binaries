@@ -8,10 +8,10 @@ Set-StrictMode -Version Latest
 $pgVersion = '18.6'
 $version = '1.3.4'
 $architecture = 'x86_64'
-$runId = '39077749917'
+$runId = '39089826690'
 $coreName = "postgresql-$pgVersion-windows-$architecture.tar.gz"
 $archiveName = "pgtap-$version-postgresql-$pgVersion-windows-$architecture.tar.gz"
-$coreSha256 = '2e48881e4b5c3289bc9526ee846685d62f6cfa4fff2539cb6393f36f605fcceb'
+$coreSha256 = 'ee0b6781299cc462ba4305ff4a318519fc61741d7b0f05988cf29030eafeedd2'
 $sourceUrl = 'https://github.com/theory/pgtap/archive/refs/tags/v1.3.4.tar.gz'
 $sourceSha256 = 'd2c951afb296a001d21785611a8e966e3f8fa3f5bfbd929396a5130c0152f314'
 $repo = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
@@ -51,7 +51,7 @@ try {
   $expected = @{
     component = 'postgresql'; version = $pgVersion; postgresql_version = $pgVersion
     platform = 'windows'; architecture = $architecture; build_id = "github-$runId-1"
-    source_revision = '54f7a3079e7cb6631bf48ab2453822133087aeed'
+    source_revision = '01fe5d267c30f73bb6e44d2b37c18f008223bc75'
   }
   foreach ($key in $expected.Keys) {
     if ($manifest.$key -cne $expected[$key]) { throw "Core manifest $key mismatch: $($manifest.$key)" }

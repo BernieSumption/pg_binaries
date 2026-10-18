@@ -26,6 +26,13 @@ class PgJsonschemaWindowsArchiveTests(unittest.TestCase):
         self.extension = self.root / (
             f"pg_jsonschema-0.3.4-postgresql-18.6-{publication.PLATFORM}.tar.gz")
 
+    def test_candidate_pins_current_core_identity(self):
+        script = Path("scripts/pg_jsonschema/windows-feasibility.ps1").read_text()
+        workflow = Path(".github/workflows/pg-jsonschema-windows-publication.yml").read_text()
+        self.assertIn(f"$coreSha256 = '{publication.CORE_SHA256}'", script)
+        self.assertIn(f"$coreBuildId = '{publication.CORE_BUILD_ID}'", script)
+        self.assertIn("run-id: 39089826690", workflow)
+
     @staticmethod
     def _tar(path, entries):
         with tarfile.open(path, "w:gz") as archive:
