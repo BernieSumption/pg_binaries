@@ -20,7 +20,7 @@ def write_profile(root, profile_id=PROFILE_ID, case_ids=None, valid=True):
     profile = {
         "scope": "publication",
         "case_ids": case_ids or ["archive-suite"],
-        "platforms": ["macos-x86_64"],
+        "platforms": ["linux-x86_64"],
         "sources": ["profile-source.txt"],
     }
     registry = {"schema_version": 1, "profiles": {profile_id: profile}}
@@ -56,13 +56,13 @@ class ProfileChangeGateTests(unittest.TestCase):
         self.assertTrue(profile_change_gate.should_run(
             self.before, self.current, PROFILE_ID))
 
-    def test_unrelated_registry_profile_change_skips_platform_work(self):
+    def test_mac_only_profile_change_skips_linux_work(self):
         registry_path = self.current / "support/verification-profiles.json"
         registry = json.loads(registry_path.read_text(encoding="utf-8"))
-        registry["profiles"]["other-platform-publication"] = {
+        registry["profiles"]["macos-publication-current-arm64"] = {
             "scope": "publication",
-            "case_ids": ["other-case"],
-            "platforms": ["windows-x86_64"],
+            "case_ids": ["archive-suite", "diagnostics", "symbols"],
+            "platforms": ["macos-arm64"],
             "sources": ["profile-source.txt"],
         }
         registry_path.write_text(json.dumps(registry), encoding="utf-8")

@@ -47,9 +47,64 @@ on:
       - 'tools/create_extension_publication_receipt.py'
       - 'tools/emit_extension_publication_records.py'
       - 'tools/write_linux_license_inventory.py'
-# profile-section: job-setup begin
+      - 'tools/profile_change_gate.py'
+      - 'tests/test_profile_change_gate.py'
 jobs:
+  scope:
+    runs-on: ubuntu-latest
+    outputs:
+      should_run: ${{ steps.profile_gate.outputs.should_run }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test profile-change gate
+        run: python3 -m unittest tests/test_profile_change_gate.py
+      - name: Check whether a Linux publication profile changed
+        id: profile_gate
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+          if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
+            echo 'should_run=true' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          before_root="$RUNNER_TEMP/profile-before"
+          if [[ ! "$BEFORE_SHA" =~ ^[0-9a-f]{40}$ ]] \
+            || ! git fetch --no-tags --depth=1 origin "$BEFORE_SHA" \
+            || ! git worktree add --detach "$before_root" "$BEFORE_SHA"; then
+            echo 'Base commit unavailable; running the Linux publication workflow.' >&2
+            echo 'should_run=true' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          profile_ids=(
+            linux-publication-current-x86_64 linux-publication-current-arm64
+            postgis-publication-current-x86_64 postgis-publication-current-arm64
+            tiger-publication-current-x86_64 tiger-publication-current-arm64
+            hypopg-publication-current-x86_64 hypopg-publication-current-arm64
+            pgtap-publication-current-x86_64 pgtap-publication-current-arm64
+            pgivm-publication-current-x86_64 pgivm-publication-current-arm64
+          )
+          for profile_id in "${profile_ids[@]}"; do
+            result=$(python3 tools/profile_change_gate.py \
+              --before-root "$before_root" \
+              --current-root "$GITHUB_WORKSPACE" \
+              --profile-id "$profile_id") || {
+              echo "Cannot resolve current Linux profile $profile_id; running the workflow." >&2
+              echo 'should_run=true' >> "$GITHUB_OUTPUT"
+              exit 0
+            }
+            if [[ "$result" == should_run=true ]]; then
+              echo 'should_run=true' >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+          done
+          echo 'should_run=false' >> "$GITHUB_OUTPUT"
+
+# profile-section: job-setup begin
   verify:
+    needs: scope
+    if: ${{ needs.scope.outputs.should_run == 'true' }}
     name: verify (${{ matrix.architecture }})
     strategy:
       fail-fast: false
