@@ -4,15 +4,16 @@ set -euo pipefail
 core_archives=${1:?usage: macos-publication.sh CORE_ARCHIVE_DIRECTORY OUTPUT_DIRECTORY}
 output=${2:?usage: macos-publication.sh CORE_ARCHIVE_DIRECTORY OUTPUT_DIRECTORY}
 repo=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
+source "$repo/scripts/macos/compiled-prefix-relocation.sh"
 architecture=arm64
 pg_version=18.6
 extension_version=0.3.4
 extension_commit=cbe74b570d38aa0c4d42914e7a118bcb3adaee7a
 cargo_lock_sha256=ab865dc25d9eea4bf7dbfaf8fae13283e5c0bce4bca460fe10464c6716e67028
-core_sha256=bc543b0d54a8a33b3b737eab74d7f185035f01e5c2db4eb48be049996eee4440
-core_run_id=39079982683
-core_build_id=github-39079982683-1
-core_revision=748e1fb698ee8f87df4cf68d70670c6f8f3adde8
+core_sha256=ec3f624ecfbea6dad20672106ec11bfafadde42e0454bc90bef992caa4be0033
+core_run_id=39093804232
+core_build_id=github-39093804232-1
+core_revision=42082a506adfca1628c509f2c7b17037b9a12123
 core_name="postgresql-${pg_version}-macos-${architecture}.tar.gz"
 extension_name="pg_jsonschema-${extension_version}-postgresql-${pg_version}-macos-${architecture}.tar.gz"
 source_url=https://github.com/supabase/pg_jsonschema.git
@@ -37,6 +38,7 @@ cleanup() {
   if [[ -n ${server_data:-} && -n ${testroot:-} ]]; then
     "$testroot/bin/pg_ctl" -D "$server_data" -m immediate -w stop >/dev/null 2>&1 || true
   fi
+  macos_restore_compiled_prefix || true
   if [[ $prefix_link_created == true && -n ${prefix_link:-} && -L $prefix_link ]]; then
     rm "$prefix_link"
   fi
@@ -195,6 +197,8 @@ python3 "$repo/scripts/macos/static_analysis.py" "$testroot" "$architecture" \
 
 mkdir -p "$work/data"
 export DYLD_LIBRARY_PATH= DYLD_FALLBACK_LIBRARY_PATH=
+macos_hide_compiled_prefix "$prefix" "$pgroot"
+test ! -e "$prefix" && test ! -L "$prefix"
 "$testroot/bin/initdb" -D "$work/data" --encoding=UTF8 --locale=C --no-instructions >/dev/null
 "$testroot/bin/pg_ctl" -D "$work/data" -l "$work/server.log" \
   -o "-k $work/socket -p 55432 -h ''" -w start
@@ -204,6 +208,8 @@ server_data="$work/data"
 grep -Fxq 'pg_jsonschema|0.3.4' "$output/probe-output.txt"
 "$testroot/bin/pg_ctl" -D "$work/data" -m fast -w stop
 server_data=
+macos_restore_compiled_prefix
+prefix_link_created=true
 {
   echo "pg_jsonschema_source_url=$source_url"
   echo "pg_jsonschema_source_commit=$extension_commit"

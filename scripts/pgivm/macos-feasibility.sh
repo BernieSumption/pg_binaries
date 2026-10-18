@@ -8,7 +8,7 @@ pg_version=18.6
 extension_version=1.16
 source_url='https://github.com/sraoss/pg_ivm/archive/refs/tags/v1.16.tar.gz'
 source_sha256=87807d6af1974fce591715d55f75d939dffea33ea6908b413e62d3dd79b9c583
-core_sha256=853e0eafb3570378225d2ea16247c9de31770f85df5230509885df2ca5e89d67
+core_sha256=ec3f624ecfbea6dad20672106ec11bfafadde42e0454bc90bef992caa4be0033
 core_name="postgresql-${pg_version}-macos-${architecture}.tar.gz"
 extension_name="pg_ivm-${extension_version}-postgresql-${pg_version}-macos-${architecture}.tar.gz"
 repo=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
@@ -52,8 +52,8 @@ root = pathlib.Path(sys.argv[1])
 manifest = json.loads((root / "manifest.json").read_text())
 expected = {
     "component": "postgresql", "version": "18.6", "postgresql_version": "18.6",
-    "platform": "macos", "architecture": "arm64", "build_id": "github-39075939632-1",
-    "source_revision": "457919a19e43687a9615697a751454e3c055c593",
+    "platform": "macos", "architecture": "arm64", "build_id": "github-39093804232-1",
+    "source_revision": "42082a506adfca1628c509f2c7b17037b9a12123",
 }
 for key, value in expected.items():
     if manifest.get(key) != value:

@@ -4,14 +4,20 @@ set -euo pipefail
 core_archives=${1:?usage: macos-feasibility.sh CORE_ARCHIVE_DIRECTORY OUTPUT_DIRECTORY [arm64|x86_64]}
 output=${2:?usage: macos-feasibility.sh CORE_ARCHIVE_DIRECTORY OUTPUT_DIRECTORY [arm64|x86_64]}
 architecture=${3:-arm64}
-pg_version=18.6
-case "$architecture" in
-  arm64) core_sha256=bc543b0d54a8a33b3b737eab74d7f185035f01e5c2db4eb48be049996eee4440; core_build_id=github-39079982683-1 ;;
-  x86_64) core_sha256=5ec45e48bad1439860f0143fd6f2cbc04a86cfa456beef8c5ca9040960ea3f40; core_build_id=github-39079982747-1 ;;
-  *) echo "Unsupported macOS architecture: $architecture" >&2; exit 2 ;;
-esac
-core_name="postgresql-${pg_version}-macos-${architecture}.tar.gz"
+pg_version=${COLLECTION_POSTGRESQL_VERSION:-18.6}
+case "$architecture" in arm64|x86_64) ;; *) echo "Unsupported macOS architecture: $architecture" >&2; exit 2 ;; esac
 repo=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
+identity=$(PYTHONPATH="$repo/tools" python3 - "$pg_version" "$architecture" <<'PYIDENTITY'
+import json, sys
+from collection_macos_identity import selected_identity
+version, architecture, value = selected_identity(sys.argv[1], sys.argv[2])
+print(json.dumps(value))
+PYIDENTITY
+)
+core_sha256=$(python3 -c 'import json,sys; print(json.load(sys.stdin)["sha256"])' <<<"$identity")
+core_build_id=$(python3 -c 'import json,sys; print(json.load(sys.stdin)["build_id"])' <<<"$identity")
+core_source_revision=$(python3 -c 'import json,sys; print(json.load(sys.stdin)["source_revision"])' <<<"$identity")
+core_name="postgresql-${pg_version}-macos-${architecture}.tar.gz"
 core_archives=$(cd "$core_archives" && pwd)
 mkdir -p "$output"
 output=$(cd "$output" && pwd)
@@ -43,19 +49,19 @@ pgroot="$work/first/postgresql"
 test -s "$pgroot/include/server/pg_config.h"
 test -s "$pgroot/lib/pgxs/src/makefiles/pgxs.mk"
 
-python3 - "$pgroot" "$architecture" "$core_build_id" > "$work/prefix" <<'PY'
+python3 - "$pgroot" "$architecture" "$pg_version" "$core_build_id" "$core_source_revision" > "$work/prefix" <<'PY'
 import json
 import pathlib
 import re
 import sys
 
 root = pathlib.Path(sys.argv[1])
-architecture, build_id = sys.argv[2:]
+architecture, pg_version, build_id, source_revision = sys.argv[2:]
 manifest = json.loads((root / "manifest.json").read_text())
 expected = {
-    "component": "postgresql", "version": "18.6", "postgresql_version": "18.6",
+    "component": "postgresql", "version": pg_version, "postgresql_version": pg_version,
     "platform": "macos", "architecture": architecture, "build_id": build_id,
-    "source_revision": "748e1fb698ee8f87df4cf68d70670c6f8f3adde8",
+    "source_revision": source_revision,
 }
 for key, value in expected.items():
     if manifest.get(key) != value:

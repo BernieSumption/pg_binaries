@@ -16,6 +16,8 @@ on:
       - tools/check_extension_redistribution.py
       - tools/emit_collection_macos_publication.py
       - tools/import_collection_macos_publication.py
+      - tools/collection_macos_identity.py
+      - tools/collection_macos_pins/18.6-arm64.json
       - tests/test_collection_macos_evidence.py
       - tests/test_collection_macos_publication.py
       - support/verification-profiles.json
@@ -48,7 +50,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: macos-arm64-pilot-archives
-          run-id: 39079982683
+          run-id: 39093804232
           github-token: ${{ github.token }}
           path: ${{ runner.temp }}/core-archives
       - name: Prepare collection publication output
@@ -68,6 +70,7 @@ jobs:
         if: always()
         env:
           COLLECTION_MACOS_ARCHITECTURE: arm64
+          COLLECTION_POSTGRESQL_VERSION: "18.6"
           ARCHIVE_SUITE_OUTCOME: ${{ steps.archive_suite.outcome }}
           STATIC_ANALYSIS_OUTCOME: ${{ steps.static_analysis.outcome }}
           GITHUB_SHA: ${{ github.sha }}
@@ -85,6 +88,7 @@ jobs:
         if: always()
         env:
           COLLECTION_MACOS_ARCHITECTURE: arm64
+          COLLECTION_POSTGRESQL_VERSION: "18.6"
         run: |
           if [[ -f "$RUNNER_TEMP/collection-publication/publication/attempt.json" ]]; then
             python3 tools/import_collection_macos_publication.py \

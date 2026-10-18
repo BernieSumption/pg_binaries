@@ -11,19 +11,14 @@ import sys
 import tarfile
 
 import coverage
+import collection_macos_identity
 
 
-PG_VERSION = "18.6"
-ARCHITECTURE = os.environ.get("COLLECTION_MACOS_ARCHITECTURE", "arm64")
-if ARCHITECTURE not in {"arm64", "x86_64"}:
-    raise ValueError("COLLECTION_MACOS_ARCHITECTURE must be arm64 or x86_64")
-PROFILE_ID = f"collection-publication-macos-{ARCHITECTURE}-18.6"
+PG_VERSION, ARCHITECTURE, CORE_IDENTITY = collection_macos_identity.selected_identity()
+PROFILE_ID = f"collection-publication-macos-{ARCHITECTURE}-{PG_VERSION}"
 PLATFORM = f"macos-{ARCHITECTURE}"
 CORE_NAME = f"postgresql-{PG_VERSION}-{PLATFORM}.tar.gz"
-CORE_SHA256 = {
-    "arm64": "bc543b0d54a8a33b3b737eab74d7f185035f01e5c2db4eb48be049996eee4440",
-    "x86_64": "5ec45e48bad1439860f0143fd6f2cbc04a86cfa456beef8c5ca9040960ea3f40",
-}[ARCHITECTURE]
+CORE_SHA256 = CORE_IDENTITY["sha256"]
 VERSIONS = {
     "1.1.1": "ab99a969334442e4a3c77405bc9ffed0083595d18f3898d64a731353a32bec5e",
     "2.1.3": "a6b07864e5893d3b682bb3223fd6d33015709765c9d40d415c85112358f0e3e4",

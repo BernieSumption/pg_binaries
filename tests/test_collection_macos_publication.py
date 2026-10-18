@@ -7,6 +7,7 @@ import sys
 import tarfile
 import tempfile
 import unittest
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
 import coverage
@@ -18,9 +19,32 @@ REPO = Path(__file__).resolve().parents[1]
 
 
 class CollectionMacosPublicationTests(unittest.TestCase):
+    def test_unresolved_postgresql_17_identity_is_rejected(self):
+        import collection_macos_identity
+        pin_root = self.base / "pins"
+        pin_file = pin_root / "tools/collection_macos_pins/17.11-arm64.json"
+        pin_file.parent.mkdir(parents=True)
+        pin_file.write_text(json.dumps({
+            "run_id": "test-run", "sha256": None, "build_id": None,
+            "source_revision": None}))
+        with patch.object(collection_macos_identity, "ROOT", pin_root):
+            with self.assertRaisesRegex(ValueError, "identity is incomplete"):
+                collection_macos_identity.selected_identity("17.11", "arm64")
+
     def test_registered_profile_has_valid_source_revision(self):
         profile = coverage.verification_profile(REPO, emitter.PROFILE_ID)
         self.assertEqual(profile["case_ids"], sorted(emitter.CASES))
+        registry = json.loads((REPO / "support/verification-profiles.json").read_text())
+        sources = registry["profiles"][emitter.PROFILE_ID]["sources"]
+        pin_source = f"tools/collection_macos_pins/{emitter.PG_VERSION}-{emitter.ARCHITECTURE}.json"
+        self.assertIn(pin_source, sources)
+        for version in ("17.11", "18.6"):
+            for architecture in ("arm64", "x86_64"):
+                candidate = f"tools/collection_macos_pins/{version}-{architecture}.json"
+                self.assertEqual(candidate in sources, candidate == pin_source)
+        workflow = next(source for source in sources if source.startswith(".github/workflows/collection-macos-")
+                        and source.endswith("-publication.yml"))
+        self.assertIn(f"run-id: {emitter.CORE_IDENTITY['run_id']}", (REPO / workflow).read_text())
 
     def setUp(self):
         self.temporary = tempfile.TemporaryDirectory()
@@ -52,12 +76,12 @@ class CollectionMacosPublicationTests(unittest.TestCase):
         emitter.CORE_SHA256 = self.core_hash
         self.extension_hashes = {}
         for version, source_hash in emitter.VERSIONS.items():
-            name = f"collection-{version}-postgresql-18.6-{emitter.PLATFORM}.tar.gz"
+            name = f"collection-{version}-postgresql-{emitter.PG_VERSION}-{emitter.PLATFORM}.tar.gz"
             path = self.output / name
             metadata = {"project": "collection", "version": version,
                         "sql_names": ["collection"], "requires": [],
                         "configuration_prerequisites": [], "runtime_prerequisites": [],
-                        "postgresql_version": "18.6", "platform": "macos",
+                        "postgresql_version": emitter.PG_VERSION, "platform": "macos",
                         "architecture": emitter.ARCHITECTURE,
                         "source": {"url": f"https://github.com/aws/pgcollection/archive/refs/tags/v{version}.tar.gz",
                                    "sha256": source_hash},

@@ -20,11 +20,11 @@ class CollectionMacosEvidenceTests(unittest.TestCase):
         self.temporary = tempfile.TemporaryDirectory()
         self.root = Path(self.temporary.name)
         self.version = "1.1.1"
-        self.archive = self.root / "collection-1.1.1-postgresql-18.6-macos-arm64.tar.gz"
+        self.archive = self.root / f"collection-1.1.1-postgresql-{evidence.PG_VERSION}-macos-{evidence.ARCHITECTURE}.tar.gz"
         metadata = {
             "project": "collection", "version": self.version, "sql_names": ["collection"],
             "requires": [], "configuration_prerequisites": [], "runtime_prerequisites": [],
-            "postgresql_version": "18.6", "platform": "macos", "architecture": evidence.ARCHITECTURE,
+            "postgresql_version": evidence.PG_VERSION, "platform": "macos", "architecture": evidence.ARCHITECTURE,
             "source": {
                 "url": "https://github.com/aws/pgcollection/archive/refs/tags/v1.1.1.tar.gz",
                 "sha256": evidence.VERSIONS[self.version],
