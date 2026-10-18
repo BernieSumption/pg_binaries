@@ -1,0 +1,48 @@
+{
+  "assembled_core": {
+    "archive": "postgresql-15.19-windows-x86_64.tar.gz",
+    "sha256": "7ffadf8bfb0b122a37759dec7eff1dd7e5307997d74791a6d84fa3f4a47bb02b",
+    "version": "15.19"
+  },
+  "case_results": {
+    "archive-suite": "passed",
+    "static-analysis": "passed"
+  },
+  "ci": {
+    "build_revision": "f6834b7a87820b5b6b67efb3663510ae6581f9dd",
+    "provider": "github-actions",
+    "run_id": "39159848195",
+    "run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/39159848195",
+    "source_revision": "f6834b7a87820b5b6b67efb3663510ae6581f9dd",
+    "test_revision": "f6834b7a87820b5b6b67efb3663510ae6581f9dd"
+  },
+  "component": "hypopg",
+  "core_status": "current-profile-core-redistribution-pending",
+  "environment": {
+    "architecture": "x86_64",
+    "clean_system": true,
+    "dependency_check_profile": "windows-pe-archive-relocation-v1",
+    "dependency_checks_passed": true,
+    "endpoint": "current",
+    "image_id": "win22/20261012.333.1",
+    "os": "windows",
+    "os_version": "10.0.20348"
+  },
+  "outcome": "passed",
+  "platform": "windows-x86_64",
+  "postgresql_version": "15.19",
+  "prerequisite_archives": [],
+  "profile_id": "hypopg-publication-windows-x86_64-15.19",
+  "profile_revision": "56b334b333e6d4744b3a96e80a0ec08e3656007d34daaa9c9cab19fed5128e4e",
+  "project": "HypoPG",
+  "release_eligible": false,
+  "schema_version": 2,
+  "scope": "publication",
+  "sha256": "73cb13f54354f1948a52c0a57ff7c7ba822a38f17db36bcc2e45567e6d244a21",
+  "test_cases": [
+    "archive-suite",
+    "static-analysis"
+  ],
+  "test_revision": "f6834b7a87820b5b6b67efb3663510ae6581f9dd",
+  "version": "1.4.3"
+}
