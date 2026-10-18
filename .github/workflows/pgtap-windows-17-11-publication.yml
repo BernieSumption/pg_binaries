@@ -1,0 +1,101 @@
+name: pgTAP 1.3.4 PostgreSQL 17.11 Windows x86-64 publication
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [spike]
+    paths:
+      - '.github/workflows/profile-change-scope.yml'
+      - 'tools/profile_change_gate.py'
+      - 'tests/test_profile_change_gate.py'
+      - '.github/workflows/pgtap-windows-17-11-publication.yml'
+      - 'scripts/pgtap/windows-feasibility.ps1'
+      - 'scripts/pgtap/probe.sql'
+      - 'tools/windows_core_pin.py'
+      - 'support/windows-core-pins/17.11-x86_64.json'
+      - 'tools/check_pgtap_windows_archive.py'
+      - 'tools/emit_pgtap_windows_publication.py'
+      - 'tools/import_pgtap_windows_publication.py'
+      - 'tests/test_pgtap_windows_publication.py'
+      - 'support/verification-profiles.json'
+      - 'support.json'
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  profile_scope:
+    uses: ./.github/workflows/profile-change-scope.yml
+    with:
+      profile_id: pgtap-publication-windows-x86_64-17.11
+
+  publish-candidate:
+    needs: profile_scope
+    if: needs.profile_scope.outputs.should_run == 'true'
+    runs-on: windows-2022
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Load pinned PostgreSQL core identity
+        id: core_pin
+        run: python tools/windows_core_pin.py --postgresql-version 17.11 --github-output >> $env:GITHUB_OUTPUT
+      - name: Test archive inspection and record generation
+        run: python -B -m unittest tests/test_pgtap_windows_publication.py
+      - name: Download the pinned PostgreSQL 17.11 core archive
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-postgresql-17.11-pilot
+          run-id: ${{ steps.core_pin.outputs.run_id }}
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/core-archives
+      - name: Build, install and exercise pgTAP from pinned upstream source
+        id: archive
+        continue-on-error: true
+        run: ./scripts/pgtap/windows-feasibility.ps1 -PostgreSQLVersion 17.11 -CoreArchiveDirectory "$env:RUNNER_TEMP/core-archives" -OutputDirectory "$env:RUNNER_TEMP/pgtap-windows-publication"
+      - name: Inspect exact core and final pgTAP archives
+        id: static
+        if: always()
+        continue-on-error: true
+        run: |
+          $dir = Join-Path $env:RUNNER_TEMP 'pgtap-windows-publication'
+          $core = Join-Path $env:RUNNER_TEMP 'core-archives/postgresql-17.11-windows-x86_64.tar.gz'
+          $extension = Join-Path $dir 'pgtap-1.3.4-postgresql-17.11-windows-x86_64.tar.gz'
+          if (-not (Test-Path $extension -PathType Leaf)) { throw 'Final pgTAP archive is missing' }
+          python tools/check_pgtap_windows_archive.py --postgresql-version 17.11 --core-archive $core --extension-archive $extension --output (Join-Path $dir 'static-analysis.json')
+      - name: Emit archive-bound attempt and publication record
+        if: always()
+        env:
+          ARCHIVE_RESULT: ${{ steps.archive.outcome }}
+          STATIC_RESULT: ${{ steps.static.outcome }}
+        run: |
+          $dir = Join-Path $env:RUNNER_TEMP 'pgtap-windows-publication'
+          New-Item -ItemType Directory -Force $dir | Out-Null
+          $version = (Get-CimInstance Win32_OperatingSystem).Version
+          $image = "$([Environment]::GetEnvironmentVariable('ImageOS'))/$([Environment]::GetEnvironmentVariable('ImageVersion'))"
+          python tools/emit_pgtap_windows_publication.py --postgresql-version 17.11 --core-archives (Join-Path $env:RUNNER_TEMP 'core-archives') --archives $dir --output $dir --os-version $version --image-id $image --archive-suite-result $env:ARCHIVE_RESULT --static-analysis-result $env:STATIC_RESULT
+      - name: Upload candidate archive and verification evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pgtap-1.3.4-postgresql-17.11-windows-x86_64-candidate-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/pgtap-windows-publication/*.tar.gz
+            ${{ runner.temp }}/pgtap-windows-publication/*.sha256
+            ${{ runner.temp }}/pgtap-windows-publication/*.json
+            ${{ runner.temp }}/pgtap-windows-publication/*.txt
+            ${{ runner.temp }}/pgtap-windows-publication/publication/**
+          if-no-files-found: warn
+          retention-days: 7
+      - name: Require both publication cases to pass
+        if: always()
+        run: |
+          if ('${{ steps.archive.outcome }}' -ne 'success' -or '${{ steps.static.outcome }}' -ne 'success') {
+            throw 'pgTAP Windows archive-suite and static-analysis cases must both pass.'
+          }

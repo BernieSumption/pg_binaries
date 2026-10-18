@@ -10,6 +10,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 import io
+from dataclasses import replace
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
 import check_pgtap_windows_archive as checker
@@ -34,6 +35,28 @@ class PgTapWindowsArchiveTests(unittest.TestCase):
         self.assertIn("windows_core_pin.py", script)
         self.assertIn("windows_core_pin.py", workflow)
         self.assertIn("run-id: ${{ steps.core_pin.outputs.run_id }}", workflow)
+
+    def test_selected_targets_bind_to_distinct_imported_core_pins(self):
+        for version in publication.SUPPORTED_PG_VERSIONS:
+            with self.subTest(version=version):
+                target = publication.target_for(version)
+                pin = json.loads(Path(f"support/windows-core-pins/{version}-x86_64.json").read_text())
+                self.assertEqual(target.pg_version, version)
+                self.assertEqual(target.profile_id, f"pgtap-publication-windows-x86_64-{version}")
+                self.assertEqual(target.core_sha256, pin["sha256"])
+                self.assertEqual(target.core_build_id, pin["build_id"])
+                self.assertEqual(target.core_source_revision, pin["source_revision"])
+                if version != "18.6":
+                    workflow = Path(f".github/workflows/pgtap-windows-{version.replace('.', '-')}-publication.yml").read_text()
+                    self.assertIn(f"profile_id: {target.profile_id}", workflow)
+                    self.assertIn(f"-PostgreSQLVersion {version}", workflow)
+                    self.assertIn(f"windows_core_pin.py --postgresql-version {version} --github-output", workflow)
+        with self.assertRaisesRegex(Exception, "unsupported PostgreSQL target"):
+            publication.target_for("15.20")
+
+    def test_archive_checker_rejects_a_different_selected_target(self):
+        with self.assertRaisesRegex(Exception, "basenames do not match"):
+            checker.inspect(self.core, self.extension, self.root / "report.json", "15.19")
 
     def _tar(self, path, members):
         with tarfile.open(path, "w:gz") as archive:
@@ -71,7 +94,8 @@ class PgTapWindowsArchiveTests(unittest.TestCase):
     def _with_pinned_core(self, callback):
         digest = hashlib.sha256(self.core.read_bytes()).hexdigest()
         self.expected_digest = digest
-        with patch.object(publication, "CORE_SHA256", digest):
+        target = replace(publication.target_for(), core_sha256=digest)
+        with patch.object(publication, "target_for", return_value=target):
             metadata = {
                 "project": "pgtap", "version": "1.3.4", "sql_names": ["pgtap"],
                 "postgresql_version": "18.6", "platform": "windows", "architecture": "x86_64",
@@ -161,7 +185,8 @@ class PgTapWindowsArchiveTests(unittest.TestCase):
         output.joinpath("probe-output.txt").write_text("1..4\nok 1\nok 2\nok 3\nok 4\n")
         env = {"GITHUB_SHA": "a" * 40, "GITHUB_RUN_ID": "12345",
                "GITHUB_REPOSITORY": "owner/repo", "GITHUB_SERVER_URL": "https://github.com"}
-        with patch.object(publication, "CORE_SHA256", digest):
+        target = replace(publication.target_for(), core_sha256=digest)
+        with patch.object(publication, "target_for", return_value=target):
             checker.inspect(core, extension, output / "static-analysis.json")
             paths = publication.emit(
                 repo, core_dir, output, output,
@@ -176,7 +201,7 @@ class PgTapWindowsArchiveTests(unittest.TestCase):
         self.assertEqual(record["assembled_core"]["sha256"], digest)
         static_path = output / "static-analysis.json"
         static_path.write_text(static_path.read_text() + " ")
-        with patch.object(publication, "CORE_SHA256", digest):
+        with patch.object(publication, "target_for", return_value=target):
             with self.assertRaisesRegex(Exception, "report hashes"):
                 importer.import_run(repo, core_dir, output, "12345")
 

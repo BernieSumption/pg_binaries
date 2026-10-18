@@ -35,13 +35,14 @@ def _copy(copies):
         shutil.copyfile(source, destination)
 
 
-def import_run(root, core_artifact, pgtap_artifact, run_id):
+def import_run(root, core_artifact, pgtap_artifact, run_id, pg_version="18.6"):
+    target = publication.target_for(pg_version)
     root, core_artifact, pgtap_artifact = map(Path, (root, core_artifact, pgtap_artifact))
     run_id = str(run_id)
     if not run_id.isdigit():
         raise coverage.CoverageError("run_id must be numeric")
     support = coverage.load_json(root / "support.json")
-    profile = coverage.verification_profile(root, publication.PROFILE_ID)
+    profile = coverage.verification_profile(root, target.profile_id)
     if (profile["scope"] != "publication" or profile["platforms"] != [publication.PLATFORM]
             or profile["case_ids"] != sorted(publication.CASES)):
         raise coverage.CoverageError("registered profile does not match the scoped pgTAP target")
@@ -49,9 +50,9 @@ def import_run(root, core_artifact, pgtap_artifact, run_id):
     attempt_path = pub / "attempt.json"
     attempt = _read(attempt_path)
     if (attempt.get("schema_version") != 1 or str(attempt.get("run_id")) != run_id
-            or attempt.get("profile_id") != publication.PROFILE_ID
+            or attempt.get("profile_id") != target.profile_id
             or attempt.get("architecture") != publication.ARCHITECTURE
-            or attempt.get("postgresql_version") != publication.PG_VERSION
+            or attempt.get("postgresql_version") != target.pg_version
             or attempt.get("pgtap_version") != publication.PGTAP_VERSION
             or not coverage.REVISION.fullmatch(str(attempt.get("source_revision", "")))):
         raise coverage.CoverageError("raw attempt identity does not match the requested run and profile")
@@ -64,8 +65,8 @@ def import_run(root, core_artifact, pgtap_artifact, run_id):
     evidence = root / "support/evidence" / f"pgtap-windows-publication-{run_id}" / publication.ARCHITECTURE
     copies = []
     _retain(attempt_path, evidence / "attempt.json", copies)
-    core_name = f"postgresql-{publication.PG_VERSION}-{publication.PLATFORM}.tar.gz"
-    extension_name = f"pgtap-{publication.PGTAP_VERSION}-postgresql-{publication.PG_VERSION}-{publication.PLATFORM}.tar.gz"
+    core_name = f"postgresql-{target.pg_version}-{publication.PLATFORM}.tar.gz"
+    extension_name = f"pgtap-{publication.PGTAP_VERSION}-postgresql-{target.pg_version}-{publication.PLATFORM}.tar.gz"
     core_archive, extension_archive = core_artifact / core_name, pgtap_artifact / extension_name
     receipt_path = pub / "current-receipt.json"
     record_paths = sorted((pub / "records").glob("*.json"))
@@ -83,9 +84,9 @@ def import_run(root, core_artifact, pgtap_artifact, run_id):
                extension_name: publication.sha256_file(extension_archive)}
     for archive in (core_archive, extension_archive):
         publication._sidecar(archive, digests[archive.name])
-    if digests[core_name] != publication.CORE_SHA256:
-        raise coverage.CoverageError("core archive does not match the pinned PostgreSQL 18.6 artifact")
-    publication._metadata(extension_archive)
+    if digests[core_name] != target.core_sha256:
+        raise coverage.CoverageError("core archive does not match the selected pinned PostgreSQL artifact")
+    publication._metadata(extension_archive, target)
     if attempt.get("archives") != digests:
         raise coverage.CoverageError("raw attempt archive hashes differ from final archive bytes")
     if not receipt_path.is_file():
@@ -93,10 +94,10 @@ def import_run(root, core_artifact, pgtap_artifact, run_id):
     receipt = _read(receipt_path)
     ci = receipt.get("ci")
     expected_receipt = {
-        "schema_version": 1, "profile_id": publication.PROFILE_ID,
+        "schema_version": 1, "profile_id": target.profile_id,
         "profile_revision": profile["profile_revision"], "test_revision": attempt["source_revision"],
         "project": "pgtap", "version": publication.PGTAP_VERSION,
-        "postgresql_version": publication.PG_VERSION, "architecture": publication.ARCHITECTURE,
+        "postgresql_version": target.pg_version, "architecture": publication.ARCHITECTURE,
         "platform": publication.PLATFORM, "endpoint": "current", "case_results": results,
         "archives": digests, "extension_archive": extension_name,
     }
@@ -136,16 +137,16 @@ def import_run(root, core_artifact, pgtap_artifact, run_id):
     coverage.validate_verification_record(record, support, root)
     outcome = "failed" if "failed" in results.values() else "skipped" if "skipped" in results.values() else "passed"
     expected_record = {
-        "profile_id": publication.PROFILE_ID, "component": "pgtap", "project": "pgtap",
-        "version": publication.PGTAP_VERSION, "postgresql_version": publication.PG_VERSION,
+        "profile_id": target.profile_id, "component": "pgtap", "project": "pgtap",
+        "version": publication.PGTAP_VERSION, "postgresql_version": target.pg_version,
         "platform": publication.PLATFORM, "case_results": results, "outcome": outcome,
         "test_cases": profile["case_ids"], "ci": ci, "test_revision": attempt["source_revision"],
         "sha256": digests[extension_name],
-        "assembled_core": {"archive": core_name, "sha256": digests[core_name], "version": publication.PG_VERSION},
+        "assembled_core": {"archive": core_name, "sha256": digests[core_name], "version": target.pg_version},
         "prerequisite_archives": [],
     }
     if (any(record.get(key) != value for key, value in expected_record.items())
-            or record_path.name != f"pgtap-{publication.PGTAP_VERSION}-postgresql-{publication.PG_VERSION}-{publication.PLATFORM}-current-{run_id}.json"
+            or record_path.name != f"pgtap-{publication.PGTAP_VERSION}-postgresql-{target.pg_version}-{publication.PLATFORM}-current-{run_id}.json"
             or record.get("environment", {}).get("clean_system") is not True
             or record.get("environment", {}).get("endpoint") != "current"
             or any(record.get("environment", {}).get(key) != receipt["environment"].get(key)
@@ -168,9 +169,11 @@ def main():
     parser.add_argument("--core-artifact", type=Path, required=True)
     parser.add_argument("--pgtap-artifact", type=Path, required=True)
     parser.add_argument("--run-id", required=True)
+    parser.add_argument("--postgresql-version", choices=publication.SUPPORTED_PG_VERSIONS, default="18.6")
     args = parser.parse_args()
     try:
-        print("\n".join(import_run(args.root, args.core_artifact, args.pgtap_artifact, args.run_id)))
+        print("\n".join(import_run(args.root, args.core_artifact, args.pgtap_artifact, args.run_id,
+                                 args.postgresql_version)))
         return 0
     except (coverage.CoverageError, OSError, ValueError, TypeError, KeyError) as exc:
         print(f"pgTAP Windows publication import: {exc}", file=sys.stderr)

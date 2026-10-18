@@ -20,16 +20,17 @@ def sha256_file(path):
     return digest.hexdigest()
 
 
-def inspect(core_archive, extension_archive, report_path):
+def inspect(core_archive, extension_archive, report_path, pg_version="18.6"):
+    target = publication.target_for(pg_version)
     core_archive, extension_archive, report_path = map(Path, (core_archive, extension_archive, report_path))
-    expected_core = f"postgresql-{publication.PG_VERSION}-{publication.PLATFORM}.tar.gz"
+    expected_core = f"postgresql-{target.pg_version}-{publication.PLATFORM}.tar.gz"
     expected_extension = (f"pgtap-{publication.PGTAP_VERSION}-postgresql-"
-                          f"{publication.PG_VERSION}-{publication.PLATFORM}.tar.gz")
+                          f"{target.pg_version}-{publication.PLATFORM}.tar.gz")
     if core_archive.name != expected_core or extension_archive.name != expected_extension:
         raise coverage.CoverageError("archive basenames do not match the pinned target")
     digests = {core_archive.name: sha256_file(core_archive),
                extension_archive.name: sha256_file(extension_archive)}
-    if digests[core_archive.name] != publication.CORE_SHA256:
+    if digests[core_archive.name] != target.core_sha256:
         raise coverage.CoverageError("core archive checksum differs from the pinned input")
     inspected = []
     native = []
@@ -49,10 +50,10 @@ def inspect(core_archive, extension_archive, report_path):
                 raise coverage.CoverageError("core archive manifest is missing")
             core = json.loads(archive.extractfile(manifest).read().decode("utf-8"))
             expected_manifest = {
-                "component": "postgresql", "version": publication.PG_VERSION,
-                "postgresql_version": publication.PG_VERSION, "platform": "windows",
-                "architecture": publication.ARCHITECTURE, "build_id": publication.CORE_BUILD_ID,
-                "source_revision": publication.CORE_SOURCE_REVISION,
+                "component": "postgresql", "version": target.pg_version,
+                "postgresql_version": target.pg_version, "platform": "windows",
+                "architecture": publication.ARCHITECTURE, "build_id": target.core_build_id,
+                "source_revision": target.core_source_revision,
             }
             if not isinstance(core, dict) or any(core.get(key) != value for key, value in expected_manifest.items()):
                 raise coverage.CoverageError("core archive manifest differs from the pinned build")
@@ -80,10 +81,10 @@ def inspect(core_archive, extension_archive, report_path):
             metadata = json.loads(archive.extractfile(metadata_member).read().decode("utf-8"))
             expected = {
                 "project": "pgtap", "version": publication.PGTAP_VERSION, "sql_names": ["pgtap"],
-                "postgresql_version": publication.PG_VERSION, "platform": "windows",
+                "postgresql_version": target.pg_version, "platform": "windows",
                 "architecture": publication.ARCHITECTURE,
                 "source": {"url": publication.SOURCE_URL, "sha256": publication.SOURCE_SHA256},
-                "core_archive": {"basename": expected_core, "sha256": publication.CORE_SHA256},
+                "core_archive": {"basename": expected_core, "sha256": target.core_sha256},
             }
             if not isinstance(metadata, dict) or any(metadata.get(key) != value for key, value in expected.items()):
                 raise coverage.CoverageError("pgTAP metadata does not bind the exact source and core inputs")
@@ -109,9 +110,10 @@ def main():
     parser.add_argument("--core-archive", type=Path, required=True)
     parser.add_argument("--extension-archive", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--postgresql-version", choices=publication.SUPPORTED_PG_VERSIONS, default="18.6")
     args = parser.parse_args()
     try:
-        report = inspect(args.core_archive, args.extension_archive, args.output)
+        report = inspect(args.core_archive, args.extension_archive, args.output, args.postgresql_version)
         print(f"PASS: inspected {len(report['inspected_files'])} archive files")
         return 0
     except (coverage.CoverageError, OSError, ValueError, TypeError) as exc:

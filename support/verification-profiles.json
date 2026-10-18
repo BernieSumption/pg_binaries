@@ -326,6 +326,24 @@
       "case_ids": ["archive-suite", "static-analysis"],
       "sources": [".github/workflows/pgtap-windows-publication.yml", "scripts/pgtap/probe.sql", "scripts/pgtap/windows-feasibility.ps1", "support.json", "support/postgresql-releases.json", "support/windows-core-pins/18.6-x86_64.json", "tests/test_pgtap_windows_publication.py", "tests/test_windows_core_pin.py", "tools/check_pgtap_windows_archive.py", "tools/coverage.py", "tools/emit_pgtap_windows_publication.py", "tools/import_pgtap_windows_publication.py", "tools/windows_core_pin.py"]
     },
+    "pgtap-publication-windows-x86_64-15.19": {
+      "scope": "publication",
+      "platforms": ["windows-x86_64"],
+      "case_ids": ["archive-suite", "static-analysis"],
+      "sources": [".github/workflows/pgtap-windows-15-19-publication.yml", "scripts/pgtap/probe.sql", "scripts/pgtap/windows-feasibility.ps1", "support.json", "support/postgresql-releases.json", "support/windows-core-pins/15.19-x86_64.json", "tests/test_pgtap_windows_publication.py", "tests/test_windows_core_pin.py", "tools/check_pgtap_windows_archive.py", "tools/coverage.py", "tools/emit_pgtap_windows_publication.py", "tools/import_pgtap_windows_publication.py", "tools/windows_core_pin.py"]
+    },
+    "pgtap-publication-windows-x86_64-16.15": {
+      "scope": "publication",
+      "platforms": ["windows-x86_64"],
+      "case_ids": ["archive-suite", "static-analysis"],
+      "sources": [".github/workflows/pgtap-windows-16-15-publication.yml", "scripts/pgtap/probe.sql", "scripts/pgtap/windows-feasibility.ps1", "support.json", "support/postgresql-releases.json", "support/windows-core-pins/16.15-x86_64.json", "tests/test_pgtap_windows_publication.py", "tests/test_windows_core_pin.py", "tools/check_pgtap_windows_archive.py", "tools/coverage.py", "tools/emit_pgtap_windows_publication.py", "tools/import_pgtap_windows_publication.py", "tools/windows_core_pin.py"]
+    },
+    "pgtap-publication-windows-x86_64-17.11": {
+      "scope": "publication",
+      "platforms": ["windows-x86_64"],
+      "case_ids": ["archive-suite", "static-analysis"],
+      "sources": [".github/workflows/pgtap-windows-17-11-publication.yml", "scripts/pgtap/probe.sql", "scripts/pgtap/windows-feasibility.ps1", "support.json", "support/postgresql-releases.json", "support/windows-core-pins/17.11-x86_64.json", "tests/test_pgtap_windows_publication.py", "tests/test_windows_core_pin.py", "tools/check_pgtap_windows_archive.py", "tools/coverage.py", "tools/emit_pgtap_windows_publication.py", "tools/import_pgtap_windows_publication.py", "tools/windows_core_pin.py"]
+    },
     "pgcron-publication-current-x86_64": {
       "scope": "publication",
       "platforms": ["linux-x86_64"],
