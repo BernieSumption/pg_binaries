@@ -112,10 +112,13 @@ class HypoPGMacOSIntelPublicationTests(unittest.TestCase):
         self.assertEqual(arm64.PROFILE_ID, "hypopg-publication-macos-arm64-18.6")
 
     def test_selected_workflow_uses_intel_target_and_shared_verification_path(self):
+        from hypopg_macos_target import load_target_config
+        target = load_target_config(Path("tools/hypopg_macos_pins/18.6-x86_64-selected.json"))
+        self.assertEqual((target.postgresql_version, target.architecture), ("18.6", "x86_64"))
         workflow = Path(".github/workflows/hypopg-macos-x86_64-selected-publication.yml").read_text()
         self.assertIn("runs-on: macos-15-intel", workflow)
         self.assertIn("--platform macos-x86_64", workflow)
-        self.assertIn('${POSTGRESQL_VERSION}-x86_64.json', workflow)
+        self.assertIn('${POSTGRESQL_VERSION}-x86_64-selected.json', workflow)
         self.assertIn("scripts/macos/resolve-core.sh", workflow)
         self.assertIn("tools/emit_hypopg_macos_x86_64_publication.py", workflow)
         self.assertIn("tools/import_hypopg_macos_x86_64_publication.py", workflow)
