@@ -1,0 +1,15 @@
+{
+  "architecture": "x86_64",
+  "pg_cron_version": "1.6.8",
+  "postgresql_version": "18.6",
+  "run_id": "39081052929",
+  "schema_version": 1,
+  "source_revision": "2bb9ddf12c60e94986f31eea1d39fe1fa6a4d939",
+  "steps": {
+    "archive_identity": "success",
+    "core_build": "success",
+    "core_reuse": "success",
+    "extension_build": "success",
+    "extension_verify": "success"
+  }
+}
