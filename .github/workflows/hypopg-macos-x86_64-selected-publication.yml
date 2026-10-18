@@ -26,7 +26,8 @@ on:
   push:
     branches: [spike]
     paths:
-      - 'experiments/hypopg-macos-target-trial/target.json'
+      - '.github/workflows/hypopg-macos-x86_64-selected-publication.yml'
+      - 'tools/hypopg_macos_pins/18.6-x86_64.json'
       - 'scripts/hypopg/macos-feasibility.sh'
       - 'scripts/macos/core-prefix.sh'
       - 'scripts/macos/resolve-core.sh'
@@ -55,7 +56,7 @@ jobs:
         run: |
           set -euo pipefail
           if [[ -z "$POSTGRESQL_VERSION" ]]; then
-            POSTGRESQL_VERSION=$(python3 -c 'import json; print(json.load(open("experiments/hypopg-macos-target-trial/target.json"))["postgresql_version"])')
+            POSTGRESQL_VERSION=18.6
           fi
           args=(--project HypoPG --platform macos-x86_64 --postgresql-version "$POSTGRESQL_VERSION")
           if [[ -n "$EXTENSION_VERSION" ]]; then args+=(--extension-version "$EXTENSION_VERSION"); fi
