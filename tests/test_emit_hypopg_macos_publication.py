@@ -90,7 +90,8 @@ class HypoPGMacOSFixture:
             "archives": digests,
         }))
         (self.output / "probe-output.txt").write_text(
-            "postgres_18\nt\nhypothetical_index_created\nt\nIndex Scan using btree_hypo_probe_id\n0\n")
+            f"{self.target.postgresql_version.split('.')[0]}\npostgres_major_matches\nt\n"
+            "hypothetical_index_created\nt\nIndex Scan using btree_hypo_probe_id\n0\n")
 
     def emit(self, cases=None):
         return emitter.emit(

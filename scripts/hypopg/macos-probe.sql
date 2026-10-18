@@ -1,8 +1,11 @@
 \set ON_ERROR_STOP on
-SELECT current_setting('server_version_num')::integer >= 180000 AS postgres_18;
+SELECT set_config('hypopg.expected_pg_major', :'expected_pg_major', false);
+SELECT current_setting('server_version_num')::integer / 10000 =
+       current_setting('hypopg.expected_pg_major')::integer AS postgres_major_matches;
 DO $$ BEGIN
-  IF current_setting('server_version_num')::integer < 180000 THEN
-    RAISE EXCEPTION 'PostgreSQL 18 or newer is required';
+  IF current_setting('server_version_num')::integer / 10000 <>
+     current_setting('hypopg.expected_pg_major')::integer THEN
+    RAISE EXCEPTION 'PostgreSQL major does not match the selected build';
   END IF;
 END $$;
 CREATE EXTENSION hypopg;

@@ -164,6 +164,7 @@ export DYLD_LIBRARY_PATH= DYLD_FALLBACK_LIBRARY_PATH=
 "$pgroot/bin/initdb" -D "$data_dir" --encoding=UTF8 --locale=C --no-instructions >/dev/null
 "$pg_ctl" -D "$data_dir" -l "$work/server.log" -o "-k $work/socket -p 55432 -h ''" -w start
 "$pgroot/bin/psql" -X -A -t -v ON_ERROR_STOP=1 -h "$work/socket" -p 55432 \
+  -v expected_pg_major="${pg_version%%.*}" \
   -d postgres -f "$repo/scripts/hypopg/macos-probe.sql" | tee "$output/probe-output.txt"
 grep -Eq '^t$' "$output/probe-output.txt"
 grep -Eq '^Index Scan using .*btree_hypo_probe_id' "$output/probe-output.txt"

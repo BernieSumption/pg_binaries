@@ -94,7 +94,8 @@ class HypoPGMacOSIntelPublicationTests(unittest.TestCase):
             "inspected_files": ["hypopg/lib/hypopg.dylib"], "archives": digests,
         }))
         (self.output / "probe-output.txt").write_text(
-            "postgres_18\nt\nhypothetical_index_created\nt\nIndex Scan using btree_hypo_probe_id\n0\n")
+            "18\npostgres_major_matches\nt\nhypothetical_index_created\nt\n"
+            "Index Scan using btree_hypo_probe_id\n0\n")
 
     def emit(self):
         return emitter.emit(self.root, self.core, self.output, self.output,
