@@ -13,24 +13,38 @@ from import_linux_tiger_publication import _sidecar
 
 
 ARCHITECTURES = {"x86_64", "arm64"}
-VERSION = "1.6.8"
-POSTGRESQL_VERSION = "18.6"
+DEFAULT_PG_VERSION = "18.6"
 MAX_EVIDENCE_BYTES = 1024 * 1024
 STEP_NAMES = {"core_build", "pgcron_build", "pgcron_verify"}
 
 
-def import_run(root, core_artifact, pgcron_artifact, run_id, architecture):
+def _selected_version(support, releases, postgresql_version, platform):
+    _, targets = coverage.expected_targets(support, releases)
+    versions = {version for name, version, pg_version, target_platform in targets
+                if name == "pg_cron" and pg_version == postgresql_version
+                and target_platform == platform}
+    if len(versions) != 1:
+        raise coverage.CoverageError(
+            f"pg_cron must have exactly one selected version for PostgreSQL "
+            f"{postgresql_version} on {platform}")
+    return next(iter(versions))
+
+
+def import_run(root, core_artifact, pgcron_artifact, run_id, architecture,
+               postgresql_version=DEFAULT_PG_VERSION):
     root, core_artifact, pgcron_artifact = map(Path, (root, core_artifact, pgcron_artifact))
     run_id = str(run_id)
     if not re.fullmatch(r"\d+", run_id) or architecture not in ARCHITECTURES:
         raise coverage.CoverageError("expected numeric run_id and x86_64 or arm64 architecture")
     support = coverage.load_json(root / "support.json")
     snapshot = coverage.load_json(root / "support/postgresql-releases.json")
-    if POSTGRESQL_VERSION not in coverage.release_snapshot(snapshot, support):
-        raise coverage.CoverageError("PostgreSQL 18.6 is not selected")
+    releases = coverage.release_snapshot(snapshot, support)
+    if postgresql_version not in releases:
+        raise coverage.CoverageError(f"PostgreSQL {postgresql_version} is not selected")
     profile_id = f"pgcron-publication-current-{architecture}"
     profile = coverage.verification_profile(root, profile_id)
     platform = f"linux-{architecture}"
+    version = _selected_version(support, releases, postgresql_version, platform)
     if profile["scope"] != "publication" or platform not in profile["platforms"]:
         raise coverage.CoverageError("profile does not match the Linux publication platform")
 
@@ -45,8 +59,8 @@ def import_run(root, core_artifact, pgcron_artifact, run_id, architecture):
             or str(attempt.get("run_id")) != run_id
             or not coverage.REVISION.fullmatch(str(attempt.get("source_revision", "")))
             or attempt.get("architecture") != architecture
-            or attempt.get("postgresql_version") != POSTGRESQL_VERSION
-            or attempt.get("pg_cron_version") != VERSION
+            or attempt.get("postgresql_version") != postgresql_version
+            or attempt.get("pg_cron_version") != version
             or not isinstance(attempt.get("steps"), dict)
             or set(attempt["steps"]) != STEP_NAMES
             or any(value not in {"success", "failure", "skipped"} for value in attempt["steps"].values())):
@@ -62,8 +76,8 @@ def import_run(root, core_artifact, pgcron_artifact, run_id, architecture):
             or steps != {"pgcron-archive-suite": suite}):
         raise coverage.CoverageError("publication case outcome differs from raw attempt outcomes")
 
-    core_name = f"postgresql-{POSTGRESQL_VERSION}-{platform}.tar.gz"
-    extension_name = f"pg_cron-{VERSION}-postgresql-{POSTGRESQL_VERSION}-{platform}.tar.gz"
+    core_name = f"postgresql-{postgresql_version}-{platform}.tar.gz"
+    extension_name = f"pg_cron-{version}-postgresql-{postgresql_version}-{platform}.tar.gz"
     archives = [core_artifact / "pilot" / core_name, extension_dir / extension_name]
     records = sorted((publication / "records").glob("*.json"))
     receipt_path = publication / "current-receipt.json"
@@ -83,8 +97,8 @@ def import_run(root, core_artifact, pgcron_artifact, run_id, architecture):
     if receipt is not None:
         ci = receipt.get("ci", {})
         revision = receipt.get("test_revision")
-        expected = {"profile_id": profile_id, "project": "pg_cron", "version": VERSION,
-                    "postgresql_version": POSTGRESQL_VERSION, "architecture": architecture,
+        expected = {"profile_id": profile_id, "project": "pg_cron", "version": version,
+                    "postgresql_version": postgresql_version, "architecture": architecture,
                     "endpoint": "current", "case_results": _case_results(steps),
                     "archives": digests, "extension_archive": extension_name,
                     "prerequisite_archives": []}
@@ -114,14 +128,14 @@ def import_run(root, core_artifact, pgcron_artifact, run_id, architecture):
         coverage.validate_verification_record(record, support, root)
         results = _case_results(steps)
         expected = {"profile_id": profile_id, "component": "pg_cron", "project": "pg_cron",
-                    "version": VERSION, "postgresql_version": POSTGRESQL_VERSION,
+                    "version": version, "postgresql_version": postgresql_version,
                     "platform": platform, "case_results": results, "outcome": _outcome(results),
                     "test_cases": profile["case_ids"], "ci": receipt["ci"],
                     "test_revision": receipt["test_revision"], "sha256": digests[extension_name],
                     "assembled_core": {"archive": core_name, "sha256": digests[core_name],
-                                       "version": POSTGRESQL_VERSION}, "prerequisite_archives": []}
+                                       "version": postgresql_version}, "prerequisite_archives": []}
         if (any(record.get(key) != value for key, value in expected.items())
-                or source.name != f"pg_cron-{VERSION}-postgresql-{POSTGRESQL_VERSION}-{platform}-current-{run_id}.json"
+                or source.name != f"pg_cron-{version}-postgresql-{postgresql_version}-{platform}-current-{run_id}.json"
                 or record.get("profile_revision") != receipt.get("profile_revision")
                 or any(record.get("environment", {}).get(key) != receipt.get(key) for key in (
                     "endpoint", "architecture", "kernel_release", "distribution",
@@ -154,10 +168,12 @@ def main():
     parser.add_argument("--pgcron-artifact", type=Path, required=True)
     parser.add_argument("--run-id", required=True)
     parser.add_argument("--architecture", choices=sorted(ARCHITECTURES), required=True)
+    parser.add_argument("--postgresql-version", default=DEFAULT_PG_VERSION,
+                        help="selected exact PostgreSQL version (defaults to 18.6)")
     args = parser.parse_args()
     try:
         print("\n".join(import_run(args.root, args.core_artifact, args.pgcron_artifact,
-                                   args.run_id, args.architecture)))
+                                   args.run_id, args.architecture, args.postgresql_version)))
         return 0
     except (coverage.CoverageError, OSError, ValueError, TypeError) as exc:
         print(f"Linux pg_cron publication import: {exc}", file=sys.stderr)

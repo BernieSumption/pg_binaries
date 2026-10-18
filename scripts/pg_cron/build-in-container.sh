@@ -6,7 +6,7 @@ case "$architecture:$(uname -m)" in x86_64:x86_64|arm64:aarch64) ;; *) echo "Bui
 version=1.6.8
 source_url='https://github.com/citusdata/pg_cron/archive/refs/tags/v1.6.8.tar.gz'
 source_sha256='c19ab9bb35406c60fb51ecda993737c083850abe424acb6c1030439d00a1f8e4'
-pg_version=18.6
+pg_version=${PG_VERSION:-18.6}
 pg_archive="postgresql-${pg_version}-linux-${architecture}.tar.gz"
 archive="pg_cron-${version}-postgresql-${pg_version}-linux-${architecture}.tar.gz"
 cd /input

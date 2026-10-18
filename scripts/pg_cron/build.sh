@@ -4,6 +4,7 @@ repo=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 input=${1:?usage: build.sh LINUX_ARCHIVE_DIRECTORY OUTPUT_DIRECTORY}
 output=${2:?usage: build.sh LINUX_ARCHIVE_DIRECTORY OUTPUT_DIRECTORY}
 architecture=${PG_ARCHITECTURE:-x86_64}
+pg_version=${PG_VERSION:-18.6}
 case "$architecture" in
   x86_64) docker_platform=linux/amd64 ;;
   arm64) docker_platform=linux/arm64 ;;
@@ -13,4 +14,4 @@ input=$(cd "$input" && pwd)
 mkdir -p "$output"
 output=$(cd "$output" && pwd)
 docker build --platform "$docker_platform" -f "$repo/scripts/pg_cron/Dockerfile" -t pg-binaries-pgcron-pilot "$repo"
-docker run --rm -e PG_ARCHITECTURE="$architecture" --platform "$docker_platform" -v "$input:/input:ro" -v "$output:/out" pg-binaries-pgcron-pilot
+docker run --rm -e PG_ARCHITECTURE="$architecture" -e PG_VERSION="$pg_version" --platform "$docker_platform" -v "$input:/input:ro" -v "$output:/out" pg-binaries-pgcron-pilot

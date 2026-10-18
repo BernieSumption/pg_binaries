@@ -40,6 +40,7 @@ class LinuxPgcronPublicationImportTests(unittest.TestCase):
         self.run_id = "7654321"
         self.postgresql_version = "18.6"
         self.architecture = "x86_64"
+        self.pgcron_version = self._selected_version(self.postgresql_version)
         self.case_id = "pgcron-archive-suite"
         self._make_artifacts()
         self._make_publication()
@@ -50,6 +51,13 @@ class LinuxPgcronPublicationImportTests(unittest.TestCase):
     @staticmethod
     def _sha(path):
         return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+
+    def _selected_version(self, postgresql_version):
+        support = coverage.load_json(self.root / "support.json")
+        releases = coverage.release_snapshot(
+            coverage.load_json(self.root / "support/postgresql-releases.json"), support)
+        return importer._selected_version(
+            support, releases, postgresql_version, f"linux-{self.architecture}")
 
     @classmethod
     def _archive(cls, path, metadata):
@@ -72,10 +80,10 @@ class LinuxPgcronPublicationImportTests(unittest.TestCase):
         self.pgcron_dir.mkdir(parents=True, exist_ok=True)
         self.platform = f"linux-{self.architecture}"
         self.core_name = f"postgresql-{self.postgresql_version}-{self.platform}.tar.gz"
-        self.pgcron_name = f"pg_cron-1.6.8-postgresql-{self.postgresql_version}-{self.platform}.tar.gz"
+        self.pgcron_name = f"pg_cron-{self.pgcron_version}-postgresql-{self.postgresql_version}-{self.platform}.tar.gz"
         self._archive(self.core_dir / self.core_name, {"archive": "core"})
         self._archive(self.pgcron_dir / self.pgcron_name, {
-            "project": "pg_cron", "version": "1.6.8", "postgresql_version": self.postgresql_version,
+            "project": "pg_cron", "version": self.pgcron_version, "postgresql_version": self.postgresql_version,
             "platform": "linux", "architecture": self.architecture,
             "sql_names": ["pg_cron"], "requires": [],
         })
@@ -107,7 +115,7 @@ class LinuxPgcronPublicationImportTests(unittest.TestCase):
         attempt_path = self.publication / "attempt.json"
         attempt_path.write_text(json.dumps({
             "schema_version": 1, "run_id": self.run_id, "source_revision": "a" * 40,
-            "postgresql_version": self.postgresql_version, "pg_cron_version": "1.6.8",
+            "postgresql_version": self.postgresql_version, "pg_cron_version": self.pgcron_version,
             "architecture": self.architecture, "verifier_image_id": image,
             "steps": step_outcomes,
         }))
@@ -116,7 +124,7 @@ class LinuxPgcronPublicationImportTests(unittest.TestCase):
         receipt_path = self.publication / "current-receipt.json"
         receipt_creator.create(
             self.root, self.pgcron_dir, self.core_dir, receipt_path, profile_id,
-            "pg_cron", "1.6.8", self.postgresql_version, self.postgresql_version,
+            "pg_cron", self.pgcron_version, self.postgresql_version, self.postgresql_version,
             self.architecture, "current", "6.8.0-test-kernel", "Alpine Linux", "3.22.6",
             image, "success" if result == "success" else "failure", result == "success",
             steps_path, environ={
@@ -127,12 +135,13 @@ class LinuxPgcronPublicationImportTests(unittest.TestCase):
 
     def _import(self):
         return importer.import_run(self.root, self.core_artifact, self.pgcron_artifact,
-                                   self.run_id, self.architecture)
+                                   self.run_id, self.architecture, self.postgresql_version)
 
     def test_retains_exact_archive_bound_evidence_idempotently(self):
-        retained = self._import()
+        retained = importer.import_run(self.root, self.core_artifact, self.pgcron_artifact,
+                                        self.run_id, self.architecture)
         record_path = self.root / "support/verification" / (
-            f"pg_cron-1.6.8-postgresql-{self.postgresql_version}-{self.platform}-current-{self.run_id}.json")
+            f"pg_cron-{self.pgcron_version}-postgresql-{self.postgresql_version}-{self.platform}-current-{self.run_id}.json")
         record = json.loads(record_path.read_text())
         self.assertEqual(record["assembled_core"]["sha256"], self._sha(self.core_dir / self.core_name))
         self.assertEqual(record["sha256"], self._sha(self.pgcron_dir / self.pgcron_name))
@@ -146,7 +155,7 @@ class LinuxPgcronPublicationImportTests(unittest.TestCase):
         self._make_publication()
         self._import()
         record_path = self.root / "support/verification" / (
-            f"pg_cron-1.6.8-postgresql-18.6-linux-arm64-current-{self.run_id}.json")
+            f"pg_cron-{self.pgcron_version}-postgresql-18.6-linux-arm64-current-{self.run_id}.json")
         self.assertEqual(json.loads(record_path.read_text())["platform"], "linux-arm64")
 
     def test_retains_failed_and_skipped_archive_records_as_nonpassing(self):
@@ -237,6 +246,27 @@ class LinuxPgcronPublicationImportTests(unittest.TestCase):
         report.write_text(json.dumps(data))
         with self.assertRaisesRegex(coverage.CoverageError, "static-analysis archives do not match"):
             self._import()
+
+    def test_imports_an_explicit_selected_postgresql_minor(self):
+        self.postgresql_version = "17.11"
+        self.pgcron_version = self._selected_version(self.postgresql_version)
+        shutil.rmtree(self.pgcron_artifact)
+        shutil.rmtree(self.core_artifact)
+        self._make_artifacts()
+        shutil.rmtree(self.pgcron_artifact / "pgcron-publication", ignore_errors=True)
+        self._make_publication()
+        retained = self._import()
+        record = self.root / "support/verification" / (
+            f"pg_cron-{self.pgcron_version}-postgresql-17.11-{self.platform}-current-{self.run_id}.json")
+        self.assertIn(str(record.relative_to(self.root)), retained)
+        data = json.loads(record.read_text())
+        self.assertEqual(data["assembled_core"]["archive"], self.core_name)
+        self.assertEqual(data["assembled_core"]["sha256"], self._sha(self.core_dir / self.core_name))
+
+    def test_rejects_unselected_postgresql_minor(self):
+        with self.assertRaisesRegex(coverage.CoverageError, "18.5 is not selected"):
+            importer.import_run(self.root, self.core_artifact, self.pgcron_artifact,
+                                self.run_id, self.architecture, "18.5")
 
 
 if __name__ == "__main__":

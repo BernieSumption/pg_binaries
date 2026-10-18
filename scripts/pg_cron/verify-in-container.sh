@@ -5,7 +5,7 @@ case "$architecture" in x86_64|arm64) ;; *) echo "Unsupported Linux architecture
 version=1.6.8
 source_url='https://github.com/citusdata/pg_cron/archive/refs/tags/v1.6.8.tar.gz'
 source_sha256='c19ab9bb35406c60fb51ecda993737c083850abe424acb6c1030439d00a1f8e4'
-pg_version=18.6
+pg_version=${PG_VERSION:-18.6}
 pg_archive="postgresql-${pg_version}-linux-${architecture}.tar.gz"
 extension_archive="pg_cron-${version}-postgresql-${pg_version}-linux-${architecture}.tar.gz"
 cd /input
@@ -18,7 +18,7 @@ tar -xzf "/extension/$extension_archive" -C /tmp/extension
 pgroot=/tmp/first/postgresql
 extroot=/tmp/extension/pg_cron
 test "$("$pgroot/bin/pg_config" --version)" = "PostgreSQL $pg_version"
-python3 - "$extroot" "$source_url" "$architecture" "$source_sha256" <<'PY'
+python3 - "$extroot" "$source_url" "$architecture" "$source_sha256" "$pg_version" <<'PY'
 import json, sys
 from pathlib import Path
 root=Path(sys.argv[1]).parent
@@ -26,7 +26,7 @@ metadata=json.loads((root/'metadata.json').read_text())
 if metadata != {'project':'pg_cron','version':'1.6.8','sql_names':['pg_cron'],'requires':[],
  'configuration_prerequisites':[{'type':'postgresql_setting','name':'shared_preload_libraries','value':'pg_cron'},
                                 {'type':'postgresql_setting','name':'cron.use_background_workers','value':'on'}],
- 'runtime_prerequisites':[],'postgresql_version':'18.6','platform':'linux','architecture':sys.argv[3],
+ 'runtime_prerequisites':[],'postgresql_version':sys.argv[5],'platform':'linux','architecture':sys.argv[3],
  'source':{'url':sys.argv[2],'sha256':sys.argv[4]}}:
  raise SystemExit('pg_cron package metadata mismatch')
 inv=json.loads((root/'pg_cron/LICENSES/pg_cron-inventory.json').read_text())
