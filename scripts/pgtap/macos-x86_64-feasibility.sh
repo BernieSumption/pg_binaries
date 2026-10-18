@@ -8,7 +8,7 @@ pg_version=18.6
 version=1.3.4
 source_url='https://github.com/theory/pgtap/archive/refs/tags/v1.3.4.tar.gz'
 source_sha256=d2c951afb296a001d21785611a8e966e3f8fa3f5bfbd929396a5130c0152f314
-core_sha256=36a2f9297d05b88125c697a6e2f73ee61ae2b3ae9edbd95d20ed3d42ffa6e91f
+core_sha256=5ec45e48bad1439860f0143fd6f2cbc04a86cfa456beef8c5ca9040960ea3f40
 core_name="postgresql-${pg_version}-macos-${architecture}.tar.gz"
 extension_name="pgtap-${version}-postgresql-${pg_version}-macos-${architecture}.tar.gz"
 repo=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
@@ -53,8 +53,8 @@ root = pathlib.Path(sys.argv[1])
 manifest = json.loads((root / "manifest.json").read_text())
 expected = {
     "component": "postgresql", "version": "18.6", "postgresql_version": "18.6",
-    "platform": "macos", "architecture": "x86_64", "build_id": "github-39068360742-1",
-    "source_revision": "3a600990f3deed8e32c57b249c31653d319b50b2",
+    "platform": "macos", "architecture": "x86_64", "build_id": "github-39079982747-1",
+    "source_revision": "748e1fb698ee8f87df4cf68d70670c6f8f3adde8",
 }
 for key, value in expected.items():
     if manifest.get(key) != value:
@@ -121,6 +121,7 @@ tar -C "$package" -czf "$output/$extension_name" pgtap metadata.json
 cd "$output"
 shasum -a 256 "$extension_name" > "$extension_name.sha256"
 shasum -a 256 -c "$extension_name.sha256"
+python3 "$repo/tools/check_extension_redistribution.py" "$output/$extension_name"
 tar -xzf "$extension_name" -C "$work/extension"
 extroot="$work/extension/pgtap"
 python3 - "$work/extension" "$extroot" <<'PY'
