@@ -43,11 +43,21 @@ class LinuxPublicationHelpers(unittest.TestCase):
             profile = {"profile_revision": "b" * 64, "case_ids": list(publication.CASES)}
             with patch.object(coverage, "verification_profile", return_value=profile):
                 paths = publication.emit(ROOT, archives, core_dir, output, "arm64", "failure", "skipped",
-                                         "c" * 40, "12345", "owner/repo", "https://github.com", "image")
+                                         "c" * 40, "12345", "owner/repo", "https://github.com", "image",
+                                         "6.17.0-azure")
             self.assertEqual(paths, (output / "attempt.json",))
             attempt = json.loads(paths[0].read_text(encoding="utf-8"))
             self.assertEqual(attempt["workflow_steps"], {"build": "failure", "verify": "skipped"})
             self.assertEqual(attempt["steps"], {"archive-suite": "skipped", "elf-closure": "skipped"})
+
+    def test_kernel_release_must_meet_linux_floor(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            for kernel_release in ("3.22.0-alpine", "not-a-kernel"):
+                with self.subTest(kernel_release=kernel_release), self.assertRaises(coverage.CoverageError):
+                    publication.emit(ROOT, root, root, root / "publication", "arm64", "failure", "skipped",
+                                     "c" * 40, "12345", "owner/repo", "https://github.com", "image",
+                                     kernel_release)
 
     def test_sidecar_binds_exact_archive_name_and_hash(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -98,7 +108,7 @@ class LinuxPublicationHelpers(unittest.TestCase):
                     patch.object(coverage, "validate_verification_record", return_value=True):
                 paths = publication.emit(root, archives, core_dir, output, arch, "success", "success",
                                          "c" * 40, "12345", "owner/repo", "https://github.com",
-                                         "sha256:" + "d" * 64)
+                                         "sha256:" + "d" * 64, "6.17.0-azure")
             attempt = json.loads((output / "attempt.json").read_text(encoding="utf-8"))
             record = json.loads((output / "verification-record.json").read_text(encoding="utf-8"))
             self.assertEqual(paths, (output / "attempt.json", output / "current-receipt.json",
@@ -107,6 +117,8 @@ class LinuxPublicationHelpers(unittest.TestCase):
             self.assertEqual(record["assembled_core"]["sha256"], core_hash)
             self.assertEqual(record["release_eligible"], False)
             self.assertEqual(record["case_results"], {"archive-suite": "passed", "elf-closure": "passed"})
+            self.assertEqual(record["environment"]["os_version"], "6.17.0")
+            self.assertEqual(record["environment"]["distribution"], "Alpine Linux 3.22")
             receipt = json.loads((output / "current-receipt.json").read_text(encoding="utf-8"))
             self.assertEqual(receipt["archives"][archive_name], archive_hash)
             self.assertEqual(receipt["archives"][core_name], core_hash)

@@ -46,7 +46,8 @@ def read_json(path):
 
 
 def emit(root, archives, core_archives, output, architecture, build_result,
-         verify_result, source_revision, run_id, repository, server_url, image_id):
+         verify_result, source_revision, run_id, repository, server_url, image_id,
+         kernel_release):
     root, archives, core_archives, output = map(Path, (root, archives, core_archives, output))
     if architecture not in PROFILE_IDS:
         raise coverage.CoverageError("architecture must be x86_64 or arm64")
@@ -54,6 +55,14 @@ def emit(root, archives, core_archives, output, architecture, build_result,
         raise coverage.CoverageError("full source revision and numeric workflow run ID are required")
     if not repository or not server_url or not image_id:
         raise coverage.CoverageError("GitHub and runner image provenance are required")
+    match = re.fullmatch(r"(\d+(?:\.\d+)+)(?:[-+].*)?", kernel_release or "")
+    if not match:
+        raise coverage.CoverageError("Linux kernel release must start with a numeric dotted version")
+    kernel_version = match.group(1)
+    minimum = coverage.load_json(root / "support.json")["os_support"]["linux"]["minimum_version"]
+    if (coverage._os_version_parts(kernel_version, "Linux kernel release")
+            < coverage._os_version_parts(minimum, "Linux minimum version")):
+        raise coverage.CoverageError("Linux kernel is below the supported floor")
     static_path = archives / "static-analysis" / "pg_jsonschema.json"
     _step(build_result)
     static_outcome = read_json(static_path).get("outcome") if static_path.is_file() else None
@@ -112,7 +121,7 @@ def emit(root, archives, core_archives, output, architecture, build_result,
                "cargo_license_inventory": digest(archives / "cargo-license-inventory.json")}
     if probe_output.is_file():
         reports["probe_output"] = digest(probe_output)
-    environment = {"os": "linux", "os_version": "3.22", "distribution": "Alpine Linux",
+    environment = {"os": "linux", "os_version": kernel_version, "distribution": "Alpine Linux 3.22",
                    "architecture": architecture, "clean_system": True, "endpoint": "current",
                    "image_id": image_id, "dependency_check_profile": "linux-elf-alpine-relocation-v1",
                    "dependency_checks_passed": results["elf-closure"] == "passed"}
@@ -184,13 +193,15 @@ def main():
     parser.add_argument("--build-result", required=True)
     parser.add_argument("--verify-result", required=True)
     parser.add_argument("--image-id", required=True)
+    parser.add_argument("--kernel-release", required=True)
     args = parser.parse_args()
     try:
         env = os.environ
         for path in emit(args.root, args.archives, args.core_archives, args.output, args.architecture,
                          args.build_result, args.verify_result, env.get("GITHUB_SHA", ""),
                          env.get("GITHUB_RUN_ID", ""), env.get("GITHUB_REPOSITORY", ""),
-                         env.get("GITHUB_SERVER_URL", ""), args.image_id):
+                         env.get("GITHUB_SERVER_URL", ""), args.image_id,
+                         args.kernel_release):
             print(path)
         return 0
     except (coverage.CoverageError, OSError, ValueError, TypeError, KeyError) as exc:

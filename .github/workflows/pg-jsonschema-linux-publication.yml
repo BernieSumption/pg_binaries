@@ -82,7 +82,8 @@ jobs:
             --archives "$RUNNER_TEMP/pg_jsonschema" --core-archives "$RUNNER_TEMP/core/pilot" \
             --output "$RUNNER_TEMP/pg_jsonschema/publication" --architecture x86_64 \
             --build-result "${BUILD_RESULT:-skipped}" --verify-result "${VERIFY_RESULT:-skipped}" \
-            --image-id "$(docker image inspect pg-binaries-pg-jsonschema-alpine-probe --format '{{.Id}}' 2>/dev/null || echo unavailable)"
+            --image-id "$(docker image inspect pg-binaries-pg-jsonschema-alpine-probe --format '{{.Id}}' 2>/dev/null || echo unavailable)" \
+            --kernel-release "$(uname -r)"
       - name: Validate and retain Linux publication evidence
         if: always()
         run: python tools/import_pg_jsonschema_linux_publication.py --core-archives "$RUNNER_TEMP/core/pilot" --archives "$RUNNER_TEMP/pg_jsonschema" --run-id "$GITHUB_RUN_ID"
@@ -146,7 +147,8 @@ jobs:
             --archives "$RUNNER_TEMP/pg_jsonschema" --core-archives "$RUNNER_TEMP/core/pilot" \
             --output "$RUNNER_TEMP/pg_jsonschema/publication" --architecture arm64 \
             --build-result "${BUILD_RESULT:-skipped}" --verify-result "${VERIFY_RESULT:-skipped}" \
-            --image-id "$(docker image inspect pg-binaries-pg-jsonschema-alpine-probe --format '{{.Id}}' 2>/dev/null || echo unavailable)"
+            --image-id "$(docker image inspect pg-binaries-pg-jsonschema-alpine-probe --format '{{.Id}}' 2>/dev/null || echo unavailable)" \
+            --kernel-release "$(uname -r)"
       - name: Validate and retain Linux publication evidence
         if: always()
         run: python tools/import_pg_jsonschema_linux_publication.py --core-archives "$RUNNER_TEMP/core/pilot" --archives "$RUNNER_TEMP/pg_jsonschema" --run-id "$GITHUB_RUN_ID"
