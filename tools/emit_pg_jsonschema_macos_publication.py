@@ -12,23 +12,33 @@ import tarfile
 
 import coverage
 
-PROFILE_ID = "pg-jsonschema-publication-macos-arm64-18.6"
-PG_VERSION = "18.6"
-EXTENSION_VERSION = "0.3.4"
-ARCHITECTURE = "arm64"
-PLATFORM = "macos-arm64"
-SOURCE_URL = "https://github.com/supabase/pg_jsonschema.git"
-SOURCE_COMMIT = "cbe74b570d38aa0c4d42914e7a118bcb3adaee7a"
-CARGO_LOCK_SHA256 = "ab865dc25d9eea4bf7dbfaf8fae13283e5c0bce4bca460fe10464c6716e67028"
-CORE_RUN_ID = "39093804232"
-CORE_SHA256 = "ec3f624ecfbea6dad20672106ec11bfafadde42e0454bc90bef992caa4be0033"
-CORE_BUILD_ID = "github-39093804232-1"
-CORE_SOURCE_REVISION = "42082a506adfca1628c509f2c7b17037b9a12123"
+from pg_jsonschema_macos_target import load_target
+
 CORE_STATUS = "current-profile-core-redistribution-pending"
 RELEASE_BLOCKERS = ["seahash-4.1.0-notice-unresolved",
                     "postgresql-core-redistribution-review-pending"]
 CASES = {"archive-suite", "static-analysis"}
 ALLOWED_STEPS = {"success", "failure", "skipped", "cancelled", "timed_out"}
+TARGET = None
+
+
+def configure_target(path):
+    global TARGET, PROFILE_ID, PG_VERSION, EXTENSION_VERSION, ARCHITECTURE, PLATFORM
+    global SOURCE_URL, SOURCE_COMMIT, CARGO_LOCK_SHA256
+    global CORE_RUN_ID, CORE_SHA256, CORE_BUILD_ID, CORE_SOURCE_REVISION
+    TARGET = load_target(path)
+    PROFILE_ID, PG_VERSION, EXTENSION_VERSION = (TARGET.profile_id, TARGET.postgresql_version,
+                                                  TARGET.extension_version)
+    ARCHITECTURE, PLATFORM = TARGET.architecture, TARGET.platform
+    SOURCE_URL, SOURCE_COMMIT = TARGET.source_url, TARGET.source_commit
+    CARGO_LOCK_SHA256 = TARGET.cargo_lock_sha256
+    CORE_RUN_ID, CORE_SHA256 = TARGET.core_run_id, TARGET.core_sha256
+    CORE_BUILD_ID, CORE_SOURCE_REVISION = TARGET.core_build_id, TARGET.core_source_revision
+    return TARGET
+
+
+DEFAULT_TARGET = Path(__file__).resolve().parent / "pg_jsonschema_macos_targets/18.6-x86_64.json"
+configure_target(DEFAULT_TARGET)
 
 
 def _fail(message):
@@ -130,7 +140,9 @@ def _static_report(path, digests):
     return report
 
 
-def emit(root, core_dir, archives, output, step_results, os_version, image_id, environ=None):
+def emit(root, core_dir, archives, output, step_results, os_version, image_id, environ=None, target_config=None):
+    if target_config is not None:
+        configure_target(target_config)
     root, core_dir, archives, output = map(Path, (root, core_dir, archives, output))
     environ = os.environ if environ is None else environ
     if not isinstance(step_results, dict) or set(step_results) != CASES or any(
@@ -168,8 +180,9 @@ def emit(root, core_dir, archives, output, step_results, os_version, image_id, e
     digests = {core_name: sha256(core), extension_name: sha256(extension)}
     for archive in (core, extension):
         _sidecar(archive, digests[archive.name])
-    if digests[core_name] != CORE_SHA256:
-        _fail("PostgreSQL core archive differs from the selected passed arm64 build")
+    if (not all((CORE_SHA256, CORE_BUILD_ID, CORE_SOURCE_REVISION))
+            or digests[core_name] != CORE_SHA256):
+        _fail("PostgreSQL core archive differs from the selected passed build")
     _metadata(extension)
     attempt["archives"] = digests
     attempt_path.write_text(json.dumps(attempt, indent=2, sort_keys=True) + "\n", encoding="utf-8")
@@ -192,6 +205,9 @@ def emit(root, core_dir, archives, output, step_results, os_version, image_id, e
     build_text = build_path.read_text(encoding="utf-8") if build_path.is_file() else ""
     if (f"pg_jsonschema_source_commit={SOURCE_COMMIT}" not in build_text
             or f"cargo_lock_sha256={CARGO_LOCK_SHA256}" not in build_text
+            or f"core_run_id={CORE_RUN_ID}" not in build_text
+            or f"core_build_id={CORE_BUILD_ID}" not in build_text
+            or f"core_source_revision={CORE_SOURCE_REVISION}" not in build_text
             or f"core_sha256={CORE_SHA256}" not in build_text):
         _fail("build evidence does not identify the exact source, Cargo.lock and core archive")
     if "static_analysis" not in reports or "cargo_license_inventory" not in reports:
@@ -245,10 +261,12 @@ def main():
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--os-version", required=True)
     parser.add_argument("--image-id", required=True)
+    parser.add_argument("--target", type=Path, required=True)
     parser.add_argument("--archive-suite-result", required=True)
     parser.add_argument("--static-analysis-result", required=True)
     args = parser.parse_args()
     try:
+        configure_target(args.target)
         for path in emit(args.root, args.core_archives, args.archives, args.output,
                          {"archive-suite": args.archive_suite_result,
                           "static-analysis": args.static_analysis_result},

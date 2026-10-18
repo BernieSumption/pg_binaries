@@ -1,24 +1,32 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-core_archives=${1:?usage: macos-publication.sh CORE_ARCHIVE_DIRECTORY OUTPUT_DIRECTORY}
-output=${2:?usage: macos-publication.sh CORE_ARCHIVE_DIRECTORY OUTPUT_DIRECTORY}
+core_archives=${1:?usage: macos-publication.sh CORE_ARCHIVE_DIRECTORY OUTPUT_DIRECTORY TARGET_CONFIG}
+output=${2:?usage: macos-publication.sh CORE_ARCHIVE_DIRECTORY OUTPUT_DIRECTORY TARGET_CONFIG}
+target_config=${3:?usage: macos-publication.sh CORE_ARCHIVE_DIRECTORY OUTPUT_DIRECTORY TARGET_CONFIG}
 repo=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 source "$repo/scripts/macos/compiled-prefix-relocation.sh"
-architecture=arm64
-pg_version=18.6
-extension_version=0.3.4
-extension_commit=cbe74b570d38aa0c4d42914e7a118bcb3adaee7a
-cargo_lock_sha256=ab865dc25d9eea4bf7dbfaf8fae13283e5c0bce4bca460fe10464c6716e67028
-core_sha256=ec3f624ecfbea6dad20672106ec11bfafadde42e0454bc90bef992caa4be0033
-core_run_id=39093804232
-core_build_id=github-39093804232-1
-core_revision=42082a506adfca1628c509f2c7b17037b9a12123
-core_name="postgresql-${pg_version}-macos-${architecture}.tar.gz"
-extension_name="pg_jsonschema-${extension_version}-postgresql-${pg_version}-macos-${architecture}.tar.gz"
-source_url=https://github.com/supabase/pg_jsonschema.git
+if [[ $target_config != /* ]]; then target_config="$repo/$target_config"; fi
+target_values=$(python3 - "$repo/tools" "$target_config" <<'PYTARGET'
+import sys
+sys.path.insert(0, sys.argv[1])
+from pg_jsonschema_macos_target import load_target
+print("\t".join(load_target(sys.argv[2]).shell_values()))
+PYTARGET
+)
+IFS=$'\t' read -r pg_version extension_version architecture platform profile_id core_name core_run_id \
+  core_sha256 core_build_id core_revision source_url extension_commit cargo_lock_sha256 <<< "$target_values"
+pg_major=${pg_version%%.*}
+feature="pg$pg_major"
+cargo_target=$(python3 - "$repo/tools" "$target_config" <<'PYTARGET'
+import sys
+sys.path.insert(0, sys.argv[1])
+from pg_jsonschema_macos_target import load_target
+print(load_target(sys.argv[2]).cargo_target)
+PYTARGET
+)
+extension_name="pg_jsonschema-${extension_version}-postgresql-${pg_version}-${platform}.tar.gz"
 deployment_target=11.0
-
 if [[ $(uname -s) != Darwin || $(uname -m) != "$architecture" ]]; then
   echo "This candidate requires native macOS $architecture" >&2
   exit 1
@@ -50,17 +58,18 @@ tar -xzf "$core_archives/$core_name" -C "$work/core"
 pgroot="$work/core/postgresql"
 test -s "$pgroot/bin/pg_config"
 
-python3 - "$pgroot" "$core_build_id" "$core_revision" > "$work/core-prefix" <<'PY'
+python3 - "$pgroot" "$pg_version" "$architecture" "$core_build_id" "$core_revision" > "$work/core-prefix" <<'PY'
 import json
 import pathlib
 import re
 import sys
 
 root = pathlib.Path(sys.argv[1])
+pg_version, architecture, build_id, source_revision = sys.argv[2:]
 manifest = json.loads((root / "manifest.json").read_text())
-expected = {"component": "postgresql", "version": "18.6", "postgresql_version": "18.6",
-            "platform": "macos", "architecture": "arm64", "build_id": sys.argv[2],
-            "source_revision": sys.argv[3]}
+expected = {"component": "postgresql", "version": pg_version, "postgresql_version": pg_version,
+            "platform": "macos", "architecture": architecture, "build_id": build_id,
+            "source_revision": source_revision}
 for key, value in expected.items():
     if manifest.get(key) != value:
         raise SystemExit(f"PostgreSQL core manifest mismatch for {key}")
@@ -94,17 +103,17 @@ git -C pg_jsonschema checkout --detach FETCH_HEAD
 test "$(git -C pg_jsonschema rev-parse HEAD)" = "$extension_commit"
 cd "$work/source/pg_jsonschema"
 test "$(sed -n 's/^version = "\([^"]*\)"/\1/p' Cargo.toml | head -n 1)" = "$extension_version"
-grep -Eq '^pg18 = \["pgrx/pg18", "pgrx-tests/pg18"\]$' Cargo.toml
+grep -Fqx "$feature = [\"pgrx/$feature\", \"pgrx-tests/$feature\"]" Cargo.toml
 test -s Cargo.lock
 actual_lock_sha256=$(shasum -a 256 Cargo.lock | awk '{print $1}')
 test "$actual_lock_sha256" = "$cargo_lock_sha256"
-cargo metadata --locked --format-version 1 --filter-platform aarch64-apple-darwin \
-  --no-default-features --features pg18 > "$work/cargo-metadata.json"
+cargo metadata --locked --format-version 1 --filter-platform "$cargo_target" \
+  --no-default-features --features "$feature" > "$work/cargo-metadata.json"
 python3 "$repo/tools/inventory_cargo_licenses.py" "$work/source/pg_jsonschema" \
   "$work/cargo-metadata.json" "$output/cargo-license-inventory.json"
 cargo install cargo-pgrx --version 0.16.1 --locked
-cargo pgrx init --pg18 "$prefix/bin/pg_config"
-cargo pgrx install --release --no-default-features --features pg18 --pg-config "$prefix/bin/pg_config"
+cargo pgrx init "--pg$pg_major" "$prefix/bin/pg_config"
+cargo pgrx install --release --no-default-features --features "$feature" --pg-config "$prefix/bin/pg_config"
 test "$(shasum -a 256 Cargo.lock | awk '{print $1}')" = "$cargo_lock_sha256"
 
 pkglibdir=$("$prefix/bin/pg_config" --pkglibdir)
@@ -120,19 +129,19 @@ cp "$work/source/pg_jsonschema/LICENSE" "$work/package/pg_jsonschema/LICENSES/pg
 cp "$output/cargo-license-inventory.json" \
   "$work/package/pg_jsonschema/LICENSES/pg_jsonschema-cargo-license-inventory.json"
 
-python3 - "$work/package" "$core_sha256" "$cargo_lock_sha256" <<'PY'
+python3 - "$work/package" "$core_sha256" "$cargo_lock_sha256" "$pg_version" "$architecture" "$platform" "$source_url" "$extension_commit" <<'PY'
 import json
 import pathlib
 import sys
 
 root = pathlib.Path(sys.argv[1])
+core_sha256, cargo_lock_sha256, pg_version, architecture, platform, source_url, extension_commit = sys.argv[2:]
 metadata = {
     "project": "pg_jsonschema", "version": "0.3.4", "sql_names": ["pg_jsonschema"],
-    "requires": [], "postgresql_version": "18.6", "platform": "macos", "architecture": "arm64",
-    "source": {"url": "https://github.com/supabase/pg_jsonschema.git",
-               "commit": "cbe74b570d38aa0c4d42914e7a118bcb3adaee7a",
-               "cargo_lock_sha256": sys.argv[3]},
-    "core_archive": {"basename": "postgresql-18.6-macos-arm64.tar.gz", "sha256": sys.argv[2]},
+    "requires": [], "postgresql_version": pg_version, "platform": "macos", "architecture": architecture,
+    "source": {"url": source_url, "commit": extension_commit,
+               "cargo_lock_sha256": cargo_lock_sha256},
+    "core_archive": {"basename": f"postgresql-{pg_version}-{platform}.tar.gz", "sha256": core_sha256},
     "release_eligible": False,
     "release_blockers": ["seahash-4.1.0-notice-unresolved",
                          "postgresql-core-redistribution-review-pending"],
@@ -213,8 +222,11 @@ prefix_link_created=true
 {
   echo "pg_jsonschema_source_url=$source_url"
   echo "pg_jsonschema_source_commit=$extension_commit"
+  echo "profile_id=$profile_id"
   echo "cargo_lock_sha256=$cargo_lock_sha256"
   echo "core_run_id=$core_run_id"
+  echo "core_build_id=$core_build_id"
+  echo "core_source_revision=$core_revision"
   echo "core_sha256=$core_sha256"
   echo "deployment_target=$deployment_target"
   echo "macos_version=$(sw_vers -productVersion)"

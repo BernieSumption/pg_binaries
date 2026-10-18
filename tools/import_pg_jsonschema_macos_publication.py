@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate and retain one pg_jsonschema macOS arm64 publication attempt."""
+"""Validate and retain one pg_jsonschema macOS publication attempt."""
 
 import argparse
 import hashlib
@@ -55,7 +55,8 @@ def _copy(copies, root):
         shutil.copyfile(source, destination)
 
 
-def import_run(root, core_archives, archives, run_id):
+def import_run(root, core_archives, archives, run_id, target_config=None):
+    publication.configure_target(target_config or publication.DEFAULT_TARGET)
     root, core_archives, archives = map(Path, (root, core_archives, archives))
     root = root.resolve()
     run_id = str(run_id)
@@ -206,9 +207,10 @@ def main():
     parser.add_argument("--core-archives", type=Path, required=True)
     parser.add_argument("--archives", type=Path, required=True)
     parser.add_argument("--run-id", required=True)
+    parser.add_argument("--target", type=Path, required=True)
     args = parser.parse_args()
     try:
-        print("\n".join(import_run(args.root, args.core_archives, args.archives, args.run_id)))
+        print("\n".join(import_run(args.root, args.core_archives, args.archives, args.run_id, args.target)))
         return 0
     except (coverage.CoverageError, OSError, ValueError, TypeError, KeyError) as exc:
         print(f"pg_jsonschema macOS publication import: {exc}", file=sys.stderr)
