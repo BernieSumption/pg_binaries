@@ -93,17 +93,21 @@ class SeparateLinuxPgvectorBuildInputs(unittest.TestCase):
             self.core, self.sidecar, archive_input.sha256(self.core), "17.11", "x86_64", "a" * 64),
             archive_input.sha256(self.core))
 
-    def test_source_must_match_pin_and_have_expected_root(self):
+    def test_source_version_must_match_selected_pin_and_have_expected_root(self):
         source = self.directory / "source.tar.gz"
         write_tar(source, {"pgvector-0.8.7/Makefile": "all:"})
         digest = archive_input.sha256(source)
         archive_input.validate_source(source, digest)
+        archive_input.validate_source(source, digest, "0.8.7")
         with self.assertRaisesRegex(ValueError, "SHA-256"):
-            archive_input.validate_source(source, "0" * 64)
+            archive_input.validate_source(source, "0" * 64, "0.8.7")
         wrong = self.directory / "wrong.tar.gz"
         write_tar(wrong, {"pgvector-0.8.6/Makefile": "all:"})
         with self.assertRaisesRegex(ValueError, "root"):
-            archive_input.validate_source(wrong, archive_input.sha256(wrong))
+            archive_input.validate_source(wrong, archive_input.sha256(wrong), "0.8.7")
+        versioned = self.directory / "versioned.tar.gz"
+        write_tar(versioned, {"pgvector-0.9.0/Makefile": "all:"})
+        archive_input.validate_source(versioned, archive_input.sha256(versioned), "0.9.0")
 
 if __name__ == "__main__":
     unittest.main()

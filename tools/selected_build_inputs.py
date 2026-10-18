@@ -1,4 +1,4 @@
-"""Select and identify the checked Linux pgvector 0.8.7 build inputs."""
+"""Select and identify checked Linux pgvector build inputs."""
 
 from __future__ import annotations
 
@@ -31,7 +31,7 @@ RECIPE_FILES = (
 
 
 def selected_identity(builder_packages_sha256: str, core_sha256: str, postgresql_major: int = 18,
-                      root: str | Path = ROOT) -> dict:
+                      root: str | Path = ROOT, pgvector_version: str = VERSION) -> dict:
     """Return the current identity for the supported Linux pgvector target."""
     root = Path(root)
     try:
@@ -54,13 +54,13 @@ def selected_identity(builder_packages_sha256: str, core_sha256: str, postgresql
         raise ValueError("the Linux pgvector selected path currently supports PostgreSQL majors 17 and 18")
     minimum = support.get("postgresql", {}).get("minimum_major")
     version = (support.get("extensions", {}).get(PROJECT, {}).get("versions", {})
-               .get(VERSION))
+               .get(pgvector_version))
     if not isinstance(minimum, int) or postgresql_major < minimum:
         raise ValueError(f"PostgreSQL {postgresql_major} is below the supported minimum")
     if not isinstance(version, dict):
-        raise ValueError(f"{PROJECT} {VERSION} is not supported")
+        raise ValueError(f"{PROJECT} {pgvector_version} is not supported")
     if postgresql_major < version.get("postgresql_minimum_major", 0):
-        raise ValueError(f"{PROJECT} {VERSION} does not support PostgreSQL {postgresql_major}")
+        raise ValueError(f"{PROJECT} {pgvector_version} does not support PostgreSQL {postgresql_major}")
     dockerfile = root / "scripts/pgvector/linux-build.Dockerfile"
     try:
         dockerfile_text = dockerfile.read_text(encoding="utf-8")
@@ -70,11 +70,11 @@ def selected_identity(builder_packages_sha256: str, core_sha256: str, postgresql
     if len(base_matches) != 1:
         raise ValueError("builder Dockerfile must have exactly one pinned ubuntu:22.04 base digest")
     base_sha256 = base_matches[0]
-    source = source_archive_tool.source_archive(PROJECT, VERSION, "tar.gz", root)
+    source = source_archive_tool.source_archive(PROJECT, pgvector_version, "tar.gz", root)
     return build_input_identity.create_identity(
         repo_root=root,
         component=PROJECT,
-        target={"project": PROJECT, "version": VERSION, "platform": PLATFORM,
+        target={"project": PROJECT, "version": pgvector_version, "platform": PLATFORM,
                 "postgresql_major": postgresql_major},
         upstream_sources={PROJECT: source},
         dependencies={"postgresql": {"major": postgresql_major, "sha256": core_sha256},
@@ -94,10 +94,11 @@ def main() -> None:
     parser.add_argument("--core-sha256", required=True,
                         help="bare lowercase SHA-256 digest of the checked PostgreSQL core archive")
     parser.add_argument("--postgresql-major", type=int, default=18)
+    parser.add_argument("--pgvector-version", default=VERSION)
     args = parser.parse_args()
     try:
         identity = selected_identity(args.builder_packages_sha256, args.core_sha256,
-                                     args.postgresql_major)
+                                     args.postgresql_major, pgvector_version=args.pgvector_version)
     except (ValueError, source_archive_tool.SourceArchiveError) as exc:
         parser.error(str(exc))
     print(json.dumps(identity, sort_keys=True, indent=2))

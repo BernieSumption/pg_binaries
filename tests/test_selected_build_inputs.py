@@ -34,6 +34,14 @@ class SelectedBuildInputsTests(unittest.TestCase):
             packages_sha256 or self.PACKAGES_SHA256, core_sha256 or self.CORE_SHA256,
             major, self.root)
 
+    def add_pgvector_release(self, version):
+        path, value = self.support()
+        value["extensions"]["pgvector"]["versions"][version] = json.loads(json.dumps(
+            value["extensions"]["pgvector"]["versions"]["0.8.7"]))
+        value["extensions"]["pgvector"]["versions"][version]["source_archives"]["tar.gz"]["url"] = (
+            f"https://github.com/pgvector/pgvector/archive/refs/tags/v{version}.tar.gz")
+        path.write_text(json.dumps(value), encoding="utf-8")
+
     def support(self):
         path = self.root / "support.json"
         value = json.loads(path.read_text(encoding="utf-8"))
@@ -70,6 +78,17 @@ class SelectedBuildInputsTests(unittest.TestCase):
         self.assertEqual(identity["dependencies"]["postgresql"], {
             "major": 17, "sha256": self.CORE_SHA256})
         self.assertEqual(identity["target"]["platform"], "linux-x86_64")
+
+    def test_selected_pgvector_release_is_checked_and_bound_into_identity(self):
+        self.add_pgvector_release("0.9.0")
+        identity = selected_build_inputs.selected_identity(
+            self.PACKAGES_SHA256, self.CORE_SHA256, 17, self.root, "0.9.0")
+        self.assertEqual(identity["target"]["version"], "0.9.0")
+        self.assertEqual(identity["upstream_sources"]["pgvector"]["url"],
+                         "https://github.com/pgvector/pgvector/archive/refs/tags/v0.9.0.tar.gz")
+        with self.assertRaisesRegex(ValueError, "not supported"):
+            selected_build_inputs.selected_identity(
+                self.PACKAGES_SHA256, self.CORE_SHA256, 17, self.root, "0.9.1")
 
     def test_source_pin_recipe_major_and_platform_change_identity(self):
         first = self.identity()

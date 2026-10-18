@@ -10,14 +10,16 @@ def sha256(path):
             digest.update(chunk)
     return digest.hexdigest()
 
-def validate_source(path, expected):
+def validate_source(path, expected, version="0.8.7"):
     path = Path(path)
+    if not re.fullmatch(r"[0-9]+(?:\.[0-9]+)+", version):
+        raise ValueError("pgvector version must be a dotted numeric release")
     if not re.fullmatch(r"[0-9a-f]{64}", expected) or sha256(path) != expected:
         raise ValueError("pgvector source archive does not match checked support.json SHA-256")
     with tarfile.open(path, "r:gz") as archive:
         roots = {member.name.split("/", 1)[0] for member in archive.getmembers() if member.name}
-    if roots != {"pgvector-0.8.7"}:
-        raise ValueError("source archive does not contain pgvector-0.8.7 root")
+    if roots != {f"pgvector-{version}"}:
+        raise ValueError(f"source archive does not contain pgvector-{version} root")
 
 def validate_core(path, sidecar, expected_sha, version, architecture, expected_source_sha):
     path = Path(path)
