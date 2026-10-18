@@ -52,7 +52,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: windows-postgresql-18.6-pilot
-          run-id: 39087778141
+          run-id: 39089826690
           github-token: ${{ github.token }}
           path: ${{ runner.temp }}/core-archives
       - name: Build upstream source, package extension and run relocated SQL probe

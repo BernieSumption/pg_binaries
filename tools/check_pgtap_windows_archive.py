@@ -51,8 +51,8 @@ def inspect(core_archive, extension_archive, report_path):
             expected_manifest = {
                 "component": "postgresql", "version": publication.PG_VERSION,
                 "postgresql_version": publication.PG_VERSION, "platform": "windows",
-                "architecture": publication.ARCHITECTURE, "build_id": "github-39077749917-1",
-                "source_revision": "54f7a3079e7cb6631bf48ab2453822133087aeed",
+                "architecture": publication.ARCHITECTURE, "build_id": "github-39089826690-1",
+                "source_revision": "01fe5d267c30f73bb6e44d2b37c18f008223bc75",
             }
             if not isinstance(core, dict) or any(core.get(key) != value for key, value in expected_manifest.items()):
                 raise coverage.CoverageError("core archive manifest differs from the pinned build")

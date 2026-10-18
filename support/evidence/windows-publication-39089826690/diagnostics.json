@@ -1,0 +1,181 @@
+{
+  "schema_version": 1,
+  "platform": "windows",
+  "architecture": "x86_64",
+  "os": {
+    "caption": "Microsoft Windows Server 2022 Datacenter",
+    "version": "10.0.20348",
+    "build_number": "20348",
+    "service_pack": 0
+  },
+  "powershell_version": "7.6.6",
+  "postgresql_version": "18.6",
+  "pgvector_version": "0.8.7",
+  "build_id": "github-39089826690-1",
+  "source_revision": "01fe5d267c30f73bb6e44d2b37c18f008223bc75",
+  "inventory_revision": null,
+  "archive_urls": null,
+  "archives": {
+    "postgresql-18.6-windows-x86_64.tar.gz": "ee0b6781299cc462ba4305ff4a318519fc61741d7b0f05988cf29030eafeedd2",
+    "pgvector-0.8.7-postgresql-18.6-windows-x86_64.tar.gz": "d871febec42ff838551d531f0dc5b58f4c717b726782beed2b0fba9263f45f96"
+  },
+  "package_metadata": {
+    "postgresql": {
+      "schema_version": 1,
+      "component": "postgresql",
+      "version": "18.6",
+      "postgresql_version": "18.6",
+      "platform": "windows",
+      "architecture": "x86_64",
+      "build_id": "github-39089826690-1",
+      "source_revision": "01fe5d267c30f73bb6e44d2b37c18f008223bc75",
+      "source_archive": {
+        "url": "https://ftp.postgresql.org/pub/source/v18.6/postgresql-18.6.tar.gz",
+        "sha256": "983ee554ec53dbeb9b70797bef9fcf4e67e117e7e48ca1463cc80b3ff8e8ff3f"
+      },
+      "build_configuration": "postgresql-18.6;pgvector-0.8.7;builder=windows-runner;meson=debugoptimized;postgresql=icu,lz4,zstd,zlib,openssl,libxml,libxslt,no-uuid,no-readline;compiler=MSVC;pgvector=debug-symbols;vcpkg=9e593bb18ea69cc5095e012465dcd675a822ed0d;runtime=vcpkg-and-msvc-dlls",
+      "included_extensions": [
+        "amcheck",
+        "autoinc",
+        "bloom",
+        "btree_gin",
+        "btree_gist",
+        "citext",
+        "cube",
+        "dblink",
+        "dict_int",
+        "dict_xsyn",
+        "earthdistance",
+        "file_fdw",
+        "fuzzystrmatch",
+        "hstore",
+        "insert_username",
+        "intagg",
+        "intarray",
+        "isn",
+        "lo",
+        "ltree",
+        "moddatetime",
+        "pageinspect",
+        "pg_buffercache",
+        "pg_freespacemap",
+        "pg_logicalinspect",
+        "pg_prewarm",
+        "pg_stat_statements",
+        "pg_surgery",
+        "pg_trgm",
+        "pg_visibility",
+        "pg_walinspect",
+        "pgcrypto",
+        "pgrowlocks",
+        "pgstattuple",
+        "plpgsql",
+        "postgres_fdw",
+        "refint",
+        "seg",
+        "sslinfo",
+        "tablefunc",
+        "tcn",
+        "tsm_system_rows",
+        "tsm_system_time",
+        "unaccent",
+        "xml2"
+      ],
+      "source_sha256": "983ee554ec53dbeb9b70797bef9fcf4e67e117e7e48ca1463cc80b3ff8e8ff3f",
+      "runtime_dependencies": [
+        "ICU",
+        "LZ4",
+        "Zstandard",
+        "zlib",
+        "OpenSSL"
+      ],
+      "bundled_runtime_dlls": [
+        "charset-1.dll",
+        "iconv-2.dll",
+        "icudt78.dll",
+        "icuin78.dll",
+        "icuio78.dll",
+        "icutu78.dll",
+        "icuuc78.dll",
+        "legacy.dll",
+        "libcrypto-3-x64.dll",
+        "libexslt.dll",
+        "libssl-3-x64.dll",
+        "libxml2.dll",
+        "libxslt.dll",
+        "lz4.dll",
+        "z.dll",
+        "zstd.dll"
+      ],
+      "os_prerequisites": [],
+      "bundled_msvc_runtime_dlls": [
+        "msvcp140.dll",
+        "vcruntime140_1.dll",
+        "vcruntime140.dll"
+      ]
+    },
+    "pgvector": {
+      "project": "pgvector",
+      "version": "0.8.7",
+      "sql_names": [
+        "vector"
+      ],
+      "requires": [],
+      "configuration_prerequisites": [],
+      "runtime_prerequisites": [],
+      "build_id": "github-39089826690-1",
+      "source_revision": "01fe5d267c30f73bb6e44d2b37c18f008223bc75",
+      "source_archive": {
+        "url": "https://github.com/pgvector/pgvector/archive/refs/tags/v0.8.7.tar.gz",
+        "sha256": "cac0b10c360f05b2d521200105ba3697e773d4cd3731f5a915a7e37ebe0bea85"
+      },
+      "build_configuration": "postgresql-18.6;pgvector-0.8.7;builder=windows-runner;meson=debugoptimized;postgresql=icu,lz4,zstd,zlib,openssl,libxml,libxslt,no-uuid,no-readline;compiler=MSVC;pgvector=debug-symbols;vcpkg=9e593bb18ea69cc5095e012465dcd675a822ed0d;runtime=vcpkg-and-msvc-dlls",
+      "platform": "windows",
+      "architecture": "x86_64"
+    }
+  },
+  "inspection_tools": {
+    "powershell": "7.6.6",
+    "tar": "bsdtar 3.8.4 - libarchive 3.8.4 zlib/1.2.5.f-ipp cng/2.0 libb2/bundled ",
+    "postgres": "postgres (PostgreSQL) 18.6"
+  },
+  "lookup_environment": {
+    "system_failure": {
+      "PATH": "C:\\Windows\\System32;C:\\Windows",
+      "SystemRoot": "C:\\Windows"
+    },
+    "postgresql_failure": {
+      "PATH": "C:\\Users\\runneradmin\\AppData\\Local\\Temp\\b384dd9428da4dc9afc8d498f8cbe5e4\\server\\postgresql\\bin;C:\\Windows\\System32;C:\\Windows",
+      "PGHOST": "127.0.0.1",
+      "PGPORT": "55439",
+      "PGUSER": "postgres",
+      "PGDATABASE": "postgres",
+      "PGSSLMODE": "disable"
+    }
+  },
+  "system_failure": {
+    "kind": "missing-bundled-runtime-dll",
+    "executable": "C:\\Users\\runneradmin\\AppData\\Local\\Temp\\b384dd9428da4dc9afc8d498f8cbe5e4\\system\\postgresql\\bin\\postgres.exe",
+    "missing_library": "libxml2.dll",
+    "hidden_library_path": "C:\\Users\\runneradmin\\AppData\\Local\\Temp\\b384dd9428da4dc9afc8d498f8cbe5e4\\system\\postgresql\\bin\\libxml2.dll.diagnostic-hidden",
+    "command": "& 'C:\\Users\\runneradmin\\AppData\\Local\\Temp\\b384dd9428da4dc9afc8d498f8cbe5e4\\system\\postgresql\\bin\\postgres.exe' --version",
+    "cwd": "C:\\Users\\runneradmin\\AppData\\Local\\Temp\\b384dd9428da4dc9afc8d498f8cbe5e4\\system\\postgresql",
+    "started_at_utc": "2026-10-18T02:47:26.1110036Z",
+    "finished_at_utc": "2026-10-18T02:47:26.2314381Z",
+    "exit_code": -1073741515,
+    "ntstatus": "0xC0000135",
+    "failure_text": ""
+  },
+  "postgresql_failure": {
+    "kind": "server-error",
+    "executable": "C:\\Users\\runneradmin\\AppData\\Local\\Temp\\b384dd9428da4dc9afc8d498f8cbe5e4\\server\\postgresql\\bin\\psql.exe",
+    "command": "& 'C:\\Users\\runneradmin\\AppData\\Local\\Temp\\b384dd9428da4dc9afc8d498f8cbe5e4\\server\\postgresql\\bin\\psql.exe' -X -v ON_ERROR_STOP=1 -h 127.0.0.1 -p 55439 -d postgres -c 'SELECT 1 / 0;'",
+    "cwd": "C:\\Users\\runneradmin\\AppData\\Local\\Temp\\b384dd9428da4dc9afc8d498f8cbe5e4\\server",
+    "server_start_command": "& 'C:\\Users\\runneradmin\\AppData\\Local\\Temp\\b384dd9428da4dc9afc8d498f8cbe5e4\\server\\postgresql\\bin\\pg_ctl.exe' -D 'C:\\Users\\runneradmin\\AppData\\Local\\Temp\\b384dd9428da4dc9afc8d498f8cbe5e4\\server\\data' -l 'C:\\Users\\runneradmin\\AppData\\Local\\Temp\\b384dd9428da4dc9afc8d498f8cbe5e4\\server\\server.log' -o '-h 127.0.0.1 -p 55439' -w start",
+    "started_at_utc": "2026-10-18T02:47:32.7142016Z",
+    "finished_at_utc": "2026-10-18T02:47:32.7983689Z",
+    "exit_code": 1,
+    "failure_text": "ERROR:  division by zero",
+    "server_log": "2026-10-18 02:47:32.642 UTC [2168] LOG:  starting PostgreSQL 18.6 on x86_64-windows, compiled by msvc-19.44.35229, 64-bit\r\n2026-10-18 02:47:32.642 UTC [2168] LOG:  listening on IPv4 address \"127.0.0.1\", port 55439\r\n2026-10-18 02:47:32.683 UTC [2848] LOG:  database system was shut down at 2026-10-18 02:47:28 UTC\n2026-10-18 02:47:32.690 UTC [2168] LOG:  database system is ready to accept connections\r\n2026-10-18 02:47:32.756 UTC [524] ERROR:  division by zero\n2026-10-18 02:47:32.756 UTC [524] STATEMENT:  SELECT 1 / 0;\n2026-10-18 02:47:32.805 UTC [2168] LOG:  received fast shutdown request\r\n2026-10-18 02:47:32.810 UTC [2168] LOG:  aborting any active transactions\r\n2026-10-18 02:47:32.814 UTC [2168] LOG:  background worker \"logical replication launcher\" (PID 8072) exited with exit code 1\r\n2026-10-18 02:47:32.816 UTC [8124] LOG:  shutting down\n2026-10-18 02:47:32.820 UTC [8124] LOG:  checkpoint starting: shutdown immediate\n2026-10-18 02:47:32.838 UTC [8124] LOG:  checkpoint complete: wrote 0 buffers (0.0%), wrote 3 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=0.001 s, sync=0.005 s, total=0.023 s; sync files=2, longest=0.003 s, average=0.003 s; distance=0 kB, estimate=0 kB; lsn=0/17ECD48, redo lsn=0/17ECD48\n2026-10-18 02:47:32.859 UTC [2168] LOG:  database system is shut down\r\n"
+  }
+}

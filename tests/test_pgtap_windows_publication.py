@@ -44,8 +44,8 @@ class PgTapWindowsArchiveTests(unittest.TestCase):
     def _make_core(self):
         manifest = {
             "component": "postgresql", "version": "18.6", "postgresql_version": "18.6",
-            "platform": "windows", "architecture": "x86_64", "build_id": "github-39077749917-1",
-            "source_revision": "54f7a3079e7cb6631bf48ab2453822133087aeed",
+            "platform": "windows", "architecture": "x86_64", "build_id": "github-39089826690-1",
+            "source_revision": "01fe5d267c30f73bb6e44d2b37c18f008223bc75",
         }
         self._tar(self.core, [("postgresql/manifest.json", json.dumps(manifest))])
 
@@ -121,8 +121,8 @@ class PgTapWindowsArchiveTests(unittest.TestCase):
         core = core_dir / f"postgresql-18.6-{publication.PLATFORM}.tar.gz"
         manifest = {
             "component": "postgresql", "version": "18.6", "postgresql_version": "18.6",
-            "platform": "windows", "architecture": "x86_64", "build_id": "github-39077749917-1",
-            "source_revision": "54f7a3079e7cb6631bf48ab2453822133087aeed",
+            "platform": "windows", "architecture": "x86_64", "build_id": "github-39089826690-1",
+            "source_revision": "01fe5d267c30f73bb6e44d2b37c18f008223bc75",
         }
         with tarfile.open(core, "w:gz") as archive:
             data = json.dumps(manifest).encode()
