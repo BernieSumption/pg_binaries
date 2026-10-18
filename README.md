@@ -10,6 +10,8 @@ This project is specified by humans and implemented by AI.
 - `specs/testing.md` - how everything is tested and how testing guarantees that the functional requirements are met 
 - `policies/*.md` - AI managed records documenting exact behaviour how implementation decisions followed the specifications 
 
+For a bounded new-extension trial, follow [Adding an extension](EXTENSION_FEASIBILITY.md).
+
 ## Licence
 
 Original repository code and documentation use the [MIT licence](LICENSE). Distributed PostgreSQL, extensions and third-party dependencies retain their own licences and notices.
