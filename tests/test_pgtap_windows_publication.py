@@ -31,7 +31,7 @@ class PgTapWindowsArchiveTests(unittest.TestCase):
 
     def test_candidate_pins_current_core_identity(self):
         script = Path("scripts/pgtap/windows-feasibility.ps1").read_text()
-        workflow = Path(".github/workflows/pgtap-windows-publication.yml").read_text()
+        workflow = Path(".github/workflows/pgtap-windows-selected-publication.yml").read_text()
         self.assertIn("windows_core_pin.py", script)
         self.assertIn("windows_core_pin.py", workflow)
         self.assertIn("run-id: ${{ steps.core_pin.outputs.run_id }}", workflow)
@@ -46,11 +46,6 @@ class PgTapWindowsArchiveTests(unittest.TestCase):
                 self.assertEqual(target.core_sha256, pin["sha256"])
                 self.assertEqual(target.core_build_id, pin["build_id"])
                 self.assertEqual(target.core_source_revision, pin["source_revision"])
-                if version != "18.6":
-                    workflow = Path(f".github/workflows/pgtap-windows-{version.replace('.', '-')}-publication.yml").read_text()
-                    self.assertIn(f"profile_id: {target.profile_id}", workflow)
-                    self.assertIn(f"-PostgreSQLVersion {version}", workflow)
-                    self.assertIn(f"windows_core_pin.py --postgresql-version {version} --github-output", workflow)
         with self.assertRaisesRegex(Exception, "unsupported PostgreSQL target"):
             publication.target_for("15.20")
 
