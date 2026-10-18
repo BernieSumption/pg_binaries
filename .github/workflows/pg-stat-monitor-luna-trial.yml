@@ -2,6 +2,13 @@ name: pg_stat_monitor Luna build iteration
 
 on:
   workflow_dispatch:
+  push:
+    branches: [spike]
+    paths:
+      - .github/workflows/pg-stat-monitor-luna-trial.yml
+      - scripts/pg_stat_monitor/linux-build.sh
+      - scripts/pg_stat_monitor/linux-build.Dockerfile
+      - scripts/pg_stat_monitor/linux-build-in-container.sh
 
 permissions:
   actions: read
