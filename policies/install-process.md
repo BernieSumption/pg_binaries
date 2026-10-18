@@ -40,6 +40,8 @@ The inventory remains authoritative for the selected SQL extension versions and 
 
 Extension prerequisites must be explicit and resolvable from supported packages. Include required runtime libraries in the PostgreSQL or extension archive unless the functional specification guarantees their presence on every supported machine. Do not rely on packages installed by a system package manager, developer tools, shell startup files, or machine-specific library paths.
 On Windows, the PostgreSQL archive supplies the application-local Visual C++ runtime DLLs beside its executables. Extension archives using that runtime depend on the PostgreSQL archive's copy and must not bundle duplicate copies. Verify that each extension's imports are satisfied by the assembled prefix; a new import absent from the core archive is a packaging failure to fix before publication.
+
+The PostgreSQL 15 Windows MSVC installer also installs SQL extension fixtures and native modules from `src/test/modules`. The Windows PG15 package step may remove only installed extension controls and SQL scripts whose names match controls in that pinned upstream test-module tree, plus DLLs named by those modules' upstream `MODULE_big` or `MODULES` entries. It must record every removed path in the archive manifest, fail on collisions with contrib or core module names, and preserve all ordinary contrib and built-in extensions. Keep the built-in coverage check unchanged so packaging cannot hide missing test cases for shipped extensions.
 When an extension needs a built-in SQL extension that has no separate project archive, list its SQL name and `CREATE EXTENSION` step in `configuration_prerequisites`. The sibling control file remains authoritative for PostgreSQL dependency ordering.
 
 ## Relocation

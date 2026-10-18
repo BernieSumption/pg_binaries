@@ -87,6 +87,10 @@ $env:PATH = "$(Join-Path $vcpkg 'bin');$env:PATH"
 if ($pgVersion -eq '15.19') {
   $pg15Dependencies = Join-Path $work 'postgresql-15-msvc-dependencies'
   & (Join-Path $PSScriptRoot 'build-postgresql-15-msvc.ps1') -SourceRoot $pgSource -InstallRoot $pgInstall -VcpkgRoot $vcpkgRoot -StagingRoot $pg15Dependencies
+  $fixtureReportPath = Join-Path $pgInstall 'share/windows-test-fixture-exclusions.json'
+  python (Join-Path $repo 'tools/package_windows_postgresql_test_fixtures.py') --source-root $pgSource --install-root $pgInstall --report $fixtureReportPath
+  if ($LASTEXITCODE -ne 0) { throw 'Failed to package PostgreSQL without test-only SQL extension fixtures' }
+  $fixtureReport = Get-Content $fixtureReportPath -Raw | ConvertFrom-Json
 } else {
   $mesonArgs = @(
     'setup', $pgBuild, $pgSource,
@@ -160,6 +164,7 @@ if ($pgGitSource) {
   $pgManifest.source_archive = [ordered]@{ url = $pgSourceUrl; sha256 = $pgSourceSha256 }
   $pgManifest.source_sha256 = $pgSourceSha256
 }
+if ($fixtureReport) { $pgManifest.windows_test_fixture_exclusions = $fixtureReport }
 
 $env:PGROOT = $pgInstall
 $vectorMakefile = Join-Path $vectorSource 'Makefile.win'
