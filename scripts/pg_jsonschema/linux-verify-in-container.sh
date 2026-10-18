@@ -3,7 +3,9 @@ set -euo pipefail
 pg_version=18.6
 extension_version=0.3.4
 extension_commit=cbe74b570d38aa0c4d42914e7a118bcb3adaee7a
-archive="pg_jsonschema-${extension_version}-postgresql-${pg_version}-linux-x86_64.tar.gz"
+architecture=${PG_ARCHITECTURE:-x86_64}
+case "$architecture:$(uname -m)" in x86_64:x86_64|arm64:aarch64) ;; *) echo "Architecture mismatch" >&2; exit 2 ;; esac
+archive="pg_jsonschema-${extension_version}-postgresql-${pg_version}-linux-${architecture}.tar.gz"
 cd /archives
 sha256sum -c "$archive.sha256"
 mkdir -p /tmp/first /tmp/moved /tmp/data /tmp/socket
@@ -12,17 +14,17 @@ useradd -m postgres
 chown -R postgres:postgres /tmp/first /tmp/moved
 pgroot=/tmp/first/postgresql
 test "$("$pgroot/bin/postgres" --version)" = "postgres (PostgreSQL) $pg_version"
-python3 - "$pgroot" "$extension_commit" <<'PY'
+python3 - "$pgroot" "$extension_commit" "$architecture" <<'PY'
 import json, pathlib, sys
 root = pathlib.Path(sys.argv[1])
 manifest = json.loads((root / 'manifest.json').read_text())
-assert manifest['version'] == '18.6' and manifest['architecture'] == 'x86_64', manifest
+assert manifest['version'] == '18.6' and manifest['architecture'] == sys.argv[3], manifest
 assert (root / 'lib/pg_jsonschema.so').is_file()
 assert (root / 'share/extension/pg_jsonschema.control').is_file()
 (pathlib.Path('/analysis/source-identity.txt')).write_text(
     f'pg_jsonschema_commit={sys.argv[2]}\n')
 PY
-python3 /usr/local/bin/check-elf-dependencies "$pgroot" --architecture x86_64 \
+python3 /usr/local/bin/check-elf-dependencies "$pgroot" --architecture "$architecture" \
   --archive "/archives/$archive" --report /analysis/pg_jsonschema.json
 chown postgres:postgres /tmp/data /tmp/socket
 runuser -u postgres -- "$pgroot/bin/initdb" -D /tmp/data --encoding=UTF8 --locale=C --no-instructions

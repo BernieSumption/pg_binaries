@@ -1,5 +1,13 @@
-name: pg_jsonschema Linux x86-64 feasibility
+name: pg_jsonschema Linux feasibility
 on:
+  workflow_dispatch:
+    inputs:
+      architecture:
+        description: Linux architecture
+        type: choice
+        options: [x86_64, arm64]
+        default: x86_64
+        required: true
   push:
     branches: [spike]
     paths:
@@ -12,13 +20,15 @@ on:
       - 'support/postgresql-releases.json'
 jobs:
   probe:
-    runs-on: ubuntu-24.04
+    runs-on: ${{ github.event_name == 'workflow_dispatch' && inputs.architecture == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-24.04' }}
     timeout-minutes: 90
     permissions:
       contents: read
+    env:
+      PG_ARCHITECTURE: ${{ github.event_name == 'workflow_dispatch' && inputs.architecture || 'x86_64' }}
     steps:
       - uses: actions/checkout@v4
-      - name: Build PostgreSQL 18.6 Linux x86-64
+      - name: Build PostgreSQL 18.6 Linux
         run: scripts/linux/build.sh "$RUNNER_TEMP/core"
       - name: Build pg_jsonschema 0.3.4 from pinned upstream source
         run: bash scripts/pg_jsonschema/linux-build.sh "$RUNNER_TEMP/core" "$RUNNER_TEMP/pg_jsonschema"
@@ -28,7 +38,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: pg-jsonschema-linux-x86_64-${{ github.run_id }}
+          name: pg-jsonschema-linux-${{ env.PG_ARCHITECTURE }}-${{ github.run_id }}
           path: |
             ${{ runner.temp }}/pg_jsonschema/*.tar.gz
             ${{ runner.temp }}/pg_jsonschema/*.sha256

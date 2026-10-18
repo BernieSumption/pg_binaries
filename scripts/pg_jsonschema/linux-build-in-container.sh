@@ -3,8 +3,10 @@ set -euo pipefail
 pg_version=18.6
 extension_version=0.3.4
 extension_commit=cbe74b570d38aa0c4d42914e7a118bcb3adaee7a
-pg_archive="postgresql-${pg_version}-linux-x86_64.tar.gz"
-output_archive="pg_jsonschema-${extension_version}-postgresql-${pg_version}-linux-x86_64.tar.gz"
+architecture=${PG_ARCHITECTURE:-x86_64}
+case "$architecture:$(uname -m)" in x86_64:x86_64|arm64:aarch64) ;; *) echo "Architecture mismatch" >&2; exit 2 ;; esac
+pg_archive="postgresql-${pg_version}-linux-${architecture}.tar.gz"
+output_archive="pg_jsonschema-${extension_version}-postgresql-${pg_version}-linux-${architecture}.tar.gz"
 cd /input
 sha256sum -c "$pg_archive.sha256"
 mkdir -p /work/core /work/source /out
