@@ -89,7 +89,7 @@ jobs:
           set -euo pipefail
           python3 tools/select_extension_work.py \
             --project HypoPG --version "$EXTENSION_VERSION" \
-            --platform macos-x86_64 --postgresql-major "${POSTGRESQL_VERSION%%.*}" \
+            --platform macos-x86_64 --postgresql-version "$POSTGRESQL_VERSION" \
             --github-output "$GITHUB_OUTPUT" > "$RUNNER_TEMP/selected-work.json"
 
   build:
