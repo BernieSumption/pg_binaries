@@ -1,6 +1,7 @@
 name: pgvector separate Linux build trial
 
 on:
+  workflow_dispatch:
   push:
     branches: [spike]
     paths:
