@@ -85,6 +85,19 @@ class DumpbinParserTests(unittest.TestCase):
             "name": "kernel32.dll", "functions": ["GetProcAddress", "#17"],
             "delay_functions": []}])
 
+    def test_merges_case_variants_of_the_same_windows_dll(self):
+        output = """
+          Section contains the following imports:
+            KERNEL32.dll
+                 0 GetProcAddress
+          Section contains the following delay load imports:
+            kernel32.dll
+                 0 Sleep
+        """
+        self.assertEqual(checker.parse_import_details(output), [{
+            "name": "KERNEL32.dll", "functions": ["GetProcAddress"],
+            "delay_functions": ["Sleep"]}])
+
     def test_stops_at_dumpbin_section_summary(self):
         output = """
           Section contains the following imports:

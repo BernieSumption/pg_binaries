@@ -9,8 +9,10 @@ on:
       - 'scripts/pg_jsonschema/windows-feasibility.ps1'
       - 'scripts/pg_jsonschema/probe.sql'
       - 'tools/check_pg_jsonschema_windows_archive.py'
+      - 'tools/check_pe_dependencies.py'
       - 'tools/emit_pg_jsonschema_windows_publication.py'
       - 'tools/import_pg_jsonschema_windows_publication.py'
+      - 'tests/test_check_pe_dependencies.py'
       - 'tests/test_pg_jsonschema_windows_publication.py'
 
 permissions:

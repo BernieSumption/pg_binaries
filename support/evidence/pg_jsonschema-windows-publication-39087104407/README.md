@@ -1,0 +1,5 @@
+# pg_jsonschema Windows candidate attempt 39087104407
+
+[Run 39087104407](https://github.com/BernieSumption/pg_binaries/actions/runs/39087104407) on 2026-10-18 built the pinned upstream `pg_jsonschema` 0.3.4 source against the temporary PostgreSQL 18.6 Windows x86-64 core. It assembled extension archive SHA-256 `301713ec7264f76893756dde6516b2d9a964e6c2126edf60115fa52e50b41eb5` and passed the [relocated SQL probe](x86_64/probe-output.txt). The PE dependency checker inspected 100 binaries before rejecting `KERNEL32.dll` and `kernel32.dll` as inconsistent spellings of one imported DLL. Windows resolves DLL names without case sensitivity, so the checker now merges those imports while preserving their function lists; its focused test covers normal and delay-load sections.
+
+The [failed attempt](x86_64/attempt.json), [archive-bound record](x86_64/verification-record.json), [PE report](x86_64/pe-dependency-analysis.json) and [failure](x86_64/failure.txt) are retained. The candidate remains release-ineligible because it uses a temporary development core and Rust dependency redistribution review remains incomplete. Rerun the candidate after the checker correction.

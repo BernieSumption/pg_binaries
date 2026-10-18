@@ -93,8 +93,6 @@ def parse_import_details(output):
                     current = {"name": name, "functions": [], "delay_functions": []}
                     by_name[key] = current
                     imports.append(current)
-                elif current["name"] != name:
-                    raise ValueError(f"inconsistent DLL import spelling: {name}")
             elif line.strip() and not line[:1].isspace():
                 in_import_section = False
                 current = None

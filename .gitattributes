@@ -3,3 +3,4 @@
 support/evidence/windows-*/debug-symbols-index.json -text
 support/evidence/windows-publication-*/*.json -text
 support/verification/*windows-x86_64-current-*.json -text
+support/evidence/pg_jsonschema-windows-publication-*/*/* -text
