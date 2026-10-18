@@ -66,7 +66,7 @@ class PgCronMacOSFixture:
                 {"type": "postgresql_setting", "name": "cron.use_background_workers", "value": "on"},
             ],
             "runtime_prerequisites": [], "postgresql_version": emitter.PG_VERSION,
-            "platform": "macos", "architecture": "arm64",
+            "platform": "macos", "architecture": emitter.ARCHITECTURE,
             "source": {"url": emitter.SOURCE_URL, "sha256": emitter.SOURCE_SHA256},
             "core_archive": {"basename": self.core_name, "sha256": self.core_digest},
         }
@@ -101,13 +101,13 @@ class PgCronMacOSFixture:
         digests = {self.core_name: self.core_digest,
                    self.extension_name: self.digest(self.extension)}
         (self.output / "static-analysis.json").write_text(json.dumps({
-            "passed": True, "architecture": "arm64", "findings": [],
+            "passed": True, "architecture": emitter.ARCHITECTURE, "findings": [],
             "inspected_files": ["bin/postgres"],
             "archives": [{"basename": name, "sha256": digest}
                          for name, digest in digests.items()],
         }))
         (self.output / "pg-cron-macho-inspection.json").write_text(json.dumps({
-            "passed": True, "architecture": "arm64", "file": "lib/pg_cron.dylib",
+            "passed": True, "architecture": emitter.ARCHITECTURE, "file": "lib/pg_cron.dylib",
             "minimum_os": "11.0", "findings": [],
             "dependencies": {"@rpath/libpq.5.dylib": "lib/libpq.5.dylib"},
             "module_rpaths": ["@loader_path"], "archives": digests,

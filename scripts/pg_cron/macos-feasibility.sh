@@ -1,14 +1,18 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-core_archives=${1:?usage: macos-feasibility.sh CORE_ARCHIVE_DIRECTORY OUTPUT_DIRECTORY}
-output=${2:?usage: macos-feasibility.sh CORE_ARCHIVE_DIRECTORY OUTPUT_DIRECTORY}
-architecture=arm64
+core_archives=${1:?usage: macos-feasibility.sh CORE_ARCHIVE_DIRECTORY OUTPUT_DIRECTORY [arm64|x86_64]}
+output=${2:?usage: macos-feasibility.sh CORE_ARCHIVE_DIRECTORY OUTPUT_DIRECTORY [arm64|x86_64]}
+architecture=${3:-arm64}
 pg_version=18.6
 extension_version=1.6.8
 source_url='https://github.com/citusdata/pg_cron/archive/refs/tags/v1.6.8.tar.gz'
 source_sha256=c19ab9bb35406c60fb51ecda993737c083850abe424acb6c1030439d00a1f8e4
-core_sha256=bc543b0d54a8a33b3b737eab74d7f185035f01e5c2db4eb48be049996eee4440
+case "$architecture" in
+  arm64) core_sha256=bc543b0d54a8a33b3b737eab74d7f185035f01e5c2db4eb48be049996eee4440; core_build_id=github-39079982683-1 ;;
+  x86_64) core_sha256=5ec45e48bad1439860f0143fd6f2cbc04a86cfa456beef8c5ca9040960ea3f40; core_build_id=github-39079982747-1 ;;
+  *) echo "Unsupported macOS architecture: $architecture" >&2; exit 2 ;;
+esac
 core_name="postgresql-${pg_version}-macos-${architecture}.tar.gz"
 extension_name="pg_cron-${extension_version}-postgresql-${pg_version}-macos-${architecture}.tar.gz"
 repo=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
@@ -41,17 +45,18 @@ pgroot="$work/first/postgresql"
 test -s "$pgroot/include/server/pg_config.h"
 test -s "$pgroot/lib/pgxs/src/makefiles/pgxs.mk"
 
-python3 - "$pgroot" > "$work/prefix" <<'PY'
+python3 - "$pgroot" "$architecture" "$core_build_id" > "$work/prefix" <<'PY'
 import json
 import pathlib
 import re
 import sys
 
 root = pathlib.Path(sys.argv[1])
+architecture, core_build_id = sys.argv[2:]
 manifest = json.loads((root / "manifest.json").read_text())
 expected = {
     "component": "postgresql", "version": "18.6", "postgresql_version": "18.6",
-    "platform": "macos", "architecture": "arm64", "build_id": "github-39079982683-1",
+    "platform": "macos", "architecture": architecture, "build_id": core_build_id,
     "source_revision": "748e1fb698ee8f87df4cf68d70670c6f8f3adde8",
 }
 for key, value in expected.items():
@@ -155,7 +160,7 @@ def rpaths(binary):
     return values
 
 if architecture not in run("lipo", "-archs", str(module)).split():
-    raise SystemExit("pg_cron.dylib lacks the required arm64 architecture")
+    raise SystemExit(f"pg_cron.dylib lacks the required {architecture} architecture")
 load = run("otool", "-l", str(module))
 minimum = re.search(r"\bminos (\d+(?:\.\d+){0,2})", load)
 if not minimum or tuple(map(int, minimum.group(1).split(".")))[:2] > (11, 0):

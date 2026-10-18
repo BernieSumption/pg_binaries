@@ -22,7 +22,7 @@ class ImportPgCronMacOSPublicationTests(unittest.TestCase):
         self.assertTrue(any(path.endswith("current-receipt.json") for path in retained))
         self.assertTrue(any(path.startswith("support/verification/") for path in retained))
         evidence = (self.fixture.root / "support/evidence/pgcron-macos-publication-"
-                    "12345678901/arm64")
+                    f"12345678901/{importer.publication.ARCHITECTURE}")
         self.assertTrue((evidence / "attempt.json").is_file())
         self.assertTrue((evidence / "static-analysis.json").is_file())
         self.assertTrue((evidence / "pg-cron-macho-inspection.json").is_file())
@@ -55,7 +55,7 @@ class ImportPgCronMacOSPublicationTests(unittest.TestCase):
     def test_import_does_not_replace_prior_evidence_with_different_bytes(self):
         self.fixture.emit()
         evidence = (self.fixture.root / "support/evidence/pgcron-macos-publication-"
-                    "12345678901/arm64/attempt.json")
+                    f"12345678901/{importer.publication.ARCHITECTURE}/attempt.json")
         evidence.parent.mkdir(parents=True, exist_ok=True)
         evidence.write_text("different evidence\n")
         with self.assertRaisesRegex(Exception, "refusing to replace retained evidence"):

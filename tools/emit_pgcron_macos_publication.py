@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Bind the pg_cron macOS arm64 archive and checks into publication evidence."""
+"""Bind a pg_cron macOS archive and its checks into publication evidence."""
 
 import argparse
 import hashlib
@@ -14,12 +14,17 @@ import coverage
 from check_macos_extension_license_inventory import check_archive
 
 
-PROFILE_ID = "pgcron-publication-macos-arm64-18.6"
 PG_VERSION = "18.6"
 VERSION = "1.6.8"
-ARCHITECTURE = "arm64"
-PLATFORM = "macos-arm64"
-CORE_SHA256 = "bc543b0d54a8a33b3b737eab74d7f185035f01e5c2db4eb48be049996eee4440"
+ARCHITECTURE = os.environ.get("PGCRON_MACOS_ARCHITECTURE", "arm64")
+if ARCHITECTURE not in {"arm64", "x86_64"}:
+    raise ValueError("PGCRON_MACOS_ARCHITECTURE must be arm64 or x86_64")
+PROFILE_ID = f"pgcron-publication-macos-{ARCHITECTURE}-18.6"
+PLATFORM = f"macos-{ARCHITECTURE}"
+CORE_SHA256 = {
+    "arm64": "bc543b0d54a8a33b3b737eab74d7f185035f01e5c2db4eb48be049996eee4440",
+    "x86_64": "5ec45e48bad1439860f0143fd6f2cbc04a86cfa456beef8c5ca9040960ea3f40",
+}[ARCHITECTURE]
 SOURCE_URL = "https://github.com/citusdata/pg_cron/archive/refs/tags/v1.6.8.tar.gz"
 SOURCE_SHA256 = "c19ab9bb35406c60fb51ecda993737c083850abe424acb6c1030439d00a1f8e4"
 CASES = {"archive-suite", "static-analysis"}
@@ -190,7 +195,7 @@ def emit(root, core_dir, archives, output, step_results, os_version, image_id, e
     _sidecar(core_archive, digests[core_name])
     _sidecar(extension_archive, digests[extension_name])
     if digests[core_name] != CORE_SHA256:
-        _fail("PostgreSQL core archive does not match run 39079982683")
+        _fail("PostgreSQL core archive does not match the pinned pilot run")
     _metadata(extension_archive)
     try:
         components, native_files = check_archive(extension_archive)

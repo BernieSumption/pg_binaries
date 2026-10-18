@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate and retain one pg_cron macOS arm64 publication attempt."""
+"""Validate and retain one pg_cron macOS publication attempt."""
 
 import argparse
 import json
