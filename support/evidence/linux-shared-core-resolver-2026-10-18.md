@@ -6,3 +6,5 @@ The selected PostgreSQL 17.11 Linux x86-64 paths now use one core resolver. On 2
 - [HypoPG evidence](hypopg-publication-39176039827/x86_64/current-receipt.json) binds core SHA-256 `ad56c70f07cb8ae12f149a87d2bd6e6bb58dbb90a76cde150bf23775b537340b` and HypoPG SHA-256 `65688d25187abe4ede580a3889ede9684388fdc4b6740b80534aa2d17f18eaf9`.
 
 Both runs rebuilt PostgreSQL after rejecting older candidates. The log showed one new cause: an archive reused and republished by a later run retained its original build revision in the core manifest, while candidate validation compared that revision with the republishing run. The validator now distinguishes the build revision from the artifact run revision and checks core-recipe changes against the build revision. This correction passed focused local tests but requires a later CI run to prove cross-run reuse. The fallback still used the combined PostgreSQL/pgvector builder in these runs; a core-only fallback remains to be verified.
+
+The subsequent [core-only and cross-project reuse trial](linux-shared-core-reuse-2026-10-18.md) passed both checks.
