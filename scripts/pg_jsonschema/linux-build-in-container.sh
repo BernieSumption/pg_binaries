@@ -31,6 +31,11 @@ cargo pgrx init --pg18 "$pgroot/bin/pg_config"
 cd /work/source
 cargo pgrx install --release --no-default-features --features pg18 --pg-config "$pgroot/bin/pg_config"
 test "$(sha256sum /work/source/Cargo.lock | awk '{print $1}')" = "$lock_sha256"
+case "$architecture" in x86_64) rust_target=x86_64-unknown-linux-gnu ;; arm64) rust_target=aarch64-unknown-linux-gnu ;; esac
+cargo metadata --locked --format-version 1 --filter-platform "$rust_target" \
+  --no-default-features --features pg18 > /work/cargo-metadata.json
+python3 /usr/local/bin/inventory-cargo-licenses /work/source /work/cargo-metadata.json \
+  /out/cargo-license-inventory.json
 test -s "$pgroot/lib/pg_jsonschema.so"
 test -s "$pgroot/share/extension/pg_jsonschema.control"
 tar -C /opt -czf "/out/$output_archive" postgresql

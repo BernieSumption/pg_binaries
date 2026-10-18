@@ -16,6 +16,7 @@ on:
       - 'scripts/pg_jsonschema/probe.sql'
       - 'scripts/linux/**'
       - 'tools/check_elf_dependencies.py'
+      - 'tools/inventory_cargo_licenses.py'
       - 'support.json'
       - 'support/postgresql-releases.json'
 jobs:
@@ -43,6 +44,7 @@ jobs:
             ${{ runner.temp }}/pg_jsonschema/*.tar.gz
             ${{ runner.temp }}/pg_jsonschema/*.sha256
             ${{ runner.temp }}/pg_jsonschema/build-evidence.txt
+            ${{ runner.temp }}/pg_jsonschema/cargo-license-inventory.json
             ${{ runner.temp }}/pg_jsonschema/static-analysis/*.json
             ${{ runner.temp }}/pg_jsonschema/static-analysis/*.txt
           if-no-files-found: warn
