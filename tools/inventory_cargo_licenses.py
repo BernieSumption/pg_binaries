@@ -16,9 +16,11 @@ def file_inventory(root):
     if not root.is_dir():
         return files
     for path in sorted(root.rglob("*")):
-        if path.is_file() and LICENSE_FILE.match(path.name):
+        relative = path.relative_to(root)
+        in_license_directory = len(relative.parts) > 1 and relative.parts[0].upper() in {"LICENSES", "LICENCES"}
+        if path.is_file() and (LICENSE_FILE.match(path.name) or in_license_directory):
             files.append({
-                "path": path.relative_to(root).as_posix(),
+                "path": relative.as_posix(),
                 "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
             })
     return files

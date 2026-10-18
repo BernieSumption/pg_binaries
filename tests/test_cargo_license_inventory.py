@@ -32,6 +32,8 @@ class CargoLicenseInventoryTests(unittest.TestCase):
             (crate / "Cargo.toml").write_text("[package]\nname='example'\n")
             (crate / "LICENSE-MIT").write_text("MIT terms\n")
             (crate / "NOTICE").write_text("notice text\n")
+            (crate / "LICENSES").mkdir()
+            (crate / "LICENSES/MIT.txt").write_text("separate MIT terms\n")
             package = {
                 "id": "example 1.0.0 (registry+https://example.invalid)",
                 "name": "example", "version": "1.0.0", "source": "registry+https://example.invalid",
@@ -42,7 +44,8 @@ class CargoLicenseInventoryTests(unittest.TestCase):
             result = checker.inventory(root, metadata)
 
             self.assertEqual(result["source_files"][0]["path"], "LICENSE")
-            self.assertEqual([f["path"] for f in result["packages"][0]["license_notice_files"]], ["LICENSE-MIT", "NOTICE"])
+            self.assertEqual([f["path"] for f in result["packages"][0]["license_notice_files"]],
+                             ["LICENSE-MIT", "LICENSES/MIT.txt", "NOTICE"])
             self.assertEqual(len(result["packages"][0]["license_notice_files"][0]["sha256"]), 64)
             self.assertEqual(result["packages"][0]["dependency_roles"], ["root", "shipped"])
 
