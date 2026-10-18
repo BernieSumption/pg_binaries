@@ -2,20 +2,24 @@
 set -euo pipefail
 pg_version=${PG_VERSION:-18.6}
 architecture=${PG_ARCHITECTURE:-x86_64}
+core_only=${CORE_ONLY:-0}
+case "$core_only" in 0|1) ;; *) echo "CORE_ONLY must be 0 or 1: $core_only" >&2; exit 2 ;; esac
 case "$architecture" in x86_64|arm64) ;; *) echo "Unsupported Linux architecture: $architecture" >&2; exit 2 ;; esac
 case "$architecture:$(uname -m)" in
   x86_64:x86_64|arm64:aarch64) ;;
   *) echo "Build container architecture does not match $architecture: $(uname -m)" >&2; exit 2 ;;
 esac
-if [[ ! $pg_version =~ ^(15|16|17|18)\.[0-9]+$ ]]; then
-  echo "Linux pilot currently supports PostgreSQL 15 through 18 minors only: $pg_version" >&2
+if [[ ! $pg_version =~ ^[1-9][0-9]*\.[0-9]+$ ]]; then
+  echo "Invalid PostgreSQL release: $pg_version" >&2
   exit 2
 fi
 vector_version=0.8.7
 pg_source_url=${PG_SOURCE_URL:?PG_SOURCE_URL is required}
 pg_source_sha256=${PG_SOURCE_SHA256:?PG_SOURCE_SHA256 is required}
-vector_source_url=${VECTOR_SOURCE_URL:?VECTOR_SOURCE_URL is required}
-vector_source_sha256=${VECTOR_SOURCE_SHA256:?VECTOR_SOURCE_SHA256 is required}
+if [[ $core_only == 0 ]]; then
+  vector_source_url=${VECTOR_SOURCE_URL:?VECTOR_SOURCE_URL is required}
+  vector_source_sha256=${VECTOR_SOURCE_SHA256:?VECTOR_SOURCE_SHA256 is required}
+fi
 build_id=${BUILD_ID:?BUILD_ID is required}
 source_revision=${SOURCE_REVISION:?SOURCE_REVISION is required}
 builder_image_id=${BUILDER_IMAGE_ID:?BUILDER_IMAGE_ID is required}
@@ -25,10 +29,17 @@ if [[ ! $build_id =~ ^[A-Za-z0-9][A-Za-z0-9._-]*$ || ! $source_revision =~ ^([0-
   echo "Invalid Linux build provenance" >&2
   exit 2
 fi
-build_configuration="postgresql-${pg_version};pgvector-${vector_version};builder=ubuntu-22.04;configure=icu,lz4,zstd,openssl,libxml,libxslt,zlib,uuid-e2fs,no-readline,no-rpath;cflags=-O2,-g;pgvector-optflags=empty;runtime=bundled-glibc-static-musl-launcher"
+build_configuration="postgresql-${pg_version};builder=ubuntu-22.04;configure=icu,lz4,zstd,openssl,libxml,libxslt,zlib,uuid-e2fs,no-readline,no-rpath;cflags=-O2,-g;runtime=bundled-glibc-static-musl-launcher"
+if [[ $core_only == 0 ]]; then
+  build_configuration="postgresql-${pg_version};pgvector-${vector_version};builder=ubuntu-22.04;configure=icu,lz4,zstd,openssl,libxml,libxslt,zlib,uuid-e2fs,no-readline,no-rpath;cflags=-O2,-g;pgvector-optflags=empty;runtime=bundled-glibc-static-musl-launcher"
+fi
 pg_archive="postgresql-${pg_version}-linux-${architecture}.tar.gz"
 vector_archive="pgvector-${vector_version}-postgresql-${pg_version}-linux-${architecture}.tar.gz"
-mkdir -p /work/src /work/stage/postgresql /work/stage/pgvector /out
+if [[ $core_only == 1 ]]; then
+  rm -f "/out/$vector_archive" "/out/$vector_archive.sha256"
+  rm -rf /out/debug-symbols
+fi
+mkdir -p /work/src /work/stage/postgresql /out
 cd /work/src
 curl -fL --retry 3 -o postgresql.tar.bz2 "$pg_source_url"
 printf '%s  %s\n' "$pg_source_sha256" postgresql.tar.bz2 | sha256sum -c -
@@ -41,18 +52,23 @@ make install
 make -C contrib -j "$(nproc)"
 make -C contrib install
 cd /work/src
-curl -fL --retry 3 -o pgvector.tar.gz "$vector_source_url"
-printf '%s  %s\n' "$vector_source_sha256" pgvector.tar.gz | sha256sum -c -
-tar -xf pgvector.tar.gz
-cd "pgvector-${vector_version}"
-make -j "$(nproc)" PG_CONFIG=/opt/postgresql/bin/pg_config OPTFLAGS=
-make install PG_CONFIG=/opt/postgresql/bin/pg_config OPTFLAGS=
+if [[ $core_only == 0 ]]; then
+  mkdir -p /work/stage/pgvector
+  curl -fL --retry 3 -o pgvector.tar.gz "$vector_source_url"
+  printf '%s  %s\n' "$vector_source_sha256" pgvector.tar.gz | sha256sum -c -
+  tar -xf pgvector.tar.gz
+  cd "pgvector-${vector_version}"
+  make -j "$(nproc)" PG_CONFIG=/opt/postgresql/bin/pg_config OPTFLAGS=
+  make install PG_CONFIG=/opt/postgresql/bin/pg_config OPTFLAGS=
+fi
 cp -a /opt/postgresql/. /work/stage/postgresql/
 # The extension is delivered separately and must not be silently bundled.
-mkdir -p /work/stage/pgvector/lib /work/stage/pgvector/share/extension /work/stage/pgvector/LICENSES
-mv /work/stage/postgresql/lib/vector.so /work/stage/pgvector/lib/
-mv /work/stage/postgresql/share/extension/vector* /work/stage/pgvector/share/extension/
-cp LICENSE /work/stage/pgvector/LICENSES/pgvector.txt
+if [[ $core_only == 0 ]]; then
+  mkdir -p /work/stage/pgvector/lib /work/stage/pgvector/share/extension /work/stage/pgvector/LICENSES
+  mv /work/stage/postgresql/lib/vector.so /work/stage/pgvector/lib/
+  mv /work/stage/postgresql/share/extension/vector* /work/stage/pgvector/share/extension/
+  cp LICENSE /work/stage/pgvector/LICENSES/pgvector.txt
+fi
 mkdir -p /work/stage/postgresql/LICENSES
 cp "/work/src/postgresql-${pg_version}/COPYRIGHT" /work/stage/postgresql/LICENSES/PostgreSQL.txt
 cp -a /usr/share/common-licenses /work/stage/postgresql/LICENSES/common-licenses
@@ -131,17 +147,26 @@ cat > "$root/manifest.json" <<EOF
 {"schema_version":1,"component":"postgresql","version":"${pg_version}","postgresql_version":"${pg_version}","platform":"linux","architecture":"${architecture}","build_id":"${build_id}","source_revision":"${source_revision}","source_archive":{"url":"${pg_source_url}","sha256":"${pg_source_sha256}"},"build_configuration":"${build_configuration}","builder_image_id":"${builder_image_id}","builder_inputs":{"base_image":"ubuntu:22.04","base_image_digest":"${base_image_digest}","packages_sha256":"${builder_packages_sha256}"},"bundled_glibc_version":"$(dpkg-query -W -f='${Version}' libc6)","included_extensions":${builtins},"capabilities":{"icu":true,"libc_collations":true,"lz4":true,"zstd":true}}
 EOF
 
+if [[ $core_only == 0 ]]; then
 cat > /work/stage/metadata.json <<EOF
 {"project":"pgvector","version":"${vector_version}","sql_names":["vector"],"requires":[],"configuration_prerequisites":[],"runtime_prerequisites":[],"build_id":"${build_id}","source_revision":"${source_revision}","source_archive":{"url":"${vector_source_url}","sha256":"${vector_source_sha256}"},"build_configuration":"${build_configuration}","builder_image_id":"${builder_image_id}","platform":"linux","architecture":"${architecture}"}
 EOF
 cat > /work/stage/pgvector/LICENSES/pgvector-inventory.json <<EOF
 {"schema_version":1,"components":[{"component":"pgvector","version":"${vector_version}","payload_paths":["lib/vector.so","share/extension"],"license_file":"pgvector.txt","license_source":"${vector_source_url}","source_url":"${vector_source_url}","source_sha256":"${vector_source_sha256}","redistribution_review":{"status":"resolved","basis":"The unmodified pgvector ${vector_version} source includes its PostgreSQL-style licence, permitting binary redistribution with its notice, permission and disclaimer text retained.","source_obligation":"none"}}]}
 EOF
+fi
 cd /work/stage
 tar -czf "/out/$pg_archive" postgresql
-tar -czf "/out/$vector_archive" pgvector metadata.json
+if [[ $core_only == 0 ]]; then
+  tar -czf "/out/$vector_archive" pgvector metadata.json
+fi
 cd /out
 sha256sum "$pg_archive" > "$pg_archive.sha256"
-sha256sum "$vector_archive" > "$vector_archive.sha256"
-python3 /usr/local/bin/create-linux-symbols \
-  "$pg_archive" "$vector_archive" --output-dir /out/debug-symbols
+if [[ $core_only == 0 ]]; then
+  sha256sum "$vector_archive" > "$vector_archive.sha256"
+  python3 /usr/local/bin/create-linux-symbols \
+    "$pg_archive" "$vector_archive" --output-dir /out/debug-symbols
+else
+  python3 /usr/local/bin/create-linux-symbols \
+    "$pg_archive" --output-dir /out/debug-symbols
+fi

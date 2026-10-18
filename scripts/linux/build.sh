@@ -4,6 +4,8 @@ repo=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 out=${1:?usage: build.sh OUTPUT_DIRECTORY}
 pg_version=${PG_VERSION:-18.6}
 architecture=${PG_ARCHITECTURE:-x86_64}
+core_only=${CORE_ONLY:-0}
+case "$core_only" in 0|1) ;; *) echo "CORE_ONLY must be 0 or 1: $core_only" >&2; exit 2 ;; esac
 source_revision=${SOURCE_REVISION:-${GITHUB_SHA:-}}
 if [[ -z $source_revision ]]; then
   source_revision=$(git -C "$repo" rev-parse HEAD 2>/dev/null || true)
@@ -29,15 +31,17 @@ case "$architecture" in
   arm64) docker_platform=linux/arm64 ;;
   *) echo "Unsupported Linux architecture: $architecture" >&2; exit 2 ;;
 esac
-if [[ ! $pg_version =~ ^(15|16|17|18)\.[0-9]+$ ]]; then
-  echo "Linux pilot currently supports PostgreSQL 15 through 18 minors only: $pg_version" >&2
+if [[ ! $pg_version =~ ^[1-9][0-9]*\.[0-9]+$ ]]; then
+  echo "Invalid PostgreSQL release: $pg_version" >&2
   exit 2
 fi
 python3 "$repo/tools/plan_work.py" --select-linux-pilot "$pg_version" --architecture "$architecture" >/dev/null
 pg_source_url=$(python3 "$repo/tools/source_archive.py" postgresql "$pg_version" tar.bz2 --field url)
 pg_source_sha256=$(python3 "$repo/tools/source_archive.py" postgresql "$pg_version" tar.bz2 --field sha256)
-vector_source_url=$(python3 "$repo/tools/source_archive.py" pgvector 0.8.7 tar.gz --field url)
-vector_source_sha256=$(python3 "$repo/tools/source_archive.py" pgvector 0.8.7 tar.gz --field sha256)
+if [[ $core_only == 0 ]]; then
+  vector_source_url=$(python3 "$repo/tools/source_archive.py" pgvector 0.8.7 tar.gz --field url)
+  vector_source_sha256=$(python3 "$repo/tools/source_archive.py" pgvector 0.8.7 tar.gz --field sha256)
+fi
 mkdir -p "$out"
 out=$(cd "$out" && pwd)
 docker pull --platform "$docker_platform" ubuntu:22.04
@@ -53,10 +57,18 @@ if [[ ! $builder_image_id =~ ^sha256:[0-9a-f]{64}$ ]]; then
   echo "Docker did not provide a content-addressed Linux builder image ID" >&2
   exit 2
 fi
-docker run --rm --platform "$docker_platform" \
+docker_env=(
   -e PG_VERSION="$pg_version" -e PG_ARCHITECTURE="$architecture" \
   -e PG_SOURCE_URL="$pg_source_url" -e PG_SOURCE_SHA256="$pg_source_sha256" \
-  -e VECTOR_SOURCE_URL="$vector_source_url" -e VECTOR_SOURCE_SHA256="$vector_source_sha256" \
   -e BUILD_ID="$build_id" -e SOURCE_REVISION="$source_revision" \
+  -e CORE_ONLY="$core_only" \
   -e BUILDER_IMAGE_ID="$builder_image_id" -e BASE_IMAGE_DIGEST="$base_image_digest" \
+)
+if [[ $core_only == 0 ]]; then
+  docker_env+=(
+    -e VECTOR_SOURCE_URL="$vector_source_url"
+    -e VECTOR_SOURCE_SHA256="$vector_source_sha256"
+  )
+fi
+docker run --rm --platform "$docker_platform" "${docker_env[@]}" \
   -v "$out:/out" pg-binaries-linux-pilot

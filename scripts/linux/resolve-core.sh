@@ -77,7 +77,7 @@ if [[ $candidate_fresh == true && -s "$out/$core_name" ]]; then
 else
   rm -f "$out/$core_name" "$out/$core_name.sha256"
   echo 'No fresh checked core candidate exists; building the selected PostgreSQL core in Docker.'
-  PG_VERSION="$version" PG_ARCHITECTURE="$architecture" \
+  PG_VERSION="$version" PG_ARCHITECTURE="$architecture" CORE_ONLY=1 \
     "$repo/scripts/linux/build.sh" "$out"
 fi
 printf '%s\n' "$out/$core_name"
