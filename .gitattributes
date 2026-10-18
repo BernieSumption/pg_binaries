@@ -5,5 +5,6 @@ support/evidence/windows-publication-*/*.json -text
 support/verification/*windows-x86_64-current-*.json -text
 support/evidence/pg_jsonschema-windows-publication-*/*/* -text
 support/evidence/pgtap-windows-publication-*/*/* -text
+support/evidence/hypopg-windows-publication-*/*/* -text
 support/evidence/pg-jsonschema-crate-licenses-2026-10-18/pgrx-v0.16.1-LICENSE -text
 support/evidence/pg-jsonschema-crate-licenses-2026-10-18/simd-v0.8.0-LICENSE -text

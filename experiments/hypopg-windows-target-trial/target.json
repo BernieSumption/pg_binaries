@@ -1,3 +1,4 @@
 {
-  "postgresql_version": "17.11"
+  "postgresql_version": "17.11",
+  "attempt": "preserve-exact-evidence-bytes"
 }
