@@ -1,0 +1,47 @@
+{
+  "assembled_core": {
+    "archive": "postgresql-16.15-windows-x86_64.tar.gz",
+    "sha256": "a4a368282a2f89a6e85bc81cfbf0a73e5c1a1a9ef4c813c681698a9af0d50bb0",
+    "version": "16.15"
+  },
+  "case_results": {
+    "archive-suite": "passed",
+    "diagnostics": "passed",
+    "symbols": "passed"
+  },
+  "ci": {
+    "build_revision": "eecefcbb0362a602afb136b5ee8769113c6a47f2",
+    "provider": "github-actions",
+    "run_id": "39119075111",
+    "run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/39119075111",
+    "source_revision": "eecefcbb0362a602afb136b5ee8769113c6a47f2",
+    "test_revision": "eecefcbb0362a602afb136b5ee8769113c6a47f2"
+  },
+  "component": "vector",
+  "environment": {
+    "architecture": "x86_64",
+    "clean_system": true,
+    "dependency_check_profile": "windows-pe-runtime-v1",
+    "dependency_checks_passed": true,
+    "endpoint": "current",
+    "image_id": "win22/20261012.333.1",
+    "os": "windows",
+    "os_version": "10.0.20348.0"
+  },
+  "outcome": "passed",
+  "platform": "windows-x86_64",
+  "postgresql_version": "16.15",
+  "profile_id": "windows-publication-current-x86_64",
+  "profile_revision": "7906fed6aff79dca12f14da6fe948b29925f04b0cd95d90a5e26f08fb3142d19",
+  "project": "pgvector",
+  "schema_version": 2,
+  "scope": "publication",
+  "sha256": "b521a2298b55cb6c08a583b8abe59966084c6c4bb10b7d7b91afe889dc12bda1",
+  "test_cases": [
+    "archive-suite",
+    "diagnostics",
+    "symbols"
+  ],
+  "test_revision": "eecefcbb0362a602afb136b5ee8769113c6a47f2",
+  "version": "0.8.7"
+}
