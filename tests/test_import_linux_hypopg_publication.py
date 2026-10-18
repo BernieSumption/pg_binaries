@@ -173,6 +173,13 @@ class LinuxHypopgPublicationImportTests(unittest.TestCase):
             self._import()
         self.assertFalse((self.root / "support/evidence").exists())
 
+    def test_rejects_tampered_extension_checksum_sidecar(self):
+        sidecar = self.hypopg_dir / f"{self.hypopg_name}.sha256"
+        sidecar.write_text("0" * 64 + f"  {self.hypopg_name}\n")
+        with self.assertRaisesRegex(coverage.CoverageError, "checksum sidecar does not match"):
+            self._import()
+        self.assertFalse((self.root / "support/evidence").exists())
+
     def test_rejects_missing_archives_and_receipt(self):
         (self.publication / "current-receipt.json").unlink()
         with self.assertRaisesRegex(coverage.CoverageError, "matching receipt"):
