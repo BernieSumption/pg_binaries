@@ -58,7 +58,7 @@ class CollectionMacosPublicationTests(unittest.TestCase):
                         "sql_names": ["collection"], "requires": [],
                         "configuration_prerequisites": [], "runtime_prerequisites": [],
                         "postgresql_version": "18.6", "platform": "macos",
-                        "architecture": "arm64",
+                        "architecture": emitter.ARCHITECTURE,
                         "source": {"url": f"https://github.com/aws/pgcollection/archive/refs/tags/v{version}.tar.gz",
                                    "sha256": source_hash},
                         "core_archive": {"basename": emitter.CORE_NAME, "sha256": self.core_hash}}
@@ -69,7 +69,7 @@ class CollectionMacosPublicationTests(unittest.TestCase):
             path.with_name(path.name + ".sha256").write_text(f"{digest}  {path.name}\n")
             self.extension_hashes[version] = digest
             (self.output / f"static-analysis-collection-{version}.json").write_text(json.dumps({
-                "passed": True, "architecture": "arm64",
+                "passed": True, "architecture": emitter.ARCHITECTURE,
                 "inspected_files": [{"file": "lib/collection.dylib"}],
                 "archives": [{"basename": emitter.CORE_NAME, "sha256": self.core_hash},
                              {"basename": path.name, "sha256": digest}]}))

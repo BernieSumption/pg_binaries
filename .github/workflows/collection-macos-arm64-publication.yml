@@ -16,6 +16,9 @@ on:
       - tests/test_collection_macos_evidence.py
       - tests/test_collection_macos_publication.py
       - support/verification-profiles.json
+      - tools/coverage.py
+      - support.json
+      - support/postgresql-releases.json
 
 permissions:
   actions: read
@@ -29,6 +32,8 @@ jobs:
       - uses: actions/checkout@v4
       - name: Check collection macOS publication evidence helpers
         run: python3 -m unittest tests/test_collection_macos_publication.py
+        env:
+          COLLECTION_MACOS_ARCHITECTURE: arm64
       - name: Download the selected PostgreSQL 18.6 Apple Silicon archive
         uses: actions/download-artifact@v4
         with:
@@ -43,15 +48,16 @@ jobs:
         run: |
           set -o pipefail
           bash scripts/collection/macos-feasibility.sh \
-            "$RUNNER_TEMP/core-archives" "$RUNNER_TEMP/collection-publication" 2>&1 \
+            "$RUNNER_TEMP/core-archives" "$RUNNER_TEMP/collection-publication" arm64 2>&1 \
             | tee "$RUNNER_TEMP/collection-publication/build-log.txt"
       - name: Validate archive checksums, metadata and Mach-O reports
         id: static_analysis
         if: ${{ always() && steps.archive_suite.outcome == 'success' }}
-        run: python3 scripts/collection/check_macos_evidence.py "$RUNNER_TEMP/core-archives" "$RUNNER_TEMP/collection-publication"
+        run: COLLECTION_MACOS_ARCHITECTURE=arm64 python3 scripts/collection/check_macos_evidence.py "$RUNNER_TEMP/core-archives" "$RUNNER_TEMP/collection-publication"
       - name: Finalize collection archive receipts and verification records
         if: always()
         env:
+          COLLECTION_MACOS_ARCHITECTURE: arm64
           ARCHIVE_SUITE_OUTCOME: ${{ steps.archive_suite.outcome }}
           STATIC_ANALYSIS_OUTCOME: ${{ steps.static_analysis.outcome }}
           GITHUB_SHA: ${{ github.sha }}
@@ -67,6 +73,8 @@ jobs:
             --static-analysis-result "$STATIC_ANALYSIS_OUTCOME"
       - name: Validate and retain archive-bound publication evidence
         if: always()
+        env:
+          COLLECTION_MACOS_ARCHITECTURE: arm64
         run: |
           if [[ -f "$RUNNER_TEMP/collection-publication/publication/attempt.json" ]]; then
             python3 tools/import_collection_macos_publication.py \

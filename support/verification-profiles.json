@@ -235,6 +235,12 @@
       "case_ids": ["archive-suite", "static-analysis"],
       "sources": [".github/workflows/collection-macos-arm64-feasibility.yml", ".github/workflows/collection-macos-arm64-publication.yml", "scripts/collection/check_macos_evidence.py", "scripts/collection/macos-feasibility.sh", "scripts/collection/probe.sql", "scripts/macos/static_analysis.py", "support.json", "support/postgresql-releases.json", "tests/test_collection_macos_evidence.py", "tests/test_collection_macos_publication.py", "tools/check_extension_redistribution.py", "tools/coverage.py", "tools/emit_collection_macos_publication.py", "tools/import_collection_macos_publication.py"]
     },
+    "collection-publication-macos-x86_64-18.6": {
+      "scope": "publication",
+      "platforms": ["macos-x86_64"],
+      "case_ids": ["archive-suite", "static-analysis"],
+      "sources": [".github/workflows/collection-macos-x86_64-publication.yml", "scripts/collection/check_macos_evidence.py", "scripts/collection/macos-feasibility.sh", "scripts/collection/probe.sql", "scripts/macos/static_analysis.py", "support.json", "support/postgresql-releases.json", "tests/test_collection_macos_evidence.py", "tests/test_collection_macos_publication.py", "tools/check_extension_redistribution.py", "tools/coverage.py", "tools/emit_collection_macos_publication.py", "tools/import_collection_macos_publication.py"]
+    },
     "collection-publication-current-x86_64": {
       "scope": "publication",
       "platforms": ["linux-x86_64"],

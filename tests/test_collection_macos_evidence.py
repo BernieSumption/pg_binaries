@@ -24,7 +24,7 @@ class CollectionMacosEvidenceTests(unittest.TestCase):
         metadata = {
             "project": "collection", "version": self.version, "sql_names": ["collection"],
             "requires": [], "configuration_prerequisites": [], "runtime_prerequisites": [],
-            "postgresql_version": "18.6", "platform": "macos", "architecture": "arm64",
+            "postgresql_version": "18.6", "platform": "macos", "architecture": evidence.ARCHITECTURE,
             "source": {
                 "url": "https://github.com/aws/pgcollection/archive/refs/tags/v1.1.1.tar.gz",
                 "sha256": evidence.VERSIONS[self.version],
@@ -46,7 +46,7 @@ class CollectionMacosEvidenceTests(unittest.TestCase):
         self.core.write_bytes(b"core")
         self.report_path = self.root / "static-analysis.json"
         self.report_path.write_text(json.dumps({
-            "passed": True, "architecture": "arm64",
+            "passed": True, "architecture": evidence.ARCHITECTURE,
             "inspected_files": [{"file": "lib/collection.dylib"}],
             "archives": [
                 {"basename": self.core.name, "sha256": evidence.sha256(self.core)},
