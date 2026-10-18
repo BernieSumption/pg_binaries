@@ -1,0 +1,21 @@
+{
+  "architecture": "x86_64",
+  "archives": {
+    "pgtap-1.3.4-postgresql-18.6-windows-x86_64.tar.gz": "218b14d2630e1d6fee77c9c9c54613c75d58b14f9004dbacb8e7df409f5d62eb",
+    "postgresql-18.6-windows-x86_64.tar.gz": "8679af38bfb384cf5f287575b8be4d7946490df14e0680674645d50d3646758d"
+  },
+  "archives_present": {
+    "pgtap-1.3.4-postgresql-18.6-windows-x86_64.tar.gz": true,
+    "postgresql-18.6-windows-x86_64.tar.gz": true
+  },
+  "pgtap_version": "1.3.4",
+  "postgresql_version": "18.6",
+  "profile_id": "pgtap-publication-windows-x86_64-18.6",
+  "run_id": "39123327013",
+  "schema_version": 1,
+  "source_revision": "be6436c92240f4d4d791b2029979d7ff9a6a176c",
+  "steps": {
+    "archive-suite": "success",
+    "static-analysis": "success"
+  }
+}
