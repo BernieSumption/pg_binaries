@@ -1,0 +1,46 @@
+{
+  "assembled_core": {
+    "archive": "postgresql-17.11-macos-arm64.tar.gz",
+    "sha256": "e2fe14b3967cd06f4e9695dac2d8649bc46a3e211a9fa63b0a686d3a53018d4b",
+    "version": "17.11"
+  },
+  "case_results": {
+    "archive-suite": "passed",
+    "static-analysis": "passed"
+  },
+  "ci": {
+    "build_revision": "11ebe1098a2625c6bf8d153dc77dadc1a3ca6a23",
+    "provider": "github-actions",
+    "run_id": "39168273004",
+    "run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/39168273004",
+    "source_revision": "11ebe1098a2625c6bf8d153dc77dadc1a3ca6a23",
+    "test_revision": "11ebe1098a2625c6bf8d153dc77dadc1a3ca6a23"
+  },
+  "component": "hypopg",
+  "environment": {
+    "architecture": "arm64",
+    "clean_system": true,
+    "dependency_check_profile": "macho-system-dependencies-v1",
+    "dependency_checks_passed": true,
+    "endpoint": "current",
+    "image_id": "macos15/20260907.0337.1",
+    "os": "macos",
+    "os_version": "15.7.9"
+  },
+  "outcome": "passed",
+  "platform": "macos-arm64",
+  "postgresql_version": "17.11",
+  "prerequisite_archives": [],
+  "profile_id": "hypopg-publication-macos-arm64-17.11",
+  "profile_revision": "d9c97c66a0bd7e36adda816aa4f6f5d73dccbbaa768873632d4bb0762c7e9b15",
+  "project": "HypoPG",
+  "schema_version": 2,
+  "scope": "publication",
+  "sha256": "670b8180f0b15562a965b49869b540b395c4cad341bd2fea198d18289945c0a4",
+  "test_cases": [
+    "archive-suite",
+    "static-analysis"
+  ],
+  "test_revision": "11ebe1098a2625c6bf8d153dc77dadc1a3ca6a23",
+  "version": "1.4.3"
+}
