@@ -29,6 +29,7 @@ class SeparateLinuxPgvectorBuildInputs(unittest.TestCase):
         self.manifest = {
             "component": "postgresql", "version": "18.6",
             "platform": "linux", "architecture": "x86_64",
+            "source_archive": {"sha256": "a" * 64},
         }
         self.write_core()
         self.sidecar = self.directory / (self.core.name + ".sha256")
@@ -51,28 +52,28 @@ class SeparateLinuxPgvectorBuildInputs(unittest.TestCase):
 
     def test_accepts_exact_pinned_core_identity_and_checksum(self):
         expected = archive_input.sha256(self.core)
-        digest = archive_input.validate_core(self.core, self.sidecar, expected, "18.6", "x86_64")
+        digest = archive_input.validate_core(self.core, self.sidecar, expected, "18.6", "x86_64", "a" * 64)
         self.assertEqual(digest, archive_input.sha256(self.core))
 
     def test_rejects_core_bytes_that_do_not_match_sidecar(self):
         self.core.write_bytes(self.core.read_bytes() + b"changed")
         with self.assertRaisesRegex(ValueError, "checksum"):
-            archive_input.validate_core(self.core, self.sidecar, archive_input.sha256(self.core), "18.6", "x86_64")
+            archive_input.validate_core(self.core, self.sidecar, archive_input.sha256(self.core), "18.6", "x86_64", "a" * 64)
 
     def test_rejects_wrong_core_manifest_architecture(self):
         self.manifest["architecture"] = "arm64"
         self.write_core()
         self.refresh_sidecar()
         with self.assertRaisesRegex(ValueError, "manifest identity"):
-            archive_input.validate_core(self.core, self.sidecar, archive_input.sha256(self.core), "18.6", "x86_64")
+            archive_input.validate_core(self.core, self.sidecar, archive_input.sha256(self.core), "18.6", "x86_64", "a" * 64)
 
     def test_rejects_wrong_core_release_or_filename(self):
         with self.assertRaisesRegex(ValueError, "requires"):
-            archive_input.validate_core(self.core, self.sidecar, archive_input.sha256(self.core), "17.11", "x86_64")
+            archive_input.validate_core(self.core, self.sidecar, archive_input.sha256(self.core), "17.11", "x86_64", "a" * 64)
         arm_name = self.directory / "postgresql-18.6-linux-arm64.tar.gz"
         arm_name.write_bytes(self.core.read_bytes())
         with self.assertRaisesRegex(ValueError, "requires"):
-            archive_input.validate_core(arm_name, self.sidecar, archive_input.sha256(arm_name), "18.6", "arm64")
+            archive_input.validate_core(arm_name, self.sidecar, archive_input.sha256(arm_name), "18.6", "arm64", "a" * 64)
 
     def test_rejects_replaced_archive_even_when_sidecar_is_replaced_too(self):
         self.manifest["build_id"] = "replacement"
@@ -80,7 +81,17 @@ class SeparateLinuxPgvectorBuildInputs(unittest.TestCase):
         self.refresh_sidecar()
         trusted_sha = "a" * 64
         with self.assertRaisesRegex(ValueError, "separately supplied"):
-            archive_input.validate_core(self.core, self.sidecar, trusted_sha, "18.6", "x86_64")
+            archive_input.validate_core(self.core, self.sidecar, trusted_sha, "18.6", "x86_64", "a" * 64)
+
+    def test_accepts_selected_postgresql_17_core_and_source_identity(self):
+        self.core = self.directory / "postgresql-17.11-linux-x86_64.tar.gz"
+        self.manifest["version"] = "17.11"
+        self.write_core()
+        self.sidecar = self.directory / (self.core.name + ".sha256")
+        self.refresh_sidecar()
+        self.assertEqual(archive_input.validate_core(
+            self.core, self.sidecar, archive_input.sha256(self.core), "17.11", "x86_64", "a" * 64),
+            archive_input.sha256(self.core))
 
     def test_source_must_match_pin_and_have_expected_root(self):
         source = self.directory / "source.tar.gz"

@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 pg_version=${PG_VERSION:?}; architecture=${PG_ARCHITECTURE:?}
-[[ "$pg_version:$architecture" == 18.6:x86_64 ]] || { echo "Trial supports PostgreSQL 18.6 x86_64 only" >&2; exit 2; }
+[[ "$pg_version" =~ ^(17|18)\.[0-9]+$ && "$architecture" == x86_64 ]] || { echo "Selected path supports PostgreSQL 17 and 18 on x86_64 only" >&2; exit 2; }
+pg_major=${pg_version%%.*}
 core_archive=${CORE_ARCHIVE:?}; source_archive=${SOURCE_ARCHIVE:?}; source_sha=${VECTOR_SOURCE_SHA256:?}
 expected_core_sha=${EXPECTED_CORE_SHA256:?}
 core_source_sha=${CORE_SOURCE_SHA256:?}
@@ -29,12 +30,13 @@ mv "$pgroot/share/extension/vector"* "$stage/share/extension/"
 cp LICENSE "$stage/LICENSES/pgvector.txt"
 core_sha=$(sha256sum "/input/$core_archive" | awk '{print $1}')
 source_url=https://github.com/pgvector/pgvector/archive/refs/tags/v0.8.7.tar.gz
-configuration='pgvector-0.8.7;postgresql-core=18.6;builder=ubuntu-22.04;optflags=empty'
+configuration="pgvector-0.8.7;postgresql-core=${pg_version};builder=ubuntu-22.04;optflags=empty"
 cat > /work/stage/metadata.json <<EOF
 {"project":"pgvector","version":"0.8.7","sql_names":["vector"],"requires":[],"configuration_prerequisites":[],"runtime_prerequisites":[],"build_id":"${build_id}","source_revision":"${source_revision}","source_archive":{"url":"${source_url}","sha256":"${source_sha}"},"core_archive":{"basename":"${core_archive}","sha256":"${core_sha}"},"build_configuration":"${configuration}","builder_image_id":"${builder_image_id}","builder_packages_sha256":"${builder_packages_sha}","platform":"linux","architecture":"${architecture}"}
 EOF
-python3 - /work/stage/metadata.json /out/build-input-identity.json <<'PY'
+PG_MAJOR="$pg_major" python3 - /work/stage/metadata.json /out/build-input-identity.json <<'PY'
 import json
+import os
 from pathlib import Path
 import sys
 
@@ -44,7 +46,7 @@ identity = json.loads(identity_path.read_text())
 if (identity['upstream_sources']['pgvector']['sha256'] != metadata['source_archive']['sha256']
         or identity['dependencies']['builder_packages']['sha256'] != metadata['builder_packages_sha256']
         or identity['target']['platform'] != 'linux-x86_64'
-        or identity['target']['postgresql_major'] != 18):
+        or identity['target']['postgresql_major'] != int(os.environ['PG_MAJOR'])):
     raise SystemExit('build input identity disagrees with the checked build inputs')
 metadata['build_inputs'] = identity
 metadata_path.write_text(json.dumps(metadata, sort_keys=True) + '\n')

@@ -51,6 +51,16 @@ class SelectExtensionWorkTests(unittest.TestCase):
                 self.assertEqual(result["postgresql_major"], 17)
                 self.assertEqual(result["closure_ids"][-1], result["group_id"])
 
+    def test_resolves_linux_x86_64_pgvector_17_11_from_the_queue(self):
+        result = tool.resolve(ROOT, {
+            "project": "pgvector", "version": "0.8.7", "platform": "linux-x86_64",
+            "postgresql_major": 17,
+        })
+        self.assertEqual(result["postgresql_version"], "17.11")
+        self.assertEqual(result["architecture"], "x86_64")
+        self.assertEqual(len(result["closure_ids"]), 2)
+        self.assertTrue(result["closure_ids"][0].startswith("build-core:"))
+
     def test_rejects_undeclared_platform_architecture_and_malformed_selection(self):
         selection = {"project": "NoSuchExtension", "version": "3.6.4", "platform": "macos-x86_64",
                      "postgresql_major": 17}

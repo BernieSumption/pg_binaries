@@ -50,8 +50,8 @@ def selected_identity(builder_packages_sha256: str, core_sha256: str, postgresql
         raise ValueError("builder packages SHA-256 must be 64 lowercase hex digits")
     if not isinstance(core_sha256, str) or not BUILDER_PACKAGES_SHA256.fullmatch(core_sha256):
         raise ValueError("PostgreSQL core SHA-256 must be 64 lowercase hex digits")
-    if postgresql_major != 18:
-        raise ValueError("the current Linux pgvector recipe supports PostgreSQL major 18 only")
+    if postgresql_major not in {17, 18}:
+        raise ValueError("the Linux pgvector selected path currently supports PostgreSQL majors 17 and 18")
     minimum = support.get("postgresql", {}).get("minimum_major")
     version = (support.get("extensions", {}).get(PROJECT, {}).get("versions", {})
                .get(VERSION))

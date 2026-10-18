@@ -64,6 +64,13 @@ class SelectedBuildInputsTests(unittest.TestCase):
         self.assertNotEqual(first["sha256"], changed_base["sha256"])
         self.assertEqual(changed_base["dependencies"]["builder_base"]["sha256"], "e" * 64)
 
+    def test_selected_postgresql_17_identity_binds_the_major_and_core_bytes(self):
+        identity = self.identity(major=17)
+        self.assertEqual(identity["target"]["postgresql_major"], 17)
+        self.assertEqual(identity["dependencies"]["postgresql"], {
+            "major": 17, "sha256": self.CORE_SHA256})
+        self.assertEqual(identity["target"]["platform"], "linux-x86_64")
+
     def test_source_pin_recipe_major_and_platform_change_identity(self):
         first = self.identity()
         path, value = self.support()
@@ -111,7 +118,7 @@ class SelectedBuildInputsTests(unittest.TestCase):
         self.assertNotEqual(first["sha256"], changed_major["sha256"])
 
     def test_rejects_unsupported_target_major(self):
-        with self.assertRaisesRegex(ValueError, "supports PostgreSQL major 18 only"):
+        with self.assertRaisesRegex(ValueError, "supports PostgreSQL majors 17 and 18"):
             self.identity(major=14)
         with self.assertRaisesRegex(ValueError, "builder packages SHA-256"):
             selected_build_inputs.selected_identity("ubuntu:22.04", self.CORE_SHA256, root=self.root)

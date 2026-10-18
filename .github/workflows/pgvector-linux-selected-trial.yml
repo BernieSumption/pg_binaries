@@ -1,0 +1,106 @@
+name: pgvector selected Linux x86-64 trial
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [spike]
+    paths:
+      - '.github/workflows/pgvector-linux-selected-trial.yml'
+      - 'scripts/pgvector/**'
+      - 'scripts/linux/verify*'
+      - 'tools/selected_build_inputs.py'
+      - 'tools/select_extension_work.py'
+      - 'tools/extension_work_queue.py'
+      - 'support.json'
+      - 'support/postgresql-releases.json'
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  selected_trial:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 70
+    env:
+      PG_ARCHITECTURE: x86_64
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Select PostgreSQL 17 pgvector work from the shared queue
+        id: target
+        run: |
+          set -euo pipefail
+          python3 tools/select_extension_work.py \
+            --project pgvector --version 0.8.7 --platform linux-x86_64 \
+            --postgresql-major 17 --github-output "$GITHUB_OUTPUT" \
+            > "$RUNNER_TEMP/selected-target.json"
+          test "$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["postgresql_version"])' "$RUNNER_TEMP/selected-target.json")" = 17.11
+          echo 'Selected pgvector 0.8.7 on Linux x86-64 for PostgreSQL 17.11.'
+      - name: Discover a checked PostgreSQL core archive or build it
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PG_VERSION: ${{ steps.target.outputs.postgresql_version }}
+        run: |
+          set -euo pipefail
+          core_name="postgresql-$PG_VERSION-linux-x86_64.tar.gz"
+          mkdir -p "$RUNNER_TEMP/core"
+          python3 tools/actions_candidate_discovery.py \
+            --repository "$GITHUB_REPOSITORY" --workflow linux-publication.yml \
+            --branch "$GITHUB_REF_NAME" --current-run-id "$GITHUB_RUN_ID" \
+            --artifact-name-template linux-publication-x86_64-evidence \
+            --archive-basename "$core_name" --project postgresql --version "$PG_VERSION" \
+            --platform linux-x86_64 --postgresql-version "$PG_VERSION" \
+            --output-directory "$RUNNER_TEMP/core" \
+            --manifest-path "$RUNNER_TEMP/core-candidate-manifest.json"
+          if [[ -s "$RUNNER_TEMP/core/$core_name" && -s "$RUNNER_TEMP/core/$core_name.sha256" ]]; then
+            echo 'Using a checksum-verified core candidate retrieved from a successful Linux publication run.'
+          else
+            echo 'No retrievable checked core candidate exists; building the selected PostgreSQL core in Docker.'
+            PG_VERSION="$PG_VERSION" PG_ARCHITECTURE=x86_64 \
+              scripts/linux/build.sh "$RUNNER_TEMP/core"
+          fi
+          python3 scripts/pgvector/archive_input.py validate-core \
+            "$RUNNER_TEMP/core/$core_name" "$RUNNER_TEMP/core/$core_name.sha256" \
+            "$(sha256sum "$RUNNER_TEMP/core/$core_name" | awk '{print $1}')" \
+            "$PG_VERSION" x86_64 \
+            "$(python3 tools/source_archive.py postgresql "$PG_VERSION" tar.bz2 --field sha256)"
+      - name: Fetch the pinned pgvector source archive
+        run: |
+          set -euo pipefail
+          source_url=$(python3 tools/source_archive.py pgvector 0.8.7 tar.gz --field url)
+          curl --fail --location --retry 3 "$source_url" --output "$RUNNER_TEMP/pgvector-v0.8.7.tar.gz"
+      - name: Build pgvector against the selected core
+        env:
+          PG_VERSION: ${{ steps.target.outputs.postgresql_version }}
+        run: |
+          set -euo pipefail
+          core="$RUNNER_TEMP/core/postgresql-$PG_VERSION-linux-x86_64.tar.gz"
+          core_sha=$(sha256sum "$core" | awk '{print $1}')
+          PG_VERSION="$PG_VERSION" PG_ARCHITECTURE=x86_64 \
+            scripts/pgvector/linux-build.sh "$core" "$core_sha" \
+            "$RUNNER_TEMP/pgvector-v0.8.7.tar.gz" "$RUNNER_TEMP/vector"
+      - name: Verify the exact core and pgvector archive bytes in Alpine
+        env:
+          PG_VERSION: ${{ steps.target.outputs.postgresql_version }}
+        run: |
+          set -euo pipefail
+          archive_dir="$RUNNER_TEMP/archives"
+          mkdir -p "$archive_dir"
+          cp "$RUNNER_TEMP/core/postgresql-$PG_VERSION-linux-x86_64.tar.gz"* "$archive_dir/"
+          cp "$RUNNER_TEMP/vector/pgvector-0.8.7-postgresql-$PG_VERSION-linux-x86_64.tar.gz"* "$archive_dir/"
+          (cd "$archive_dir" && sha256sum --check *.sha256)
+          PG_VERSION="$PG_VERSION" PG_ARCHITECTURE=x86_64 scripts/linux/verify.sh "$archive_dir"
+      - name: Retain exact archives and verifier output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pgvector-linux-selected-${{ steps.target.outputs.postgresql_version }}-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/archives/*.tar.gz
+            ${{ runner.temp }}/archives/*.sha256
+            ${{ runner.temp }}/archives/publication/static-analysis/**
+          if-no-files-found: warn
+          retention-days: 7
