@@ -11,19 +11,24 @@ import sys
 
 import coverage
 
-PG_VERSION = "18.6"
+DEFAULT_PG_VERSION = "18.6"
 EXTENSION_VERSION = "0.3.4"
 SOURCE_COMMIT = "cbe74b570d38aa0c4d42914e7a118bcb3adaee7a"
 CARGO_LOCK_SHA256 = "ab865dc25d9eea4bf7dbfaf8fae13283e5c0bce4bca460fe10464c6716e67028"
-PROFILE_IDS = {
-    "x86_64": "pg-jsonschema-publication-linux-x86_64-18.6",
-    "arm64": "pg-jsonschema-publication-linux-arm64-18.6",
-}
-CORE_RUN_ID = "39081368117"
+CORE_RUNS = {"18.6": "39081368117", "17.11": "39082111630"}
 CORE_SHA256 = {
-    "x86_64": "f89a7047812324b85c3b0bb29a3118fc55a492b17956f1fe0d74d1788d33d680",
-    "arm64": "0eb9c0144fd0b1669c594ce1ebcf7abdf4e1ae3f8e29e59a92833e476001e42b",
+    "18.6": {"x86_64": "f89a7047812324b85c3b0bb29a3118fc55a492b17956f1fe0d74d1788d33d680",
+             "arm64": "0eb9c0144fd0b1669c594ce1ebcf7abdf4e1ae3f8e29e59a92833e476001e42b"},
+    "17.11": {"x86_64": "ffc3160481f8d0cd5f7c14bd95f0e3964242ac78b01f6d4b0e3b03806d4b34dc",
+              "arm64": "82f22d4110bd8d82307d068d4416fc5d223dc6d68efc41cb3494677384509010"},
 }
+PG_VERSIONS = tuple(CORE_RUNS)
+
+
+def profile_id(architecture, pg_version):
+    if architecture not in {"x86_64", "arm64"} or pg_version not in PG_VERSIONS:
+        raise coverage.CoverageError("unsupported architecture or PostgreSQL version")
+    return f"pg-jsonschema-publication-linux-{architecture}-{pg_version}"
 CASES = ("archive-suite", "elf-closure")
 
 
@@ -47,10 +52,9 @@ def read_json(path):
 
 def emit(root, archives, core_archives, output, architecture, build_result,
          verify_result, source_revision, run_id, repository, server_url, image_id,
-         kernel_release):
+         kernel_release, pg_version=DEFAULT_PG_VERSION):
     root, archives, core_archives, output = map(Path, (root, archives, core_archives, output))
-    if architecture not in PROFILE_IDS:
-        raise coverage.CoverageError("architecture must be x86_64 or arm64")
+    selected_profile = profile_id(architecture, pg_version)
     if not coverage.REVISION.fullmatch(source_revision or "") or not str(run_id).isdigit():
         raise coverage.CoverageError("full source revision and numeric workflow run ID are required")
     if not repository or not server_url or not image_id:
@@ -68,18 +72,18 @@ def emit(root, archives, core_archives, output, architecture, build_result,
     static_outcome = read_json(static_path).get("outcome") if static_path.is_file() else None
     raw_archive_result, raw_elf_result = _case_results(verify_result, static_outcome)
     results = {"archive-suite": _step(raw_archive_result), "elf-closure": _step(raw_elf_result)}
-    profile = coverage.verification_profile(root, PROFILE_IDS[architecture])
+    profile = coverage.verification_profile(root, selected_profile)
     platform = f"linux-{architecture}"
-    archive_name = f"pg_jsonschema-{EXTENSION_VERSION}-postgresql-{PG_VERSION}-{platform}.tar.gz"
-    core_name = f"postgresql-{PG_VERSION}-{platform}.tar.gz"
+    archive_name = f"pg_jsonschema-{EXTENSION_VERSION}-postgresql-{pg_version}-{platform}.tar.gz"
+    core_name = f"postgresql-{pg_version}-{platform}.tar.gz"
     archive, core = archives / archive_name, core_archives / core_name
     output.mkdir(parents=True, exist_ok=True)
     attempt_path = output / "attempt.json"
     attempt = {
         "schema_version": 1, "run_id": str(run_id), "source_revision": source_revision,
-        "profile_id": PROFILE_IDS[architecture], "postgresql_version": PG_VERSION,
+        "profile_id": selected_profile, "postgresql_version": pg_version,
         "pg_jsonschema_version": EXTENSION_VERSION, "architecture": architecture,
-        "core_run_id": CORE_RUN_ID,
+        "core_run_id": CORE_RUNS[pg_version],
         "steps": {"archive-suite": raw_archive_result, "elf-closure": raw_elf_result},
         "workflow_steps": {"build": build_result, "verify": verify_result},
         "release_eligible": False, "redistribution_status": "seahash-4.1.0-notice-unresolved",
@@ -94,8 +98,8 @@ def emit(root, archives, core_archives, output, architecture, build_result,
     _sidecar(core, checksums[core_name])
     attempt["archives"] = checksums
     attempt_path.write_text(json.dumps(attempt, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    if checksums[core_name] != CORE_SHA256[architecture]:
-        raise coverage.CoverageError("core archive differs from the pinned current PostgreSQL 18.6 archive")
+    if checksums[core_name] != CORE_SHA256[pg_version][architecture]:
+        raise coverage.CoverageError(f"core archive differs from the pinned current PostgreSQL {pg_version} archive")
     static = read_json(static_path)
     static_archives = static.get("archives", [])
     if (static.get("outcome") != "passed" or static.get("architecture") != architecture
@@ -126,9 +130,9 @@ def emit(root, archives, core_archives, output, architecture, build_result,
                    "image_id": image_id, "dependency_check_profile": "linux-elf-alpine-relocation-v1",
                    "dependency_checks_passed": results["elf-closure"] == "passed"}
     receipt = {
-        "schema_version": 1, "profile_id": PROFILE_IDS[architecture],
+        "schema_version": 1, "profile_id": selected_profile,
         "profile_revision": profile["profile_revision"], "test_revision": source_revision,
-        "project": "pg_jsonschema", "version": EXTENSION_VERSION, "postgresql_version": PG_VERSION,
+        "project": "pg_jsonschema", "version": EXTENSION_VERSION, "postgresql_version": pg_version,
         "architecture": architecture, "platform": platform, "endpoint": "current",
         "case_results": results, "archives": checksums, "extension_archive": archive_name,
         "reports": reports, "clean_system": True,
@@ -140,12 +144,12 @@ def emit(root, archives, core_archives, output, architecture, build_result,
     receipt_path = output / "current-receipt.json"
     receipt_path.write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     record = {
-        "schema_version": 2, "scope": "publication", "profile_id": PROFILE_IDS[architecture],
+        "schema_version": 2, "scope": "publication", "profile_id": selected_profile,
         "profile_revision": profile["profile_revision"], "test_cases": profile["case_ids"],
         "case_results": results, "test_revision": source_revision, "ci": ci, "outcome": outcome,
         "sha256": checksums[archive_name], "component": "pg_jsonschema", "project": "pg_jsonschema",
-        "version": EXTENSION_VERSION, "platform": platform, "postgresql_version": PG_VERSION,
-        "assembled_core": {"archive": core_name, "sha256": checksums[core_name], "version": PG_VERSION},
+        "version": EXTENSION_VERSION, "platform": platform, "postgresql_version": pg_version,
+        "assembled_core": {"archive": core_name, "sha256": checksums[core_name], "version": pg_version},
         "prerequisite_archives": [], "release_eligible": False,
         "redistribution_status": "seahash-4.1.0-notice-unresolved",
         "environment": environment,
@@ -189,7 +193,8 @@ def main():
     parser.add_argument("--archives", type=Path, required=True)
     parser.add_argument("--core-archives", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
-    parser.add_argument("--architecture", choices=tuple(PROFILE_IDS), required=True)
+    parser.add_argument("--architecture", choices=("x86_64", "arm64"), required=True)
+    parser.add_argument("--postgresql-version", choices=PG_VERSIONS, default=DEFAULT_PG_VERSION)
     parser.add_argument("--build-result", required=True)
     parser.add_argument("--verify-result", required=True)
     parser.add_argument("--image-id", required=True)
@@ -201,7 +206,7 @@ def main():
                          args.build_result, args.verify_result, env.get("GITHUB_SHA", ""),
                          env.get("GITHUB_RUN_ID", ""), env.get("GITHUB_REPOSITORY", ""),
                          env.get("GITHUB_SERVER_URL", ""), args.image_id,
-                         args.kernel_release):
+                         args.kernel_release, args.postgresql_version):
             print(path)
         return 0
     except (coverage.CoverageError, OSError, ValueError, TypeError, KeyError) as exc:

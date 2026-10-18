@@ -91,13 +91,14 @@ def import_run(root, core_archives, archives, run_id):
     attempt_path = archives / "publication" / "attempt.json"
     attempt = _read(attempt_path)
     architecture = attempt.get("architecture")
-    if architecture not in publication.PROFILE_IDS:
+    pg_version = attempt.get("postgresql_version")
+    if architecture not in {"x86_64", "arm64"} or pg_version not in publication.PG_VERSIONS:
         raise coverage.CoverageError("attempt architecture is unsupported")
-    profile = coverage.verification_profile(root, publication.PROFILE_IDS[architecture])
+    selected_profile = publication.profile_id(architecture, pg_version)
+    profile = coverage.verification_profile(root, selected_profile)
     if (attempt.get("schema_version") != 1 or str(attempt.get("run_id")) != run_id
-            or attempt.get("profile_id") != publication.PROFILE_IDS[architecture]
-            or attempt.get("core_run_id") != publication.CORE_RUN_ID
-            or attempt.get("postgresql_version") != publication.PG_VERSION
+            or attempt.get("profile_id") != selected_profile
+            or attempt.get("core_run_id") != publication.CORE_RUNS[pg_version]
             or attempt.get("pg_jsonschema_version") != publication.EXTENSION_VERSION
             or attempt.get("release_eligible") is not False
             or attempt.get("redistribution_status") != "seahash-4.1.0-notice-unresolved"
@@ -110,8 +111,8 @@ def import_run(root, core_archives, archives, run_id):
                    for value in workflow_steps.values())):
         raise coverage.CoverageError("raw attempt must retain build and verify workflow outcomes")
     platform = f"linux-{architecture}"
-    archive_name = f"pg_jsonschema-{publication.EXTENSION_VERSION}-postgresql-{publication.PG_VERSION}-{platform}.tar.gz"
-    core_name = f"postgresql-{publication.PG_VERSION}-{platform}.tar.gz"
+    archive_name = f"pg_jsonschema-{publication.EXTENSION_VERSION}-postgresql-{pg_version}-{platform}.tar.gz"
+    core_name = f"postgresql-{pg_version}-{platform}.tar.gz"
     extension_archive, core_archive = archives / archive_name, core_archives / core_name
     for path in (extension_archive, core_archive):
         if path.is_symlink():
@@ -132,7 +133,7 @@ def import_run(root, core_archives, archives, run_id):
     digests = {archive_name: publication.digest(extension_archive), core_name: publication.digest(core_archive)}
     publication._sidecar(extension_archive, digests[archive_name])
     publication._sidecar(core_archive, digests[core_name])
-    if digests[core_name] != publication.CORE_SHA256[architecture]:
+    if digests[core_name] != publication.CORE_SHA256[pg_version][architecture]:
         raise coverage.CoverageError("downloaded core archive differs from the pinned current-profile archive")
     if attempt.get("archives") != digests:
         raise coverage.CoverageError("downloaded archive bytes differ from raw attempt hashes")
@@ -163,7 +164,7 @@ def import_run(root, core_archives, archives, run_id):
     probe_output = archives / "probe-output.txt"
     if results["archive-suite"] == "passed" and (
             not probe_output.is_file()
-            or f"PASS: pg_jsonschema {publication.EXTENSION_VERSION} on relocated PostgreSQL {publication.PG_VERSION} in Alpine 3.22"
+            or f"PASS: pg_jsonschema {publication.EXTENSION_VERSION} on relocated PostgreSQL {pg_version} in Alpine 3.22"
             not in probe_output.read_text(encoding="utf-8")):
         raise coverage.CoverageError("passed archive suite lacks retained relocated Alpine probe output")
 
@@ -180,11 +181,11 @@ def import_run(root, core_archives, archives, run_id):
     if attempt.get("reports") != expected_reports:
         raise coverage.CoverageError("raw attempt report hashes differ from retained report bytes")
     ci = receipt.get("ci")
-    if (receipt.get("schema_version") != 1 or receipt.get("profile_id") != publication.PROFILE_IDS[architecture]
+    if (receipt.get("schema_version") != 1 or receipt.get("profile_id") != selected_profile
             or receipt.get("profile_revision") != profile["profile_revision"]
             or receipt.get("test_revision") != attempt["source_revision"]
             or receipt.get("project") != "pg_jsonschema" or receipt.get("version") != publication.EXTENSION_VERSION
-            or receipt.get("postgresql_version") != publication.PG_VERSION
+            or receipt.get("postgresql_version") != pg_version
             or receipt.get("architecture") != architecture or receipt.get("platform") != platform
             or receipt.get("endpoint") != "current" or receipt.get("case_results") != results
             or receipt.get("archives") != digests or receipt.get("extension_archive") != archive_name
@@ -205,7 +206,7 @@ def import_run(root, core_archives, archives, run_id):
             or record.get("outcome") != expected_outcome or record.get("ci") != ci
             or record.get("test_revision") != attempt["source_revision"]
             or record.get("sha256") != digests[archive_name]
-            or record.get("assembled_core") != {"archive": core_name, "sha256": digests[core_name], "version": publication.PG_VERSION}
+            or record.get("assembled_core") != {"archive": core_name, "sha256": digests[core_name], "version": pg_version}
             or record.get("release_eligible") is not False
             or record.get("redistribution_status") != "seahash-4.1.0-notice-unresolved"):
         raise coverage.CoverageError("verification record identity or checksums differ from receipt")
@@ -216,7 +217,7 @@ def import_run(root, core_archives, archives, run_id):
     for source, name in output_names:
         _retain(source, evidence / name, copies)
     _retain(record_path, root / "support/verification" /
-            f"pg_jsonschema-{publication.EXTENSION_VERSION}-postgresql-{publication.PG_VERSION}-{platform}-current-{run_id}.json", copies)
+            f"pg_jsonschema-{publication.EXTENSION_VERSION}-postgresql-{pg_version}-{platform}-current-{run_id}.json", copies)
     _copy(copies, root)
     return [str(destination.relative_to(root)) for _, destination in copies]
 

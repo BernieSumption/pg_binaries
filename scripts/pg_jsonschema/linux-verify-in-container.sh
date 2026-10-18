@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
-pg_version=18.6
+pg_version=${PG_VERSION:-18.6}
 extension_version=0.3.4
 extension_commit=cbe74b570d38aa0c4d42914e7a118bcb3adaee7a
 architecture=${PG_ARCHITECTURE:-x86_64}

@@ -18,8 +18,12 @@ import coverage
 
 class LinuxPublicationHelpers(unittest.TestCase):
     def test_architecture_profiles_are_scoped(self):
-        self.assertEqual(set(publication.PROFILE_IDS), {"x86_64", "arm64"})
-        self.assertNotEqual(publication.PROFILE_IDS["x86_64"], publication.PROFILE_IDS["arm64"])
+        self.assertEqual(publication.profile_id("x86_64", "18.6"),
+                         "pg-jsonschema-publication-linux-x86_64-18.6")
+        self.assertEqual(publication.profile_id("x86_64", "17.11"),
+                         "pg-jsonschema-publication-linux-x86_64-17.11")
+        self.assertNotEqual(publication.profile_id("x86_64", "18.6"),
+                            publication.profile_id("arm64", "18.6"))
 
     def test_step_outcomes_are_mapped(self):
         self.assertEqual(publication._step("success"), "passed")
@@ -49,6 +53,22 @@ class LinuxPublicationHelpers(unittest.TestCase):
             attempt = json.loads(paths[0].read_text(encoding="utf-8"))
             self.assertEqual(attempt["workflow_steps"], {"build": "failure", "verify": "skipped"})
             self.assertEqual(attempt["steps"], {"archive-suite": "skipped", "elf-closure": "skipped"})
+
+    def test_postgresql_17_attempt_uses_its_profile_and_core_run(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            archives, core_dir = root / "archives", root / "core"
+            archives.mkdir()
+            core_dir.mkdir()
+            profile = {"profile_revision": "b" * 64, "case_ids": list(publication.CASES)}
+            with patch.object(coverage, "verification_profile", return_value=profile):
+                paths = publication.emit(ROOT, archives, core_dir, archives / "publication", "x86_64",
+                                         "failure", "skipped", "c" * 40, "12345", "owner/repo",
+                                         "https://github.com", "image", "6.17.0-azure", "17.11")
+            attempt = json.loads(paths[0].read_text(encoding="utf-8"))
+            self.assertEqual(attempt["profile_id"], "pg-jsonschema-publication-linux-x86_64-17.11")
+            self.assertEqual(attempt["postgresql_version"], "17.11")
+            self.assertEqual(attempt["core_run_id"], "39082111630")
 
     def test_kernel_release_must_meet_linux_floor(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -103,7 +123,7 @@ class LinuxPublicationHelpers(unittest.TestCase):
             (archives / "probe-output.txt").write_text(
                 "PASS: pg_jsonschema 0.3.4 on relocated PostgreSQL 18.6 in Alpine 3.22\n", encoding="utf-8")
             profile = {"profile_revision": "b" * 64, "case_ids": list(publication.CASES)}
-            with patch.object(publication, "CORE_SHA256", {arch: core_hash}), \
+            with patch.object(publication, "CORE_SHA256", {"18.6": {arch: core_hash}}), \
                     patch.object(coverage, "verification_profile", return_value=profile), \
                     patch.object(coverage, "validate_verification_record", return_value=True):
                 paths = publication.emit(root, archives, core_dir, output, arch, "success", "success",
@@ -125,7 +145,7 @@ class LinuxPublicationHelpers(unittest.TestCase):
             temporary_root = Path(directory) / "root"
             (temporary_root / "support").mkdir(parents=True)
             (temporary_root / "support.json").write_bytes((ROOT / "support.json").read_bytes())
-            with patch.object(publication, "CORE_SHA256", {arch: core_hash}), \
+            with patch.object(publication, "CORE_SHA256", {"18.6": {arch: core_hash}}), \
                     patch.object(coverage, "verification_profile", return_value=profile), \
                     patch.object(coverage, "validate_verification_record", return_value=True):
                 retained = importer.import_run(temporary_root, core_dir, archives, "12345")
@@ -136,7 +156,7 @@ class LinuxPublicationHelpers(unittest.TestCase):
                                 for name in retained))
             original_archive = archive.read_bytes()
             archive.write_bytes(b"tampered final archive")
-            with patch.object(publication, "CORE_SHA256", {arch: core_hash}), \
+            with patch.object(publication, "CORE_SHA256", {"18.6": {arch: core_hash}}), \
                     patch.object(coverage, "verification_profile", return_value=profile), \
                     patch.object(coverage, "validate_verification_record", return_value=True), \
                     self.assertRaises(coverage.CoverageError):
@@ -147,7 +167,7 @@ class LinuxPublicationHelpers(unittest.TestCase):
             receipt = json.loads(original_receipt)
             receipt["archives"][archive_name] = "0" * 64
             receipt_path.write_text(json.dumps(receipt), encoding="utf-8")
-            with patch.object(publication, "CORE_SHA256", {arch: core_hash}), \
+            with patch.object(publication, "CORE_SHA256", {"18.6": {arch: core_hash}}), \
                     patch.object(coverage, "verification_profile", return_value=profile), \
                     patch.object(coverage, "validate_verification_record", return_value=True), \
                     self.assertRaises(coverage.CoverageError):

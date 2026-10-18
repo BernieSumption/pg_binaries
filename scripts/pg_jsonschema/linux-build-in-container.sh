@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
-pg_version=18.6
+pg_version=${PG_VERSION:-18.6}
+pg_major=${pg_version%%.*}
 extension_version=0.3.4
 extension_commit=cbe74b570d38aa0c4d42914e7a118bcb3adaee7a
 architecture=${PG_ARCHITECTURE:-x86_64}
@@ -20,7 +21,7 @@ git -C /work/source fetch --depth 1 origin "$extension_commit"
 git -C /work/source checkout --detach FETCH_HEAD
 test "$(git -C /work/source rev-parse HEAD)" = "$extension_commit"
 test "$(sed -n 's/^version = "\([^"]*\)"/\1/p' /work/source/Cargo.toml | head -n 1)" = "$extension_version"
-grep -Eq '^pg18 = \["pgrx/pg18", "pgrx-tests/pg18"\]$' /work/source/Cargo.toml
+grep -Eq "^pg${pg_major} = \\[\"pgrx/pg${pg_major}\", \"pgrx-tests/pg${pg_major}\"\\]$" /work/source/Cargo.toml
 test -s /work/source/Cargo.lock
 lock_sha256=$(sha256sum /work/source/Cargo.lock | awk '{print $1}')
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-modify-path --profile minimal --default-toolchain stable
@@ -29,12 +30,12 @@ export PGRX_HOME=/work/pgrx
 cd /work/source
 case "$architecture" in x86_64) rust_target=x86_64-unknown-linux-gnu ;; arm64) rust_target=aarch64-unknown-linux-gnu ;; esac
 cargo metadata --locked --format-version 1 --filter-platform "$rust_target" \
-  --no-default-features --features pg18 > /work/cargo-metadata.json
+  --no-default-features --features "pg${pg_major}" > /work/cargo-metadata.json
 python3 /usr/local/bin/inventory-cargo-licenses /work/source /work/cargo-metadata.json \
   /out/cargo-license-inventory.json
 cargo install cargo-pgrx --version 0.16.1 --locked
-cargo pgrx init --pg18 "$pgroot/bin/pg_config"
-cargo pgrx install --release --no-default-features --features pg18 --pg-config "$pgroot/bin/pg_config"
+cargo pgrx init "--pg${pg_major}" "$pgroot/bin/pg_config"
+cargo pgrx install --release --no-default-features --features "pg${pg_major}" --pg-config "$pgroot/bin/pg_config"
 test "$(sha256sum /work/source/Cargo.lock | awk '{print $1}')" = "$lock_sha256"
 test -s "$pgroot/lib/pg_jsonschema.so"
 test -s "$pgroot/share/extension/pg_jsonschema.control"
