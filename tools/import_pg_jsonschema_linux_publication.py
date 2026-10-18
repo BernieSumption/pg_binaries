@@ -134,6 +134,11 @@ def _retain_available(attempt_path, attempt, archives, evidence, copies):
             _retain(source, evidence / name, copies)
 
 
+def _evidence_directory(root, run_id, pg_version, architecture):
+    return (Path(root) / "support/evidence" /
+            f"pg_jsonschema-linux-publication-{run_id}" / pg_version / architecture)
+
+
 def import_run(root, core_archives, archives, run_id):
     root, core_archives, archives = map(Path, (root, core_archives, archives))
     root = root.resolve()
@@ -173,7 +178,7 @@ def import_run(root, core_archives, archives, run_id):
     if (not isinstance(present, dict) or present != {core_name: core_archive.is_file(),
                                                     archive_name: extension_archive.is_file()}):
         raise coverage.CoverageError("raw attempt archive presence differs from downloaded files")
-    evidence = root / "support/evidence" / f"pg_jsonschema-linux-publication-{run_id}" / architecture
+    evidence = _evidence_directory(root, run_id, pg_version, architecture)
     copies = []
     _retain_available(attempt_path, attempt, archives, evidence, copies)
     if not extension_archive.is_file() or not core_archive.is_file():

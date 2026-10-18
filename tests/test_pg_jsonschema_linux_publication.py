@@ -19,6 +19,15 @@ import coverage
 
 
 class LinuxPublicationHelpers(unittest.TestCase):
+    def test_evidence_directory_discriminates_postgresql_version(self):
+        root = Path("/repo")
+        pg15 = importer._evidence_directory(root, "39113295355", "15.19", "x86_64")
+        pg16 = importer._evidence_directory(root, "39113295355", "16.15", "x86_64")
+        arm64 = importer._evidence_directory(root, "39113295355", "15.19", "arm64")
+        self.assertEqual(pg15, root / "support/evidence/pg_jsonschema-linux-publication-39113295355/15.19/x86_64")
+        self.assertNotEqual(pg15, pg16)
+        self.assertNotEqual(pg15, arm64)
+
     def test_architecture_profiles_are_scoped(self):
         self.assertEqual(publication.profile_id("x86_64", "18.6"),
                          "pg-jsonschema-publication-linux-x86_64-18.6")
