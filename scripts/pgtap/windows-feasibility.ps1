@@ -82,9 +82,9 @@ try {
   $pgConfigPosix = (& $msysCygpath -u $pgConfig).Trim()
   if ($LASTEXITCODE -ne 0 -or -not $sourcePosix -or -not $shimPosix -or -not $pgConfigPosix) { throw 'Could not map pgTAP generation paths into MSYS2' }
   $env:MSYS2_PATH_TYPE = 'inherit'
-  & $msysBash --noprofile --norc -c 'pacman -S --needed --noconfirm make patch grep sed gawk'
+  & $msysBash -lc 'pacman -S --needed --noconfirm make patch grep sed gawk'
   if ($LASTEXITCODE -ne 0) { throw 'Could not provide GNU make and SQL-generation tools on the disposable runner' }
-  & $msysBash --noprofile --norc -c "cd '$sourcePosix' && make all PG_CONFIG='$pgConfigPosix' PGXS='$shimPosix' OSNAME=windows"
+  & $msysBash -lc "cd '$sourcePosix' && make all PG_CONFIG='$pgConfigPosix' PGXS='$shimPosix' OSNAME=windows"
   if ($LASTEXITCODE -ne 0) { throw 'Upstream pgTAP SQL generation failed' }
 
   $payload = Join-Path $stage 'pgtap'
