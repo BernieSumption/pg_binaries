@@ -4,6 +4,7 @@ import hashlib
 import json
 from pathlib import Path
 import shutil
+import shutil
 import sys
 import tarfile
 import tempfile
@@ -179,6 +180,34 @@ class PgtapMacOSPublicationTests(unittest.TestCase):
             path.write_text(json.dumps(value))
             with self.assertRaisesRegex(ValueError, "profile or archive identity"):
                 load_target_config(path)
+
+    def test_unrelated_profile_addition_does_not_change_pgtap_revision(self):
+        for config in TARGET_CONFIGS:
+            target = load_target_config(config)
+            profile_id = target.profile_id
+            registry = json.loads((ROOT / "support/verification-profiles.json").read_text())
+            profile = registry["profiles"][profile_id]
+            self.assertNotIn("support/verification-profiles.json", profile["sources"])
+            with tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)
+                for relative in profile["sources"]:
+                    source = ROOT / relative
+                    destination = root / relative
+                    destination.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.copyfile(source, destination)
+                registry_path = root / "support/verification-profiles.json"
+                registry_path.parent.mkdir(parents=True, exist_ok=True)
+                registry_path.write_text(json.dumps(registry))
+                revision = emitter.coverage.verification_profile(root, profile_id)["profile_revision"]
+                registry["profiles"]["unrelated-publication-profile"] = {
+                    "scope": "publication", "platforms": [target.platform],
+                    "case_ids": ["unrelated"], "sources": ["support.json"],
+                }
+                registry_path.write_text(json.dumps(registry))
+                self.assertEqual(
+                    emitter.coverage.verification_profile(root, profile_id)["profile_revision"],
+                    revision,
+                )
 
 
 if __name__ == "__main__":

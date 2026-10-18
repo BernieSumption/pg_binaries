@@ -173,25 +173,25 @@
       "scope": "publication",
       "platforms": ["macos-arm64"],
       "case_ids": ["archive-suite", "static-analysis"],
-      "sources": [".github/workflows/pgtap-macos-arm64-publication.yml",".github/workflows/profile-change-scope.yml","scripts/macos/static_analysis.py","scripts/pgtap/macos-feasibility.sh","scripts/pgtap/probe.sql","support.json","support/postgresql-releases.json","support/verification-profiles.json","tests/test_pgtap_macos_publication.py","tests/test_profile_change_gate.py","tools/check_extension_redistribution.py","tools/coverage.py","tools/emit_pgtap_macos_publication.py","tools/import_pgtap_macos_publication.py","tools/pgtap_macos_pins/18.6-arm64.json","tools/pgtap_macos_target.py","tools/profile_change_gate.py","tools/publication_preflight.py"]
+      "sources": [".github/workflows/pgtap-macos-arm64-publication.yml",".github/workflows/profile-change-scope.yml","scripts/macos/static_analysis.py","scripts/pgtap/macos-feasibility.sh","scripts/pgtap/probe.sql","support.json","support/postgresql-releases.json","tests/test_pgtap_macos_publication.py","tests/test_profile_change_gate.py","tools/check_extension_redistribution.py","tools/coverage.py","tools/emit_pgtap_macos_publication.py","tools/import_pgtap_macos_publication.py","tools/pgtap_macos_pins/18.6-arm64.json","tools/pgtap_macos_target.py","tools/profile_change_gate.py","tools/publication_preflight.py"]
     },
     "pgtap-publication-macos-x86_64-18.6": {
       "scope": "publication",
       "platforms": ["macos-x86_64"],
       "case_ids": ["archive-suite", "static-analysis"],
-      "sources": [".github/workflows/pgtap-macos-x86_64-publication.yml",".github/workflows/profile-change-scope.yml","scripts/macos/static_analysis.py","scripts/pgtap/macos-feasibility.sh","scripts/pgtap/probe.sql","support.json","support/postgresql-releases.json","support/verification-profiles.json","tests/test_pgtap_macos_publication.py","tests/test_profile_change_gate.py","tools/check_extension_redistribution.py","tools/coverage.py","tools/emit_pgtap_macos_publication.py","tools/import_pgtap_macos_publication.py","tools/pgtap_macos_pins/18.6-x86_64.json","tools/pgtap_macos_target.py","tools/profile_change_gate.py","tools/publication_preflight.py"]
+      "sources": [".github/workflows/pgtap-macos-x86_64-publication.yml",".github/workflows/profile-change-scope.yml","scripts/macos/static_analysis.py","scripts/pgtap/macos-feasibility.sh","scripts/pgtap/probe.sql","support.json","support/postgresql-releases.json","tests/test_pgtap_macos_publication.py","tests/test_profile_change_gate.py","tools/check_extension_redistribution.py","tools/coverage.py","tools/emit_pgtap_macos_publication.py","tools/import_pgtap_macos_publication.py","tools/pgtap_macos_pins/18.6-x86_64.json","tools/pgtap_macos_target.py","tools/profile_change_gate.py","tools/publication_preflight.py"]
     },
     "pgtap-publication-macos-arm64-17.11": {
       "scope": "publication",
       "platforms": ["macos-arm64"],
       "case_ids": ["archive-suite", "static-analysis"],
-      "sources": [".github/workflows/pgtap-macos-arm64-17.11-publication.yml",".github/workflows/profile-change-scope.yml","scripts/macos/static_analysis.py","scripts/pgtap/macos-feasibility.sh","scripts/pgtap/probe.sql","support.json","support/postgresql-releases.json","support/verification-profiles.json","tests/test_pgtap_macos_publication.py","tests/test_profile_change_gate.py","tools/check_extension_redistribution.py","tools/coverage.py","tools/emit_pgtap_macos_publication.py","tools/import_pgtap_macos_publication.py","tools/pgtap_macos_pins/17.11-arm64.json","tools/pgtap_macos_target.py","tools/profile_change_gate.py","tools/publication_preflight.py"]
+      "sources": [".github/workflows/pgtap-macos-arm64-17.11-publication.yml",".github/workflows/profile-change-scope.yml","scripts/macos/static_analysis.py","scripts/pgtap/macos-feasibility.sh","scripts/pgtap/probe.sql","support.json","support/postgresql-releases.json","tests/test_pgtap_macos_publication.py","tests/test_profile_change_gate.py","tools/check_extension_redistribution.py","tools/coverage.py","tools/emit_pgtap_macos_publication.py","tools/import_pgtap_macos_publication.py","tools/pgtap_macos_pins/17.11-arm64.json","tools/pgtap_macos_target.py","tools/profile_change_gate.py","tools/publication_preflight.py"]
     },
     "pgtap-publication-macos-x86_64-17.11": {
       "scope": "publication",
       "platforms": ["macos-x86_64"],
       "case_ids": ["archive-suite", "static-analysis"],
-      "sources": [".github/workflows/pgtap-macos-x86_64-17.11-publication.yml",".github/workflows/profile-change-scope.yml","scripts/macos/static_analysis.py","scripts/pgtap/macos-feasibility.sh","scripts/pgtap/probe.sql","support.json","support/postgresql-releases.json","support/verification-profiles.json","tests/test_pgtap_macos_publication.py","tests/test_profile_change_gate.py","tools/check_extension_redistribution.py","tools/coverage.py","tools/emit_pgtap_macos_publication.py","tools/import_pgtap_macos_publication.py","tools/pgtap_macos_pins/17.11-x86_64.json","tools/pgtap_macos_target.py","tools/profile_change_gate.py","tools/publication_preflight.py"]
+      "sources": [".github/workflows/pgtap-macos-x86_64-17.11-publication.yml",".github/workflows/profile-change-scope.yml","scripts/macos/static_analysis.py","scripts/pgtap/macos-feasibility.sh","scripts/pgtap/probe.sql","support.json","support/postgresql-releases.json","tests/test_pgtap_macos_publication.py","tests/test_profile_change_gate.py","tools/check_extension_redistribution.py","tools/coverage.py","tools/emit_pgtap_macos_publication.py","tools/import_pgtap_macos_publication.py","tools/pgtap_macos_pins/17.11-x86_64.json","tools/pgtap_macos_target.py","tools/profile_change_gate.py","tools/publication_preflight.py"]
     },
     "hypopg-publication-macos-arm64-18.6": {
       "scope": "publication",
