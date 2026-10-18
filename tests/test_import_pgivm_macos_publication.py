@@ -42,6 +42,17 @@ class ImportPgivmMacOSPublicationTests(unittest.TestCase):
         self.assertTrue(any(path.endswith("attempt.json") for path in retained))
         self.assertFalse((self.fixture.root / "support/verification").exists())
 
+    def test_import_retains_raw_attempt_when_finalizer_fails(self):
+        self.fixture.emit()
+        publication = self.fixture.output / "publication"
+        (publication / "current-receipt.json").unlink()
+        for record in (publication / "records").glob("*.json"):
+            record.unlink()
+        retained = importer.import_run(self.fixture.root, self.fixture.core,
+                                       self.fixture.output, "12345678901")
+        self.assertTrue(any(path.endswith("attempt.json") for path in retained))
+        self.assertFalse(any(path.startswith("support/verification/") for path in retained))
+
 
 if __name__ == "__main__":
     unittest.main()

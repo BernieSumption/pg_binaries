@@ -152,8 +152,8 @@ def emit(root, core_dir, archives, output, step_results, os_version, image_id, e
             _fail("passing archive suite is missing pg_ivm probe output")
         probe = probe_path.read_text(encoding="utf-8")
         if ("CREATE EXTENSION" not in probe or "CREATE TABLE" not in probe
-                or "CREATE MATERIALIZED VIEW" not in probe or probe.count("DO") < 3
-                or not re.search(r"(?m)^18\.6\s*$", probe)):
+                or "create_immv" not in probe or probe.count("DO") < 3
+                or not re.search(r"(?m)^\s*18\.6\s*$", probe)):
             _fail("pg_ivm probe output does not show the expected extension and IMMV checks")
     if results["static-analysis"] == "passed":
         static = _json(static_path, "static analysis")

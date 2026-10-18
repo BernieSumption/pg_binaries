@@ -90,7 +90,10 @@ class pg_ivmMacOSFixture:
             "archives": digests,
         }))
         (self.output / "probe-output.txt").write_text(
-            "18.6\nCREATE EXTENSION\nCREATE TABLE\nCREATE MATERIALIZED VIEW\nDO\nDO\nDO\n")
+            " postgres_version \n------------------\n 18.6\n(1 row)\n"
+            "CREATE EXTENSION\nCREATE TABLE\nINSERT 0 2\n"
+            " create_immv \n-------------\n           1\n(1 row)\n"
+            "DO\nINSERT 0 1\nDO\nUPDATE 1\nDO\n")
 
     def emit(self, cases=None):
         return emitter.emit(

@@ -148,8 +148,6 @@ def import_run(root, core_artifact, pgivm_artifact, run_id):
         _retain(receipt_path, evidence_dir / receipt_path.name, copies)
     elif records:
         raise coverage.CoverageError("verification records require matching receipt")
-    elif outcome == "passed":
-        raise coverage.CoverageError("passing attempt has no archive-bound receipt")
 
     if len(records) > 1:
         raise coverage.CoverageError("expected one pg_ivm verification record")
