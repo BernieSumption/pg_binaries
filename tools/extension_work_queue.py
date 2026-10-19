@@ -68,7 +68,7 @@ def load_expected_build_inputs(path):
     return result
 
 
-def build_queue(root, candidate_manifest=None, expected_build_inputs=None):
+def build_queue(root, candidate_manifest=None, expected_build_inputs=None, checked_overlay=None):
     """Build project-level archive candidates and exact endpoint verification tasks."""
     root = Path(root)
     support = coverage.load_json(root / "support.json")
@@ -84,6 +84,17 @@ def build_queue(root, candidate_manifest=None, expected_build_inputs=None):
     if candidate_manifest is not None:
         cached_candidates, rejected_candidates = candidate_cache.load_candidates(
             candidate_manifest, support, expected_build_inputs)
+    if checked_overlay is not None:
+        if checked_overlay.get("schema_version") != 1:
+            raise ValueError("checked candidate overlay schema_version must be 1")
+        for candidate in checked_overlay["candidate_archives"]:
+            if candidate["component"] == "postgresql":
+                key = ("postgresql", candidate["version"], candidate["platform"])
+            else:
+                key = (candidate["project"], candidate["version"], candidate["platform"],
+                       int(candidate["postgresql_version"].split(".", 1)[0]))
+            cached_candidates[key] = candidate
+        records.extend(checked_overlay["verification_records"])
     groups = archive_plan.plan(support, snapshot)["candidate_archives"]
     items = {}
     unresolved = []

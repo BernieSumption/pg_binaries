@@ -72,6 +72,7 @@ jobs:
           REQUEST_POSTGRESQL_VERSION: ${{ inputs.postgresql_version }}
           REQUEST_PLATFORM: ${{ inputs.platform }}
           REQUEST_RETRY: ${{ inputs.retry }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           python3 - "$RUNNER_TEMP/request.json" <<'PY'
@@ -89,7 +90,12 @@ jobs:
           with open(sys.argv[1], "w", encoding="utf-8") as output:
               json.dump(request, output)
           PY
-          python3 tools/dispatch_plan.py --request "$RUNNER_TEMP/request.json" > "$RUNNER_TEMP/dispatch-plan.json"
+          if [[ "$REQUEST_PROJECT" == pgvector && "$REQUEST_PLATFORM" == linux-x86_64 && "$REQUEST_RETRY" != true ]]; then
+            bash tools/pgvector_checked_dispatch.sh "$RUNNER_TEMP/request.json" \
+              "$RUNNER_TEMP/dispatch-plan.json" "$REQUEST_VERSION" "$REQUEST_POSTGRESQL_VERSION"
+          else
+            python3 tools/dispatch_plan.py --request "$RUNNER_TEMP/request.json" > "$RUNNER_TEMP/dispatch-plan.json"
+          fi
           python3 - "$RUNNER_TEMP/dispatch-plan.json" "$GITHUB_OUTPUT" <<'PY'
           import json
           import sys

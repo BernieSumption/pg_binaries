@@ -24,7 +24,8 @@ RUNNERS = {
 REQUIRED = {"project", "version", "postgresql_version", "platform"}
 
 
-def resolve(root, request, candidate_manifest=None, expected_build_inputs=None):
+def resolve(root, request, candidate_manifest=None, expected_build_inputs=None,
+            checked_overlay=None):
     """Resolve an exact request to all queue tasks needed to build and verify it."""
     if (not isinstance(request, dict) or not REQUIRED <= set(request)
             or set(request) - (REQUIRED | {"retry"})):
@@ -41,7 +42,8 @@ def resolve(root, request, candidate_manifest=None, expected_build_inputs=None):
     if platform not in RUNNERS:
         raise ValueError(f"undeclared platform: {platform}")
 
-    queue = extension_work_queue.build_queue(root, candidate_manifest, expected_build_inputs)
+    queue = extension_work_queue.build_queue(root, candidate_manifest, expected_build_inputs,
+                                             checked_overlay)
     target = {key: request[key] for key in REQUIRED}
     groups = [item for item in queue["work_items"]
               if item.get("kind") == "build-extension"
@@ -96,12 +98,31 @@ def main(argv=None):
                         help="retrieved unpublished Actions archives eligible for reuse")
     parser.add_argument("--expected-build-inputs", type=Path,
                         help="current build-input identities for exact candidate targets")
+    parser.add_argument("--pgvector-candidate-bundle", type=Path,
+                        help="retrieved exact pgvector selected bundle manifest")
+    parser.add_argument("--core-base-image-digest")
+    parser.add_argument("--core-builder-packages-sha256")
+    parser.add_argument("--pgvector-builder-packages-sha256")
     args = parser.parse_args(argv)
     try:
         request = json.loads(args.request.read_text(encoding="utf-8"))
         expected_inputs = (extension_work_queue.load_expected_build_inputs(args.expected_build_inputs)
                            if args.expected_build_inputs else None)
-        print(json.dumps(resolve(args.root, request, args.candidate_manifest, expected_inputs),
+        overlay = None
+        if args.pgvector_candidate_bundle:
+            if not all((args.core_base_image_digest, args.core_builder_packages_sha256,
+                        args.pgvector_builder_packages_sha256)):
+                raise ValueError("pgvector candidate bundle requires all three current builder identities")
+            sys.path.insert(0, str(Path(__file__).resolve().parent))
+            import pgvector_planner_adapter
+            checked = pgvector_planner_adapter.checked_candidate_inputs(
+                args.pgvector_candidate_bundle, args.root,
+                core_base_image_digest=args.core_base_image_digest,
+                core_builder_packages_sha256=args.core_builder_packages_sha256,
+                pgvector_builder_packages_sha256=args.pgvector_builder_packages_sha256)
+            overlay = checked["planner_overlay"]
+        print(json.dumps(resolve(args.root, request, args.candidate_manifest, expected_inputs,
+                                 overlay),
                          indent=2, sort_keys=True))
         return 0
     except (OSError, json.JSONDecodeError, KeyError, TypeError, ValueError) as exc:
