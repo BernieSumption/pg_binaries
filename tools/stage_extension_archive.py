@@ -62,7 +62,8 @@ def _extract_checked(archive_path, destination):
         archive.extractall(destination, members=members)
 
 
-def _metadata(archive_root, project, version, platform, architecture, sql_name):
+def _metadata(archive_root, project, version, platform, architecture, sql_name,
+              sql_names=None, requires=None):
     entries = {path.name for path in archive_root.iterdir()}
     if entries != {project, "metadata.json"} or not (archive_root / project).is_dir():
         raise StagingError("extension archive must contain its project payload and metadata.json")
@@ -75,11 +76,15 @@ def _metadata(archive_root, project, version, platform, architecture, sql_name):
     for key, value in expected.items():
         if metadata.get(key) != value:
             raise StagingError(f"extension metadata mismatch for {key}")
+    if sql_names is not None and metadata.get("sql_names") != sql_names:
+        raise StagingError("extension metadata SQL names do not match declared project names")
     if sql_name not in metadata.get("sql_names", []):
         raise StagingError(f"extension metadata does not provide SQL name {sql_name!r}")
     for key in ("requires", "configuration_prerequisites", "runtime_prerequisites"):
         if not isinstance(metadata.get(key), list):
             raise StagingError(f"extension metadata field {key} must be an array")
+    if requires is not None and metadata["requires"] != requires:
+        raise StagingError("extension metadata prerequisites do not match declared project prerequisites")
     return archive_root / project
 
 
@@ -165,11 +170,57 @@ def select_and_stage(inventory, support, postgresql_version, platform_key,
     if stage_path.exists():
         shutil.rmtree(stage_path)
     _extract_checked(archive_path, stage_path)
+    details = support["extensions"][project]
     payload = _metadata(stage_path, project.lower().replace(" ", "_"),
-                        extension_version, platform, architecture, sql_name)
+                        extension_version, platform, architecture, sql_name,
+                        details["sql_names"], details.get("requires", []))
     _check_licenses(payload, project.lower().replace(" ", "_"))
     merge_payload(payload, prefix)
     return download
+
+
+def select_and_stage_projects(inventory, support, postgresql_version, platform_key,
+                              project_versions, archive_directory, prefix,
+                              staging_root):
+    """Stage selected projects once each, in declared prerequisite order."""
+    if not isinstance(project_versions, dict) or not project_versions:
+        raise SelectionError("project_versions must map selected project names to versions")
+
+    ordered = []
+    visiting = set()
+    visited = set()
+
+    def visit(project):
+        if project in visited:
+            return
+        if project in visiting:
+            raise SelectionError(f"extension project prerequisite cycle includes {project!r}")
+        details = support.get("extensions", {}).get(project)
+        if not isinstance(details, dict):
+            raise SelectionError(f"unknown extension project {project!r}")
+        version = project_versions.get(project)
+        if version not in details.get("versions", {}):
+            raise SelectionError(f"extension version {version!r} is not declared for project {project!r}")
+        visiting.add(project)
+        for prerequisite in details.get("requires", []):
+            if prerequisite not in project_versions:
+                raise SelectionError(f"selected project {project!r} requires project {prerequisite!r}")
+            visit(prerequisite)
+        visiting.remove(project)
+        visited.add(project)
+        ordered.append(project)
+
+    for selected_project in project_versions:
+        visit(selected_project)
+
+    downloads = {}
+    for project in ordered:
+        details = support["extensions"][project]
+        downloads[project] = select_and_stage(
+            inventory, support, postgresql_version, platform_key,
+            project, project_versions[project], details["sql_names"][0],
+            archive_directory, prefix, staging_root)
+    return downloads
 
 
 def main():

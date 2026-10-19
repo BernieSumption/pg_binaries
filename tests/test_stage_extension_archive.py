@@ -155,6 +155,72 @@ class StageExtensionArchiveTests(unittest.TestCase):
         self.assertEqual((prefix / "LICENSES/inventory.json").read_text(), "core inventory")
         self.assertTrue((prefix / "LICENSES/example_project-inventory.json").is_file())
 
+    def test_project_staging_deduplicates_postgis_sql_names(self):
+        support, inventory = self.project_fixture()
+        prefix = self.root / "projects-prefix"
+        downloads = staging.select_and_stage_projects(
+            inventory, support, "18.6", "linux-x86_64",
+            {"PostGIS": "3.6.4"}, self.archives, prefix, self.staging)
+        self.assertEqual(list(downloads), ["PostGIS"])
+        for sql_name in support["extensions"]["PostGIS"]["sql_names"]:
+            self.assertTrue((prefix / f"share/extension/{sql_name}.control").is_file())
+        self.assertEqual(len(list(self.staging.iterdir())), 1)
+
+    def test_project_staging_orders_tiger_after_its_postgis_prerequisite(self):
+        support, inventory = self.project_fixture(include_tiger=True)
+        prefix = self.root / "ordered-prefix"
+        downloads = staging.select_and_stage_projects(
+            inventory, support, "18.6", "linux-x86_64",
+            {"PostGIS TIGER Geocoder": "2025.2", "PostGIS": "3.6.4"},
+            self.archives, prefix, self.staging)
+        self.assertEqual(list(downloads), ["PostGIS", "PostGIS TIGER Geocoder"])
+        self.assertTrue((prefix / "share/extension/postgis.control").is_file())
+        self.assertTrue((prefix / "share/extension/postgis_tiger_geocoder.control").is_file())
+
+    def project_fixture(self, include_tiger=False):
+        projects = {
+            "PostGIS": {
+                "sql_names": ["postgis", "postgis_raster", "postgis_sfcgal", "postgis_topology"],
+                "requires": [], "version": "3.6.4", "payload": "postgis",
+            }
+        }
+        if include_tiger:
+            projects["PostGIS TIGER Geocoder"] = {
+                "sql_names": ["postgis_tiger_geocoder"], "requires": ["PostGIS"],
+                "version": "2025.2", "payload": "postgis_tiger_geocoder",
+            }
+        support = {"extensions": {
+            project: {"sql_names": details["sql_names"], "requires": details["requires"],
+                      "versions": {details["version"]: {}}}
+            for project, details in projects.items()
+        }}
+        inventory = {"schema_version": 1, "extensions": {}}
+        for project, details in projects.items():
+            slug = project.lower().replace(" ", "_")
+            archive_name = f"{slug}-{details['version']}-linux-x86_64.tar.gz"
+            archive_path = self.archives / archive_name
+            metadata = {
+                "project": slug, "version": details["version"], "platform": "linux",
+                "architecture": "x86_64", "sql_names": details["sql_names"],
+                "requires": details["requires"], "configuration_prerequisites": [],
+                "runtime_prerequisites": [],
+            }
+            with tarfile.open(archive_path, "w:gz") as archive:
+                for sql_name in details["sql_names"]:
+                    self.add_file(archive, f"{slug}/share/extension/{sql_name}.control", b"control")
+                self.add_file(archive, f"{slug}/LICENSES/{slug}-inventory.json",
+                              b'{"schema_version":1,"components":[{}]}')
+                self.add_file(archive, "metadata.json", json.dumps(metadata).encode())
+            digest = hashlib.sha256(archive_path.read_bytes()).hexdigest()
+            download = {
+                "postgresql_support": {"from": "18.6", "to": "18.6"},
+                "url": f"https://example.test/{archive_name}", "sha256": digest,
+            }
+            for sql_name in details["sql_names"]:
+                inventory["extensions"].setdefault(sql_name, {})[details["version"]] = {
+                    "downloads": {"linux-x86_64": [download]}}
+        return support, inventory
+
     def test_rejects_missing_extension_license_inventory(self):
         archive_path = self.archives / "example-2.0-linux-x86_64.tar.gz"
         self.write_archive(archive_path, "2.0", "lib/old.so")
