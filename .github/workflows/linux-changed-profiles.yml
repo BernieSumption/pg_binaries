@@ -1,0 +1,56 @@
+name: Linux changed-profile scheduler
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [spike]
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  select:
+    runs-on: ubuntu-latest
+    outputs:
+      targets: ${{ steps.plan.outputs.targets }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: plan
+        env:
+          EVENT_BEFORE: ${{ github.event.before }}
+        run: |
+          set -euo pipefail
+          before_root="$RUNNER_TEMP/profile-before"
+          if [[ -z "$EVENT_BEFORE" || "$EVENT_BEFORE" =~ ^0+$ ]]; then
+            python3 tools/linux_changed_profiles.py \
+              --current-root "$GITHUB_WORKSPACE" \
+              --github-output "$GITHUB_OUTPUT"
+          elif ! git worktree add --detach "$before_root" "$EVENT_BEFORE"; then
+            echo 'Could not materialize the event base; selecting all routed Linux targets.' >&2
+            python3 tools/linux_changed_profiles.py \
+              --current-root "$GITHUB_WORKSPACE" \
+              --github-output "$GITHUB_OUTPUT"
+          else
+            python3 tools/linux_changed_profiles.py \
+              --before-root "$before_root" \
+              --current-root "$GITHUB_WORKSPACE" \
+              --github-output "$GITHUB_OUTPUT"
+          fi
+
+  publish:
+    needs: select
+    if: needs.select.outputs.targets != '[]'
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        include: ${{ fromJSON(needs.select.outputs.targets) }}
+    uses: ./.github/workflows/selected-extension-publication.yml
+    with:
+      project: ${{ matrix.project }}
+      extension_version: ${{ matrix.extension_version }}
+      postgresql_version: ${{ matrix.postgresql_version }}
+      platform: ${{ matrix.platform }}

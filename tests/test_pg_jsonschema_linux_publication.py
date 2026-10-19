@@ -20,14 +20,14 @@ import linux_core_resolution
 
 
 class LinuxPublicationHelpers(unittest.TestCase):
-    def _core_resolution_fixture(self, directory, origin="built"):
+    def _core_resolution_fixture(self, directory, origin="built", pg_version="18.6", architecture="x86_64"):
         base = Path(directory)
         core_dir = base / "core"
         core_dir.mkdir(exist_ok=True)
-        core = core_dir / "postgresql-18.6-linux-x86_64.tar.gz"
+        core = core_dir / f"postgresql-{pg_version}-linux-{architecture}.tar.gz"
         manifest = {
-            "component": "postgresql", "version": "18.6", "platform": "linux",
-            "architecture": "x86_64", "source_revision": "e" * 40, "build_id": "linux-core-1",
+            "component": "postgresql", "version": pg_version, "platform": "linux",
+            "architecture": architecture, "source_revision": "e" * 40, "build_id": "linux-core-1",
             "builder_inputs": {"base_image": "ubuntu:22.04", "base_image_digest": "sha256:" + "f" * 64,
                                "packages_sha256": "a" * 64},
         }
@@ -45,7 +45,7 @@ class LinuxPublicationHelpers(unittest.TestCase):
         else:
             provenance.update({"artifact_name": "postgresql-linux-x86_64", "head_sha": "d" * 40})
         record = {"schema_version": 1, "archive": core.name, "sha256": hashlib.sha256(core.read_bytes()).hexdigest(),
-                  "postgresql_version": "18.6", "architecture": "x86_64", "origin": origin,
+                  "postgresql_version": pg_version, "architecture": architecture, "origin": origin,
                   "provenance": provenance}
         resolution_path = base / "core-resolution.json"
         resolution_path.write_text(json.dumps(record), encoding="utf-8")
@@ -75,6 +75,14 @@ class LinuxPublicationHelpers(unittest.TestCase):
                                  "failure", "skipped", "b" * 40, "12345", "owner/repo",
                                  "https://github.com", "image", "6.17.0-azure",
                                  core_resolution_path=resolution_path)
+
+    def test_emitter_rejects_missing_core_resolution(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            with self.assertRaisesRegex(coverage.CoverageError, "core-resolution.json is required"):
+                publication.emit(ROOT, base, base, base / "publication", "x86_64", "failure", "skipped",
+                                 "c" * 40, "12345", "owner/repo", "https://github.com", "image",
+                                 "6.17.0-azure")
 
     def test_dynamic_reused_resolution_accepts_checked_producer_run(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -110,18 +118,11 @@ class LinuxPublicationHelpers(unittest.TestCase):
         self.assertNotEqual(publication.profile_id("x86_64", "18.6"),
                             publication.profile_id("arm64", "18.6"))
 
-    def test_selected_postgresql_15_and_16_core_pins(self):
-        self.assertEqual(publication.PG_VERSIONS, ("18.6", "17.11", "15.19", "16.15"))
-        self.assertEqual(publication.CORE_RUNS["15.19"], "39082151857")
-        self.assertEqual(publication.CORE_RUNS["16.15"], "39082147531")
-        self.assertEqual(publication.CORE_SHA256["15.19"], {
-            "x86_64": "f538b0f41d25b8eea530ce59897248e83dfe770265c7a53698e7a9c2bef45db5",
-            "arm64": "9b570ba3827c2255a668375ec09ffe8d249e473d8389a7191e7c1fd77fbdca97",
-        })
-        self.assertEqual(publication.CORE_SHA256["16.15"], {
-            "x86_64": "f8758cdcb93f6d177f1d01e10dc10ba590acc3bbdadb47b78110996678c599ff",
-            "arm64": "8602843a166b8de1944857b0bfe9eefc3139a9cb726f4296ee66e18a8e608b70",
-        })
+    def test_postgresql_versions_follow_supported_release_snapshot(self):
+        expected = tuple(coverage.release_snapshot(
+            coverage.load_json(ROOT / "support/postgresql-releases.json"),
+            coverage.load_json(ROOT / "support.json")))
+        self.assertEqual(publication.pg_versions(ROOT), expected)
 
     def test_step_outcomes_are_mapped(self):
         self.assertEqual(publication._step("success"), "passed")
@@ -143,46 +144,51 @@ class LinuxPublicationHelpers(unittest.TestCase):
             archives.mkdir()
             core_dir.mkdir()
             profile = {"profile_revision": "b" * 64, "case_ids": list(publication.CASES)}
+            core_dir, resolution_path, resolution = self._core_resolution_fixture(
+                archives.parent, architecture="arm64")
             with patch.object(coverage, "verification_profile", return_value=profile):
                 paths = publication.emit(ROOT, archives, core_dir, output, "arm64", "failure", "skipped",
                                          "c" * 40, "12345", "owner/repo", "https://github.com", "image",
-                                         "6.17.0-azure")
+                                         "6.17.0-azure", core_resolution_path=resolution_path)
             self.assertEqual(paths, (output / "attempt.json",))
             attempt = json.loads(paths[0].read_text(encoding="utf-8"))
             self.assertEqual(attempt["workflow_steps"], {"build": "failure", "verify": "skipped"})
             self.assertEqual(attempt["steps"], {"archive-suite": "skipped", "elf-closure": "skipped"})
 
-    def test_postgresql_17_attempt_uses_its_profile_and_core_run(self):
+    def test_postgresql_17_attempt_uses_its_profile_and_resolved_core(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             archives, core_dir = root / "archives", root / "core"
             archives.mkdir()
-            core_dir.mkdir()
+            core_dir, resolution_path, resolution = self._core_resolution_fixture(root, pg_version="17.11")
             profile = {"profile_revision": "b" * 64, "case_ids": list(publication.CASES)}
             with patch.object(coverage, "verification_profile", return_value=profile):
                 paths = publication.emit(ROOT, archives, core_dir, archives / "publication", "x86_64",
                                          "failure", "skipped", "c" * 40, "12345", "owner/repo",
-                                         "https://github.com", "image", "6.17.0-azure", "17.11")
+                                         "https://github.com", "image", "6.17.0-azure", "17.11",
+                                         core_resolution_path=resolution_path)
             attempt = json.loads(paths[0].read_text(encoding="utf-8"))
             self.assertEqual(attempt["profile_id"], "pg-jsonschema-publication-linux-x86_64-17.11")
             self.assertEqual(attempt["postgresql_version"], "17.11")
-            self.assertEqual(attempt["core_run_id"], "39082111630")
+            self.assertEqual(attempt["core_run_id"], resolution["provenance"]["run_id"])
 
-    def test_postgresql_15_and_16_attempts_select_pinned_core_runs(self):
+    def test_postgresql_15_and_16_attempts_select_resolved_core(self):
         for version, architecture in (("15.19", "arm64"), ("16.15", "x86_64")):
             with self.subTest(version=version, architecture=architecture), tempfile.TemporaryDirectory() as directory:
                 root = Path(directory)
                 archives, core_dir = root / "archives", root / "core"
                 archives.mkdir()
-                core_dir.mkdir()
+                core_dir, resolution_path, resolution = self._core_resolution_fixture(
+                    root, pg_version=version, architecture=architecture)
                 profile = {"profile_revision": "b" * 64, "case_ids": list(publication.CASES)}
                 with patch.object(coverage, "verification_profile", return_value=profile):
                     paths = publication.emit(ROOT, archives, core_dir, archives / "publication", architecture,
                                              "failure", "skipped", "c" * 40, "12345", "owner/repo",
-                                             "https://github.com", "image", "6.17.0-azure", version)
+                                             "https://github.com", "image", "6.17.0-azure", version,
+                                             core_resolution_path=resolution_path)
                 attempt = json.loads(paths[0].read_text(encoding="utf-8"))
                 self.assertEqual(attempt["profile_id"], publication.profile_id(architecture, version))
-                self.assertEqual(attempt["core_run_id"], publication.CORE_RUNS[version])
+                self.assertEqual(attempt["core_run_id"], resolution["provenance"]["run_id"])
                 self.assertIs(attempt["release_eligible"], False)
                 self.assertEqual(attempt["redistribution_status"], "seahash-4.1.0-notice-unresolved")
 
@@ -239,7 +245,7 @@ class LinuxPublicationHelpers(unittest.TestCase):
                     member = tarfile.TarInfo(name)
                     member.size = len(contents)
                     package.addfile(member, io.BytesIO(contents))
-            core.write_bytes(b"pinned core archive")
+            core_dir, resolution_path, resolution = self._core_resolution_fixture(directory)
             archive_hash = hashlib.sha256(archive.read_bytes()).hexdigest()
             core_hash = hashlib.sha256(core.read_bytes()).hexdigest()
             for path in (archive, core):
@@ -262,12 +268,12 @@ class LinuxPublicationHelpers(unittest.TestCase):
             (archives / "probe-output.txt").write_text(
                 "PASS: pg_jsonschema 0.3.4 on relocated PostgreSQL 18.6 in Alpine 3.22\n", encoding="utf-8")
             profile = {"profile_revision": "b" * 64, "case_ids": list(publication.CASES)}
-            with patch.object(publication, "CORE_SHA256", {"18.6": {arch: core_hash}}), \
-                    patch.object(coverage, "verification_profile", return_value=profile), \
+            with patch.object(coverage, "verification_profile", return_value=profile), \
                     patch.object(coverage, "validate_verification_record", return_value=True):
                 paths = publication.emit(root, archives, core_dir, output, arch, "success", "success",
                                          "c" * 40, "12345", "owner/repo", "https://github.com",
-                                         "sha256:" + "d" * 64, "6.17.0-azure")
+                                         "sha256:" + "d" * 64, "6.17.0-azure",
+                                         core_resolution_path=resolution_path)
             attempt = json.loads((output / "attempt.json").read_text(encoding="utf-8"))
             record = json.loads((output / "verification-record.json").read_text(encoding="utf-8"))
             self.assertEqual(paths, (output / "attempt.json", output / "current-receipt.json",
@@ -284,8 +290,9 @@ class LinuxPublicationHelpers(unittest.TestCase):
             temporary_root = Path(directory) / "root"
             (temporary_root / "support").mkdir(parents=True)
             (temporary_root / "support.json").write_bytes((ROOT / "support.json").read_bytes())
-            with patch.object(publication, "CORE_SHA256", {"18.6": {arch: core_hash}}), \
-                    patch.object(coverage, "verification_profile", return_value=profile), \
+            (temporary_root / "support/postgresql-releases.json").write_bytes(
+                (ROOT / "support/postgresql-releases.json").read_bytes())
+            with patch.object(coverage, "verification_profile", return_value=profile), \
                     patch.object(coverage, "validate_verification_record", return_value=True):
                 retained = importer.import_run(temporary_root, core_dir, archives, "12345")
             self.assertTrue(any(name.endswith("/attempt.json") for name in retained))
@@ -293,10 +300,25 @@ class LinuxPublicationHelpers(unittest.TestCase):
             self.assertTrue((temporary_root / "support/verification/pg_jsonschema-0.3.4-postgresql-18.6-linux-x86_64-current-12345.json").is_file())
             self.assertTrue(any(name.endswith("/pg_jsonschema-0.3.4-postgresql-18.6-linux-x86_64.tar.gz.sha256")
                                 for name in retained))
+            attempt_path = output / "attempt.json"
+            original_attempt = attempt_path.read_bytes()
+            attempt = json.loads(original_attempt)
+            del attempt["core_resolution"]
+            attempt_path.write_text(json.dumps(attempt), encoding="utf-8")
+            with patch.object(coverage, "verification_profile", return_value=profile), \
+                    self.assertRaisesRegex(coverage.CoverageError, "raw attempt identity"):
+                importer.import_run(temporary_root, core_dir, archives, "12345")
+            attempt_path.write_bytes(original_attempt)
+            resolved_path = output / "core-resolution.json"
+            original_resolution = resolved_path.read_bytes()
+            resolved_path.unlink()
+            with patch.object(coverage, "verification_profile", return_value=profile), \
+                    self.assertRaisesRegex(coverage.CoverageError, "lacks its core resolution JSON"):
+                importer.import_run(temporary_root, core_dir, archives, "12345")
+            resolved_path.write_bytes(original_resolution)
             original_archive = archive.read_bytes()
             archive.write_bytes(b"tampered final archive")
-            with patch.object(publication, "CORE_SHA256", {"18.6": {arch: core_hash}}), \
-                    patch.object(coverage, "verification_profile", return_value=profile), \
+            with patch.object(coverage, "verification_profile", return_value=profile), \
                     patch.object(coverage, "validate_verification_record", return_value=True), \
                     self.assertRaises(coverage.CoverageError):
                 importer.import_run(temporary_root, core_dir, archives, "12345")
@@ -306,8 +328,7 @@ class LinuxPublicationHelpers(unittest.TestCase):
             receipt = json.loads(original_receipt)
             receipt["archives"][archive_name] = "0" * 64
             receipt_path.write_text(json.dumps(receipt), encoding="utf-8")
-            with patch.object(publication, "CORE_SHA256", {"18.6": {arch: core_hash}}), \
-                    patch.object(coverage, "verification_profile", return_value=profile), \
+            with patch.object(coverage, "verification_profile", return_value=profile), \
                     patch.object(coverage, "validate_verification_record", return_value=True), \
                     self.assertRaises(coverage.CoverageError):
                 importer.import_run(temporary_root, core_dir, archives, "12345")

@@ -12,27 +12,20 @@ import sys
 import coverage
 import linux_core_resolution
 
-DEFAULT_PG_VERSION = "18.6"
 EXTENSION_VERSION = "0.3.4"
 SOURCE_COMMIT = "cbe74b570d38aa0c4d42914e7a118bcb3adaee7a"
 CARGO_LOCK_SHA256 = "ab865dc25d9eea4bf7dbfaf8fae13283e5c0bce4bca460fe10464c6716e67028"
-CORE_RUNS = {"18.6": "39081368117", "17.11": "39082111630",
-             "15.19": "39082151857", "16.15": "39082147531"}
-CORE_SHA256 = {
-    "18.6": {"x86_64": "f89a7047812324b85c3b0bb29a3118fc55a492b17956f1fe0d74d1788d33d680",
-             "arm64": "0eb9c0144fd0b1669c594ce1ebcf7abdf4e1ae3f8e29e59a92833e476001e42b"},
-    "17.11": {"x86_64": "ffc3160481f8d0cd5f7c14bd95f0e3964242ac78b01f6d4b0e3b03806d4b34dc",
-              "arm64": "82f22d4110bd8d82307d068d4416fc5d223dc6d68efc41cb3494677384509010"},
-    "15.19": {"x86_64": "f538b0f41d25b8eea530ce59897248e83dfe770265c7a53698e7a9c2bef45db5",
-              "arm64": "9b570ba3827c2255a668375ec09ffe8d249e473d8389a7191e7c1fd77fbdca97"},
-    "16.15": {"x86_64": "f8758cdcb93f6d177f1d01e10dc10ba590acc3bbdadb47b78110996678c599ff",
-              "arm64": "8602843a166b8de1944857b0bfe9eefc3139a9cb726f4296ee66e18a8e608b70"},
-}
-PG_VERSIONS = tuple(CORE_RUNS)
+DEFAULT_ROOT = Path(__file__).resolve().parents[1]
 
 
-def profile_id(architecture, pg_version):
-    if architecture not in {"x86_64", "arm64"} or pg_version not in PG_VERSIONS:
+def pg_versions(root=DEFAULT_ROOT):
+    support = coverage.load_json(Path(root) / "support.json")
+    snapshot = coverage.load_json(Path(root) / "support/postgresql-releases.json")
+    return tuple(coverage.release_snapshot(snapshot, support))
+
+
+def profile_id(architecture, pg_version, root=DEFAULT_ROOT):
+    if architecture not in {"x86_64", "arm64"} or pg_version not in pg_versions(root):
         raise coverage.CoverageError("unsupported architecture or PostgreSQL version")
     return f"pg-jsonschema-publication-linux-{architecture}-{pg_version}"
 CASES = ("archive-suite", "elf-closure")
@@ -58,9 +51,13 @@ def read_json(path):
 
 def emit(root, archives, core_archives, output, architecture, build_result,
          verify_result, source_revision, run_id, repository, server_url, image_id,
-         kernel_release, pg_version=DEFAULT_PG_VERSION, core_resolution_path=None):
+         kernel_release, pg_version=None, core_resolution_path=None):
     root, archives, core_archives, output = map(Path, (root, archives, core_archives, output))
-    selected_profile = profile_id(architecture, pg_version)
+    versions = pg_versions(root)
+    pg_version = pg_version or versions[-1]
+    selected_profile = profile_id(architecture, pg_version, root)
+    if core_resolution_path is None:
+        raise coverage.CoverageError("validated core-resolution.json is required")
     if not coverage.REVISION.fullmatch(source_revision or "") or not str(run_id).isdigit():
         raise coverage.CoverageError("full source revision and numeric workflow run ID are required")
     if not repository or not server_url or not image_id:
@@ -83,37 +80,33 @@ def emit(root, archives, core_archives, output, architecture, build_result,
     archive_name = f"pg_jsonschema-{EXTENSION_VERSION}-postgresql-{pg_version}-{platform}.tar.gz"
     core_name = f"postgresql-{pg_version}-{platform}.tar.gz"
     archive, core = archives / archive_name, core_archives / core_name
-    resolution = None
-    if core_resolution_path is not None:
-        try:
-            resolution = linux_core_resolution.validate_resolution(
-                core_resolution_path, core, pg_version, architecture)
-        except (ValueError, OSError, TypeError) as exc:
-            raise coverage.CoverageError(f"invalid resolved core evidence: {exc}") from exc
-        provenance = resolution["provenance"]
-        if (resolution["origin"] == "built"
-                and (provenance.get("run_id") != str(run_id)
-                     or provenance.get("run_sha") != source_revision)):
-            raise coverage.CoverageError("built core provenance does not match this workflow run and source revision")
-        output.mkdir(parents=True, exist_ok=True)
-        (output / "core-resolution.json").write_text(
-            json.dumps(resolution, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    try:
+        resolution = linux_core_resolution.validate_resolution(
+            core_resolution_path, core, pg_version, architecture)
+    except (ValueError, OSError, TypeError) as exc:
+        raise coverage.CoverageError(f"invalid resolved core evidence: {exc}") from exc
+    provenance = resolution["provenance"]
+    if (resolution["origin"] == "built"
+            and (provenance.get("run_id") != str(run_id)
+                 or provenance.get("run_sha") != source_revision)):
+        raise coverage.CoverageError("built core provenance does not match this workflow run and source revision")
     output.mkdir(parents=True, exist_ok=True)
+    (output / "core-resolution.json").write_text(
+        json.dumps(resolution, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     attempt_path = output / "attempt.json"
     attempt = {
         "schema_version": 1, "run_id": str(run_id), "source_revision": source_revision,
         "profile_id": selected_profile, "postgresql_version": pg_version,
         "pg_jsonschema_version": EXTENSION_VERSION, "architecture": architecture,
-        "core_run_id": CORE_RUNS[pg_version] if resolution is None else resolution["provenance"]["run_id"],
+        "core_run_id": resolution["provenance"]["run_id"],
         "steps": {"archive-suite": raw_archive_result, "elf-closure": raw_elf_result},
         "workflow_steps": {"build": build_result, "verify": verify_result},
         "release_eligible": False, "redistribution_status": "seahash-4.1.0-notice-unresolved",
         "archives_present": {core_name: core.is_file(), archive_name: archive.is_file()},
         "reports": {"elf_closure": digest(static_path)} if static_path.is_file() else {},
     }
-    if resolution is not None:
-        attempt.update({"core_resolution": resolution, "core_origin": resolution["origin"],
-                        "core_provenance": resolution["provenance"]})
+    attempt.update({"core_resolution": resolution, "core_origin": resolution["origin"],
+                    "core_provenance": resolution["provenance"]})
     attempt_path.write_text(json.dumps(attempt, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     if not archive.is_file() or not core.is_file():
         return (attempt_path,)
@@ -122,8 +115,6 @@ def emit(root, archives, core_archives, output, architecture, build_result,
     _sidecar(core, checksums[core_name])
     attempt["archives"] = checksums
     attempt_path.write_text(json.dumps(attempt, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    if resolution is None and checksums[core_name] != CORE_SHA256[pg_version][architecture]:
-        raise coverage.CoverageError(f"core archive differs from the pinned current PostgreSQL {pg_version} archive")
     static = read_json(static_path)
     static_archives = static.get("archives", [])
     if (static.get("outcome") != "passed" or static.get("architecture") != architecture
@@ -166,9 +157,8 @@ def emit(root, archives, core_archives, output, architecture, build_result,
         "release_eligible": False, "redistribution_status": "seahash-4.1.0-notice-unresolved",
         "environment": environment, "ci": ci,
     }
-    if resolution is not None:
-        receipt.update({"core_resolution": resolution, "core_origin": resolution["origin"],
-                        "core_provenance": resolution["provenance"]})
+    receipt.update({"core_resolution": resolution, "core_origin": resolution["origin"],
+                    "core_provenance": resolution["provenance"]})
     receipt_path = output / "current-receipt.json"
     receipt_path.write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     record = {
@@ -182,9 +172,8 @@ def emit(root, archives, core_archives, output, architecture, build_result,
         "redistribution_status": "seahash-4.1.0-notice-unresolved",
         "environment": environment,
     }
-    if resolution is not None:
-        record.update({"core_resolution": resolution, "core_origin": resolution["origin"],
-                       "core_provenance": resolution["provenance"]})
+    record.update({"core_resolution": resolution, "core_origin": resolution["origin"],
+                   "core_provenance": resolution["provenance"]})
     coverage.validate_verification_record(record, coverage.load_json(root / "support.json"), root)
     record_path = output / "verification-record.json"
     record_path.write_text(json.dumps(record, indent=2, sort_keys=True) + "\n", encoding="utf-8")
@@ -225,12 +214,12 @@ def main():
     parser.add_argument("--core-archives", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--architecture", choices=("x86_64", "arm64"), required=True)
-    parser.add_argument("--postgresql-version", choices=PG_VERSIONS, default=DEFAULT_PG_VERSION)
+    parser.add_argument("--postgresql-version", choices=pg_versions(), default=pg_versions()[-1])
     parser.add_argument("--build-result", required=True)
     parser.add_argument("--verify-result", required=True)
     parser.add_argument("--image-id", required=True)
     parser.add_argument("--kernel-release", required=True)
-    parser.add_argument("--core-resolution", type=Path)
+    parser.add_argument("--core-resolution", type=Path, required=True)
     args = parser.parse_args()
     try:
         env = os.environ

@@ -1,20 +1,16 @@
-import json
 from pathlib import Path
 import unittest
 
 
 ROOT = Path(__file__).resolve().parents[1]
-WORKFLOW = ROOT / ".github/workflows/pg-jsonschema-linux-selected-trial.yml"
-TARGET = ROOT / "experiments/pg-jsonschema-linux-selected-trial/target.json"
+WORKFLOW = ROOT / ".github/workflows/pg-jsonschema-linux-selected-publication.yml"
 
 
 class SelectedLinuxWorkflowTests(unittest.TestCase):
-    def test_trial_target_is_a_supported_linux_target(self):
-        target = json.loads(TARGET.read_text(encoding="utf-8"))
-        releases = json.loads((ROOT / "support/postgresql-releases.json").read_text(encoding="utf-8"))
-        versions = {row["version"] for row in releases["releases"]}
-        self.assertIn(target["postgresql_version"], versions)
-        self.assertIn(target["architecture"], {"x86_64", "arm64"})
+    def test_target_is_required_for_direct_dispatch(self):
+        workflow = WORKFLOW.read_text(encoding="utf-8")
+        self.assertIn('test -n "$POSTGRESQL_VERSION"', workflow)
+        self.assertIn('test -n "$REQUESTED_ARCHITECTURE"', workflow)
 
     def test_workflow_plans_requested_target_and_reuses_existing_recipe(self):
         workflow = WORKFLOW.read_text(encoding="utf-8")
@@ -22,6 +18,7 @@ class SelectedLinuxWorkflowTests(unittest.TestCase):
         self.assertIn("--project pg_jsonschema", workflow)
         self.assertIn("linux-publication-$PG_ARCHITECTURE-evidence", workflow)
         self.assertIn("scripts/pg_jsonschema/linux-build.sh", workflow)
+        self.assertIn("PG_JSONSCHEMA_VERSION: ${{ needs.select.outputs.extension_version }}", workflow)
         self.assertIn("scripts/pg_jsonschema/linux-verify.sh", workflow)
         self.assertIn("tools/emit_pg_jsonschema_linux_publication.py", workflow)
         self.assertIn("tools/import_pg_jsonschema_linux_publication.py", workflow)

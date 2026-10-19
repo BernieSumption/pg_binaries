@@ -121,9 +121,8 @@ def _validate_package(path, architecture, pg_version):
 
 def _retain_available(attempt_path, attempt, archives, evidence, copies):
     _retain(attempt_path, evidence / "attempt.json", copies)
-    if attempt.get("core_resolution") is not None:
-        resolution_path = archives / "publication" / "core-resolution.json"
-        _retain(resolution_path, evidence / "core-resolution.json", copies)
+    resolution_path = archives / "publication" / "core-resolution.json"
+    _retain(resolution_path, evidence / "core-resolution.json", copies)
     names = {
         "elf_closure": (archives / "static-analysis" / "pg_jsonschema.json", "elf-closure.json"),
         "probe_output": (archives / "probe-output.txt", "probe-output.txt"),
@@ -153,29 +152,27 @@ def import_run(root, core_archives, archives, run_id):
     attempt = _read(attempt_path)
     architecture = attempt.get("architecture")
     pg_version = attempt.get("postgresql_version")
-    if architecture not in {"x86_64", "arm64"} or pg_version not in publication.PG_VERSIONS:
+    if architecture not in {"x86_64", "arm64"} or pg_version not in publication.pg_versions(root):
         raise coverage.CoverageError("attempt architecture is unsupported")
-    selected_profile = publication.profile_id(architecture, pg_version)
+    selected_profile = publication.profile_id(architecture, pg_version, root)
     profile = coverage.verification_profile(root, selected_profile)
     resolution = attempt.get("core_resolution")
     if (attempt.get("schema_version") != 1 or str(attempt.get("run_id")) != run_id
             or attempt.get("profile_id") != selected_profile
-            or (resolution is None and attempt.get("core_run_id") != publication.CORE_RUNS[pg_version])
-            or (resolution is not None and (not isinstance(resolution, dict)
-                 or attempt.get("core_run_id") != resolution.get("provenance", {}).get("run_id")))
+            or not isinstance(resolution, dict)
+            or not isinstance(resolution.get("provenance"), dict)
+            or attempt.get("core_run_id") != resolution["provenance"].get("run_id")
             or attempt.get("pg_jsonschema_version") != publication.EXTENSION_VERSION
             or attempt.get("release_eligible") is not False
             or attempt.get("redistribution_status") != "seahash-4.1.0-notice-unresolved"
             or not coverage.REVISION.fullmatch(str(attempt.get("source_revision", "")))):
         raise coverage.CoverageError("raw attempt identity does not match this run and profile")
     resolution_path = archives / "publication" / "core-resolution.json"
-    if resolution is not None:
-        if (not isinstance(resolution, dict)
-                or attempt.get("core_origin") != resolution.get("origin")
-                or attempt.get("core_provenance") != resolution.get("provenance")):
-            raise coverage.CoverageError("raw attempt core resolution fields are inconsistent")
-        if not resolution_path.is_file():
-            raise coverage.CoverageError("raw attempt lacks its core resolution JSON")
+    if (attempt.get("core_origin") != resolution.get("origin")
+            or attempt.get("core_provenance") != resolution.get("provenance")):
+        raise coverage.CoverageError("raw attempt core resolution fields are inconsistent")
+    if not resolution_path.is_file():
+        raise coverage.CoverageError("raw attempt lacks its core resolution JSON")
     results = _step_results(attempt)
     workflow_steps = attempt.get("workflow_steps")
     if (not isinstance(workflow_steps, dict) or set(workflow_steps) != {"build", "verify"}
@@ -205,23 +202,18 @@ def import_run(root, core_archives, archives, run_id):
     digests = {archive_name: publication.digest(extension_archive), core_name: publication.digest(core_archive)}
     publication._sidecar(extension_archive, digests[archive_name])
     publication._sidecar(core_archive, digests[core_name])
-    if resolution is None:
-        if (attempt.get("core_run_id") != publication.CORE_RUNS[pg_version]
-                or digests[core_name] != publication.CORE_SHA256[pg_version][architecture]):
-            raise coverage.CoverageError("downloaded core archive differs from the pinned current-profile archive")
-    else:
-        try:
-            checked = linux_core_resolution.validate_resolution(resolution_path, core_archive,
-                                                                pg_version, architecture)
-        except (ValueError, OSError, TypeError) as exc:
-            raise coverage.CoverageError(f"invalid downloaded core resolution evidence: {exc}") from exc
-        if checked != resolution:
-            raise coverage.CoverageError("core resolution JSON differs from raw attempt")
-        provenance = checked["provenance"]
-        if (checked["origin"] == "built"
-                and (provenance.get("run_id") != run_id
-                     or provenance.get("run_sha") != attempt.get("source_revision"))):
-            raise coverage.CoverageError("built core provenance does not match this workflow run and source revision")
+    try:
+        checked = linux_core_resolution.validate_resolution(resolution_path, core_archive,
+                                                            pg_version, architecture)
+    except (ValueError, OSError, TypeError) as exc:
+        raise coverage.CoverageError(f"invalid downloaded core resolution evidence: {exc}") from exc
+    if checked != resolution:
+        raise coverage.CoverageError("core resolution JSON differs from raw attempt")
+    provenance = checked["provenance"]
+    if (checked["origin"] == "built"
+            and (provenance.get("run_id") != run_id
+                 or provenance.get("run_sha") != attempt.get("source_revision"))):
+        raise coverage.CoverageError("built core provenance does not match this workflow run and source revision")
     _validate_package(extension_archive, architecture, pg_version)
     if attempt.get("archives") != digests:
         raise coverage.CoverageError("downloaded archive bytes differ from raw attempt hashes")

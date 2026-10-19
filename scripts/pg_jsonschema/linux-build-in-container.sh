@@ -3,6 +3,10 @@ set -euo pipefail
 pg_version=${PG_VERSION:-18.6}
 pg_major=${pg_version%%.*}
 extension_version=0.3.4
+if [[ ${PG_JSONSCHEMA_VERSION:?selected extension version is required} != "$extension_version" ]]; then
+  echo "Selected pg_jsonschema release $PG_JSONSCHEMA_VERSION is not supported by this Linux recipe." >&2
+  exit 2
+fi
 extension_commit=cbe74b570d38aa0c4d42914e7a118bcb3adaee7a
 architecture=${PG_ARCHITECTURE:-x86_64}
 case "$architecture:$(uname -m)" in x86_64:x86_64|arm64:aarch64) ;; *) echo "Architecture mismatch" >&2; exit 2 ;; esac

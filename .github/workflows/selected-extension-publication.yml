@@ -174,7 +174,7 @@ jobs:
   pg_jsonschema_linux:
     needs: plan
     if: needs.plan.outputs.should_dispatch == 'true' && needs.plan.outputs.route == 'pg-jsonschema-linux'
-    uses: ./.github/workflows/pg-jsonschema-linux-selected-trial.yml
+    uses: ./.github/workflows/pg-jsonschema-linux-selected-publication.yml
     with:
       postgresql_version: ${{ needs.plan.outputs.postgresql_version }}
       extension_version: ${{ needs.plan.outputs.extension_version }}
