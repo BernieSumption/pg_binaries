@@ -18,7 +18,7 @@ class LinuxChangedProfilesTests(unittest.TestCase):
         plan = module.extension_archive_plan.plan(support, releases)
         self.expected = []
         for target in plan["candidate_archives"]:
-            if target["project"] in {"HypoPG", "pg_jsonschema", "pgtap", "pg_ivm", "pg_cron", "pgaudit"} and target["platform"].startswith("linux-"):
+            if target["project"] in {"HypoPG", "pg_jsonschema", "pgtap", "pg_ivm", "pg_cron", "pgaudit", "PostGIS"} and target["platform"].startswith("linux-"):
                 self.expected.append({
                     "project": target["project"],
                     "extension_version": target["selected_version"],
@@ -28,7 +28,7 @@ class LinuxChangedProfilesTests(unittest.TestCase):
         self.expected.sort(key=lambda item: (item["project"], item["postgresql_version"], item["platform"]))
         self.profile_ids = [module._profile_id({"HypoPG": "hypopg", "pg_jsonschema": "pg-jsonschema",
                                                "pgtap": "pgtap", "pg_ivm": "pgivm",
-                                               "pg_cron": "pgcron", "pgaudit": "pgaudit"}[item["project"]],
+                                               "pg_cron": "pgcron", "pgaudit": "pgaudit", "PostGIS": "postgis"}[item["project"]],
                                                item["platform"].split("-")[1],
                                                item["postgresql_version"])
                             for item in self.expected]
@@ -46,7 +46,7 @@ class LinuxChangedProfilesTests(unittest.TestCase):
     def test_initial_or_missing_base_selects_all_support_derived_targets(self):
         self.assertEqual(len(self.expected), len(self.profile_ids))
         self.assertEqual({target["project"] for target in self.expected},
-                         {"HypoPG", "pg_jsonschema", "pgtap", "pg_ivm", "pg_cron", "pgaudit"})
+                         {"HypoPG", "pg_jsonschema", "pgtap", "pg_ivm", "pg_cron", "pgaudit", "PostGIS"})
         self.assertEqual({target["platform"] for target in self.expected},
                          {"linux-x86_64", "linux-arm64"})
         self.assertEqual(module.changed_targets(ROOT / "no-such-base", ROOT), self.expected)
@@ -78,13 +78,13 @@ class LinuxChangedProfilesTests(unittest.TestCase):
 
     def test_manual_request_selects_one_declared_target(self):
         target = next(item for item in self.expected
-                      if item["project"] == "pg_ivm"
+                      if item["project"] == "PostGIS"
                       and item["postgresql_version"] == "17.11"
                       and item["platform"] == "linux-arm64")
-        self.assertEqual(module.changed_targets(None, ROOT, project="pg_ivm",
+        self.assertEqual(module.changed_targets(None, ROOT, project="PostGIS",
                          postgresql_version="17.11", architecture="arm64"), [target])
         with self.assertRaisesRegex(ValueError, "not declared"):
-            module.changed_targets(None, ROOT, project="pg_ivm",
+            module.changed_targets(None, ROOT, project="PostGIS",
                                    postgresql_version="19.1", architecture="arm64")
 
     def test_matrix_limit_is_enforced(self):

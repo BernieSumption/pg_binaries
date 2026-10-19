@@ -113,6 +113,8 @@ jobs:
               ("pg_cron", "linux-arm64"): "pgcron-linux",
               ("pgaudit", "linux-x86_64"): "pgaudit-linux",
               ("pgaudit", "linux-arm64"): "pgaudit-linux",
+              ("PostGIS", "linux-x86_64"): "postgis-linux",
+              ("PostGIS", "linux-arm64"): "postgis-linux",
               ("pg_jsonschema", "macos-arm64"): "pg-jsonschema-macos",
               ("pg_jsonschema", "macos-x86_64"): "pg-jsonschema-macos",
               ("pgtap", "macos-x86_64"): "pgtap-macos-x86_64",
@@ -219,6 +221,15 @@ jobs:
     needs: plan
     if: needs.plan.outputs.should_dispatch == 'true' && needs.plan.outputs.route == 'pgaudit-linux'
     uses: ./.github/workflows/pgaudit-linux-selected-publication.yml
+    with:
+      postgresql_version: ${{ needs.plan.outputs.postgresql_version }}
+      extension_version: ${{ needs.plan.outputs.extension_version }}
+      architecture: ${{ needs.plan.outputs.architecture }}
+
+  postgis_linux:
+    needs: plan
+    if: needs.plan.outputs.should_dispatch == 'true' && needs.plan.outputs.route == 'postgis-linux'
+    uses: ./.github/workflows/postgis-linux-selected-publication.yml
     with:
       postgresql_version: ${{ needs.plan.outputs.postgresql_version }}
       extension_version: ${{ needs.plan.outputs.extension_version }}

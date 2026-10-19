@@ -1,0 +1,279 @@
+name: PostGIS selected PostgreSQL Linux publication
+
+on:
+  workflow_call:
+    inputs:
+      postgresql_version:
+        description: Exact selected PostgreSQL release
+        required: true
+        type: string
+      architecture:
+        description: Exact selected Linux architecture
+        required: true
+        type: string
+      extension_version:
+        description: Exact selected PostGIS release
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      postgresql_version:
+        description: Exact selected PostgreSQL release
+        required: true
+        type: string
+      architecture:
+        description: Exact selected Linux architecture
+        required: true
+        type: string
+      extension_version:
+        description: Exact selected PostGIS release
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  select:
+    runs-on: ubuntu-latest
+    outputs:
+      postgresql_version: ${{ steps.plan.outputs.postgresql_version }}
+      extension_version: ${{ steps.plan.outputs.selected_version }}
+      architecture: ${{ steps.plan.outputs.architecture }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Plan the exact selected target
+        id: plan
+        env:
+          POSTGRESQL_VERSION: ${{ inputs.postgresql_version }}
+          EXTENSION_VERSION: ${{ inputs.extension_version }}
+          REQUESTED_ARCHITECTURE: ${{ inputs.architecture }}
+        run: |
+          set -euo pipefail
+          test -n "$POSTGRESQL_VERSION"
+          test -n "$REQUESTED_ARCHITECTURE"
+          test -n "$EXTENSION_VERSION"
+          case "$REQUESTED_ARCHITECTURE" in x86_64|arm64) ;; *) echo "Unsupported Linux architecture: $REQUESTED_ARCHITECTURE" >&2; exit 2 ;; esac
+          python3 tools/extension_archive_plan.py \
+            --project PostGIS --platform "linux-$REQUESTED_ARCHITECTURE" \
+            --postgresql-version "$POSTGRESQL_VERSION" --extension-version "$EXTENSION_VERSION" \
+            --github-output "$GITHUB_OUTPUT" > "$RUNNER_TEMP/selection.json"
+          selected_version=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["selected_version"])' "$RUNNER_TEMP/selection.json")
+          if [[ "$selected_version" != '3.6.4' ]]; then
+            echo "The selected PostGIS release is $selected_version; the Linux recipe supports only 3.6.4." >&2
+            exit 1
+          fi
+          echo "architecture=$REQUESTED_ARCHITECTURE" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: select
+    runs-on: ${{ needs.select.outputs.architecture == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-24.04' }}
+    timeout-minutes: 110
+    outputs:
+      core_resolution: ${{ steps.core_resolution.outcome }}
+      extension_build: ${{ steps.extension_build.outcome }}
+    env:
+      PG_VERSION: ${{ needs.select.outputs.postgresql_version }}
+      PG_ARCHITECTURE: ${{ needs.select.outputs.architecture }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Resolve a checked PostgreSQL core or build the selected release
+        id: core_resolution
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          CALLER_WORKFLOW_REF: ${{ github.workflow_ref }}
+        run: |
+          set -euo pipefail
+          sources=()
+          if [[ "$CALLER_WORKFLOW_REF" == */.github/workflows/selected-extension-publication.yml@* ]]; then
+            sources+=(selected-extension-publication.yml "postgis-linux-core-$PG_VERSION-$PG_ARCHITECTURE-{run_id}")
+          fi
+          sources+=(
+            linux-changed-profiles.yml "postgis-linux-core-$PG_VERSION-$PG_ARCHITECTURE-{run_id}"
+            postgis-linux-selected-publication.yml "postgis-linux-core-$PG_VERSION-$PG_ARCHITECTURE-{run_id}"
+            linux-publication.yml "linux-publication-$PG_ARCHITECTURE-evidence"
+          )
+          scripts/linux/resolve-core.sh "$PG_VERSION" "$PG_ARCHITECTURE" "$RUNNER_TEMP/core/pilot" "${sources[@]}"
+      - name: Build selected PostGIS archive against that core
+        id: extension_build
+        if: always() && steps.core_resolution.outcome == 'success'
+        continue-on-error: true
+        run: PG_VERSION="$PG_VERSION" PG_ARCHITECTURE="$PG_ARCHITECTURE" scripts/postgis/build.sh "$RUNNER_TEMP/core/pilot" "$RUNNER_TEMP/postgis"
+      - name: Upload selected PostGIS archive and build reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: postgis-linux-built-${{ needs.select.outputs.postgresql_version }}-${{ needs.select.outputs.architecture }}-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/postgis/*.tar.gz
+            ${{ runner.temp }}/postgis/*.sha256
+            ${{ runner.temp }}/postgis/*.txt
+            ${{ runner.temp }}/postgis/*.json
+            ${{ runner.temp }}/postgis/debug-symbols/**
+            ${{ runner.temp }}/postgis/static-analysis/**
+          if-no-files-found: warn
+          retention-days: 7
+      - name: Upload exact resolved PostgreSQL core and provenance
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: postgis-linux-core-${{ needs.select.outputs.postgresql_version }}-${{ needs.select.outputs.architecture }}-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/core/pilot/*.tar.gz
+            ${{ runner.temp }}/core/pilot/*.sha256
+            ${{ runner.temp }}/core/pilot/core-resolution.json
+          if-no-files-found: warn
+          retention-days: 7
+
+  verify:
+    needs: [select, build]
+    if: always() && needs.select.result == 'success' && needs.build.result == 'success'
+    runs-on: ${{ needs.select.outputs.architecture == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-24.04' }}
+    timeout-minutes: 90
+    env:
+      PG_VERSION: ${{ needs.select.outputs.postgresql_version }}
+      PG_ARCHITECTURE: ${{ needs.select.outputs.architecture }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Download selected PostGIS archive
+        id: download_extension
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: postgis-linux-built-${{ needs.select.outputs.postgresql_version }}-${{ needs.select.outputs.architecture }}-${{ github.run_id }}
+          path: ${{ runner.temp }}/postgis
+      - name: Download exact resolved PostgreSQL core archive
+        id: download_core
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: postgis-linux-core-${{ needs.select.outputs.postgresql_version }}-${{ needs.select.outputs.architecture }}-${{ github.run_id }}
+          path: ${{ runner.temp }}/core/pilot
+      - name: Validate transferred core identity and provenance
+        id: core_validation
+        if: always() && steps.download_core.outcome == 'success'
+        continue-on-error: true
+        run: |
+          python3 tools/linux_core_resolution.py \
+            --validate-record "$RUNNER_TEMP/core/pilot/core-resolution.json" \
+            --archive "$RUNNER_TEMP/core/pilot/postgresql-$PG_VERSION-linux-$PG_ARCHITECTURE.tar.gz" \
+            --postgresql-version "$PG_VERSION" --architecture "$PG_ARCHITECTURE"
+      - name: Verify final archives on this fresh runner
+        id: verification
+        if: always() && steps.download_extension.outcome == 'success' && steps.download_core.outcome == 'success' && steps.core_validation.outcome == 'success'
+        continue-on-error: true
+        env:
+          POSTGIS_BUILD_PG_VERSION: ${{ needs.select.outputs.postgresql_version }}
+        run: |
+          set -o pipefail
+          PG_VERSION="$PG_VERSION" PG_ARCHITECTURE="$PG_ARCHITECTURE" \
+            scripts/postgis/verify.sh "$RUNNER_TEMP/core/pilot" "$RUNNER_TEMP/postgis" \
+            2>&1 | tee "$RUNNER_TEMP/postgis/probe-output.txt"
+      - name: Record PostGIS publication step outcome
+        if: always()
+        env:
+          VERIFY_OUTCOME: ${{ steps.verification.outcome }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/postgis-publication"
+          printf '{"archive-suite":"%s"}\n' "$VERIFY_OUTCOME" > "$RUNNER_TEMP/postgis-publication/current-steps.json"
+      - name: Create target-bound receipt and four SQL extension records
+        id: receipt
+        if: always()
+        continue-on-error: true
+        env:
+          VERIFY_OUTCOME: ${{ steps.verification.outcome }}
+        run: |
+          set -euo pipefail
+          core="$RUNNER_TEMP/core/pilot/postgresql-$PG_VERSION-linux-$PG_ARCHITECTURE.tar.gz"
+          extension="$RUNNER_TEMP/postgis/postgis-3.6.4-postgresql-$PG_VERSION-linux-$PG_ARCHITECTURE.tar.gz"
+          if [[ ! -f "$core" || ! -f "$core.sha256" || ! -f "$extension" || ! -f "$extension.sha256" ]]; then
+            echo 'Archives are unavailable; retaining step outcomes without a receipt.'
+            echo 'has_receipt=false' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          image=$(docker image inspect --format '{{.Id}}' pg-binaries-postgis-verifier 2>/dev/null || true)
+          if [[ ! "$image" =~ ^sha256:[0-9a-f]{64}$ ]]; then
+            echo 'Verifier image identity is unavailable; retaining step outcomes without a receipt.' >&2
+            echo 'has_receipt=false' >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          clean=false
+          dependencies=failure
+          if [[ "$VERIFY_OUTCOME" == success ]]; then clean=true; dependencies=success; fi
+          case "$PG_ARCHITECTURE" in x86_64) docker_platform=linux/amd64 ;; arm64) docker_platform=linux/arm64 ;; esac
+          distribution=$(docker run --rm --platform "$docker_platform" --entrypoint sh pg-binaries-postgis-verifier -c '. /etc/os-release; printf "%s" "$NAME"')
+          distribution_version=$(docker run --rm --platform "$docker_platform" --entrypoint sh pg-binaries-postgis-verifier -c '. /etc/os-release; printf "%s" "$VERSION_ID"')
+          python3 tools/create_extension_publication_receipt.py \
+            --archives "$RUNNER_TEMP/postgis" --core-archives "$RUNNER_TEMP/core/pilot" \
+            --receipt "$RUNNER_TEMP/postgis-publication/current-receipt.json" \
+            --profile-id "postgis-publication-linux-$PG_ARCHITECTURE-$PG_VERSION" \
+            --project PostGIS --version 3.6.4 --postgresql-version "$PG_VERSION" \
+            --architecture "$PG_ARCHITECTURE" --endpoint current \
+            --kernel-release "$(uname -r)" --distribution "$distribution" \
+            --distribution-version "$distribution_version" --image-id "$image" \
+            --dependency-check-result "$dependencies" --clean-system "$clean" \
+            --step-results "$RUNNER_TEMP/postgis-publication/current-steps.json"
+          python3 tools/emit_extension_publication_records.py \
+            --archives "$RUNNER_TEMP/postgis" --core-archives "$RUNNER_TEMP/core/pilot" \
+            --receipt "$RUNNER_TEMP/postgis-publication/current-receipt.json" \
+            --output "$RUNNER_TEMP/postgis-publication/records"
+          test "$(find "$RUNNER_TEMP/postgis-publication/records" -maxdepth 1 -name '*.json' | wc -l)" -eq 4
+          echo 'has_receipt=true' >> "$GITHUB_OUTPUT"
+      - name: Import and validate exact PostGIS publication evidence
+        id: import
+        if: always() && steps.receipt.outcome == 'success' && steps.receipt.outputs.has_receipt == 'true'
+        continue-on-error: true
+        run: |
+          python3 tools/import_linux_postgis_publication.py \
+            --core-artifact "$RUNNER_TEMP/core" --postgis-artifact "$RUNNER_TEMP" \
+            --run-id "$GITHUB_RUN_ID" --architecture "$PG_ARCHITECTURE" \
+            --postgresql-version "$PG_VERSION"
+      - name: Upload exact archives, provenance and outcomes
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: postgis-linux-selected-${{ needs.select.outputs.postgresql_version }}-${{ needs.select.outputs.architecture }}-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/core/pilot/*.tar.gz
+            ${{ runner.temp }}/core/pilot/*.sha256
+            ${{ runner.temp }}/core/pilot/core-resolution.json
+            ${{ runner.temp }}/postgis/*.tar.gz
+            ${{ runner.temp }}/postgis/*.sha256
+            ${{ runner.temp }}/postgis/*.txt
+            ${{ runner.temp }}/postgis/*.json
+            ${{ runner.temp }}/postgis/debug-symbols/**
+            ${{ runner.temp }}/postgis/static-analysis/**
+            ${{ runner.temp }}/postgis-publication/**
+            support/evidence/postgis-publication-${{ github.run_id }}/${{ needs.select.outputs.architecture }}/${{ needs.select.outputs.postgresql_version }}/**
+            support/verification/postgis-*-postgresql-${{ needs.select.outputs.postgresql_version }}-linux-${{ needs.select.outputs.architecture }}-current-${{ github.run_id }}.json
+          if-no-files-found: warn
+          retention-days: 7
+      - name: Require build, provenance, verification and receipt generation to pass
+        if: always()
+        env:
+          CORE_RESOLUTION: ${{ needs.build.outputs.core_resolution }}
+          EXTENSION_BUILD: ${{ needs.build.outputs.extension_build }}
+          CORE_DOWNLOAD: ${{ steps.download_core.outcome }}
+          EXTENSION_DOWNLOAD: ${{ steps.download_extension.outcome }}
+          CORE_VALIDATION: ${{ steps.core_validation.outcome }}
+          VERIFICATION: ${{ steps.verification.outcome }}
+          RECEIPT: ${{ steps.receipt.outcome }}
+          IMPORT: ${{ steps.import.outcome }}
+          HAS_RECEIPT: ${{ steps.receipt.outputs.has_receipt }}
+        run: |
+          set -euo pipefail
+          for result in "$CORE_RESOLUTION" "$EXTENSION_BUILD" "$CORE_DOWNLOAD" "$EXTENSION_DOWNLOAD" "$CORE_VALIDATION" "$VERIFICATION" "$RECEIPT" "$IMPORT"; do
+            if [[ "$result" != success ]]; then
+              echo "Selected PostGIS Linux publication did not pass: $CORE_RESOLUTION/$EXTENSION_BUILD/$CORE_DOWNLOAD/$EXTENSION_DOWNLOAD/$CORE_VALIDATION/$VERIFICATION/$RECEIPT/$IMPORT" >&2
+              exit 1
+            fi
+          done
+          test "$HAS_RECEIPT" = true
