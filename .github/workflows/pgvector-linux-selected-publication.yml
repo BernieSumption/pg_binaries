@@ -194,10 +194,14 @@ jobs:
         if: always() && steps.download_extension.outcome == 'success' && steps.download_core.outcome == 'success' && steps.core_validation.outcome == 'success'
         continue-on-error: true
         run: |
+          set -euo pipefail
           python3 tools/create_linux_symbols.py \
             "$RUNNER_TEMP/archives/postgresql-$PG_VERSION-linux-$PG_ARCHITECTURE.tar.gz" \
             "$RUNNER_TEMP/archives/pgvector-$PGVECTOR_VERSION-postgresql-$PG_VERSION-linux-$PG_ARCHITECTURE.tar.gz" \
             --output-dir "$RUNNER_TEMP/archives/debug-symbols"
+          python3 tools/check_linux_symbols.py "$RUNNER_TEMP/archives/debug-symbols/index.json" \
+            "$RUNNER_TEMP/archives/postgresql-$PG_VERSION-linux-$PG_ARCHITECTURE.tar.gz" \
+            "$RUNNER_TEMP/archives/pgvector-$PGVECTOR_VERSION-postgresql-$PG_VERSION-linux-$PG_ARCHITECTURE.tar.gz"
       - name: Run final archive loader and PostgreSQL diagnostics
         id: diagnostics
         if: always() && steps.download_extension.outcome == 'success' && steps.download_core.outcome == 'success' && steps.core_validation.outcome == 'success'

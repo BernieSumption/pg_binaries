@@ -136,7 +136,12 @@ jobs:
         id: symbols
         if: always() && steps.core_validation.outcome == 'success'
         continue-on-error: true
-        run: python3 tools/create_linux_symbols.py "$RUNNER_TEMP/archives/postgresql-$PG_VERSION-linux-$PG_ARCHITECTURE.tar.gz" --output-dir "$RUNNER_TEMP/archives/debug-symbols"
+        run: |
+          set -euo pipefail
+          archive="$RUNNER_TEMP/archives/postgresql-$PG_VERSION-linux-$PG_ARCHITECTURE.tar.gz"
+          index="$RUNNER_TEMP/archives/debug-symbols/index.json"
+          python3 tools/create_linux_symbols.py "$archive" --output-dir "$RUNNER_TEMP/archives/debug-symbols"
+          python3 tools/check_linux_symbols.py "$index" "$archive"
       - name: Run PostgreSQL diagnostics in a fresh Alpine container
         id: diagnostics
         if: always() && steps.core_validation.outcome == 'success'

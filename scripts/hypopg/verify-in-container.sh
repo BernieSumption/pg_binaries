@@ -18,7 +18,9 @@ test "$(/tmp/first/postgresql/bin/pg_config --version)" = "PostgreSQL $pg_versio
 test -s "$extroot/LICENSES/HypoPG.txt"
 python3 - <<'PY'
 import json
+import hashlib
 import os
+import re
 from pathlib import Path
 
 root = Path('/tmp/extension')
@@ -38,8 +40,28 @@ expected = {
         'sha256': '498a961d88cf37057fd9e98027d06fe805c8959d51895c3d9b94c9eb4e14f706',
     },
 }
+build_inputs = metadata.pop('build_inputs', None)
 if metadata != expected:
     raise SystemExit(f'HypoPG package metadata mismatch: {metadata!r}')
+if not isinstance(build_inputs, dict):
+    raise SystemExit('HypoPG package metadata lacks build input identity')
+identity_payload = {key: value for key, value in build_inputs.items() if key != 'sha256'}
+identity_digest = hashlib.sha256(json.dumps(identity_payload, sort_keys=True, separators=(',', ':'),
+                                           ensure_ascii=False, allow_nan=False).encode()).hexdigest()
+core_sha = hashlib.sha256(Path('/input/' + f"postgresql-{os.environ['PG_VERSION']}-linux-{os.environ['PG_ARCHITECTURE']}.tar.gz").read_bytes()).hexdigest()
+if (build_inputs.get('schema_version') != 1 or build_inputs.get('sha256') != identity_digest
+        or build_inputs.get('component') != 'hypopg'
+        or build_inputs.get('target') != {
+            'project': 'hypopg', 'version': '1.4.3',
+            'platform': f"linux-{os.environ['PG_ARCHITECTURE']}",
+            'postgresql_version': os.environ['PG_VERSION'],
+        }
+        or build_inputs.get('upstream_sources', {}).get('hypopg') != expected['source']
+        or build_inputs.get('dependencies', {}).get('postgresql') != {
+            'version': os.environ['PG_VERSION'], 'sha256': core_sha}
+        or not re.fullmatch(r'[0-9a-f]{64}', build_inputs.get('dependencies', {}).get(
+            'builder_packages', {}).get('sha256', ''))):
+    raise SystemExit('HypoPG build input identity is invalid or does not match this target')
 inventory = json.loads((root / 'hypopg/LICENSES/hypopg-inventory.json').read_text())
 if inventory.get('schema_version') != 1 or len(inventory.get('components', [])) != 1:
     raise SystemExit('HypoPG licence inventory must contain one component')
