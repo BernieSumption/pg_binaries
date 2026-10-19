@@ -228,6 +228,7 @@ jobs:
             --archive-suite-result "${ARCHIVE_SUITE_OUTCOME:-failure}" \
             --static-analysis-result "${STATIC_ANALYSIS_OUTCOME:-failure}"
       - name: Import retained evidence when an attempt was emitted
+        id: evidence_import
         if: always()
         continue-on-error: true
         run: |
@@ -256,7 +257,7 @@ jobs:
       - name: Require fresh-runner verification to pass
         if: always()
         run: |
-          if [[ '${{ needs.build.result }}' != success || '${{ steps.download.outcome }}' != success || '${{ steps.archive_suite.outcome }}' != success || '${{ steps.static_analysis.outcome }}' != success ]]; then
-            echo 'pg_cron archive suite and static/Mach-O analysis must both pass on the fresh runner.' >&2
+          if [[ '${{ needs.build.result }}' != success || '${{ steps.download.outcome }}' != success || '${{ steps.archive_suite.outcome }}' != success || '${{ steps.static_analysis.outcome }}' != success || '${{ steps.evidence.outcome }}' != success || '${{ steps.evidence_import.outcome }}' != success ]]; then
+            echo 'pg_cron archive verification, evidence emission and import must pass on the fresh runner.' >&2
             exit 1
           fi

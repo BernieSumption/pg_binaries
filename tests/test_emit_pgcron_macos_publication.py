@@ -17,7 +17,7 @@ _DEFAULT_TARGET = object()
 
 
 class PgCronMacOSFixture:
-    def __init__(self, architecture="arm64", module_extension="dylib"):
+    def __init__(self, architecture="arm64", module_extension="dylib", pg_version="18.6"):
         self.temp = tempfile.TemporaryDirectory()
         self.base = Path(self.temp.name)
         self.root = self.base / "repo"
@@ -25,12 +25,12 @@ class PgCronMacOSFixture:
         self.output = self.base / "output"
         for directory in (self.root, self.core, self.output):
             directory.mkdir()
-        self.pg_version = "18.6"
+        self.pg_version = pg_version
         self.version = "1.6.8"
         self.architecture = architecture
         self.module_path = f"lib/pg_cron.{module_extension}"
         self.platform = f"macos-{architecture}"
-        self.profile_id = f"pgcron-publication-macos-{architecture}-18.6"
+        self.profile_id = f"pgcron-publication-macos-{architecture}-{pg_version}"
         self.core_name = f"postgresql-{self.pg_version}-{self.platform}.tar.gz"
         self.extension_name = (f"pg_cron-{self.version}-postgresql-"
                                f"{self.pg_version}-{self.platform}.tar.gz")
@@ -202,6 +202,34 @@ class PgCronMacOSPublicationTests(unittest.TestCase):
             self.assertEqual(report["file"], "lib/pg_cron.so")
         finally:
             fixture.close()
+
+    def test_accepts_postgresql_15_versioned_bundled_libpq(self):
+        fixture = PgCronMacOSFixture(pg_version="15.19")
+        try:
+            report_path = fixture.output / "pg-cron-macho-inspection.json"
+            report = json.loads(report_path.read_text())
+            report["dependencies"] = {"@rpath/libpq.5.15.dylib": "lib/libpq.5.15.dylib"}
+            report_path.write_text(json.dumps(report))
+            paths = fixture.emit()
+            record = json.loads(paths[-1].read_text())
+            self.assertEqual(record["postgresql_version"], "15.19")
+        finally:
+            fixture.close()
+
+    def test_rejects_missing_or_mismatched_postgresql_15_libpq_resolution(self):
+        for dependencies in ({}, {"@rpath/libpq.5.15.dylib": "lib/libpq.5.dylib"},
+                             {"@rpath/libpq.6.15.dylib": "lib/libpq.6.15.dylib"}):
+            with self.subTest(dependencies=dependencies):
+                fixture = PgCronMacOSFixture(pg_version="15.19")
+                try:
+                    report_path = fixture.output / "pg-cron-macho-inspection.json"
+                    report = json.loads(report_path.read_text())
+                    report["dependencies"] = dependencies
+                    report_path.write_text(json.dumps(report))
+                    with self.assertRaisesRegex(Exception, "does not resolve bundled libpq"):
+                        fixture.emit()
+                finally:
+                    fixture.close()
 
     def test_rejects_macho_report_for_different_module_suffix(self):
         fixture = PgCronMacOSFixture(module_extension="so")

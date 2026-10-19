@@ -144,8 +144,13 @@ def _check_static(path, macho_path, digests, architecture, module_path):
             or macho.get("minimum_os") != "11.0" or macho.get("findings")):
         _fail("pg_cron Mach-O inspection did not pass against the final archive bytes")
     dependencies = macho.get("dependencies")
-    if (not isinstance(dependencies, dict)
-            or dependencies.get("@rpath/libpq.5.dylib") != "lib/libpq.5.dylib"
+    libpq_dependencies = ({name: path for name, path in dependencies.items()
+                          if isinstance(name, str) and name.startswith("@rpath/libpq.")}
+                         if isinstance(dependencies, dict) else {})
+    resolved_libpq = next(iter(libpq_dependencies.items()), (None, None))
+    if (len(libpq_dependencies) != 1
+            or not re.fullmatch(r"@rpath/libpq\.5(?:\.\d+)?\.dylib", resolved_libpq[0] or "")
+            or resolved_libpq[1] != f"lib/{resolved_libpq[0].removeprefix('@rpath/')}"
             or "@loader_path" not in macho.get("module_rpaths", [])):
         _fail("pg_cron Mach-O report does not resolve bundled libpq through its module run path")
 
