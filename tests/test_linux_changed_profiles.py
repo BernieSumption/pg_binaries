@@ -75,6 +75,17 @@ class LinuxChangedProfilesTests(unittest.TestCase):
             resolve.side_effect = self.resolve_profiles(base, missing_id=self.profile_ids[0])
             self.assertEqual(module.changed_targets(base, ROOT), [self.expected[0]])
 
+    def test_manual_request_selects_one_declared_target(self):
+        target = next(item for item in self.expected
+                      if item["project"] == "pg_ivm"
+                      and item["postgresql_version"] == "17.11"
+                      and item["platform"] == "linux-arm64")
+        self.assertEqual(module.changed_targets(None, ROOT, project="pg_ivm",
+                         postgresql_version="17.11", architecture="arm64"), [target])
+        with self.assertRaisesRegex(ValueError, "not declared"):
+            module.changed_targets(None, ROOT, project="pg_ivm",
+                                   postgresql_version="19.1", architecture="arm64")
+
     def test_matrix_limit_is_enforced(self):
         with mock.patch.object(module, "MAX_TARGETS", 1):
             with self.assertRaisesRegex(ValueError, "matrix exceeds"):

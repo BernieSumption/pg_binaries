@@ -2,6 +2,19 @@ name: Linux changed-profile scheduler
 
 on:
   workflow_dispatch:
+    inputs:
+      project:
+        description: Optional exact project for a targeted rerun
+        required: false
+        type: string
+      postgresql_version:
+        description: Optional exact selected PostgreSQL release
+        required: false
+        type: string
+      architecture:
+        description: Optional Linux architecture
+        required: false
+        type: string
   push:
     branches: [spike]
 
@@ -21,22 +34,32 @@ jobs:
       - id: plan
         env:
           EVENT_BEFORE: ${{ github.event.before }}
+          REQUEST_PROJECT: ${{ inputs.project }}
+          REQUEST_POSTGRESQL_VERSION: ${{ inputs.postgresql_version }}
+          REQUEST_ARCHITECTURE: ${{ inputs.architecture }}
         run: |
           set -euo pipefail
+          filters=()
+          if [[ -n "$REQUEST_PROJECT" ]]; then filters+=(--project "$REQUEST_PROJECT"); fi
+          if [[ -n "$REQUEST_POSTGRESQL_VERSION" ]]; then filters+=(--postgresql-version "$REQUEST_POSTGRESQL_VERSION"); fi
+          if [[ -n "$REQUEST_ARCHITECTURE" ]]; then filters+=(--architecture "$REQUEST_ARCHITECTURE"); fi
           before_root="$RUNNER_TEMP/profile-before"
           if [[ -z "$EVENT_BEFORE" || "$EVENT_BEFORE" =~ ^0+$ ]]; then
             python3 tools/linux_changed_profiles.py \
               --current-root "$GITHUB_WORKSPACE" \
+              "${filters[@]}" \
               --github-output "$GITHUB_OUTPUT"
           elif ! git worktree add --detach "$before_root" "$EVENT_BEFORE"; then
             echo 'Could not materialize the event base; selecting all routed Linux targets.' >&2
             python3 tools/linux_changed_profiles.py \
               --current-root "$GITHUB_WORKSPACE" \
+              "${filters[@]}" \
               --github-output "$GITHUB_OUTPUT"
           else
             python3 tools/linux_changed_profiles.py \
               --before-root "$before_root" \
               --current-root "$GITHUB_WORKSPACE" \
+              "${filters[@]}" \
               --github-output "$GITHUB_OUTPUT"
           fi
 

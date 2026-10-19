@@ -29,7 +29,8 @@ def _profile_id(route_name, architecture, postgresql_version):
     return f"{route_name}-publication-linux-{architecture}-{postgresql_version}"
 
 
-def changed_targets(before_root, current_root):
+def changed_targets(before_root, current_root, *, project=None, postgresql_version=None,
+                    architecture=None):
     """Return a bounded matrix of changed targets, selecting all if base is absent."""
     current_root = Path(current_root)
     support = coverage.load_json(current_root / "support.json")
@@ -42,13 +43,13 @@ def changed_targets(before_root, current_root):
 
     candidates = []
     seen_profiles = set()
-    for route_name, project in LINUX_ROUTES.items():
+    for route_name, route_project in LINUX_ROUTES.items():
         project_candidates = [target for target in plan["candidate_archives"]
-                              if target["project"] == project
+                              if target["project"] == route_project
                               and target["platform"].startswith("linux-")]
         for target in project_candidates:
-            architecture = target["platform"].removeprefix("linux-")
-            profile_id = _profile_id(route_name, architecture, target["postgresql_version"])
+            target_architecture = target["platform"].removeprefix("linux-")
+            profile_id = _profile_id(route_name, target_architecture, target["postgresql_version"])
             if profile_id in seen_profiles:
                 raise ValueError(f"multiple selected releases require distinct profiles for {profile_id!r}")
             seen_profiles.add(profile_id)
@@ -56,7 +57,7 @@ def changed_targets(before_root, current_root):
             if current["scope"] != "publication" or current["platforms"] != [target["platform"]]:
                 raise ValueError(f"profile {profile_id!r} does not match its Linux publication target")
             candidates.append({
-                "project": project,
+                "project": route_project,
                 "extension_version": target["selected_version"],
                 "postgresql_version": target["postgresql_version"],
                 "platform": target["platform"],
@@ -72,6 +73,16 @@ def changed_targets(before_root, current_root):
         raise ValueError("routed Linux publication profiles and support-derived targets differ")
     if len(candidates) > MAX_TARGETS:
         raise ValueError(f"Linux changed-profile matrix exceeds the {MAX_TARGETS}-target limit")
+
+    if any(value is not None for value in (project, postgresql_version, architecture)):
+        candidates = [target for target in candidates
+                      if (project is None or target["project"] == project)
+                      and (postgresql_version is None
+                           or target["postgresql_version"] == postgresql_version)
+                      and (architecture is None
+                           or target["platform"] == f"linux-{architecture}")]
+        if not candidates:
+            raise ValueError("requested Linux publication target is not declared")
 
     selected = before_root is None
     before_root = Path(before_root) if before_root is not None else None
@@ -102,10 +113,15 @@ def main(argv=None):
     parser.add_argument("--before-root", type=Path)
     parser.add_argument("--current-root", type=Path, required=True)
     parser.add_argument("--github-output", type=Path)
+    parser.add_argument("--project")
+    parser.add_argument("--postgresql-version")
+    parser.add_argument("--architecture", choices=("x86_64", "arm64"))
     args = parser.parse_args(argv)
     try:
         before = args.before_root if args.before_root and args.before_root.exists() else None
-        selected = changed_targets(before, args.current_root)
+        selected = changed_targets(before, args.current_root, project=args.project,
+                                   postgresql_version=args.postgresql_version,
+                                   architecture=args.architecture)
     except Exception as exc:
         parser.exit(2, f"Linux profile selection failed: {exc}\n")
     rendered = json.dumps(selected, separators=(",", ":"))
