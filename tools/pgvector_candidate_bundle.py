@@ -108,6 +108,11 @@ def retrieve(*, repository, branch, current_run_id, version, postgresql_version,
             f"pgvector-{version}-postgresql-{postgresql_version}-linux-{architecture}-current-{run_id}.json")
         basenames = [core_archive, core_archive + ".sha256", pgvector_archive, pgvector_archive + ".sha256",
                      verification_core, verification_extension]
+        artifact_paths = {
+            name: (f"_temp/bundle/pilot/publication/records/{name}" if name.endswith(".json")
+                   else f"_temp/bundle/pilot/{name}")
+            for name in basenames
+        }
         if artifact.get("expired") is True or expiry is None or expiry <= now:
             failures.append(f"run {run_id}: artifact expired or expiry metadata invalid")
             continue
@@ -122,12 +127,13 @@ def retrieve(*, repository, branch, current_run_id, version, postgresql_version,
             continue
         try:
             files = bundle.download_and_extract_bundle(
-                repository, artifact_id, digest, basenames, output_directory,
-                archive_paths=[core_archive, pgvector_archive])
+                repository, artifact_id, digest, list(artifact_paths.values()), output_directory,
+                archive_paths=[artifact_paths[core_archive], artifact_paths[pgvector_archive]])
         except (bundle.BundleError, OSError, ValueError) as exc:
             failures.append(f"run {run_id} artifact {artifact_id}: {exc}")
             continue
-        selected = (workflow, run, artifact_name, artifact_id, expiry_text, digest, files)
+        selected = (workflow, run, artifact_name, artifact_id, expiry_text, digest,
+                    {name: files[path] for name, path in artifact_paths.items()})
         break
     if selected is None:
         if not saw_candidate:

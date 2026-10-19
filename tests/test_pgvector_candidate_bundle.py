@@ -37,10 +37,11 @@ class PgvectorCandidateBundleTests(unittest.TestCase):
         }
         members = []
         for name, data in self.files.items():
-            members.append(("bundle/pilot/" + name, data))
+            location = "_temp/bundle/pilot/publication/records/" if name.endswith(".json") else "_temp/bundle/pilot/"
+            members.append((location + name, data))
         for name, data in self.files.items():
             if name.endswith(".tar.gz"):
-                members.append(("bundle/pilot/" + name + ".sha256",
+                members.append(("_temp/bundle/pilot/" + name + ".sha256",
                                 f"{hashlib.sha256(data).hexdigest()}  {name}\n".encode()))
         buffer = io.BytesIO()
         with zipfile.ZipFile(buffer, "w") as archive:
