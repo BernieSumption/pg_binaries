@@ -1,0 +1,172 @@
+name: Selected extension publication
+
+on:
+  workflow_call:
+    inputs:
+      project:
+        required: true
+        type: string
+      extension_version:
+        required: true
+        type: string
+      postgresql_version:
+        required: true
+        type: string
+      platform:
+        required: true
+        type: string
+      retry:
+        required: false
+        type: boolean
+        default: false
+  workflow_dispatch:
+    inputs:
+      project:
+        description: Declared extension project
+        required: true
+        type: string
+      extension_version:
+        description: Exact selected extension release
+        required: true
+        type: string
+      postgresql_version:
+        description: Exact selected PostgreSQL release
+        required: true
+        type: string
+      platform:
+        description: Operating system and architecture
+        required: true
+        type: choice
+        options:
+          - linux-x86_64
+          - linux-arm64
+          - macos-arm64
+          - macos-x86_64
+          - windows-x86_64
+      retry:
+        description: Run this target even when the retained work is complete
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    outputs:
+      should_dispatch: ${{ steps.select.outputs.should_dispatch }}
+      route: ${{ steps.select.outputs.route }}
+      extension_version: ${{ steps.select.outputs.extension_version }}
+      postgresql_version: ${{ steps.select.outputs.postgresql_version }}
+      architecture: ${{ steps.select.outputs.architecture }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Resolve the declared target and its work prerequisites
+        id: select
+        env:
+          REQUEST_PROJECT: ${{ inputs.project }}
+          REQUEST_VERSION: ${{ inputs.extension_version }}
+          REQUEST_POSTGRESQL_VERSION: ${{ inputs.postgresql_version }}
+          REQUEST_PLATFORM: ${{ inputs.platform }}
+          REQUEST_RETRY: ${{ inputs.retry }}
+        run: |
+          set -euo pipefail
+          python3 - "$RUNNER_TEMP/request.json" <<'PY'
+          import json
+          import os
+          import sys
+
+          request = {
+              "project": os.environ["REQUEST_PROJECT"],
+              "version": os.environ["REQUEST_VERSION"],
+              "postgresql_version": os.environ["REQUEST_POSTGRESQL_VERSION"],
+              "platform": os.environ["REQUEST_PLATFORM"],
+              "retry": os.environ["REQUEST_RETRY"].lower() == "true",
+          }
+          with open(sys.argv[1], "w", encoding="utf-8") as output:
+              json.dump(request, output)
+          PY
+          python3 tools/dispatch_plan.py --request "$RUNNER_TEMP/request.json" > "$RUNNER_TEMP/dispatch-plan.json"
+          python3 - "$RUNNER_TEMP/dispatch-plan.json" "$GITHUB_OUTPUT" <<'PY'
+          import json
+          import sys
+
+          plan = json.load(open(sys.argv[1], encoding="utf-8"))
+          target = plan["target"]
+          project, platform = target["project"], target["platform"]
+          routes = {
+              ("HypoPG", "linux-x86_64"): "hypopg-linux",
+              ("HypoPG", "linux-arm64"): "hypopg-linux",
+              ("HypoPG", "macos-arm64"): "hypopg-macos-arm64",
+              ("HypoPG", "macos-x86_64"): "hypopg-macos-x86_64",
+              ("HypoPG", "windows-x86_64"): "hypopg-windows-x86_64",
+              ("pg_jsonschema", "macos-arm64"): "pg-jsonschema-macos",
+              ("pg_jsonschema", "macos-x86_64"): "pg-jsonschema-macos",
+              ("pgtap", "macos-x86_64"): "pgtap-macos-x86_64",
+          }
+          route = routes.get((project, platform))
+          if route is None:
+              raise SystemExit(f"No selected publication workflow serves {project} on {platform}")
+          with open(sys.argv[2], "a", encoding="utf-8") as output:
+              for key, value in (
+                  ("should_dispatch", str(plan["should_dispatch"]).lower()),
+                  ("route", route),
+                  ("extension_version", target["version"]),
+                  ("postgresql_version", target["postgresql_version"]),
+                  ("architecture", platform.rsplit("-", 1)[1]),
+              ):
+                  output.write(f"{key}={value}\n")
+          PY
+
+  hypopg_linux:
+    needs: plan
+    if: needs.plan.outputs.should_dispatch == 'true' && needs.plan.outputs.route == 'hypopg-linux'
+    uses: ./.github/workflows/hypopg-linux-selected-publication.yml
+    with:
+      postgresql_version: ${{ needs.plan.outputs.postgresql_version }}
+      extension_version: ${{ needs.plan.outputs.extension_version }}
+      architecture: ${{ needs.plan.outputs.architecture }}
+
+  hypopg_macos_arm64:
+    needs: plan
+    if: needs.plan.outputs.should_dispatch == 'true' && needs.plan.outputs.route == 'hypopg-macos-arm64'
+    uses: ./.github/workflows/hypopg-macos-arm64-selected-publication.yml
+    with:
+      postgresql_version: ${{ needs.plan.outputs.postgresql_version }}
+      extension_version: ${{ needs.plan.outputs.extension_version }}
+
+  hypopg_macos_x86_64:
+    needs: plan
+    if: needs.plan.outputs.should_dispatch == 'true' && needs.plan.outputs.route == 'hypopg-macos-x86_64'
+    uses: ./.github/workflows/hypopg-macos-x86_64-selected-publication.yml
+    with:
+      postgresql_version: ${{ needs.plan.outputs.postgresql_version }}
+      extension_version: ${{ needs.plan.outputs.extension_version }}
+
+  hypopg_windows_x86_64:
+    needs: plan
+    if: needs.plan.outputs.should_dispatch == 'true' && needs.plan.outputs.route == 'hypopg-windows-x86_64'
+    uses: ./.github/workflows/hypopg-windows-selected-publication.yml
+    with:
+      postgresql_version: ${{ needs.plan.outputs.postgresql_version }}
+      extension_version: ${{ needs.plan.outputs.extension_version }}
+
+  pg_jsonschema_macos:
+    needs: plan
+    if: needs.plan.outputs.should_dispatch == 'true' && needs.plan.outputs.route == 'pg-jsonschema-macos'
+    uses: ./.github/workflows/pg-jsonschema-macos-selected-publication.yml
+    with:
+      postgresql_version: ${{ needs.plan.outputs.postgresql_version }}
+      extension_version: ${{ needs.plan.outputs.extension_version }}
+      architecture: ${{ needs.plan.outputs.architecture }}
+
+  pgtap_macos_x86_64:
+    needs: plan
+    if: needs.plan.outputs.should_dispatch == 'true' && needs.plan.outputs.route == 'pgtap-macos-x86_64'
+    uses: ./.github/workflows/pgtap-macos-x86_64-selected-publication.yml
+    with:
+      postgresql_version: ${{ needs.plan.outputs.postgresql_version }}
+      extension_version: ${{ needs.plan.outputs.extension_version }}
