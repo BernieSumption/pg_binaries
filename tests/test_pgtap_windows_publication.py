@@ -29,12 +29,17 @@ class PgTapWindowsArchiveTests(unittest.TestCase):
         self._make_core()
         self._make_extension()
 
-    def test_candidate_pins_current_core_identity(self):
+    def test_workflow_discovers_core_candidate_and_rebuilds_when_needed(self):
         script = Path("scripts/pgtap/windows-feasibility.ps1").read_text()
         workflow = Path(".github/workflows/pgtap-windows-selected-publication.yml").read_text()
         self.assertIn("windows_core_pin", script)
-        self.assertIn("windows_core_pin.py", workflow)
-        self.assertIn("run-id: ${{ steps.core_pin.outputs.run_id }}", workflow)
+        self.assertIn("windows_core_candidate.py --selected-core", workflow)
+        self.assertIn("steps.core_candidate.outputs.status == 'missing'", workflow)
+        self.assertIn("steps.core_candidate.outputs.status == 'stale'", workflow)
+        self.assertIn("windows_core_target_config.py", workflow)
+        self.assertNotIn("windows_core_pin.py", workflow)
+        self.assertNotIn("run-id:", workflow)
+        self.assertIn("CoreIdentityPath", workflow)
 
     def test_selected_targets_bind_to_distinct_imported_core_pins(self):
         for version in publication.SUPPORTED_PG_VERSIONS:

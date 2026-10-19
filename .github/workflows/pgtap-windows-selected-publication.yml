@@ -76,22 +76,52 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Load pinned PostgreSQL core identity
-        id: core_pin
-        run: python tools/windows_core_pin.py --postgresql-version '${{ needs.select.outputs.postgresql_version }}' --github-output >> $env:GITHUB_OUTPUT
+      - name: Resolve a checked PostgreSQL core candidate
+        id: core_candidate
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PG_VERSION: ${{ needs.select.outputs.postgresql_version }}
+        run: |
+          $coreDir = Join-Path $env:RUNNER_TEMP 'core-archives'
+          python tools/windows_core_candidate.py --selected-core --base-pin "support/windows-core-pins/$env:PG_VERSION-x86_64.json" --output-directory $coreDir
+          if ($LASTEXITCODE -ne 0) { throw 'PostgreSQL core candidate resolution failed.' }
+          $result = Get-Content (Join-Path $coreDir 'result.json') -Raw | ConvertFrom-Json
+          if ($result.status -notin @('checked', 'missing', 'stale')) { throw "Unexpected core candidate status: $($result.status)" }
+          "status=$($result.status)" | Add-Content $env:GITHUB_OUTPUT
       - name: Check pgTAP publication evidence tooling
         run: python -B -m unittest tests/test_pgtap_windows_publication.py
-      - name: Download the pinned PostgreSQL core archive
-        uses: actions/download-artifact@v4
-        with:
-          name: windows-postgresql-${{ needs.select.outputs.postgresql_version }}-pilot
-          run-id: ${{ steps.core_pin.outputs.run_id }}
-          github-token: ${{ github.token }}
-          path: ${{ runner.temp }}/core-archives
+      - name: Set up PostgreSQL core build dependencies when needed
+        if: steps.core_candidate.outputs.status == 'missing' || steps.core_candidate.outputs.status == 'stale'
+        env:
+          PG_VERSION: ${{ needs.select.outputs.postgresql_version }}
+        run: ./scripts/windows/setup-core-dependencies.ps1 -PostgreSQLVersion $env:PG_VERSION
+      - name: Build selected PostgreSQL core when no checked candidate is available
+        if: steps.core_candidate.outputs.status == 'missing' || steps.core_candidate.outputs.status == 'stale'
+        env:
+          PG_VERSION: ${{ needs.select.outputs.postgresql_version }}
+          BUILD_MODE: core-only
+        run: |
+          cmd.exe /d /c scripts\windows\build.cmd
+          if ($LASTEXITCODE -ne 0) { throw 'PostgreSQL core build failed.' }
+          $archiveName = "postgresql-$env:PG_VERSION-windows-x86_64.tar.gz"
+          $archive = Join-Path $env:RUNNER_TEMP "core-archives/$archiveName"
+          Copy-Item "dist/windows/$archiveName" $archive -Force
+          Copy-Item "dist/windows/$archiveName.sha256" "$archive.sha256" -Force
+          $artifactName = "pgtap-windows-$env:PG_VERSION-build-$env:GITHUB_RUN_ID"
+          python tools/windows_core_target_config.py --base-pin "support/windows-core-pins/$env:PG_VERSION-x86_64.json" --core-archive $archive --source-run-id $env:GITHUB_RUN_ID --source-run-attempt $env:GITHUB_RUN_ATTEMPT --source-artifact-name $artifactName --output (Join-Path $env:RUNNER_TEMP 'core-archives/candidate-target.json')
+          if ($LASTEXITCODE -ne 0) { throw 'Generated PostgreSQL core identity validation failed.' }
+      - name: Select PostgreSQL core identity
+        env:
+          PG_VERSION: ${{ needs.select.outputs.postgresql_version }}
+        run: |
+          $coreDir = Join-Path $env:RUNNER_TEMP 'core-archives'
+          $candidate = Join-Path $coreDir 'candidate-target.json'
+          if (-not (Test-Path $candidate -PathType Leaf)) { throw 'Checked or rebuilt PostgreSQL core identity is missing.' }
+          Copy-Item $candidate (Join-Path $coreDir 'identity.json') -Force
       - name: Build and package pgTAP from pinned upstream source
         id: archive
         continue-on-error: true
-        run: ./scripts/pgtap/windows-feasibility.ps1 -PostgreSQLVersion '${{ needs.select.outputs.postgresql_version }}' -CoreArchiveDirectory "$env:RUNNER_TEMP/core-archives" -OutputDirectory "$env:RUNNER_TEMP/pgtap-build" -BuildOnly
+        run: ./scripts/pgtap/windows-feasibility.ps1 -PostgreSQLVersion '${{ needs.select.outputs.postgresql_version }}' -CoreArchiveDirectory "$env:RUNNER_TEMP/core-archives" -OutputDirectory "$env:RUNNER_TEMP/pgtap-build" -CoreIdentityPath "$env:RUNNER_TEMP/core-archives/identity.json" -BuildOnly
       - name: Upload final core and extension archives
         if: always()
         uses: actions/upload-artifact@v4
@@ -149,12 +179,12 @@ jobs:
           $core = Join-Path $env:RUNNER_TEMP "core-archives/postgresql-$env:POSTGRESQL_VERSION-windows-x86_64.tar.gz"
           $extension = Join-Path $env:RUNNER_TEMP "pgtap-extension/pgtap-1.3.4-postgresql-$env:POSTGRESQL_VERSION-windows-x86_64.tar.gz"
           if (-not (Test-Path $extension -PathType Leaf)) { throw 'Final pgTAP archive is missing' }
-          python tools/check_pgtap_windows_archive.py --postgresql-version $env:POSTGRESQL_VERSION --core-archive $core --extension-archive $extension --output (Join-Path $dir 'static-analysis.json')
+          python tools/check_pgtap_windows_archive.py --postgresql-version $env:POSTGRESQL_VERSION --core-archive $core --extension-archive $extension --core-identity-path (Join-Path $env:RUNNER_TEMP 'core-archives/identity.json') --output (Join-Path $dir 'static-analysis.json')
       - name: Inspect and exercise downloaded archives after relocation
         id: verification
         if: always() && needs.build.result == 'success' && steps.download.outcome == 'success'
         continue-on-error: true
-        run: ./scripts/pgtap/verify-windows-publication.ps1 -CoreArchiveDirectory "$env:RUNNER_TEMP/core-archives" -ExtensionArchiveDirectory "$env:RUNNER_TEMP/pgtap-extension" -OutputDirectory "$env:RUNNER_TEMP/pgtap-verification" -PostgreSQLVersion '${{ needs.select.outputs.postgresql_version }}'
+        run: ./scripts/pgtap/verify-windows-publication.ps1 -CoreArchiveDirectory "$env:RUNNER_TEMP/core-archives" -ExtensionArchiveDirectory "$env:RUNNER_TEMP/pgtap-extension" -OutputDirectory "$env:RUNNER_TEMP/pgtap-verification" -PostgreSQLVersion '${{ needs.select.outputs.postgresql_version }}' -CoreIdentityPath "$env:RUNNER_TEMP/core-archives/identity.json"
       - name: Emit archive-bound attempt and publication record
         if: always()
         env:
@@ -166,7 +196,7 @@ jobs:
           New-Item -ItemType Directory -Force $dir | Out-Null
           $version = (Get-CimInstance Win32_OperatingSystem).Version
           $image = "$([Environment]::GetEnvironmentVariable('ImageOS'))/$([Environment]::GetEnvironmentVariable('ImageVersion'))"
-          python tools/emit_pgtap_windows_publication.py --postgresql-version $env:POSTGRESQL_VERSION --core-archives (Join-Path $env:RUNNER_TEMP 'core-archives') --archives (Join-Path $env:RUNNER_TEMP 'pgtap-extension') --output $dir --os-version $version --image-id $image --archive-suite-result $env:ARCHIVE_RESULT --static-analysis-result $env:STATIC_RESULT
+          python tools/emit_pgtap_windows_publication.py --postgresql-version $env:POSTGRESQL_VERSION --core-archives (Join-Path $env:RUNNER_TEMP 'core-archives') --archives (Join-Path $env:RUNNER_TEMP 'pgtap-extension') --output $dir --os-version $version --image-id $image --archive-suite-result $env:ARCHIVE_RESULT --static-analysis-result $env:STATIC_RESULT --core-identity-path (Join-Path $env:RUNNER_TEMP 'core-archives/identity.json')
       - name: Validate and retain publication evidence
         if: always()
         env:
@@ -179,7 +209,7 @@ jobs:
             if ($attempt.archives) {
               $extensionDir = Join-Path $env:RUNNER_TEMP 'pgtap-extension'
               Copy-Item (Join-Path $dir '*') $extensionDir -Recurse -Force
-              python tools/import_pgtap_windows_publication.py --postgresql-version $env:POSTGRESQL_VERSION --core-artifact (Join-Path $env:RUNNER_TEMP 'core-archives') --pgtap-artifact $extensionDir --run-id $env:GITHUB_RUN_ID
+              python tools/import_pgtap_windows_publication.py --postgresql-version $env:POSTGRESQL_VERSION --core-artifact (Join-Path $env:RUNNER_TEMP 'core-archives') --pgtap-artifact $extensionDir --core-identity-path (Join-Path $env:RUNNER_TEMP 'core-archives/identity.json') --run-id $env:GITHUB_RUN_ID
             }
           }
       - name: Upload candidate archive and verification evidence
@@ -190,6 +220,7 @@ jobs:
           path: |
             ${{ runner.temp }}/core-archives/*.tar.gz
             ${{ runner.temp }}/core-archives/*.sha256
+            ${{ runner.temp }}/core-archives/identity.json
             ${{ runner.temp }}/pgtap-extension/*
             ${{ runner.temp }}/pgtap-verification/*
             support/evidence/pgtap-windows-publication-${{ github.run_id }}/**
