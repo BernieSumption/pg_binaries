@@ -1,6 +1,10 @@
 name: PostgreSQL selected Windows publication
 
 on:
+  push:
+    branches: [spike]
+    paths:
+      - '.github/workflows/postgresql-windows-selected-publication.yml'
   workflow_call:
     inputs:
       postgresql_version:
@@ -28,7 +32,7 @@ jobs:
       - name: Validate selected Windows PostgreSQL target
         id: target
         env:
-          PG_VERSION: ${{ inputs.postgresql_version }}
+          PG_VERSION: ${{ inputs.postgresql_version || '18.6' }}
         run: |
           set -euo pipefail
           python3 - "$PG_VERSION" <<'PY'
