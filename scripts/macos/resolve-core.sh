@@ -183,6 +183,9 @@ elif try_source "pg-jsonschema-macos-changed-profiles.yml" \
 elif try_source "pg-jsonschema-macos-selected-publication.yml" \
     "pg-jsonschema-macos-${version}-${architecture}-build-{run_id}"; then
   candidate_usable=true
+elif [[ $architecture == arm64 ]] && try_source pgtap-macos-arm64-selected-publication.yml \
+    "pgtap-macos-arm64-${version}-build-{run_id}"; then
+  candidate_usable=true
 elif try_source "$pilot_workflow" macos-pilot-archives; then
   candidate_usable=true
 fi
