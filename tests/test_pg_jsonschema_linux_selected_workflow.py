@@ -42,6 +42,7 @@ class SelectedLinuxWorkflowTests(unittest.TestCase):
         workflow = WORKFLOW.read_text(encoding="utf-8")
         emitter = (ROOT / "tools/emit_pg_jsonschema_linux_publication.py").read_text(encoding="utf-8")
         self.assertIn("scripts/linux/resolve-core.sh", workflow)
+        self.assertIn("selected-extension-publication.yml \"pg-jsonschema-linux-core-$PG_VERSION-$PG_ARCHITECTURE-{run_id}\"", workflow)
         self.assertIn("--core-resolution", workflow)
         self.assertIn("linux_core_resolution.validate_resolution", emitter)
 
