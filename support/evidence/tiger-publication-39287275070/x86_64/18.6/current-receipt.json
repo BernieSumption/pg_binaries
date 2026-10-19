@@ -1,0 +1,41 @@
+{
+  "architecture": "x86_64",
+  "archives": {
+    "postgis_tiger_geocoder-2025.2-postgresql-18.6-linux-x86_64.tar.gz": "9611caf45965c391547869766b62ef3abf46bfa7c5936e832cd17c209527487c",
+    "postgresql-18.6-linux-x86_64.tar.gz": "ea2bee81fbd243370cc3efdaf712883df9bad354b681e0fe301ced0ea35ca11d"
+  },
+  "case_results": {
+    "archive-suite": "passed"
+  },
+  "ci": {
+    "build_revision": "d439c43b91b468fee5269b35c45b24df9758b978",
+    "provider": "github-actions",
+    "run_id": "39287275070",
+    "run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/39287275070",
+    "source_revision": "d439c43b91b468fee5269b35c45b24df9758b978",
+    "test_revision": "d439c43b91b468fee5269b35c45b24df9758b978"
+  },
+  "clean_system": true,
+  "dependency_check_profile": "postgis_tiger_geocoder-runtime-v1",
+  "dependency_checks_passed": true,
+  "distribution": "Alpine Linux",
+  "distribution_version": "3.22.6",
+  "endpoint": "current",
+  "extension_archive": "postgis_tiger_geocoder-2025.2-postgresql-18.6-linux-x86_64.tar.gz",
+  "image_id": "sha256:7be29a7e4b1ecb39c724c3fa9e6ffbc7e6b12391ca42094caa9277e818fefcf0",
+  "kernel_release": "6.17.0-1022-azure",
+  "postgresql_version": "18.6",
+  "prerequisite_archives": [
+    {
+      "archive": "postgis-3.6.4-postgresql-18.6-linux-x86_64.tar.gz",
+      "project": "PostGIS",
+      "sha256": "85ac4d2d9a69aec95a0993c9750bfc419db6f9337865100b1695b9a3fae957b0",
+      "version": "3.6.4"
+    }
+  ],
+  "profile_id": "tiger-publication-linux-x86_64-18.6",
+  "profile_revision": "97d1d8ee3e677d272a748793cb68343d8ae23830544e6529d6a22c160d280c12",
+  "project": "PostGIS TIGER Geocoder",
+  "test_revision": "d439c43b91b468fee5269b35c45b24df9758b978",
+  "version": "2025.2"
+}
