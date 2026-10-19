@@ -1,0 +1,7 @@
+# PostgreSQL 18.6 macOS arm64 core publication run 39253162889
+
+[Run 39253162889](https://github.com/BernieSumption/pg_binaries/actions/runs/39253162889) passed selection, build, fresh-runner verification and the final publication gate. Its source revision was `8bfdb74957b3f22f5d9df7571011b1b8e63aa944`. The PostgreSQL 18.6 macOS arm64 archive SHA-256 is `6a534e192e070135a2055428e17c3ab1b1b37a6e2a5308b705020b4b86148966`. The current-profile verification record uses profile revision `fe0b960333e2f1deecb1ba987197bc3a0ab59fb10aa03f32f56faf4ff9970220`.
+
+The `archive-suite`, `diagnostics` and `symbols` cases passed on a clean macOS 15.7.9 arm64 verifier. The final gate required all three cases, the current-profile record, Mach-O dependency checks, dSYM checks and diagnostics to succeed; it passed. The exact-revision importer from the run's source tree imported the downloaded artifacts. All six retained evidence files and the verification record match their copies in the CI artifacts byte-for-byte.
+
+GitHub identified the build artifact as `postgresql-macos-selected-18.6-arm64-build-39253162889` (artifact ID `12186554686`, ZIP SHA-256 `fa5bea1aadecd7d2cf39f9260598c394b6849986136d284853619880fb807596`) and the verification artifact as `postgresql-macos-selected-18.6-arm64-verification-39253162889` (artifact ID `12188420132`, ZIP SHA-256 `f1fca432fc7a34c9b79012da89b9009ac79c013b5cb790784e3094e11709f440`). The archive checksum sidecar and all retained evidence bytes were checked against the corresponding downloaded CI artifact contents.
