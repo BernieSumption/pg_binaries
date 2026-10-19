@@ -169,6 +169,9 @@ jobs:
           New-Item -ItemType Directory -Force $core,$extension | Out-Null
           if (Test-Path (Join-Path $bundle 'core-archives')) { Copy-Item (Join-Path $bundle 'core-archives/*') $core -Recurse -Force }
           if (Test-Path (Join-Path $bundle 'pg-jsonschema-windows')) { Copy-Item (Join-Path $bundle 'pg-jsonschema-windows/*') $extension -Recurse -Force }
+          foreach ($report in @('probe-output.txt', 'pe-dependency-analysis.json', 'static-analysis.json')) {
+            Remove-Item (Join-Path $extension $report) -ErrorAction SilentlyContinue
+          }
       - name: Supply the checked base identity when build identity is unavailable
         if: always()
         env:
@@ -193,7 +196,7 @@ jobs:
           Copy-Item (Join-Path $extension 'fresh-runner-pe-dependency-analysis.json') (Join-Path $extension 'pe-dependency-analysis.json') -Force
       - name: Inspect downloaded archives and PE dependencies on the fresh runner
         id: static_analysis
-        if: always() && steps.download.outcome == 'success'
+        if: always() && steps.archive_suite.outcome == 'success'
         continue-on-error: true
         env:
           PG_VERSION: ${{ needs.select.outputs.postgresql_version }}

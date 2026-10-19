@@ -37,6 +37,7 @@ $payload = Join-Path $extensionRoot 'pg_jsonschema'
 Copy-Item (Join-Path $payload 'lib/pg_jsonschema.dll') (Join-Path $pgRoot 'lib/pg_jsonschema.dll') -Force
 $share = Join-Path $pgRoot 'share/extension'
 Get-ChildItem (Join-Path $payload 'share/extension') -File | Copy-Item -Destination $share -Force
+$python = (Get-Command python -ErrorAction Stop).Source
 $originalPath = $env:PATH
 $serverStarted = $false
 try {
@@ -79,7 +80,7 @@ try {
   $dumpbin = Get-ChildItem (Join-Path $vsRoot 'VC/Tools/MSVC') -Directory | Sort-Object Name -Descending | Select-Object -First 1
   if ($dumpbin) { $dumpbin = Join-Path $dumpbin.FullName 'bin/Hostx64/x64/dumpbin.exe' }
   if (-not $dumpbin -or -not (Test-Path $dumpbin -PathType Leaf)) { throw 'x64 dumpbin.exe is missing from the fresh runner.' }
-  python (Join-Path $PSScriptRoot '../../tools/check_pe_dependencies.py') $pgRoot --dumpbin $dumpbin --archive $coreArchive --archive $extensionArchive --report (Join-Path $OutputDirectory 'fresh-runner-pe-dependency-analysis.json')
+  & $python (Join-Path $PSScriptRoot '../../tools/check_pe_dependencies.py') $pgRoot --dumpbin $dumpbin --archive $coreArchive --archive $extensionArchive --report (Join-Path $OutputDirectory 'fresh-runner-pe-dependency-analysis.json')
   if ($LASTEXITCODE -ne 0) { throw 'Fresh-runner PE dependency closure check failed.' }
   & $pgCtl -D $data -m fast -w stop
   if ($LASTEXITCODE -ne 0) { throw 'PostgreSQL did not stop cleanly after the relocated probe.' }
