@@ -4,6 +4,7 @@
 import argparse
 import hashlib
 import json
+import os
 from pathlib import Path
 import re
 import sys
@@ -103,6 +104,7 @@ def _report(path, digests, module_path, target):
 
 def emit(root, core_dir, archives, output, step_results, os_version, image_id,
          target_config=None, environ=None):
+    environ = os.environ if environ is None else environ
     root, core_dir, archives, output = map(Path, (root, core_dir, archives, output))
     target = selected_target(target_config)
     pg_version, architecture = target.postgresql_version, target.architecture

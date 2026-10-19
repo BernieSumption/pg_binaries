@@ -1,4 +1,5 @@
 from pathlib import Path
+import subprocess
 import unittest
 
 
@@ -7,6 +8,11 @@ WORKFLOW = ROOT / ".github/workflows/collection-macos-selected-publication.yml"
 
 
 class CollectionMacosSelectedWorkflowTests(unittest.TestCase):
+    def test_build_and_verify_shell_scripts_parse(self):
+        scripts = [ROOT / "scripts/collection/build-macos.sh",
+                   ROOT / "scripts/collection/verify-macos.sh"]
+        subprocess.run(["bash", "-n", *map(str, scripts)], check=True)
+
     def test_selected_workflow_resolves_builds_and_verifies_one_target(self):
         workflow = WORKFLOW.read_text()
         self.assertIn("workflow_call:", workflow)

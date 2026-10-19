@@ -1,4 +1,5 @@
 import json
+import subprocess
 import sys
 import tempfile
 import unittest
@@ -10,6 +11,11 @@ import emit_pgivm_macos_publication as publication
 
 
 class PgIvmSelectedMacosPublicationTests(unittest.TestCase):
+    def test_build_and_verify_shell_scripts_parse(self):
+        scripts = [ROOT / "scripts/pg_ivm/macos-build-publication.sh",
+                   ROOT / "scripts/pg_ivm/macos-verify-publication.sh"]
+        subprocess.run(["bash", "-n", *map(str, scripts)], check=True)
+
     def test_target_configuration_covers_both_architectures_and_postgresql_releases(self):
         original = (publication.PROFILE_ID, publication.PG_VERSION,
                     publication.ARCHITECTURE, publication.PLATFORM,

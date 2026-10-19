@@ -21,7 +21,7 @@ if v not in {"17.11","18.6"} or a not in {"arm64","x86_64"} or t.get("platform")
 if c.get("basename") != f"postgresql-{v}-macos-{a}.tar.gz" or not re.fullmatch(r"[0-9a-f]{64}",str(c.get("sha256",""))): raise SystemExit("target does not bind the exact core archive")
 print(v,a,c["basename"],c["sha256"])
 PY
-)
+)"
 extension="pg_ivm-1.16-postgresql-${pg_version}-macos-${architecture}.tar.gz"
 if [[ $(uname -s) != Darwin || $(uname -m) != "$architecture" ]]; then echo "Verification requires native macOS $architecture" >&2; exit 1; fi
 for path in "$core_dir/$core_name" "$archive_dir/$extension"; do test -s "$path" && test -s "$path.sha256"; (cd "$(dirname "$path")" && shasum -a 256 -c "$(basename "$path").sha256"); done

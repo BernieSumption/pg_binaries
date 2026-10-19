@@ -122,6 +122,14 @@ class CollectionMacosPublicationTests(unittest.TestCase):
                     coverage.validate_verification_record(record, coverage.load_json(self.root / "support.json"), self.root)
                 self.assertEqual(self._import(), retained)
 
+    def test_cli_uses_actions_environment_when_none_is_injected(self):
+        with patch.dict("os.environ", self.environ):
+            emitter.emit(self.root, self.core_dir, self.output, self.output,
+                         {"archive-suite": "success", "static-analysis": "success"},
+                         "15.0", self.image_id, self.target_config)
+        attempt = json.loads((self.publication / "attempt.json").read_text())
+        self.assertEqual(attempt["source_revision"], self.revision)
+
     def test_existing_workflows_keep_their_pinned_target_until_retired(self):
         identity = {"sha256": self.core_hash, "run_id": "123456",
                     "build_id": "github-123456-1", "source_revision": "b" * 40}
