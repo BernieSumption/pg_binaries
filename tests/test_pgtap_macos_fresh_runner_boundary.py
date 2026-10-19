@@ -67,9 +67,13 @@ class PgtapMacosFreshRunnerBoundaryTests(unittest.TestCase):
                 self.assertNotIn("run-id:", workflow)
 
                 self.assertIn(f"--platform macos-{architecture}", select)
-                self.assertIn(f'${{POSTGRESQL_VERSION}}-{architecture}.json', select)
-                for version in versions:
-                    self.assertTrue((ROOT / f"tools/pgtap_macos_pins/{version}-{architecture}.json").is_file())
+                if architecture == "x86_64":
+                    self.assertIn(f'${{POSTGRESQL_VERSION}}-{architecture}.json', select)
+                else:
+                    self.assertNotIn("pin_path", select)
+                if architecture == "x86_64":
+                    for version in versions:
+                        self.assertTrue((ROOT / f"tools/pgtap_macos_pins/{version}-{architecture}.json").is_file())
                 self.assertIn(f"support/evidence/pgtap-macos-publication-${{{{ github.run_id }}}}/{architecture}/**", verify)
                 self.assertIn(f"-macos-{architecture}-current-", verify)
 

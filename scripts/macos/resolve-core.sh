@@ -124,6 +124,7 @@ repository, branch, run_id, attempt, revision, architecture, candidate_workflow 
 suffix = "arm64" if architecture == "arm64" else "x86_64"
 pilot = f"macos-{suffix}-pilot.yml" if architecture == "arm64" else "macos-pilot.yml"
 allowed = {pilot, f"hypopg-macos-{suffix}-selected-publication.yml"}
+allowed.add("postgresql-macos-selected-publication.yml")
 if architecture == "arm64":
     allowed.add("pgtap-macos-arm64-selected-publication.yml")
 if candidate_workflow in {"pg-jsonschema-macos-changed-profiles.yml",
@@ -166,16 +167,22 @@ PY
 }
 
 if [[ $architecture == arm64 ]]; then
-  selected_workflow=hypopg-macos-arm64-selected-publication.yml
-  selected_artifact="hypopg-macos-arm64-${version}-candidate-{run_id}"
+  selected_workflow=postgresql-macos-selected-publication.yml
+  selected_artifact="postgresql-macos-selected-${version}-${architecture}-build-{run_id}"
+  extension_workflow=hypopg-macos-arm64-selected-publication.yml
+  extension_artifact="hypopg-macos-arm64-${version}-candidate-{run_id}"
   pilot_workflow=macos-arm64-pilot.yml
 else
-  selected_workflow=hypopg-macos-x86_64-selected-publication.yml
-  selected_artifact="hypopg-macos-x86_64-${version}-candidate-{run_id}"
+  selected_workflow=postgresql-macos-selected-publication.yml
+  selected_artifact="postgresql-macos-selected-${version}-${architecture}-build-{run_id}"
+  extension_workflow=hypopg-macos-x86_64-selected-publication.yml
+  extension_artifact="hypopg-macos-x86_64-${version}-candidate-{run_id}"
   pilot_workflow=macos-pilot.yml
 fi
 
 if try_source "$selected_workflow" "$selected_artifact"; then
+  candidate_usable=true
+elif try_source "$extension_workflow" "$extension_artifact"; then
   candidate_usable=true
 elif try_source "pg-jsonschema-macos-changed-profiles.yml" \
     "pg-jsonschema-macos-${version}-${architecture}-build-{run_id}"; then
