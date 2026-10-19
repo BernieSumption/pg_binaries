@@ -10,6 +10,7 @@ import tarfile
 
 import coverage
 import emit_pg_jsonschema_windows_publication as publication
+from windows_core_pin import PG_VERSIONS
 
 
 def sha256_file(path):
@@ -20,16 +21,20 @@ def sha256_file(path):
     return digest.hexdigest()
 
 
-def inspect(core_archive, extension_archive, report_path, pe_report_path=None):
+def inspect(core_archive, extension_archive, report_path, pe_report_path=None,
+           postgresql_version=publication.PG_VERSION, core_identity_path=None):
     core_archive, extension_archive, report_path = map(Path, (core_archive, extension_archive, report_path))
-    expected_core = f"postgresql-{publication.PG_VERSION}-{publication.PLATFORM}.tar.gz"
+    if postgresql_version not in PG_VERSIONS:
+        raise coverage.CoverageError("unsupported Windows PostgreSQL target")
+    identity = publication.load_core_identity(postgresql_version, core_identity_path)
+    expected_core = f"postgresql-{postgresql_version}-{publication.PLATFORM}.tar.gz"
     expected_extension = (f"pg_jsonschema-{publication.PG_JSONSCHEMA_VERSION}-postgresql-"
-                          f"{publication.PG_VERSION}-{publication.PLATFORM}.tar.gz")
+                          f"{postgresql_version}-{publication.PLATFORM}.tar.gz")
     if core_archive.name != expected_core or extension_archive.name != expected_extension:
         raise coverage.CoverageError("archive basenames do not match the pinned target")
     digests = {core_archive.name: sha256_file(core_archive),
                extension_archive.name: sha256_file(extension_archive)}
-    if digests[core_archive.name] != publication.CORE_SHA256:
+    if digests[core_archive.name] != identity["sha256"]:
         raise coverage.CoverageError("core archive checksum differs from the pinned input")
     inspected = []
     native = []
@@ -49,10 +54,10 @@ def inspect(core_archive, extension_archive, report_path, pe_report_path=None):
                 raise coverage.CoverageError("core archive manifest is missing")
             core = json.loads(archive.extractfile(manifest).read().decode("utf-8"))
             expected_manifest = {
-                "component": "postgresql", "version": publication.PG_VERSION,
-                "postgresql_version": publication.PG_VERSION, "platform": "windows",
-                "architecture": publication.ARCHITECTURE, "build_id": publication.CORE_BUILD_ID,
-                "source_revision": publication.CORE_SOURCE_REVISION,
+                "component": "postgresql", "version": postgresql_version,
+                "postgresql_version": postgresql_version, "platform": "windows",
+                "architecture": publication.ARCHITECTURE, "build_id": identity["build_id"],
+                "source_revision": identity["source_revision"],
             }
             if not isinstance(core, dict) or any(core.get(key) != value for key, value in expected_manifest.items()):
                 raise coverage.CoverageError("core archive manifest differs from the pinned build")
@@ -80,13 +85,13 @@ def inspect(core_archive, extension_archive, report_path, pe_report_path=None):
             metadata = json.loads(archive.extractfile(metadata_member).read().decode("utf-8"))
             expected = {
                 "project": "pg_jsonschema", "version": publication.PG_JSONSCHEMA_VERSION, "sql_names": ["pg_jsonschema"],
-                "postgresql_version": publication.PG_VERSION, "platform": "windows",
+                "postgresql_version": postgresql_version, "platform": "windows",
                 "architecture": publication.ARCHITECTURE,
                 "source": {"url": publication.SOURCE_URL, "commit": publication.SOURCE_COMMIT,
                            "cargo_lock_sha256": publication.CARGO_LOCK_SHA256},
-                "core_archive": {"basename": expected_core, "sha256": publication.CORE_SHA256},
+                "core_archive": {"basename": expected_core, "sha256": identity["sha256"]},
                 "release_eligible": False,
-                "core_status": publication.CORE_STATUS,
+                "core_status": identity["status"],
             }
             if not isinstance(metadata, dict) or any(metadata.get(key) != value for key, value in expected.items()):
                 raise coverage.CoverageError("pg_jsonschema metadata does not bind the exact source and core inputs")
@@ -130,7 +135,7 @@ def inspect(core_archive, extension_archive, report_path, pe_report_path=None):
         "architecture": publication.ARCHITECTURE, "archives": digests,
         "inspected_files": sorted(inspected), "native_extension_files": sorted(native),
         "pe_dependency_analysis_sha256": pe_digest,
-        "checks": ["current-profile-core-manifest", "safe-archive-paths", "source-and-core-metadata",
+        "checks": ["selected-core-manifest", "safe-archive-paths", "source-and-core-metadata",
                    "project-named-licence-inventory", "native-extension-identity",
                    "archive-bound-pe-dependency-analysis"],
         "limits": ["The PostgreSQL PE dependency checker separately inspects the relocated core plus extension DLL."],
@@ -146,9 +151,12 @@ def main():
     parser.add_argument("--extension-archive", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--pe-report", type=Path, required=True)
+    parser.add_argument("--postgresql-version", choices=PG_VERSIONS, default=publication.PG_VERSION)
+    parser.add_argument("--core-identity", type=Path)
     args = parser.parse_args()
     try:
-        report = inspect(args.core_archive, args.extension_archive, args.output, args.pe_report)
+        report = inspect(args.core_archive, args.extension_archive, args.output, args.pe_report,
+                         args.postgresql_version, args.core_identity)
         print(f"PASS: inspected {len(report['inspected_files'])} archive files")
         return 0
     except (coverage.CoverageError, OSError, ValueError, TypeError) as exc:

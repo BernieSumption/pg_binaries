@@ -760,7 +760,25 @@
       "scope": "publication",
       "platforms": ["windows-x86_64"],
       "case_ids": ["archive-suite", "static-analysis"],
-      "sources": [".gitattributes", ".github/workflows/pg-jsonschema-windows-publication.yml", "scripts/pg_jsonschema/probe.sql", "scripts/pg_jsonschema/windows-feasibility.ps1", "support.json", "support/postgresql-releases.json", "support/windows-core-pins/18.6-x86_64.json", "tests/test_pg_jsonschema_windows_publication.py", "tests/test_windows_core_pin.py", "tools/check_pe_dependencies.py", "tools/check_pg_jsonschema_windows_archive.py", "tools/coverage.py", "tools/emit_pg_jsonschema_windows_publication.py", "tools/import_pg_jsonschema_windows_publication.py", "tools/inventory_cargo_licenses.py", "tools/windows_core_pin.py"]
+      "sources": [".gitattributes", ".github/workflows/pg-jsonschema-windows-publication.yml", ".github/workflows/pg-jsonschema-windows-selected-publication.yml", "scripts/pg_jsonschema/probe.sql", "scripts/pg_jsonschema/verify-windows-archive.ps1", "scripts/pg_jsonschema/windows-feasibility.ps1", "support.json", "support/postgresql-releases.json", "support/windows-core-pins/18.6-x86_64.json", "tests/test_pg_jsonschema_windows_publication.py", "tests/test_windows_core_pin.py", "tools/actions_candidate_discovery.py", "tools/check_pe_dependencies.py", "tools/check_pg_jsonschema_windows_archive.py", "tools/coverage.py", "tools/emit_pg_jsonschema_windows_publication.py", "tools/extension_archive_plan.py", "tools/import_pg_jsonschema_windows_publication.py", "tools/inventory_cargo_licenses.py", "tools/select_extension_work.py", "tools/windows_core_candidate.py", "tools/windows_core_pin.py", "tools/windows_core_target_config.py"]
+    },
+    "pg-jsonschema-publication-windows-x86_64-15.19": {
+      "scope": "publication",
+      "platforms": ["windows-x86_64"],
+      "case_ids": ["archive-suite", "static-analysis"],
+      "sources": [".gitattributes", ".github/workflows/pg-jsonschema-windows-selected-publication.yml", "scripts/pg_jsonschema/probe.sql", "scripts/pg_jsonschema/verify-windows-archive.ps1", "scripts/pg_jsonschema/windows-feasibility.ps1", "support.json", "support/postgresql-releases.json", "support/windows-core-pins/15.19-x86_64.json", "tests/test_pg_jsonschema_windows_publication.py", "tests/test_windows_core_pin.py", "tools/actions_candidate_discovery.py", "tools/check_pe_dependencies.py", "tools/check_pg_jsonschema_windows_archive.py", "tools/coverage.py", "tools/emit_pg_jsonschema_windows_publication.py", "tools/extension_archive_plan.py", "tools/import_pg_jsonschema_windows_publication.py", "tools/inventory_cargo_licenses.py", "tools/select_extension_work.py", "tools/windows_core_candidate.py", "tools/windows_core_pin.py", "tools/windows_core_target_config.py"]
+    },
+    "pg-jsonschema-publication-windows-x86_64-16.15": {
+      "scope": "publication",
+      "platforms": ["windows-x86_64"],
+      "case_ids": ["archive-suite", "static-analysis"],
+      "sources": [".gitattributes", ".github/workflows/pg-jsonschema-windows-selected-publication.yml", "scripts/pg_jsonschema/probe.sql", "scripts/pg_jsonschema/verify-windows-archive.ps1", "scripts/pg_jsonschema/windows-feasibility.ps1", "support.json", "support/postgresql-releases.json", "support/windows-core-pins/16.15-x86_64.json", "tests/test_pg_jsonschema_windows_publication.py", "tests/test_windows_core_pin.py", "tools/actions_candidate_discovery.py", "tools/check_pe_dependencies.py", "tools/check_pg_jsonschema_windows_archive.py", "tools/coverage.py", "tools/emit_pg_jsonschema_windows_publication.py", "tools/extension_archive_plan.py", "tools/import_pg_jsonschema_windows_publication.py", "tools/inventory_cargo_licenses.py", "tools/select_extension_work.py", "tools/windows_core_candidate.py", "tools/windows_core_pin.py", "tools/windows_core_target_config.py"]
+    },
+    "pg-jsonschema-publication-windows-x86_64-17.11": {
+      "scope": "publication",
+      "platforms": ["windows-x86_64"],
+      "case_ids": ["archive-suite", "static-analysis"],
+      "sources": [".gitattributes", ".github/workflows/pg-jsonschema-windows-selected-publication.yml", "scripts/pg_jsonschema/probe.sql", "scripts/pg_jsonschema/verify-windows-archive.ps1", "scripts/pg_jsonschema/windows-feasibility.ps1", "support.json", "support/postgresql-releases.json", "support/windows-core-pins/17.11-x86_64.json", "tests/test_pg_jsonschema_windows_publication.py", "tests/test_windows_core_pin.py", "tools/actions_candidate_discovery.py", "tools/check_pe_dependencies.py", "tools/check_pg_jsonschema_windows_archive.py", "tools/coverage.py", "tools/emit_pg_jsonschema_windows_publication.py", "tools/extension_archive_plan.py", "tools/import_pg_jsonschema_windows_publication.py", "tools/inventory_cargo_licenses.py", "tools/select_extension_work.py", "tools/windows_core_candidate.py", "tools/windows_core_pin.py", "tools/windows_core_target_config.py"]
     },
     "hypopg-publication-windows-x86_64-18.6": {
       "scope": "publication",

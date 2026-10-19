@@ -1,14 +1,23 @@
 param(
   [Parameter(Mandatory = $true)][string]$CoreArchiveDirectory,
-  [Parameter(Mandatory = $true)][string]$OutputDirectory
+  [Parameter(Mandatory = $true)][string]$OutputDirectory,
+  [ValidateSet('15.19','16.15','17.11','18.6')][string]$PostgreSQLVersion = '18.6',
+  [string]$CoreIdentityPath
 )
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 
-$coreIdentityTool = Join-Path $PSScriptRoot '../../tools/windows_core_pin.py'
-$coreIdentity = (& python $coreIdentityTool | ConvertFrom-Json)
-if ($LASTEXITCODE -ne 0 -or -not $coreIdentity) { throw 'Cannot load the pinned Windows PostgreSQL core identity' }
-$pgVersion = $coreIdentity.postgresql_version
+$pgVersion = $PostgreSQLVersion
+if ($CoreIdentityPath) {
+  $coreIdentity = Get-Content $CoreIdentityPath -Raw | ConvertFrom-Json
+} else {
+  $pinPath = Join-Path $PSScriptRoot "../../support/windows-core-pins/$pgVersion-x86_64.json"
+  $coreIdentity = (& python (Join-Path $PSScriptRoot '../../tools/windows_core_pin.py') --postgresql-version $pgVersion --path $pinPath | ConvertFrom-Json)
+  if ($LASTEXITCODE -ne 0 -or -not $coreIdentity) { throw 'Cannot load the pinned Windows PostgreSQL core identity' }
+}
+if ($coreIdentity.postgresql_version -cne $pgVersion -or $coreIdentity.platform -cne 'windows-x86_64') { throw 'Core identity does not match the selected Windows PostgreSQL target' }
+$pgMajor = $pgVersion.Split('.')[0]
+$pgFeature = "pg$pgMajor"
 $extensionVersion = '0.3.4'
 $extensionCommit = 'cbe74b570d38aa0c4d42914e7a118bcb3adaee7a'
 $cargoLockSha256 = 'ab865dc25d9eea4bf7dbfaf8fae13283e5c0bce4bca460fe10464c6716e67028'
@@ -84,7 +93,7 @@ try {
   if ($manifest.component -cne 'postgresql' -or $manifest.version -cne $pgVersion -or
       $manifest.platform -cne 'windows' -or $manifest.architecture -cne $coreIdentity.architecture -or
       $manifest.build_id -cne $coreBuildId -or $manifest.source_revision -cne $coreIdentity.source_revision) {
-    throw 'The downloaded PostgreSQL archive manifest does not match the pinned current-profile Windows 18.6 build.'
+    throw "The downloaded PostgreSQL archive manifest does not match the selected Windows $pgVersion core build."
   }
   $pgConfig = Join-Path $pgRoot 'bin/pg_config.exe'
   foreach ($exe in @($pgConfig,(Join-Path $pgRoot 'bin/initdb.exe'),(Join-Path $pgRoot 'bin/pg_ctl.exe'),(Join-Path $pgRoot 'bin/psql.exe'))) {
@@ -107,7 +116,8 @@ try {
   $cargoManifest = Get-Content (Join-Path $source 'Cargo.toml') -Raw
   if ($cargoManifest -notmatch '(?m)^version = "0\.3\.4"\r?$') { throw 'Cargo.toml version does not match pg_jsonschema 0.3.4' }
   if ($cargoManifest -notmatch '(?m)^edition = "2024"\r?$') { throw 'Cargo.toml edition differs from the reviewed pinned source' }
-  if ($cargoManifest -notmatch '(?m)^pg18 = \["pgrx/pg18", "pgrx-tests/pg18"\]\r?$') { throw 'The source has no expected PostgreSQL 18 feature' }
+  $featurePattern = '(?m)^' + [regex]::Escape($pgFeature) + ' = \["pgrx/' + [regex]::Escape($pgFeature) + '", "pgrx-tests/' + [regex]::Escape($pgFeature) + '"\]\r?$'
+  if ($cargoManifest -notmatch $featurePattern) { throw "The source has no expected PostgreSQL $pgMajor feature" }
   $cargoLock = Join-Path $source 'Cargo.lock'
   if (-not (Test-Path $cargoLock -PathType Leaf)) { throw 'Cargo.lock is missing from the pinned source' }
   $actualLockSha256 = (Get-FileHash $cargoLock -Algorithm SHA256).Hash.ToLowerInvariant()
@@ -135,11 +145,11 @@ try {
 
   & cargo install cargo-pgrx --version 0.16.1 --locked
   if ($LASTEXITCODE -ne 0) { throw 'Could not install cargo-pgrx 0.16.1' }
-  & cargo pgrx init --pg18 $pgConfig
+  & cargo pgrx init "--$pgFeature" $pgConfig
   if ($LASTEXITCODE -ne 0) { throw 'cargo pgrx init could not register the pinned PostgreSQL core' }
   Push-Location $source
   try {
-    & cargo pgrx install --release --no-default-features --features pg18 --pg-config $pgConfig
+    & cargo pgrx install --release --no-default-features --features $pgFeature --pg-config $pgConfig
     if ($LASTEXITCODE -ne 0) { throw 'cargo pgrx install failed for pg_jsonschema 0.3.4' }
   } finally {
     Pop-Location
@@ -166,7 +176,7 @@ try {
   if (-not (Test-Path $upstreamLicense -PathType Leaf)) { throw 'Pinned pg_jsonschema source LICENSE is missing' }
   Copy-Item $upstreamLicense (Join-Path $licenseDir 'pg_jsonschema.txt')
   $cargoMetadata = Join-Path $work 'cargo-metadata.json'
-  & cargo metadata --manifest-path (Join-Path $source 'Cargo.toml') --locked --format-version 1 --filter-platform x86_64-pc-windows-msvc --no-default-features --features pg18 | Set-Content -Encoding utf8 $cargoMetadata
+  & cargo metadata --manifest-path (Join-Path $source 'Cargo.toml') --locked --format-version 1 --filter-platform x86_64-pc-windows-msvc --no-default-features --features $pgFeature | Set-Content -Encoding utf8 $cargoMetadata
   if ($LASTEXITCODE -ne 0) { throw 'Could not resolve the locked Windows Cargo package inventory' }
   python (Join-Path $repo 'tools/inventory_cargo_licenses.py') $source $cargoMetadata (Join-Path $licenseDir 'pg_jsonschema-cargo-license-inventory.json') --package-root $payload --supplements (Join-Path $repo 'support/evidence/pg-jsonschema-crate-licenses-2026-10-18')
   if ($LASTEXITCODE -ne 0) { throw 'Could not create the project-named Cargo licence inventory' }
@@ -177,7 +187,7 @@ try {
     postgresql_version = $pgVersion; platform = 'windows'; architecture = 'x86_64'
     source = @{ url = 'https://github.com/supabase/pg_jsonschema.git'; commit = $actualCommit; cargo_lock_sha256 = $cargoLockSha256 }
     core_archive = @{ basename = $coreName; sha256 = $coreSha256 }
-    release_eligible = $false; core_status = 'current-profile-core-redistribution-pending'
+    release_eligible = $false; core_status = $coreIdentity.status
   }
   $metadata | ConvertTo-Json -Depth 8 | Set-Content -Encoding utf8 (Join-Path $stage 'metadata.json')
   & tar.exe -czf $extensionArchive -C $stage pg_jsonschema metadata.json

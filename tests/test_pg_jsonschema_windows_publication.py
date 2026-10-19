@@ -26,11 +26,24 @@ class PgJsonschemaWindowsArchiveTests(unittest.TestCase):
         self.extension = self.root / (
             f"pg_jsonschema-0.3.4-postgresql-18.6-{publication.PLATFORM}.tar.gz")
 
-    def test_candidate_pins_current_core_identity(self):
-        script = Path("scripts/pg_jsonschema/windows-feasibility.ps1").read_text()
-        workflow = Path(".github/workflows/pg-jsonschema-windows-publication.yml").read_text()
-        self.assertIn("windows_core_pin.py", script)
-        self.assertIn("run-id: ${{ steps.core_pin.outputs.run_id }}", workflow)
+    def test_metadata_validation_uses_selected_core_target(self):
+        target = publication.load_core_identity("17.11")
+        metadata = {
+            "project": "pg_jsonschema", "version": "0.3.4", "sql_names": ["pg_jsonschema"],
+            "postgresql_version": "17.11", "platform": "windows", "architecture": "x86_64",
+            "source": {"url": publication.SOURCE_URL, "commit": publication.SOURCE_COMMIT,
+                       "cargo_lock_sha256": publication.CARGO_LOCK_SHA256},
+            "core_archive": {"basename": "postgresql-17.11-windows-x86_64.tar.gz",
+                             "sha256": target["sha256"]},
+            "release_eligible": False, "core_status": target["status"],
+        }
+        path = self.root / "selected-metadata.tar.gz"
+        self._tar(path, [("metadata.json", json.dumps(metadata))])
+        publication._metadata(path, "17.11", target)
+        metadata["postgresql_version"] = "18.6"
+        self._tar(path, [("metadata.json", json.dumps(metadata))])
+        with self.assertRaisesRegex(Exception, "pinned publication target"):
+            publication._metadata(path, "17.11", target)
 
     @staticmethod
     def _tar(path, entries):
@@ -134,6 +147,41 @@ class PgJsonschemaWindowsArchiveTests(unittest.TestCase):
             with self.assertRaisesRegex(Exception, "licence inventory"):
                 checker.inspect(self.core, self.extension, self.root / "report.json")
 
+    def test_selected_profiles_emit_and_import_incomplete_attempts(self):
+        for index, version in enumerate(("15.19", "16.15", "17.11", "18.6"), start=1):
+            repo = self.root / version
+            profile_id = f"pg-jsonschema-publication-windows-x86_64-{version}"
+            for relative in ("support.json", "support/verification-profiles.json",
+                             "support/postgresql-releases.json"):
+                destination = repo / relative
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copyfile(relative, destination)
+            profiles = json.loads((repo / "support/verification-profiles.json").read_text())["profiles"]
+            for relative in profiles[profile_id]["sources"]:
+                source, destination = Path(relative), repo / relative
+                destination.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copyfile(source, destination)
+
+            core_dir, archives, output = repo / "core", repo / "archives", repo / "output"
+            core_dir.mkdir()
+            archives.mkdir()
+            identity_path = repo / f"support/windows-core-pins/{version}-x86_64.json"
+            paths = publication.emit(
+                repo, core_dir, archives, output,
+                {"archive-suite": "failure", "static-analysis": "skipped"},
+                "10.0.20348.0", "windows-2022/test-image",
+                {"GITHUB_SHA": "a" * 40, "GITHUB_RUN_ID": str(100 + index),
+                 "GITHUB_REPOSITORY": "owner/repo", "GITHUB_SERVER_URL": "https://github.com"},
+                postgresql_version=version, core_identity_path=identity_path)
+            attempt = json.loads((output / "publication/attempt.json").read_text())
+            self.assertEqual(attempt["profile_id"], profile_id)
+            self.assertEqual(attempt["postgresql_version"], version)
+            self.assertEqual(paths, [output / "publication/attempt.json"])
+            imported = importer.import_run(repo, core_dir, output, str(100 + index), version, identity_path)
+            retained = repo / "support/evidence" / f"pg_jsonschema-windows-publication-{100 + index}/x86_64/attempt.json"
+            self.assertTrue(retained.is_file())
+            self.assertIn(str(retained.relative_to(repo)), imported)
+
     def test_importer_persists_validated_record_to_verification_directory(self):
         repo = self.root / "repo"
         for relative in ("support.json", "support/verification-profiles.json",
@@ -158,9 +206,13 @@ class PgJsonschemaWindowsArchiveTests(unittest.TestCase):
             Path(str(archive) + ".sha256").write_text(f"{digest}  {archive.name}\n")
         (output / "probe-output.txt").parent.mkdir(parents=True, exist_ok=True)
         (output / "probe-output.txt").write_text("CREATE EXTENSION pg_jsonschema\n")
+        (output / "first-run-probe-output.txt").write_text("CREATE EXTENSION pg_jsonschema\n")
         pe_report = output / "pe-dependency-analysis.json"
         pe_report.write_text(json.dumps({"outcome": "passed", "inspected_files": [
-            "pg_jsonschema/lib/pg_jsonschema.dll"]}))
+            "lib/pg_jsonschema.dll"], "archives": [
+                {"basename": self.core.name, "sha256": core_hash},
+                {"basename": self.extension.name, "sha256": extension_hash},
+            ]}))
         static = {
             "passed": True, "architecture": publication.ARCHITECTURE,
             "archives": {self.core.name: core_hash, self.extension.name: extension_hash},

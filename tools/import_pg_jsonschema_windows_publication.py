@@ -9,6 +9,7 @@ import sys
 
 import coverage
 import emit_pg_jsonschema_windows_publication as publication
+from windows_core_pin import PG_VERSIONS
 
 MAX_EVIDENCE_BYTES = 1024 * 1024
 
@@ -35,13 +36,18 @@ def _copy(copies):
         shutil.copyfile(source, destination)
 
 
-def import_run(root, core_artifact, extension_artifact, run_id):
+def import_run(root, core_artifact, extension_artifact, run_id,
+               postgresql_version=publication.PG_VERSION, core_identity_path=None):
     root, core_artifact, extension_artifact = map(Path, (root, core_artifact, extension_artifact))
     run_id = str(run_id)
     if not run_id.isdigit():
         raise coverage.CoverageError("run_id must be numeric")
+    if postgresql_version not in PG_VERSIONS:
+        raise coverage.CoverageError("unsupported Windows PostgreSQL target")
+    identity = publication.load_core_identity(postgresql_version, core_identity_path)
+    profile_id = f"pg-jsonschema-publication-windows-x86_64-{postgresql_version}"
     support = coverage.load_json(root / "support.json")
-    profile = coverage.verification_profile(root, publication.PROFILE_ID)
+    profile = coverage.verification_profile(root, profile_id)
     if (profile["scope"] != "publication" or profile["platforms"] != [publication.PLATFORM]
             or profile["case_ids"] != sorted(publication.CASES)):
         raise coverage.CoverageError("registered profile does not match the scoped pg_jsonschema target")
@@ -49,12 +55,12 @@ def import_run(root, core_artifact, extension_artifact, run_id):
     attempt_path = pub / "attempt.json"
     attempt = _read(attempt_path)
     if (attempt.get("schema_version") != 1 or str(attempt.get("run_id")) != run_id
-            or attempt.get("profile_id") != publication.PROFILE_ID
+            or attempt.get("profile_id") != profile_id
             or attempt.get("architecture") != publication.ARCHITECTURE
-            or attempt.get("postgresql_version") != publication.PG_VERSION
+            or attempt.get("postgresql_version") != postgresql_version
             or attempt.get("pg_jsonschema_version") != publication.PG_JSONSCHEMA_VERSION
             or attempt.get("release_eligible") is not False
-            or attempt.get("core_status") != publication.CORE_STATUS
+            or attempt.get("core_status") != identity["status"]
             or not coverage.REVISION.fullmatch(str(attempt.get("source_revision", "")))):
         raise coverage.CoverageError("raw attempt identity does not match the requested run and profile")
     raw_steps = attempt.get("steps")
@@ -66,28 +72,33 @@ def import_run(root, core_artifact, extension_artifact, run_id):
     evidence = root / "support/evidence" / f"pg_jsonschema-windows-publication-{run_id}" / publication.ARCHITECTURE
     copies = []
     _retain(attempt_path, evidence / "attempt.json", copies)
-    core_name = f"postgresql-{publication.PG_VERSION}-{publication.PLATFORM}.tar.gz"
-    extension_name = f"pg_jsonschema-{publication.PG_JSONSCHEMA_VERSION}-postgresql-{publication.PG_VERSION}-{publication.PLATFORM}.tar.gz"
+    _copy(copies)
+    retained = [str((evidence / "attempt.json").relative_to(root))]
+    copies = []
+    core_name = f"postgresql-{postgresql_version}-{publication.PLATFORM}.tar.gz"
+    extension_name = f"pg_jsonschema-{publication.PG_JSONSCHEMA_VERSION}-postgresql-{postgresql_version}-{publication.PLATFORM}.tar.gz"
     core_archive, extension_archive = core_artifact / core_name, extension_artifact / extension_name
     receipt_path = pub / "current-receipt.json"
     record_paths = sorted((pub / "records").glob("*.json"))
     if not core_archive.is_file() or not extension_archive.is_file():
         if receipt_path.exists() or record_paths:
             raise coverage.CoverageError("archive-bound receipt or record exists without both archives")
-        for name in ("static-analysis.json", "probe-output.txt", "prerequisite-output.txt"):
+        for name in ("static-analysis.json", "probe-output.txt", "prerequisite-output.txt",
+                     "first-run-probe-output.txt", "failure.txt", "windows-build.log",
+                     "build-identity.txt", "server.log", "first-run-server.log"):
             source = extension_artifact / name
-            if source.is_file():
+            if source.is_file() and source.stat().st_size <= MAX_EVIDENCE_BYTES:
                 _retain(source, evidence / name, copies)
         _copy(copies)
-        return [str(dest.relative_to(root)) for _, dest in copies]
+        return retained + [str(dest.relative_to(root)) for _, dest in copies]
 
     digests = {core_name: publication.sha256_file(core_archive),
                extension_name: publication.sha256_file(extension_archive)}
     for archive in (core_archive, extension_archive):
         publication._sidecar(archive, digests[archive.name])
-    if digests[core_name] != publication.CORE_SHA256:
-        raise coverage.CoverageError("core archive does not match the pinned PostgreSQL 18.6 artifact")
-    publication._metadata(extension_archive)
+    if digests[core_name] != identity["sha256"]:
+        raise coverage.CoverageError("core archive does not match the selected Windows PostgreSQL artifact")
+    publication._metadata(extension_archive, postgresql_version, identity)
     if attempt.get("archives") != digests:
         raise coverage.CoverageError("raw attempt archive hashes differ from final archive bytes")
     if not receipt_path.is_file():
@@ -95,13 +106,13 @@ def import_run(root, core_artifact, extension_artifact, run_id):
     receipt = _read(receipt_path)
     ci = receipt.get("ci")
     expected_receipt = {
-        "schema_version": 1, "profile_id": publication.PROFILE_ID,
+        "schema_version": 1, "profile_id": profile_id,
         "profile_revision": profile["profile_revision"], "test_revision": attempt["source_revision"],
         "project": "pg_jsonschema", "version": publication.PG_JSONSCHEMA_VERSION,
-        "postgresql_version": publication.PG_VERSION, "architecture": publication.ARCHITECTURE,
+        "postgresql_version": postgresql_version, "architecture": publication.ARCHITECTURE,
         "platform": publication.PLATFORM, "endpoint": "current", "case_results": results,
         "archives": digests, "extension_archive": extension_name,
-        "release_eligible": False, "core_status": publication.CORE_STATUS,
+        "release_eligible": False, "core_status": identity["status"],
     }
     if any(receipt.get(key) != value for key, value in expected_receipt.items()):
         raise coverage.CoverageError("receipt identity or archive hashes differ from the raw attempt")
@@ -120,6 +131,7 @@ def import_run(root, core_artifact, extension_artifact, run_id):
         raise coverage.CoverageError("receipt environment or static-check profile is incomplete")
     report_sources = {"static_analysis": extension_artifact / "static-analysis.json",
                       "probe_output": extension_artifact / "probe-output.txt",
+                      "first_run_probe_output": extension_artifact / "first-run-probe-output.txt",
                       "pe_dependency_analysis": extension_artifact / "pe-dependency-analysis.json"}
     expected_reports = {}
     for key, source in report_sources.items():
@@ -130,12 +142,21 @@ def import_run(root, core_artifact, extension_artifact, run_id):
     static_path = extension_artifact / "static-analysis.json"
     if results["static-analysis"] == "passed":
         static = _read(static_path)
+        pe_report = _read(extension_artifact / "pe-dependency-analysis.json")
         if (static.get("passed") is not True or static.get("archives") != digests
                 or static.get("native_extension_files") != ["pg_jsonschema/lib/pg_jsonschema.dll"]
                 or not static.get("inspected_files")
                 or static.get("pe_dependency_analysis_sha256") !=
-                publication.sha256_file(extension_artifact / "pe-dependency-analysis.json")):
+                publication.sha256_file(extension_artifact / "pe-dependency-analysis.json")
+                or pe_report.get("outcome") != "passed"
+                or {item.get("basename"): item.get("sha256") for item in pe_report.get("archives", [])
+                    if isinstance(item, dict)} != digests
+                or "lib/pg_jsonschema.dll" not in pe_report.get("inspected_files", [])):
             raise coverage.CoverageError("static-analysis report does not cover the final archives")
+    if results["archive-suite"] == "passed":
+        probe = extension_artifact / "probe-output.txt"
+        if not probe.is_file() or "pg_jsonschema" not in probe.read_text(encoding="utf-8"):
+            raise coverage.CoverageError("archive-suite output does not identify the installed extension")
     if len(record_paths) != 1:
         raise coverage.CoverageError("expected exactly one pg_jsonschema publication record")
     record_path = record_paths[0]
@@ -143,17 +164,17 @@ def import_run(root, core_artifact, extension_artifact, run_id):
     coverage.validate_verification_record(record, support, root)
     outcome = "failed" if "failed" in results.values() else "skipped" if "skipped" in results.values() else "passed"
     expected_record = {
-        "profile_id": publication.PROFILE_ID, "component": "pg_jsonschema", "project": "pg_jsonschema",
-        "version": publication.PG_JSONSCHEMA_VERSION, "postgresql_version": publication.PG_VERSION,
+        "profile_id": profile_id, "component": "pg_jsonschema", "project": "pg_jsonschema",
+        "version": publication.PG_JSONSCHEMA_VERSION, "postgresql_version": postgresql_version,
         "platform": publication.PLATFORM, "case_results": results, "outcome": outcome,
         "test_cases": profile["case_ids"], "ci": ci, "test_revision": attempt["source_revision"],
         "sha256": digests[extension_name],
-        "assembled_core": {"archive": core_name, "sha256": digests[core_name], "version": publication.PG_VERSION},
+        "assembled_core": {"archive": core_name, "sha256": digests[core_name], "version": postgresql_version},
         "prerequisite_archives": [], "release_eligible": False,
-        "core_status": publication.CORE_STATUS,
+        "core_status": identity["status"],
     }
     if (any(record.get(key) != value for key, value in expected_record.items())
-            or record_path.name != f"pg_jsonschema-{publication.PG_JSONSCHEMA_VERSION}-postgresql-{publication.PG_VERSION}-{publication.PLATFORM}-current-{run_id}.json"
+            or record_path.name != f"pg_jsonschema-{publication.PG_JSONSCHEMA_VERSION}-postgresql-{postgresql_version}-{publication.PLATFORM}-current-{run_id}.json"
             or record.get("environment", {}).get("clean_system") is not True
             or record.get("environment", {}).get("endpoint") != "current"
             or any(record.get("environment", {}).get(key) != receipt["environment"].get(key)
@@ -162,6 +183,8 @@ def import_run(root, core_artifact, extension_artifact, run_id):
             or record.get("environment", {}).get("dependency_checks_passed") != receipt.get("dependency_checks_passed")):
         raise coverage.CoverageError("record identity, archive or environment differs from receipt")
     for source in (receipt_path, static_path, extension_artifact / "probe-output.txt",
+                   extension_artifact / "first-run-probe-output.txt",
+                   extension_artifact / "first-run-server.log",
                    extension_artifact / "pe-dependency-analysis.json", record_path):
         if source.is_file():
             destination = (evidence / "verification-record.json"
@@ -169,7 +192,7 @@ def import_run(root, core_artifact, extension_artifact, run_id):
             _retain(source, destination, copies)
     _retain(record_path, root / "support/verification" / record_path.name, copies)
     _copy(copies)
-    return [str(dest.relative_to(root)) for _, dest in copies]
+    return retained + [str(dest.relative_to(root)) for _, dest in copies]
 
 
 def main():
@@ -178,9 +201,12 @@ def main():
     parser.add_argument("--core-artifact", type=Path, required=True)
     parser.add_argument("--extension-artifact", type=Path, required=True)
     parser.add_argument("--run-id", required=True)
+    parser.add_argument("--postgresql-version", choices=PG_VERSIONS, default=publication.PG_VERSION)
+    parser.add_argument("--core-identity", type=Path)
     args = parser.parse_args()
     try:
-        print("\n".join(import_run(args.root, args.core_artifact, args.extension_artifact, args.run_id)))
+        print("\n".join(import_run(args.root, args.core_artifact, args.extension_artifact, args.run_id,
+                                   args.postgresql_version, args.core_identity)))
         return 0
     except (coverage.CoverageError, OSError, ValueError, TypeError, KeyError) as exc:
         print(f"pg_jsonschema Windows publication import: {exc}", file=sys.stderr)
