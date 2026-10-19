@@ -1,0 +1,52 @@
+{
+  "architecture": "arm64",
+  "archives": {
+    "address-standardizer-3.7.0-postgresql-18.6-linux-arm64.tar.gz": "7a868a7ea07b21180c5ffefa80345e2a2cc5d35acb6375103d0a402513bb8841",
+    "postgresql-18.6-linux-arm64.tar.gz": "f8c6d739ea02af334131afc11e5d51d9206d89d0196b6154dd67aee982a69c2e"
+  },
+  "case_results": {
+    "archive-suite": "passed",
+    "elf-closure": "passed"
+  },
+  "ci": {
+    "build_revision": "be9fde4549baa01238d5470b4a39493ecd7aaa93",
+    "provider": "github-actions",
+    "run_id": "39255542985",
+    "run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/39255542985",
+    "source_revision": "be9fde4549baa01238d5470b4a39493ecd7aaa93",
+    "test_revision": "be9fde4549baa01238d5470b4a39493ecd7aaa93"
+  },
+  "clean_system": true,
+  "dependency_check_profile": "linux-elf-alpine-relocation-v1",
+  "dependency_checks_passed": true,
+  "endpoint": "current",
+  "environment": {
+    "architecture": "arm64",
+    "clean_system": true,
+    "dependency_check_profile": "linux-elf-alpine-relocation-v1",
+    "dependency_checks_passed": true,
+    "distribution": "Alpine Linux 3.22",
+    "endpoint": "current",
+    "image_id": "sha256:f3d85566ffde471c01cf0dc5a9828446506164503ed0060d220123bf0f4e39a8",
+    "os": "linux",
+    "os_version": "6.17.0"
+  },
+  "extension_archive": "address-standardizer-3.7.0-postgresql-18.6-linux-arm64.tar.gz",
+  "platform": "linux-arm64",
+  "postgresql_version": "18.6",
+  "profile_id": "address-standardizer-publication-linux-arm64-18.6",
+  "profile_revision": "760f9655dac4fbfd42be1deac1164894fb4192bff0cd28d8b137788264200f1a",
+  "project": "Address Standardizer",
+  "redistribution_status": "pending-human-review-of-upstream-only-source-and-runtime-load-path-policy",
+  "release_eligible": false,
+  "reports": {
+    "address_standardizer_license": "70a4997d7edd308495346ba51bcf472b1abbe0dbabe8b42bd91ae0b0fa0053c5",
+    "build_evidence": "4408d1949c34466da27e91284f0c7dc170c758be42c80321cce47353b42f8293",
+    "core_resolution": "ad4b5e9d4d24bfbaa8fe0df3a76c3149f4368346f823a9632439d213201fc018",
+    "elf_closure": "2c083e2bd890206ae12aed23c9c38b6c3d12bd3f58b31b301bd8767a7aa57191",
+    "pcre2_license": "99272c55f3dcfa07a8a7e15a5c1a33096e4727de74241d65fa049fccfdd59507"
+  },
+  "schema_version": 1,
+  "test_revision": "be9fde4549baa01238d5470b4a39493ecd7aaa93",
+  "version": "3.7.0"
+}

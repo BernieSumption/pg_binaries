@@ -1,0 +1,37 @@
+{
+  "architecture": "arm64",
+  "archives": {
+    "address-standardizer-3.7.0-postgresql-16.15-linux-arm64.tar.gz": "e83b88a56e2d278ca1aa739ad90560b3143d924445f1cf04c0c0c19f69cbebbd",
+    "postgresql-16.15-linux-arm64.tar.gz": "bd3ad2a30bb18e934ba8ccd125833663e5b8be52b5b3356f53e59134d056d9ef"
+  },
+  "archives_present": {
+    "address-standardizer-3.7.0-postgresql-16.15-linux-arm64.tar.gz": true,
+    "postgresql-16.15-linux-arm64.tar.gz": true
+  },
+  "core_run_id": "39255682572",
+  "postgresql_version": "16.15",
+  "profile_id": "address-standardizer-publication-linux-arm64-16.15",
+  "redistribution_status": "pending-human-review-of-upstream-only-source-and-runtime-load-path-policy",
+  "release_eligible": false,
+  "reports": {
+    "address_standardizer_license": "70a4997d7edd308495346ba51bcf472b1abbe0dbabe8b42bd91ae0b0fa0053c5",
+    "build_evidence": "9352c64461a5643197504f43e783ce8de1622963ed6e6c06e54fac0e91713335",
+    "core_resolution": "c9b50781dc88d8f261807d93a9800e3e585b678fcbb336bcd0aa510daff9f3b6",
+    "elf_closure": "886248672268f0dfa727dc337c3a72d721fb30da4f46bf909dcf09da8bb97ac0",
+    "pcre2_license": "99272c55f3dcfa07a8a7e15a5c1a33096e4727de74241d65fa049fccfdd59507",
+    "probe_output": "3b5b217bc3696e0c652002ccda949ef61f9ab0f4abce68790a110f1b6b391cea"
+  },
+  "run_id": "39255682572",
+  "schema_version": 1,
+  "source_revision": "be9fde4549baa01238d5470b4a39493ecd7aaa93",
+  "steps": {
+    "archive-suite": "success",
+    "elf-closure": "success"
+  },
+  "version": "3.7.0",
+  "workflow_steps": {
+    "build": "success",
+    "core_resolution": "success",
+    "verify": "success"
+  }
+}
