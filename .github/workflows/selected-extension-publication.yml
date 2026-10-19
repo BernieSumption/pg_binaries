@@ -1,6 +1,11 @@
 name: Selected extension publication
 
 on:
+  push:
+    branches: [spike]
+    paths:
+      - 'experiments/selected-extension-dispatch-trial/target.json'
+      - '.github/workflows/selected-extension-publication.yml'
   workflow_call:
     inputs:
       project:
@@ -67,6 +72,7 @@ jobs:
       - name: Resolve the declared target and its work prerequisites
         id: select
         env:
+          EVENT_NAME: ${{ github.event_name }}
           REQUEST_PROJECT: ${{ inputs.project }}
           REQUEST_VERSION: ${{ inputs.extension_version }}
           REQUEST_POSTGRESQL_VERSION: ${{ inputs.postgresql_version }}
@@ -79,13 +85,17 @@ jobs:
           import os
           import sys
 
-          request = {
-              "project": os.environ["REQUEST_PROJECT"],
-              "version": os.environ["REQUEST_VERSION"],
-              "postgresql_version": os.environ["REQUEST_POSTGRESQL_VERSION"],
-              "platform": os.environ["REQUEST_PLATFORM"],
-              "retry": os.environ["REQUEST_RETRY"].lower() == "true",
-          }
+          if os.environ["EVENT_NAME"] == "push":
+              with open("experiments/selected-extension-dispatch-trial/target.json", encoding="utf-8") as source:
+                  request = json.load(source)
+          else:
+              request = {
+                  "project": os.environ["REQUEST_PROJECT"],
+                  "version": os.environ["REQUEST_VERSION"],
+                  "postgresql_version": os.environ["REQUEST_POSTGRESQL_VERSION"],
+                  "platform": os.environ["REQUEST_PLATFORM"],
+                  "retry": os.environ["REQUEST_RETRY"].lower() == "true",
+              }
           with open(sys.argv[1], "w", encoding="utf-8") as output:
               json.dump(request, output)
           PY

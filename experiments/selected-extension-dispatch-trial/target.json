@@ -1,0 +1,7 @@
+{
+  "project": "HypoPG",
+  "version": "1.4.3",
+  "postgresql_version": "17.11",
+  "platform": "linux-x86_64",
+  "retry": true
+}
