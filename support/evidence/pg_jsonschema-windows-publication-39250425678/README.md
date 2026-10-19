@@ -1,0 +1,5 @@
+# Windows pg_jsonschema selected-target run 39250425678
+
+[Run 39250425678](https://github.com/BernieSumption/pg_binaries/actions/runs/39250425678) at revision `3bde86d34a6157489ea7d26c4df8629feea39c48` built pg_jsonschema 0.3.4 for PostgreSQL 17.11 on Windows x86-64. The fresh Windows runner passed the archive suite and static analysis. Both cases covered the same core archive (`c729d030546991367165f94286bd8a88f2e5f29b1001efd1c21c10502ed6f0e5`) and extension archive (`a94cdb8011e22b402c7eb0f279a69e325785536ff3f283d467078b268bba898a`). The result remains ineligible for release because the selected PostgreSQL core status is `current-profile-core-redistribution-pending`.
+
+The retained reports and verification record were imported from the run's verification artifact and matched byte-for-byte. The registered profile revision `f1a6b3362f26d1b7f67ac2342a33ab09f1b25cd0d5e7ab425ab6dddad01cf68f` matches the receipt. The workflow's final gate passed after requiring successful build, fresh-runner download, archive suite, static analysis, emission and import steps.
