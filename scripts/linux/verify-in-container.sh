@@ -163,8 +163,15 @@ fi
 pgroot=/tmp/first/postgresql
 if [[ $verify_mode == full ]]; then
   extroot=/tmp/vector/pgvector
+  python3 /usr/local/bin/linux-assembly-inventory \
+    --core-archive "/out/$pg" --extension-archive "/out/$vector" \
+    --postgresql-version "$pg_version" --extension-version "$vector_version" \
+    --platform "linux-$architecture" --output /tmp/assembly-inventory.json
   runuser -u postgres -- python3 /usr/local/bin/stage-extension-archive \
-    --merge-payload "$extroot" --prefix "$pgroot"
+    --inventory /tmp/assembly-inventory.json --support /verification/support.json \
+    --postgresql-version "$pg_version" --platform "linux-$architecture" \
+    --project pgvector --extension-version "$vector_version" --sql-name vector \
+    --archive-directory /out --prefix "$pgroot" --staging-root /tmp/extension-staging
   test -s "$pgroot/LICENSES/pgvector.txt"
   python3 /usr/local/bin/check-elf-dependencies "$pgroot" --architecture "$architecture" \
     --archive "/out/$pg" --archive "/out/$vector" --report /analysis/core-pgvector.json
