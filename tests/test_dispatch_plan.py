@@ -1,6 +1,10 @@
 import importlib.util
+import contextlib
+import hashlib
+import io
 import json
 import shutil
+import tarfile
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -80,6 +84,157 @@ class DispatchPlanTests(unittest.TestCase):
         snapshot.write_text(json.dumps(releases))
         (root / "inventory.json").write_text(json.dumps({"postgresql": {}, "extensions": {}}))
         return directory, root
+
+    @staticmethod
+    def input_identity(component):
+        payload = {"schema_version": 1, "component": component, "target": "test",
+                   "upstream_sources": {"source": "a"}, "dependencies": {"builder_image": "b"},
+                   "build_configuration": {"recipe": "c"}, "recipes": {}}
+        payload["sha256"] = hashlib.sha256(json.dumps(
+            payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()).hexdigest()
+        return payload
+
+    def candidate_fixture(self, root, *, mismatch=False):
+        cache = root / "cache"
+        cache.mkdir()
+        target = {"project": "HypoPG", "version": "1.4.3", "platform": "linux-x86_64",
+                  "postgresql_version": "17.11", "postgresql_major": 17}
+        core_identity = self.input_identity("postgresql")
+        extension_identity = self.input_identity("hypopg")
+        expected = {
+            ("postgresql", "17.11", "linux-x86_64"): core_identity,
+            ("HypoPG", "1.4.3", "linux-x86_64", 17): extension_identity,
+        }
+        rows = []
+        archive_data = {}
+        members = (
+            ("postgresql-17.11-linux-x86_64.tar.gz", "postgresql/manifest.json",
+             {"schema_version": 1, "component": "postgresql", "version": "17.11",
+              "postgresql_version": "17.11", "platform": "linux", "architecture": "x86_64",
+              "build_inputs": core_identity}, "postgresql", "17.11"),
+            ("hypopg-1.4.3-postgresql-17.11-linux-x86_64.tar.gz", "metadata.json",
+             {"project": "hypopg", "version": "1.4.3", "sql_names": ["hypopg"],
+              "postgresql_version": "17.11", "platform": "linux", "architecture": "x86_64",
+              "build_inputs": extension_identity}, "HypoPG", "1.4.3"),
+        )
+        for basename, member_name, metadata, project, version in members:
+            path = cache / basename
+            with tarfile.open(path, "w:gz") as archive:
+                payload = json.dumps(metadata).encode()
+                member = tarfile.TarInfo(member_name)
+                member.size = len(payload)
+                archive.addfile(member, io.BytesIO(payload))
+            digest = hashlib.sha256(path.read_bytes()).hexdigest()
+            archive_data[basename] = digest
+            row = {"component": "postgresql" if project == "postgresql" else "extension",
+                   "project": project, "version": version, "platform": "linux-x86_64",
+                   "postgresql_version": "17.11", "path": str(path), "sha256": digest,
+                   "source": {"provider": "github-actions", "run_id": "123456",
+                              "artifact_name": f"candidate-{basename}",
+                              "expires_at": "2099-01-01T00:00:00Z"}}
+            rows.append(row)
+
+        manifest = root / "cache/candidates.json"
+        manifest.write_text(json.dumps({"schema_version": 1, "archives": rows}))
+        if mismatch:
+            changed = self.input_identity("hypopg")
+            changed["build_configuration"]["recipe"] = "changed"
+            changed["sha256"] = hashlib.sha256(json.dumps(
+                {key: value for key, value in changed.items() if key != "sha256"},
+                sort_keys=True, separators=(",", ":"), ensure_ascii=False).encode()).hexdigest()
+            expected[("HypoPG", "1.4.3", "linux-x86_64", 17)] = changed
+
+        self.write_hypopg_records(root, archive_data)
+        return manifest, expected, {key: target[key] for key in
+                                    ("project", "version", "postgresql_version", "platform")}
+
+    @staticmethod
+    def write_hypopg_records(root, archive_data):
+        profile_dir = root / "support"
+        profile_dir.mkdir(exist_ok=True)
+        source = root / "tests/fixture.sql"
+        source.parent.mkdir(parents=True, exist_ok=True)
+        source.write_text("select 1;\n")
+        profiles = {"schema_version": 1, "profiles": {
+            profile_id: {"scope": "publication", "platforms": ["linux-x86_64"],
+                         "case_ids": ["archive-assembly"], "sources": ["tests/fixture.sql"]}
+            for profile_id in ("core-current", "hypopg-current")}}
+        (profile_dir / "verification-profiles.json").write_text(json.dumps(profiles))
+        revision = "a" * 40
+        rows = []
+        for component, version, profile_id, digest in (
+                ("postgresql", "17.11", "core-current", archive_data[
+                    "postgresql-17.11-linux-x86_64.tar.gz"]),
+                ("hypopg", "1.4.3", "hypopg-current", archive_data[
+                    "hypopg-1.4.3-postgresql-17.11-linux-x86_64.tar.gz"])):
+            profile = tool.extension_work_queue.coverage.verification_profile(root, profile_id)
+            row = {"schema_version": 2, "scope": "publication", "profile_id": profile_id,
+                   "profile_revision": profile["profile_revision"], "outcome": "passed",
+                   "case_results": {"archive-assembly": "passed"}, "sha256": digest,
+                   "component": component, "version": version, "platform": "linux-x86_64",
+                   "postgresql_version": "17.11", "test_revision": revision,
+                   "test_cases": ["archive-assembly"],
+                   "environment": {"os": "linux", "architecture": "x86_64", "os_version": "1.0",
+                                   "clean_system": True, "endpoint": "current", "image_id": "test-image",
+                                   "dependency_check_profile": "test", "dependency_checks_passed": True}}
+            if component != "postgresql":
+                row["project"] = "HypoPG"
+                row["assembled_core"] = {"archive": "postgresql-17.11-linux-x86_64.tar.gz",
+                                          "version": "17.11",
+                                          "sha256": archive_data["postgresql-17.11-linux-x86_64.tar.gz"]}
+                row["prerequisite_archives"] = []
+            rows.append(row)
+        verification = root / "support/verification"
+        verification.mkdir(parents=True, exist_ok=True)
+        for index, row in enumerate(rows):
+            (verification / f"record-{index}.json").write_text(json.dumps(row))
+
+    def test_matching_candidate_queue_is_noop_and_is_passed_to_queue(self):
+        temp, root = self.fixture_root()
+        manifest, expected, request = self.candidate_fixture(root)
+        result = tool.resolve(root, request, manifest, expected)
+        self.assertFalse(result["should_dispatch"])
+        self.assertTrue(result["work_items"])
+        self.assertTrue(all(item["status"] == "complete" for item in result["work_items"]))
+        temp.cleanup()
+
+    def test_candidate_identity_mismatch_or_absent_manifest_keeps_dispatch_needed(self):
+        temp, root = self.fixture_root()
+        manifest, expected, request = self.candidate_fixture(root, mismatch=True)
+        mismatch = tool.resolve(root, request, manifest, expected)
+        self.assertTrue(mismatch["should_dispatch"])
+        self.assertTrue(any(item["status"] == "needed" for item in mismatch["work_items"]))
+        absent = tool.resolve(root, request)
+        self.assertTrue(absent["should_dispatch"])
+        self.assertTrue(any(item["status"] == "needed" for item in absent["work_items"]))
+        temp.cleanup()
+
+    def test_cli_loads_candidate_manifest_and_expected_build_inputs(self):
+        temp, root = self.fixture_root()
+        manifest, expected, request = self.candidate_fixture(root)
+        request_path = root / "request.json"
+        request_path.write_text(json.dumps(request))
+        inputs_path = root / "expected-build-inputs.json"
+        entries = []
+        for key, identity in expected.items():
+            if key[0] == "postgresql":
+                component, version, platform = key
+                entry = {"component": component, "version": version, "platform": platform,
+                         "identity": identity}
+            else:
+                project, version, platform, major = key
+                entry = {"project": project, "version": version, "platform": platform,
+                         "postgresql_major": major, "identity": identity}
+            entries.append(entry)
+        inputs_path.write_text(json.dumps({"schema_version": 1, "entries": entries}))
+        output = io.StringIO()
+        with contextlib.redirect_stdout(output):
+            code = tool.main(["--root", str(root), "--request", str(request_path),
+                              "--candidate-manifest", str(manifest),
+                              "--expected-build-inputs", str(inputs_path)])
+        self.assertEqual(code, 0)
+        self.assertFalse(json.loads(output.getvalue())["should_dispatch"])
+        temp.cleanup()
 
     def test_selects_one_declared_target_and_its_prerequisites(self):
         temp, root = self.fixture_root()

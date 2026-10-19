@@ -98,9 +98,9 @@ jobs:
         run: |
           set -euo pipefail
           sources=()
-          if [[ "$CALLER_WORKFLOW_REF" == */.github/workflows/planner-dispatch-trial.yml@* ]]; then
+          if [[ "$CALLER_WORKFLOW_REF" == */.github/workflows/selected-extension-publication.yml@* ]]; then
             sources+=(
-              planner-dispatch-trial.yml
+              selected-extension-publication.yml
               "hypopg-linux-$PG_VERSION-$PG_ARCHITECTURE-trial-{run_id}"
             )
           fi

@@ -24,7 +24,7 @@ RUNNERS = {
 REQUIRED = {"project", "version", "postgresql_version", "platform"}
 
 
-def resolve(root, request):
+def resolve(root, request, candidate_manifest=None, expected_build_inputs=None):
     """Resolve an exact request to all queue tasks needed to build and verify it."""
     if (not isinstance(request, dict) or not REQUIRED <= set(request)
             or set(request) - (REQUIRED | {"retry"})):
@@ -41,7 +41,7 @@ def resolve(root, request):
     if platform not in RUNNERS:
         raise ValueError(f"undeclared platform: {platform}")
 
-    queue = extension_work_queue.build_queue(root)
+    queue = extension_work_queue.build_queue(root, candidate_manifest, expected_build_inputs)
     target = {key: request[key] for key in REQUIRED}
     groups = [item for item in queue["work_items"]
               if item.get("kind") == "build-extension"
@@ -92,10 +92,17 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[1])
     parser.add_argument("--request", type=Path, required=True, help="one-target request JSON")
+    parser.add_argument("--candidate-manifest", type=Path,
+                        help="retrieved unpublished Actions archives eligible for reuse")
+    parser.add_argument("--expected-build-inputs", type=Path,
+                        help="current build-input identities for exact candidate targets")
     args = parser.parse_args(argv)
     try:
         request = json.loads(args.request.read_text(encoding="utf-8"))
-        print(json.dumps(resolve(args.root, request), indent=2, sort_keys=True))
+        expected_inputs = (extension_work_queue.load_expected_build_inputs(args.expected_build_inputs)
+                           if args.expected_build_inputs else None)
+        print(json.dumps(resolve(args.root, request, args.candidate_manifest, expected_inputs),
+                         indent=2, sort_keys=True))
         return 0
     except (OSError, json.JSONDecodeError, KeyError, TypeError, ValueError) as exc:
         print(f"dispatch-plan: error: {exc}", file=sys.stderr)
