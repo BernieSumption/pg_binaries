@@ -16,6 +16,7 @@ class SelectedExtensionWorkflowTests(unittest.TestCase):
         self.assertIn("python3 tools/dispatch_plan.py --request", DISPATCHER)
         self.assertIn("needs.plan.outputs.should_dispatch == 'true'", DISPATCHER)
         self.assertIn("uses: ./.github/workflows/hypopg-linux-selected-publication.yml", DISPATCHER)
+        self.assertIn("uses: ./.github/workflows/pgivm-linux-selected-publication.yml", DISPATCHER)
         self.assertIn("uses: ./.github/workflows/collection-macos-selected-publication.yml", DISPATCHER)
         self.assertIn("uses: ./.github/workflows/pgivm-macos-selected-publication.yml", DISPATCHER)
 

@@ -33,7 +33,6 @@ on:
       - 'tools/read_combined_verification_phases.py'
       - 'scripts/postgis/**'
       - 'scripts/tiger/**'
-      - 'scripts/pg_ivm/**'
       - 'scripts/pg_cron/**'
       - 'tools/import_linux_pgcron_publication.py'
       - 'tests/test_import_linux_pgcron_publication.py'
@@ -83,7 +82,6 @@ jobs:
             linux-publication-current-x86_64 linux-publication-current-arm64
             postgis-publication-current-x86_64 postgis-publication-current-arm64
             tiger-publication-current-x86_64 tiger-publication-current-arm64
-            pgivm-publication-current-x86_64 pgivm-publication-current-arm64
             pgcron-publication-current-x86_64 pgcron-publication-current-arm64
             collection-publication-current-x86_64 collection-publication-current-arm64
             pgaudit-publication-current-x86_64 pgaudit-publication-current-arm64
@@ -142,12 +140,6 @@ jobs:
         id: tiger_build
         run: bash scripts/tiger/build.sh "$RUNNER_TEMP/pilot" "$RUNNER_TEMP/tiger"
       # profile-section: archive-builds end
-      # profile-section: pgivm-build begin
-      - name: Build pg_ivm 1.16 against the selected PostgreSQL archive
-        if: ${{ always() && steps.build.outcome == 'success' && (startsWith(env.PG_VERSION, '15.') || startsWith(env.PG_VERSION, '16.') || startsWith(env.PG_VERSION, '17.') || startsWith(env.PG_VERSION, '18.')) }}
-        id: pgivm_build
-        run: PG_VERSION="$PG_VERSION" bash scripts/pg_ivm/build.sh "$RUNNER_TEMP/pilot" "$RUNNER_TEMP/pg_ivm"
-      # profile-section: pgivm-build end
       # profile-section: pgcron-build begin
       - name: Build pg_cron 1.6.8 against the selected PostgreSQL archive
         if: ${{ always() && steps.build.outcome == 'success' }}
@@ -189,12 +181,6 @@ jobs:
           outcomes=$(python3 tools/read_combined_verification_phases.py "${args[@]}")
           printf 'outcomes=%s\n' "$outcomes" >> "$GITHUB_OUTPUT"
       # profile-section: combined-current end
-      # profile-section: pgivm-verify begin
-      - name: Verify relocated pg_ivm 1.16 archive and runtime closure in Alpine 3.22
-        if: ${{ always() && steps.pgivm_build.outcome == 'success' }}
-        id: pgivm_verify
-        run: PG_VERSION="$PG_VERSION" bash scripts/pg_ivm/verify.sh "$RUNNER_TEMP/pilot" "$RUNNER_TEMP/pg_ivm"
-      # profile-section: pgivm-verify end
       # profile-section: pgcron-verify begin
       - name: Verify relocated pg_cron 1.6.8 archive and scheduled background-worker job in Alpine 3.22
         if: ${{ always() && steps.pgcron_build.outcome == 'success' }}
@@ -392,81 +378,6 @@ jobs:
             --prerequisite-archive "PostGIS=$postgis" \
             --receipt "$publication/current-receipt.json" --output "$publication/records"
       # profile-section: tiger-report end
-      # profile-section: pgivm-report begin
-      - name: Record pg_ivm publication outcomes and emit archive-bound evidence
-        if: ${{ always() && (startsWith(env.PG_VERSION, '15.') || startsWith(env.PG_VERSION, '16.') || startsWith(env.PG_VERSION, '17.') || startsWith(env.PG_VERSION, '18.')) }}
-        env:
-          CORE_BUILD_OUTCOME: ${{ steps.build.outcome }}
-          PGIVM_BUILD_OUTCOME: ${{ steps.pgivm_build.outcome }}
-          PGIVM_VERIFY_OUTCOME: ${{ steps.pgivm_verify.outcome }}
-        run: |
-          set -euo pipefail
-          publication="$RUNNER_TEMP/pgivm-publication"
-          mkdir -p "$publication"
-          image=$(docker image inspect --format '{{.Id}}' pg-binaries-pgivm-verifier 2>/dev/null || true)
-          if [[ ! "$image" =~ ^sha256:[0-9a-f]{64}$ ]]; then image=unknown; fi
-          IMAGE_ID="$image" python3 - "$publication/attempt.json" "$publication/current-steps.json" <<'PY'
-          import json
-          import os
-          import sys
-          from pathlib import Path
-
-          core = os.environ["CORE_BUILD_OUTCOME"]
-          build = os.environ["PGIVM_BUILD_OUTCOME"]
-          verify = os.environ["PGIVM_VERIFY_OUTCOME"]
-          image = os.environ["IMAGE_ID"]
-          suite = "failure" if "failure" in (build, verify) or (
-              build == verify == "success" and image == "unknown") else (
-              "success" if build == verify == "success" else "skipped")
-          attempt = {
-              "schema_version": 1,
-              "run_id": os.environ["GITHUB_RUN_ID"],
-              "source_revision": os.environ["GITHUB_SHA"],
-              "postgresql_version": os.environ["PG_VERSION"],
-              "pg_ivm_version": "1.16",
-              "architecture": os.environ["PG_ARCHITECTURE"],
-              "verifier_image_id": image,
-              "steps": {"core_build": core, "pgivm_build": build, "pgivm_verify": verify},
-          }
-          Path(sys.argv[1]).write_text(json.dumps(attempt, indent=2, sort_keys=True) + "\n",
-                                       encoding="utf-8")
-          Path(sys.argv[2]).write_text(json.dumps({"pgivm-archive-suite": suite}, sort_keys=True) + "\n",
-                                       encoding="utf-8")
-          PY
-          core="$RUNNER_TEMP/pilot/postgresql-$PG_VERSION-linux-$PG_ARCHITECTURE.tar.gz"
-          extension="$RUNNER_TEMP/pg_ivm/pg_ivm-1.16-postgresql-$PG_VERSION-linux-$PG_ARCHITECTURE.tar.gz"
-          if [[ ! -f "$core" || ! -f "$core.sha256" || ! -f "$extension" || ! -f "$extension.sha256" ]]; then
-            echo 'No pg_ivm publication receipt or record: exact core and extension archives with sidecars are required'
-            exit 0
-          fi
-          clean=false
-          dependencies=failure
-          if [[ "$(python3 -c 'import json,sys; print(next(iter(json.load(open(sys.argv[1])).values())) == "success")' "$publication/current-steps.json")" == True ]]; then
-            clean=true
-            dependencies=success
-          fi
-          distribution='Alpine Linux'
-          distribution_version=3.22
-          if [[ "$image" != unknown ]]; then
-            distribution=$(docker run --rm --platform "${{ matrix.docker_platform }}" \
-              --entrypoint sh pg-binaries-pgivm-verifier -c '. /etc/os-release; printf "%s" "$NAME"')
-            distribution_version=$(docker run --rm --platform "${{ matrix.docker_platform }}" \
-              --entrypoint sh pg-binaries-pgivm-verifier -c '. /etc/os-release; printf "%s" "$VERSION_ID"')
-          fi
-          python3 tools/create_extension_publication_receipt.py \
-            --archives "$RUNNER_TEMP/pg_ivm" --core-archives "$RUNNER_TEMP/pilot" \
-            --receipt "$publication/current-receipt.json" \
-            --profile-id "pgivm-publication-current-$PG_ARCHITECTURE" \
-            --project pg_ivm --version 1.16 --postgresql-version "$PG_VERSION" \
-            --architecture "$PG_ARCHITECTURE" --endpoint current \
-            --kernel-release "$(uname -r)" --distribution "$distribution" \
-            --distribution-version "$distribution_version" --image-id "$image" \
-            --dependency-check-result "$dependencies" --clean-system "$clean" \
-            --step-results "$publication/current-steps.json"
-          python3 tools/emit_extension_publication_records.py \
-            --archives "$RUNNER_TEMP/pg_ivm" --core-archives "$RUNNER_TEMP/pilot" \
-            --receipt "$publication/current-receipt.json" --output "$publication/records"
-      # profile-section: pgivm-report end
       # profile-section: pgcron-report begin
       - name: Record pg_cron publication outcomes and emit archive-bound evidence
         if: ${{ always() }}
@@ -703,17 +614,6 @@ jobs:
             ${{ runner.temp }}/pgaudit/*.sha256
             ${{ runner.temp }}/pgaudit/static-analysis/**
             ${{ runner.temp }}/pgaudit/pgaudit-publication/**
-          if-no-files-found: ignore
-          retention-days: 3
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: pgivm-publication-${{ matrix.architecture }}-evidence
-          path: |
-            ${{ runner.temp }}/pg_ivm/*.tar.gz
-            ${{ runner.temp }}/pg_ivm/*.sha256
-            ${{ runner.temp }}/pg_ivm/static-analysis/**
-            ${{ runner.temp }}/pgivm-publication/**
           if-no-files-found: ignore
           retention-days: 3
       - uses: actions/upload-artifact@v4

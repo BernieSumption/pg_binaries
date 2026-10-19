@@ -28,7 +28,9 @@ class LinuxPgivmPublicationImportTests(unittest.TestCase):
             shutil.copyfile(REPO / source, destination)
         profiles = coverage.load_json(self.root / "support/verification-profiles.json")["profiles"]
         source_paths = set()
-        for profile_id in ("pgivm-publication-current-x86_64", "pgivm-publication-current-arm64"):
+        for profile_id in ("pgivm-publication-linux-x86_64-15.19",
+                           "pgivm-publication-linux-x86_64-18.6",
+                           "pgivm-publication-linux-arm64-18.6"):
             source_paths.update(profiles[profile_id]["sources"])
         for profile_source in source_paths:
             source = profile_source.partition("#profile-section=")[0]
@@ -95,7 +97,7 @@ class LinuxPgivmPublicationImportTests(unittest.TestCase):
         self.publication = self.pgivm_artifact / "pgivm-publication"
         self.records_dir = self.publication / "records"
         self.records_dir.mkdir(parents=True, exist_ok=True)
-        profile_id = f"pgivm-publication-current-{self.architecture}"
+        profile_id = f"pgivm-publication-linux-{self.architecture}-{self.postgresql_version}"
         profile = coverage.verification_profile(self.root, profile_id)
         image = "sha256:" + "b" * 64
         step_outcomes = {
@@ -165,6 +167,21 @@ class LinuxPgivmPublicationImportTests(unittest.TestCase):
                     f"pg_ivm-1.16-postgresql-{version}-{self.platform}-current-{self.run_id}.json")
                 record = json.loads(record_path.read_text())
                 self.assertEqual(record["postgresql_version"], version)
+
+    def test_same_run_retains_each_postgresql_target_separately(self):
+        self._import()
+        shutil.rmtree(self.pgivm_artifact / "pgivm-publication")
+        shutil.rmtree(self.pgivm_dir / "static-analysis")
+        shutil.rmtree(self.core_dir)
+        for path in self.pgivm_dir.glob("*.tar.gz*"):
+            path.unlink()
+        self.postgresql_version = "15.19"
+        self._make_artifacts()
+        self._make_publication()
+        self._import()
+        evidence = self.root / "support/evidence" / f"pgivm-publication-{self.run_id}/x86_64"
+        self.assertTrue((evidence / "18.6/current-receipt.json").is_file())
+        self.assertTrue((evidence / "15.19/current-receipt.json").is_file())
 
     def test_retains_failed_and_skipped_archive_records_as_nonpassing(self):
         for result in ("failed", "skipped"):

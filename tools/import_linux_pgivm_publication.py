@@ -64,7 +64,7 @@ def import_run(root, core_artifact, pgivm_artifact, run_id, architecture,
         raise coverage.CoverageError(f"pg_ivm 1.16 does not support PostgreSQL {major}")
 
     platform = f"linux-{architecture}"
-    profile_id = f"pgivm-publication-current-{architecture}"
+    profile_id = f"pgivm-publication-linux-{architecture}-{postgresql_version}"
     profile = coverage.verification_profile(root, profile_id)
     if profile["scope"] != "publication" or platform not in profile["platforms"]:
         raise coverage.CoverageError("profile does not match the Linux publication platform")
@@ -73,7 +73,8 @@ def import_run(root, core_artifact, pgivm_artifact, run_id, architecture,
     extension_dir = pgivm_artifact / "pg_ivm"
     if not extension_dir.is_dir():
         extension_dir = pgivm_artifact
-    target = root / "support/evidence" / f"pgivm-publication-{run_id}" / architecture
+    target = (root / "support/evidence" / f"pgivm-publication-{run_id}"
+              / architecture / postgresql_version)
     steps_path = publication / "current-steps.json"
     attempt_path = publication / "attempt.json"
     steps = _steps(steps_path, profile)
