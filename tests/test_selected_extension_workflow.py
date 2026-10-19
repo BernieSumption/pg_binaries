@@ -6,6 +6,7 @@ import stat
 ROOT = Path(__file__).resolve().parents[1]
 DISPATCHER = (ROOT / ".github/workflows/selected-extension-publication.yml").read_text()
 HYPOPG = (ROOT / ".github/workflows/hypopg-linux-selected-publication.yml").read_text()
+PG_JSONSCHEMA_WINDOWS = (ROOT / ".github/workflows/pg-jsonschema-windows-selected-publication.yml").read_text()
 
 
 class SelectedExtensionWorkflowTests(unittest.TestCase):
@@ -53,6 +54,17 @@ class SelectedExtensionWorkflowTests(unittest.TestCase):
                 script = ROOT / f"scripts/{project}/{phase}.sh"
                 self.assertFalse(script.stat().st_mode & stat.S_IXUSR)
                 self.assertIn(f"bash scripts/{project}/{phase}.sh", workflow)
+
+    def test_pg_jsonschema_windows_workflow_uses_exact_inputs_and_selected_paths(self):
+        self.assertIn("workflow_dispatch:", PG_JSONSCHEMA_WINDOWS)
+        self.assertIn("workflow_call:", PG_JSONSCHEMA_WINDOWS)
+        self.assertNotIn("  push:", PG_JSONSCHEMA_WINDOWS)
+        self.assertNotIn("type: choice", PG_JSONSCHEMA_WINDOWS)
+        self.assertIn("POSTGRESQL_VERSION: ${{ inputs.postgresql_version }}", PG_JSONSCHEMA_WINDOWS)
+        self.assertIn("EXTENSION_VERSION: ${{ inputs.extension_version }}", PG_JSONSCHEMA_WINDOWS)
+        self.assertNotIn("currently supports extension version 0.3.4", PG_JSONSCHEMA_WINDOWS)
+        self.assertNotIn("'18.6'", PG_JSONSCHEMA_WINDOWS)
+        self.assertNotIn("pg_jsonschema-0.3.4-postgresql-", PG_JSONSCHEMA_WINDOWS)
 
 
 if __name__ == "__main__":

@@ -14,21 +14,13 @@ on:
   workflow_dispatch:
     inputs:
       postgresql_version:
-        description: Selected PostgreSQL release
+        description: Exact selected PostgreSQL release
         required: true
-        type: choice
-        options: ['15.19', '16.15', '17.11', '18.6']
-        default: '18.6'
+        type: string
       extension_version:
-        description: Selected pg_jsonschema release
+        description: Exact selected pg_jsonschema release
         required: true
-        type: choice
-        options: ['0.3.4']
-        default: '0.3.4'
-  push:
-    branches: [spike]
-    paths:
-      - '.github/workflows/pg-jsonschema-windows-selected-publication.yml'
+        type: string
 
 permissions:
   actions: read
@@ -45,10 +37,12 @@ jobs:
       - name: Validate selected extension support and resolve work
         id: plan
         env:
-          POSTGRESQL_VERSION: ${{ inputs.postgresql_version || '18.6' }}
-          EXTENSION_VERSION: ${{ inputs.extension_version || '0.3.4' }}
+          POSTGRESQL_VERSION: ${{ inputs.postgresql_version }}
+          EXTENSION_VERSION: ${{ inputs.extension_version }}
         run: |
           set -euo pipefail
+          test -n "$POSTGRESQL_VERSION"
+          test -n "$EXTENSION_VERSION"
           python3 tools/extension_archive_plan.py --project pg_jsonschema --platform windows-x86_64 --postgresql-version "$POSTGRESQL_VERSION" --extension-version "$EXTENSION_VERSION" --github-output "$GITHUB_OUTPUT"
           python3 tools/select_extension_work.py --project pg_jsonschema --version "$EXTENSION_VERSION" --platform windows-x86_64 --postgresql-version "$POSTGRESQL_VERSION" > "$RUNNER_TEMP/selected-work.json"
           python3 - "$POSTGRESQL_VERSION" <<'PY'
@@ -100,7 +94,7 @@ jobs:
           $archive = Join-Path $env:RUNNER_TEMP "core-archives/$archiveName"
           Copy-Item "dist/windows/$archiveName" $archive -Force
           Copy-Item "dist/windows/$archiveName.sha256" "$archive.sha256" -Force
-          $artifactName = "pg-jsonschema-0.3.4-postgresql-$env:PG_VERSION-windows-x86_64-candidate-$env:GITHUB_RUN_ID"
+          $artifactName = "pg-jsonschema-${{ needs.select.outputs.extension_version }}-postgresql-$env:PG_VERSION-windows-x86_64-candidate-$env:GITHUB_RUN_ID"
           python tools/windows_core_target_config.py --base-pin "support/windows-core-pins/$env:PG_VERSION-x86_64.json" --core-archive $archive --source-run-id $env:GITHUB_RUN_ID --source-run-attempt $env:GITHUB_RUN_ATTEMPT --source-artifact-name $artifactName --output (Join-Path $env:RUNNER_TEMP 'core-archives/candidate-target.json')
           if ($LASTEXITCODE -ne 0) { throw 'Generated core target identity validation failed.' }
       - name: Select core identity
@@ -122,7 +116,7 @@ jobs:
           $dir = Join-Path $env:RUNNER_TEMP 'pg-jsonschema-windows'
           $identity = Join-Path $env:RUNNER_TEMP 'core-archives/identity.json'
           $core = Join-Path $env:RUNNER_TEMP "core-archives/postgresql-${{ needs.select.outputs.postgresql_version }}-windows-x86_64.tar.gz"
-          $extension = Join-Path $dir "pg_jsonschema-0.3.4-postgresql-${{ needs.select.outputs.postgresql_version }}-windows-x86_64.tar.gz"
+          $extension = Join-Path $dir "pg_jsonschema-${{ needs.select.outputs.extension_version }}-postgresql-${{ needs.select.outputs.postgresql_version }}-windows-x86_64.tar.gz"
           python tools/check_pg_jsonschema_windows_archive.py --core-archive $core --extension-archive $extension --pe-report (Join-Path $dir 'pe-dependency-analysis.json') --output (Join-Path $dir 'static-analysis.json') --postgresql-version '${{ needs.select.outputs.postgresql_version }}' --core-identity $identity
           if ($LASTEXITCODE -ne 0) { throw 'Final archive structure or PE dependency inspection failed.' }
       - name: Upload candidate archive and attempt evidence
@@ -205,7 +199,7 @@ jobs:
           $extension = Join-Path $env:RUNNER_TEMP 'pg-jsonschema-windows'
           $identity = Join-Path $core 'identity.json'
           $coreArchive = Join-Path $core "postgresql-$env:PG_VERSION-windows-x86_64.tar.gz"
-          $extensionArchive = Join-Path $extension "pg_jsonschema-0.3.4-postgresql-$env:PG_VERSION-windows-x86_64.tar.gz"
+          $extensionArchive = Join-Path $extension "pg_jsonschema-${{ needs.select.outputs.extension_version }}-postgresql-$env:PG_VERSION-windows-x86_64.tar.gz"
           python tools/check_pg_jsonschema_windows_archive.py --core-archive $coreArchive --extension-archive $extensionArchive --pe-report (Join-Path $extension 'pe-dependency-analysis.json') --output (Join-Path $extension 'static-analysis.json') --postgresql-version $env:PG_VERSION --core-identity $identity
           if ($LASTEXITCODE -ne 0) { throw 'Fresh-runner archive structure or PE dependency inspection failed.' }
       - name: Emit archive-bound attempt and verification record
@@ -242,7 +236,7 @@ jobs:
             ${{ runner.temp }}/core-archives/**
             ${{ runner.temp }}/pg-jsonschema-windows/**
             support/evidence/pg_jsonschema-windows-publication-${{ github.run_id }}/**
-            support/verification/pg_jsonschema-0.3.4-postgresql-${{ needs.select.outputs.postgresql_version }}-windows-x86_64-current-${{ github.run_id }}.json
+            support/verification/pg_jsonschema-${{ needs.select.outputs.extension_version }}-postgresql-${{ needs.select.outputs.postgresql_version }}-windows-x86_64-current-${{ github.run_id }}.json
           if-no-files-found: warn
           retention-days: 7
       - name: Require fresh-runner archive verification to pass
