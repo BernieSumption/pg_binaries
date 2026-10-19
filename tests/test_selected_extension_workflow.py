@@ -1,3 +1,4 @@
+import json
 import unittest
 from pathlib import Path
 import stat
@@ -65,6 +66,15 @@ class SelectedExtensionWorkflowTests(unittest.TestCase):
         self.assertNotIn("currently supports extension version 0.3.4", PG_JSONSCHEMA_WINDOWS)
         self.assertNotIn("'18.6'", PG_JSONSCHEMA_WINDOWS)
         self.assertNotIn("pg_jsonschema-0.3.4-postgresql-", PG_JSONSCHEMA_WINDOWS)
+
+    def test_pg_jsonschema_windows_profiles_use_only_selected_workflow(self):
+        profiles = json.loads((ROOT / "support/verification-profiles.json").read_text())["profiles"]
+        for version in ("15.19", "16.15", "17.11", "18.6"):
+            sources = profiles[f"pg-jsonschema-publication-windows-x86_64-{version}"]["sources"]
+            self.assertIn(".github/workflows/pg-jsonschema-windows-selected-publication.yml", sources)
+            self.assertNotIn(".github/workflows/pg-jsonschema-windows-publication.yml", sources)
+        self.assertFalse((ROOT / ".github/workflows/pg-jsonschema-windows-publication.yml").exists())
+        self.assertFalse((ROOT / ".github/workflows/pg-jsonschema-windows-feasibility.yml").exists())
 
     def test_address_standardizer_linux_routes_both_architectures(self):
         for platform in ("linux-x86_64", "linux-arm64"):
