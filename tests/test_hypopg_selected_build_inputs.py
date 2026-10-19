@@ -66,6 +66,12 @@ class HypoPGSelectedBuildInputsTests(unittest.TestCase):
         recipe.write_text(recipe.read_text(encoding="utf-8") + "\n# changed\n", encoding="utf-8")
         self.assertNotEqual(first["sha256"], self.identity()["sha256"])
 
+    def test_probe_change_does_not_rebuild_unchanged_archive(self):
+        before = self.identity()
+        probe = self.root / "scripts/hypopg/probe.sql"
+        probe.write_text("-- changed probe\n", encoding="utf-8")
+        self.assertEqual(before, self.identity())
+
     def test_builder_base_pin_is_validated_and_bound_into_identity(self):
         first = self.identity()
         self.assertEqual(first["dependencies"]["builder_base"], {

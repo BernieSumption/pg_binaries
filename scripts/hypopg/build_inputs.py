@@ -21,7 +21,6 @@ RECIPE_FILES = (
     "scripts/hypopg/build.sh",
     "scripts/hypopg/build-in-container.sh",
     "scripts/hypopg/Dockerfile",
-    "scripts/hypopg/probe.sql",
     "scripts/hypopg/build_inputs.py",
     "tools/build_input_identity.py",
 )
