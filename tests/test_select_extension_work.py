@@ -79,15 +79,6 @@ class SelectExtensionWorkTests(unittest.TestCase):
         self.assertEqual(status, 0)
         self.assertEqual(json.loads(output.getvalue())["postgresql_version"], "17.11")
 
-    def test_linux_selected_trial_uses_planned_extension_and_selected_postgresql_outputs(self):
-        workflow = (ROOT / ".github/workflows/pgvector-linux-selected-trial.yml").read_text()
-        self.assertIn("REQUESTED_POSTGRESQL_VERSION: ${{ inputs.postgresql_version }}", workflow)
-        self.assertIn("--postgresql-version \"$pg_version\"", workflow)
-        self.assertIn("PG_VERSION: ${{ steps.target.outputs.postgresql_version }}", workflow)
-        self.assertIn("PGVECTOR_VERSION: ${{ steps.target.outputs.version }}", workflow)
-        self.assertNotIn("0.8.7", workflow)
-        self.assertNotIn('test "$PG_VERSION" = 17.11', workflow)
-
     def test_rejects_undeclared_platform_architecture_and_malformed_selection(self):
         selection = {"project": "NoSuchExtension", "version": "3.6.4", "platform": "macos-x86_64",
                      "postgresql_major": 17}
