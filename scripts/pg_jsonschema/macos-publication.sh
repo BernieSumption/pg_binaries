@@ -157,6 +157,28 @@ python3 "$repo/tools/inventory_cargo_licenses.py" --check-archive "$output/$exte
   --archive-inventory pg_jsonschema/LICENSES/pg_jsonschema-cargo-license-inventory.json
 (cd "$output" && shasum -a 256 "$extension_name" > "$extension_name.sha256")
 
+if [[ ${PG_JSONSCHEMA_BUILD_ONLY:-0} == 1 ]]; then
+  {
+    echo "pg_jsonschema_source_url=$source_url"
+    echo "pg_jsonschema_source_commit=$extension_commit"
+    echo "profile_id=$profile_id"
+    echo "cargo_lock_sha256=$cargo_lock_sha256"
+    echo "core_run_id=$core_run_id"
+    echo "core_build_id=$core_build_id"
+    echo "core_source_revision=$core_revision"
+    echo "core_sha256=$core_sha256"
+    echo "deployment_target=$deployment_target"
+    echo "macos_version=$(sw_vers -productVersion)"
+    echo "architecture=$(uname -m)"
+    echo "core_archive=$core_name"
+    rustc --version
+    cargo --version
+    "$prefix/bin/pg_config" --version
+  } > "$output/build-evidence.txt"
+  echo "PASS: pg_jsonschema $extension_version archive built against checked PostgreSQL $pg_version on macOS $architecture"
+  exit 0
+fi
+
 python3 - "$work/package" "$work/test-core" "$core_archives/$core_name" "$output/$extension_name" "$module_filename" <<'PY'
 import pathlib
 import sys

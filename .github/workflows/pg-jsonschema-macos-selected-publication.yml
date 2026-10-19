@@ -1,0 +1,241 @@
+name: pg_jsonschema selected macOS publication
+
+on:
+  workflow_call:
+    inputs:
+      postgresql_version:
+        description: Exact selected PostgreSQL release
+        required: true
+        type: string
+      extension_version:
+        description: Exact selected pg_jsonschema release
+        required: true
+        type: string
+      architecture:
+        description: Native macOS architecture
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      postgresql_version:
+        description: Exact selected PostgreSQL release
+        required: true
+        type: string
+      extension_version:
+        description: Exact selected pg_jsonschema release
+        required: true
+        type: string
+      architecture:
+        description: Native macOS architecture
+        required: true
+        type: choice
+        options: [arm64, x86_64]
+  push:
+    branches: [spike]
+    paths:
+      - 'experiments/pg-jsonschema-macos-selected-trial/target.json'
+      - '.github/workflows/pg-jsonschema-macos-selected-publication.yml'
+      - 'scripts/pg_jsonschema/macos-publication.sh'
+      - 'scripts/pg_jsonschema/verify-macos-publication.sh'
+      - 'scripts/pg_jsonschema/check_macos_static_analysis.py'
+      - 'tools/pg_jsonschema_macos_target.py'
+      - 'tools/pg_jsonschema_macos_targets/18.6-arm64.json'
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  select:
+    runs-on: ubuntu-latest
+    outputs:
+      target: ${{ steps.target.outputs.target }}
+      postgresql_version: ${{ steps.target.outputs.postgresql_version }}
+      extension_version: ${{ steps.target.outputs.extension_version }}
+      architecture: ${{ steps.target.outputs.architecture }}
+      platform: ${{ steps.target.outputs.platform }}
+      core_run_id: ${{ steps.target.outputs.core_run_id }}
+      core_archive: ${{ steps.target.outputs.core_archive }}
+      runner: ${{ steps.target.outputs.runner }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Resolve and validate the declared target
+        id: target
+        env:
+          POSTGRESQL_VERSION: ${{ inputs.postgresql_version }}
+          EXTENSION_VERSION: ${{ inputs.extension_version }}
+          ARCHITECTURE: ${{ inputs.architecture }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$POSTGRESQL_VERSION" ]]; then
+            read -r POSTGRESQL_VERSION EXTENSION_VERSION ARCHITECTURE < <(python3 - <<'PYREQUEST'
+          import json
+          from pathlib import Path
+          request = json.loads(Path('experiments/pg-jsonschema-macos-selected-trial/target.json').read_text())
+          if set(request) != {'project', 'postgresql_version', 'extension_version', 'architecture'} or request['project'] != 'pg_jsonschema':
+              raise SystemExit('pilot request must identify one exact pg_jsonschema target')
+          print(request['postgresql_version'], request['extension_version'], request['architecture'])
+          PYREQUEST
+            )
+          fi
+          python3 tools/select_extension_work.py --project pg_jsonschema \
+            --version "$EXTENSION_VERSION" --platform "macos-$ARCHITECTURE" \
+            --postgresql-version "$POSTGRESQL_VERSION" > "$RUNNER_TEMP/selected-work.json"
+          target="tools/pg_jsonschema_macos_targets/${POSTGRESQL_VERSION}-${ARCHITECTURE}.json"
+          test -f "$target" || { echo 'The requested macOS target is not declared.' >&2; exit 1; }
+          python3 - "$target" "$POSTGRESQL_VERSION" "$EXTENSION_VERSION" "$ARCHITECTURE" <<'PY' >> "$GITHUB_OUTPUT"
+          import sys
+          from pathlib import Path
+          sys.path.insert(0, "tools")
+          from pg_jsonschema_macos_target import load_target
+          target = load_target(Path(sys.argv[1]))
+          expected = tuple(sys.argv[2:])
+          actual = (target.postgresql_version, target.extension_version, target.architecture)
+          if actual != expected:
+              raise SystemExit("validated target does not match all requested versions and architecture")
+          print(f"target={sys.argv[1]}")
+          print(f"postgresql_version={target.postgresql_version}")
+          print(f"extension_version={target.extension_version}")
+          print(f"architecture={target.architecture}")
+          print(f"platform={target.platform}")
+          print(f"core_run_id={target.core_run_id}")
+          print(f"core_archive={target.core_basename}")
+          print("runner=macos-15" if target.architecture == "arm64" else "runner=macos-15-intel")
+          PY
+
+  build:
+    needs: select
+    runs-on: ${{ needs.select.outputs.runner }}
+    timeout-minutes: 100
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.90.0
+      - name: Download the exact pinned PostgreSQL pilot archive
+        id: core
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.select.outputs.architecture == 'arm64' && 'macos-arm64-pilot-archives' || 'macos-pilot-archives' }}
+          run-id: ${{ needs.select.outputs.core_run_id }}
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/core-archives
+      - name: Build the final extension archive against the pinned core
+        id: package
+        if: always() && steps.core.outcome == 'success'
+        continue-on-error: true
+        env:
+          PG_JSONSCHEMA_BUILD_ONLY: '1'
+        run: |
+          set -o pipefail
+          mkdir -p "$RUNNER_TEMP/pg-jsonschema-macos"
+          cp '${{ needs.select.outputs.target }}' "$RUNNER_TEMP/pg-jsonschema-macos/target.json"
+          bash scripts/pg_jsonschema/macos-publication.sh \
+            "$RUNNER_TEMP/core-archives" "$RUNNER_TEMP/pg-jsonschema-macos" \
+            "$RUNNER_TEMP/pg-jsonschema-macos/target.json" 2>&1 \
+            | tee "$RUNNER_TEMP/pg-jsonschema-macos/build-log.txt"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pg-jsonschema-macos-${{ needs.select.outputs.postgresql_version }}-${{ needs.select.outputs.architecture }}-build-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/core-archives/**
+            ${{ runner.temp }}/pg-jsonschema-macos/**
+          if-no-files-found: warn
+          retention-days: 7
+      - name: Require the pinned core download and extension build to pass
+        if: always()
+        run: |
+          if [[ '${{ steps.core.outcome }}' != success || '${{ steps.package.outcome }}' != success ]]; then
+            echo 'The exact pinned core archive and extension build must both succeed.' >&2
+            exit 1
+          fi
+
+  verify:
+    needs: [select, build]
+    if: always() && needs.select.result == 'success'
+    runs-on: ${{ needs.select.outputs.runner }}
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download final archives from the build runner
+        id: download
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: pg-jsonschema-macos-${{ needs.select.outputs.postgresql_version }}-${{ needs.select.outputs.architecture }}-build-${{ github.run_id }}
+          path: ${{ runner.temp }}/pg-jsonschema-bundle
+      - name: Prepare verification directories
+        if: always()
+        run: |
+          mkdir -p "$RUNNER_TEMP/core-archives" "$RUNNER_TEMP/pg-jsonschema-macos"
+          if [[ -d "$RUNNER_TEMP/pg-jsonschema-bundle/core-archives" ]]; then cp -a "$RUNNER_TEMP/pg-jsonschema-bundle/core-archives/." "$RUNNER_TEMP/core-archives/"; fi
+          if [[ -d "$RUNNER_TEMP/pg-jsonschema-bundle/pg-jsonschema-macos" ]]; then cp -a "$RUNNER_TEMP/pg-jsonschema-bundle/pg-jsonschema-macos/." "$RUNNER_TEMP/pg-jsonschema-macos/"; fi
+          if [[ ! -f "$RUNNER_TEMP/pg-jsonschema-macos/target.json" ]]; then cp "${{ github.workspace }}/${{ needs.select.outputs.target }}" "$RUNNER_TEMP/pg-jsonschema-macos/target.json"; fi
+      - name: Assemble, relocate, probe and inspect the final archives
+        id: archive_suite
+        if: always() && steps.download.outcome == 'success'
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          bash scripts/pg_jsonschema/verify-macos-publication.sh \
+            "$RUNNER_TEMP/core-archives" "$RUNNER_TEMP/pg-jsonschema-macos" \
+            "$RUNNER_TEMP/pg-jsonschema-macos" "$RUNNER_TEMP/pg-jsonschema-macos/target.json" \
+            2>&1 | tee "$RUNNER_TEMP/pg-jsonschema-macos/verification-log.txt"
+      - name: Validate static analysis against the final archive bytes
+        id: static_analysis
+        if: always() && steps.download.outcome == 'success'
+        continue-on-error: true
+        env:
+          CORE_ARCHIVE: ${{ needs.select.outputs.core_archive }}
+        run: |
+          python3 scripts/pg_jsonschema/check_macos_static_analysis.py \
+            --target "$RUNNER_TEMP/pg-jsonschema-macos/target.json" \
+            --core-archive "$RUNNER_TEMP/core-archives/$CORE_ARCHIVE" \
+            --extension-archive "$RUNNER_TEMP/pg-jsonschema-macos/pg_jsonschema-${{ needs.select.outputs.extension_version }}-postgresql-${{ needs.select.outputs.postgresql_version }}-${{ needs.select.outputs.platform }}.tar.gz" \
+            --report "$RUNNER_TEMP/pg-jsonschema-macos/static-analysis.json"
+      - name: Emit candidate evidence even when verification failed
+        id: evidence
+        if: always()
+        continue-on-error: true
+        env:
+          ARCHIVE_SUITE_OUTCOME: ${{ steps.archive_suite.outcome }}
+          STATIC_ANALYSIS_OUTCOME: ${{ steps.static_analysis.outcome }}
+          GITHUB_SHA: ${{ github.sha }}
+        run: |
+          python3 tools/emit_pg_jsonschema_macos_publication.py \
+            --target "$RUNNER_TEMP/pg-jsonschema-macos/target.json" \
+            --core-archives "$RUNNER_TEMP/core-archives" \
+            --archives "$RUNNER_TEMP/pg-jsonschema-macos" \
+            --output "$RUNNER_TEMP/pg-jsonschema-macos" \
+            --os-version "$(sw_vers -productVersion)" \
+            --image-id "${ImageOS:-unknown}/${ImageVersion:-unknown}" \
+            --archive-suite-result "${ARCHIVE_SUITE_OUTCOME:-failure}" \
+            --static-analysis-result "${STATIC_ANALYSIS_OUTCOME:-failure}"
+      - name: Import retained evidence when an attempt was emitted
+        id: import
+        if: always()
+        continue-on-error: true
+        run: |
+          if [[ -f "$RUNNER_TEMP/pg-jsonschema-macos/publication/attempt.json" ]]; then
+            python3 tools/import_pg_jsonschema_macos_publication.py \
+              --target "$RUNNER_TEMP/pg-jsonschema-macos/target.json" \
+              --core-archives "$RUNNER_TEMP/core-archives" \
+              --archives "$RUNNER_TEMP/pg-jsonschema-macos" --run-id "$GITHUB_RUN_ID"
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pg-jsonschema-macos-${{ needs.select.outputs.postgresql_version }}-${{ needs.select.outputs.architecture }}-verification-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/pg-jsonschema-macos/**
+            support/evidence/pg-jsonschema-macos-publication-${{ github.run_id }}/**
+            support/verification/pg_jsonschema-${{ needs.select.outputs.extension_version }}-postgresql-${{ needs.select.outputs.postgresql_version }}-${{ needs.select.outputs.platform }}-current-${{ github.run_id }}.json
+          if-no-files-found: warn
+          retention-days: 7
+      - name: Require both fresh-runner verification cases to pass
+        if: always()
+        run: |
+          if [[ '${{ needs.build.result }}' != success || '${{ steps.download.outcome }}' != success || '${{ steps.archive_suite.outcome }}' != success || '${{ steps.static_analysis.outcome }}' != success || '${{ steps.evidence.outcome }}' != success || '${{ steps.import.outcome }}' != success ]]; then
+            echo 'The build and both fresh-runner verification cases must pass.' >&2
+            exit 1
+          fi
