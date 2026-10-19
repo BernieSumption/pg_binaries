@@ -93,6 +93,16 @@ class MacosCoreTargetConfigTests(unittest.TestCase):
         self.assertEqual(result["core_archive"]["run_id"], self.run_id)
         self.assertEqual(result["core_archive"]["source_revision"], self.revision)
 
+    def test_accepts_base_with_only_core_basename(self):
+        base_path, original = self.base("pg_cron")
+        original["core_archive"] = {"basename": original["core_archive"]["basename"]}
+        base_path.write_text(json.dumps(original), encoding="utf-8")
+        archive = self.archive(original)
+        result = config.create_target(base_path, archive, self.run_id, self.root / "out.json")
+        self.assertEqual(result["core_archive"]["sha256"],
+                         hashlib.sha256(archive.read_bytes()).hexdigest())
+        self.assertEqual(result["core_archive"]["build_id"], f"github-{self.run_id}-1")
+
     def test_accepts_positive_rerun_attempt(self):
         base_path, original = self.base("hypopg")
         archive = self.archive(original, attempt="3")

@@ -9,9 +9,12 @@ import re
 import sys
 import tarfile
 
+sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
 import coverage
 import macos_publication_evidence as evidence
 from check_macos_extension_license_inventory import check_archive
+from scripts.pg_cron.macos_target import load_target
 
 
 PG_VERSION = "18.6"
@@ -33,6 +36,19 @@ REPORTS = {"static_analysis": "static-analysis.json",
            "probe_output": "probe-output.txt"}
 
 
+def target_info(target_config=None):
+    if target_config is None:
+        return {"pg_version": PG_VERSION, "version": VERSION,
+                "architecture": ARCHITECTURE, "platform": PLATFORM,
+                "profile_id": PROFILE_ID, "core_sha256": CORE_SHA256,
+                "source_url": SOURCE_URL, "source_sha256": SOURCE_SHA256}
+    value = load_target(target_config, require_resolved=True)
+    return {"pg_version": value["postgresql_version"], "version": value["pg_cron_version"],
+            "architecture": value["architecture"], "platform": value["platform"],
+            "profile_id": value["profile_id"], "core_sha256": value["core_sha256"],
+            "source_url": value["source_url"], "source_sha256": value["source_sha256"]}
+
+
 def _fail(message):
     raise coverage.CoverageError(message)
 
@@ -45,7 +61,7 @@ def _sidecar(path, digest):
     evidence.check_sidecar(path, digest, "missing checksum sidecar for {name}")
 
 
-def _metadata(path):
+def _metadata(path, target):
     try:
         with tarfile.open(path, "r:gz") as archive:
             member = next((item for item in archive.getmembers()
@@ -62,18 +78,18 @@ def _metadata(path):
             control_text = archive.extractfile(control).read().decode("utf-8")
     except (OSError, tarfile.TarError, UnicodeError, json.JSONDecodeError) as exc:
         _fail(f"cannot read pg_cron archive metadata: {exc}")
-    core_name = f"postgresql-{PG_VERSION}-{PLATFORM}.tar.gz"
+    core_name = f"postgresql-{target['pg_version']}-{target['platform']}.tar.gz"
     expected = {
-        "project": "pg_cron", "version": VERSION, "sql_names": ["pg_cron"],
+        "project": "pg_cron", "version": target["version"], "sql_names": ["pg_cron"],
         "requires": [],
         "configuration_prerequisites": [
             {"type": "postgresql_setting", "name": "shared_preload_libraries", "value": "pg_cron"},
             {"type": "postgresql_setting", "name": "cron.use_background_workers", "value": "on"},
         ],
-        "runtime_prerequisites": [], "postgresql_version": PG_VERSION,
-        "platform": "macos", "architecture": ARCHITECTURE,
-        "source": {"url": SOURCE_URL, "sha256": SOURCE_SHA256},
-        "core_archive": {"basename": core_name, "sha256": CORE_SHA256},
+        "runtime_prerequisites": [], "postgresql_version": target["pg_version"],
+        "platform": "macos", "architecture": target["architecture"],
+        "source": {"url": target["source_url"], "sha256": target["source_sha256"]},
+        "core_archive": {"basename": core_name, "sha256": target["core_sha256"]},
     }
     if not isinstance(value, dict) or value != expected:
         _fail("pg_cron metadata does not match the pinned publication target")
@@ -119,15 +135,15 @@ def _archive_map(report):
     return value
 
 
-def _check_static(path, macho_path, digests):
+def _check_static(path, macho_path, digests, architecture):
     static = _json(path, "static analysis")
     if (_archive_map(static) != digests or static.get("passed") is not True
-            or static.get("architecture") != ARCHITECTURE
+            or static.get("architecture") != architecture
             or not static.get("inspected_files") or static.get("findings")):
         _fail("core Mach-O analysis did not pass against the final archive bytes")
     macho = _json(macho_path, "pg_cron Mach-O inspection")
     if (macho.get("archives") != digests or macho.get("passed") is not True
-            or macho.get("architecture") != ARCHITECTURE
+            or macho.get("architecture") != architecture
             or macho.get("file") != "lib/pg_cron.dylib"
             or macho.get("minimum_os") != "11.0" or macho.get("findings")):
         _fail("pg_cron Mach-O inspection did not pass against the final archive bytes")
@@ -138,8 +154,13 @@ def _check_static(path, macho_path, digests):
         _fail("pg_cron Mach-O report does not resolve bundled libpq through its module run path")
 
 
-def emit(root, core_dir, archives, output, step_results, os_version, image_id, environ=None):
+def emit(root, core_dir, archives, output, step_results, os_version, image_id,
+         environ=None, target_config=None):
     root, core_dir, archives, output = map(Path, (root, core_dir, archives, output))
+    target = target_info(target_config)
+    PG_VERSION, VERSION = target["pg_version"], target["version"]
+    ARCHITECTURE, PLATFORM = target["architecture"], target["platform"]
+    PROFILE_ID, CORE_SHA256 = target["profile_id"], target["core_sha256"]
     environ = os.environ if environ is None else environ
     if not isinstance(step_results, dict) or set(step_results) != CASES:
         _fail("step_results must identify archive-suite and static-analysis")
@@ -181,7 +202,7 @@ def emit(root, core_dir, archives, output, step_results, os_version, image_id, e
     _sidecar(extension_archive, digests[extension_name])
     if digests[core_name] != CORE_SHA256:
         _fail("PostgreSQL core archive does not match the pinned pilot run")
-    _metadata(extension_archive)
+    _metadata(extension_archive, target)
     try:
         components, native_files = check_archive(extension_archive)
     except (OSError, ValueError) as exc:
@@ -196,7 +217,8 @@ def emit(root, core_dir, archives, output, step_results, os_version, image_id, e
     if results["archive-suite"] == "passed":
         _check_probe(paths["probe_output"])
     if results["static-analysis"] == "passed":
-        _check_static(paths["static_analysis"], paths["macho_inspection"], digests)
+        _check_static(paths["static_analysis"], paths["macho_inspection"], digests,
+                      ARCHITECTURE)
 
     ci = {"provider": "github-actions", "run_id": run_id,
           "run_url": f"{server_url.rstrip('/')}/{repository}/actions/runs/{run_id}",
@@ -249,12 +271,13 @@ def main():
     parser.add_argument("--image-id", required=True)
     parser.add_argument("--archive-suite-result", required=True)
     parser.add_argument("--static-analysis-result", required=True)
+    parser.add_argument("--target-config", type=Path)
     args = parser.parse_args()
     try:
         for path in emit(args.root, args.core_archives, args.archives, args.output,
                          {"archive-suite": args.archive_suite_result,
                           "static-analysis": args.static_analysis_result},
-                         args.os_version, args.image_id):
+                         args.os_version, args.image_id, target_config=args.target_config):
             print(path)
         return 0
     except (coverage.CoverageError, OSError, ValueError, TypeError, KeyError) as exc:

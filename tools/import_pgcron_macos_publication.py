@@ -26,14 +26,18 @@ def _copy(copies):
     evidence.copy_retained(copies, MAX_EVIDENCE_BYTES)
 
 
-def import_run(root, core_artifact, extension_artifact, run_id):
+def import_run(root, core_artifact, extension_artifact, run_id, target_config=None):
     root, core_artifact, extension_artifact = map(Path, (root, core_artifact, extension_artifact))
+    target = publication.target_info(target_config)
+    PG_VERSION, VERSION = target["pg_version"], target["version"]
+    ARCHITECTURE, PLATFORM = target["architecture"], target["platform"]
+    PROFILE_ID, CORE_SHA256 = target["profile_id"], target["core_sha256"]
     run_id = str(run_id)
     if not run_id.isdigit():
         raise coverage.CoverageError("run_id must be numeric")
     support = coverage.load_json(root / "support.json")
-    profile = coverage.verification_profile(root, publication.PROFILE_ID)
-    if (profile["scope"] != "publication" or profile["platforms"] != [publication.PLATFORM]
+    profile = coverage.verification_profile(root, PROFILE_ID)
+    if (profile["scope"] != "publication" or profile["platforms"] != [PLATFORM]
             or profile["case_ids"] != sorted(publication.CASES)):
         raise coverage.CoverageError("registered profile does not match scoped pg_cron target")
 
@@ -41,10 +45,10 @@ def import_run(root, core_artifact, extension_artifact, run_id):
     attempt_path = publication_dir / "attempt.json"
     attempt = _read(attempt_path)
     if (attempt.get("schema_version") != 1 or str(attempt.get("run_id")) != run_id
-            or attempt.get("profile_id") != publication.PROFILE_ID
-            or attempt.get("architecture") != publication.ARCHITECTURE
-            or attempt.get("postgresql_version") != publication.PG_VERSION
-            or attempt.get("pg_cron_version") != publication.VERSION
+            or attempt.get("profile_id") != PROFILE_ID
+            or attempt.get("architecture") != ARCHITECTURE
+            or attempt.get("postgresql_version") != PG_VERSION
+            or attempt.get("pg_cron_version") != VERSION
             or not coverage.REVISION.fullmatch(str(attempt.get("source_revision", "")))):
         raise coverage.CoverageError("raw attempt identity does not match requested run and profile")
     raw_steps = attempt.get("steps")
@@ -56,12 +60,12 @@ def import_run(root, core_artifact, extension_artifact, run_id):
                for case in sorted(publication.CASES)}
     outcome = ("failed" if "failed" in results.values()
                else "skipped" if "skipped" in results.values() else "passed")
-    evidence_dir = root / "support/evidence" / f"pgcron-macos-publication-{run_id}" / publication.ARCHITECTURE
+    evidence_dir = root / "support/evidence" / f"pgcron-macos-publication-{run_id}" / ARCHITECTURE
     copies = []
     _retain(attempt_path, evidence_dir / "attempt.json", copies)
 
-    core_name = f"postgresql-{publication.PG_VERSION}-{publication.PLATFORM}.tar.gz"
-    extension_name = f"pg_cron-{publication.VERSION}-postgresql-{publication.PG_VERSION}-{publication.PLATFORM}.tar.gz"
+    core_name = f"postgresql-{PG_VERSION}-{PLATFORM}.tar.gz"
+    extension_name = f"pg_cron-{VERSION}-postgresql-{PG_VERSION}-{PLATFORM}.tar.gz"
     core_archive, extension_archive = core_artifact / core_name, extension_artifact / extension_name
     receipt_path = publication_dir / "current-receipt.json"
     records = sorted((publication_dir / "records").glob("*.json"))
@@ -80,9 +84,9 @@ def import_run(root, core_artifact, extension_artifact, run_id):
                extension_name: publication.sha256_file(extension_archive)}
     for archive in (core_archive, extension_archive):
         publication._sidecar(archive, digests[archive.name])
-    if digests[core_name] != publication.CORE_SHA256:
+    if digests[core_name] != CORE_SHA256:
         raise coverage.CoverageError("core archive does not match pinned PostgreSQL 18.6 artifact")
-    publication._metadata(extension_archive)
+    publication._metadata(extension_archive, target)
     try:
         components, native_files = publication.check_archive(extension_archive)
     except (OSError, ValueError) as exc:
@@ -95,12 +99,12 @@ def import_run(root, core_artifact, extension_artifact, run_id):
     if receipt_path.is_file():
         receipt = _read(receipt_path)
         expected_receipt = {
-            "schema_version": 1, "profile_id": publication.PROFILE_ID,
+            "schema_version": 1, "profile_id": PROFILE_ID,
             "profile_revision": profile["profile_revision"],
             "test_revision": attempt["source_revision"],
-            "project": "pg_cron", "version": publication.VERSION,
-            "postgresql_version": publication.PG_VERSION,
-            "architecture": publication.ARCHITECTURE, "platform": publication.PLATFORM,
+            "project": "pg_cron", "version": VERSION,
+            "postgresql_version": PG_VERSION,
+            "architecture": ARCHITECTURE, "platform": PLATFORM,
             "endpoint": "current", "case_results": results, "archives": digests,
             "extension_archive": extension_name,
         }
@@ -112,7 +116,7 @@ def import_run(root, core_artifact, extension_artifact, run_id):
                 or receipt.get("dependency_check_profile") != "macho-system-dependencies-v1"
                 or receipt.get("dependency_checks_passed") is not (results["static-analysis"] == "passed")
                 or not isinstance(environment, dict) or environment.get("os") != "macos"
-                or environment.get("architecture") != publication.ARCHITECTURE
+                or environment.get("architecture") != ARCHITECTURE
                 or not re.fullmatch(r"\d+(?:\.\d+)*", str(environment.get("os_version", "")))
                 or not environment.get("image_id") or not isinstance(ci, dict)
                 or ci.get("provider") != "github-actions" or str(ci.get("run_id")) != run_id
@@ -131,7 +135,7 @@ def import_run(root, core_artifact, extension_artifact, run_id):
                 raise coverage.CoverageError(f"passing receipt is missing {key}")
         if results["static-analysis"] == "passed":
             publication._check_static(report_paths["static_analysis"],
-                                      report_paths["macho_inspection"], digests)
+                                      report_paths["macho_inspection"], digests, ARCHITECTURE)
         if results["archive-suite"] == "passed":
             publication._check_probe(report_paths["probe_output"])
         _retain(receipt_path, evidence_dir / receipt_path.name, copies)
@@ -146,18 +150,18 @@ def import_run(root, core_artifact, extension_artifact, run_id):
         record = _read(source)
         coverage.validate_verification_record(record, support, root)
         expected_record = {
-            "profile_id": publication.PROFILE_ID, "component": "pg_cron",
-            "project": "pg_cron", "version": publication.VERSION,
-            "postgresql_version": publication.PG_VERSION, "platform": publication.PLATFORM,
+            "profile_id": PROFILE_ID, "component": "pg_cron",
+            "project": "pg_cron", "version": VERSION,
+            "postgresql_version": PG_VERSION, "platform": PLATFORM,
             "case_results": results, "outcome": outcome, "test_cases": profile["case_ids"],
             "ci": receipt["ci"], "test_revision": receipt["test_revision"],
             "sha256": digests[extension_name],
             "assembled_core": {"archive": core_name, "sha256": digests[core_name],
-                               "version": publication.PG_VERSION},
+                               "version": PG_VERSION},
             "prerequisite_archives": [],
         }
         if (any(record.get(key) != value for key, value in expected_record.items())
-                or source.name != f"pg_cron-{publication.VERSION}-postgresql-{publication.PG_VERSION}-{publication.PLATFORM}-current-{run_id}.json"
+                or source.name != f"pg_cron-{VERSION}-postgresql-{PG_VERSION}-{PLATFORM}-current-{run_id}.json"
                 or any(record.get("environment", {}).get(key) != receipt["environment"].get(key)
                        for key in ("os", "os_version", "architecture", "image_id"))
                 or record.get("environment", {}).get("clean_system") is not True
@@ -181,10 +185,12 @@ def main():
     parser.add_argument("--core-artifact", type=Path, required=True)
     parser.add_argument("--extension-artifact", type=Path, required=True)
     parser.add_argument("--run-id", required=True)
+    parser.add_argument("--target-config", type=Path)
     args = parser.parse_args()
     try:
         print("\n".join(import_run(args.root, args.core_artifact,
-                                   args.extension_artifact, args.run_id)))
+                                   args.extension_artifact, args.run_id,
+                                   target_config=args.target_config)))
         return 0
     except (coverage.CoverageError, OSError, ValueError, TypeError, KeyError) as exc:
         print(f"pg_cron macOS publication import: {exc}", file=sys.stderr)

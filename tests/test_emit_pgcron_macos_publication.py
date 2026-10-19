@@ -41,6 +41,23 @@ class PgCronMacOSFixture:
         self.core_archive = self.core / self.core_name
         self.core_archive.write_bytes(b"fixture core bytes")
         self.core_digest = self.digest(self.core_archive)
+        self.target_config = self.base / "target.json"
+        self.target_config.write_text(json.dumps({
+            "schema_version": 1,
+            "profile_id": emitter.PROFILE_ID,
+            "postgresql_version": emitter.PG_VERSION,
+            "pg_cron_version": emitter.VERSION,
+            "architecture": emitter.ARCHITECTURE,
+            "platform": emitter.PLATFORM,
+            "source": {"url": emitter.SOURCE_URL, "sha256": emitter.SOURCE_SHA256},
+            "core_archive": {
+                "basename": self.core_name,
+                "run_id": "12345678901",
+                "sha256": self.core_digest,
+                "build_id": "github-12345678901-1",
+                "source_revision": "a" * 40,
+            },
+        }), encoding="utf-8")
         self.core_patch = patch.object(emitter, "CORE_SHA256", self.core_digest)
         self.core_patch.start()
         self.extension = self.output / self.extension_name
@@ -117,11 +134,12 @@ class PgCronMacOSFixture:
             "CREATE EXTENSION\nscheduled_job_status=succeeded\nscheduled_job_rows=1\n"
             " unschedule \n------------\n t\n(1 row)\n")
 
-    def emit(self, cases=None):
+    def emit(self, cases=None, target_config=None):
         return emitter.emit(
             self.root, self.core, self.output, self.output,
             cases or {"archive-suite": "success", "static-analysis": "success"},
             "15.7.9", "macos15/20261018.1", self.environ,
+            target_config=target_config,
         )
 
     def close(self):
@@ -144,6 +162,19 @@ class PgCronMacOSPublicationTests(unittest.TestCase):
         self.assertEqual(record["case_results"],
                          {"archive-suite": "passed", "static-analysis": "passed"})
         self.assertEqual(record["assembled_core"]["sha256"], self.fixture.core_digest)
+
+    def test_resolved_target_supplies_checked_core_identity(self):
+        with patch.object(emitter, "CORE_SHA256", "0" * 64):
+            paths = self.fixture.emit(target_config=self.fixture.target_config)
+        record = json.loads(paths[-1].read_text())
+        self.assertEqual(record["assembled_core"]["sha256"], self.fixture.core_digest)
+
+    def test_rejects_unresolved_target(self):
+        value = json.loads(self.fixture.target_config.read_text())
+        value["core_archive"] = {"basename": self.fixture.core_name}
+        self.fixture.target_config.write_text(json.dumps(value))
+        with self.assertRaisesRegex(ValueError, "not been resolved"):
+            self.fixture.emit(target_config=self.fixture.target_config)
 
     def test_incomplete_archives_retain_attempt_only(self):
         self.fixture.extension.unlink()

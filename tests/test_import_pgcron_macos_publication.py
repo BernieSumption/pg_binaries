@@ -3,6 +3,7 @@
 from pathlib import Path
 import sys
 import unittest
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -27,6 +28,14 @@ class ImportPgCronMacOSPublicationTests(unittest.TestCase):
         self.assertTrue((evidence / "static-analysis.json").is_file())
         self.assertTrue((evidence / "pg-cron-macho-inspection.json").is_file())
         self.assertTrue((evidence / "probe-output.txt").is_file())
+
+    def test_import_uses_resolved_target_identity(self):
+        self.fixture.emit(target_config=self.fixture.target_config)
+        with patch.object(importer.publication, "CORE_SHA256", "0" * 64):
+            retained = importer.import_run(
+                self.fixture.root, self.fixture.core, self.fixture.output, "12345678901",
+                target_config=self.fixture.target_config)
+        self.assertTrue(any(path.startswith("support/verification/") for path in retained))
 
     def test_import_rejects_changed_final_extension_bytes(self):
         self.fixture.emit()

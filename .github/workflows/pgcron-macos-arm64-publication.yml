@@ -2,24 +2,6 @@ name: pg_cron macOS arm64 publication
 
 on:
   workflow_dispatch:
-  push:
-    branches: [spike]
-    paths:
-      - .github/workflows/profile-change-scope.yml
-      - tools/profile_change_gate.py
-      - tests/test_profile_change_gate.py
-      - '.github/workflows/pgcron-macos-arm64-publication.yml'
-      - 'scripts/pg_cron/macos-feasibility.sh'
-      - 'scripts/macos/static_analysis.py'
-      - 'tools/check_extension_redistribution.py'
-      - 'tools/check_macos_extension_license_inventory.py'
-      - 'tools/coverage.py'
-      - 'tools/emit_pgcron_macos_publication.py'
-      - 'tools/import_pgcron_macos_publication.py'
-      - 'tools/publication_preflight.py'
-      - 'tests/test_emit_pgcron_macos_publication.py'
-      - 'tests/test_import_pgcron_macos_publication.py'
-      - 'support/verification-profiles.json'
 
 permissions:
   actions: read

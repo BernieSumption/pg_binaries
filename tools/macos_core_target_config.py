@@ -82,9 +82,10 @@ def create_target(base_path, archive_path, source_run_id, output_path, source_ru
     if not isinstance(target, dict) or not isinstance(target.get("core_archive"), dict):
         raise ValueError("base target config must contain a core_archive object")
     core = target["core_archive"]
-    stable_fields = {"basename", "sha256"}
-    runtime_fields = stable_fields | {"run_id", "build_id", "source_revision"}
-    if set(core) not in (stable_fields, runtime_fields):
+    stable_fields = {"basename"}
+    legacy_fields = stable_fields | {"sha256"}
+    runtime_fields = legacy_fields | {"run_id", "build_id", "source_revision"}
+    if set(core) not in (stable_fields, legacy_fields, runtime_fields):
         raise ValueError("base target core_archive has an unexpected field set")
     version = target.get("postgresql_version")
     platform = target.get("platform")
