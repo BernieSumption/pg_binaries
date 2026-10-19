@@ -83,7 +83,10 @@ jobs:
           PG_VERSION: ${{ needs.select.outputs.postgresql_version }}
         run: |
           $coreDir = Join-Path $env:RUNNER_TEMP 'core-archives'
-          python tools/windows_core_candidate.py --selected-core --base-pin "support/windows-core-pins/$env:PG_VERSION-x86_64.json" --output-directory $coreDir
+          $baseTarget = Join-Path $coreDir 'base-target.json'
+          python tools/windows_core_target.py --postgresql-version $env:PG_VERSION --output $baseTarget
+          if ($LASTEXITCODE -ne 0) { throw 'Selected PostgreSQL core target generation failed.' }
+          python tools/windows_core_candidate.py --selected-core --base-target $baseTarget --output-directory $coreDir
           if ($LASTEXITCODE -ne 0) { throw 'PostgreSQL core candidate resolution failed.' }
           $result = Get-Content (Join-Path $coreDir 'result.json') -Raw | ConvertFrom-Json
           if ($result.status -notin @('checked', 'missing', 'stale')) { throw "Unexpected core candidate status: $($result.status)" }
@@ -108,7 +111,7 @@ jobs:
           Copy-Item "dist/windows/$archiveName" $archive -Force
           Copy-Item "dist/windows/$archiveName.sha256" "$archive.sha256" -Force
           $artifactName = "pgtap-windows-$env:PG_VERSION-build-$env:GITHUB_RUN_ID"
-          python tools/windows_core_target_config.py --base-pin "support/windows-core-pins/$env:PG_VERSION-x86_64.json" --core-archive $archive --source-run-id $env:GITHUB_RUN_ID --source-run-attempt $env:GITHUB_RUN_ATTEMPT --source-artifact-name $artifactName --output (Join-Path $env:RUNNER_TEMP 'core-archives/candidate-target.json')
+          python tools/windows_core_target_config.py --base-target (Join-Path $env:RUNNER_TEMP 'core-archives/base-target.json') --core-archive $archive --source-run-id $env:GITHUB_RUN_ID --source-run-attempt $env:GITHUB_RUN_ATTEMPT --source-artifact-name $artifactName --output (Join-Path $env:RUNNER_TEMP 'core-archives/candidate-target.json')
           if ($LASTEXITCODE -ne 0) { throw 'Generated PostgreSQL core identity validation failed.' }
       - name: Select PostgreSQL core identity
         env:

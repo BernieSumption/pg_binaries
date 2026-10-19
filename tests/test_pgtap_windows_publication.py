@@ -16,6 +16,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
 import check_pgtap_windows_archive as checker
 import emit_pgtap_windows_publication as publication
 import import_pgtap_windows_publication as importer
+import windows_core_target
+import windows_core_target_config
 
 
 class PgTapWindowsArchiveTests(unittest.TestCase):
@@ -33,34 +35,45 @@ class PgTapWindowsArchiveTests(unittest.TestCase):
         script = Path("scripts/pgtap/windows-feasibility.ps1").read_text()
         workflow = Path(".github/workflows/pgtap-windows-selected-publication.yml").read_text()
         self.assertIn("windows_core_pin", script)
-        self.assertIn("windows_core_candidate.py --selected-core", workflow)
+        self.assertIn("windows_core_target.py --postgresql-version", workflow)
+        self.assertIn("windows_core_candidate.py --selected-core --base-target", workflow)
         self.assertIn("steps.core_candidate.outputs.status == 'missing'", workflow)
         self.assertIn("steps.core_candidate.outputs.status == 'stale'", workflow)
-        self.assertIn("windows_core_target_config.py", workflow)
+        self.assertIn("windows_core_target_config.py --base-target", workflow)
+        self.assertNotIn("--base-pin", workflow)
+        self.assertNotIn("support/windows-core-pins", workflow)
         self.assertNotIn("windows_core_pin.py", workflow)
         self.assertNotIn("run-id:", workflow)
         self.assertIn("CoreIdentityPath", workflow)
+        self.assertIn("if (-not (Test-Path $candidate -PathType Leaf))", workflow)
+        self.assertIn("Inspect and exercise downloaded archives after relocation", workflow)
+        self.assertIn("Require fresh-runner verification to pass", workflow)
 
-    def test_selected_targets_bind_to_distinct_imported_core_pins(self):
+    def test_selected_targets_are_generated_from_current_postgresql_selection(self):
         for version in publication.SUPPORTED_PG_VERSIONS:
             with self.subTest(version=version):
-                target = publication.target_for(version)
-                pin = json.loads(Path(f"support/windows-core-pins/{version}-x86_64.json").read_text())
-                self.assertEqual(target.pg_version, version)
-                self.assertEqual(target.profile_id, f"pgtap-publication-windows-x86_64-{version}")
-                self.assertEqual(target.core_sha256, pin["sha256"])
-                self.assertEqual(target.core_build_id, pin["build_id"])
-                self.assertEqual(target.core_source_revision, pin["source_revision"])
-        with self.assertRaisesRegex(Exception, "unsupported PostgreSQL target"):
-            publication.target_for("15.20")
+                target = windows_core_target.target_for(version)
+                self.assertEqual(target["postgresql_version"], version)
+                self.assertEqual(target["profile_id"], "windows-publication-current-x86_64")
+                self.assertEqual(target["archive_name"], f"postgresql-{version}-windows-x86_64.tar.gz")
+                self.assertEqual(target["status"], "current-profile-core-redistribution-pending")
+        with self.assertRaisesRegex(Exception, "is not selected"):
+            windows_core_target.target_for("15.20")
 
     def test_explicit_core_identity_path_selects_dynamic_identity(self):
-        identity = json.loads(Path("support/windows-core-pins/18.6-x86_64.json").read_text())
-        identity["run_id"] = "987654"
-        identity["build_id"] = "github-987654-2"
-        identity["source_revision"] = "b" * 40
+        self._tar(self.core, [("postgresql/manifest.json", json.dumps({
+            "component": "postgresql", "version": "18.6", "postgresql_version": "18.6",
+            "platform": "windows", "architecture": "x86_64", "build_id": "github-987654-2",
+            "source_revision": "b" * 40,
+        }))])
+        base = self.root / "base-target.json"
+        windows_core_target.write_target("18.6", base)
+        sidecar = Path(str(self.core) + ".sha256")
+        digest = hashlib.sha256(self.core.read_bytes()).hexdigest()
+        sidecar.write_text(f"{digest}  {self.core.name}\n")
         path = self.root / "selected-core.json"
-        path.write_text(json.dumps(identity))
+        windows_core_target_config.create_target(
+            base, self.core, "987654", path, "2", "core-test-artifact")
         target = publication.target_for("18.6", path)
         self.assertEqual(target.core_build_id, "github-987654-2")
         self.assertEqual(target.core_source_revision, "b" * 40)
