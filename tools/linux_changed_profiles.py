@@ -23,6 +23,7 @@ extension_archive_plan = _load_tool("linux_changed_profiles_plan", "extension_ar
 LINUX_ROUTES = {"hypopg": "HypoPG", "pg-jsonschema": "pg_jsonschema",
                 "pgtap": "pgtap", "pgivm": "pg_ivm", "pgcron": "pg_cron",
                 "pgaudit": "pgaudit", "postgis": "PostGIS",
+                "tiger": "PostGIS TIGER Geocoder",
                 "collection": "collection"}
 MAX_TARGETS = 128
 
