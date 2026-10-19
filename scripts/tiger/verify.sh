@@ -15,6 +15,7 @@ core=$(cd "$core" && pwd)
 postgis=$(cd "$postgis" && pwd)
 tiger=$(cd "$tiger" && pwd)
 mkdir -p "$tiger/static-analysis"
+docker build --platform "$docker_platform" -f "$repo/scripts/postgis/verify.Dockerfile" -t pg-binaries-postgis-verifier "$repo"
 docker run --rm --platform "$docker_platform" -e PG_ARCHITECTURE="$architecture" \
   -e PG_VERSION="${PG_VERSION:-18.6}" \
   -v "$core:/core:ro" -v "$postgis:/postgis:ro" -v "$tiger:/tiger:ro" -v "$repo:/repo:ro" \

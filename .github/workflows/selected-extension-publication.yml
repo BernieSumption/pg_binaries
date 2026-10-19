@@ -115,6 +115,8 @@ jobs:
               ("pgaudit", "linux-arm64"): "pgaudit-linux",
               ("PostGIS", "linux-x86_64"): "postgis-linux",
               ("PostGIS", "linux-arm64"): "postgis-linux",
+              ("PostGIS TIGER Geocoder", "linux-x86_64"): "tiger-linux",
+              ("PostGIS TIGER Geocoder", "linux-arm64"): "tiger-linux",
               ("collection", "linux-x86_64"): "collection-linux",
               ("collection", "linux-arm64"): "collection-linux",
               ("pg_jsonschema", "macos-arm64"): "pg-jsonschema-macos",
@@ -241,6 +243,15 @@ jobs:
     needs: plan
     if: needs.plan.outputs.should_dispatch == 'true' && needs.plan.outputs.route == 'collection-linux'
     uses: ./.github/workflows/collection-linux-selected-publication.yml
+    with:
+      postgresql_version: ${{ needs.plan.outputs.postgresql_version }}
+      extension_version: ${{ needs.plan.outputs.extension_version }}
+      architecture: ${{ needs.plan.outputs.architecture }}
+
+  tiger_linux:
+    needs: plan
+    if: needs.plan.outputs.should_dispatch == 'true' && needs.plan.outputs.route == 'tiger-linux'
+    uses: ./.github/workflows/tiger-linux-selected-publication.yml
     with:
       postgresql_version: ${{ needs.plan.outputs.postgresql_version }}
       extension_version: ${{ needs.plan.outputs.extension_version }}

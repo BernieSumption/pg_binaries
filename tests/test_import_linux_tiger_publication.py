@@ -12,6 +12,7 @@ sys.path.insert(0, str(REPO / "tools"))
 import coverage
 import emit_extension_publication_records as emitter
 import import_linux_tiger_publication as importer
+import linux_core_resolution
 
 
 class LinuxTigerPublicationImportTests(unittest.TestCase):
@@ -26,6 +27,12 @@ class LinuxTigerPublicationImportTests(unittest.TestCase):
             destination.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(REPO / source, destination)
         profiles = coverage.load_json(self.root / "support/verification-profiles.json")["profiles"]
+        registry_path = self.root / "support/verification-profiles.json"
+        registry = json.loads(registry_path.read_text())
+        selected_profile_id = "tiger-publication-linux-x86_64-18.6"
+        registry["profiles"][selected_profile_id] = dict(
+            registry["profiles"]["tiger-publication-current-x86_64"])
+        registry_path.write_text(json.dumps(registry))
         source_paths = set()
         for profile_id in ("tiger-publication-current-x86_64",):
             source_paths.update(profiles[profile_id]["sources"])
@@ -57,7 +64,20 @@ class LinuxTigerPublicationImportTests(unittest.TestCase):
         self.core_name = f"postgresql-{self.postgresql_version}-{self.platform}.tar.gz"
         self.postgis_name = f"postgis-3.6.4-postgresql-{self.postgresql_version}-{self.platform}.tar.gz"
         self.tiger_name = f"postgis_tiger_geocoder-2025.2-postgresql-{self.postgresql_version}-{self.platform}.tar.gz"
-        self._archive(self.core_dir / self.core_name, b"core")
+        core = self.core_dir / self.core_name
+        manifest = {
+            "component": "postgresql", "version": self.postgresql_version,
+            "platform": "linux", "architecture": self.architecture,
+            "source_revision": "a" * 40, "build_id": "test-build",
+            "builder_inputs": {"base_image": "ubuntu:22.04",
+                               "base_image_digest": "sha256:" + "b" * 64,
+                               "packages_sha256": "c" * 64},
+        }
+        temporary_manifest = self.core_dir / "manifest.json"
+        temporary_manifest.write_text(json.dumps(manifest))
+        with tarfile.open(core, "w:gz") as archive:
+            archive.add(temporary_manifest, arcname="postgresql/manifest.json")
+        temporary_manifest.unlink()
         self._metadata_archive(self.postgis_dir / self.postgis_name, {
             "project": "postgis", "version": "3.6.4", "postgresql_version": self.postgresql_version,
             "platform": "linux", "architecture": "x86_64",
@@ -110,12 +130,13 @@ class LinuxTigerPublicationImportTests(unittest.TestCase):
             values.append(f"{self._sha(directory / name)}  {name}")
         path.write_text("\n".join(values) + "\n")
 
-    def _make_records(self, result="success"):
+    def _make_records(self, result="success", profile_id_override=None):
         postgis_sha = self._sha(self.postgis_dir / self.postgis_name)
         core_sha = self._sha(self.core_dir / self.core_name)
         tiger_sha = self._sha(self.tiger_dir / self.tiger_name)
-        for endpoint, profile_id, kernel, distribution, distribution_version in (
+        for endpoint, legacy_profile_id, kernel, distribution, distribution_version in (
                 ("current", "tiger-publication-current-x86_64", "6.8.0-test-kernel", "Alpine Linux", "3.22.6"),):
+            profile_id = profile_id_override or legacy_profile_id
             raw_result = {"failed": "failure"}.get(result, result)
             self._write_json(self.publication / f"{endpoint}-steps.json", {"archive-suite": raw_result})
             profile = coverage.verification_profile(self.root, profile_id)
@@ -160,7 +181,7 @@ class LinuxTigerPublicationImportTests(unittest.TestCase):
         record = self.root / "support/verification" / (
             f"postgis_tiger_geocoder-2025.2-postgresql-18.6-{self.platform}-current-{self.run_id}.json")
         self.assertEqual(json.loads(record.read_text())["outcome"], "passed")
-        steps = self.root / "support/evidence" / f"tiger-publication-{self.run_id}/x86_64/current-steps.json"
+        steps = self.root / "support/evidence" / f"tiger-publication-{self.run_id}/x86_64/18.6/current-steps.json"
         self.assertTrue(steps.is_file())
         receipt = json.loads((steps.parent / "current-receipt.json").read_text())
         self.assertEqual(receipt["distribution"], "Alpine Linux")
@@ -170,6 +191,33 @@ class LinuxTigerPublicationImportTests(unittest.TestCase):
         importer.import_run(self.root, self.core_artifact, self.postgis_artifact,
                             self.tiger_artifact, self.run_id, self.architecture)
         self.assertEqual(steps.read_bytes(), first_bytes)
+
+    def test_selected_mode_checks_core_provenance_and_retains_target_identity(self):
+        selected_profile = "tiger-publication-linux-x86_64-18.6"
+        self._make_records(profile_id_override=selected_profile)
+        environment = {
+            "GITHUB_RUN_ID": self.run_id, "GITHUB_RUN_ATTEMPT": "1",
+            "GITHUB_REPOSITORY": "example/repo",
+            "GITHUB_WORKFLOW_REF": "example/repo/.github/workflows/tiger.yml@refs/heads/main",
+            "GITHUB_SHA": "a" * 40,
+        }
+        resolution = linux_core_resolution.create_record(
+            self.core_dir / self.core_name, self.postgresql_version, self.architecture,
+            "built", environ=environment)
+        (self.core_dir / "core-resolution.json").write_text(json.dumps(resolution))
+        retained = importer.import_run(
+            self.root, self.core_artifact, self.postgis_artifact, self.tiger_artifact,
+            self.run_id, self.architecture, self.postgresql_version, selected_mode=True)
+        target = self.root / "support/evidence/tiger-publication-7654321/x86_64/18.6"
+        self.assertTrue((target / "core-resolution.json").is_file())
+        self.assertIn(str((target / "core-resolution.json").relative_to(self.root)), retained)
+
+        resolution["sha256"] = "0" * 64
+        (self.core_dir / "core-resolution.json").write_text(json.dumps(resolution))
+        with self.assertRaisesRegex(coverage.CoverageError, "provenance"):
+            importer.import_run(
+                self.root, self.core_artifact, self.postgis_artifact, self.tiger_artifact,
+                self.run_id, self.architecture, self.postgresql_version, selected_mode=True)
 
     def test_imports_selected_pg16_and_rejects_unsupported_pg15(self):
         for directory in (self.core_dir, self.postgis_dir, self.tiger_dir, self.publication):
@@ -187,6 +235,7 @@ class LinuxTigerPublicationImportTests(unittest.TestCase):
         record = json.loads(record_path.read_text())
         self.assertEqual(record["assembled_core"]["archive"], self.core_name)
         self.assertEqual(len(retained), 4)
+        self.assertTrue((self.root / "support/evidence" / f"tiger-publication-{self.run_id}/x86_64/16.15/current-steps.json").is_file())
         with self.assertRaisesRegex(coverage.CoverageError, "does not support PostgreSQL 15.19"):
             importer.import_run(self.root, self.core_artifact, self.postgis_artifact,
                                 self.tiger_artifact, self.run_id, self.architecture, "15.19")
@@ -205,7 +254,7 @@ class LinuxTigerPublicationImportTests(unittest.TestCase):
                                                self.tiger_artifact, self.run_id, self.architecture)
                 self.assertGreaterEqual(len(retained), 2)
                 saved = json.loads((self.root / "support/evidence" /
-                                    f"tiger-publication-{self.run_id}/x86_64/current-steps.json").read_text())
+                                    f"tiger-publication-{self.run_id}/x86_64/18.6/current-steps.json").read_text())
                 self.assertEqual(saved, {"archive-suite": "failure" if result == "failed" else result})
 
     def test_retains_raw_outcomes_when_archives_and_records_are_absent(self):
@@ -216,7 +265,7 @@ class LinuxTigerPublicationImportTests(unittest.TestCase):
         retained = importer.import_run(self.root, self.core_artifact, self.postgis_artifact,
                                        self.tiger_artifact, self.run_id, self.architecture)
         self.assertEqual(len(retained), 1)
-        self.assertTrue((self.root / "support/evidence" / f"tiger-publication-{self.run_id}/x86_64/current-steps.json").is_file())
+        self.assertTrue((self.root / "support/evidence" / f"tiger-publication-{self.run_id}/x86_64/18.6/current-steps.json").is_file())
 
     def test_missing_archives_with_any_record_is_an_error(self):
         (self.core_dir / self.core_name).unlink()
@@ -260,7 +309,7 @@ class LinuxTigerPublicationImportTests(unittest.TestCase):
     def test_tiger_static_analysis_is_retained_and_claims_are_checked(self):
         importer.import_run(self.root, self.core_artifact, self.postgis_artifact,
                             self.tiger_artifact, self.run_id, self.architecture)
-        retained = self.root / "support/evidence" / f"tiger-publication-{self.run_id}/x86_64/static-analysis/tiger.json"
+        retained = self.root / "support/evidence" / f"tiger-publication-{self.run_id}/x86_64/18.6/static-analysis/tiger.json"
         self.assertTrue(retained.is_file())
         report = self.tiger_dir / "static-analysis/tiger.json"
         data = json.loads(report.read_text())

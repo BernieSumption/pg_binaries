@@ -5,8 +5,8 @@ import re
 import shutil
 
 import coverage
+from archive_identity import verify_sidecar as _sidecar
 from import_linux_publication_run import _sha256, _steps, _case_results, _outcome, _static_analysis
-from import_linux_tiger_publication import _sidecar
 
 
 ARCHITECTURES = {"x86_64", "arm64"}

@@ -15,6 +15,7 @@ core=$(cd "$core" && pwd)
 mkdir -p "$output" "$source_dir"
 output=$(cd "$output" && pwd)
 source_dir=$(cd "$source_dir" && pwd)
+docker build --platform "$docker_platform" -f "$repo/scripts/postgis/Dockerfile" -t pg-binaries-postgis-pilot "$repo"
 docker run --rm --platform "$docker_platform" -e PG_ARCHITECTURE="$architecture" \
   -e PG_VERSION="${PG_VERSION:-18.6}" \
   -v "$core:/core:ro" -v "$source_dir:/source:ro" -v "$output:/out" -v "$repo:/repo:ro" \

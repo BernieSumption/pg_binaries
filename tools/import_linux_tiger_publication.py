@@ -10,6 +10,8 @@ import shutil
 import sys
 
 import coverage
+from archive_identity import verify_sidecar as _sidecar
+import linux_core_resolution
 
 
 ARCHITECTURES = {"x86_64", "arm64"}
@@ -24,16 +26,6 @@ def _sha256(path):
         for chunk in iter(lambda: stream.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
-
-
-def _sidecar(path, digest):
-    sidecar = path.with_name(path.name + ".sha256")
-    try:
-        text = sidecar.read_text(encoding="utf-8").strip()
-    except OSError as exc:
-        raise coverage.CoverageError(f"missing checksum sidecar {sidecar}: {exc}") from exc
-    if text != f"{digest}  {path.name}":
-        raise coverage.CoverageError(f"checksum sidecar does not match {path.name}")
 
 
 def _steps(path):
@@ -80,8 +72,8 @@ def _static_analysis(path, architecture, archives, required):
     return path
 
 
-def _retain_steps(root, run_id, architecture, step_sources):
-    target = root / "support/evidence" / f"tiger-publication-{run_id}" / architecture
+def _retain_steps(root, run_id, architecture, postgresql_version, step_sources):
+    target = root / "support/evidence" / f"tiger-publication-{run_id}" / architecture / postgresql_version
     copies = [(source, target / source.name) for source in step_sources]
     for source, destination in copies:
         if destination.exists() and destination.read_bytes() != source.read_bytes():
@@ -92,7 +84,7 @@ def _retain_steps(root, run_id, architecture, step_sources):
 
 
 def import_run(root, core_artifact, postgis_artifact, tiger_artifact, run_id, architecture,
-               postgresql_version=DEFAULT_PG_VERSION):
+               postgresql_version=DEFAULT_PG_VERSION, selected_mode=False):
     """Validate a run bundle, then retain its TIGER records and compact evidence."""
     root, core_artifact, postgis_artifact, tiger_artifact = map(
         Path, (root, core_artifact, postgis_artifact, tiger_artifact))
@@ -122,7 +114,8 @@ def import_run(root, core_artifact, postgis_artifact, tiger_artifact, run_id, ar
     retained_records = []
     endpoint_data = {}
     for endpoint in ("current",):
-        profile_id = f"tiger-publication-{endpoint}-{architecture}"
+        profile_id = (f"tiger-publication-linux-{architecture}-{postgresql_version}"
+                      if selected_mode else f"tiger-publication-{endpoint}-{architecture}")
         profile = coverage.verification_profile(root, profile_id)
         if profile["scope"] != "publication" or platform not in profile["platforms"]:
             raise coverage.CoverageError(f"{profile_id}: not a matching publication profile")
@@ -164,11 +157,19 @@ def import_run(root, core_artifact, postgis_artifact, tiger_artifact, run_id, ar
         if any(path.is_file() for path in existing_records):
             raise coverage.CoverageError("TIGER records exist but one or more referenced archives are missing")
         # The workflow emits raw outcomes even when it cannot assemble all archives.
-        return _retain_steps(root, run_id, architecture, step_sources)
+        return _retain_steps(root, run_id, architecture, postgresql_version, step_sources)
     digests = {}
     for path in archive_paths:
         digests[path.name] = _sha256(path)
         _sidecar(path, digests[path.name])
+
+    core_resolution = core_dir / "core-resolution.json"
+    if selected_mode:
+        try:
+            linux_core_resolution.validate_resolution(
+                core_resolution, core, postgresql_version, architecture)
+        except ValueError as exc:
+            raise coverage.CoverageError(f"invalid exact PostgreSQL core provenance: {exc}") from exc
 
     report_path = tiger_dir / "static-analysis/tiger.json"
     passed = any(data.get("receipt", {}).get("case_results")
@@ -224,11 +225,13 @@ def import_run(root, core_artifact, postgis_artifact, tiger_artifact, run_id, ar
         record_sources.append(record_path)
         retained_records.append(record)
 
-    evidence_target = root / "support/evidence" / f"tiger-publication-{run_id}" / architecture
+    evidence_target = root / "support/evidence" / f"tiger-publication-{run_id}" / architecture / postgresql_version
     verification_target = root / "support/verification"
     copies = []
     for source in step_sources + receipt_sources:
         copies.append((source, evidence_target / source.name))
+    if selected_mode:
+        copies.append((core_resolution, evidence_target / core_resolution.name))
     for source in record_sources:
         copies.append((source, verification_target / source.name))
     if report is not None:
@@ -253,11 +256,13 @@ def main():
     parser.add_argument("--run-id", required=True)
     parser.add_argument("--architecture", choices=sorted(ARCHITECTURES), required=True)
     parser.add_argument("--postgresql-version", default=DEFAULT_PG_VERSION)
+    parser.add_argument("--selected", action="store_true",
+                        help="validate selected-target profile and core provenance")
     args = parser.parse_args()
     try:
         paths = import_run(args.root, args.core_artifact, args.postgis_artifact,
                            args.tiger_artifact, args.run_id, args.architecture,
-                           args.postgresql_version)
+                           args.postgresql_version, args.selected)
         print("\n".join(paths))
         return 0
     except (coverage.CoverageError, OSError, ValueError, TypeError) as exc:

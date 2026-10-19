@@ -12,7 +12,7 @@ import tarfile
 import coverage
 import linux_core_resolution
 from import_linux_publication_run import _case_results, _outcome, _sha256, _static_analysis, _steps
-from import_linux_tiger_publication import _sidecar
+from archive_identity import verify_sidecar as _sidecar
 
 
 ARCHITECTURES = {"x86_64", "arm64"}
