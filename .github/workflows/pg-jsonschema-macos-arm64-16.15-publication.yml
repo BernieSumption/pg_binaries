@@ -2,26 +2,6 @@ name: pg_jsonschema macOS arm64 PostgreSQL 16.15 publication
 
 on:
   workflow_dispatch:
-  push:
-    branches: [spike]
-    paths:
-      - .github/workflows/profile-change-scope.yml
-      - tools/profile_change_gate.py
-      - tests/test_profile_change_gate.py
-      - '.github/workflows/pg-jsonschema-macos-arm64-16.15-publication.yml'
-      - 'scripts/pg_jsonschema/macos-publication.sh'
-      - 'scripts/macos/compiled-prefix-relocation.sh'
-      - 'scripts/pg_jsonschema/probe.sql'
-      - 'scripts/macos/static_analysis.py'
-      - 'tools/inventory_cargo_licenses.py'
-      - 'tools/emit_pg_jsonschema_macos_publication.py'
-      - 'tools/import_pg_jsonschema_macos_publication.py'
-      - 'tests/test_pg_jsonschema_macos_publication.py'
-      - 'tests/test_macos_compiled_prefix_relocation.py'
-      - 'tools/pg_jsonschema_macos_target.py'
-      - 'tools/pg_jsonschema_macos_targets/16.15-arm64.json'
-      - 'support/verification-profiles.json'
-
 permissions:
   actions: read
   contents: read
