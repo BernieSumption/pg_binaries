@@ -12,12 +12,40 @@ from dataclasses import replace
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
 import emit_hypopg_macos_publication as emitter
-from hypopg_macos_target import load_target_config
+from hypopg_macos_target import (SOURCE_SHA256, SOURCE_URL, HypoPGMacosTarget,
+                                 base_target)
+
+
+def fixture_target(postgresql_version="18.6", architecture="arm64"):
+    base = base_target(postgresql_version, architecture)
+    core_name = base["core_archive"]["basename"]
+    return HypoPGMacosTarget(
+        profile_id=base["profile_id"], postgresql_version=postgresql_version,
+        architecture=architecture, platform=base["platform"], core_basename=core_name,
+        core_run_id="12345678900", core_sha256="0" * 64,
+        core_build_id="github-12345678900-1", core_source_revision="a" * 40,
+    )
+
+
+def fixture_target_config(target):
+    return {
+        "schema_version": 1,
+        "profile_id": target.profile_id,
+        "postgresql_version": target.postgresql_version,
+        "architecture": target.architecture,
+        "platform": target.platform,
+        "core_archive": {
+            "basename": target.core_basename, "run_id": target.core_run_id,
+            "sha256": target.core_sha256, "build_id": target.core_build_id,
+            "source_revision": target.core_source_revision,
+        },
+        "source": {"url": SOURCE_URL, "sha256": SOURCE_SHA256},
+    }
 
 
 class HypoPGMacOSFixture:
     def __init__(self, target=None):
-        self.target = target or emitter._default_target()
+        self.target = target or fixture_target()
         self.temp = tempfile.TemporaryDirectory()
         self.base = Path(self.temp.name)
         self.root = self.base / "repo"
@@ -109,22 +137,20 @@ class HypoPGMacOSFixture:
 
 
 class HypoPGMacOSPublicationTests(unittest.TestCase):
-    def test_arm64_pins_match_current_core_record(self):
+    def test_arm64_selected_workflow_resolves_the_selected_core(self):
         root = Path(__file__).resolve().parents[1]
-        core = json.loads((root / "support/verification/postgresql-18.6-macos-arm64-current-39093804232.json").read_text())
-        run_id = core["ci"]["run_id"]
-        source_revision = core["ci"]["source_revision"]
         workflow = (root / ".github/workflows/hypopg-macos-arm64-selected-publication.yml").read_text()
-        script = (root / "scripts/hypopg/macos-feasibility.sh").read_text()
-        emitter_source = (root / "tools/emit_hypopg_macos_publication.py").read_text()
-        pin = json.loads((root / "tools/hypopg_macos_pins/18.6-arm64.json").read_text())
         self.assertIn("scripts/macos/resolve-core.sh", workflow)
-        self.assertEqual(pin["core_archive"]["run_id"], run_id)
-        self.assertEqual(pin["core_archive"]["build_id"], f"github-{run_id}-1")
-        self.assertEqual(pin["core_archive"]["source_revision"], source_revision)
-        self.assertEqual(pin["core_archive"]["sha256"], core["sha256"])
-        self.assertIn("load_target_config", script)
-        self.assertIn(f'CORE_SHA256 = "{core["sha256"]}"', emitter_source)
+        self.assertIn("tools/hypopg_macos_target.py", workflow)
+        self.assertIn("--postgresql-version \"$POSTGRESQL_VERSION\" --architecture arm64", workflow)
+        self.assertIn('--output "$RUNNER_TEMP/hypopg-base-target.json"', workflow)
+        self.assertIn('resolve-core.sh "$RUNNER_TEMP/hypopg-base-target.json"', workflow)
+        self.assertNotIn("hypopg_macos_pins", workflow)
+        with self.assertRaisesRegex(emitter.coverage.CoverageError, "--target-config"):
+            emitter._default_target()
+        feasibility = Path("scripts/hypopg/macos-feasibility.sh").read_text()
+        self.assertIn("target_config=${3:?usage:", feasibility)
+        self.assertNotIn("hypopg_macos_pins", feasibility)
 
     def setUp(self):
         self.fixture = HypoPGMacOSFixture()

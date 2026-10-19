@@ -7,16 +7,15 @@ import import_hypopg_macos_publication as importer
 
 def _invoke(function, *args):
     original = (implementation.implementation.PROFILE_ID, implementation.implementation.ARCHITECTURE,
-                implementation.implementation.PLATFORM, implementation.implementation.CORE_SHA256)
+                implementation.implementation.PLATFORM)
     implementation.implementation.PROFILE_ID = implementation.PROFILE_ID
     implementation.implementation.ARCHITECTURE = implementation.ARCHITECTURE
     implementation.implementation.PLATFORM = f"macos-{implementation.ARCHITECTURE}"
-    implementation.implementation.CORE_SHA256 = implementation.CORE_SHA256
     try:
         return function(*args)
     finally:
         (implementation.implementation.PROFILE_ID, implementation.implementation.ARCHITECTURE,
-         implementation.implementation.PLATFORM, implementation.implementation.CORE_SHA256) = original
+         implementation.implementation.PLATFORM) = original
 
 
 def import_run(*args):

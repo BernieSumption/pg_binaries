@@ -187,14 +187,13 @@ def _copy(copies):
 def main(target=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[1])
-    parser.add_argument("--target-config", type=Path)
+    parser.add_argument("--target-config", type=Path, required=True)
     parser.add_argument("--core-artifact", type=Path, required=True)
     parser.add_argument("--hypopg-artifact", type=Path, required=True)
     parser.add_argument("--run-id", required=True)
     args = parser.parse_args()
     try:
-        target = target or (load_target_config(args.target_config)
-                            if args.target_config else publication._default_target())
+        target = target or load_target_config(args.target_config)
         print("\n".join(import_run(args.root, args.core_artifact, args.hypopg_artifact, args.run_id, target)))
         return 0
     except (coverage.CoverageError, OSError, ValueError, TypeError, KeyError) as exc:

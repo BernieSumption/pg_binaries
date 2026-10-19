@@ -2,7 +2,6 @@
 """Bind the HypoPG macOS arm64 archive and feasibility checks into records."""
 
 import argparse
-from dataclasses import replace
 import json
 import os
 from pathlib import Path
@@ -22,17 +21,11 @@ PG_VERSION = "18.6"
 HYPOPG_VERSION = "1.4.3"
 ARCHITECTURE = "arm64"
 PLATFORM = "macos-arm64"
-CORE_SHA256 = "ec3f624ecfbea6dad20672106ec11bfafadde42e0454bc90bef992caa4be0033"
 CASES = {"archive-suite", "static-analysis"}
 
 
 def _default_target():
-    pins = Path(__file__).parent / "hypopg_macos_pins"
-    if ARCHITECTURE == "arm64":
-        target = load_target_config(pins / f"{PG_VERSION}-arm64.json")
-        return replace(target, profile_id=PROFILE_ID, core_sha256=CORE_SHA256)
-    target = load_target_config(pins / f"{PG_VERSION}-{ARCHITECTURE}-selected.json", allow_base=True)
-    return replace(target, core_sha256=CORE_SHA256)
+    _fail("a resolved HypoPG macOS --target-config is required")
 
 
 def _fail(message):
@@ -212,7 +205,7 @@ def emit(root, core_dir, archives, output, step_results, os_version, image_id, e
 def main(target=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[1])
-    parser.add_argument("--target-config", type=Path)
+    parser.add_argument("--target-config", type=Path, required=True)
     parser.add_argument("--core-archives", type=Path, required=True)
     parser.add_argument("--archives", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
@@ -222,8 +215,7 @@ def main(target=None):
     parser.add_argument("--static-analysis-result", required=True)
     args = parser.parse_args()
     try:
-        target = target or (load_target_config(args.target_config)
-                            if args.target_config else _default_target())
+        target = target or load_target_config(args.target_config)
         for path in emit(args.root, args.core_archives, args.archives, args.output,
                          {"archive-suite": args.archive_suite_result,
                           "static-analysis": args.static_analysis_result},

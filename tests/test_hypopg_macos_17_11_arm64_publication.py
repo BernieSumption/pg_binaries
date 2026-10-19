@@ -8,29 +8,36 @@ import unittest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import emit_hypopg_macos_publication as emitter
-from hypopg_macos_target import load_target_config
-from test_emit_hypopg_macos_publication import HypoPGMacOSFixture
+import coverage
+from hypopg_macos_target import SOURCE_URL, base_target, load_target_config
+from test_emit_hypopg_macos_publication import (
+    HypoPGMacOSFixture, fixture_target, fixture_target_config,
+)
 
 
 class HypoPGMacOS1711Arm64Tests(unittest.TestCase):
     def setUp(self):
         root = Path(__file__).resolve().parents[1]
-        self.target = load_target_config(root / "tools/hypopg_macos_pins/17.11-arm64.json")
+        self.target = fixture_target("17.11", "arm64")
         self.fixture = HypoPGMacOSFixture(self.target)
         self.addCleanup(self.fixture.close)
 
-    def test_config_is_pinned_to_imported_core_and_profile(self):
+    def test_generated_base_target_uses_a_support_selected_release(self):
         root = Path(__file__).resolve().parents[1]
-        pin = json.loads((root / "tools/hypopg_macos_pins/17.11-arm64.json").read_text())
+        target = base_target("17.11", "arm64", root)
         profile = json.loads((root / "support/verification-profiles.json").read_text())[
-            "profiles"][self.target.profile_id]
-        self.assertEqual(pin["core_archive"]["run_id"], "39093804725")
-        self.assertEqual(pin["core_archive"]["build_id"], "github-39093804725-1")
-        self.assertEqual(pin["core_archive"]["sha256"],
-                         "d9ac809946cd87bbb585135d0ff329d33d5563047b9caaa312aea9116a8d9eaa")
+            "profiles"][target["profile_id"]]
+        self.assertEqual(target["core_archive"], {"basename": "postgresql-17.11-macos-arm64.tar.gz"})
+        self.assertEqual(target["source"]["url"], SOURCE_URL)
         self.assertEqual(profile["scope"], "publication")
         self.assertEqual(profile["platforms"], ["macos-arm64"])
+        with self.assertRaisesRegex(ValueError, "is not selected"):
+            base_target("14.18", "arm64", root)
+        with self.assertRaisesRegex(coverage.CoverageError, "unknown verification profile"):
+            base_target("15.19", "arm64", root)
         self.assertIn("tools/hypopg_macos_target.py", profile["sources"])
+        self.assertFalse(any("hypopg_macos_pins" in source for source in profile["sources"]))
+        self.assertIn("scripts/macos/core-prefix.sh", profile["sources"])
         self.assertIn("scripts/hypopg/macos-feasibility.sh", profile["sources"])
         self.assertIn("scripts/hypopg/verify-macos-publication.sh", profile["sources"])
         self.assertIn("policies/install-process.md", profile["sources"])
@@ -65,7 +72,7 @@ class HypoPGMacOS1711Arm64Tests(unittest.TestCase):
 
     def test_emit_and_import_bind_pg17_core_and_restore_pg18_default(self):
         original = (emitter.PROFILE_ID, emitter.PG_VERSION, emitter.ARCHITECTURE,
-                    emitter.PLATFORM, emitter.CORE_SHA256)
+                    emitter.PLATFORM)
         paths = self.fixture.emit()
         retained = self.fixture.import_run()
         receipt = json.loads((self.fixture.output / "publication/current-receipt.json").read_text())
@@ -76,11 +83,11 @@ class HypoPGMacOS1711Arm64Tests(unittest.TestCase):
         self.assertEqual(receipt["profile_id"], "hypopg-publication-macos-arm64-17.11")
         self.assertTrue(any(path.startswith("support/verification/") for path in retained))
         self.assertEqual((emitter.PROFILE_ID, emitter.PG_VERSION, emitter.ARCHITECTURE,
-                          emitter.PLATFORM, emitter.CORE_SHA256), original)
+                          emitter.PLATFORM), original)
 
     def test_target_config_rejects_core_basename_mismatch(self):
-        config = self.fixture.root / "tools/hypopg_macos_pins/17.11-arm64.json"
-        value = json.loads(config.read_text())
+        config = self.fixture.root / "target.json"
+        value = fixture_target_config(self.fixture.target)
         value["core_archive"]["basename"] = "postgresql-18.6-macos-arm64.tar.gz"
         config.write_text(json.dumps(value))
         with self.assertRaisesRegex(ValueError, "inconsistent"):

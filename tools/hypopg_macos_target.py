@@ -1,10 +1,12 @@
-"""Load the pinned target identity for a HypoPG macOS publication run."""
+"""Create and load target identities for a HypoPG macOS publication run."""
 
 from dataclasses import dataclass
 import json
 from pathlib import Path
 import re
 from typing import Optional
+
+import coverage
 
 
 HYPOPG_VERSION = "1.4.3"
@@ -47,6 +49,35 @@ def _unique_object(pairs):
     return result
 
 
+def base_target(postgresql_version, architecture, root=None):
+    """Create an unresolved target for one support-selected macOS release."""
+    if (not isinstance(postgresql_version, str)
+            or re.fullmatch(r"[1-9][0-9]*\.[0-9]+", postgresql_version) is None
+            or architecture not in {"arm64", "x86_64"}):
+        raise ValueError("invalid HypoPG macOS target")
+    root = Path(root) if root is not None else Path(__file__).resolve().parents[1]
+    support = coverage.load_json(root / "support.json")
+    releases = coverage.release_snapshot(
+        coverage.load_json(root / "support/postgresql-releases.json"), support)
+    selected_core_targets, _ = coverage.expected_targets(support, releases)
+    platform = f"macos-{architecture}"
+    if (postgresql_version, platform) not in selected_core_targets:
+        raise ValueError(f"PostgreSQL {postgresql_version} {platform} is not selected")
+    profile_id = f"hypopg-publication-{platform}-{postgresql_version}"
+    profile = coverage.verification_profile(root, profile_id)
+    if profile["scope"] != "publication" or profile["platforms"] != [platform]:
+        raise ValueError(f"HypoPG PostgreSQL {postgresql_version} {platform} publication is not registered")
+    return {
+        "schema_version": 1,
+        "profile_id": profile_id,
+        "postgresql_version": postgresql_version,
+        "architecture": architecture,
+        "platform": platform,
+        "core_archive": {"basename": f"postgresql-{postgresql_version}-{platform}.tar.gz"},
+        "source": {"url": SOURCE_URL, "sha256": SOURCE_SHA256},
+    }
+
+
 def load_target_config(path, allow_base=False):
     path = Path(path)
     try:
@@ -66,7 +97,8 @@ def load_target_config(path, allow_base=False):
 
     version = value.get("postgresql_version")
     architecture = value.get("architecture")
-    if value.get("schema_version") != 1 or version not in {"17.11", "18.6"}:
+    if (value.get("schema_version") != 1 or not isinstance(version, str)
+            or re.fullmatch(r"[1-9][0-9]*\.[0-9]+", version) is None):
         raise ValueError("unsupported HypoPG macOS PostgreSQL target version")
     if architecture not in {"arm64", "x86_64"}:
         raise ValueError("unsupported HypoPG macOS architecture")
@@ -95,3 +127,25 @@ def load_target_config(path, allow_base=False):
         raise ValueError("HypoPG target source must match the pinned 1.4.3 source archive")
     return HypoPGMacosTarget(profile_id, version, architecture, platform, core_basename,
                              run_id, digest, build_id, source_revision)
+
+
+def main(argv=None):
+    import argparse
+
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--postgresql-version", required=True)
+    parser.add_argument("--architecture", choices=("arm64", "x86_64"), required=True)
+    parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[1])
+    parser.add_argument("--output", type=Path, required=True)
+    args = parser.parse_args(argv)
+    try:
+        target = base_target(args.postgresql_version, args.architecture, args.root)
+    except (coverage.CoverageError, OSError, ValueError) as exc:
+        parser.error(str(exc))
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    args.output.write_text(json.dumps(target, indent=2) + "\n", encoding="utf-8")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

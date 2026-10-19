@@ -27,11 +27,11 @@ on:
     branches: [spike]
     paths:
       - '.github/workflows/hypopg-macos-x86_64-selected-publication.yml'
-      - 'tools/hypopg_macos_pins/18.6-x86_64-selected.json'
       - 'scripts/hypopg/macos-feasibility.sh'
       - 'scripts/macos/core-prefix.sh'
       - 'scripts/macos/resolve-core.sh'
       - 'tools/macos_core_target_config.py'
+      - 'tools/hypopg_macos_target.py'
       - 'tools/actions_candidate_discovery.py'
       - 'tools/emit_hypopg_macos_publication.py'
       - 'tools/emit_hypopg_macos_x86_64_publication.py'
@@ -50,7 +50,6 @@ jobs:
     outputs:
       postgresql_version: ${{ steps.plan.outputs.postgresql_version }}
       extension_version: ${{ steps.plan.outputs.selected_version }}
-      pin_path: ${{ steps.plan.outputs.pin_path }}
       work_group_id: ${{ steps.work.outputs.group_id }}
     steps:
       - uses: actions/checkout@v4
@@ -97,21 +96,6 @@ jobs:
             echo "The selected HypoPG release is $selected_version; the macOS recipe and publication tools support only 1.4.3." >&2
             exit 1
           fi
-          pin_path="tools/hypopg_macos_pins/${POSTGRESQL_VERSION}-x86_64-selected.json"
-          if [[ ! -f "$pin_path" ]]; then
-            echo "No checked macOS x86_64 core archive is configured for PostgreSQL $POSTGRESQL_VERSION." >&2
-            exit 1
-          fi
-          python3 - "$pin_path" "$POSTGRESQL_VERSION" <<'PY'
-          import sys
-          from pathlib import Path
-          sys.path.insert(0, "tools")
-          from hypopg_macos_target import load_target_config
-          target = load_target_config(Path(sys.argv[1]), allow_base=True)
-          if target.postgresql_version != sys.argv[2] or target.architecture != "x86_64":
-              raise SystemExit("pinned core target does not match the selected request")
-          PY
-          echo "pin_path=$pin_path" >> "$GITHUB_OUTPUT"
       - name: Resolve selected build work and prerequisites
         id: work
         env:
@@ -131,10 +115,17 @@ jobs:
     timeout-minutes: 100
     steps:
       - uses: actions/checkout@v4
+      - name: Create the selected PostgreSQL core base target
+        env:
+          POSTGRESQL_VERSION: ${{ needs.select.outputs.postgresql_version }}
+        run: |
+          python3 tools/hypopg_macos_target.py \
+            --postgresql-version "$POSTGRESQL_VERSION" --architecture x86_64 \
+            --output "$RUNNER_TEMP/hypopg-base-target.json"
       - name: Retrieve a checked core archive or build the selected PostgreSQL release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: bash scripts/macos/resolve-core.sh "${{ needs.select.outputs.pin_path }}" "$RUNNER_TEMP/core-archives"
+        run: bash scripts/macos/resolve-core.sh "$RUNNER_TEMP/hypopg-base-target.json" "$RUNNER_TEMP/core-archives"
       - name: Build the HypoPG archive against the selected core
         id: package
         continue-on-error: true

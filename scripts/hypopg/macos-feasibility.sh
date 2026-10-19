@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-core_archives=${1:?usage: macos-feasibility.sh CORE_ARCHIVE_DIRECTORY OUTPUT_DIRECTORY [TARGET_CONFIG]}
-output=${2:?usage: macos-feasibility.sh CORE_ARCHIVE_DIRECTORY OUTPUT_DIRECTORY [TARGET_CONFIG]}
+core_archives=${1:?usage: macos-feasibility.sh CORE_ARCHIVE_DIRECTORY OUTPUT_DIRECTORY TARGET_CONFIG}
+output=${2:?usage: macos-feasibility.sh CORE_ARCHIVE_DIRECTORY OUTPUT_DIRECTORY TARGET_CONFIG}
 repo=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 source "$repo/scripts/macos/core-prefix.sh"
-target_config=${3:-$repo/tools/hypopg_macos_pins/18.6-arm64.json}
+target_config=${3:?usage: macos-feasibility.sh CORE_ARCHIVE_DIRECTORY OUTPUT_DIRECTORY TARGET_CONFIG}
 target_values=$(PYTHONPATH="$repo/tools" python3 - "$target_config" <<'PY'
 import sys
 from hypopg_macos_target import load_target_config

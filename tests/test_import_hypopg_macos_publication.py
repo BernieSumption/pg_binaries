@@ -8,8 +8,8 @@ import unittest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from test_emit_hypopg_macos_publication import HypoPGMacOSFixture
-from hypopg_macos_target import load_target_config
 import import_hypopg_macos_publication as importer
+from test_emit_hypopg_macos_publication import fixture_target
 
 
 class ImportHypoPGMacOSPublicationTests(unittest.TestCase):
@@ -53,9 +53,8 @@ class ImportHypoPGMacOSPublicationTests(unittest.TestCase):
         self.assertEqual(destination.read_text(), "existing evidence\n")
 
     def test_same_run_imports_for_two_postgresql_versions_have_separate_evidence(self):
-        root = Path(__file__).resolve().parents[1]
-        target_17 = load_target_config(root / "tools/hypopg_macos_pins/17.11-arm64.json")
-        target_18 = load_target_config(root / "tools/hypopg_macos_pins/18.6-arm64.json")
+        target_17 = fixture_target("17.11", "arm64")
+        target_18 = fixture_target("18.6", "arm64")
         fixture_17 = HypoPGMacOSFixture(target_17)
         fixture_18 = HypoPGMacOSFixture(target_18)
         self.addCleanup(fixture_17.close)
