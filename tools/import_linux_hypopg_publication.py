@@ -15,7 +15,7 @@ def import_run(root, core_artifact, hypopg_artifact, run_id, architecture, postg
         slug="hypopg", project="HypoPG", version="1.4.3",
         profile_prefix="hypopg", publication_dir="hypopg-publication",
         extension_dir_name="hypopg", report_name="hypopg.json",
-        extension_dir_fallback=False, target_profile=True,
+        extension_dir_fallback=False, target_profile=True, target_version_dir=True,
     )
 
 

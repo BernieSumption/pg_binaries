@@ -156,13 +156,29 @@ class LinuxHypopgPublicationImportTests(unittest.TestCase):
         self.assertEqual(record["assembled_core"]["archive"], self.core_name)
         self.assertEqual(len(retained), 4)
 
+    def test_same_run_retains_each_postgresql_target_separately(self):
+        self._import()
+        for directory in (self.core_dir, self.hypopg_dir, self.publication):
+            shutil.rmtree(directory)
+        self.core_dir.mkdir()
+        self.hypopg_dir.mkdir()
+        self.records_dir.mkdir(parents=True)
+        self.postgresql_version = "15.19"
+        self._make_archives()
+        self._make_records()
+        self._import()
+        evidence = self.root / "support/evidence" / f"hypopg-publication-{self.run_id}/x86_64"
+        self.assertTrue((evidence / "18.6/current-receipt.json").is_file())
+        self.assertTrue((evidence / "15.19/current-receipt.json").is_file())
+
     def test_retains_exact_bytes_and_is_idempotent(self):
         log = self.publication / "current-verifier.log"
         log.write_bytes(b"verifier output\n")
         retained = self._import()
         self.assertEqual(len(retained), 5)
         for source in [self.publication / "current-receipt.json", log]:
-            destination = self.root / "support/evidence" / f"hypopg-publication-{self.run_id}/x86_64" / source.name
+            destination = (self.root / "support/evidence" /
+                           f"hypopg-publication-{self.run_id}/x86_64/{self.postgresql_version}" / source.name)
             self.assertEqual(source.read_bytes(), destination.read_bytes())
         self.assertEqual(self._import(), retained)
 

@@ -270,7 +270,7 @@ jobs:
             ${{ runner.temp }}/hypopg/*.json
             ${{ runner.temp }}/hypopg/static-analysis/**
             ${{ runner.temp }}/hypopg-publication/**
-            support/evidence/hypopg-publication-${{ github.run_id }}/${{ needs.select.outputs.architecture }}/**
+            support/evidence/hypopg-publication-${{ github.run_id }}/${{ needs.select.outputs.architecture }}/${{ needs.select.outputs.postgresql_version }}/**
             support/verification/hypopg-1.4.3-postgresql-${{ needs.select.outputs.postgresql_version }}-linux-${{ needs.select.outputs.architecture }}-current-${{ github.run_id }}.json
           if-no-files-found: warn
           retention-days: 7

@@ -16,7 +16,8 @@ MAX_EVIDENCE_BYTES = 1024 * 1024
 def import_run(root, core_artifact, extension_artifact, run_id, architecture,
                postgresql_version, *, slug, project, version, profile_prefix,
                publication_dir, extension_dir_name, report_name,
-               extension_dir_fallback=False, target_profile=False):
+               extension_dir_fallback=False, target_profile=False,
+               target_version_dir=False):
     root, core_artifact, extension_artifact = map(Path, (root, core_artifact, extension_artifact))
     run_id = str(run_id)
     if (not re.fullmatch(r"\d+", run_id) or architecture not in ARCHITECTURES
@@ -37,6 +38,8 @@ def import_run(root, core_artifact, extension_artifact, run_id, architecture,
     if extension_dir_fallback and not extension_dir.is_dir():
         extension_dir = extension_artifact
     target = root / "support/evidence" / f"{slug}-publication-{run_id}" / architecture
+    if target_version_dir:
+        target /= postgresql_version
     steps_path = publication / "current-steps.json"
     steps = _steps(steps_path, profile)
     copies = [(steps_path, target / steps_path.name)]
