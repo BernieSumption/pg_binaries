@@ -94,6 +94,8 @@ class HypopgPlannerAdapterTests(unittest.TestCase):
     def test_rejects_stale_core_recipe(self):
         with mock.patch.object(adapter.linux_extension_candidate, "validate_candidate",
                                return_value=self.validated), \
+                mock.patch.object(adapter.hypopg_build_inputs, "selected_identity",
+                                  return_value=self.identity), \
                 mock.patch.object(adapter.linux_core_resolution, "validate_resolution",
                                    return_value={"origin": "reused", "provenance": {
                                        "run_id": self.source["run_id"],
@@ -139,6 +141,8 @@ class HypopgPlannerAdapterTests(unittest.TestCase):
     def test_rejects_failed_core_resolution_provenance(self):
         with mock.patch.object(adapter.linux_extension_candidate, "validate_candidate",
                                return_value=self.validated), \
+                mock.patch.object(adapter.hypopg_build_inputs, "selected_identity",
+                                  return_value=self.identity), \
                 mock.patch.object(adapter.linux_core_resolution, "validate_resolution",
                                    side_effect=ValueError("resolution digest mismatch")):
             with self.assertRaisesRegex(adapter.PlannerAdapterError, "core resolution provenance rejected"):
