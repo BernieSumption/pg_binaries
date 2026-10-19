@@ -1,0 +1,187 @@
+name: PostgreSQL selected macOS publication
+
+on:
+  push:
+    branches: [spike]
+    paths:
+      - '.github/workflows/postgresql-macos-selected-publication.yml'
+  workflow_call:
+    inputs:
+      postgresql_version:
+        description: Exact selected PostgreSQL release
+        required: true
+        type: string
+      architecture:
+        description: Native macOS architecture
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      postgresql_version:
+        description: Exact selected PostgreSQL release
+        required: true
+        type: string
+      architecture:
+        description: Native macOS architecture
+        required: true
+        type: choice
+        options: [arm64, x86_64]
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  select:
+    runs-on: ubuntu-latest
+    outputs:
+      postgresql_version: ${{ steps.target.outputs.postgresql_version }}
+      architecture: ${{ steps.target.outputs.architecture }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate selected macOS PostgreSQL target
+        id: target
+        env:
+          PG_VERSION: ${{ inputs.postgresql_version || '18.6' }}
+          PG_ARCHITECTURE: ${{ inputs.architecture || 'arm64' }}
+        run: |
+          set -euo pipefail
+          python3 - "$PG_VERSION" "$PG_ARCHITECTURE" <<'PY'
+          import importlib.util
+          import pathlib
+          import sys
+          root = pathlib.Path.cwd()
+          spec = importlib.util.spec_from_file_location("publication_coverage", root / "tools/coverage.py")
+          coverage = importlib.util.module_from_spec(spec)
+          spec.loader.exec_module(coverage)
+          support = coverage.load_json(root / "support.json")
+          releases = coverage.release_snapshot(
+              coverage.load_json(root / "support/postgresql-releases.json"), support)
+          core, _ = coverage.expected_targets(support, releases)
+          if (sys.argv[1], f"macos-{sys.argv[2]}") not in core:
+              raise SystemExit(f"PostgreSQL {sys.argv[1]} macos-{sys.argv[2]} is not selected")
+          PY
+          printf 'postgresql_version=%s\narchitecture=%s\n' "$PG_VERSION" "$PG_ARCHITECTURE" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: select
+    runs-on: ${{ needs.select.outputs.architecture == 'arm64' && 'macos-15' || 'macos-15-intel' }}
+    timeout-minutes: 100
+    env:
+      PG_VERSION: ${{ needs.select.outputs.postgresql_version }}
+      PG_ARCHITECTURE: ${{ needs.select.outputs.architecture }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and package selected PostgreSQL core and symbols
+        id: package
+        continue-on-error: true
+        run: bash scripts/macos/build.sh "$RUNNER_TEMP/archives" "$PG_ARCHITECTURE" "$PG_VERSION" core-only
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: postgresql-macos-selected-${{ needs.select.outputs.postgresql_version }}-${{ needs.select.outputs.architecture }}-build-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/archives/*.tar.gz
+            ${{ runner.temp }}/archives/*.sha256
+            ${{ runner.temp }}/archives/debug-symbols/**
+          retention-days: 7
+          if-no-files-found: warn
+      - name: Require core build
+        if: always()
+        run: |
+          if [[ '${{ steps.package.outcome }}' != success ]]; then
+            echo 'Selected macOS PostgreSQL core build must pass' >&2
+            exit 1
+          fi
+
+  verify:
+    needs: [select, build]
+    if: always() && needs.select.result == 'success'
+    runs-on: ${{ needs.select.outputs.architecture == 'arm64' && 'macos-15' || 'macos-15-intel' }}
+    timeout-minutes: 35
+    env:
+      PG_VERSION: ${{ needs.select.outputs.postgresql_version }}
+      PG_ARCHITECTURE: ${{ needs.select.outputs.architecture }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download exact core archive and symbols from build runner
+        id: download
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: postgresql-macos-selected-${{ needs.select.outputs.postgresql_version }}-${{ needs.select.outputs.architecture }}-build-${{ github.run_id }}
+          path: ${{ runner.temp }}/archives
+      - name: Verify relocated PostgreSQL core and Mach-O closure
+        id: archive_suite
+        if: always() && steps.download.outcome == 'success'
+        continue-on-error: true
+        env:
+          MACOS_STATIC_ANALYSIS_REPORT: ${{ runner.temp }}/verification/static-analysis.json
+        run: bash scripts/macos/verify.sh --core-only "$RUNNER_TEMP/archives" "$PG_ARCHITECTURE" "$PG_VERSION"
+      - name: Verify dSYMs against downloaded core archive
+        id: symbols
+        if: always() && steps.download.outcome == 'success'
+        continue-on-error: true
+        run: |
+          python3 tools/create_macos_symbols.py \
+            "$RUNNER_TEMP/archives/postgresql-$PG_VERSION-macos-$PG_ARCHITECTURE.tar.gz" \
+            --output-dir "$RUNNER_TEMP/archives/debug-symbols" --verify-only
+      - name: Capture representative macOS loader and PostgreSQL failures
+        id: diagnostics
+        if: always() && steps.download.outcome == 'success'
+        continue-on-error: true
+        run: bash scripts/macos/diagnostics.sh --core-only "$RUNNER_TEMP/archives" "$PG_ARCHITECTURE" "$PG_VERSION" "$RUNNER_TEMP/verification/diagnostics.json"
+      - name: Emit and import one archive-bound core record or a failed attempt
+        id: evidence
+        if: always()
+        continue-on-error: true
+        env:
+          ARCHIVE_SUITE_OUTCOME: ${{ steps.archive_suite.outcome }}
+          SYMBOLS_OUTCOME: ${{ steps.symbols.outcome }}
+          DIAGNOSTICS_OUTCOME: ${{ steps.diagnostics.outcome }}
+        run: |
+          set -euo pipefail
+          record_dir="$RUNNER_TEMP/verification"
+          mkdir -p "$record_dir/debug-symbols"
+          if [[ -f "$RUNNER_TEMP/archives/debug-symbols/index.json" ]]; then
+            cp "$RUNNER_TEMP/archives/debug-symbols/index.json" "$record_dir/debug-symbols/index.json"
+          fi
+          python3 - "$record_dir/step-results.json" <<'PY'
+          import json, os, pathlib, sys
+          steps = {"archive-suite": os.environ["ARCHIVE_SUITE_OUTCOME"],
+                   "diagnostics": os.environ["DIAGNOSTICS_OUTCOME"],
+                   "symbols": os.environ["SYMBOLS_OUTCOME"]}
+          pathlib.Path(sys.argv[1]).write_text(json.dumps(steps, sort_keys=True) + "\n")
+          PY
+          image_id="${ImageOS:?runner image OS missing}/${ImageVersion:?runner image version missing}"
+          python3 tools/emit_macos_core_publication.py \
+            --archives "$RUNNER_TEMP/archives" --output "$record_dir" \
+            --postgresql-version "$PG_VERSION" --architecture "$PG_ARCHITECTURE" \
+            --revision "$GITHUB_SHA" --os-version "$(sw_vers -productVersion)" \
+            --image-id "$image_id" --step-results "$record_dir/step-results.json" \
+            --static-report "$record_dir/static-analysis.json" \
+            --symbol-report "$record_dir/debug-symbols/index.json" \
+            --diagnostic-report "$record_dir/diagnostics.json"
+          python3 tools/import_macos_core_publication.py \
+            --archive-artifact "$RUNNER_TEMP/archives" --verification-artifact "$record_dir" \
+            --run-id "$GITHUB_RUN_ID" --postgresql-version "$PG_VERSION" \
+            --architecture "$PG_ARCHITECTURE"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: postgresql-macos-selected-${{ needs.select.outputs.postgresql_version }}-${{ needs.select.outputs.architecture }}-verification-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/verification/**
+            support/evidence/macos-core-publication-${{ github.run_id }}/**
+            support/verification/postgresql-${{ needs.select.outputs.postgresql_version }}-macos-${{ needs.select.outputs.architecture }}-current-${{ github.run_id }}.json
+          retention-days: 7
+          if-no-files-found: warn
+      - name: Require fresh-runner core verification and evidence
+        if: always()
+        run: |
+          if [[ '${{ needs.build.result }}' != success || '${{ steps.download.outcome }}' != success ||
+                '${{ steps.archive_suite.outcome }}' != success || '${{ steps.symbols.outcome }}' != success ||
+                '${{ steps.diagnostics.outcome }}' != success || '${{ steps.evidence.outcome }}' != success ]]; then
+            echo 'Selected macOS PostgreSQL core publication checks must all pass' >&2
+            exit 1
+          fi

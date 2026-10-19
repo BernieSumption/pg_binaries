@@ -1,11 +1,28 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-archives=$(cd "${1:?usage: diagnostics.sh ARCHIVE_DIRECTORY [ARCHITECTURE] [POSTGRESQL_VERSION] [PGVECTOR_VERSION] [REPORT.json]}" && pwd)
+core_only=false
+if [[ ${1:-} == --core-only ]]; then
+  core_only=true
+  shift
+fi
+if [[ ${1:-} == --help ]]; then
+  echo "Usage: diagnostics.sh [--core-only] ARCHIVE_DIRECTORY [ARCHITECTURE] [POSTGRESQL_VERSION] [REPORT.json]"
+  echo "       diagnostics.sh ARCHIVE_DIRECTORY [ARCHITECTURE] [POSTGRESQL_VERSION] [PGVECTOR_VERSION] [REPORT.json]"
+  exit 0
+fi
+archives=$(cd "${1:?usage: diagnostics.sh [--core-only] ARCHIVE_DIRECTORY [ARCHITECTURE] [POSTGRESQL_VERSION] [PGVECTOR_VERSION] [REPORT.json]}" && pwd)
 architecture=${2:-$(uname -m)}
 pg_version=${3:-18.6}
-vector_version=${4:-0.8.7}
-report=${5:-"$archives/macos-diagnostics-${pg_version}-${architecture}.json"}
+if $core_only; then
+  report=${4:-"$archives/macos-diagnostics-${pg_version}-${architecture}.json"}
+  vector_version=
+  vector_name=
+else
+  vector_version=${4:-0.8.7}
+  report=${5:-"$archives/macos-diagnostics-${pg_version}-${architecture}.json"}
+  vector_name="pgvector-${vector_version}-postgresql-${pg_version}-macos-${architecture}.tar.gz"
+fi
 case "$architecture" in x86_64|arm64) ;; *) echo "Unsupported macOS architecture: $architecture" >&2; exit 2 ;; esac
 if [[ $(uname -s) != Darwin || $(uname -m) != "$architecture" ]]; then
   echo "Diagnostics require native macOS $architecture" >&2
@@ -13,14 +30,15 @@ if [[ $(uname -s) != Darwin || $(uname -m) != "$architecture" ]]; then
 fi
 
 pg_name="postgresql-${pg_version}-macos-${architecture}.tar.gz"
-vector_name="pgvector-${vector_version}-postgresql-${pg_version}-macos-${architecture}.tar.gz"
 pg_archive="$archives/$pg_name"
-vector_archive="$archives/$vector_name"
-for file in "$pg_archive" "$vector_archive"; do
+if ! $core_only; then vector_archive="$archives/$vector_name"; fi
+inputs=("$pg_archive")
+if ! $core_only; then inputs+=("$vector_archive"); fi
+for file in "${inputs[@]}"; do
   test -s "$file" || { echo "Missing diagnostic input: $file" >&2; exit 2; }
 done
 cd "$archives"
-shasum -a 256 -c "$pg_name.sha256" "$vector_name.sha256"
+if $core_only; then shasum -a 256 -c "$pg_name.sha256"; else shasum -a 256 -c "$pg_name.sha256" "$vector_name.sha256"; fi
 work=$(mktemp -d "${RUNNER_TEMP:-/tmp}/pg-macos-diagnostics.XXXXXX")
 data=
 pg_ctl=
@@ -34,7 +52,7 @@ trap cleanup EXIT
 mkdir -p "$work/system" "$work/server" "$(dirname "$report")"
 
 tar -xzf "$pg_archive" -C "$work/system"
-tar -xzf "$vector_archive" -C "$work/system"
+if ! $core_only; then tar -xzf "$vector_archive" -C "$work/system"; fi
 root="$work/system/postgresql"
 test -x "$root/bin/postgres"
 
@@ -72,7 +90,7 @@ fi
 rm -rf "$work/server"
 mkdir -p "$work/server"
 tar -xzf "$pg_archive" -C "$work/server"
-tar -xzf "$vector_archive" -C "$work/server"
+if ! $core_only; then tar -xzf "$vector_archive" -C "$work/server"; fi
 root="$work/server/postgresql"
 data="$work/server/data"
 socket="$work/server/socket"
@@ -97,7 +115,7 @@ if [[ $client_status -eq 0 ]] || ! grep -q 'ERROR:  division by zero' "$log"; th
 fi
 
 PG_DIAG_REPORT="$report" PG_DIAG_ARCHIVE_DIR="$archives" PG_DIAG_PG_NAME="$pg_name" \
-PG_DIAG_VECTOR_NAME="$vector_name" \
+PG_DIAG_CORE_ONLY="$core_only" PG_DIAG_VECTOR_NAME="$vector_name" \
 PG_DIAG_SYSTEM_OUTPUT="$system_output" PG_DIAG_SYSTEM_STATUS="$system_status" \
 PG_DIAG_SYSTEM_STARTED="$system_started" PG_DIAG_SYSTEM_FINISHED="$system_finished" \
 PG_DIAG_MISSING_DYLIB="$missing_path" PG_DIAG_OTOOL="$otool_output" \
@@ -116,13 +134,20 @@ def command_version(*args):
 
 archive_dir = Path(os.environ["PG_DIAG_ARCHIVE_DIR"])
 hashes = {}
-for name in (os.environ["PG_DIAG_PG_NAME"], os.environ["PG_DIAG_VECTOR_NAME"]):
+names = [os.environ["PG_DIAG_PG_NAME"]]
+if os.environ["PG_DIAG_CORE_ONLY"] != "true":
+    names.append(os.environ["PG_DIAG_VECTOR_NAME"])
+for name in names:
     digest = hashlib.sha256((archive_dir / name).read_bytes()).hexdigest()
     hashes[name] = digest
 metadata = json.loads((Path(os.environ["PG_DIAG_ROOT"]) / "manifest.json").read_text())
-vector_metadata = json.loads((Path(os.environ["PG_DIAG_ROOT"]).parent / "metadata.json").read_text())
-if metadata.get("build_id") != vector_metadata.get("build_id") or not metadata.get("build_id"):
-    raise SystemExit("archive metadata has missing or inconsistent build identifiers")
+vector_metadata = None
+if os.environ["PG_DIAG_CORE_ONLY"] != "true":
+    vector_metadata = json.loads((Path(os.environ["PG_DIAG_ROOT"]).parent / "metadata.json").read_text())
+    if metadata.get("build_id") != vector_metadata.get("build_id") or not metadata.get("build_id"):
+        raise SystemExit("archive metadata has missing or inconsistent build identifiers")
+elif not metadata.get("build_id"):
+    raise SystemExit("archive metadata has missing build identifier")
 env_names = ("DYLD_LIBRARY_PATH", "DYLD_FALLBACK_LIBRARY_PATH", "DYLD_FRAMEWORK_PATH",
              "DYLD_FALLBACK_FRAMEWORK_PATH", "PGDATA", "PGSYSCONFDIR")
 record = {
@@ -132,13 +157,12 @@ record = {
     "os_version": command_version("sw_vers", "-productVersion"),
     "kernel": platform.release(),
     "postgresql_version": os.environ["PG_DIAG_PG_VERSION"],
-    "pgvector_version": os.environ["PG_DIAG_VECTOR_VERSION"],
     "build_id": metadata["build_id"],
     "source_revision": metadata.get("source_revision"),
     "inventory_revision": None,
     "archive_urls": None,
     "archives": hashes,
-    "package_metadata": {"postgresql": metadata, "pgvector": vector_metadata},
+    "package_metadata": {"postgresql": metadata},
     "inspection_tool_versions": {
         "apple_toolchain": command_version("xcodebuild", "-version"),
         "otool_path": shutil.which("otool"),
@@ -167,6 +191,9 @@ record = {
         "server_log": Path(os.environ["PG_DIAG_SERVER_LOG"]).read_text(errors="replace"),
     },
 }
+if vector_metadata is not None:
+    record["pgvector_version"] = os.environ["PG_DIAG_VECTOR_VERSION"]
+    record["package_metadata"]["pgvector"] = vector_metadata
 if not record["system_failure"]["loader_output"] or not record["postgresql_failure"]["server_log"]:
     raise SystemExit("diagnostic report lacks required failure evidence")
 Path(os.environ["PG_DIAG_REPORT_PATH"]).write_text(json.dumps(record, indent=2, sort_keys=True) + "\n")

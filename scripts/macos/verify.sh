@@ -1,6 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+core_only=false
+if [[ ${1:-} == --core-only ]]; then
+  core_only=true
+  shift
+fi
+if [[ ${1:-} == --help ]]; then
+  echo "Usage: verify.sh [--core-only] ARCHIVE_DIRECTORY [ARCHITECTURE] [POSTGRESQL_VERSION]"
+  exit 0
+fi
 archives=$(cd "${1:?archive directory required}" && pwd)
 architecture=${2:-$(uname -m)}
 pg_version=${3:-18.6}
@@ -24,27 +33,30 @@ cleanup() {
 trap cleanup EXIT
 
 cd "$archives"
-shasum -a 256 -c "$pg_name.sha256" "$vector_name.sha256"
+if $core_only; then
+  shasum -a 256 -c "$pg_name.sha256"
+else
+  shasum -a 256 -c "$pg_name.sha256" "$vector_name.sha256"
+fi
 python3 "$repo/tools/check_macos_license_inventory.py" "$archives/$pg_name"
-python3 "$repo/tools/check_macos_license_inventory.py" "$archives/$vector_name"
+if ! $core_only; then python3 "$repo/tools/check_macos_license_inventory.py" "$archives/$vector_name"; fi
 mkdir -p "$work/first" "$work/extension" "$work/moved" "$work/socket"
 tar -xzf "$archives/$pg_name" -C "$work/first"
-tar -xzf "$archives/$vector_name" -C "$work/extension"
-python3 "$repo/tools/check_source_identity.py" --platform macos \
-  --postgresql-version "$pg_version" \
-  --core-manifest "$work/first/postgresql/manifest.json" \
-  --vector-metadata "$work/extension/metadata.json"
+if ! $core_only; then tar -xzf "$archives/$vector_name" -C "$work/extension"; fi
+source_args=(--platform macos --postgresql-version "$pg_version" --core-manifest "$work/first/postgresql/manifest.json")
+if ! $core_only; then source_args+=(--vector-metadata "$work/extension/metadata.json"); fi
+python3 "$repo/tools/check_source_identity.py" "${source_args[@]}"
 
-python3 - "$work/first/postgresql" "$work/extension" "$architecture" "$pg_version" <<'PY'
+python3 - "$work/first/postgresql" "$architecture" "$pg_version" "$core_only" "$work/extension" <<'PY'
 import json, pathlib, re, sys
-core, extension = map(pathlib.Path, sys.argv[1:3])
+core = pathlib.Path(sys.argv[1])
+core_only = sys.argv[4] == 'true'
 pg = json.loads((core / 'manifest.json').read_text())
-vector = json.loads((extension / 'metadata.json').read_text())
-expected = {"schema_version": 1, "postgresql_version": sys.argv[4], "platform": "macos", "architecture": sys.argv[3]}
+expected = {"schema_version": 1, "postgresql_version": sys.argv[3], "platform": "macos", "architecture": sys.argv[2]}
 for key, value in expected.items():
     if pg.get(key) != value:
         raise SystemExit(f"PostgreSQL manifest mismatch: {key}: {pg.get(key)!r} != {value!r}")
-if pg.get("component") != "postgresql" or pg.get("version") != sys.argv[4]:
+if pg.get("component") != "postgresql" or pg.get("version") != sys.argv[3]:
     raise SystemExit("PostgreSQL manifest mismatch")
 provenance_fields = ('build_id', 'source_revision', 'build_configuration', 'platform', 'architecture')
 provenance = {field: pg.get(field) for field in provenance_fields}
@@ -57,27 +69,32 @@ if not isinstance(provenance['build_configuration'], str) or not provenance['bui
 controls = {path.stem for path in (core / 'share/extension').glob('*.control')}
 if not controls or pg.get('included_extensions') != sorted(controls) or 'vector' in controls or 'uuid-ossp' not in controls:
     raise SystemExit('built-in extension inventory mismatch')
-expected_vector = {'project': 'pgvector', 'version': '0.8.7', 'sql_names': ['vector'],
-                   'requires': [], 'configuration_prerequisites': [], 'runtime_prerequisites': []}
-if any(vector.get(key) != value for key, value in expected_vector.items()):
-    raise SystemExit('pgvector metadata mismatch')
-if any(vector.get(field) != value for field, value in provenance.items()):
-    raise SystemExit('pgvector build provenance differs from PostgreSQL')
-licence_inventory = extension / 'pgvector/LICENSES/pgvector-inventory.json'
-inventory = json.loads(licence_inventory.read_text())
-if inventory.get('schema_version') != 1 or not inventory.get('components'):
-    raise SystemExit('pgvector licence inventory missing components')
-for source in (extension / 'pgvector').rglob('*'):
-    destination = core / source.relative_to(extension / 'pgvector')
-    if destination.exists() or destination.is_symlink():
-        if source.is_dir() and not source.is_symlink() and destination.is_dir() and not destination.is_symlink():
-            continue
-        raise SystemExit(f'extension payload collision: {source.relative_to(extension / "pgvector")}')
+if not core_only:
+    extension = pathlib.Path(sys.argv[5])
+    vector = json.loads((extension / 'metadata.json').read_text())
+    expected_vector = {'project': 'pgvector', 'version': '0.8.7', 'sql_names': ['vector'],
+                       'requires': [], 'configuration_prerequisites': [], 'runtime_prerequisites': []}
+    if any(vector.get(key) != value for key, value in expected_vector.items()):
+        raise SystemExit('pgvector metadata mismatch')
+    if any(vector.get(field) != value for field, value in provenance.items()):
+        raise SystemExit('pgvector build provenance differs from PostgreSQL')
+    licence_inventory = extension / 'pgvector/LICENSES/pgvector-inventory.json'
+    inventory = json.loads(licence_inventory.read_text())
+    if inventory.get('schema_version') != 1 or not inventory.get('components'):
+        raise SystemExit('pgvector licence inventory missing components')
+    for source in (extension / 'pgvector').rglob('*'):
+        destination = core / source.relative_to(extension / 'pgvector')
+        if destination.exists() or destination.is_symlink():
+            if source.is_dir() and not source.is_symlink() and destination.is_dir() and not destination.is_symlink():
+                continue
+            raise SystemExit(f'extension payload collision: {source.relative_to(extension / "pgvector")}')
 PY
 test -s "$work/first/postgresql/LICENSES/PostgreSQL.txt"
-test -s "$work/extension/pgvector/LICENSES/pgvector.txt"
-ditto "$work/extension/pgvector" "$work/first/postgresql"
-test -s "$work/first/postgresql/LICENSES/pgvector.txt"
+if ! $core_only; then
+  test -s "$work/extension/pgvector/LICENSES/pgvector.txt"
+  ditto "$work/extension/pgvector" "$work/first/postgresql"
+  test -s "$work/first/postgresql/LICENSES/pgvector.txt"
+fi
 
 start_server() {
   local pg_root=$1
@@ -154,7 +171,7 @@ printf "CREATE COLLATION pilot_libc (provider = libc, locale = '%s');\n" "$local
 "${psql[@]}" -c "SELECT pg_reload_conf()"
 "${psql[@]}" -At -c "SHOW wal_compression" | grep -Fx zstd
 
-"${psql[@]}" -f "$repo/tests/extensions/pgvector.sql"
+if ! $core_only; then "${psql[@]}" -f "$repo/tests/extensions/pgvector.sql"; fi
 "${psql[@]}" -f "$repo/tests/builtins/coverage.sql"
 dump_compression=(-Z zstd:1)
 if [[ $pg_version == 15.* ]]; then dump_compression=(-Z 1); fi
@@ -163,13 +180,16 @@ if [[ $pg_version == 15.* ]]; then dump_compression=(-Z 1); fi
 "$pg/bin/pg_restore" --exit-on-error -h "$work/socket" -p 54329 -d restored "$work/pilot.dump"
 restored=("$pg/bin/psql" -h "$work/socket" -p 54329 -d restored -X -v ON_ERROR_STOP=1)
 "${restored[@]}" -At -c 'SELECT pilot.active_item_count(1)' | grep -Fx 1
-"${restored[@]}" -At -c "SELECT id FROM pilot_vectors ORDER BY embedding <-> '[1,0,0]'::vector LIMIT 1" | grep -Fx 1
+if ! $core_only; then
+  "${restored[@]}" -At -c "SELECT id FROM pilot_vectors ORDER BY embedding <-> '[1,0,0]'::vector LIMIT 1" | grep -Fx 1
+fi
 "${psql[@]}" -c 'CREATE DATABASE surgery_check'
 surgery=("$pg/bin/psql" -h "$work/socket" -p 54329 -d surgery_check -X -v ON_ERROR_STOP=1)
 "${surgery[@]}" -f "$repo/tests/builtins/surgery.sql"
 stop_server
 
 static_report=${MACOS_STATIC_ANALYSIS_REPORT:-$work/macos-static-analysis.json}
-python3 "$repo/scripts/macos/static_analysis.py" "$pg" "$architecture" \
-  --archive "$archives/$pg_name" --archive "$archives/$vector_name" --report "$static_report"
+static_args=(--archive "$archives/$pg_name" --report "$static_report")
+if ! $core_only; then static_args+=(--archive "$archives/$vector_name"); fi
+python3 "$repo/scripts/macos/static_analysis.py" "$pg" "$architecture" "${static_args[@]}"
 echo "macOS packaged archive verification passed on $(sw_vers -productVersion), $(uname -m), libc locale $locale_name"

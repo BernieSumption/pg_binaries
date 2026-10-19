@@ -83,6 +83,8 @@ The selected Linux PostgreSQL-only path now has a support-derived scheduler targ
 
 The Windows PostgreSQL builder already supports a core-only mode. A selected-target workflow and four version-specific profiles now use that mode with fresh-runner relocation, built-in SQL, PE dependency inspection, PDB verification and diagnostic probes. Separate emitter and importer tools require one exact core archive and retain failed attempts without inventing a passed record. Local tests and PowerShell syntax checks pass; the Windows runner path still needs a focused CI trial, independent evidence import and checked core reuse before the pilot workflow can be retired.
 
+The macOS PostgreSQL builder also supports core-only mode. The shared verifier and diagnostic probe now accept a single PostgreSQL archive, and a selected-target workflow and eight version/architecture profiles separate building from fresh-runner verification. Core-specific evidence tools bind the final archive to Mach-O, dSYM and diagnostic reports and retain failed attempts. Local tests pass; this path still needs focused and full-matrix CI, independent evidence import, checked archive reuse and replacement of the paired pilot's PostgreSQL core role.
+
 ### Migrate active paths
 
 - [ ] Migrate remaining active PostgreSQL and extension build recipes, verification profiles, SQL probes, evidence emitters and importers, and workflows in batches. Cover every currently implemented platform, architecture, PostgreSQL release and project path; preserve required cases and exact archive identity checks. A batch is complete when its new path passes the applicable CI checks and the superseded path is removed.
