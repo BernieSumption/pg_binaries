@@ -8,18 +8,19 @@ from pathlib import Path
 from source_archive import source_archive
 
 
-def check(root, platform, version, core_manifest, vector_metadata, vector_version="0.8.7"):
+def check(root, platform, version, core_manifest, vector_metadata=None, vector_version="0.8.7"):
     archive_format = "tar.gz" if platform == "windows" else "tar.bz2"
     expected_core = source_archive("postgresql", version, archive_format, root)
-    expected_vector = source_archive("pgvector", vector_version, "tar.gz", root)
     core = json.loads(Path(core_manifest).read_text(encoding="utf-8-sig"))
-    vector = json.loads(Path(vector_metadata).read_text(encoding="utf-8-sig"))
     if core.get("source_archive") != expected_core:
         raise ValueError("PostgreSQL packaged source identity differs from selected archive")
-    if vector.get("source_archive") != expected_vector:
-        raise ValueError("pgvector packaged source identity differs from selected archive")
     if platform == "windows" and core.get("source_sha256") != expected_core["sha256"]:
         raise ValueError("PostgreSQL legacy source checksum differs from selected archive")
+    if vector_metadata is not None:
+        expected_vector = source_archive("pgvector", vector_version, "tar.gz", root)
+        vector = json.loads(Path(vector_metadata).read_text(encoding="utf-8-sig"))
+        if vector.get("source_archive") != expected_vector:
+            raise ValueError("pgvector packaged source identity differs from selected archive")
 
 
 def main():
@@ -29,7 +30,7 @@ def main():
     parser.add_argument("--postgresql-version", required=True)
     parser.add_argument("--pgvector-version", default="0.8.7")
     parser.add_argument("--core-manifest", type=Path, required=True)
-    parser.add_argument("--vector-metadata", type=Path, required=True)
+    parser.add_argument("--vector-metadata", type=Path)
     args = parser.parse_args()
     check(args.root, args.platform, args.postgresql_version,
           args.core_manifest, args.vector_metadata, args.pgvector_version)

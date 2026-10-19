@@ -2,6 +2,7 @@ param(
   [Parameter(Mandatory = $true)][string]$ArchiveDirectory,
   [string]$PostgreSQLVersion = '18.6',
   [string]$PgvectorVersion = '0.8.7',
+  [switch]$CoreOnly,
   [string]$ReportPath
 )
 
@@ -12,10 +13,16 @@ if (-not $ReportPath) { $ReportPath = Join-Path $ArchiveDirectory "windows-diagn
 $ReportPath = [IO.Path]::GetFullPath($ReportPath)
 $archives = (Resolve-Path $ArchiveDirectory).Path
 $pgName = "postgresql-$PostgreSQLVersion-windows-$architecture.tar.gz"
-$vectorName = "pgvector-$PgvectorVersion-postgresql-$PostgreSQLVersion-windows-$architecture.tar.gz"
 $pgArchive = Join-Path $archives $pgName
-$vectorArchive = Join-Path $archives $vectorName
-foreach ($archive in @($pgArchive, $vectorArchive)) {
+$archivePaths = @($pgArchive)
+$vectorName = $null
+$vectorArchive = $null
+if (-not $CoreOnly) {
+  $vectorName = "pgvector-$PgvectorVersion-postgresql-$PostgreSQLVersion-windows-$architecture.tar.gz"
+  $vectorArchive = Join-Path $archives $vectorName
+  $archivePaths += $vectorArchive
+}
+foreach ($archive in $archivePaths) {
   if (-not (Test-Path $archive -PathType Leaf) -or (Get-Item $archive).Length -eq 0) { throw "Missing diagnostic archive: $archive" }
   $sidecar = Get-Content "$archive.sha256" -Raw
   if ($sidecar -notmatch ('(?m)^([0-9a-fA-F]{64})\s+' + [regex]::Escape((Split-Path $archive -Leaf)) + '\s*$')) { throw "Invalid checksum sidecar for $archive" }
@@ -37,15 +44,21 @@ try {
   foreach ($tree in @($systemTree, $serverTree)) {
     & tar.exe -xzf $pgArchive -C $tree
     if ($LASTEXITCODE -ne 0) { throw 'Failed to extract PostgreSQL archive' }
-    & tar.exe -xzf $vectorArchive -C $tree
-    if ($LASTEXITCODE -ne 0) { throw 'Failed to extract pgvector archive' }
+    if (-not $CoreOnly) {
+      & tar.exe -xzf $vectorArchive -C $tree
+      if ($LASTEXITCODE -ne 0) { throw 'Failed to extract pgvector archive' }
+    }
   }
   $root = Join-Path $systemTree 'postgresql'
   $pgManifest = Get-Content (Join-Path $root 'manifest.json') -Raw | ConvertFrom-Json
-  $vectorMetadata = Get-Content (Join-Path $systemTree 'metadata.json') -Raw | ConvertFrom-Json
-  if (-not $pgManifest.build_id -or $pgManifest.build_id -cne $vectorMetadata.build_id) { throw 'Archive metadata has missing or inconsistent build identifiers' }
-  if ($pgManifest.platform -ne 'windows' -or $pgManifest.architecture -ne $architecture -or
-      $pgManifest.version -ne $PostgreSQLVersion -or $vectorMetadata.version -ne $PgvectorVersion) { throw 'Archive metadata does not match requested diagnostic target' }
+  $vectorMetadata = $null
+  if (-not $CoreOnly) {
+    $vectorMetadata = Get-Content (Join-Path $systemTree 'metadata.json') -Raw | ConvertFrom-Json
+    if ($pgManifest.build_id -cne $vectorMetadata.build_id) { throw 'Archive metadata has inconsistent build identifiers' }
+  }
+  if (-not $pgManifest.build_id -or $pgManifest.platform -ne 'windows' -or
+      $pgManifest.architecture -ne $architecture -or $pgManifest.version -ne $PostgreSQLVersion -or
+      (-not $CoreOnly -and $vectorMetadata.version -ne $PgvectorVersion)) { throw 'Archive metadata does not match requested diagnostic target' }
 
   $runtimeCandidates = @(@('libxml2.dll', 'libcrypto-3-x64.dll') | Where-Object {
     ($_ -in $pgManifest.bundled_runtime_dlls) -and
@@ -115,11 +128,11 @@ try {
     schema_version = 1; platform = 'windows'; architecture = $architecture
     os = [ordered]@{ caption = $os.Caption; version = $os.Version; build_number = $os.BuildNumber; service_pack = $os.ServicePackMajorVersion }
     powershell_version = $PSVersionTable.PSVersion.ToString()
-    postgresql_version = $PostgreSQLVersion; pgvector_version = $PgvectorVersion
+    postgresql_version = $PostgreSQLVersion
     build_id = $pgManifest.build_id; source_revision = $pgManifest.source_revision
     inventory_revision = $null; archive_urls = $null
-    archives = [ordered]@{ $pgName = (Get-FileHash $pgArchive -Algorithm SHA256).Hash.ToLowerInvariant(); $vectorName = (Get-FileHash $vectorArchive -Algorithm SHA256).Hash.ToLowerInvariant() }
-    package_metadata = [ordered]@{ postgresql = $pgManifest; pgvector = $vectorMetadata }
+    archives = [ordered]@{ $pgName = (Get-FileHash $pgArchive -Algorithm SHA256).Hash.ToLowerInvariant() }
+    package_metadata = [ordered]@{ postgresql = $pgManifest }
     inspection_tools = [ordered]@{ powershell = $PSVersionTable.PSVersion.ToString(); tar = ((& tar.exe --version 2>&1 | Select-Object -First 1) -join ''); postgres = $version }
     lookup_environment = [ordered]@{
       system_failure = [ordered]@{ PATH = $systemPath; SystemRoot = $env:SystemRoot }
@@ -127,6 +140,11 @@ try {
     }
     system_failure = [ordered]@{ kind = 'missing-bundled-runtime-dll'; executable = (Join-Path $root 'bin/postgres.exe'); missing_library = $missingDll; hidden_library_path = $hiddenDll; command = $systemCommand; cwd = $systemCwd; started_at_utc = $systemStarted; finished_at_utc = $systemFinished; exit_code = $systemStatus; ntstatus = $systemStatusHex; failure_text = $systemText }
     postgresql_failure = [ordered]@{ kind = 'server-error'; executable = $psql; command = $serverCommand; cwd = $serverCwd; server_start_command = "& '$pgCtl' -D '$data' -l '$log' -o '-h 127.0.0.1 -p 55439' -w start"; started_at_utc = $serverStarted; finished_at_utc = $serverFinished; exit_code = $clientStatus; failure_text = $clientText; server_log = $serverLog }
+  }
+  if (-not $CoreOnly) {
+    $record.pgvector_version = $PgvectorVersion
+    $record.archives[$vectorName] = (Get-FileHash $vectorArchive -Algorithm SHA256).Hash.ToLowerInvariant()
+    $record.package_metadata.pgvector = $vectorMetadata
   }
   New-Item -ItemType Directory -Force (Split-Path $ReportPath -Parent) | Out-Null
   $record | ConvertTo-Json -Depth 12 | Set-Content -Encoding utf8 $ReportPath

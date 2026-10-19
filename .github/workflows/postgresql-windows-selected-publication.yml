@@ -1,0 +1,180 @@
+name: PostgreSQL selected Windows publication
+
+on:
+  workflow_call:
+    inputs:
+      postgresql_version:
+        description: Exact selected PostgreSQL release
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      postgresql_version:
+        description: Exact selected PostgreSQL release
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  select:
+    runs-on: ubuntu-latest
+    outputs:
+      postgresql_version: ${{ steps.target.outputs.postgresql_version }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate selected Windows PostgreSQL target
+        id: target
+        env:
+          PG_VERSION: ${{ inputs.postgresql_version }}
+        run: |
+          set -euo pipefail
+          python3 - "$PG_VERSION" <<'PY'
+          import importlib.util
+          import pathlib
+          import sys
+          root = pathlib.Path.cwd()
+          spec = importlib.util.spec_from_file_location("publication_coverage", root / "tools/coverage.py")
+          coverage = importlib.util.module_from_spec(spec)
+          spec.loader.exec_module(coverage)
+          support = coverage.load_json(root / "support.json")
+          releases = coverage.release_snapshot(
+              coverage.load_json(root / "support/postgresql-releases.json"), support)
+          core, _ = coverage.expected_targets(support, releases)
+          if (sys.argv[1], "windows-x86_64") not in core:
+              raise SystemExit(f"PostgreSQL {sys.argv[1]} windows-x86_64 is not selected")
+          PY
+          printf 'postgresql_version=%s\n' "$PG_VERSION" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: select
+    runs-on: windows-2022
+    timeout-minutes: 90
+    defaults:
+      run:
+        shell: pwsh
+    env:
+      PG_VERSION: ${{ needs.select.outputs.postgresql_version }}
+      BUILD_MODE: core-only
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Set up PostgreSQL build dependencies
+        id: dependencies
+        continue-on-error: true
+        run: ./scripts/windows/setup-core-dependencies.ps1 -PostgreSQLVersion $env:PG_VERSION
+      - name: Build and package PostgreSQL
+        id: package
+        if: steps.dependencies.outcome == 'success'
+        continue-on-error: true
+        shell: cmd
+        run: scripts\windows\build.cmd
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: windows-core-selected-${{ needs.select.outputs.postgresql_version }}-build-${{ github.run_id }}
+          path: |
+            dist/windows/postgresql-*.tar.gz
+            dist/windows/postgresql-*.sha256
+            dist/windows/debug-symbols/**
+          retention-days: 7
+          if-no-files-found: warn
+      - name: Require core build
+        if: always()
+        run: |
+          if ('${{ steps.dependencies.outcome }}' -ne 'success' -or '${{ steps.package.outcome }}' -ne 'success') {
+            throw 'PostgreSQL Windows core dependencies and archive build must pass'
+          }
+
+  verify:
+    needs: [select, build]
+    if: always() && needs.select.result == 'success'
+    runs-on: windows-2022
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: pwsh
+    env:
+      PG_VERSION: ${{ needs.select.outputs.postgresql_version }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Download exact core archive and symbols from build runner
+        id: download
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-core-selected-${{ needs.select.outputs.postgresql_version }}-build-${{ github.run_id }}
+          path: dist/windows
+      - name: Verify relocated PostgreSQL archive and PE closure
+        id: archive_suite
+        if: always() && steps.download.outcome == 'success'
+        continue-on-error: true
+        env:
+          PE_STATIC_ANALYSIS_REPORT: ${{ runner.temp }}/windows-core-verification/static-analysis.json
+        run: ./scripts/windows/verify.ps1 -CoreOnly
+      - name: Verify PDBs against downloaded core archive
+        id: symbols
+        if: always() && steps.download.outcome == 'success'
+        continue-on-error: true
+        run: python tools/create_windows_symbols.py "dist/windows/postgresql-${env:PG_VERSION}-windows-x86_64.tar.gz" --output-dir dist/windows/debug-symbols --verify-only
+      - name: Capture representative system and PostgreSQL failures
+        id: diagnostics
+        if: always() && steps.download.outcome == 'success'
+        continue-on-error: true
+        run: ./scripts/windows/diagnostics.ps1 -ArchiveDirectory dist/windows -PostgreSQLVersion $env:PG_VERSION -CoreOnly -ReportPath (Join-Path $env:RUNNER_TEMP 'windows-core-verification/diagnostics.json')
+      - name: Emit and import one archive-bound core record or a failed attempt
+        id: evidence
+        if: always()
+        continue-on-error: true
+        env:
+          ARCHIVE_SUITE_OUTCOME: ${{ steps.archive_suite.outcome }}
+          SYMBOLS_OUTCOME: ${{ steps.symbols.outcome }}
+          DIAGNOSTICS_OUTCOME: ${{ steps.diagnostics.outcome }}
+        run: |
+          $recordDir = Join-Path $env:RUNNER_TEMP 'windows-core-verification'
+          New-Item -ItemType Directory -Force $recordDir | Out-Null
+          $outcomes = [ordered]@{
+            'archive-suite' = $env:ARCHIVE_SUITE_OUTCOME
+            symbols = $env:SYMBOLS_OUTCOME
+            diagnostics = $env:DIAGNOSTICS_OUTCOME
+          }
+          $results = [ordered]@{}
+          foreach ($case in $outcomes.Keys) {
+            $results[$case] = switch ($outcomes[$case]) {
+              'success' { 'passed' }
+              'failure' { 'failed' }
+              default { 'skipped' }
+            }
+          }
+          $steps = Join-Path $recordDir 'step-results.json'
+          $results | ConvertTo-Json -Depth 2 | Set-Content -Encoding utf8 $steps
+          $imageId = "$([Environment]::GetEnvironmentVariable('ImageOS'))/$([Environment]::GetEnvironmentVariable('ImageVersion'))"
+          python tools/emit_windows_core_publication.py --archives dist/windows --output $recordDir --postgresql-version $env:PG_VERSION --revision $env:GITHUB_SHA --os-version ([System.Environment]::OSVersion.Version.ToString()) --image-id $imageId --step-results $steps --static-report (Join-Path $recordDir 'static-analysis.json') --symbol-report 'dist/windows/debug-symbols/index.json' --diagnostic-report (Join-Path $recordDir 'diagnostics.json')
+          if ($LASTEXITCODE -ne 0) { throw 'Core publication evidence emission failed' }
+          python tools/import_windows_core_publication.py --build-artifact dist/windows --verification-artifact $recordDir --run-id $env:GITHUB_RUN_ID --postgresql-version $env:PG_VERSION
+          if ($LASTEXITCODE -ne 0) { throw 'Core publication evidence import failed' }
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: windows-core-selected-${{ needs.select.outputs.postgresql_version }}-verification-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/windows-core-verification/**
+            support/evidence/windows-publication-${{ github.run_id }}/postgresql-${{ needs.select.outputs.postgresql_version }}/**
+            support/verification/postgresql-${{ needs.select.outputs.postgresql_version }}-windows-x86_64-current-${{ github.run_id }}.json
+          retention-days: 7
+          if-no-files-found: warn
+      - name: Require fresh-runner core verification and evidence
+        if: always()
+        run: |
+          if ('${{ needs.build.result }}' -ne 'success' -or '${{ steps.download.outcome }}' -ne 'success' -or
+              '${{ steps.archive_suite.outcome }}' -ne 'success' -or '${{ steps.symbols.outcome }}' -ne 'success' -or
+              '${{ steps.diagnostics.outcome }}' -ne 'success' -or '${{ steps.evidence.outcome }}' -ne 'success') {
+            throw 'Selected Windows PostgreSQL core publication checks must all pass'
+          }

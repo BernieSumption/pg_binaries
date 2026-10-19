@@ -9,17 +9,18 @@ from postgresql_git_source import source_checkout
 from source_archive import source_archive
 
 
-def check(root, version, core_manifest, vector_metadata):
+def check(root, version, core_manifest, vector_metadata=None):
     if version != "16.15":
         raise ValueError("Windows Git source validation is only configured for PostgreSQL 16.15")
     core = json.loads(Path(core_manifest).read_text(encoding="utf-8-sig"))
-    vector = json.loads(Path(vector_metadata).read_text(encoding="utf-8-sig"))
     if core.get("source_checkout") != source_checkout(version, root):
         raise ValueError("PostgreSQL packaged Git source identity differs from the selected upstream release tag")
     if "source_archive" in core or "source_sha256" in core:
         raise ValueError("PostgreSQL Git checkout must not claim release-tarball identity")
-    if vector.get("source_archive") != source_archive("pgvector", "0.8.7", "tar.gz", root):
-        raise ValueError("pgvector packaged source identity differs from selected archive")
+    if vector_metadata is not None:
+        vector = json.loads(Path(vector_metadata).read_text(encoding="utf-8-sig"))
+        if vector.get("source_archive") != source_archive("pgvector", "0.8.7", "tar.gz", root):
+            raise ValueError("pgvector packaged source identity differs from selected archive")
 
 
 def main():
@@ -27,7 +28,7 @@ def main():
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[1])
     parser.add_argument("--postgresql-version", required=True)
     parser.add_argument("--core-manifest", type=Path, required=True)
-    parser.add_argument("--vector-metadata", type=Path, required=True)
+    parser.add_argument("--vector-metadata", type=Path)
     args = parser.parse_args()
     check(args.root, args.postgresql_version, args.core_manifest, args.vector_metadata)
 

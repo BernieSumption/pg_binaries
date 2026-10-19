@@ -28,6 +28,7 @@ class CheckSourceIdentityTests(unittest.TestCase):
                 core_path.write_text(json.dumps(core))
                 vector_path.write_text(json.dumps(vector))
                 checker.check(ROOT, platform, "18.6", core_path, vector_path)
+                checker.check(ROOT, platform, "18.6", core_path)
                 vector["source_archive"]["sha256"] = "0" * 64
                 vector_path.write_text(json.dumps(vector))
                 with self.assertRaisesRegex(ValueError, "pgvector"):
@@ -40,6 +41,8 @@ class CheckSourceIdentityTests(unittest.TestCase):
                 core_path.write_text(json.dumps(core))
                 with self.assertRaisesRegex(ValueError, "PostgreSQL"):
                     checker.check(ROOT, platform, "18.6", core_path, vector_path)
+                with self.assertRaisesRegex(ValueError, "PostgreSQL"):
+                    checker.check(ROOT, platform, "18.6", core_path)
                 if platform == "windows":
                     core["source_archive"] = checker.source_archive("postgresql", "18.6", "tar.gz")
                     core["source_sha256"] = "0" * 64

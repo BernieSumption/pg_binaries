@@ -1,3 +1,5 @@
+param([switch]$CoreOnly)
+
 $ErrorActionPreference = 'Stop'
 $PSNativeCommandUseErrorActionPreference = $true
 
@@ -26,21 +28,27 @@ function Assert-ArchiveHash([string]$archive) {
 }
 
 Assert-ArchiveHash $pgArchive
-Assert-ArchiveHash $vectorArchive
-New-Item -ItemType Directory -Force $pgExtract, $vectorExtract, (Split-Path $moved -Parent) | Out-Null
+if (-not $CoreOnly) { Assert-ArchiveHash $vectorArchive }
+New-Item -ItemType Directory -Force $pgExtract, (Split-Path $moved -Parent) | Out-Null
+if (-not $CoreOnly) { New-Item -ItemType Directory -Force $vectorExtract | Out-Null }
 tar.exe -xzf $pgArchive -C $pgExtract
 if ($LASTEXITCODE -ne 0) { throw 'Failed to extract PostgreSQL archive' }
-tar.exe -xzf $vectorArchive -C $vectorExtract
-if ($LASTEXITCODE -ne 0) { throw 'Failed to extract pgvector archive' }
+if (-not $CoreOnly) {
+  tar.exe -xzf $vectorArchive -C $vectorExtract
+  if ($LASTEXITCODE -ne 0) { throw 'Failed to extract pgvector archive' }
+}
 
 $pgRoot = Join-Path $pgExtract 'postgresql'
 $vectorRoot = Join-Path $vectorExtract 'pgvector'
 $metadataPath = Join-Path $vectorExtract 'metadata.json'
 if (-not (Test-Path $pgRoot -PathType Container) -or
-    @(Get-ChildItem $pgExtract -Force | Where-Object Name -ne 'postgresql').Count -ne 0 -or
-    -not (Test-Path $vectorRoot -PathType Container) -or -not (Test-Path $metadataPath -PathType Leaf) -or
-    @(Get-ChildItem $vectorExtract -Force | Where-Object { $_.Name -notin @('pgvector', 'metadata.json') }).Count -ne 0) {
-  throw 'Archive top-level layout is invalid'
+    @(Get-ChildItem $pgExtract -Force | Where-Object Name -ne 'postgresql').Count -ne 0) {
+  throw 'PostgreSQL archive top-level layout is invalid'
+}
+if (-not $CoreOnly -and (-not (Test-Path $vectorRoot -PathType Container) -or
+    -not (Test-Path $metadataPath -PathType Leaf) -or
+    @(Get-ChildItem $vectorExtract -Force | Where-Object { $_.Name -notin @('pgvector', 'metadata.json') }).Count -ne 0)) {
+  throw 'pgvector archive top-level layout is invalid'
 }
 $pgManifest = Get-Content (Join-Path $pgRoot 'manifest.json') -Raw | ConvertFrom-Json
 if ($pgManifest.schema_version -ne 1 -or $pgManifest.component -ne 'postgresql' -or
@@ -53,13 +61,23 @@ if ($controls.Count -eq 0 -or @($pgManifest.included_extensions).Count -ne $cont
     (Compare-Object $controls @($pgManifest.included_extensions))) {
   throw 'Built-in extension inventory does not match the extracted archive'
 }
-$vectorMetadata = Get-Content $metadataPath -Raw | ConvertFrom-Json
-if ($pgVersion -eq '16.15') {
-  & $python (Join-Path $repo 'tools/check_windows_git_source_identity.py') --postgresql-version $pgVersion --core-manifest (Join-Path $pgRoot 'manifest.json') --vector-metadata $metadataPath
-  if ($LASTEXITCODE -ne 0) { throw 'Packaged source identity differs from the selected upstream Git tag or pgvector archive' }
+if ($CoreOnly) {
+  if ($pgVersion -eq '16.15') {
+    & $python (Join-Path $repo 'tools/check_windows_git_source_identity.py') --postgresql-version $pgVersion --core-manifest (Join-Path $pgRoot 'manifest.json')
+    if ($LASTEXITCODE -ne 0) { throw 'Packaged PostgreSQL Git source identity differs from the selected upstream release tag' }
+  } else {
+    & $python (Join-Path $repo 'tools/check_source_identity.py') --platform windows --postgresql-version $pgVersion --core-manifest (Join-Path $pgRoot 'manifest.json')
+    if ($LASTEXITCODE -ne 0) { throw 'Packaged PostgreSQL source identity differs from the selected archive' }
+  }
 } else {
-  & $python (Join-Path $repo 'tools/check_source_identity.py') --platform windows --postgresql-version $pgVersion --core-manifest (Join-Path $pgRoot 'manifest.json') --vector-metadata $metadataPath
-  if ($LASTEXITCODE -ne 0) { throw 'Packaged source identity differs from the selected archives' }
+  $vectorMetadata = Get-Content $metadataPath -Raw | ConvertFrom-Json
+  if ($pgVersion -eq '16.15') {
+    & $python (Join-Path $repo 'tools/check_windows_git_source_identity.py') --postgresql-version $pgVersion --core-manifest (Join-Path $pgRoot 'manifest.json') --vector-metadata $metadataPath
+    if ($LASTEXITCODE -ne 0) { throw 'Packaged source identity differs from the selected upstream Git tag or pgvector archive' }
+  } else {
+    & $python (Join-Path $repo 'tools/check_source_identity.py') --platform windows --postgresql-version $pgVersion --core-manifest (Join-Path $pgRoot 'manifest.json') --vector-metadata $metadataPath
+    if ($LASTEXITCODE -ne 0) { throw 'Packaged source identity differs from the selected archives' }
+  }
 }
 if ($pgVersion -eq '16.15') {
   & $python (Join-Path $repo 'tools/stage_windows_postgres_import_library.py') --library-directory (Join-Path $pgRoot 'lib') --verify-manifest (Join-Path $pgRoot 'manifest.json')
@@ -67,6 +85,7 @@ if ($pgVersion -eq '16.15') {
 } elseif ($null -ne $pgManifest.windows_import_library) {
   throw 'Unexpected Windows import-library alias metadata for this PostgreSQL version'
 }
+if (-not $CoreOnly) {
 foreach ($field in @('project', 'version', 'sql_names', 'requires', 'configuration_prerequisites', 'runtime_prerequisites')) {
   if ($null -eq $vectorMetadata.$field) { throw "pgvector metadata is missing $field" }
 }
@@ -78,6 +97,7 @@ foreach ($field in @('sql_names', 'requires', 'configuration_prerequisites', 'ru
 if (@($vectorMetadata.sql_names).Count -ne 1 -or @($vectorMetadata.requires).Count -ne 0 -or
     @($vectorMetadata.configuration_prerequisites).Count -ne 0 -or
     @($vectorMetadata.runtime_prerequisites).Count -ne 0) { throw 'pgvector metadata prerequisites or SQL names are unexpected' }
+}
 if ($pgManifest.build_id -notmatch '^[A-Za-z0-9][A-Za-z0-9._-]*$' -or
     $pgManifest.source_revision -notmatch '^([0-9a-fA-F]{40}|[0-9a-fA-F]{64})$' -or
     -not $pgManifest.build_configuration) { throw 'PostgreSQL build provenance is missing or invalid' }
@@ -97,25 +117,23 @@ if (-not (Test-Path (Join-Path $pgRoot "bin/$msvcNotice") -PathType Leaf) -or
     -not (Test-Path (Join-Path $pgRoot "LICENSES/$msvcNotice") -PathType Leaf)) {
   throw 'The Visual C++ runtime notice is missing'
 }
-foreach ($field in @('build_id', 'source_revision', 'build_configuration', 'platform', 'architecture')) {
+if (-not $CoreOnly) { foreach ($field in @('build_id', 'source_revision', 'build_configuration', 'platform', 'architecture')) {
   if ($vectorMetadata.$field -cne $pgManifest.$field) { throw "pgvector build provenance differs from PostgreSQL: $field" }
-}
+} }
 if (-not (Test-Path (Join-Path $pgRoot 'manifest.json')) -or
     -not (Test-Path (Join-Path $pgRoot 'LICENSES/PostgreSQL.txt')) -or
-    -not (Test-Path (Join-Path $vectorRoot 'LICENSES/pgvector.txt')) -or
+    (-not $CoreOnly -and -not (Test-Path (Join-Path $vectorRoot 'LICENSES/pgvector.txt'))) -or
     -not (Test-Path (Join-Path $pgRoot 'LICENSES/dependencies/icu.txt'))) { throw 'A required license text is missing' }
 
 $licenseInventoryPath = Join-Path $pgRoot 'LICENSES/inventory.json'
 $vectorLicenseInventoryPath = Join-Path $vectorRoot 'LICENSES/pgvector-inventory.json'
 if (-not (Test-Path $licenseInventoryPath -PathType Leaf) -or
-    -not (Test-Path $vectorLicenseInventoryPath -PathType Leaf) -or
-    (Test-Path (Join-Path $vectorRoot 'LICENSES/inventory.json'))) {
-  throw 'Core and extension licence inventories are missing or use colliding names'
+    (-not $CoreOnly -and (-not (Test-Path $vectorLicenseInventoryPath -PathType Leaf) -or
+    (Test-Path (Join-Path $vectorRoot 'LICENSES/inventory.json'))))) {
+  throw 'Required licence inventories are missing or use colliding names'
 }
-$licenseInventories = @(
-  [ordered]@{ root = $pgRoot; path = $licenseInventoryPath; expected = @('postgresql', 'bundled-runtime-dependencies', 'Microsoft Visual C++ runtime') },
-  [ordered]@{ root = $vectorRoot; path = $vectorLicenseInventoryPath; expected = @('pgvector') }
-)
+$licenseInventories = @([ordered]@{ root = $pgRoot; path = $licenseInventoryPath; expected = @('postgresql', 'bundled-runtime-dependencies', 'Microsoft Visual C++ runtime') })
+if (-not $CoreOnly) { $licenseInventories += [ordered]@{ root = $vectorRoot; path = $vectorLicenseInventoryPath; expected = @('pgvector') } }
 foreach ($inventorySpec in $licenseInventories) {
   $inventory = Get-Content $inventorySpec.path -Raw | ConvertFrom-Json
   if ($inventory.schema_version -ne 1 -or @($inventory.components).Count -ne $inventorySpec.expected.Count) {
@@ -180,9 +198,9 @@ if ($msvcComponent.redistribution_review.status -ne 'resolved' -or
     $msvcComponent.version -notmatch '(?i)vcruntime140\.dll=\S+') {
   throw 'Visual C++ runtime inventory lacks the reviewed runtime and version evidence'
 }
-$vectorInventory = Get-Content $vectorLicenseInventoryPath -Raw | ConvertFrom-Json
-if (@($vectorInventory.components)[0].redistribution_review.status -ne 'resolved') {
-  throw 'pgvector redistribution review is unresolved'
+if (-not $CoreOnly) {
+  $vectorInventory = Get-Content $vectorLicenseInventoryPath -Raw | ConvertFrom-Json
+  if (@($vectorInventory.components)[0].redistribution_review.status -ne 'resolved') { throw 'pgvector redistribution review is unresolved' }
 }
 
 $coreEntries = @{}
@@ -190,19 +208,19 @@ Get-ChildItem $pgRoot -Force -Recurse | ForEach-Object {
   $relative = $_.FullName.Substring($pgRoot.Length).TrimStart('\', '/')
   if ($relative) { $coreEntries[$relative.ToLowerInvariant()] = $_.PSIsContainer }
 }
-Get-ChildItem $vectorRoot -Force -Recurse | ForEach-Object {
+if (-not $CoreOnly) { Get-ChildItem $vectorRoot -Force -Recurse | ForEach-Object {
   $relative = $_.FullName.Substring($vectorRoot.Length).TrimStart('\', '/')
   $key = $relative.ToLowerInvariant()
   if ($relative -and $coreEntries.ContainsKey($key) -and
       (-not $_.PSIsContainer -or -not $coreEntries[$key])) { throw "Payload path collision: $relative" }
-}
-Get-ChildItem $vectorRoot -File -Recurse | ForEach-Object {
+} }
+if (-not $CoreOnly) { Get-ChildItem $vectorRoot -File -Recurse | ForEach-Object {
   $relative = $_.FullName.Substring($vectorRoot.Length).TrimStart('\', '/')
   $destination = Join-Path $pgRoot $relative
   New-Item -ItemType Directory -Force (Split-Path $destination -Parent) | Out-Null
   Copy-Item $_.FullName $destination
-}
-if ((Test-Path (Join-Path $pgRoot 'metadata.json')) -or -not (Test-Path $metadataPath)) {
+} }
+if (-not $CoreOnly -and ((Test-Path (Join-Path $pgRoot 'metadata.json')) -or -not (Test-Path $metadataPath))) {
   throw 'Extension metadata must remain outside the PostgreSQL prefix'
 }
 
@@ -223,9 +241,11 @@ try {
   $initialVersion = (& $initialPsql -At -c 'SHOW server_version').Trim()
   $initialQuery = (& $initialPsql -At -c 'SELECT 1').Trim()
   if ($initialVersion -ne $pgVersion -or $initialQuery -ne '1') { throw 'Pre-move PostgreSQL smoke check failed' }
-  & $initialPsql -X -v ON_ERROR_STOP=1 -c "CREATE EXTENSION vector; CREATE TABLE pilot_vectors (id integer PRIMARY KEY, embedding vector(3)); INSERT INTO pilot_vectors VALUES (1, '[1,0,0]'), (2, '[0,1,0]'), (3, '[0,0,1]'); CREATE INDEX pilot_vectors_hnsw ON pilot_vectors USING hnsw (embedding vector_l2_ops);"
-  $nearest = (& $initialPsql -At -c "SELECT id FROM pilot_vectors ORDER BY embedding <-> '[1,0,0]'::vector LIMIT 1").Trim()
-  if ($nearest -ne '1') { throw "Pre-move pgvector query returned $nearest, expected 1" }
+  if (-not $CoreOnly) {
+    & $initialPsql -X -v ON_ERROR_STOP=1 -c "CREATE EXTENSION vector; CREATE TABLE pilot_vectors (id integer PRIMARY KEY, embedding vector(3)); INSERT INTO pilot_vectors VALUES (1, '[1,0,0]'), (2, '[0,1,0]'), (3, '[0,0,1]'); CREATE INDEX pilot_vectors_hnsw ON pilot_vectors USING hnsw (embedding vector_l2_ops);"
+    $nearest = (& $initialPsql -At -c "SELECT id FROM pilot_vectors ORDER BY embedding <-> '[1,0,0]'::vector LIMIT 1").Trim()
+    if ($nearest -ne '1') { throw "Pre-move pgvector query returned $nearest, expected 1" }
+  }
 } finally {
   if ($initialStarted) { & (Join-Path $initialBin 'pg_ctl.exe') -D $initialData -m immediate -w stop }
 }
@@ -243,8 +263,9 @@ $dumpbin = Join-Path $toolset.FullName 'bin/Hostx64/x64/dumpbin.exe'
 if (-not (Test-Path $dumpbin -PathType Leaf)) { throw 'Visual Studio dumpbin is unavailable for PE inspection' }
 $staticReport = if ($env:PE_STATIC_ANALYSIS_REPORT) { $env:PE_STATIC_ANALYSIS_REPORT } else { Join-Path $work 'static-analysis.json' }
 New-Item -ItemType Directory -Force (Split-Path $staticReport -Parent) | Out-Null
-& $python (Join-Path $repo 'tools/check_pe_dependencies.py') $moved --dumpbin $dumpbin `
-  --archive $pgArchive --archive $vectorArchive --report $staticReport
+$peArgs = @($moved, '--dumpbin', $dumpbin, '--archive', $pgArchive, '--report', $staticReport)
+if (-not $CoreOnly) { $peArgs += @('--archive', $vectorArchive) }
+& $python (Join-Path $repo 'tools/check_pe_dependencies.py') @peArgs
 if ($LASTEXITCODE -ne 0) { throw 'Packaged PE static analysis failed' }
 
 $bin = Join-Path $moved 'bin'
@@ -343,9 +364,11 @@ SHOW wal_compression;
     & $pgRestore -l $dump | Out-Null
   }
 
-  & $psql -X -v ON_ERROR_STOP=1 -f (Join-Path $repo 'tests/extensions/pgvector.sql')
-  $installed = (& $psql -At -c "SELECT extversion FROM pg_extension WHERE extname = 'vector'").Trim()
-  if ($installed -ne $vectorVersion) { throw "pgvector reports $installed, expected $vectorVersion" }
+  if (-not $CoreOnly) {
+    & $psql -X -v ON_ERROR_STOP=1 -f (Join-Path $repo 'tests/extensions/pgvector.sql')
+    $installed = (& $psql -At -c "SELECT extversion FROM pg_extension WHERE extname = 'vector'").Trim()
+    if ($installed -ne $vectorVersion) { throw "pgvector reports $installed, expected $vectorVersion" }
+  }
   & $psql -X -v ON_ERROR_STOP=1 -f (Join-Path $repo 'tests/builtins/coverage.sql')
   $restoreDump = Join-Path $work 'restorable.dump'
   $restoreCompression = 'zstd'
@@ -354,13 +377,15 @@ SHOW wal_compression;
   & $psql -X -v ON_ERROR_STOP=1 -c 'CREATE DATABASE restored'
   & $pgRestore --exit-on-error -d restored $restoreDump
   $restoredCount = (& $psql -X -At -d restored -c 'SELECT pilot.active_item_count(1)').Trim()
-  $restoredNearest = (& $psql -X -At -d restored -c "SELECT id FROM pilot_vectors ORDER BY embedding <-> '[1,0,0]'::vector LIMIT 1").Trim()
-  if ($restoredCount -ne '1' -or $restoredNearest -ne '1') {
-    throw "Restored schema/vector check failed: $restoredCount / $restoredNearest"
+  if ($restoredCount -ne '1') { throw "Restored schema check failed: $restoredCount" }
+  if (-not $CoreOnly) {
+    $restoredNearest = (& $psql -X -At -d restored -c "SELECT id FROM pilot_vectors ORDER BY embedding <-> '[1,0,0]'::vector LIMIT 1").Trim()
+    if ($restoredNearest -ne '1') { throw "Restored vector check failed: $restoredNearest" }
   }
   & $psql -X -v ON_ERROR_STOP=1 -c 'CREATE DATABASE surgery_check'
   & $psql -X -v ON_ERROR_STOP=1 -d surgery_check -f (Join-Path $repo 'tests/builtins/surgery.sql')
-  Write-Host "Verified PostgreSQL $reported and pgvector $installed on Windows $([Environment]::OSVersion.Version) after archive relocation"
+  if ($CoreOnly) { Write-Host "Verified PostgreSQL $reported on Windows $([Environment]::OSVersion.Version) after archive relocation" }
+  else { Write-Host "Verified PostgreSQL $reported and pgvector $installed on Windows $([Environment]::OSVersion.Version) after archive relocation" }
 } finally {
   if ($started) { & $pgCtl -D $data -m fast -w stop }
 }
