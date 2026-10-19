@@ -70,7 +70,9 @@ if any(manifest.get(key) != value for key, value in expected_manifest.items()):
 if any(metadata.get(key) != value for key, value in expected_metadata.items()):
     raise SystemExit("pg_cron metadata differs from checked target identity")
 required = {"pg_cron/lib/pg_cron.dylib", "pg_cron/LICENSES/pg_cron.txt",
-            "pg_cron/share/extension/pg_cron.control", "pg_cron/share/extension/pg_cron--1.6.sql"}
+            "pg_cron/share/extension/pg_cron.control",
+            "pg_cron/share/extension/pg_cron--1.0.sql",
+            "pg_cron/share/extension/pg_cron--1.5--1.6.sql"}
 if not required.issubset(names):
     raise SystemExit("pg_cron archive lacks required payload")
 PY
