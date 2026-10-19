@@ -17,7 +17,7 @@ _DEFAULT_TARGET = object()
 
 
 class PgCronMacOSFixture:
-    def __init__(self, architecture="arm64"):
+    def __init__(self, architecture="arm64", module_extension="dylib"):
         self.temp = tempfile.TemporaryDirectory()
         self.base = Path(self.temp.name)
         self.root = self.base / "repo"
@@ -28,6 +28,7 @@ class PgCronMacOSFixture:
         self.pg_version = "18.6"
         self.version = "1.6.8"
         self.architecture = architecture
+        self.module_path = f"lib/pg_cron.{module_extension}"
         self.platform = f"macos-{architecture}"
         self.profile_id = f"pgcron-publication-macos-{architecture}-18.6"
         self.core_name = f"postgresql-{self.pg_version}-{self.platform}.tar.gz"
@@ -98,7 +99,7 @@ class PgCronMacOSFixture:
         }
         inventory = {"schema_version": 1, "components": [{
             "component": "pg_cron", "version": self.version,
-            "payload_paths": ["lib/pg_cron.dylib", "share/extension"],
+            "payload_paths": [self.module_path, "share/extension"],
             "license_file": "pg_cron.txt",
             "license_source": "https://github.com/citusdata/pg_cron/blob/v1.6.8/LICENSE",
             "source_url": SOURCE_URL, "source_sha256": SOURCE_SHA256,
@@ -112,9 +113,11 @@ class PgCronMacOSFixture:
             (package / "lib").mkdir(parents=True)
             (package / "share/extension").mkdir(parents=True)
             (package / "LICENSES").mkdir()
-            (package / "lib/pg_cron.dylib").write_bytes(b"Mach-O fixture")
+            (package / self.module_path).write_bytes(b"Mach-O fixture")
             (package / "share/extension/pg_cron.control").write_text(
                 "default_version = '1.6'\n")
+            (package / "share/extension/pg_cron--1.0.sql").write_text("-- base DDL\n")
+            (package / "share/extension/pg_cron--1.5--1.6.sql").write_text("-- update DDL\n")
             (package / "LICENSES/pg_cron.txt").write_text("PostgreSQL License\n")
             (package / "LICENSES/pg_cron-inventory.json").write_text(json.dumps(inventory))
             metadata_path = Path(temporary) / "metadata.json"
@@ -133,7 +136,7 @@ class PgCronMacOSFixture:
                          for name, digest in digests.items()],
         }))
         (self.output / "pg-cron-macho-inspection.json").write_text(json.dumps({
-            "passed": True, "architecture": self.architecture, "file": "lib/pg_cron.dylib",
+            "passed": True, "architecture": self.architecture, "file": self.module_path,
             "minimum_os": "11.0", "findings": [],
             "dependencies": {"@rpath/libpq.5.dylib": "lib/libpq.5.dylib"},
             "module_rpaths": ["@loader_path"], "archives": digests,
@@ -183,6 +186,34 @@ class PgCronMacOSPublicationTests(unittest.TestCase):
                     self.assertEqual(record["assembled_core"]["sha256"], fixture.core_digest)
                 finally:
                     fixture.close()
+
+    def test_emits_and_binds_pgxs_so_module(self):
+        fixture = PgCronMacOSFixture(module_extension="so")
+        try:
+            paths = fixture.emit()
+            record = json.loads(paths[-1].read_text())
+            self.assertEqual(record["outcome"], "passed")
+            with tarfile.open(fixture.extension, "r:gz") as archive:
+                inventory = json.load(archive.extractfile(
+                    "pg_cron/LICENSES/pg_cron-inventory.json"))
+                self.assertIn("pg_cron/lib/pg_cron.so", archive.getnames())
+                self.assertIn("lib/pg_cron.so", inventory["components"][0]["payload_paths"])
+            report = json.loads((fixture.output / "pg-cron-macho-inspection.json").read_text())
+            self.assertEqual(report["file"], "lib/pg_cron.so")
+        finally:
+            fixture.close()
+
+    def test_rejects_macho_report_for_different_module_suffix(self):
+        fixture = PgCronMacOSFixture(module_extension="so")
+        try:
+            report_path = fixture.output / "pg-cron-macho-inspection.json"
+            report = json.loads(report_path.read_text())
+            report["file"] = "lib/pg_cron.dylib"
+            report_path.write_text(json.dumps(report))
+            with self.assertRaisesRegex(Exception, "Mach-O inspection"):
+                fixture.emit()
+        finally:
+            fixture.close()
 
     def test_requires_target_config(self):
         with self.assertRaisesRegex(Exception, "resolved pg_cron target config is required"):

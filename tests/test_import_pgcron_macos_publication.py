@@ -48,6 +48,16 @@ class ImportPgCronMacOSPublicationTests(unittest.TestCase):
                 finally:
                     fixture.close()
 
+    def test_imports_pgxs_so_module_with_matching_report(self):
+        fixture = PgCronMacOSFixture(module_extension="so")
+        try:
+            fixture.emit()
+            retained = self.import_fixture(fixture)
+            self.assertTrue(any(path.startswith("support/verification/")
+                                for path in retained))
+        finally:
+            fixture.close()
+
     def test_requires_target_config(self):
         with self.assertRaises(TypeError):
             importer.import_run(self.fixture.root, self.fixture.core,

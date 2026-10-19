@@ -119,7 +119,19 @@ def _archive_map(report):
     return value
 
 
-def _check_static(path, macho_path, digests, architecture):
+def _module_path(path):
+    try:
+        with tarfile.open(path, "r:gz") as archive:
+            names = {item.name for item in archive.getmembers() if item.isfile()}
+    except (OSError, tarfile.TarError) as exc:
+        _fail(f"cannot inspect pg_cron archive module: {exc}")
+    modules = sorted(names & {"pg_cron/lib/pg_cron.dylib", "pg_cron/lib/pg_cron.so"})
+    if len(modules) != 1:
+        _fail("pg_cron archive must contain exactly one .dylib or .so module")
+    return modules[0].removeprefix("pg_cron/")
+
+
+def _check_static(path, macho_path, digests, architecture, module_path):
     static = _json(path, "static analysis")
     if (_archive_map(static) != digests or static.get("passed") is not True
             or static.get("architecture") != architecture
@@ -128,7 +140,7 @@ def _check_static(path, macho_path, digests, architecture):
     macho = _json(macho_path, "pg_cron Mach-O inspection")
     if (macho.get("archives") != digests or macho.get("passed") is not True
             or macho.get("architecture") != architecture
-            or macho.get("file") != "lib/pg_cron.dylib"
+            or macho.get("file") != module_path
             or macho.get("minimum_os") != "11.0" or macho.get("findings")):
         _fail("pg_cron Mach-O inspection did not pass against the final archive bytes")
     dependencies = macho.get("dependencies")
@@ -193,6 +205,7 @@ def emit(root, core_dir, archives, output, step_results, os_version, image_id,
         _fail(f"final pg_cron archive licence inventory is invalid: {exc}")
     if components != 1 or native_files != 1:
         _fail("final pg_cron archive must inventory its native payload and licence")
+    module_path = _module_path(extension_archive)
     attempt["archives"] = digests
     attempt_path.write_text(json.dumps(attempt, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
@@ -202,7 +215,7 @@ def emit(root, core_dir, archives, output, step_results, os_version, image_id,
         _check_probe(paths["probe_output"])
     if results["static-analysis"] == "passed":
         _check_static(paths["static_analysis"], paths["macho_inspection"], digests,
-                      ARCHITECTURE)
+                      ARCHITECTURE, module_path)
 
     ci = {"provider": "github-actions", "run_id": run_id,
           "run_url": f"{server_url.rstrip('/')}/{repository}/actions/runs/{run_id}",

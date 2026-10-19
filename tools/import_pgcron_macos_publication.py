@@ -135,7 +135,8 @@ def import_run(root, core_artifact, extension_artifact, run_id, target_config):
                 raise coverage.CoverageError(f"passing receipt is missing {key}")
         if results["static-analysis"] == "passed":
             publication._check_static(report_paths["static_analysis"],
-                                      report_paths["macho_inspection"], digests, ARCHITECTURE)
+                                      report_paths["macho_inspection"], digests, ARCHITECTURE,
+                                      publication._module_path(extension_archive))
         if results["archive-suite"] == "passed":
             publication._check_probe(report_paths["probe_output"])
         _retain(receipt_path, evidence_dir / receipt_path.name, copies)

@@ -51,17 +51,26 @@ make PG_CONFIG="$pg_config" PG_LDFLAGS='-Wl,-rpath,@loader_path' -j "$(sysctl -n
 make PG_CONFIG="$pg_config" install DESTDIR="$work/stage"
 staged_root="$work/stage$(cd "$pgroot" && pwd -P)"
 mkdir -p "$work/package/pg_cron"/{lib,share/extension,LICENSES}
-cp "$staged_root/lib/pg_cron.dylib" "$work/package/pg_cron/lib/"
+modules=()
+for module in "$staged_root/lib/pg_cron.dylib" "$staged_root/lib/pg_cron.so"; do
+  [[ ! -f "$module" ]] || modules+=("$module")
+done
+if [[ ${#modules[@]} != 1 ]]; then
+  echo "Expected exactly one staged pg_cron PGXS module, found ${#modules[@]}" >&2
+  exit 1
+fi
+module_name=${modules[0]##*/}
+cp "${modules[0]}" "$work/package/pg_cron/lib/"
 cp "$staged_root/share/extension/"pg_cron* "$work/package/pg_cron/share/extension/"
 cp LICENSE "$work/package/pg_cron/LICENSES/pg_cron.txt"
-python3 - "$work/package/pg_cron/LICENSES/pg_cron-inventory.json" "$source_url" "$source_sha256" <<'PY'
+python3 - "$work/package/pg_cron/LICENSES/pg_cron-inventory.json" "$source_url" "$source_sha256" "$module_name" <<'PY'
 import json
 import pathlib
 import sys
-path, url, digest = sys.argv[1:]
+path, url, digest, module = sys.argv[1:]
 value = {"schema_version": 1, "components": [{
     "component": "pg_cron", "version": "1.6.8",
-    "payload_paths": ["lib/pg_cron.dylib", "share/extension"],
+    "payload_paths": [f"lib/{module}", "share/extension"],
     "license_file": "pg_cron.txt",
     "license_source": "https://github.com/citusdata/pg_cron/blob/v1.6.8/LICENSE",
     "source_url": url, "source_sha256": digest,
@@ -74,7 +83,7 @@ cat > "$work/package/metadata.json" <<EOF
 {"project":"pg_cron","version":"1.6.8","sql_names":["pg_cron"],"requires":[],"configuration_prerequisites":[{"type":"postgresql_setting","name":"shared_preload_libraries","value":"pg_cron"},{"type":"postgresql_setting","name":"cron.use_background_workers","value":"on"}],"runtime_prerequisites":[],"postgresql_version":"$pg_version","platform":"macos","architecture":"$architecture","source":{"url":"$source_url","sha256":"$source_sha256"},"core_archive":{"basename":"$core_name","sha256":"$core_sha256"}}
 EOF
 grep -Fq 'Permission to use, copy, modify, and distribute this software' LICENSE
-test -s "$work/package/pg_cron/lib/pg_cron.dylib"
+test -s "$work/package/pg_cron/lib/$module_name"
 test -s "$work/package/pg_cron/share/extension/pg_cron.control"
 tar -C "$work/package" -czf "$output/$extension_name" pg_cron metadata.json
 (cd "$output" && shasum -a 256 "$extension_name" > "$extension_name.sha256" && shasum -a 256 -c "$extension_name.sha256")

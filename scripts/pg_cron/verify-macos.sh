@@ -69,7 +69,11 @@ if any(manifest.get(key) != value for key, value in expected_manifest.items()):
     raise SystemExit("core archive manifest differs from checked target identity")
 if any(metadata.get(key) != value for key, value in expected_metadata.items()):
     raise SystemExit("pg_cron metadata differs from checked target identity")
-required = {"pg_cron/lib/pg_cron.dylib", "pg_cron/LICENSES/pg_cron.txt",
+modules = {name for name in names
+           if name in {"pg_cron/lib/pg_cron.dylib", "pg_cron/lib/pg_cron.so"}}
+if len(modules) != 1:
+    raise SystemExit("pg_cron archive must contain exactly one .dylib or .so module")
+required = {*modules, "pg_cron/LICENSES/pg_cron.txt",
             "pg_cron/share/extension/pg_cron.control",
             "pg_cron/share/extension/pg_cron--1.0.sql",
             "pg_cron/share/extension/pg_cron--1.5--1.6.sql"}
@@ -108,7 +112,10 @@ python3 - "$pgroot" "$architecture" "$core_archives/$core_name" "$extension_arch
 import hashlib, json, pathlib, re, subprocess, sys
 root = pathlib.Path(sys.argv[1]).resolve(); architecture = sys.argv[2]
 archives = [pathlib.Path(value) for value in sys.argv[3:]]
-module = root / "lib/pg_cron.dylib"; postgres = root / "bin/postgres"
+modules = [root / "lib/pg_cron.dylib", root / "lib/pg_cron.so"]
+modules = [path for path in modules if path.is_file()]
+if len(modules) != 1: raise SystemExit("installation must contain exactly one pg_cron module")
+module = modules[0]; module_relative = str(module.relative_to(root)); postgres = root / "bin/postgres"
 def run(*args):
     result = subprocess.run(args, capture_output=True, text=True)
     if result.returncode: raise SystemExit(f"command failed: {' '.join(args)}: {result.stderr}")
@@ -120,9 +127,9 @@ def rpaths(binary):
             match = re.search(r"^\s*path (.+?) \(offset ", lines[index + 2])
             if match: values.append(match.group(1))
     return values
-if architecture not in run("lipo", "-archs", str(module)).split(): raise SystemExit("pg_cron.dylib lacks required architecture")
+if architecture not in run("lipo", "-archs", str(module)).split(): raise SystemExit("pg_cron module lacks required architecture")
 load = run("otool", "-l", str(module)); minimum = re.search(r"\bminos (\d+(?:\.\d+){0,2})", load)
-if not minimum or tuple(map(int, minimum.group(1).split(".")))[:2] > (11, 0): raise SystemExit("pg_cron.dylib lacks compatible minimum macOS metadata")
+if not minimum or tuple(map(int, minimum.group(1).split(".")))[:2] > (11, 0): raise SystemExit("pg_cron module lacks compatible minimum macOS metadata")
 deps = [line.strip().split(" (compatibility version",1)[0] for line in run("otool","-L",str(module)).splitlines()[1:] if line.strip()]
 module_rpaths=rpaths(module); executable_rpaths=rpaths(postgres); resolved={}; findings=[]
 for dependency in deps:
@@ -139,7 +146,7 @@ for dependency in deps:
         if candidates: resolved[dependency]=str(candidates[0].relative_to(root))
         else: findings.append({"error":"unresolved dependency","path":dependency})
     else: findings.append({"error":"unsupported dependency token","path":dependency})
-report={"architecture":architecture,"file":"lib/pg_cron.dylib","minimum_os":minimum.group(1),"dependencies":resolved,
+report={"architecture":architecture,"file":module_relative,"minimum_os":minimum.group(1),"dependencies":resolved,
         "module_rpaths":module_rpaths,"postgres_executable_rpaths":executable_rpaths,
         "resolution_note":"@rpath dependencies use the dyld run-path stack, which includes run paths from the executable loading the extension.",
         "archives":{archive.name:hashlib.sha256(archive.read_bytes()).hexdigest() for archive in archives},
