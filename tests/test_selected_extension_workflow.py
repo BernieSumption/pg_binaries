@@ -45,6 +45,7 @@ class SelectedExtensionWorkflowTests(unittest.TestCase):
         self.assertIn("*/.github/workflows/selected-extension-publication.yml@*", HYPOPG)
         self.assertIn('"hypopg-linux-$PG_VERSION-$PG_ARCHITECTURE-trial-{run_id}"', HYPOPG)
         self.assertIn('linux-changed-profiles.yml "hypopg-linux-core-', HYPOPG)
+        self.assertIn('linux-changed-profiles.yml "postgresql-linux-selected-core-', HYPOPG)
         self.assertLess(HYPOPG.index('selected-extension-publication.yml "hypopg-linux-core-'),
                         HYPOPG.index('hypopg-linux-selected-publication.yml "hypopg-linux-core-'))
         self.assertNotIn("planner-dispatch-trial.yml", HYPOPG)
