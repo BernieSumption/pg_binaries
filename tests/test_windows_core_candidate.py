@@ -42,6 +42,7 @@ class WindowsCoreCandidateTests(unittest.TestCase):
             "run_id": self.run_id, "run_attempt": self.attempt,
             "head_sha": self.revision, "artifact_name": f"windows-postgresql-{self.version}-pilot",
         }}
+        self.manifest = manifest
 
     def tearDown(self):
         self.temp.cleanup()
@@ -55,6 +56,74 @@ class WindowsCoreCandidateTests(unittest.TestCase):
             Path(kwargs["manifest_path"]).write_text(json.dumps({"archives": archives}), encoding="utf-8")
             return []
         return fake
+
+    def selected_manifest(self, configuration=None):
+        manifest = dict(self.manifest)
+        if configuration is not None:
+            manifest["build_configuration"] = configuration
+        body = json.dumps(manifest).encode()
+        with tarfile.open(self.archive, "w:gz") as tar:
+            info = tarfile.TarInfo("postgresql/manifest.json")
+            info.size = len(body)
+            tar.addfile(info, io.BytesIO(body))
+        digest = hashlib.sha256(self.archive.read_bytes()).hexdigest()
+        Path(str(self.archive) + ".sha256").write_text(f"{digest}  {self.archive.name}\n", encoding="ascii")
+
+    def test_selected_candidate_is_preferred_and_provenance_is_recorded(self):
+        self.selected_manifest(
+            "postgresql-17.11;builder=windows-runner;meson=debugoptimized;"
+            "postgresql=icu,lz4,zstd,zlib,openssl,libxml,libxslt,no-uuid,no-readline;"
+            "compiler=MSVC;vcpkg=revision;runtime=vcpkg-and-msvc-dlls")
+        row = {"path": str(self.archive), "source": {
+            **self.row["source"], "artifact_name": f"windows-core-selected-{self.version}-build-{self.run_id}"}}
+        calls = []
+
+        def discover(**kwargs):
+            calls.append(kwargs["workflow"])
+            Path(kwargs["manifest_path"]).write_text(json.dumps({"archives": [row]}), encoding="utf-8")
+            return []
+
+        with patch.object(candidate.discovery, "discover", side_effect=discover), \
+             patch.object(candidate, "_relevant_inputs_match", return_value=True):
+            result = candidate.resolve(base_pin=self.base, output_directory=self.output / "out",
+                repository="owner/repo", branch="spike", current_run_id="999", selected_core=True)
+        self.assertEqual(calls, [candidate.SELECTED_WORKFLOW])
+        self.assertEqual(result["candidate_kind"], "selected")
+        target = json.loads(Path(result["target"]).read_text())
+        self.assertEqual(target["artifact_name"], row["source"]["artifact_name"])
+
+    def test_stale_selected_candidate_falls_back_to_pilot(self):
+        calls = []
+
+        def discover(**kwargs):
+            calls.append(kwargs["workflow"])
+            row = dict(self.row)
+            row["source"] = dict(self.row["source"])
+            if kwargs["workflow"] == candidate.SELECTED_WORKFLOW:
+                row["source"]["artifact_name"] = f"windows-core-selected-{self.version}-build-{self.run_id}"
+            else:
+                row["source"]["artifact_name"] = f"windows-postgresql-{self.version}-pilot"
+            Path(kwargs["manifest_path"]).write_text(json.dumps({"archives": [row]}), encoding="utf-8")
+            return []
+
+        with patch.object(candidate.discovery, "discover", side_effect=discover), \
+             patch.object(candidate, "_relevant_inputs_match", return_value=True):
+            result = candidate.resolve(base_pin=self.base, output_directory=self.output / "out",
+                repository="owner/repo", branch="spike", current_run_id="999", selected_core=True)
+        self.assertEqual(calls, [candidate.SELECTED_WORKFLOW, "windows-pilot.yml"])
+        self.assertEqual(result["status"], "checked")
+        self.assertEqual(result["candidate_kind"], "pilot")
+
+    def test_selected_candidate_recipe_must_be_core_only(self):
+        self.selected_manifest("postgresql-17.11;builder=windows-runner;pgvector-0.8.7;compiler=MSVC")
+        row = {"path": str(self.archive), "source": {
+            **self.row["source"], "artifact_name": f"windows-core-selected-{self.version}-build-{self.run_id}"}}
+        with patch.object(candidate.discovery, "discover", side_effect=self.discovery_result(None, [row])), \
+             patch.object(candidate, "_relevant_inputs_match", return_value=True):
+            result = candidate.resolve(base_pin=self.base, output_directory=self.output / "out",
+                repository="owner/repo", branch="spike", current_run_id="999", selected_core=True)
+        self.assertEqual(result["status"], "stale")
+        self.assertIn("core-only", result["reason"])
 
     def test_accepts_checked_candidate_and_uses_run_attempt(self):
         with patch.object(candidate.discovery, "discover", side_effect=self.discovery_result(None, [self.row])), \

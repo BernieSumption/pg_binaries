@@ -12,6 +12,7 @@ import coverage
 import emit_windows_core_publication as publication
 import emit_windows_publication_records as combined
 import import_windows_publication as windows_import
+import windows_core_target_config
 
 
 MAX_EVIDENCE_BYTES = windows_import.MAX_EVIDENCE_BYTES
@@ -120,6 +121,18 @@ def import_run(root, build_artifact, verification_artifact, run_id, postgresql_v
         record, coverage.load_json(root / "support.json"), root, allow_stale=False)
     ci = record.get("ci")
     revision = record.get("test_revision")
+    manifest = windows_core_target_config._manifest(archive)
+    build_revision = manifest.get("source_revision") if isinstance(manifest, dict) else None
+    if (not isinstance(build_revision, str) or not re.fullmatch(r"[0-9a-f]{40}", build_revision)
+            or any(manifest.get(key) != value for key, value in {
+                "component": "postgresql", "version": postgresql_version,
+                "postgresql_version": postgresql_version, "platform": "windows",
+                "architecture": "x86_64",
+            }.items())):
+        raise coverage.CoverageError("PostgreSQL archive manifest has invalid build identity")
+    build_match = re.fullmatch(r"github-([1-9][0-9]*)-([1-9][0-9]*)", str(manifest.get("build_id", "")))
+    if build_match is None:
+        raise coverage.CoverageError("PostgreSQL archive manifest has invalid producer run identity")
     if (record.get("schema_version") != 2 or record.get("scope") != "publication"
             or record.get("profile_id") != profile["profile_id"]
             or record.get("profile_revision") != profile["profile_revision"]
@@ -130,7 +143,11 @@ def import_run(root, build_artifact, verification_artifact, run_id, postgresql_v
             or not isinstance(ci, dict) or ci.get("provider") != "github-actions"
             or ci.get("run_id") != run_id
             or not str(ci.get("run_url", "")).endswith(f"/actions/runs/{run_id}")
-            or any(ci.get(key) != revision for key in ("source_revision", "build_revision", "test_revision"))
+            or ci.get("source_revision") != build_revision
+            or ci.get("build_revision") != build_revision
+            or ci.get("test_revision") != revision
+            or ci.get("build_run_id") != build_match.group(1)
+            or ci.get("build_run_attempt") != build_match.group(2)
             or not isinstance(revision, str)
             or not re.fullmatch(r"[0-9a-fA-F]{40}|[0-9a-fA-F]{64}", revision)):
         raise coverage.CoverageError("PostgreSQL publication record identity or archive digest is invalid")

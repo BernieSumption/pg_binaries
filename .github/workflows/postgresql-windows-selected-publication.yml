@@ -67,13 +67,55 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Resolve a checked PostgreSQL core candidate
+        id: core_candidate
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $candidateDir = Join-Path $env:RUNNER_TEMP 'core-candidate'
+          python tools/windows_core_candidate.py --selected-core --base-pin "support/windows-core-pins/${env:PG_VERSION}-x86_64.json" --output-directory $candidateDir
+          if ($LASTEXITCODE -ne 0) { throw 'PostgreSQL core candidate resolution failed.' }
+          $result = Get-Content (Join-Path $candidateDir 'result.json') -Raw | ConvertFrom-Json
+          if ($result.status -notin @('checked', 'missing', 'stale')) { throw "Unexpected PostgreSQL core candidate status: $($result.status)" }
+          $candidateStatus = $result.status
+          if ($candidateStatus -eq 'checked') {
+            $archiveName = "postgresql-${env:PG_VERSION}-windows-x86_64.tar.gz"
+            try {
+              New-Item -ItemType Directory -Force dist/windows | Out-Null
+              Copy-Item (Join-Path $candidateDir $archiveName) (Join-Path 'dist/windows' $archiveName) -Force -ErrorAction Stop
+              Copy-Item (Join-Path $candidateDir "$archiveName.sha256") (Join-Path 'dist/windows' "$archiveName.sha256") -Force -ErrorAction Stop
+
+              $artifactName = if ($result.candidate_kind -eq 'selected') {
+                "windows-core-selected-$($env:PG_VERSION)-build-$($result.run_id)"
+              } elseif ($result.candidate_kind -eq 'pilot') {
+                "windows-postgresql-$($env:PG_VERSION)-pilot"
+              } else {
+                throw "Unsupported PostgreSQL core candidate kind: $($result.candidate_kind)"
+              }
+              $producerDir = Join-Path $env:RUNNER_TEMP 'core-producer-artifact'
+              gh run download $result.run_id --repo $env:GITHUB_REPOSITORY --name $artifactName --dir $producerDir
+              if ($LASTEXITCODE -ne 0) { throw 'Could not download the checked PostgreSQL producer artifact.' }
+              python tools/stage_windows_core_symbols.py $producerDir (Join-Path 'dist/windows' 'debug-symbols') $archiveName
+              if ($LASTEXITCODE -ne 0) { throw 'Could not stage PostgreSQL core PDBs from the producer artifact.' }
+              python tools/create_windows_symbols.py (Join-Path 'dist/windows' $archiveName) --output-dir (Join-Path 'dist/windows' 'debug-symbols') --verify-only
+              if ($LASTEXITCODE -ne 0) { throw 'Checked PostgreSQL core symbols do not match the candidate archive.' }
+            } catch {
+              Write-Warning "Checked core candidate could not be staged; building PostgreSQL core instead: $_"
+              Remove-Item (Join-Path 'dist/windows' $archiveName) -Force -ErrorAction SilentlyContinue
+              Remove-Item (Join-Path 'dist/windows' "$archiveName.sha256") -Force -ErrorAction SilentlyContinue
+              Remove-Item 'dist/windows/debug-symbols' -Recurse -Force -ErrorAction SilentlyContinue
+              $candidateStatus = 'stale'
+            }
+          }
+          "status=$candidateStatus" | Add-Content $env:GITHUB_OUTPUT
       - name: Set up PostgreSQL build dependencies
         id: dependencies
+        if: steps.core_candidate.outputs.status == 'missing' || steps.core_candidate.outputs.status == 'stale'
         continue-on-error: true
         run: ./scripts/windows/setup-core-dependencies.ps1 -PostgreSQLVersion $env:PG_VERSION
       - name: Build and package PostgreSQL
         id: package
-        if: steps.dependencies.outcome == 'success'
+        if: (steps.core_candidate.outputs.status == 'missing' || steps.core_candidate.outputs.status == 'stale') && steps.dependencies.outcome == 'success'
         continue-on-error: true
         shell: cmd
         run: scripts\windows\build.cmd
@@ -90,7 +132,9 @@ jobs:
       - name: Require core build
         if: always()
         run: |
-          if ('${{ steps.dependencies.outcome }}' -ne 'success' -or '${{ steps.package.outcome }}' -ne 'success') {
+          $candidate = '${{ steps.core_candidate.outputs.status }}'
+          if ($candidate -eq 'checked') { return }
+          if ($candidate -notin @('missing', 'stale') -or '${{ steps.dependencies.outcome }}' -ne 'success' -or '${{ steps.package.outcome }}' -ne 'success') {
             throw 'PostgreSQL Windows core dependencies and archive build must pass'
           }
 

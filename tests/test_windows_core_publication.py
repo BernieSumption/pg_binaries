@@ -1,10 +1,12 @@
 import hashlib
+import io
 import json
 import os
 from pathlib import Path
 import shutil
 import sys
 import tempfile
+import tarfile
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
@@ -39,12 +41,10 @@ class WindowsCorePublicationTests(unittest.TestCase):
         self.pg = "18.6"
         self.run_id = "7654321"
         self.revision = "a" * 40
+        self.build_revision = self.revision
         self.archive_name = f"postgresql-{self.pg}-windows-x86_64.tar.gz"
         self.archive = self.build / self.archive_name
-        self.archive.write_bytes(b"core archive bytes")
-        self.digest = hashlib.sha256(self.archive.read_bytes()).hexdigest()
-        (self.build / (self.archive_name + ".sha256")).write_text(
-            f"{self.digest}  {self.archive_name}\n", encoding="utf-8")
+        self._archive()
         self.pdb = self.build / "debug-symbols/pdbs/postgres.pdb"
         self.pdb.parent.mkdir(parents=True, exist_ok=True)
         self.pdb.write_bytes(b"PDB fixture")
@@ -84,6 +84,20 @@ class WindowsCorePublicationTests(unittest.TestCase):
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps(data), encoding="utf-8")
 
+    def _archive(self):
+        manifest = {"component": "postgresql", "version": self.pg,
+                    "postgresql_version": self.pg, "platform": "windows",
+                    "architecture": "x86_64", "source_revision": self.build_revision,
+                    "build_id": "github-1234567-1"}
+        raw = json.dumps(manifest).encode()
+        with tarfile.open(self.archive, "w:gz") as archive:
+            info = tarfile.TarInfo("postgresql/manifest.json")
+            info.size = len(raw)
+            archive.addfile(info, io.BytesIO(raw))
+        self.digest = hashlib.sha256(self.archive.read_bytes()).hexdigest()
+        (self.build / (self.archive_name + ".sha256")).write_text(
+            f"{self.digest}  {self.archive_name}\n", encoding="utf-8")
+
     def diagnostic_report(self):
         return {"schema_version": 1, "platform": "windows", "architecture": "x86_64",
                 "postgresql_version": self.pg, "archives": {self.archive_name: self.digest},
@@ -104,6 +118,8 @@ class WindowsCorePublicationTests(unittest.TestCase):
         record = json.loads(emitted[0].read_text())
         self.assertEqual(record["component"], "postgresql")
         self.assertEqual(record["profile_id"], "postgresql-publication-windows-x86_64-18.6")
+        self.assertEqual(record["ci"]["build_revision"], self.build_revision)
+        self.assertEqual(record["ci"]["build_run_id"], "1234567")
         self.assertNotIn("project", record)
         self.assertNotIn("assembled_core", record)
         self.assertEqual(json.loads((self.verify / "publication/publication-attempt.json").read_text())["steps"], {
@@ -114,6 +130,27 @@ class WindowsCorePublicationTests(unittest.TestCase):
             f"postgresql-{self.pg}-windows-x86_64-current-{self.run_id}.json"))), 1)
         evidence = self.root / "support/evidence/windows-publication-7654321/postgresql-18.6"
         self.assertTrue((evidence / "debug-symbols-index.json").is_file())
+
+    def test_reused_archive_records_producer_revision(self):
+        self.build_revision = "b" * 40
+        self._archive()
+        self._write(self.build / "debug-symbols/index.json", {"schema_version": 1, "files": [{
+            "archive": self.archive_name, "archive_sha256": self.digest,
+            "module_path": "postgresql/bin/postgres.exe", "module_sha256": "b" * 64,
+            "rsds_guid": "c" * 32, "rsds_age": 1, "pdb_path": "pdbs/postgres.pdb",
+            "pdb_sha256": self.pdb_digest,
+        }]})
+        self._write(self.static, {"outcome": "passed", "platform": "windows", "architecture": "x86_64",
+                                  "inspected_files": ["bin/postgres.exe"], "archives": [
+                                      {"basename": self.archive_name, "sha256": self.digest}]})
+        self._write(self.diagnostics, self.diagnostic_report())
+        record_path = self.emit()[0]
+        record = json.loads(record_path.read_text())
+        self.assertEqual(record["ci"]["build_revision"], self.build_revision)
+        self.assertEqual(record["ci"]["source_revision"], self.build_revision)
+        self.assertEqual(record["ci"]["test_revision"], self.revision)
+        self.assertEqual(record["ci"]["build_run_id"], "1234567")
+        importer.import_run(self.root, self.build, self.verify, self.run_id, self.pg)
 
     def test_rejects_bad_archive_sidecar(self):
         (self.build / (self.archive_name + ".sha256")).write_text("0" * 64 + "  " + self.archive_name + "\n")

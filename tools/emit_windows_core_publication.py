@@ -10,6 +10,7 @@ import sys
 
 import coverage
 import emit_windows_publication_records as combined
+import windows_core_target_config
 
 
 DEPENDENCY_PROFILE = combined.DEPENDENCY_PROFILE
@@ -126,6 +127,19 @@ def emit(root, archives, output, postgresql_version, revision, os_version, image
         raise coverage.CoverageError("expected exactly one PostgreSQL Windows archive")
     digest = combined.sha256_file(archive)
     combined._sidecar(archives / (archive_name + ".sha256"), archive_name, digest)
+    manifest = windows_core_target_config._manifest(archive)
+    build_revision = manifest.get("source_revision") if isinstance(manifest, dict) else None
+    if not isinstance(build_revision, str) or not re.fullmatch(r"[0-9a-f]{40}", build_revision):
+        raise coverage.CoverageError("PostgreSQL archive has no valid build source revision")
+    if any(manifest.get(key) != value for key, value in {
+        "component": "postgresql", "version": postgresql_version,
+        "postgresql_version": postgresql_version, "platform": "windows",
+        "architecture": "x86_64",
+    }.items()):
+        raise coverage.CoverageError("PostgreSQL archive manifest does not match the selected Windows target")
+    build_match = re.fullmatch(r"github-([1-9][0-9]*)-([1-9][0-9]*)", str(manifest.get("build_id", "")))
+    if build_match is None:
+        raise coverage.CoverageError("PostgreSQL archive has no valid producer run identity")
     if outcome == "passed":
         if static_report is None or symbol_report is None or diagnostic_report is None:
             raise coverage.CoverageError("passed core publication requires PE, PDB, and diagnostic reports")
@@ -134,7 +148,8 @@ def emit(root, archives, output, postgresql_version, revision, os_version, image
         _diagnostic(diagnostic_report, archive, postgresql_version)
     ci = {"provider": "github-actions", "run_id": run_id,
           "run_url": f"{server_url}/{repository}/actions/runs/{run_id}",
-          "source_revision": revision, "build_revision": revision, "test_revision": revision}
+          "source_revision": build_revision, "build_revision": build_revision, "test_revision": revision,
+          "build_run_id": build_match.group(1), "build_run_attempt": build_match.group(2)}
     record = {"schema_version": 2, "scope": "publication", "profile_id": profile["profile_id"],
               "profile_revision": profile["profile_revision"], "test_cases": profile["case_ids"],
               "case_results": results, "test_revision": revision, "ci": ci, "outcome": outcome,
