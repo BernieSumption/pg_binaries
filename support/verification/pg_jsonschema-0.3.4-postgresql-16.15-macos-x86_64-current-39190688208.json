@@ -1,0 +1,52 @@
+{
+  "assembled_core": {
+    "archive": "postgresql-16.15-macos-x86_64.tar.gz",
+    "sha256": "b9a26fca74af3703778f6a612a0a4a14e6d468d4b3f9b7df5cb15f1a6389bb5b",
+    "version": "16.15"
+  },
+  "case_results": {
+    "archive-suite": "passed",
+    "static-analysis": "passed"
+  },
+  "ci": {
+    "build_revision": "5df17517c24123f82cc94c56996999d090c0c727",
+    "provider": "github-actions",
+    "run_id": "39190688208",
+    "run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/39190688208",
+    "source_revision": "5df17517c24123f82cc94c56996999d090c0c727",
+    "test_revision": "5df17517c24123f82cc94c56996999d090c0c727"
+  },
+  "component": "pg_jsonschema",
+  "core_status": "current-profile-core-redistribution-pending",
+  "environment": {
+    "architecture": "x86_64",
+    "clean_system": true,
+    "dependency_check_profile": "macho-system-dependencies-v1",
+    "dependency_checks_passed": true,
+    "endpoint": "current",
+    "image_id": "macos15/20260824.0482.1",
+    "os": "macos",
+    "os_version": "15.7.9"
+  },
+  "outcome": "passed",
+  "platform": "macos-x86_64",
+  "postgresql_version": "16.15",
+  "prerequisite_archives": [],
+  "profile_id": "pg-jsonschema-publication-macos-x86_64-16.15",
+  "profile_revision": "f8fe7979bb7e0da6bffb23bda562451c0f6bebd5cce296a6e49cfbc4d36baf0e",
+  "project": "pg_jsonschema",
+  "release_blockers": [
+    "seahash-4.1.0-notice-unresolved",
+    "postgresql-core-redistribution-review-pending"
+  ],
+  "release_eligible": false,
+  "schema_version": 2,
+  "scope": "publication",
+  "sha256": "a41861f5848e4250bf344f299a469831e3d80e856a3ba782b4ebe95d8b40b03e",
+  "test_cases": [
+    "archive-suite",
+    "static-analysis"
+  ],
+  "test_revision": "5df17517c24123f82cc94c56996999d090c0c727",
+  "version": "0.3.4"
+}

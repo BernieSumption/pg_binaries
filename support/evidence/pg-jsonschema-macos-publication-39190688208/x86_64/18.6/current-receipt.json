@@ -1,0 +1,54 @@
+{
+  "architecture": "x86_64",
+  "archives": {
+    "pg_jsonschema-0.3.4-postgresql-18.6-macos-x86_64.tar.gz": "b99c5da86c8718cdc4fb7f909b120b2882485a3ccb88d7fbe3bd6e5025ccdf04",
+    "postgresql-18.6-macos-x86_64.tar.gz": "4eb0125ce114880d2d923a3873d2de148b05a895852aea40aed60c664eafea28"
+  },
+  "case_results": {
+    "archive-suite": "passed",
+    "static-analysis": "passed"
+  },
+  "ci": {
+    "build_revision": "5df17517c24123f82cc94c56996999d090c0c727",
+    "provider": "github-actions",
+    "run_id": "39190688208",
+    "run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/39190688208",
+    "source_revision": "5df17517c24123f82cc94c56996999d090c0c727",
+    "test_revision": "5df17517c24123f82cc94c56996999d090c0c727"
+  },
+  "clean_system": true,
+  "core_status": "current-profile-core-redistribution-pending",
+  "dependency_check_profile": "macho-system-dependencies-v1",
+  "dependency_checks_passed": true,
+  "endpoint": "current",
+  "environment": {
+    "architecture": "x86_64",
+    "clean_system": true,
+    "dependency_check_profile": "macho-system-dependencies-v1",
+    "dependency_checks_passed": true,
+    "endpoint": "current",
+    "image_id": "macos15/20260824.0482.1",
+    "os": "macos",
+    "os_version": "15.7.9"
+  },
+  "extension_archive": "pg_jsonschema-0.3.4-postgresql-18.6-macos-x86_64.tar.gz",
+  "platform": "macos-x86_64",
+  "postgresql_version": "18.6",
+  "profile_id": "pg-jsonschema-publication-macos-x86_64-18.6",
+  "profile_revision": "16e826e3e091b4c2c2b22424a0e986f2b6d9be93218155abccae3e3a0683be78",
+  "project": "pg_jsonschema",
+  "release_blockers": [
+    "seahash-4.1.0-notice-unresolved",
+    "postgresql-core-redistribution-review-pending"
+  ],
+  "release_eligible": false,
+  "reports": {
+    "build_evidence": "682cd5dc110fe27d2946fc0c3994effff898ef47e96628b9370ed871180b43f4",
+    "cargo_license_inventory": "98e4b6c347de019cd53448b302bb9a5e8bd92f9f6f5ec76b7b12f6e32a71dab3",
+    "probe_output": "4bc5c56f97dcb4c9e91bd5655831f9cc0e7a81cd728f63fd3aa10dd3741b9515",
+    "static_analysis": "b2ef37f6cbdff69b55eefa5dc1c3080dddc8d626f2445e6e154aa6da64bf34e1"
+  },
+  "schema_version": 1,
+  "test_revision": "5df17517c24123f82cc94c56996999d090c0c727",
+  "version": "0.3.4"
+}
