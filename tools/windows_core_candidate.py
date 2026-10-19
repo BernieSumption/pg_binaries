@@ -62,7 +62,7 @@ def resolve(*, base_pin, output_directory, repository, branch, current_run_id, r
     checked = None
     for kind, workflow, artifact_template, selected in candidate_options:
         candidate_reasons = discovery.discover(
-            repository=repository, workflow=workflow, branch=branch,
+            repository=repository, workflow=Path(workflow).name, branch=branch,
             current_run_id=current_run_id, artifact_name_template=artifact_template,
             archive_basename=archive_name, project="PostgreSQL", version=version,
             platform="windows-x86_64", postgresql_version=version,

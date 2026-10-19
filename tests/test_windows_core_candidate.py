@@ -87,7 +87,7 @@ class WindowsCoreCandidateTests(unittest.TestCase):
              patch.object(candidate, "_relevant_inputs_match", return_value=True):
             result = candidate.resolve(base_pin=self.base, output_directory=self.output / "out",
                 repository="owner/repo", branch="spike", current_run_id="999", selected_core=True)
-        self.assertEqual(calls, [candidate.SELECTED_WORKFLOW])
+        self.assertEqual(calls, [Path(candidate.SELECTED_WORKFLOW).name])
         self.assertEqual(result["candidate_kind"], "selected")
         target = json.loads(Path(result["target"]).read_text())
         self.assertEqual(target["artifact_name"], row["source"]["artifact_name"])
@@ -99,7 +99,7 @@ class WindowsCoreCandidateTests(unittest.TestCase):
             calls.append(kwargs["workflow"])
             row = dict(self.row)
             row["source"] = dict(self.row["source"])
-            if kwargs["workflow"] == candidate.SELECTED_WORKFLOW:
+            if kwargs["workflow"] == Path(candidate.SELECTED_WORKFLOW).name:
                 row["source"]["artifact_name"] = f"windows-core-selected-{self.version}-build-{self.run_id}"
             else:
                 row["source"]["artifact_name"] = f"windows-postgresql-{self.version}-pilot"
@@ -110,7 +110,7 @@ class WindowsCoreCandidateTests(unittest.TestCase):
              patch.object(candidate, "_relevant_inputs_match", return_value=True):
             result = candidate.resolve(base_pin=self.base, output_directory=self.output / "out",
                 repository="owner/repo", branch="spike", current_run_id="999", selected_core=True)
-        self.assertEqual(calls, [candidate.SELECTED_WORKFLOW, "windows-pilot.yml"])
+        self.assertEqual(calls, [Path(candidate.SELECTED_WORKFLOW).name, "windows-pilot.yml"])
         self.assertEqual(result["status"], "checked")
         self.assertEqual(result["candidate_kind"], "pilot")
 
