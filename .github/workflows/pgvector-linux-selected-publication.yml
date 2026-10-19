@@ -295,13 +295,15 @@ jobs:
       - name: Require final verification, no-host check, diagnostics and records
         if: always()
         env:
+          CORE_RESOLUTION: ${{ needs.build.outputs.core_resolution }}
+          EXTENSION_BUILD: ${{ needs.build.outputs.extension_build }}
           VERIFICATION: ${{ steps.verification.outcome }}
           NOHOST: ${{ steps.nohost.outcome }}
           DIAGNOSTICS: ${{ steps.diagnostics.outcome }}
           RECORDS: ${{ steps.records.outputs.records_imported }}
         run: |
           set -euo pipefail
-          if [[ "$VERIFICATION" != success || "$NOHOST" != success || "$DIAGNOSTICS" != success || "$RECORDS" != true ]]; then
-            echo "Selected pgvector Linux publication incomplete: verify=$VERIFICATION no-host=$NOHOST diagnostics=$DIAGNOSTICS records=$RECORDS." >&2
+          if [[ "$CORE_RESOLUTION" != success || "$EXTENSION_BUILD" != success || "$VERIFICATION" != success || "$NOHOST" != success || "$DIAGNOSTICS" != success || "$RECORDS" != true ]]; then
+            echo "Selected pgvector Linux publication incomplete: core=$CORE_RESOLUTION build=$EXTENSION_BUILD verify=$VERIFICATION no-host=$NOHOST diagnostics=$DIAGNOSTICS records=$RECORDS." >&2
             exit 1
           fi
