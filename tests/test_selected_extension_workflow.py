@@ -66,6 +66,11 @@ class SelectedExtensionWorkflowTests(unittest.TestCase):
         self.assertNotIn("'18.6'", PG_JSONSCHEMA_WINDOWS)
         self.assertNotIn("pg_jsonschema-0.3.4-postgresql-", PG_JSONSCHEMA_WINDOWS)
 
+    def test_address_standardizer_linux_routes_both_architectures(self):
+        for platform in ("linux-x86_64", "linux-arm64"):
+            self.assertIn(f'("Address Standardizer", "{platform}"): "address-standardizer-linux"', DISPATCHER)
+        self.assertIn("uses: ./.github/workflows/address-standardizer-linux-selected-publication.yml", DISPATCHER)
+
 
 if __name__ == "__main__":
     unittest.main()
