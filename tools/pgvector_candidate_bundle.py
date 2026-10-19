@@ -4,10 +4,12 @@ import argparse
 from datetime import datetime, timezone
 import hashlib
 import json
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 import re
 import sys
+import tempfile
 from urllib.parse import quote
+import zipfile
 
 import actions_candidate_bundle as bundle
 import actions_candidate_discovery as discovery
@@ -18,6 +20,9 @@ DISPATCHER_WORKFLOW = "selected-extension-publication.yml"
 MAX_RUNS = 100
 MAX_RUN_PAGES = 10
 MAX_ARTIFACTS = 100
+MAX_CANDIDATE_ATTEMPTS = 3
+SYMBOL_INDEX = "_temp/bundle/pilot/debug-symbols/index.json"
+SYMBOL_ROOT = "_temp/bundle/pilot/debug-symbols/"
 
 
 class CandidateBundleError(ValueError):
@@ -84,6 +89,67 @@ def _run_candidates(repository, branch, current_run_id, pg_version):
             yield workflow, run, artifact, expected_artifact
 
 
+def _symbol_paths(archive, core_name, vector_name, core_member, vector_member):
+    """Validate the selected artifact's symbol index and return its exact allowlist."""
+    try:
+        with zipfile.ZipFile(archive) as source:
+            index = json.loads(source.read(SYMBOL_INDEX))
+            by_name = {item.filename: item for item in source.infolist() if not item.is_dir()}
+            symbol_members = {
+                bundle._safe_relative_path(item.filename)
+                for item in source.infolist()
+                if not item.is_dir() and item.filename.startswith(SYMBOL_ROOT)
+                and item.filename != SYMBOL_INDEX
+            }
+    except (KeyError, OSError, ValueError, zipfile.BadZipFile, UnicodeError) as exc:
+        raise CandidateBundleError(f"debug-symbol index is missing or invalid: {exc}") from exc
+    if not isinstance(index, dict) or index.get("schema_version") != 1 or not isinstance(index.get("files"), list):
+        raise CandidateBundleError("debug-symbol index has an unsupported schema")
+    try:
+        with zipfile.ZipFile(archive) as source:
+            archive_hashes = {
+                core_name: hashlib.sha256(source.read(core_member)).hexdigest(),
+                vector_name: hashlib.sha256(source.read(vector_member)).hexdigest(),
+            }
+    except (KeyError, OSError, zipfile.BadZipFile) as exc:
+        raise CandidateBundleError("selected archives are missing from the artifact") from exc
+    expected_paths = set()
+    try:
+        with zipfile.ZipFile(archive) as source:
+            for row in index["files"]:
+                if not isinstance(row, dict):
+                    raise CandidateBundleError("debug-symbol index contains an invalid entry")
+                archive_name = row.get("archive")
+                archive_hash = row.get("archive_sha256")
+                debug_path = row.get("debug_file_path")
+                debug_hash = row.get("debug_file_sha256")
+                if archive_name not in archive_hashes or archive_hash != archive_hashes[archive_name]:
+                    raise CandidateBundleError("debug-symbol entry is not bound to the selected core or pgvector archive")
+                if not isinstance(debug_hash, str) or not re.fullmatch(r"[0-9a-fA-F]{64}", debug_hash):
+                    raise CandidateBundleError("debug-symbol entry has an invalid file checksum")
+                try:
+                    safe_path = bundle._safe_relative_path(debug_path)
+                except bundle.BundleError as exc:
+                    raise CandidateBundleError(f"debug-symbol path is unsafe: {debug_path!r}") from exc
+                if safe_path in expected_paths:
+                    raise CandidateBundleError("debug-symbol index contains duplicate paths")
+                expected_paths.add(safe_path)
+                member = SYMBOL_ROOT + safe_path
+                if member not in by_name:
+                    raise CandidateBundleError(f"debug-symbol file is missing: {debug_path}")
+                digest = hashlib.sha256()
+                with source.open(member) as stream:
+                    for chunk in iter(lambda: stream.read(1024 * 1024), b""):
+                        digest.update(chunk)
+                if digest.hexdigest() != debug_hash.lower():
+                    raise CandidateBundleError(f"debug-symbol checksum mismatch: {debug_path}")
+    except (OSError, KeyError, zipfile.BadZipFile) as exc:
+        raise CandidateBundleError("debug-symbol file cannot be read") from exc
+    if not expected_paths or symbol_members != {SYMBOL_ROOT + path for path in expected_paths}:
+        raise CandidateBundleError("debug-symbol files are missing, extra, or unsafe")
+    return [SYMBOL_ROOT + path for path in sorted(expected_paths)], index
+
+
 def retrieve(*, repository, branch, current_run_id, version, postgresql_version,
              architecture, output_directory, manifest_path):
     """Retrieve one verified producer artifact and write paths plus its provenance."""
@@ -96,6 +162,8 @@ def retrieve(*, repository, branch, current_run_id, version, postgresql_version,
     selected = None
     saw_candidate = False
     for workflow, run, artifact, artifact_name in candidates:
+        if len(failures) >= MAX_CANDIDATE_ATTEMPTS:
+            break
         saw_candidate = True
         expiry_text = artifact.get("expires_at")
         expiry = discovery._expiry(expiry_text)
@@ -126,14 +194,27 @@ def retrieve(*, repository, branch, current_run_id, version, postgresql_version,
             failures.append(f"run {run_id}: artifact ZIP exceeds size limit")
             continue
         try:
-            files = bundle.download_and_extract_bundle(
-                repository, artifact_id, digest, list(artifact_paths.values()), output_directory,
-                archive_paths=[artifact_paths[core_archive], artifact_paths[pgvector_archive]])
+            output_directory.mkdir(parents=True, exist_ok=True)
+            with tempfile.TemporaryDirectory(dir=output_directory) as temporary:
+                zip_path = bundle._download_verified_zip(repository, artifact_id, digest, temporary)
+                symbol_paths, symbol_index = _symbol_paths(
+                    zip_path, core_archive, pgvector_archive,
+                    artifact_paths[core_archive], artifact_paths[pgvector_archive])
+                requested_paths = list(artifact_paths.values()) + [SYMBOL_INDEX] + symbol_paths
+                files = bundle.extract_bundle(
+                    zip_path, requested_paths, output_directory,
+                    archive_paths=[artifact_paths[core_archive], artifact_paths[pgvector_archive]])
+                for row in symbol_index["files"]:
+                    symbol_key = "debug-symbols/" + row["debug_file_path"]
+                    files[symbol_key] = files.pop(SYMBOL_ROOT + row["debug_file_path"])
+                files["debug-symbols/index.json"] = files.pop(SYMBOL_INDEX)
         except (bundle.BundleError, OSError, ValueError) as exc:
             failures.append(f"run {run_id} artifact {artifact_id}: {exc}")
             continue
-        selected = (workflow, run, artifact_name, artifact_id, expiry_text, digest,
-                    {name: files[path] for name, path in artifact_paths.items()})
+        manifest_files = {name: files[path] for name, path in artifact_paths.items()}
+        manifest_files.update({key: value for key, value in files.items()
+                               if key.startswith("debug-symbols/")})
+        selected = (workflow, run, artifact_name, artifact_id, expiry_text, digest, manifest_files)
         break
     if selected is None:
         if not saw_candidate:

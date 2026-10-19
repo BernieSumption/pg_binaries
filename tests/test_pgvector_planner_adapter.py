@@ -30,6 +30,16 @@ class PgvectorPlannerAdapterTests(unittest.TestCase):
             info = tarfile.TarInfo("metadata.json")
             info.size = len(data)
             archive.addfile(info, io.BytesIO(data))
+        symbol_name = "debug-symbols/postgresql-17.11-linux-x86_64/postgresql/bin/postgres.debug"
+        symbol = self.directory / "postgres.debug"
+        symbol.write_bytes(b"debug symbols")
+        index = self.directory / "index.json"
+        index.write_text(json.dumps({"schema_version": 1, "files": [{
+            "archive": self.core_name,
+            "archive_sha256": hashlib.sha256(self.core_path.read_bytes()).hexdigest(),
+            "debug_file_path": symbol_name.removeprefix("debug-symbols/"),
+            "debug_file_sha256": hashlib.sha256(symbol.read_bytes()).hexdigest(),
+        }]}))
         self.source = {"run_id": "123", "run_attempt": 1, "head_sha": "a" * 40,
                        "artifact_name": f"pgvector-linux-selected-{self.pg}-123",
                        "artifact_expires_at": "2030-01-01T00:00:00Z"}
@@ -38,7 +48,11 @@ class PgvectorPlannerAdapterTests(unittest.TestCase):
                                     "platform": self.platform},
                          "source": self.source,
                          "files": {self.core_name: str(self.core_path),
-                                   self.vector_name: str(self.vector_path)}}
+                                   self.vector_name: str(self.vector_path),
+                                   symbol_name: str(symbol),
+                                   "debug-symbols/index.json": str(index)},
+                         "sha256": {symbol_name: hashlib.sha256(symbol.read_bytes()).hexdigest(),
+                                    "debug-symbols/index.json": hashlib.sha256(index.read_bytes()).hexdigest()}}
         self.core_record = {"component": "postgresql", "version": self.pg}
         self.extension_record = {"component": "vector", "version": self.version}
         self.identity = {"schema_version": 1, "component": "pgvector", "target": {"project": "pgvector"},
@@ -93,6 +107,18 @@ class PgvectorPlannerAdapterTests(unittest.TestCase):
                     self.manifest, ROOT, core_base_image_digest="sha256:" + "b" * 64,
                     core_builder_packages_sha256="c" * 64,
                     pgvector_builder_packages_sha256="d" * 64)
+
+    def test_rejects_missing_symbol_file(self):
+        symbol = next(key for key in self.manifest["files"] if key.endswith("postgres.debug"))
+        del self.manifest["files"][symbol]
+        with mock.patch.object(adapter.pgvector_candidate_records, "validate_candidate_records",
+                               return_value={"core": self.core_record,
+                                             "extension": self.extension_record}), \
+                self.assertRaisesRegex(adapter.PlannerAdapterError, "debug-symbol file is missing"):
+            adapter.checked_candidate_inputs(
+                self.manifest, ROOT, core_base_image_digest="sha256:" + "b" * 64,
+                core_builder_packages_sha256="c" * 64,
+                pgvector_builder_packages_sha256="d" * 64)
 
 
 if __name__ == "__main__":

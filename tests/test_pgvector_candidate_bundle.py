@@ -35,6 +35,22 @@ class PgvectorCandidateBundleTests(unittest.TestCase):
             f"postgresql-{self.pg}-linux-{self.arch}-current-123.json": b'{"verified":true}',
             f"pgvector-{self.version}-postgresql-{self.pg}-linux-{self.arch}-current-123.json": b'{"verified":true}',
         }
+        self.symbols = {
+            "postgresql-17.11-linux-x86_64/postgresql/lib/postgres.debug": b"core debug symbols",
+            "pgvector-0.8.7-postgresql-17.11-linux-x86_64/postgresql/lib/vector.so.debug": b"vector debug symbols",
+        }
+        index_rows = []
+        for archive_name, symbol_path, content in (
+                (f"postgresql-{self.pg}-linux-{self.arch}.tar.gz", next(iter(self.symbols)),
+                 next(iter(self.symbols.values()))),
+                (f"pgvector-{self.version}-postgresql-{self.pg}-linux-{self.arch}.tar.gz",
+                 list(self.symbols)[1], list(self.symbols.values())[1])):
+            index_rows.append({"archive": archive_name,
+                               "archive_sha256": hashlib.sha256(self.files[archive_name]).hexdigest(),
+                               "debug_file_path": symbol_path,
+                               "debug_file_sha256": hashlib.sha256(content).hexdigest(),
+                               "module_path": symbol_path.removesuffix(".debug"),
+                               "module_sha256": "a" * 64, "gnu_build_id": "b" * 40})
         members = []
         for name, data in self.files.items():
             location = "_temp/bundle/pilot/publication/records/" if name.endswith(".json") else "_temp/bundle/pilot/"
@@ -43,6 +59,10 @@ class PgvectorCandidateBundleTests(unittest.TestCase):
             if name.endswith(".tar.gz"):
                 members.append(("_temp/bundle/pilot/" + name + ".sha256",
                                 f"{hashlib.sha256(data).hexdigest()}  {name}\n".encode()))
+        members.append(("_temp/bundle/pilot/debug-symbols/index.json",
+                        json.dumps({"schema_version": 1, "files": index_rows}).encode()))
+        members.extend(("_temp/bundle/pilot/debug-symbols/" + name, data)
+                       for name, data in self.symbols.items())
         buffer = io.BytesIO()
         with zipfile.ZipFile(buffer, "w") as archive:
             for name, data in members:
@@ -94,6 +114,28 @@ class PgvectorCandidateBundleTests(unittest.TestCase):
             path = Path(manifest["files"][name])
             self.assertEqual(path.read_bytes(), content)
             self.assertEqual(manifest["sha256"][name], hashlib.sha256(content).hexdigest())
+        for name, content in self.symbols.items():
+            key = "debug-symbols/" + name
+            self.assertEqual(Path(manifest["files"][key]).read_bytes(), content)
+            self.assertEqual(manifest["sha256"][key], hashlib.sha256(content).hexdigest())
+        self.assertIn("debug-symbols/index.json", manifest["files"])
+
+    def test_rejects_symbol_paths_that_do_not_match_the_index(self):
+        with zipfile.ZipFile(io.BytesIO(self.zip_bytes)) as source:
+            members = [(item.filename, source.read(item)) for item in source.infolist()]
+        members.append(("_temp/bundle/pilot/debug-symbols/orphan.debug", b"extra"))
+        buffer = io.BytesIO()
+        with zipfile.ZipFile(buffer, "w") as archive:
+            for name, data in members:
+                archive.writestr(name, data)
+        archive_path = self.root / "extra.zip"
+        archive_path.write_bytes(buffer.getvalue())
+        with self.assertRaisesRegex(candidate.CandidateBundleError, "extra, or unsafe"):
+            candidate._symbol_paths(
+                archive_path, next(name for name in self.files if name.startswith("postgresql-")),
+                next(name for name in self.files if name.startswith("pgvector-")),
+                "_temp/bundle/pilot/" + next(name for name in self.files if name.startswith("postgresql-")),
+                "_temp/bundle/pilot/" + next(name for name in self.files if name.startswith("pgvector-")))
 
     def test_usable_newest_candidate_stops_artifact_queries(self):
         with patch.object(discovery, "_gh", side_effect=self.fake_api), \

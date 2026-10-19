@@ -291,6 +291,7 @@ jobs:
             support/verification/pgvector-${{ needs.select.outputs.extension_version }}-postgresql-${{ needs.select.outputs.postgresql_version }}-linux-${{ needs.select.outputs.architecture }}-current-${{ github.run_id }}.json
           if-no-files-found: warn
           retention-days: 7
+          include-hidden-files: true
       - name: Require final verification, no-host check, diagnostics and records
         if: always()
         env:

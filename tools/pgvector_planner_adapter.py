@@ -3,6 +3,7 @@
 import hashlib
 import json
 from pathlib import Path
+import re
 import sys
 import tarfile
 import tempfile
@@ -43,6 +44,41 @@ def _metadata(archive_path, member_name):
         raise PlannerAdapterError(f"cannot read candidate {member_name}: {exc}") from exc
 
 
+def _validate_symbols(manifest, core_name, vector_name):
+    files, hashes = manifest["files"], manifest["sha256"]
+    index_key = "debug-symbols/index.json"
+    if index_key not in files or index_key not in hashes:
+        raise PlannerAdapterError("candidate has no checked debug-symbol index")
+    if _sha256(files[index_key]) != hashes[index_key]:
+        raise PlannerAdapterError("debug-symbol index checksum differs from candidate manifest")
+    try:
+        index = json.loads(Path(files[index_key]).read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+        raise PlannerAdapterError(f"cannot read candidate debug-symbol index: {exc}") from exc
+    if (not isinstance(index, dict) or index.get("schema_version") != 1
+            or not isinstance(index.get("files"), list) or not index["files"]):
+        raise PlannerAdapterError("candidate debug-symbol index is invalid")
+    expected = {core_name: _sha256(files[core_name]), vector_name: _sha256(files[vector_name])}
+    symbol_keys = set()
+    for row in index["files"]:
+        if not isinstance(row, dict) or row.get("archive_sha256") != expected.get(row.get("archive")):
+            raise PlannerAdapterError("debug-symbol entry is not bound to the candidate archives")
+        name = row.get("debug_file_path")
+        if (not isinstance(name, str) or not name or name.startswith("/")
+                or ".." in Path(name).parts or "\\" in name):
+            raise PlannerAdapterError("debug-symbol index has an unsafe file path")
+        key = "debug-symbols/" + name
+        if key in symbol_keys or key not in files or key not in hashes:
+            raise PlannerAdapterError("candidate debug-symbol file is missing or duplicated")
+        digest = row.get("debug_file_sha256")
+        if (not isinstance(digest, str) or not re.fullmatch(r"[0-9a-f]{64}", digest)
+                or hashes[key] != digest or _sha256(files[key]) != digest):
+            raise PlannerAdapterError("candidate debug-symbol checksum differs from its index")
+        symbol_keys.add(key)
+    if symbol_keys != {key for key in files if key.startswith("debug-symbols/") and key != index_key}:
+        raise PlannerAdapterError("candidate contains unindexed debug symbols")
+
+
 def checked_candidate_inputs(manifest, root=ROOT, *, core_base_image_digest,
                              core_builder_packages_sha256,
                              pgvector_builder_packages_sha256):
@@ -63,6 +99,7 @@ def checked_candidate_inputs(manifest, root=ROOT, *, core_base_image_digest,
     architecture = platform.removeprefix("linux-")
     core_name = f"postgresql-{pg}-{platform}.tar.gz"
     vector_name = f"pgvector-{version}-postgresql-{pg}-{platform}.tar.gz"
+    _validate_symbols(manifest, core_name, vector_name)
     core_path = Path(manifest["files"][core_name])
     vector_path = Path(manifest["files"][vector_name])
     source = manifest["source"]
