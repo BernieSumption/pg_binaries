@@ -128,10 +128,12 @@ export DYLD_LIBRARY_PATH= DYLD_FALLBACK_LIBRARY_PATH=
 start_server "$work/first/postgresql" first
 first_psql=("$work/first/postgresql/bin/psql" -h "$work/socket" -p 54329 -d postgres -X -v ON_ERROR_STOP=1)
 "${first_psql[@]}" -f "$repo/tests/schema.sql"
-"${first_psql[@]}" -c 'CREATE EXTENSION vector'
-"${first_psql[@]}" -c 'CREATE TABLE first_vectors (embedding vector(3))'
-"${first_psql[@]}" -c "INSERT INTO first_vectors VALUES ('[1,0,0]')"
-"${first_psql[@]}" -At -c "SELECT embedding <-> '[1,0,0]'::vector FROM first_vectors" | grep -Fx 0
+if ! $core_only; then
+  "${first_psql[@]}" -c 'CREATE EXTENSION vector'
+  "${first_psql[@]}" -c 'CREATE TABLE first_vectors (embedding vector(3))'
+  "${first_psql[@]}" -c "INSERT INTO first_vectors VALUES ('[1,0,0]')"
+  "${first_psql[@]}" -At -c "SELECT embedding <-> '[1,0,0]'::vector FROM first_vectors" | grep -Fx 0
+fi
 stop_server
 mv "$work/first/postgresql" "$work/moved/postgresql"
 pg="$work/moved/postgresql"
