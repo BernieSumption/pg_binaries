@@ -13,6 +13,7 @@ import coverage
 import create_extension_publication_receipt as receipt_creator
 import emit_extension_publication_records as emitter
 import import_linux_collection_publication as importer
+import linux_core_resolution
 
 
 REPO = Path(__file__).resolve().parents[1]
@@ -179,6 +180,89 @@ class CollectionPublicationImportTests(unittest.TestCase):
         self.assertEqual(len(retained), 4)
         self.assertTrue((self.root / "support/evidence" / f"collection-publication-{self.run_id}" /
                          self.architecture / "attempt.json").is_file())
+
+    def _prepare_selected(self, version):
+        profile_id = f"collection-publication-linux-{self.architecture}-18.6-{version}"
+        profiles = json.loads((self.root / "support/verification-profiles.json").read_text())
+        profiles["profiles"][profile_id] = {
+            "scope": "publication", "platforms": [self.platform],
+            "case_ids": ["collection-archive-suite"], "sources": ["profile-source.txt"],
+        }
+        (self.root / "support/verification-profiles.json").write_text(json.dumps(profiles))
+        for path in self.publication.glob("current-receipt-*.json"):
+            path.unlink()
+        for path in self.records.glob("*.json"):
+            path.unlink()
+        attempt = json.loads((self.publication / "attempt.json").read_text())
+        attempt["collection_versions"] = [version]
+        attempt["source_sha256"] = {version: SOURCE_SHA256[version]}
+        (self.publication / "attempt.json").write_text(json.dumps(attempt))
+        manifest = {"component": "postgresql", "version": "18.6", "platform": "linux",
+                    "architecture": self.architecture, "source_revision": self.revision,
+                    "build_id": "fixture-build", "builder_inputs": {
+                        "base_image": "ubuntu:22.04", "base_image_digest": "sha256:" + "a" * 64,
+                        "packages_sha256": "b" * 64}}
+        with tarfile.open(self.core_dir / self.core_name, "w:gz") as archive:
+            data = json.dumps(manifest).encode()
+            member = tarfile.TarInfo("postgresql/manifest.json")
+            member.size = len(data)
+            archive.addfile(member, io.BytesIO(data))
+        self.core_hash = self._sidecar(self.core_dir / self.core_name)
+        report_path = self.collection_artifact / "static-analysis" / f"collection-{version}.json"
+        report = json.loads(report_path.read_text())
+        report["archives"] = [
+            {"basename": self.core_name, "sha256": self.core_hash},
+            {"basename": self.extension_names[version], "sha256": self.extension_hashes[version]},
+        ]
+        report_path.write_text(json.dumps(report))
+        resolution = linux_core_resolution.create_record(
+            self.core_dir / self.core_name, "18.6", self.architecture, "built",
+            environ={"GITHUB_RUN_ID": self.run_id, "GITHUB_REPOSITORY": "example/repo",
+                     "GITHUB_WORKFLOW_REF": "example/repo/.github/workflows/test.yml@refs/heads/test",
+                     "GITHUB_SHA": self.revision, "GITHUB_RUN_ATTEMPT": "1"})
+        (self.core_dir / "core-resolution.json").write_text(json.dumps(resolution))
+        receipt_path = self.publication / f"current-receipt-{version}.json"
+        receipt_creator.create(
+            self.root, self.collection_artifact, self.core_dir, receipt_path, profile_id,
+            "collection", version, "18.6", "18.6", self.architecture, "current",
+            "6.8.0-test-kernel", "Alpine Linux", "3.22.6", self.image_id,
+            "success", True, self.publication / "current-steps.json",
+            environ={"GITHUB_SHA": self.revision, "GITHUB_RUN_ID": self.run_id,
+                     "GITHUB_REPOSITORY": "example/repo", "GITHUB_SERVER_URL": "https://github.com"})
+        emitter.emit(self.root, self.collection_artifact, self.core_dir, receipt_path, self.records)
+
+    def test_selected_mode_retains_one_version_under_versioned_evidence_path(self):
+        self._prepare_selected("1.1.1")
+        retained = importer.import_run(self.root, self.core_artifact, self.collection_artifact,
+                                       self.run_id, self.architecture, "18.6", "1.1.1")
+        versioned = self.root / "support/evidence/collection-publication-456/x86_64/18.6/1.1.1"
+        self.assertEqual({json.loads(path.read_text())["version"] for path in
+                          (self.root / "support/verification").glob("*.json")}, {"1.1.1"})
+        self.assertTrue((versioned / "core-resolution.json").is_file())
+        self.assertIn(str((versioned / "current-receipt-1.1.1.json").relative_to(self.root)), retained)
+        self.assertEqual(importer.import_run(self.root, self.core_artifact, self.collection_artifact,
+                                             self.run_id, self.architecture, "18.6", "1.1.1"), retained)
+
+    def test_selected_mode_rejects_core_provenance_digest_mismatch(self):
+        self._prepare_selected("2.1.3")
+        (self.core_dir / "postgresql-18.6-linux-x86_64.tar.gz").write_bytes(b"changed")
+        self._sidecar(self.core_dir / "postgresql-18.6-linux-x86_64.tar.gz")
+        with self.assertRaisesRegex(coverage.CoverageError, "invalid exact PostgreSQL core provenance"):
+            importer.import_run(self.root, self.core_artifact, self.collection_artifact,
+                                self.run_id, self.architecture, "18.6", "2.1.3")
+
+    def test_selected_versions_share_run_without_evidence_path_collision(self):
+        self._prepare_selected("1.1.1")
+        importer.import_run(self.root, self.core_artifact, self.collection_artifact,
+                            self.run_id, self.architecture, "18.6", "1.1.1")
+        self._prepare_selected("2.1.3")
+        importer.import_run(self.root, self.core_artifact, self.collection_artifact,
+                            self.run_id, self.architecture, "18.6", "2.1.3")
+        base = self.root / "support/evidence/collection-publication-456/x86_64/18.6"
+        self.assertTrue((base / "1.1.1/current-receipt-1.1.1.json").is_file())
+        self.assertTrue((base / "2.1.3/current-receipt-2.1.3.json").is_file())
+        self.assertEqual({json.loads(path.read_text())["version"] for path in
+                          (self.root / "support/verification").glob("*.json")}, set(VERSIONS))
 
 
 if __name__ == "__main__":

@@ -105,6 +105,9 @@ def import_run(root, core_artifact, pgaudit_artifact, run_id, architecture,
         raise coverage.CoverageError("profile does not match the Linux publication platform")
 
     publication = pgaudit_artifact / "pgaudit-publication"
+    archive_dir = pgaudit_artifact / "pgaudit"
+    if not archive_dir.is_dir():
+        archive_dir = pgaudit_artifact
     target = (root / "support/evidence" / f"pgaudit-publication-{run_id}"
               / architecture / postgresql_version)
     steps_path, attempt_path = publication / "current-steps.json", publication / "attempt.json"
@@ -119,7 +122,7 @@ def import_run(root, core_artifact, pgaudit_artifact, run_id, architecture,
     core_candidates = (core_artifact / core_name, core_artifact / "pilot" / core_name,
                        pgaudit_artifact / core_name)
     core_archive = next((path for path in core_candidates if path.is_file()), core_candidates[0])
-    archives = [core_archive, pgaudit_artifact / extension_name]
+    archives = [core_archive, archive_dir / extension_name]
     if archives[1].is_file():
         _validate_source_identity(archives[1], pgaudit_version, postgresql_version, architecture)
     records = sorted((publication / "records").glob("*.json"))
@@ -201,7 +204,7 @@ def import_run(root, core_artifact, pgaudit_artifact, run_id, architecture,
         copies.append((source, root / "support/verification" / source.name))
 
     passed = receipt is not None and _outcome(receipt["case_results"]) == "passed"
-    report = _static_analysis(pgaudit_artifact / "static-analysis/pgaudit.json", architecture,
+    report = _static_analysis(archive_dir / "static-analysis/pgaudit.json", architecture,
                               digests, passed)
     if report is not None:
         copies.append((report, target / "static-analysis" / report.name))

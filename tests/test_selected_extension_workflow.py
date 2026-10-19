@@ -25,6 +25,9 @@ class SelectedExtensionWorkflowTests(unittest.TestCase):
         self.assertIn('("PostGIS", "linux-x86_64"): "postgis-linux"', DISPATCHER)
         self.assertIn('("PostGIS", "linux-arm64"): "postgis-linux"', DISPATCHER)
         self.assertIn("uses: ./.github/workflows/postgis-linux-selected-publication.yml", DISPATCHER)
+        self.assertIn('("collection", "linux-x86_64"): "collection-linux"', DISPATCHER)
+        self.assertIn('("collection", "linux-arm64"): "collection-linux"', DISPATCHER)
+        self.assertIn("uses: ./.github/workflows/collection-linux-selected-publication.yml", DISPATCHER)
         self.assertIn("uses: ./.github/workflows/collection-macos-selected-publication.yml", DISPATCHER)
         self.assertIn("uses: ./.github/workflows/pgivm-macos-selected-publication.yml", DISPATCHER)
 

@@ -7,6 +7,8 @@ case "$architecture:$(uname -m)" in
   *) echo "Build container architecture does not match $architecture: $(uname -m)" >&2; exit 2 ;;
 esac
 pg_version=${PG_VERSION:-18.6}
+source /usr/local/bin/collection-version-selection.sh
+select_collection_versions
 case "$pg_version" in
   15.19|16.15|17.11|18.6) ;;
   *) echo "Unsupported PostgreSQL version: $pg_version" >&2; exit 2 ;;
@@ -98,5 +100,9 @@ PY
 }
 
 # Digests were independently obtained from the exact public GitHub tag archive URLs.
-build_one 1.1.1 ab99a969334442e4a3c77405bc9ffed0083595d18f3898d64a731353a32bec5e
-build_one 2.1.3 a6b07864e5893d3b682bb3223fd6d33015709765c9d40d415c85112358f0e3e4
+for version in "${SELECTED_COLLECTION_VERSIONS[@]}"; do
+  case "$version" in
+    1.1.1) build_one "$version" ab99a969334442e4a3c77405bc9ffed0083595d18f3898d64a731353a32bec5e ;;
+    2.1.3) build_one "$version" a6b07864e5893d3b682bb3223fd6d33015709765c9d40d415c85112358f0e3e4 ;;
+  esac
+done

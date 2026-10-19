@@ -26,8 +26,13 @@ LINUX_ROUTES = {"hypopg": "HypoPG", "pg-jsonschema": "pg_jsonschema",
 MAX_TARGETS = 128
 
 
-def _profile_id(route_name, architecture, postgresql_version):
-    return f"{route_name}-publication-linux-{architecture}-{postgresql_version}"
+def _profile_id(route_name, architecture, postgresql_version, extension_version=None):
+    profile_id = f"{route_name}-publication-linux-{architecture}-{postgresql_version}"
+    if route_name == "collection":
+        if not extension_version:
+            raise ValueError("Collection publication profile requires an extension version")
+        profile_id += f"-{extension_version}"
+    return profile_id
 
 
 def changed_targets(before_root, current_root, *, project=None, postgresql_version=None,
@@ -50,7 +55,8 @@ def changed_targets(before_root, current_root, *, project=None, postgresql_versi
                               and target["platform"].startswith("linux-")]
         for target in project_candidates:
             target_architecture = target["platform"].removeprefix("linux-")
-            profile_id = _profile_id(route_name, target_architecture, target["postgresql_version"])
+            profile_id = _profile_id(route_name, target_architecture, target["postgresql_version"],
+                                     target["selected_version"])
             if profile_id in seen_profiles:
                 raise ValueError(f"multiple selected releases require distinct profiles for {profile_id!r}")
             seen_profiles.add(profile_id)

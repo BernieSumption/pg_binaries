@@ -10,6 +10,7 @@ import sys
 import tarfile
 
 import coverage
+import linux_core_resolution
 from import_linux_publication_run import _case_results, _outcome, _sha256, _static_analysis, _steps
 from import_linux_tiger_publication import _sidecar
 
@@ -45,7 +46,170 @@ def _metadata(path, version, architecture, postgresql_version):
         raise coverage.CoverageError("collection archive metadata or pinned source identity is invalid")
 
 
-def import_run(root, core_artifact, collection_artifact, run_id, architecture, postgresql_version="18.6"):
+def _import_selected_run(root, core_artifact, collection_artifact, run_id, architecture,
+                         postgresql_version, selected_version):
+    root, core_artifact, collection_artifact = map(Path, (root, core_artifact, collection_artifact))
+    postgresql_version, selected_version = str(postgresql_version), str(selected_version)
+    if (not re.fullmatch(r"[1-9][0-9]*", str(run_id)) or architecture not in ARCHITECTURES
+            or not re.fullmatch(r"\d+\.\d+", postgresql_version)
+            or selected_version not in VERSIONS):
+        raise coverage.CoverageError("expected numeric run_id and a selected Collection Linux target")
+    support = coverage.load_json(root / "support.json")
+    releases = coverage.release_snapshot(coverage.load_json(root / "support/postgresql-releases.json"), support)
+    if postgresql_version not in releases:
+        raise coverage.CoverageError(f"PostgreSQL {postgresql_version} is not selected")
+    project = support.get("extensions", {}).get("collection")
+    version_config = project.get("versions", {}).get(selected_version) if isinstance(project, dict) else None
+    major = int(postgresql_version.split(".", 1)[0])
+    if (not isinstance(version_config, dict)
+            or major < version_config.get("postgresql_minimum_major", 0)
+            or major > version_config.get("postgresql_maximum_major", major)):
+        raise coverage.CoverageError(f"Collection {selected_version} does not support PostgreSQL {major}")
+    _, targets = coverage.expected_targets(support, releases)
+    platform = f"linux-{architecture}"
+    if not any(sql == "collection" and version == selected_version and pg == postgresql_version
+               and target_platform == platform for sql, version, pg, target_platform in targets):
+        raise coverage.CoverageError("selected Collection version is not an exact supported target")
+
+    profile_id = f"collection-publication-linux-{architecture}-{postgresql_version}-{selected_version}"
+    profile = coverage.verification_profile(root, profile_id)
+    if (profile["scope"] != "publication" or platform not in profile["platforms"]
+            or profile["case_ids"] != ["collection-archive-suite"]):
+        raise coverage.CoverageError("profile does not match the selected Collection Linux publication target")
+    collection_dir = collection_artifact / "collection"
+    if not collection_dir.is_dir():
+        collection_dir = collection_artifact
+    publication = collection_artifact / "collection-publication"
+    steps_path, attempt_path = publication / "current-steps.json", publication / "attempt.json"
+    steps = _steps(steps_path, profile)
+    attempt = coverage.load_json(attempt_path)
+    expected_source = {selected_version: SOURCE_SHA256[selected_version]}
+    if (not isinstance(attempt, dict) or attempt.get("schema_version") != 1
+            or str(attempt.get("run_id")) != str(run_id)
+            or not coverage.REVISION.fullmatch(str(attempt.get("source_revision", "")))
+            or attempt.get("architecture") != architecture
+            or attempt.get("postgresql_version") != postgresql_version
+            or attempt.get("collection_versions") != [selected_version]
+            or attempt.get("source_sha256") != expected_source
+            or not isinstance(attempt.get("steps"), dict) or set(attempt["steps"]) != STEP_NAMES
+            or any(value not in {"success", "failure", "skipped"} for value in attempt["steps"].values())):
+        raise coverage.CoverageError("selected attempt identity, source pin, or step outcomes are invalid")
+    image = attempt.get("verifier_image_id")
+    if image != "unknown" and not re.fullmatch(r"sha256:[0-9a-f]{64}", str(image)):
+        raise coverage.CoverageError("verifier image identity is malformed")
+    build, verify = attempt["steps"]["collection_build"], attempt["steps"]["collection_verify"]
+    suite = ("failure" if "failure" in (build, verify) or
+             (build == verify == "success" and image == "unknown") else
+             "success" if build == verify == "success" else "skipped")
+    if steps != {"collection-archive-suite": suite}:
+        raise coverage.CoverageError("publication case outcome differs from raw attempt outcomes")
+
+    core_dir = core_artifact / "pilot"
+    if not core_dir.is_dir():
+        core_dir = core_artifact
+    core_name = f"postgresql-{postgresql_version}-{platform}.tar.gz"
+    extension_name = f"collection-{selected_version}-postgresql-{postgresql_version}-{platform}.tar.gz"
+    core_archive, extension_archive = core_dir / core_name, collection_dir / extension_name
+    receipt_path = publication / f"current-receipt-{selected_version}.json"
+    records = sorted((publication / "records").glob("*.json"))
+    if len(records) > 1 or (records and not receipt_path.is_file()):
+        raise coverage.CoverageError("selected run must contain at most one receipt and one record")
+    archives = {core_name: core_archive, extension_name: extension_archive}
+    digests = {name: _sha256(path) for name, path in archives.items() if path.is_file()}
+    bound = receipt_path.is_file() or bool(records)
+    for name, path in archives.items():
+        if name in digests and (bound or path.with_name(name + ".sha256").exists()):
+            _sidecar(path, digests[name])
+    if bound and set(digests) != set(archives):
+        raise coverage.CoverageError("receipt or record exists but a referenced archive is missing")
+    if extension_name in digests:
+        _metadata(extension_archive, selected_version, architecture, postgresql_version)
+    resolution = core_dir / "core-resolution.json"
+    if core_archive.is_file():
+        try:
+            checked = linux_core_resolution.validate_resolution(resolution, core_archive,
+                                                                postgresql_version, architecture)
+        except (ValueError, OSError, TypeError) as exc:
+            raise coverage.CoverageError(f"invalid exact PostgreSQL core provenance: {exc}") from exc
+        if (checked.get("origin") == "built"
+                and (checked["provenance"].get("run_id") != str(run_id)
+                     or checked["provenance"].get("run_sha") != attempt["source_revision"])):
+            raise coverage.CoverageError("built core provenance does not match this run and source revision")
+
+    target = (root / "support/evidence" / f"collection-publication-{run_id}" / architecture
+              / postgresql_version / selected_version)
+    copies = [(steps_path, target / steps_path.name), (attempt_path, target / attempt_path.name)]
+    receipt_data = {}
+    if receipt_path.is_file():
+        receipt = coverage.load_json(receipt_path)
+        expected = {"profile_id": profile_id, "project": "collection", "version": selected_version,
+                    "postgresql_version": postgresql_version, "architecture": architecture,
+                    "endpoint": "current", "case_results": _case_results(steps),
+                    "extension_archive": extension_name, "prerequisite_archives": [],
+                    "archives": digests}
+        ci, revision = receipt.get("ci", {}), receipt.get("test_revision")
+        if (not isinstance(receipt, dict) or any(receipt.get(key) != value for key, value in expected.items())
+                or receipt.get("profile_revision") not in profile["compatible_profile_revisions"]
+                or not isinstance(ci, dict) or str(ci.get("run_id")) != str(run_id)
+                or ci.get("provider") != "github-actions"
+                or not str(ci.get("run_url", "")).endswith(f"/actions/runs/{run_id}")
+                or revision != attempt["source_revision"]
+                or any(ci.get(key) != revision for key in ("source_revision", "build_revision", "test_revision"))):
+            raise coverage.CoverageError("selected receipt identity or archive hashes do not match attempt")
+        if (receipt.get("distribution") != "Alpine Linux"
+                or not re.fullmatch(r"3\.22(?:\.\d+)?", str(receipt.get("distribution_version")))
+                or not receipt.get("kernel_release") or receipt.get("image_id") != image
+                or receipt.get("dependency_check_profile") != "collection-runtime-v1"):
+            raise coverage.CoverageError("receipt must identify matching Alpine 3.22 verifier and runtime check")
+        if _outcome(receipt["case_results"]) == "passed" and not (
+                receipt.get("clean_system") is True and receipt.get("dependency_checks_passed") is True):
+            raise coverage.CoverageError("passed receipt requires clean runtime and dependency checks")
+        receipt_data[selected_version] = receipt
+        copies.append((receipt_path, target / receipt_path.name))
+    if records:
+        record = coverage.load_json(records[0])
+        coverage.validate_verification_record(record, support, root)
+        results = _case_results(steps)
+        expected = {"profile_id": profile_id, "component": "collection", "project": "collection",
+                    "version": selected_version, "postgresql_version": postgresql_version,
+                    "platform": platform, "case_results": results, "outcome": _outcome(results),
+                    "test_cases": profile["case_ids"], "ci": receipt["ci"],
+                    "test_revision": receipt["test_revision"], "sha256": digests[extension_name],
+                    "assembled_core": {"archive": core_name, "sha256": digests[core_name],
+                                       "version": postgresql_version}, "prerequisite_archives": []}
+        filename = f"collection-{selected_version}-postgresql-{postgresql_version}-{platform}-current-{run_id}.json"
+        if (any(record.get(key) != value for key, value in expected.items()) or records[0].name != filename
+                or record.get("profile_revision") != receipt.get("profile_revision")
+                or any(record.get("environment", {}).get(key) != receipt.get(key) for key in (
+                    "endpoint", "architecture", "kernel_release", "distribution", "distribution_version",
+                    "image_id", "clean_system", "dependency_check_profile", "dependency_checks_passed"))):
+            raise coverage.CoverageError("selected record identity or archive checksum differs from receipt")
+        copies.append((records[0], root / "support/verification" / records[0].name))
+    report_path = collection_dir / "static-analysis" / f"collection-{selected_version}.json"
+    if receipt_data:
+        report = _static_analysis(report_path, architecture, digests,
+                                  _outcome(receipt["case_results"]) == "passed")
+        if report is not None:
+            copies.append((report, target / "static-analysis" / report.name))
+    if bound:
+        copies.append((resolution, target / resolution.name))
+    for source, destination in copies:
+        if source.is_symlink() or not source.is_file() or source.stat().st_size > MAX_EVIDENCE_BYTES:
+            raise coverage.CoverageError(f"evidence must be a regular file of at most {MAX_EVIDENCE_BYTES} bytes: {source}")
+        if destination.exists() and (destination.is_symlink() or not destination.is_file()
+                                     or destination.read_bytes() != source.read_bytes()):
+            raise coverage.CoverageError(f"refusing to replace retained evidence {destination}")
+    for source, destination in copies:
+        destination.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(source, destination)
+    return [str(destination.relative_to(root)) for _, destination in copies]
+
+
+def import_run(root, core_artifact, collection_artifact, run_id, architecture, postgresql_version="18.6",
+               selected_version=None):
+    if selected_version is not None:
+        return _import_selected_run(root, core_artifact, collection_artifact, run_id,
+                                    architecture, postgresql_version, selected_version)
     root, core_artifact, collection_artifact = map(Path, (root, core_artifact, collection_artifact))
     run_id = str(run_id)
     if not re.fullmatch(r"\d+", run_id) or architecture not in ARCHITECTURES:
@@ -199,10 +363,13 @@ def main():
     parser.add_argument("--run-id", required=True)
     parser.add_argument("--architecture", choices=sorted(ARCHITECTURES), required=True)
     parser.add_argument("--postgresql-version", default="18.6")
+    parser.add_argument("--selected-version", choices=VERSIONS,
+                        help="import one target-specific Collection release instead of legacy both-version evidence")
     args = parser.parse_args()
     try:
         print("\n".join(import_run(args.root, args.core_artifact, args.collection_artifact,
-                                   args.run_id, args.architecture, args.postgresql_version)))
+                                   args.run_id, args.architecture, args.postgresql_version,
+                                   args.selected_version)))
         return 0
     except (coverage.CoverageError, OSError, ValueError, TypeError) as exc:
         print(f"Linux collection publication import: {exc}", file=sys.stderr)

@@ -12,8 +12,10 @@ case "$architecture" in
 esac
 input=$(cd "$input" && pwd)
 extension=$(cd "$extension" && pwd)
+source "$repo/scripts/collection/version-selection.sh"
+select_collection_versions
 mkdir -p "$extension/static-analysis"
 docker build --platform "$docker_platform" -f "$repo/scripts/collection/verify.Dockerfile" -t pg-binaries-collection-verifier "$repo"
-docker run --rm -e PG_ARCHITECTURE="$architecture" -e PG_VERSION="$pg_version" --platform "$docker_platform" \
+docker run --rm -e PG_ARCHITECTURE="$architecture" -e PG_VERSION="$pg_version" -e COLLECTION_VERSION="${COLLECTION_VERSION:-}" --platform "$docker_platform" \
   -v "$input:/input:ro" -v "$extension:/extension:ro" \
   -v "$extension/static-analysis:/analysis" pg-binaries-collection-verifier

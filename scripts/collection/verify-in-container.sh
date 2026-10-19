@@ -6,6 +6,8 @@ case "$architecture:$(uname -m)" in
   *) echo "Verifier architecture does not match $architecture: $(uname -m)" >&2; exit 2 ;;
 esac
 pg_version=${PG_VERSION:-18.6}
+source /usr/local/bin/collection-version-selection.sh
+select_collection_versions
 case "$pg_version" in
   15.19|16.15|17.11|18.6) ;;
   *) echo "Unsupported PostgreSQL version: $pg_version" >&2; exit 2 ;;
@@ -14,12 +16,12 @@ core_archive="postgresql-${pg_version}-linux-${architecture}.tar.gz"
 cd /input
 sha256sum -c "$core_archive.sha256"
 cd /extension
-for version in 1.1.1 2.1.3; do
+for version in "${SELECTED_COLLECTION_VERSIONS[@]}"; do
   archive="collection-${version}-postgresql-${pg_version}-linux-${architecture}.tar.gz"
   sha256sum -c "$archive.sha256"
 done
 useradd -m postgres
-for version in 1.1.1 2.1.3; do
+for version in "${SELECTED_COLLECTION_VERSIONS[@]}"; do
   archive="collection-${version}-postgresql-${pg_version}-linux-${architecture}.tar.gz"
   work="/tmp/collection-${version}"
   mkdir -p "$work/first" "$work/moved" "$work/package" "$work/data" "$work/socket"

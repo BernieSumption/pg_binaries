@@ -13,6 +13,8 @@ esac
 input=$(cd "$input" && pwd)
 mkdir -p "$output"
 output=$(cd "$output" && pwd)
+source "$repo/scripts/collection/version-selection.sh"
+select_collection_versions
 docker build --platform "$docker_platform" -f "$repo/scripts/collection/Dockerfile" -t pg-binaries-collection-pilot "$repo"
-docker run --rm -e PG_ARCHITECTURE="$architecture" -e PG_VERSION="$pg_version" --platform "$docker_platform" \
+docker run --rm -e PG_ARCHITECTURE="$architecture" -e PG_VERSION="$pg_version" -e COLLECTION_VERSION="${COLLECTION_VERSION:-}" --platform "$docker_platform" \
   -v "$input:/input:ro" -v "$output:/out" pg-binaries-collection-pilot

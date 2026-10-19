@@ -149,6 +149,15 @@ class LinuxPgauditPublicationImportTests(unittest.TestCase):
                          / self.architecture / self.postgresql_version / "current-receipt.json").is_file())
         self.assertEqual(self._import(), retained)
 
+    def test_imports_fresh_runner_artifact_layout(self):
+        archive_dir = self.pgaudit_artifact / "pgaudit"
+        archive_dir.mkdir()
+        for name in (self.pgaudit_name, self.pgaudit_name + ".sha256"):
+            shutil.move(self.pgaudit_artifact / name, archive_dir / name)
+        shutil.move(self.pgaudit_artifact / "static-analysis", archive_dir / "static-analysis")
+        retained = self._import()
+        self.assertEqual(len(retained), 5)
+
     def test_retains_failed_and_skipped_records_as_nonpassing(self):
         for result in ("failed", "skipped"):
             with self.subTest(result=result):
