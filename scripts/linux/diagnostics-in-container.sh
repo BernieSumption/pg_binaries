@@ -4,7 +4,9 @@ set -euo pipefail
 archives=${1:?usage: diagnostics-in-container.sh ARCHIVE_DIRECTORY POSTGRESQL_VERSION ARCHITECTURE [PGVECTOR_VERSION]}
 pg_version=${2:?}
 architecture=${3:?}
+diagnostics_mode=${PG_DIAGNOSTICS_MODE:-paired}
 vector_version=${4:-0.8.7}
+case "$diagnostics_mode" in paired|core-only) ;; *) echo "Unsupported PG_DIAGNOSTICS_MODE: $diagnostics_mode (expected paired or core-only)" >&2; exit 2 ;; esac
 case "$architecture:$(uname -m)" in
   x86_64:x86_64|arm64:aarch64) ;;
   *) echo "Diagnostic container architecture does not match $architecture: $(uname -m)" >&2; exit 2 ;;
@@ -14,17 +16,25 @@ vector_archive="pgvector-${vector_version}-postgresql-${pg_version}-linux-${arch
 pg_sha_file="$archives/$pg_archive.sha256"
 vector_sha_file="$archives/$vector_archive.sha256"
 index="$archives/debug-symbols/index.json"
-for file in "$archives/$pg_archive" "$archives/$vector_archive" "$pg_sha_file" "$vector_sha_file" "$index"; do
+required_inputs=("$archives/$pg_archive" "$pg_sha_file" "$index")
+if [[ $diagnostics_mode == paired ]]; then
+  required_inputs+=("$archives/$vector_archive" "$vector_sha_file")
+fi
+for file in "${required_inputs[@]}"; do
   test -s "$file" || { echo "Missing diagnostic input: $file" >&2; exit 2; }
 done
-(cd "$archives" && sha256sum -c "$pg_archive.sha256" "$vector_archive.sha256")
+if [[ $diagnostics_mode == paired ]]; then
+  (cd "$archives" && sha256sum -c "$pg_archive.sha256" "$vector_archive.sha256")
+else
+  (cd "$archives" && sha256sum -c "$pg_archive.sha256")
+fi
 evidence=${DIAGNOSTICS_EVIDENCE_DIR:-"$archives/diagnostics"}
 install=$(mktemp -d /tmp/pg-binaries-diagnostics.XXXXXX)
 trap 'rm -rf "$install"' EXIT
 chmod 755 "$install"
 mkdir -p "$evidence/system-failure" "$evidence/postgresql-error"
 tar -xzf "$archives/$pg_archive" -C "$install"
-tar -xzf "$archives/$vector_archive" -C "$install"
+if [[ $diagnostics_mode == paired ]]; then tar -xzf "$archives/$vector_archive" -C "$install"; fi
 root="$install/postgresql"
 test -x "$root/bin/postgres"
 
@@ -54,7 +64,7 @@ if [[ $system_status -eq 0 ]] || ! grep -Eqi 'loader|ld-linux|No such file|canno
   exit 1
 fi
 
-system_output_file="$evidence/system-failure/output.txt" \
+diagnostics_mode="$diagnostics_mode" system_output_file="$evidence/system-failure/output.txt" \
 system_command="$failure_command" system_cwd="$failure_cwd" \
 system_exit="$system_status" system_start="$failure_start" system_end="$failure_end" \
 system_ldd="$ldd_output" removed_loader="$loader" pg_archive_path="$archives/$pg_archive" \
@@ -81,12 +91,16 @@ def build_id(path):
     return match.group(1).lower()
 
 index = json.loads(Path(os.environ["symbols_index"]).read_text())
-wanted = {"postgresql/bin/.pg-launcher", "pgvector/lib/vector.so"}
+core_only = os.environ["diagnostics_mode"] == "core-only"
+wanted = {"postgresql/bin/.pg-launcher", "postgresql/libexec/postgres"} if core_only else {"postgresql/bin/.pg-launcher", "pgvector/lib/vector.so"}
 entries = [row for row in index["files"] if row["module_path"] in wanted]
 if {row["module_path"] for row in entries} != wanted:
-    raise SystemExit("debug-symbols index lacks launcher or vector.so entry")
+    raise SystemExit("debug-symbols index lacks a required launcher or native module entry")
 for row in entries:
-    archive_path = os.environ["pg_archive_path"] if row["archive"].startswith("postgresql-") else os.environ["vector_archive_path"]
+    expected_archive = os.path.basename(os.environ["pg_archive_path"]) if row["module_path"].startswith("postgresql/") else os.path.basename(os.environ["vector_archive_path"])
+    if row["archive"] != expected_archive:
+        raise SystemExit(f"debug-symbols index references the wrong archive for {row['module_path']}")
+    archive_path = os.environ["pg_archive_path"] if row["module_path"].startswith("postgresql/") else os.environ["vector_archive_path"]
     expected = sha(archive_path)
     if row["archive_sha256"] != expected:
         raise SystemExit(f"debug-symbols index archive hash mismatch: {row['archive']}")
@@ -122,9 +136,9 @@ record = {
     "executable_paths": {"postgres": os.environ["pg_root"] + "/bin/postgres", "postgres_payload": os.environ["pg_root"] + "/libexec/postgres", "removed_loader": os.environ["removed_loader"]},
     "ldd_libexec_postgres": os.environ["system_ldd"],
     "inspection_tool_versions": {"ldd": os.environ["inspection_ldd"], "readelf": os.environ["inspection_readelf"]},
-    "archives": {os.path.basename(os.environ["pg_archive_path"]): sha(os.environ["pg_archive_path"]), os.path.basename(os.environ["vector_archive_path"]): sha(os.environ["vector_archive_path"])},
+    "archives": ({os.path.basename(os.environ["pg_archive_path"]): sha(os.environ["pg_archive_path"])} if core_only else {os.path.basename(os.environ["pg_archive_path"]): sha(os.environ["pg_archive_path"]), os.path.basename(os.environ["vector_archive_path"]): sha(os.environ["vector_archive_path"])}),
     "archive_urls": None,
-    "package_metadata": {"postgresql": json.loads((Path(os.environ["pg_root"]) / "manifest.json").read_text()), "pgvector": json.loads((Path(os.environ["pg_root"]).parent / "metadata.json").read_text())},
+    "package_metadata": ({"postgresql": json.loads((Path(os.environ["pg_root"]) / "manifest.json").read_text())} if core_only else {"postgresql": json.loads((Path(os.environ["pg_root"]) / "manifest.json").read_text()), "pgvector": json.loads((Path(os.environ["pg_root"]).parent / "metadata.json").read_text())}),
     "gnu_build_ids_and_index_entries": entries,
 }
 (root / "system-failure/record.json").write_text(json.dumps(record, indent=2, sort_keys=True) + "\n")
@@ -135,7 +149,7 @@ rm -rf "$install"
 mkdir -p "$install"
 chown diagnostic-postgres:diagnostic-postgres "$install"
 tar -xzf "$archives/$pg_archive" -C "$install"
-tar -xzf "$archives/$vector_archive" -C "$install"
+if [[ $diagnostics_mode == paired ]]; then tar -xzf "$archives/$vector_archive" -C "$install"; fi
 root="$install/postgresql"
 data="$install/data"
 log="$evidence/postgresql-error/server.log"
@@ -166,7 +180,7 @@ if [[ $psql_status -eq 0 ]] || ! grep -q 'ERROR:  division by zero' "$log"; then
   exit 1
 fi
 
-postgres_output_file="$evidence/postgresql-error/client-output.txt" \
+diagnostics_mode="$diagnostics_mode" postgres_output_file="$evidence/postgresql-error/client-output.txt" \
 postgres_log="$log" postgres_command="$failure_command" postgres_cwd="$failure_cwd" \
 postgres_exit="$psql_status" postgres_start="$failure_start" postgres_end="$failure_end" \
 postgres_pg_ctl_command="$pg_ctl_start_command" pg_archive_path="$archives/$pg_archive" \
@@ -184,8 +198,11 @@ def sha(path):
     return digest.hexdigest()
 env_names = ("PATH", "LD_LIBRARY_PATH", "LD_PRELOAD", "PGHOST", "PGPORT", "PGDATA", "PG_CONFIG")
 index = json.loads(Path(os.environ["symbols_index"]).read_text())
-wanted = {"postgresql/bin/.pg-launcher", "pgvector/lib/vector.so"}
+core_only = os.environ["diagnostics_mode"] == "core-only"
+wanted = {"postgresql/bin/.pg-launcher", "postgresql/libexec/postgres"} if core_only else {"postgresql/bin/.pg-launcher", "pgvector/lib/vector.so"}
 entries = [row for row in index["files"] if row["module_path"] in wanted]
+if {row["module_path"] for row in entries} != wanted:
+    raise SystemExit("debug-symbols index lacks required launcher or native module entry")
 root = Path(os.environ["evidence_root"])
 record = {
     "schema_version": 1,
@@ -209,9 +226,9 @@ record = {
     "executable_paths": {"postgres": os.environ["pg_root"] + "/bin/postgres", "pg_ctl": os.environ["pg_root"] + "/bin/pg_ctl", "psql": os.environ["pg_root"] + "/bin/psql"},
     "server_start_command": os.environ["postgres_pg_ctl_command"],
     "inspection_tool_versions": {"ldd": os.environ["inspection_ldd"], "readelf": os.environ["inspection_readelf"]},
-    "archives": {os.path.basename(os.environ["pg_archive_path"]): sha(os.environ["pg_archive_path"]), os.path.basename(os.environ["vector_archive_path"]): sha(os.environ["vector_archive_path"])},
+    "archives": ({os.path.basename(os.environ["pg_archive_path"]): sha(os.environ["pg_archive_path"])} if core_only else {os.path.basename(os.environ["pg_archive_path"]): sha(os.environ["pg_archive_path"]), os.path.basename(os.environ["vector_archive_path"]): sha(os.environ["vector_archive_path"])}),
     "archive_urls": None,
-    "package_metadata": {"postgresql": json.loads((Path(os.environ["pg_root"]) / "manifest.json").read_text()), "pgvector": json.loads((Path(os.environ["pg_root"]).parent / "metadata.json").read_text())},
+    "package_metadata": ({"postgresql": json.loads((Path(os.environ["pg_root"]) / "manifest.json").read_text())} if core_only else {"postgresql": json.loads((Path(os.environ["pg_root"]) / "manifest.json").read_text()), "pgvector": json.loads((Path(os.environ["pg_root"]).parent / "metadata.json").read_text())}),
     "gnu_build_ids_and_index_entries": entries,
 }
 (root / "postgresql-error/record.json").write_text(json.dumps(record, indent=2, sort_keys=True) + "\n")

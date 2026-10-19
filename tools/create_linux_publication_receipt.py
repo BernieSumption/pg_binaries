@@ -42,13 +42,15 @@ def create(root, archives_dir, receipt_path, profile_id, postgresql_version,
            architecture, endpoint, kernel_release, distribution,
            distribution_version, image_id, dependency_check_profile,
            dependency_check_result, clean_system, step_results_path,
-           environ=None):
+           environ=None, publication_mode="paired"):
     root, archives_dir, receipt_path = Path(root), Path(archives_dir), Path(receipt_path)
     environ = os.environ if environ is None else environ
     if architecture not in {"x86_64", "arm64"}:
         raise coverage.CoverageError("architecture must be x86_64 or arm64")
     if endpoint != "current":
         raise coverage.CoverageError("Linux publication endpoint must be current")
+    if publication_mode not in {"paired", "core-only"}:
+        raise coverage.CoverageError("publication_mode must be paired or core-only")
     if dependency_check_profile != DEPENDENCY_PROFILE:
         raise coverage.CoverageError(f"dependency_check_profile must be {DEPENDENCY_PROFILE}")
     if dependency_check_result not in {"success", "failure"}:
@@ -70,9 +72,10 @@ def create(root, archives_dir, receipt_path, profile_id, postgresql_version,
     version = postgresql_version
     if not re.fullmatch(r"\d+\.\d+", version):
         raise coverage.CoverageError("postgresql_version must be major.minor")
-    vector_version = emit_linux_publication_records.selected_pgvector_version(root, version, platform)
-    names = (f"postgresql-{version}-{platform}.tar.gz",
-             f"pgvector-{vector_version}-postgresql-{version}-{platform}.tar.gz")
+    names = [f"postgresql-{version}-{platform}.tar.gz"]
+    if publication_mode == "paired":
+        vector_version = emit_linux_publication_records.selected_pgvector_version(root, version, platform)
+        names.append(f"pgvector-{vector_version}-postgresql-{version}-{platform}.tar.gz")
     archive_hashes = {name: _sha256(archives_dir / name) for name in names}
     clean = clean_system
     dep_passed = dependency_check_result == "success"
@@ -81,6 +84,7 @@ def create(root, archives_dir, receipt_path, profile_id, postgresql_version,
         raise coverage.CoverageError("passed cases require a clean system and successful dependency checks")
     receipt = {
         "profile_id": profile_id,
+        "publication_mode": publication_mode,
         "profile_revision": profile["profile_revision"],
         "test_revision": revision,
         "postgresql_version": version,
@@ -120,6 +124,7 @@ def main():
     parser.add_argument("--archives", type=Path, required=True)
     parser.add_argument("--receipt", type=Path, required=True)
     parser.add_argument("--profile-id", required=True)
+    parser.add_argument("--publication-mode", choices=("paired", "core-only"), default="paired")
     parser.add_argument("--postgresql-version", required=True)
     parser.add_argument("--architecture", choices=("x86_64", "arm64"), required=True)
     parser.add_argument("--endpoint", choices=("current",), required=True)
@@ -138,7 +143,7 @@ def main():
                         args.kernel_release, args.distribution, args.distribution_version,
                         args.image_id, args.dependency_check_profile,
                         args.dependency_check_result, args.clean_system == "true",
-                        args.step_results)
+                        args.step_results, publication_mode=args.publication_mode)
         print(result)
         return 0
     except (coverage.CoverageError, OSError, ValueError, TypeError) as exc:

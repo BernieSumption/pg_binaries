@@ -6,6 +6,11 @@ out=$(cd "$out" && pwd)
 pg_version=${PG_VERSION:-18.6}
 architecture=${PG_ARCHITECTURE:-x86_64}
 vector_version=${PGVECTOR_VERSION:-0.8.7}
+verify_mode=${PG_VERIFY_MODE:-full}
+case "$verify_mode" in
+  full|core-only) ;;
+  *) echo "Unsupported Linux verification mode: $verify_mode (expected full or core-only)" >&2; exit 2 ;;
+esac
 case "$architecture" in
   x86_64) docker_platform=linux/amd64 ;;
   arm64) docker_platform=linux/arm64 ;;
@@ -17,4 +22,4 @@ if [[ ! $pg_version =~ ^(15|16|17|18)\.[0-9]+$ ]]; then
 fi
 docker build --platform "$docker_platform" -f "$repo/scripts/linux/verify.Dockerfile" -t pg-binaries-linux-verifier "$repo"
 mkdir -p "$out/publication/static-analysis"
-docker run --rm --platform "$docker_platform" -e PG_VERSION="$pg_version" -e PG_ARCHITECTURE="$architecture" -e PGVECTOR_VERSION="$vector_version" -v "$out:/out:ro" -v "$out/publication/static-analysis:/analysis" -v "$repo/tests:/tests:ro" pg-binaries-linux-verifier
+docker run --rm --platform "$docker_platform" -e PG_VERSION="$pg_version" -e PG_ARCHITECTURE="$architecture" -e PG_VERIFY_MODE="$verify_mode" -e PGVECTOR_VERSION="$vector_version" -v "$out:/out:ro" -v "$out/publication/static-analysis:/analysis" -v "$repo/tests:/tests:ro" pg-binaries-linux-verifier

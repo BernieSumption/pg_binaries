@@ -87,7 +87,7 @@ def _retain(source, destination):
 
 def _validate_receipt(receipt_path, profile_id, profile, endpoint, architecture,
                       run_id, steps, expected_archives, digests, postgresql_version,
-                      vector_version, postgis_version, core_name=None):
+                      vector_version, postgis_version, core_name=None, publication_mode="paired"):
     if not Path(receipt_path).is_file():
         return None
     receipt = coverage.load_json(receipt_path)
@@ -107,6 +107,8 @@ def _validate_receipt(receipt_path, profile_id, profile, endpoint, architecture,
             or receipt.get("architecture") != architecture
             or receipt.get("test_revision") != ci.get("test_revision")):
         raise coverage.CoverageError(f"{receipt_path}: receipt identity or outcomes do not match this run")
+    if receipt.get("publication_mode", "paired") != publication_mode:
+        raise coverage.CoverageError(f"{receipt_path}: publication mode does not match importer mode")
     if (receipt.get("distribution") != "Alpine Linux"
             or not re.fullmatch(r"3\.22(?:\.\d+)?", str(receipt.get("distribution_version", "")))
             or not isinstance(receipt.get("kernel_release"), str)
@@ -267,8 +269,97 @@ def _selected_postgresql_versions(root):
     return set(coverage.release_snapshot(snapshot, support))
 
 
+def _import_core_only(root, artifact, run_id, architecture, postgresql_version):
+    """Import one selected PostgreSQL archive and its publication evidence."""
+    platform = f"linux-{architecture}"
+    core_name = f"postgresql-{postgresql_version}-{platform}.tar.gz"
+    archive_dir = Path(artifact) / "pilot"
+    publication = archive_dir / "publication"
+    archive = archive_dir / core_name
+    if not archive.is_file():
+        raise coverage.CoverageError(f"core-only publication archive is missing: {archive}")
+    if not Path(f"{archive}.sha256").is_file():
+        raise coverage.CoverageError(f"{archive}: core-only publication requires a checksum sidecar")
+    digest = _sha256(archive)
+    _sidecar(archive, digest)
+    profile_id = f"postgresql-publication-linux-{architecture}-{postgresql_version}"
+    profile = coverage.verification_profile(root, profile_id)
+    if profile["scope"] != "publication" or platform not in profile["platforms"]:
+        raise coverage.CoverageError(f"{profile_id}: not a matching publication profile")
+    steps_path = publication / "current-steps.json"
+    steps = _steps(steps_path, profile)
+    receipt_path = publication / "current-receipt.json"
+    receipt = _validate_receipt(receipt_path, profile_id, profile, "current", architecture,
+                                run_id, steps, [core_name], {core_name: digest},
+                                postgresql_version, "", "", publication_mode="core-only")
+    if receipt is None:
+        raise coverage.CoverageError("core-only publication requires a matching endpoint receipt")
+    records = _record_files(publication / "records", run_id)
+    validated = []
+    for path in records:
+        record = coverage.load_json(path)
+        coverage.validate_verification_record(record, coverage.load_json(root / "support.json"), root)
+        results = _case_results(steps)
+        expected_name = f"postgresql-{postgresql_version}-{platform}-current-{run_id}.json"
+        identity = (path.name == expected_name and record.get("component") == "postgresql"
+                    and record.get("version") == postgresql_version
+                    and record.get("sha256") == digest and record.get("profile_id") == profile_id
+                    and record.get("profile_revision") in profile["compatible_profile_revisions"]
+                    and record.get("scope") == "publication" and record.get("platform") == platform
+                    and record.get("postgresql_version") == postgresql_version
+                    and record.get("test_cases") == profile["case_ids"]
+                    and record.get("case_results") == results
+                    and record.get("outcome") == _outcome(results)
+                    and record.get("ci") == receipt.get("ci"))
+        if not identity:
+            raise coverage.CoverageError(f"{path}: core-only record identity or outcome does not match its receipt/profile")
+        environment = record.get("environment", {})
+        expected_environment = {
+            "endpoint": "current", "kernel_release": receipt.get("kernel_release"),
+            "distribution": receipt.get("distribution"),
+            "distribution_version": receipt.get("distribution_version"),
+            "architecture": architecture, "clean_system": receipt.get("clean_system"),
+            "image_id": receipt.get("image_id"),
+            "dependency_check_profile": receipt.get("dependency_check_profile"),
+            "dependency_checks_passed": receipt.get("dependency_checks_passed"),
+        }
+        if any(environment.get(key) != value for key, value in expected_environment.items()):
+            raise coverage.CoverageError(f"{path}: record environment differs from its receipt")
+        validated.append(path)
+    if len(validated) != 1:
+        raise coverage.CoverageError("core-only publication must contain exactly one PostgreSQL record")
+    passed = _outcome(_case_results(steps)) == "passed"
+    report = _static_analysis(publication / "static-analysis/core.json", architecture,
+                              {core_name: digest}, passed)
+    symbols_index = archive_dir / "debug-symbols/index.json"
+    if passed and not symbols_index.is_file():
+        raise coverage.CoverageError(f"{symbols_index}: core-only publication requires a debug-symbol index")
+    diagnostic_root = archive_dir / "diagnostics"
+    if passed and (not diagnostic_root.is_dir()
+                   or not any(item.is_file() for item in diagnostic_root.rglob("*"))):
+        raise coverage.CoverageError(f"{diagnostic_root}: core-only publication requires diagnostics evidence")
+    target = (Path(root) / "support/evidence" / f"linux-core-only-publication-{run_id}"
+              / f"postgresql-{postgresql_version}" / architecture)
+    retained = []
+    for source in (steps_path, receipt_path if receipt_path.is_file() else None,
+                   report, symbols_index):
+        if source is None or not Path(source).is_file():
+            continue
+        source = Path(source)
+        destination = target / ("static-analysis/core.json" if source == report else
+                                "debug-symbols-index.json" if source.name == "index.json" else source.name)
+        _retain(source, destination)
+        retained.append(destination)
+    for path in validated:
+        destination = Path(root) / "support/verification" / path.name
+        _retain(path, destination)
+        retained.append(destination)
+    retained.extend(_copy_tree_files(archive_dir / "diagnostics", target / "diagnostics"))
+    return [str(path.relative_to(root)) for path in retained]
+
+
 def import_run(root, core_artifact, postgis_artifact, run_id, architecture,
-               postgresql_version=DEFAULT_PG_VERSION):
+               postgresql_version=DEFAULT_PG_VERSION, publication_mode="paired"):
     """Validate and retain records, receipts, and compact evidence for a run."""
     root, core_artifact = Path(root), Path(core_artifact)
     postgis_artifact = Path(postgis_artifact) if postgis_artifact is not None else None
@@ -277,6 +368,17 @@ def import_run(root, core_artifact, postgis_artifact, run_id, architecture,
         raise coverage.CoverageError("run_id must contain digits only")
     if architecture not in ARCHITECTURES:
         raise coverage.CoverageError("architecture must be x86_64 or arm64")
+    if publication_mode not in {"paired", "core-only"}:
+        raise coverage.CoverageError("publication_mode must be paired or core-only")
+    if publication_mode == "core-only":
+        if postgis_artifact is not None:
+            raise coverage.CoverageError("core-only publication cannot include a PostGIS artifact")
+        selected_versions = _selected_postgresql_versions(root)
+        if postgresql_version not in selected_versions:
+            raise coverage.CoverageError(
+                f"postgresql_version {postgresql_version!r} is not selected; choose one of "
+                f"{', '.join(sorted(selected_versions))}")
+        return _import_core_only(root, core_artifact, run_id, architecture, postgresql_version)
     selected_versions = _selected_postgresql_versions(root)
     if postgresql_version not in selected_versions:
         raise coverage.CoverageError(
@@ -462,6 +564,7 @@ def main():
                         help="extracted linux-publication evidence artifact root")
     parser.add_argument("--postgis-artifact", type=Path,
                         help="extracted postgis-publication evidence artifact root")
+    parser.add_argument("--publication-mode", choices=("paired", "core-only"), default="paired")
     parser.add_argument("--run-id", required=True)
     parser.add_argument("--architecture", choices=sorted(ARCHITECTURES), required=True)
     parser.add_argument("--postgresql-version", default=DEFAULT_PG_VERSION,
@@ -469,7 +572,8 @@ def main():
     args = parser.parse_args()
     try:
         paths = import_run(args.root, args.core_artifact, args.postgis_artifact,
-                           args.run_id, args.architecture, args.postgresql_version)
+                           args.run_id, args.architecture, args.postgresql_version,
+                           args.publication_mode)
         print("\n".join(paths))
         return 0
     except (coverage.CoverageError, OSError, ValueError, TypeError) as exc:

@@ -27,6 +27,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       targets: ${{ steps.plan.outputs.targets }}
+      core_targets: ${{ steps.plan.outputs.core_targets }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -77,3 +78,16 @@ jobs:
       extension_version: ${{ matrix.extension_version }}
       postgresql_version: ${{ matrix.postgresql_version }}
       platform: ${{ matrix.platform }}
+
+  publish-core:
+    needs: select
+    if: needs.select.outputs.core_targets != '[]'
+    strategy:
+      fail-fast: false
+      max-parallel: 4
+      matrix:
+        include: ${{ fromJSON(needs.select.outputs.core_targets) }}
+    uses: ./.github/workflows/postgresql-linux-selected-publication.yml
+    with:
+      postgresql_version: ${{ matrix.postgresql_version }}
+      architecture: ${{ matrix.platform == 'linux-arm64' && 'arm64' || 'x86_64' }}

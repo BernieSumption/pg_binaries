@@ -298,6 +298,124 @@ class LinuxPublicationRunImportTests(unittest.TestCase):
         }))
         return artifact
 
+    def _core_publication_artifact(self, postgresql_version="18.6", step_result="success",
+                                   include_outputs=True):
+        artifact = Path(self.temporary.name) / f"core-only-{postgresql_version}-{step_result}"
+        archives = artifact / "pilot"
+        publication = archives / "publication"
+        records = publication / "records"
+        records.mkdir(parents=True)
+        core = archives / f"postgresql-{postgresql_version}-{self.platform}.tar.gz"
+        core.write_bytes(f"core-only {postgresql_version}".encode())
+        self._write_sidecar(core)
+        profile_id = f"postgresql-publication-linux-{self.architecture}-{postgresql_version}"
+        registry_path = self.root / "support/verification-profiles.json"
+        registry = coverage.load_json(registry_path)
+        registry["profiles"][profile_id] = {
+            "scope": "publication", "platforms": [self.platform],
+            "case_ids": ["archive-install"], "sources": ["core-only-profile.txt"],
+        }
+        (self.root / "core-only-profile.txt").write_text("core-only profile fixture\n")
+        registry_path.write_text(json.dumps(registry))
+        steps = publication / "current-steps.json"
+        steps.write_text(json.dumps({"archive-install": step_result}))
+        receipt = publication / "current-receipt.json"
+        environ = {
+            "GITHUB_SHA": "a" * 40, "GITHUB_RUN_ID": self.run_id,
+            "GITHUB_REPOSITORY": "example/repo", "GITHUB_SERVER_URL": "https://github.com",
+        }
+        core_receipts.create(
+            self.root, archives, receipt, profile_id, postgresql_version,
+            self.architecture, "current", "6.8.0-test-kernel", "Alpine Linux",
+            "3.22.6", "sha256:" + "b" * 64, "linux-runtime-v1", "success",
+            True, steps, environ=environ, publication_mode="core-only")
+        core_emitter.emit(self.root, archives, receipt, records)
+        if include_outputs:
+            report = publication / "static-analysis/core.json"
+            report.parent.mkdir(parents=True)
+            report.write_text(json.dumps({
+                "outcome": "passed", "architecture": self.architecture,
+                "files": [{"path": "bin/postgres"}],
+                "archives": [{"basename": core.name, "sha256": self._sha(core)}],
+            }))
+            symbols = archives / "debug-symbols"
+            symbols.mkdir()
+            (symbols / "index.json").write_text('{"symbols": ["postgres"]}\n')
+            diagnostic = archives / "diagnostics/core"
+            diagnostic.mkdir(parents=True)
+            (diagnostic / "server.log").write_text("core-only diagnostic\n")
+        return artifact
+
+    def test_imports_explicit_core_only_publication_and_keeps_evidence_separate(self):
+        artifact = self._core_publication_artifact()
+        retained = importer.import_run(self.root, artifact, None, self.run_id,
+                                       self.architecture, "18.6", "core-only")
+        self.assertEqual(sum("/support/verification/" in f"/{path}" for path in retained), 1)
+        evidence = (self.root / "support/evidence" /
+                    f"linux-core-only-publication-{self.run_id}/postgresql-18.6/{self.architecture}")
+        self.assertTrue((evidence / "static-analysis/core.json").is_file())
+        self.assertTrue((evidence / "debug-symbols-index.json").is_file())
+        self.assertTrue((evidence / "diagnostics/core/server.log").is_file())
+        self.assertTrue((self.root / "support/evidence" /
+                         f"linux-publication-{self.run_id}/x86_64").exists() is False)
+
+    def test_core_only_import_rejects_mode_confusion_and_conflicting_evidence(self):
+        artifact = self._core_publication_artifact()
+        receipt = artifact / "pilot/publication/current-receipt.json"
+        data = json.loads(receipt.read_text())
+        data["publication_mode"] = "paired"
+        receipt.write_text(json.dumps(data))
+        with self.assertRaisesRegex(coverage.CoverageError, "publication mode"):
+            importer.import_run(self.root, artifact, None, self.run_id,
+                                self.architecture, "18.6", "core-only")
+        data["publication_mode"] = "core-only"
+        receipt.write_text(json.dumps(data))
+        target = (self.root / "support/evidence" /
+                  f"linux-core-only-publication-{self.run_id}/postgresql-18.6/{self.architecture}/static-analysis/core.json")
+        target.parent.mkdir(parents=True)
+        target.write_text("conflicting report\n")
+        with self.assertRaisesRegex(coverage.CoverageError, "refusing to replace"):
+            importer.import_run(self.root, artifact, None, self.run_id,
+                                self.architecture, "18.6", "core-only")
+
+    def test_failed_and_skipped_core_only_attempts_import_without_downstream_outputs(self):
+        for outcome in ("failure", "skipped"):
+            with self.subTest(outcome=outcome):
+                self.run_id = "7654321" if outcome == "failure" else "7654322"
+                artifact = self._core_publication_artifact(step_result=outcome,
+                                                           include_outputs=False)
+                retained = importer.import_run(self.root, artifact, None, self.run_id,
+                                               self.architecture, "18.6", "core-only")
+                self.assertEqual(sum("/support/verification/" in f"/{path}" for path in retained), 1)
+                evidence = (self.root / "support/evidence" /
+                            f"linux-core-only-publication-{self.run_id}/postgresql-18.6/{self.architecture}")
+                self.assertTrue((evidence / "current-receipt.json").is_file())
+                self.assertFalse((evidence / "debug-symbols-index.json").exists())
+                self.assertFalse((evidence / "static-analysis/core.json").exists())
+
+    def test_passed_core_only_attempt_requires_static_symbol_and_diagnostic_outputs(self):
+        artifact = self._core_publication_artifact(include_outputs=False)
+        archives = artifact / "pilot"
+        core = archives / f"postgresql-18.6-{self.platform}.tar.gz"
+        report = archives / "publication/static-analysis/core.json"
+        with self.assertRaisesRegex(coverage.CoverageError, "requires a static-analysis report"):
+            importer.import_run(self.root, artifact, None, self.run_id,
+                                self.architecture, "18.6", "core-only")
+        report.parent.mkdir(parents=True)
+        report.write_text(json.dumps({
+            "outcome": "passed", "architecture": self.architecture,
+            "files": [{"path": "bin/postgres"}],
+            "archives": [{"basename": core.name, "sha256": self._sha(core)}],
+        }))
+        with self.assertRaisesRegex(coverage.CoverageError, "requires a debug-symbol index"):
+            importer.import_run(self.root, artifact, None, self.run_id,
+                                self.architecture, "18.6", "core-only")
+        symbols = archives / "debug-symbols"
+        symbols.mkdir()
+        (symbols / "index.json").write_text('{"symbols": []}\n')
+        with self.assertRaisesRegex(coverage.CoverageError, "requires diagnostics evidence"):
+            importer.import_run(self.root, artifact, None, self.run_id,
+                                self.architecture, "18.6", "core-only")
     def test_imports_core_and_pgvector_for_each_selected_core_without_postgis(self):
         for version in ("15.19", "16.15", "17.11", "18.6"):
             with self.subTest(postgresql_version=version):

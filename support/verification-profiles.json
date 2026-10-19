@@ -768,5 +768,54 @@
       "case_ids": ["archive-suite", "static-analysis"],
       "sources": [".gitattributes", ".github/workflows/hypopg-windows-selected-publication.yml", "scripts/hypopg/probe.sql", "scripts/hypopg/verify-windows-publication.ps1", "scripts/hypopg/windows-feasibility.ps1", "support.json", "support/postgresql-releases.json", "support/windows-core-pins/17.11-x86_64.json", "tests/test_hypopg_windows_publication.py", "tests/test_windows_core_pin.py", "tools/check_extension_redistribution.py", "tools/check_hypopg_windows_archive.py", "tools/check_pe_dependencies.py", "tools/coverage.py", "tools/create_windows_symbols.py", "tools/emit_hypopg_windows_publication.py", "tools/extension_archive_plan.py", "tools/hypopg_windows_symbols.py", "tools/import_hypopg_windows_publication.py", "tools/windows_core_pin.py"]
     }
+,
+    "postgresql-publication-linux-x86_64-15.19": {
+      "scope": "publication",
+      "platforms": ["linux-x86_64"],
+      "case_ids": ["archive-suite","diagnostics","no-host-userspace"],
+      "sources": [".github/workflows/postgresql-linux-selected-publication.yml","scripts/linux/Dockerfile","scripts/linux/build.sh","scripts/linux/diagnostics-in-container.sh","scripts/linux/diagnostics.Dockerfile","scripts/linux/resolve-core.sh","scripts/linux/verify-in-container.sh","scripts/linux/verify-no-host-userspace.sh","scripts/linux/verify.Dockerfile","scripts/linux/verify.sh","tests/test_linux_changed_profiles.py","tests/test_linux_core_only_publication.py","tools/actions_candidate_discovery.py","tools/check_elf_dependencies.py","tools/coverage.py","tools/create_linux_publication_receipt.py","tools/create_linux_symbols.py","tools/emit_linux_publication_records.py","tools/import_linux_publication_run.py","tools/linux_changed_profiles.py","tools/linux_core_candidate.py","tools/linux_core_resolution.py","tools/source_archive.py"]
+    },
+    "postgresql-publication-linux-arm64-15.19": {
+      "scope": "publication",
+      "platforms": ["linux-arm64"],
+      "case_ids": ["archive-suite","diagnostics","no-host-userspace"],
+      "sources": [".github/workflows/postgresql-linux-selected-publication.yml","scripts/linux/Dockerfile","scripts/linux/build.sh","scripts/linux/diagnostics-in-container.sh","scripts/linux/diagnostics.Dockerfile","scripts/linux/resolve-core.sh","scripts/linux/verify-in-container.sh","scripts/linux/verify-no-host-userspace.sh","scripts/linux/verify.Dockerfile","scripts/linux/verify.sh","tests/test_linux_changed_profiles.py","tests/test_linux_core_only_publication.py","tools/actions_candidate_discovery.py","tools/check_elf_dependencies.py","tools/coverage.py","tools/create_linux_publication_receipt.py","tools/create_linux_symbols.py","tools/emit_linux_publication_records.py","tools/import_linux_publication_run.py","tools/linux_core_candidate.py","tools/linux_core_resolution.py","tools/source_archive.py"]
+    },
+    "postgresql-publication-linux-x86_64-16.15": {
+      "scope": "publication",
+      "platforms": ["linux-x86_64"],
+      "case_ids": ["archive-suite","diagnostics","no-host-userspace"],
+      "sources": [".github/workflows/postgresql-linux-selected-publication.yml","scripts/linux/Dockerfile","scripts/linux/build.sh","scripts/linux/diagnostics-in-container.sh","scripts/linux/diagnostics.Dockerfile","scripts/linux/resolve-core.sh","scripts/linux/verify-in-container.sh","scripts/linux/verify-no-host-userspace.sh","scripts/linux/verify.Dockerfile","scripts/linux/verify.sh","tests/test_linux_changed_profiles.py","tests/test_linux_core_only_publication.py","tools/actions_candidate_discovery.py","tools/check_elf_dependencies.py","tools/coverage.py","tools/create_linux_publication_receipt.py","tools/create_linux_symbols.py","tools/emit_linux_publication_records.py","tools/import_linux_publication_run.py","tools/linux_core_candidate.py","tools/linux_core_resolution.py","tools/source_archive.py"]
+    },
+    "postgresql-publication-linux-arm64-16.15": {
+      "scope": "publication",
+      "platforms": ["linux-arm64"],
+      "case_ids": ["archive-suite","diagnostics","no-host-userspace"],
+      "sources": [".github/workflows/postgresql-linux-selected-publication.yml","scripts/linux/Dockerfile","scripts/linux/build.sh","scripts/linux/diagnostics-in-container.sh","scripts/linux/diagnostics.Dockerfile","scripts/linux/resolve-core.sh","scripts/linux/verify-in-container.sh","scripts/linux/verify-no-host-userspace.sh","scripts/linux/verify.Dockerfile","scripts/linux/verify.sh","tests/test_linux_changed_profiles.py","tests/test_linux_core_only_publication.py","tools/actions_candidate_discovery.py","tools/check_elf_dependencies.py","tools/coverage.py","tools/create_linux_publication_receipt.py","tools/create_linux_symbols.py","tools/emit_linux_publication_records.py","tools/import_linux_publication_run.py","tools/linux_core_candidate.py","tools/linux_core_resolution.py","tools/source_archive.py"]
+    },
+    "postgresql-publication-linux-x86_64-17.11": {
+      "scope": "publication",
+      "platforms": ["linux-x86_64"],
+      "case_ids": ["archive-suite","diagnostics","no-host-userspace"],
+      "sources": [".github/workflows/postgresql-linux-selected-publication.yml","scripts/linux/Dockerfile","scripts/linux/build.sh","scripts/linux/diagnostics-in-container.sh","scripts/linux/diagnostics.Dockerfile","scripts/linux/resolve-core.sh","scripts/linux/verify-in-container.sh","scripts/linux/verify-no-host-userspace.sh","scripts/linux/verify.Dockerfile","scripts/linux/verify.sh","tests/test_linux_changed_profiles.py","tests/test_linux_core_only_publication.py","tools/actions_candidate_discovery.py","tools/check_elf_dependencies.py","tools/coverage.py","tools/create_linux_publication_receipt.py","tools/create_linux_symbols.py","tools/emit_linux_publication_records.py","tools/import_linux_publication_run.py","tools/linux_core_candidate.py","tools/linux_core_resolution.py","tools/source_archive.py"]
+    },
+    "postgresql-publication-linux-arm64-17.11": {
+      "scope": "publication",
+      "platforms": ["linux-arm64"],
+      "case_ids": ["archive-suite","diagnostics","no-host-userspace"],
+      "sources": [".github/workflows/postgresql-linux-selected-publication.yml","scripts/linux/Dockerfile","scripts/linux/build.sh","scripts/linux/diagnostics-in-container.sh","scripts/linux/diagnostics.Dockerfile","scripts/linux/resolve-core.sh","scripts/linux/verify-in-container.sh","scripts/linux/verify-no-host-userspace.sh","scripts/linux/verify.Dockerfile","scripts/linux/verify.sh","tests/test_linux_changed_profiles.py","tests/test_linux_core_only_publication.py","tools/actions_candidate_discovery.py","tools/check_elf_dependencies.py","tools/coverage.py","tools/create_linux_publication_receipt.py","tools/create_linux_symbols.py","tools/emit_linux_publication_records.py","tools/import_linux_publication_run.py","tools/linux_core_candidate.py","tools/linux_core_resolution.py","tools/source_archive.py"]
+    },
+    "postgresql-publication-linux-x86_64-18.6": {
+      "scope": "publication",
+      "platforms": ["linux-x86_64"],
+      "case_ids": ["archive-suite","diagnostics","no-host-userspace"],
+      "sources": [".github/workflows/postgresql-linux-selected-publication.yml","scripts/linux/Dockerfile","scripts/linux/build.sh","scripts/linux/diagnostics-in-container.sh","scripts/linux/diagnostics.Dockerfile","scripts/linux/resolve-core.sh","scripts/linux/verify-in-container.sh","scripts/linux/verify-no-host-userspace.sh","scripts/linux/verify.Dockerfile","scripts/linux/verify.sh","tests/test_linux_changed_profiles.py","tests/test_linux_core_only_publication.py","tools/actions_candidate_discovery.py","tools/check_elf_dependencies.py","tools/coverage.py","tools/create_linux_publication_receipt.py","tools/create_linux_symbols.py","tools/emit_linux_publication_records.py","tools/import_linux_publication_run.py","tools/linux_core_candidate.py","tools/linux_core_resolution.py","tools/source_archive.py"]
+    },
+    "postgresql-publication-linux-arm64-18.6": {
+      "scope": "publication",
+      "platforms": ["linux-arm64"],
+      "case_ids": ["archive-suite","diagnostics","no-host-userspace"],
+      "sources": [".github/workflows/postgresql-linux-selected-publication.yml","scripts/linux/Dockerfile","scripts/linux/build.sh","scripts/linux/diagnostics-in-container.sh","scripts/linux/diagnostics.Dockerfile","scripts/linux/resolve-core.sh","scripts/linux/verify-in-container.sh","scripts/linux/verify-no-host-userspace.sh","scripts/linux/verify.Dockerfile","scripts/linux/verify.sh","tests/test_linux_changed_profiles.py","tests/test_linux_core_only_publication.py","tools/actions_candidate_discovery.py","tools/check_elf_dependencies.py","tools/coverage.py","tools/create_linux_publication_receipt.py","tools/create_linux_symbols.py","tools/emit_linux_publication_records.py","tools/import_linux_publication_run.py","tools/linux_core_candidate.py","tools/linux_core_resolution.py","tools/source_archive.py"]
+    }
   }
 }

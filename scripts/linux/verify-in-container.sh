@@ -3,7 +3,11 @@ set -euo pipefail
 pg_version=${PG_VERSION:-18.6}
 architecture=${PG_ARCHITECTURE:-x86_64}
 vector_version=${PGVECTOR_VERSION:-0.8.7}
-[[ $vector_version =~ ^[0-9]+(\.[0-9]+)+$ ]] || { echo "Invalid pgvector release: $vector_version" >&2; exit 2; }
+verify_mode=${PG_VERIFY_MODE:-full}
+case "$verify_mode" in full|core-only) ;; *) echo "Unsupported Linux verification mode: $verify_mode (expected full or core-only)" >&2; exit 2 ;; esac
+if [[ $verify_mode == full ]]; then
+  [[ $vector_version =~ ^[0-9]+(\.[0-9]+)+$ ]] || { echo "Invalid pgvector release: $vector_version" >&2; exit 2; }
+fi
 case "$architecture" in x86_64|arm64) ;; *) echo "Unsupported Linux architecture: $architecture" >&2; exit 2 ;; esac
 case "$architecture:$(uname -m)" in
   x86_64:x86_64|arm64:aarch64) ;;
@@ -16,12 +20,13 @@ fi
 pg="postgresql-${pg_version}-linux-${architecture}.tar.gz"
 vector="pgvector-${vector_version}-postgresql-${pg_version}-linux-${architecture}.tar.gz"
 cd /out
-sha256sum -c "$pg.sha256" "$vector.sha256"
+sha256sum -c "$pg.sha256"
+if [[ $verify_mode == full ]]; then sha256sum -c "$vector.sha256"; fi
 useradd -m postgres
 install -d -o postgres -g postgres /tmp/first /tmp/moved /tmp/vector
 runuser -u postgres -- tar -xzf "$pg" -C /tmp/first
-runuser -u postgres -- tar -xzf "$vector" -C /tmp/vector
-python3 - "$pg_version" "$architecture" "$vector_version" <<'PY'
+if [[ $verify_mode == full ]]; then runuser -u postgres -- tar -xzf "$vector" -C /tmp/vector; fi
+python3 - "$pg_version" "$architecture" "$vector_version" "$verify_mode" <<'PY'
 import hashlib
 import json
 from pathlib import Path
@@ -30,6 +35,7 @@ import sys
 version = sys.argv[1]
 architecture = sys.argv[2]
 vector_version = sys.argv[3]
+verify_mode = sys.argv[4]
 with open('/tmp/first/postgresql/manifest.json') as f:
     m = json.load(f)
 assert (m['schema_version'], m['component'], m['version'],
@@ -105,62 +111,69 @@ launcher = root / 'bin/.pg-launcher'
 assert launcher.read_bytes().startswith(b'\x7fELF'), launcher
 assert all((root / 'bin' / name).stat().st_ino == launcher.stat().st_ino for name in wrappers)
 
-with open('/tmp/vector/metadata.json') as f:
-    m = json.load(f)
-expected_vector = {
-    'project': 'pgvector',
-    'version': vector_version,
-    'sql_names': ['vector'],
-    'requires': [],
-    'configuration_prerequisites': [],
-    'runtime_prerequisites': [],
-}
-assert all(m.get(key) == value for key, value in expected_vector.items()), m
-extension_provenance = {field: m[field] for field in provenance_fields}
-if 'core_archive' not in m:
-    assert extension_provenance == provenance, m
-else:
-    core_archive = Path('/out') / f'postgresql-{version}-linux-{architecture}.tar.gz'
-    digest = hashlib.sha256()
-    with core_archive.open('rb') as stream:
-        for chunk in iter(lambda: stream.read(1024 * 1024), b''):
-            digest.update(chunk)
-    assert m['core_archive'] == {
-        'basename': core_archive.name,
-        'sha256': digest.hexdigest(),
-    }, m
-    assert re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9._-]*', extension_provenance['build_id']), m
-    assert re.fullmatch(r'[0-9a-fA-F]{40}|[0-9a-fA-F]{64}', extension_provenance['source_revision']), m
-    assert re.fullmatch(r'sha256:[0-9a-f]{64}', extension_provenance['builder_image_id']), m
-    assert isinstance(extension_provenance['build_configuration'], str) and extension_provenance['build_configuration'], m
-    assert (extension_provenance['platform'], extension_provenance['architecture']) == (
-        'linux', architecture
-    ), m
-vector_root = Path('/tmp/vector/pgvector')
-inventory = json.loads((vector_root / 'LICENSES/pgvector-inventory.json').read_text())
-assert inventory.get('schema_version') == 1 and len(inventory.get('components', [])) == 1, inventory
-vector = inventory['components'][0]
-assert all(vector.get(key) == value for key, value in {
-    'component': 'pgvector', 'version': vector_version,
-    'payload_paths': ['lib/vector.so', 'share/extension'],
-    'license_file': 'pgvector.txt',
-    'source_url': m['source_archive']['url'],
-    'source_sha256': m['source_archive']['sha256'],
-}.items()), vector
-assert vector.get('redistribution_review', {}).get('status') == 'resolved', vector
+if verify_mode == 'full':
+    with open('/tmp/vector/metadata.json') as f:
+        m = json.load(f)
+    expected_vector = {
+        'project': 'pgvector', 'version': vector_version, 'sql_names': ['vector'],
+        'requires': [], 'configuration_prerequisites': [], 'runtime_prerequisites': [],
+    }
+    assert all(m.get(key) == value for key, value in expected_vector.items()), m
+    extension_provenance = {field: m[field] for field in provenance_fields}
+    if 'core_archive' not in m:
+        assert extension_provenance == provenance, m
+    else:
+        core_archive = Path('/out') / f'postgresql-{version}-linux-{architecture}.tar.gz'
+        digest = hashlib.sha256()
+        with core_archive.open('rb') as stream:
+            for chunk in iter(lambda: stream.read(1024 * 1024), b''):
+                digest.update(chunk)
+        assert m['core_archive'] == {'basename': core_archive.name, 'sha256': digest.hexdigest()}, m
+        assert re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9._-]*', extension_provenance['build_id']), m
+        assert re.fullmatch(r'[0-9a-fA-F]{40}|[0-9a-fA-F]{64}', extension_provenance['source_revision']), m
+        assert re.fullmatch(r'sha256:[0-9a-f]{64}', extension_provenance['builder_image_id']), m
+        assert isinstance(extension_provenance['build_configuration'], str) and extension_provenance['build_configuration'], m
+        assert (extension_provenance['platform'], extension_provenance['architecture']) == ('linux', architecture), m
+    vector_root = Path('/tmp/vector/pgvector')
+    inventory = json.loads((vector_root / 'LICENSES/pgvector-inventory.json').read_text())
+    assert inventory.get('schema_version') == 1 and len(inventory.get('components', [])) == 1, inventory
+    vector = inventory['components'][0]
+    assert all(vector.get(key) == value for key, value in {
+        'component': 'pgvector', 'version': vector_version,
+        'payload_paths': ['lib/vector.so', 'share/extension'], 'license_file': 'pgvector.txt',
+        'source_url': m['source_archive']['url'], 'source_sha256': m['source_archive']['sha256'],
+    }.items()), vector
+    assert vector.get('redistribution_review', {}).get('status') == 'resolved', vector
 PY
-python3 /verification/tools/check_source_identity.py --root /verification --platform linux \
-  --postgresql-version "$pg_version" --pgvector-version "$vector_version" \
-  --core-manifest /tmp/first/postgresql/manifest.json --vector-metadata /tmp/vector/metadata.json
-test -s /tmp/vector/pgvector/LICENSES/pgvector.txt
+if [[ $verify_mode == full ]]; then
+  python3 /verification/tools/check_source_identity.py --root /verification --platform linux \
+    --postgresql-version "$pg_version" --pgvector-version "$vector_version" \
+    --core-manifest /tmp/first/postgresql/manifest.json --vector-metadata /tmp/vector/metadata.json
+  test -s /tmp/vector/pgvector/LICENSES/pgvector.txt
+else
+  python3 - "$pg_version" /tmp/first/postgresql/manifest.json <<'PYCORE'
+import json, sys
+from pathlib import Path
+sys.path.insert(0, '/verification/tools')
+from source_archive import source_archive
+manifest = json.loads(Path(sys.argv[2]).read_text())
+assert manifest.get('source_archive') == source_archive('postgresql', sys.argv[1], 'tar.bz2', Path('/verification'))
+PYCORE
+fi
 pgroot=/tmp/first/postgresql
-extroot=/tmp/vector/pgvector
-runuser -u postgres -- python3 /usr/local/bin/stage-extension-archive \
-  --merge-payload "$extroot" --prefix "$pgroot"
-test -s "$pgroot/LICENSES/pgvector.txt"
-python3 /usr/local/bin/check-elf-dependencies "$pgroot" --architecture "$architecture" \
-  --archive "/out/$pg" --archive "/out/$vector" --report /analysis/core-pgvector.json
+if [[ $verify_mode == full ]]; then
+  extroot=/tmp/vector/pgvector
+  runuser -u postgres -- python3 /usr/local/bin/stage-extension-archive \
+    --merge-payload "$extroot" --prefix "$pgroot"
+  test -s "$pgroot/LICENSES/pgvector.txt"
+  python3 /usr/local/bin/check-elf-dependencies "$pgroot" --architecture "$architecture" \
+    --archive "/out/$pg" --archive "/out/$vector" --report /analysis/core-pgvector.json
+else
+  python3 /usr/local/bin/check-elf-dependencies "$pgroot" --architecture "$architecture" \
+    --archive "/out/$pg" --report /analysis/core.json
+fi
 test "$(/tmp/first/postgresql/bin/postgres --version)" = "postgres (PostgreSQL) $pg_version"
+if [[ $verify_mode == full ]]; then
 mkdir -p /tmp/first-data /tmp/first-socket
 chown postgres:postgres /tmp/first-data /tmp/first-socket
 runuser -u postgres -- /tmp/first/postgresql/bin/initdb -D /tmp/first-data --encoding=UTF8 --locale=C --no-instructions
@@ -177,6 +190,7 @@ DO $$ BEGIN IF (SELECT embedding <-> '[1,0,0]'::vector FROM relocation_probe) <>
 SQL
 runuser -u postgres -- /tmp/first/postgresql/bin/pg_ctl -D /tmp/first-data -m fast -w stop
 trap - EXIT
+fi
 runuser -u postgres -- mv /tmp/first/postgresql /tmp/moved/postgresql
 pgroot=/tmp/moved/postgresql
 mkdir -p /tmp/pgdata /tmp/pgsocket
@@ -225,7 +239,7 @@ DO $$ BEGIN IF (SELECT pg_column_compression(lz) FROM compression_probe) <> 'lz4
 SET wal_compression = zstd;
 SHOW wal_compression;
 SQL
-"${psql[@]}" -f /tests/extensions/pgvector.sql
+if [[ $verify_mode == full ]]; then "${psql[@]}" -f /tests/extensions/pgvector.sql; fi
 "${psql[@]}" -f /tests/builtins/coverage.sql
 if [[ $pg_version == 15.* ]]; then
   dump_compression=(-Z 1)
@@ -267,6 +281,11 @@ DO $$ BEGIN
       AND x.indisvalid AND x.indpred IS NOT NULL
   ) THEN RAISE EXCEPTION 'restored partial index missing'; END IF;
   IF (SELECT count(*) FROM pilot.events_2026) <> 1 THEN RAISE EXCEPTION 'restored partition data missing'; END IF;
+END $$;
+SQL
+if [[ $verify_mode == full ]]; then
+  "${restored[@]}" <<'SQL'
+DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'vector') THEN
     RAISE EXCEPTION 'restored pgvector missing'; END IF;
   IF (SELECT embedding <-> '[1,0,0]'::vector FROM pilot_vectors WHERE id = 1) <> 0 THEN
@@ -274,10 +293,15 @@ DO $$ BEGIN
 END $$;
 SQL
 test "$("${psql[@]}" -Atqc "SELECT extversion FROM pg_extension WHERE extname = 'vector'")" = "$vector_version"
+fi
 "${psql[@]}" -c 'CREATE DATABASE surgery_check'
 surgery=(runuser -u postgres -- "$pgroot/bin/psql" -X -v ON_ERROR_STOP=1 -h /tmp/pgsocket -p 55431 -d surgery_check)
 "${surgery[@]}" -f /tests/builtins/surgery.sql
 runuser -u postgres -- "$pgroot/bin/pg_ctl" -D /tmp/pgdata -m fast -w stop
 trap - EXIT
 . /etc/os-release
-echo "PASS: moved PostgreSQL $pg_version archive and pgvector $vector_version archive on $PRETTY_NAME"
+if [[ $verify_mode == full ]]; then
+  echo "PASS: moved PostgreSQL $pg_version archive and pgvector $vector_version archive on $PRETTY_NAME"
+else
+  echo "PASS: moved PostgreSQL $pg_version archive on $PRETTY_NAME (core-only mode; pgvector not checked)"
+fi

@@ -1,0 +1,237 @@
+name: PostgreSQL selected Linux publication
+
+on:
+  workflow_call:
+    inputs:
+      postgresql_version:
+        description: Exact selected PostgreSQL release
+        required: true
+        type: string
+      architecture:
+        description: Exact selected Linux architecture
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      postgresql_version:
+        description: Exact selected PostgreSQL release
+        required: true
+        type: string
+      architecture:
+        description: Exact selected Linux architecture
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  select:
+    runs-on: ubuntu-24.04
+    outputs:
+      postgresql_version: ${{ steps.plan.outputs.postgresql_version }}
+      architecture: ${{ steps.plan.outputs.architecture }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: plan
+        env:
+          PG_VERSION: ${{ inputs.postgresql_version }}
+          PG_ARCHITECTURE: ${{ inputs.architecture }}
+        run: |
+          set -euo pipefail
+          case "$PG_ARCHITECTURE" in x86_64|arm64) ;; *) echo "Unsupported architecture: $PG_ARCHITECTURE" >&2; exit 2 ;; esac
+          python3 - "$PG_VERSION" <<'PY'
+          import json, pathlib, sys
+          versions = {item["version"] for item in json.loads(pathlib.Path("support/postgresql-releases.json").read_text())["releases"]}
+          if sys.argv[1] not in versions:
+              raise SystemExit(f"PostgreSQL release is not declared: {sys.argv[1]}")
+          PY
+          printf 'postgresql_version=%s\narchitecture=%s\n' "$PG_VERSION" "$PG_ARCHITECTURE" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: select
+    runs-on: ${{ needs.select.outputs.architecture == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-24.04' }}
+    timeout-minutes: 90
+    outputs:
+      core_resolution: ${{ steps.core_resolution.outcome }}
+    env:
+      PG_VERSION: ${{ needs.select.outputs.postgresql_version }}
+      PG_ARCHITECTURE: ${{ needs.select.outputs.architecture }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Resolve a checked core with build fallback
+        id: core_resolution
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          scripts/linux/resolve-core.sh "$PG_VERSION" "$PG_ARCHITECTURE" "$RUNNER_TEMP/core" \
+            postgresql-linux-selected-publication.yml "postgresql-linux-selected-core-$PG_VERSION-$PG_ARCHITECTURE-{run_id}" \
+            postgresql-linux-selected-publication.yml "postgresql-linux-selected-$PG_VERSION-{run_id}" \
+            pgvector-linux-selected-publication.yml "pgvector-linux-core-$PG_VERSION-$PG_ARCHITECTURE-{run_id}" \
+            linux-publication.yml "linux-publication-$PG_ARCHITECTURE-evidence"
+      - name: Upload exact resolved core and provenance
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: postgresql-linux-selected-core-${{ needs.select.outputs.postgresql_version }}-${{ needs.select.outputs.architecture }}-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/core/*.tar.gz
+            ${{ runner.temp }}/core/*.sha256
+            ${{ runner.temp }}/core/core-resolution.json
+          if-no-files-found: warn
+          retention-days: 7
+
+  verify:
+    needs: [select, build]
+    if: always() && needs.select.result == 'success'
+    runs-on: ${{ needs.select.outputs.architecture == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-24.04' }}
+    timeout-minutes: 70
+    env:
+      PG_VERSION: ${{ needs.select.outputs.postgresql_version }}
+      PG_ARCHITECTURE: ${{ needs.select.outputs.architecture }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Download resolved PostgreSQL core
+        id: download_core
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: postgresql-linux-selected-core-${{ needs.select.outputs.postgresql_version }}-${{ needs.select.outputs.architecture }}-${{ github.run_id }}
+          path: ${{ runner.temp }}/core
+      - name: Validate core provenance and sidecar
+        id: core_validation
+        if: always() && steps.download_core.outcome == 'success'
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          python3 tools/linux_core_resolution.py --validate-record "$RUNNER_TEMP/core/core-resolution.json" \
+            --archive "$RUNNER_TEMP/core/postgresql-$PG_VERSION-linux-$PG_ARCHITECTURE.tar.gz" \
+            --postgresql-version "$PG_VERSION" --architecture "$PG_ARCHITECTURE"
+          (cd "$RUNNER_TEMP/core" && sha256sum --check "postgresql-$PG_VERSION-linux-$PG_ARCHITECTURE.tar.gz.sha256")
+          mkdir -p "$RUNNER_TEMP/archives"
+          cp "$RUNNER_TEMP/core/postgresql-$PG_VERSION-linux-$PG_ARCHITECTURE.tar.gz"* "$RUNNER_TEMP/archives/"
+          cp "$RUNNER_TEMP/core/core-resolution.json" "$RUNNER_TEMP/archives/"
+      - name: Run core-only archive verification
+        id: verification
+        if: always() && steps.core_validation.outcome == 'success'
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          PG_VERIFY_MODE=core-only PG_VERSION="$PG_VERSION" PG_ARCHITECTURE="$PG_ARCHITECTURE" \
+            scripts/linux/verify.sh "$RUNNER_TEMP/archives" 2>&1 | tee "$RUNNER_TEMP/archives/probe-output.txt"
+      - name: Verify PostgreSQL starts without host user space
+        id: nohost
+        if: always() && steps.core_validation.outcome == 'success'
+        continue-on-error: true
+        run: bash scripts/linux/verify-no-host-userspace.sh "$RUNNER_TEMP/archives" "$PG_VERSION" "$PG_ARCHITECTURE"
+      - name: Index symbols from the final core archive
+        id: symbols
+        if: always() && steps.core_validation.outcome == 'success'
+        continue-on-error: true
+        run: python3 tools/create_linux_symbols.py "$RUNNER_TEMP/archives/postgresql-$PG_VERSION-linux-$PG_ARCHITECTURE.tar.gz" --output-dir "$RUNNER_TEMP/archives/debug-symbols"
+      - name: Run PostgreSQL diagnostics in a fresh Alpine container
+        id: diagnostics
+        if: always() && steps.core_validation.outcome == 'success'
+        continue-on-error: true
+        run: |
+          set -euo pipefail
+          case "$PG_ARCHITECTURE" in x86_64) docker_platform=linux/amd64 ;; arm64) docker_platform=linux/arm64 ;; esac
+          docker build --platform "$docker_platform" -f scripts/linux/diagnostics.Dockerfile -t pg-binaries-linux-diagnostics .
+          mkdir -p "$RUNNER_TEMP/diagnostics-evidence"
+          docker run --rm --platform "$docker_platform" \
+            -e GITHUB_RUN_ID -e GITHUB_REPOSITORY -e GITHUB_SERVER_URL -e GITHUB_SHA \
+            -e PG_DIAGNOSTICS_MODE=core-only -e DIAGNOSTICS_EVIDENCE_DIR=/evidence \
+            -v "$GITHUB_WORKSPACE:/repo:ro" -v "$RUNNER_TEMP/archives:/archives:ro" \
+            -v "$RUNNER_TEMP/diagnostics-evidence:/evidence" \
+            pg-binaries-linux-diagnostics bash /repo/scripts/linux/diagnostics-in-container.sh \
+            /archives "$PG_VERSION" "$PG_ARCHITECTURE"
+      - name: Create receipt, PostgreSQL record and import evidence
+        id: records
+        if: always()
+        continue-on-error: true
+        env:
+          VERIFY_OUTCOME: ${{ steps.verification.outcome }}
+          NOHOST_OUTCOME: ${{ steps.nohost.outcome }}
+          DIAGNOSTICS_OUTCOME: ${{ steps.diagnostics.outcome }}
+          CORE_VALIDATION: ${{ steps.core_validation.outcome }}
+          SYMBOLS_OUTCOME: ${{ steps.symbols.outcome }}
+        run: |
+          set -euo pipefail
+          bundle="$RUNNER_TEMP/bundle"
+          core_dir="$bundle/pilot"
+          publication="$core_dir/publication"
+          mkdir -p "$publication"
+          if [[ -d "$RUNNER_TEMP/archives" ]]; then cp -a "$RUNNER_TEMP/archives/." "$core_dir/"; fi
+          if [[ -d "$RUNNER_TEMP/diagnostics-evidence" ]]; then mkdir -p "$core_dir/diagnostics"; cp -a "$RUNNER_TEMP/diagnostics-evidence/." "$core_dir/diagnostics/"; fi
+          python3 - "$publication/current-steps.json" <<'PY'
+          import json, os, pathlib, sys
+          results = {"archive-suite": os.environ["VERIFY_OUTCOME"],
+                     "no-host-userspace": os.environ["NOHOST_OUTCOME"],
+                     "diagnostics": os.environ["DIAGNOSTICS_OUTCOME"]}
+          pathlib.Path(sys.argv[1]).write_text(json.dumps(results, sort_keys=True) + "\n")
+          PY
+          archive="$core_dir/postgresql-$PG_VERSION-linux-$PG_ARCHITECTURE.tar.gz"
+          if [[ -s "$archive" && -s "$archive.sha256" && "$CORE_VALIDATION" == success && "$SYMBOLS_OUTCOME" == success ]]; then
+            image=$(docker image inspect --format '{{.Id}}' pg-binaries-linux-verifier 2>/dev/null || true)
+            if [[ "$image" =~ ^sha256:[0-9a-f]{64}$ ]]; then
+              clean=false; dependencies=failure
+              if [[ "$VERIFY_OUTCOME" == success && "$NOHOST_OUTCOME" == success ]]; then clean=true; dependencies=success; fi
+              case "$PG_ARCHITECTURE" in x86_64) docker_platform=linux/amd64 ;; arm64) docker_platform=linux/arm64 ;; esac
+              distribution=$(docker run --rm --platform "$docker_platform" --entrypoint sh pg-binaries-linux-verifier -c '. /etc/os-release; printf "%s" "$NAME"')
+              distribution_version=$(docker run --rm --platform "$docker_platform" --entrypoint sh pg-binaries-linux-verifier -c '. /etc/os-release; printf "%s" "$VERSION_ID"')
+              python3 tools/create_linux_publication_receipt.py --archives "$core_dir" --receipt "$publication/current-receipt.json" \
+                --profile-id "postgresql-publication-linux-$PG_ARCHITECTURE-$PG_VERSION" --publication-mode core-only \
+                --postgresql-version "$PG_VERSION" --architecture "$PG_ARCHITECTURE" --endpoint current \
+                --kernel-release "$(uname -r)" --distribution "$distribution" --distribution-version "$distribution_version" \
+                --image-id "$image" --dependency-check-profile linux-runtime-v1 \
+                --dependency-check-result "$dependencies" --clean-system "$clean" --step-results "$publication/current-steps.json"
+              python3 tools/emit_linux_publication_records.py --archives "$core_dir" --receipt "$publication/current-receipt.json" \
+                --output "$publication/records"
+              python3 tools/import_linux_publication_run.py --core-artifact "$bundle" --run-id "$GITHUB_RUN_ID" \
+                --architecture "$PG_ARCHITECTURE" --postgresql-version "$PG_VERSION" --publication-mode core-only
+              echo 'records_imported=true' >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+          fi
+          echo 'Complete archive-bound evidence is unavailable; retaining available outcomes.'
+          echo 'records_imported=false' >> "$GITHUB_OUTPUT"
+          if [[ -s "$archive" ]]; then
+            python3 tools/import_linux_publication_run.py --core-artifact "$bundle" --run-id "$GITHUB_RUN_ID" \
+              --architecture "$PG_ARCHITECTURE" --postgresql-version "$PG_VERSION" --publication-mode core-only
+          fi
+      - name: Upload archives, provenance and verification outcomes
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: postgresql-linux-selected-${{ needs.select.outputs.postgresql_version }}-${{ needs.select.outputs.architecture }}-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/bundle/**
+            support/evidence/linux-core-only-publication-${{ github.run_id }}/**
+            support/verification/postgresql-${{ needs.select.outputs.postgresql_version }}-linux-${{ needs.select.outputs.architecture }}-current-${{ github.run_id }}.json
+          if-no-files-found: warn
+          retention-days: 7
+      - name: Require every core publication check and evidence import
+        if: always()
+        env:
+          CORE_RESOLUTION: ${{ needs.build.outputs.core_resolution }}
+          CORE_VALIDATION: ${{ steps.core_validation.outcome }}
+          VERIFICATION: ${{ steps.verification.outcome }}
+          NOHOST: ${{ steps.nohost.outcome }}
+          SYMBOLS: ${{ steps.symbols.outcome }}
+          DIAGNOSTICS: ${{ steps.diagnostics.outcome }}
+          RECORDS: ${{ steps.records.outputs.records_imported }}
+        run: |
+          set -euo pipefail
+          if [[ "$CORE_RESOLUTION" != success || "$CORE_VALIDATION" != success || "$VERIFICATION" != success || "$NOHOST" != success || "$SYMBOLS" != success || "$DIAGNOSTICS" != success || "$RECORDS" != true ]]; then
+            echo "Selected PostgreSQL Linux publication incomplete: resolve=$CORE_RESOLUTION validate=$CORE_VALIDATION verify=$VERIFICATION no-host=$NOHOST symbols=$SYMBOLS diagnostics=$DIAGNOSTICS records=$RECORDS." >&2
+            exit 1
+          fi

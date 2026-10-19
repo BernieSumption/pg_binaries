@@ -184,6 +184,32 @@ class LinuxPublicationRecordTests(unittest.TestCase):
         with self.assertRaisesRegex(coverage.CoverageError, "canonical PostgreSQL and pgvector"):
             emitter.emit(self.root, self.archives, self.receipt_path, self.output)
 
+    def test_emits_core_only_record_without_pgvector_archive_or_selection(self):
+        core_profile = "postgresql-publication-linux-x86_64-18.6"
+        self.profile_data["profiles"][core_profile] = {
+            "scope": "publication", "platforms": ["linux-x86_64"],
+            "case_ids": ["archive-install"], "sources": ["source.txt"]}
+        self._write_profile()
+        profile = coverage.verification_profile(self.root, core_profile)
+        core_name, vector_name = self.names
+        (self.archives / vector_name).unlink()
+        (self.archives / f"{vector_name}.sha256").unlink()
+        self.receipt.update({
+            "publication_mode": "core-only", "profile_id": core_profile,
+            "profile_revision": profile["profile_revision"],
+            "case_results": {"archive-install": "failed"},
+            "archives": {core_name: self.receipt["archives"][core_name]},
+        })
+        self._write_receipt()
+        paths = emitter.emit(self.root, self.archives, self.receipt_path, self.output)
+        self.assertEqual(len(paths), 1)
+        record = json.loads(paths[0].read_text())
+        self.assertEqual(record["component"], "postgresql")
+        self.assertEqual(record["outcome"], "failed")
+        self.assertEqual(record["case_results"], {"archive-install": "failed"})
+        self.assertTrue(coverage.validate_verification_record(
+            record, coverage.load_json(self.root / "support.json"), self.root))
+
 
 if __name__ == "__main__":
     unittest.main()

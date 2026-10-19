@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Emit Linux PostgreSQL and pgvector publication records from verifier JSON.
+"""Emit Linux PostgreSQL publication records from verifier JSON.
 
 Receipt schema: profile_id, profile_revision, test_revision, postgresql_version,
 architecture, current endpoint, kernel_release, distribution,
@@ -79,6 +79,9 @@ def emit(root, archives, receipt_path, output):
     missing = [key for key in required if key not in receipt]
     if missing:
         _fail(f"receipt is missing fields: {', '.join(missing)}")
+    mode = receipt.get("publication_mode", "paired")
+    if mode not in {"paired", "core-only"}:
+        _fail("publication_mode must be paired or core-only")
     architecture = receipt["architecture"]
     if architecture not in {"x86_64", "arm64"}:
         _fail("architecture must be x86_64 or arm64")
@@ -135,14 +138,24 @@ def emit(root, archives, receipt_path, output):
     version = receipt["postgresql_version"]
     if not isinstance(version, str) or not re.fullmatch(r"\d+\.\d+", version):
         _fail("postgresql_version must be major.minor")
-    vector_version = selected_pgvector_version(root, version, platform)
+    if mode == "core-only" and receipt["profile_id"] != (
+            f"postgresql-publication-linux-{architecture}-{version}"):
+        _fail("core-only profile_id must identify the PostgreSQL version and architecture")
     core_name = f"postgresql-{version}-{platform}.tar.gz"
-    vector_name = f"pgvector-{vector_version}-postgresql-{version}-{platform}.tar.gz"
     archive_receipt = receipt["archives"]
-    if not isinstance(archive_receipt, dict) or set(archive_receipt) != {core_name, vector_name}:
-        _fail("archives must identify exactly the canonical PostgreSQL and pgvector archives")
+    if mode == "core-only":
+        names = [core_name]
+    else:
+        vector_version = selected_pgvector_version(root, version, platform)
+        vector_name = f"pgvector-{vector_version}-postgresql-{version}-{platform}.tar.gz"
+        names = [core_name, vector_name]
+    expected_names = set(names)
+    if not isinstance(archive_receipt, dict) or set(archive_receipt) != expected_names:
+        description = ("canonical PostgreSQL archive" if mode == "core-only"
+                       else "canonical PostgreSQL and pgvector archives")
+        _fail(f"archives must identify exactly the {description}")
     digests = {}
-    for name in (core_name, vector_name):
+    for name in names:
         claimed = archive_receipt[name]
         if not isinstance(claimed, str) or not re.fullmatch(r"[0-9a-fA-F]{64}", claimed):
             _fail(f"receipt has malformed checksum for {name}")
@@ -154,8 +167,10 @@ def emit(root, archives, receipt_path, output):
         digests[name] = digest
     support = coverage.load_json(root / "support.json")
     records = []
-    for name, component, record_version in (
-        (core_name, "postgresql", version), (vector_name, "vector", vector_version)):
+    record_targets = [(core_name, "postgresql", version)]
+    if mode == "paired":
+        record_targets.append((vector_name, "vector", vector_version))
+    for name, component, record_version in record_targets:
         record = {
             "schema_version": 2,
             "scope": "publication",
@@ -188,7 +203,7 @@ def emit(root, archives, receipt_path, output):
         records.append(record)
     output.mkdir(parents=True, exist_ok=True)
     paths = []
-    for record, name in zip(records, (core_name, vector_name)):
+    for record, name in zip(records, names):
         path = output / f"{name[:-7]}-{endpoint}-{ci['run_id']}.json"
         path.write_text(json.dumps(record, indent=2, sort_keys=True) + "\n", encoding="utf-8")
         paths.append(path)

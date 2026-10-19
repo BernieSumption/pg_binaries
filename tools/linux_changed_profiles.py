@@ -26,6 +26,7 @@ LINUX_ROUTES = {"hypopg": "HypoPG", "pg-jsonschema": "pg_jsonschema",
                 "tiger": "PostGIS TIGER Geocoder", "pgvector": "pgvector",
                 "collection": "collection"}
 MAX_TARGETS = 128
+CORE_PROFILE_PREFIX = "postgresql-publication-linux-"
 
 
 def _profile_id(route_name, architecture, postgresql_version, extension_version=None):
@@ -120,6 +121,58 @@ def changed_targets(before_root, current_root, *, project=None, postgresql_versi
     return sorted(changed, key=lambda item: (item["project"], item["postgresql_version"], item["platform"]))
 
 
+def core_targets(before_root, current_root, *, postgresql_version=None, architecture=None):
+    """Select PostgreSQL-only Linux targets from the release and platform declarations."""
+    current_root = Path(current_root)
+    support = coverage.load_json(current_root / "support.json")
+    releases = coverage.load_json(current_root / "support" / "postgresql-releases.json")
+    registry = coverage.load_json(current_root / "support" / "verification-profiles.json")
+    profiles = registry.get("profiles")
+    if not isinstance(profiles, dict):
+        raise ValueError("verification profile registry must contain profiles")
+    versions = [item["version"] for item in releases["releases"]]
+    architectures = support["platform_architectures"]["linux"]
+    candidates = []
+    for version in versions:
+        for arch in architectures:
+            profile_id = f"{CORE_PROFILE_PREFIX}{arch}-{version}"
+            profile = coverage.verification_profile(current_root, profile_id)
+            if (profile["scope"] != "publication" or profile["platforms"] != [f"linux-{arch}"]
+                    or profile["case_ids"] != ["archive-suite", "diagnostics", "no-host-userspace"]):
+                raise ValueError(f"profile {profile_id!r} does not match its PostgreSQL Linux target")
+            candidates.append({"project": "PostgreSQL", "postgresql_version": version,
+                               "platform": f"linux-{arch}", "profile_id": profile_id,
+                               "profile_revision": profile["profile_revision"]})
+    registered = {name for name, profile in profiles.items()
+                  if profile.get("scope") == "publication" and name.startswith(CORE_PROFILE_PREFIX)}
+    declared = {target["profile_id"] for target in candidates}
+    if registered != declared:
+        raise ValueError("routed PostgreSQL Linux profiles and support-derived targets differ")
+    if len(candidates) + len(changed_targets(None, current_root)) > MAX_TARGETS:
+        raise ValueError(f"Linux changed-profile matrix exceeds the {MAX_TARGETS}-target limit")
+    if postgresql_version is not None:
+        candidates = [target for target in candidates if target["postgresql_version"] == postgresql_version]
+    if architecture is not None:
+        candidates = [target for target in candidates if target["platform"] == f"linux-{architecture}"]
+    if not candidates:
+        raise ValueError("requested PostgreSQL Linux publication target is not declared")
+    before_root = Path(before_root) if before_root is not None else None
+    changed = []
+    for target in candidates:
+        select = before_root is None
+        if before_root is not None:
+            try:
+                previous = coverage.verification_profile(before_root, target["profile_id"])
+            except Exception as exc:
+                print(f"Cannot resolve base profile {target['profile_id']!r}; selecting this target: {exc}", file=sys.stderr)
+                select = True
+            else:
+                select = previous["profile_revision"] != target["profile_revision"]
+        if select:
+            changed.append({key: target[key] for key in ("project", "postgresql_version", "platform")})
+    return sorted(changed, key=lambda item: (item["postgresql_version"], item["platform"]))
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--before-root", type=Path)
@@ -131,15 +184,24 @@ def main(argv=None):
     args = parser.parse_args(argv)
     try:
         before = args.before_root if args.before_root and args.before_root.exists() else None
-        selected = changed_targets(before, args.current_root, project=args.project,
-                                   postgresql_version=args.postgresql_version,
-                                   architecture=args.architecture)
+        if args.project == "PostgreSQL":
+            selected = core_targets(before, args.current_root,
+                                    postgresql_version=args.postgresql_version,
+                                    architecture=args.architecture)
+        else:
+            selected = changed_targets(before, args.current_root, project=args.project,
+                                       postgresql_version=args.postgresql_version,
+                                       architecture=args.architecture)
     except Exception as exc:
         parser.exit(2, f"Linux profile selection failed: {exc}\n")
     rendered = json.dumps(selected, separators=(",", ":"))
     if args.github_output:
+        extension_targets = [] if args.project == "PostgreSQL" else selected
+        core = (selected if args.project == "PostgreSQL" else
+                core_targets(before, args.current_root) if args.project is None else [])
         with args.github_output.open("a", encoding="utf-8") as stream:
-            stream.write(f"targets={rendered}\n")
+            stream.write(f"targets={json.dumps(extension_targets, separators=(',', ':'))}\n")
+            stream.write(f"core_targets={json.dumps(core, separators=(',', ':'))}\n")
     else:
         print(rendered)
     return 0

@@ -25,13 +25,21 @@ class LinuxPublicationReceiptTests(unittest.TestCase):
         shutil.copy(REPO / "support/postgresql-releases.json", self.root / "support/postgresql-releases.json")
         (self.root / "profile-source.txt").write_text("profile fixture\n")
         self.profile_id = "publication-fixture"
+        self.core_profile_id = "postgresql-publication-linux-x86_64-18.6"
         (self.root / "support" / "verification-profiles.json").write_text(json.dumps({
             "schema_version": 1,
-            "profiles": {self.profile_id: {
-                "scope": "publication", "platforms": ["linux-arm64", "linux-x86_64"],
-                "case_ids": ["archive-suite", "diagnostics"],
-                "sources": ["profile-source.txt"],
-            }},
+            "profiles": {
+                self.profile_id: {
+                    "scope": "publication", "platforms": ["linux-arm64", "linux-x86_64"],
+                    "case_ids": ["archive-suite", "diagnostics"],
+                    "sources": ["profile-source.txt"],
+                },
+                self.core_profile_id: {
+                    "scope": "publication", "platforms": ["linux-x86_64"],
+                    "case_ids": ["archive-install"],
+                    "sources": ["profile-source.txt"],
+                },
+            },
         }))
         self.archives = self.base / "archives"
         self.archives.mkdir()
@@ -139,6 +147,24 @@ class LinuxPublicationReceiptTests(unittest.TestCase):
         records = emitter.emit(self.root, self.archives, self.receipt_path, self.base / "records")
         vector = json.loads(records[1].read_text())
         self.assertEqual(vector["version"], "0.9.0")
+
+    def test_core_only_receipt_and_emitter_need_only_postgresql_archive(self):
+        core_name = "postgresql-18.6-linux-x86_64.tar.gz"
+        vector_name = self.names[1]
+        (self.archives / vector_name).unlink()
+        (self.archives / f"{vector_name}.sha256").unlink()
+        self.steps.write_text(json.dumps({"archive-install": "success"}))
+        self.create(profile_id=self.core_profile_id, publication_mode="core-only")
+        receipt = json.loads(self.receipt_path.read_text())
+        self.assertEqual(receipt["publication_mode"], "core-only")
+        self.assertEqual(set(receipt["archives"]), {core_name})
+        paths = emitter.emit(self.root, self.archives, self.receipt_path, self.base / "core-records")
+        self.assertEqual(len(paths), 1)
+        record = json.loads(paths[0].read_text())
+        self.assertEqual(record["component"], "postgresql")
+        self.assertEqual(record["profile_id"], self.core_profile_id)
+        self.assertTrue(coverage.validate_verification_record(
+            record, coverage.load_json(self.root / "support.json"), self.root))
 
 
 if __name__ == "__main__":
