@@ -18,6 +18,9 @@ class SelectedExtensionWorkflowTests(unittest.TestCase):
         self.assertIn("uses: ./.github/workflows/hypopg-linux-selected-publication.yml", DISPATCHER)
         self.assertIn("uses: ./.github/workflows/pgivm-linux-selected-publication.yml", DISPATCHER)
         self.assertIn("uses: ./.github/workflows/pgcron-linux-selected-publication.yml", DISPATCHER)
+        self.assertIn('("pgaudit", "linux-x86_64"): "pgaudit-linux"', DISPATCHER)
+        self.assertIn('("pgaudit", "linux-arm64"): "pgaudit-linux"', DISPATCHER)
+        self.assertIn("uses: ./.github/workflows/pgaudit-linux-selected-publication.yml", DISPATCHER)
         self.assertIn("uses: ./.github/workflows/collection-macos-selected-publication.yml", DISPATCHER)
         self.assertIn("uses: ./.github/workflows/pgivm-macos-selected-publication.yml", DISPATCHER)
 

@@ -29,10 +29,11 @@ class LinuxPgauditPublicationImportTests(unittest.TestCase):
         registry_path = self.root / "support/verification-profiles.json"
         registry = json.loads(registry_path.read_text())
         for architecture in ("x86_64", "arm64"):
-            registry["profiles"][f"pgaudit-publication-current-{architecture}"] = {
-                "scope": "publication", "case_ids": ["pgaudit-archive-suite"],
-                "platforms": [f"linux-{architecture}"], "sources": ["support.json"],
-            }
+            for postgresql_version in ("15.19", "16.15", "17.11", "18.6"):
+                registry["profiles"][f"pgaudit-publication-linux-{architecture}-{postgresql_version}"] = {
+                    "scope": "publication", "case_ids": ["pgaudit-archive-suite"],
+                    "platforms": [f"linux-{architecture}"], "sources": ["support.json"],
+                }
         registry_path.write_text(json.dumps(registry))
 
         self.run_id = "7654321"
@@ -104,7 +105,7 @@ class LinuxPgauditPublicationImportTests(unittest.TestCase):
         }))
 
     def _make_publication(self, result="success"):
-        profile_id = f"pgaudit-publication-current-{self.architecture}"
+        profile_id = f"pgaudit-publication-linux-{self.architecture}-{self.postgresql_version}"
         image = "sha256:" + "b" * 64
         step_outcomes = {
             "success": {"core_build": "success", "pgaudit_build": "success", "pgaudit_verify": "success"},
@@ -144,6 +145,8 @@ class LinuxPgauditPublicationImportTests(unittest.TestCase):
         self.assertEqual(record["assembled_core"]["sha256"], self._sha(self.core_dir / self.core_name))
         self.assertEqual(record["sha256"], self._sha(self.pgaudit_artifact / self.pgaudit_name))
         self.assertEqual(len(retained), 5)
+        self.assertTrue((self.root / "support/evidence" / f"pgaudit-publication-{self.run_id}"
+                         / self.architecture / self.postgresql_version / "current-receipt.json").is_file())
         self.assertEqual(self._import(), retained)
 
     def test_retains_failed_and_skipped_records_as_nonpassing(self):
@@ -167,6 +170,18 @@ class LinuxPgauditPublicationImportTests(unittest.TestCase):
                 record = json.loads(next((self.root / "support/verification").glob("*.json")).read_text())
                 self.assertEqual(record["postgresql_version"], pg_version)
                 self.assertEqual(record["version"], pgaudit_version)
+
+    def test_same_run_retains_each_postgresql_target_separately(self):
+        self._import()
+        evidence = self.root / "support/evidence"
+        retained = self.base / "retained-evidence"
+        shutil.copytree(evidence, retained)
+        self._configure_target("15.19")
+        shutil.copytree(retained, evidence)
+        self._import()
+        targets = evidence / f"pgaudit-publication-{self.run_id}" / "x86_64"
+        self.assertTrue((targets / "18.6/current-receipt.json").is_file())
+        self.assertTrue((targets / "15.19/current-receipt.json").is_file())
 
     def test_rejects_attempt_from_another_pgaudit_major(self):
         attempt_path = self.publication / "attempt.json"

@@ -88,25 +88,25 @@ def import_run(root, core_artifact, pgaudit_artifact, run_id, architecture,
     snapshot = coverage.load_json(root / "support/postgresql-releases.json")
     if postgresql_version not in coverage.release_snapshot(snapshot, support):
         raise coverage.CoverageError(f"PostgreSQL {postgresql_version} is not selected")
-    pg_major = int(postgresql_version.split(".", 1)[0])
-    candidates = [(candidate, metadata) for candidate, metadata in
-                  support["extensions"]["pgaudit"]["versions"].items()
-                  if isinstance(metadata, dict)
-                  and metadata.get("postgresql_minimum_major", 0) <= pg_major
-                  and metadata.get("postgresql_maximum_major", pg_major) >= pg_major
-                  and "linux" in metadata.get("operating_systems", [])]
-    if len(candidates) != 1:
-        raise coverage.CoverageError(f"expected one selected pgAudit version for PostgreSQL {pg_major}")
-    pgaudit_version = candidates[0][0]
+    _, selected_targets = coverage.expected_targets(support, coverage.release_snapshot(snapshot, support))
+    selected_versions = {version for project, version, pg_version, platform in selected_targets
+                         if project == "pgaudit" and pg_version == postgresql_version
+                         and platform == f"linux-{architecture}"}
+    if len(selected_versions) != 1:
+        raise coverage.CoverageError(
+            f"expected one selected pgAudit version for PostgreSQL {postgresql_version} "
+            f"on linux-{architecture}")
+    pgaudit_version = next(iter(selected_versions))
 
     platform = f"linux-{architecture}"
-    profile_id = f"pgaudit-publication-current-{architecture}"
+    profile_id = f"pgaudit-publication-linux-{architecture}-{postgresql_version}"
     profile = coverage.verification_profile(root, profile_id)
     if profile["scope"] != "publication" or platform not in profile["platforms"]:
         raise coverage.CoverageError("profile does not match the Linux publication platform")
 
     publication = pgaudit_artifact / "pgaudit-publication"
-    target = root / "support/evidence" / f"pgaudit-publication-{run_id}" / architecture
+    target = (root / "support/evidence" / f"pgaudit-publication-{run_id}"
+              / architecture / postgresql_version)
     steps_path, attempt_path = publication / "current-steps.json", publication / "attempt.json"
     steps = _steps(steps_path, profile)
     attempt, expected_suite = _attempt(
