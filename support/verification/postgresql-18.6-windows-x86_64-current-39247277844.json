@@ -1,0 +1,43 @@
+{
+  "case_results": {
+    "archive-suite": "passed",
+    "diagnostics": "passed",
+    "symbols": "passed"
+  },
+  "ci": {
+    "build_revision": "38e2040869fb2a09118e117837f961e79ac7399c",
+    "build_run_attempt": "1",
+    "build_run_id": "39242094311",
+    "provider": "github-actions",
+    "run_id": "39247277844",
+    "run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/39247277844",
+    "source_revision": "38e2040869fb2a09118e117837f961e79ac7399c",
+    "test_revision": "e5f6beec622705513b0686a813f8b2e299146971"
+  },
+  "component": "postgresql",
+  "environment": {
+    "architecture": "x86_64",
+    "clean_system": true,
+    "dependency_check_profile": "windows-pe-runtime-v1",
+    "dependency_checks_passed": true,
+    "endpoint": "current",
+    "image_id": "win22/20261012.333.1",
+    "os": "windows",
+    "os_version": "10.0.20348.0"
+  },
+  "outcome": "passed",
+  "platform": "windows-x86_64",
+  "postgresql_version": "18.6",
+  "profile_id": "postgresql-publication-windows-x86_64-18.6",
+  "profile_revision": "c157bcceda631a6dc5547b70606e62c1e86bdb9c81289739a741576c77719fa6",
+  "schema_version": 2,
+  "scope": "publication",
+  "sha256": "044f621e6dad2d7e8096883206d1f5d40b5c92ea7bc6f583d271856063308eac",
+  "test_cases": [
+    "archive-suite",
+    "diagnostics",
+    "symbols"
+  ],
+  "test_revision": "e5f6beec622705513b0686a813f8b2e299146971",
+  "version": "18.6"
+}
