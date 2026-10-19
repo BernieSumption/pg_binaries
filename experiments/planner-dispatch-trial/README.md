@@ -6,6 +6,6 @@ The workflow reads `target.json`, runs `tools/dispatch_plan.py`, and dispatches 
 
 The input is one exact project, extension version, PostgreSQL release and platform, with an optional retry flag. The first run requested a retry of HypoPG 1.4.3 on PostgreSQL 17.11 for `linux-x86_64`. The second request leaves retry false to test ordinary planning and checked retrieval from a coordinator run.
 
-The second run passed but found an older standalone HypoPG artifact before checking the prior coordinator artifact. The resolver now checks coordinator artifacts first when called from this workflow. Repeat the request to verify that retrieval path.
+The second run passed but found an older standalone HypoPG artifact before checking the prior coordinator artifact. The resolver now checks coordinator artifacts first when called from this workflow. [The third run](../../support/evidence/planner-dispatch-linux-hypopg-39178721895.md) passed and reused the preceding coordinator's checksum-verified core artifact. It took 98 seconds and independently imported its final-archive evidence.
 
-Finish the trial when a scoped push produces a valid plan and dispatches only the declared selected workflow target, or when the integration proves unsafe. Then remove the experiment workflow and request, and move any retained planner-to-CI behavior into its owning workflow or tool.
+The trial's question is answered. Retire its workflow and request after moving the proved planner-to-CI behavior into the permanent entry point. General target routing and planner-level archive discovery remain separate work.

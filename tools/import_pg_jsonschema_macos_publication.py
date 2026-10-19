@@ -2,43 +2,32 @@
 """Validate and retain one pg_jsonschema macOS publication attempt."""
 
 import argparse
-import hashlib
-import json
 from pathlib import Path
-import shutil
 import sys
 
 import coverage
 import emit_pg_jsonschema_macos_publication as publication
+import macos_publication_evidence as evidence_tools
 
 MAX_FILE_BYTES = 8 * 1024 * 1024
 
 
 def _read(path):
     try:
-        value = json.loads(Path(path).read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError) as exc:
+        return evidence_tools.read_json_object(path, MAX_FILE_BYTES)
+    except (coverage.CoverageError, OSError, ValueError) as exc:
         raise coverage.CoverageError(f"invalid or missing evidence {path}: {exc}") from exc
-    if not isinstance(value, dict):
-        raise coverage.CoverageError(f"expected a JSON object in {path}")
-    return value
 
 
 def _digest(path):
-    digest = hashlib.sha256()
-    with Path(path).open("rb") as stream:
-        for block in iter(lambda: stream.read(1024 * 1024), b""):
-            digest.update(block)
-    return digest.hexdigest()
+    return evidence_tools.sha256_file(path)
 
 
 def _retain(source, destination, copies):
     source, destination = Path(source), Path(destination)
-    if source.is_symlink() or not source.is_file() or source.stat().st_size > MAX_FILE_BYTES:
-        raise coverage.CoverageError(f"evidence must be a regular file no larger than {MAX_FILE_BYTES} bytes: {source}")
-    if destination.exists() and (destination.is_symlink() or destination.read_bytes() != source.read_bytes()):
+    if destination.is_symlink():
         raise coverage.CoverageError(f"refusing to replace retained evidence {destination}")
-    copies.append((source, destination))
+    evidence_tools.retain(source, destination, copies, MAX_FILE_BYTES)
 
 
 def _copy(copies, root):
@@ -51,8 +40,7 @@ def _copy(copies, root):
             if parent.is_symlink():
                 raise coverage.CoverageError(f"evidence path crosses a symbolic link: {parent}")
             parent = parent.parent
-        destination.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copyfile(source, destination)
+    evidence_tools.copy_retained(copies, MAX_FILE_BYTES)
 
 
 def import_run(root, core_archives, archives, run_id, target_config=None):

@@ -1,0 +1,46 @@
+{
+  "assembled_core": {
+    "archive": "postgresql-18.6-macos-x86_64.tar.gz",
+    "sha256": "898256ad26f29cc055208ab443aff9ef9813bc5cbf150539b15dfce7e4ad017d",
+    "version": "18.6"
+  },
+  "case_results": {
+    "archive-suite": "passed",
+    "static-analysis": "passed"
+  },
+  "ci": {
+    "build_revision": "04cda9dcc0ef7a59bf75a24cbeacd982832cb42a",
+    "provider": "github-actions",
+    "run_id": "39178722052",
+    "run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/39178722052",
+    "source_revision": "04cda9dcc0ef7a59bf75a24cbeacd982832cb42a",
+    "test_revision": "04cda9dcc0ef7a59bf75a24cbeacd982832cb42a"
+  },
+  "component": "pg_ivm",
+  "environment": {
+    "architecture": "x86_64",
+    "clean_system": true,
+    "dependency_check_profile": "macho-system-dependencies-v1",
+    "dependency_checks_passed": true,
+    "endpoint": "current",
+    "image_id": "macos15/20260824.0482.1",
+    "os": "macos",
+    "os_version": "15.7.9"
+  },
+  "outcome": "passed",
+  "platform": "macos-x86_64",
+  "postgresql_version": "18.6",
+  "prerequisite_archives": [],
+  "profile_id": "pgivm-publication-macos-x86_64-18.6",
+  "profile_revision": "154cfa505a7895e87d34355e26c4639523f1d7a287bc9403658da45e35974c2a",
+  "project": "pg_ivm",
+  "schema_version": 2,
+  "scope": "publication",
+  "sha256": "1506eed976f4d6faea3bf97225a88d94cfa48a4599c5a1338a45ffda639d9735",
+  "test_cases": [
+    "archive-suite",
+    "static-analysis"
+  ],
+  "test_revision": "04cda9dcc0ef7a59bf75a24cbeacd982832cb42a",
+  "version": "1.16"
+}

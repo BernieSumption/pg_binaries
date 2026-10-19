@@ -21,7 +21,8 @@ class MacOSPublicationEvidenceTests(unittest.TestCase):
                     "tools/emit_pgtap_macos", "tools/import_pgtap_macos",
                     "tools/emit_hypopg_macos", "tools/import_hypopg_macos",
                     "tools/emit_pgcron_macos", "tools/import_pgcron_macos",
-                    "tools/emit_pgivm_macos", "tools/import_pgivm_macos"))
+                    "tools/emit_pgivm_macos", "tools/import_pgivm_macos",
+                    "tools/emit_pg_jsonschema_macos", "tools/import_pg_jsonschema_macos"))
                     for source in sources):
                 with self.subTest(profile_id=profile_id):
                     self.assertIn("tools/macos_publication_evidence.py", sources)

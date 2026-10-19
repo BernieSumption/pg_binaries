@@ -2,7 +2,6 @@
 """Emit archive-bound candidate evidence for macOS pg_jsonschema."""
 
 import argparse
-import hashlib
 import json
 import os
 from pathlib import Path
@@ -11,6 +10,7 @@ import sys
 import tarfile
 
 import coverage
+import macos_publication_evidence as evidence
 
 from pg_jsonschema_macos_target import load_target
 
@@ -49,20 +49,14 @@ def _fail(message):
 
 
 def sha256(path):
-    digest = hashlib.sha256()
-    with Path(path).open("rb") as stream:
-        for block in iter(lambda: stream.read(1024 * 1024), b""):
-            digest.update(block)
-    return digest.hexdigest()
+    return evidence.sha256_file(path)
 
 
 def _json(path, label):
     try:
-        value = json.loads(Path(path).read_text(encoding="utf-8"))
-    except (OSError, json.JSONDecodeError) as exc:
+        value = evidence.read_json_object(path)
+    except (coverage.CoverageError, OSError, json.JSONDecodeError) as exc:
         _fail(f"{label} is missing or invalid: {exc}")
-    if not isinstance(value, dict):
-        _fail(f"{label} must be a JSON object")
     return value
 
 
