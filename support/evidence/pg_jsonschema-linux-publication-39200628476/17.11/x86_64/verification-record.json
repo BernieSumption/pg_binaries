@@ -1,0 +1,49 @@
+{
+  "assembled_core": {
+    "archive": "postgresql-17.11-linux-x86_64.tar.gz",
+    "sha256": "ffc3160481f8d0cd5f7c14bd95f0e3964242ac78b01f6d4b0e3b03806d4b34dc",
+    "version": "17.11"
+  },
+  "case_results": {
+    "archive-suite": "passed",
+    "elf-closure": "passed"
+  },
+  "ci": {
+    "build_revision": "a092c56074cc5165eb0018c2af8d3e3a8aa2287e",
+    "provider": "github-actions",
+    "run_id": "39200628476",
+    "run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/39200628476",
+    "source_revision": "a092c56074cc5165eb0018c2af8d3e3a8aa2287e",
+    "test_revision": "a092c56074cc5165eb0018c2af8d3e3a8aa2287e"
+  },
+  "component": "pg_jsonschema",
+  "environment": {
+    "architecture": "x86_64",
+    "clean_system": true,
+    "dependency_check_profile": "linux-elf-alpine-relocation-v1",
+    "dependency_checks_passed": true,
+    "distribution": "Alpine Linux 3.22",
+    "endpoint": "current",
+    "image_id": "sha256:c94bd83839e9355b763957b851d0cdde69d20375ae0a241b67cf4c0c0913b542",
+    "os": "linux",
+    "os_version": "6.17.0"
+  },
+  "outcome": "passed",
+  "platform": "linux-x86_64",
+  "postgresql_version": "17.11",
+  "prerequisite_archives": [],
+  "profile_id": "pg-jsonschema-publication-linux-x86_64-17.11",
+  "profile_revision": "56e1fae35b3db5d23dd814e34e63c35ea05e50942df86d2c7e85fca0c87ecdc3",
+  "project": "pg_jsonschema",
+  "redistribution_status": "seahash-4.1.0-notice-unresolved",
+  "release_eligible": false,
+  "schema_version": 2,
+  "scope": "publication",
+  "sha256": "d05287593ef9f9908923cc6316cfeffc40e782433ef6bb118becdcb1b1a974e2",
+  "test_cases": [
+    "archive-suite",
+    "elf-closure"
+  ],
+  "test_revision": "a092c56074cc5165eb0018c2af8d3e3a8aa2287e",
+  "version": "0.3.4"
+}
