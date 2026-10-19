@@ -20,7 +20,7 @@ extension_archive_plan = _load_tool("linux_changed_profiles_plan", "extension_ar
 
 # These are projects with a Linux route in selected-extension-publication.yml.
 # Add a project here when its reusable selected Linux workflow is ready.
-LINUX_ROUTES = {"hypopg": "HypoPG", "pg-jsonschema": "pg_jsonschema"}
+LINUX_ROUTES = {"hypopg": "HypoPG", "pg-jsonschema": "pg_jsonschema", "pgtap": "pgtap"}
 MAX_TARGETS = 128
 
 

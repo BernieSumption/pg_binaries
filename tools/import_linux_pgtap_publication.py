@@ -15,7 +15,7 @@ def import_run(root, core_artifact, pgtap_artifact, run_id, architecture, postgr
         slug="pgtap", project="pgtap", version="1.3.4",
         profile_prefix="pgtap", publication_dir="pgtap-publication",
         extension_dir_name="pgtap", report_name="pgtap.json",
-        extension_dir_fallback=True,
+        extension_dir_fallback=True, target_profile=True, target_version_dir=True,
     )
 
 

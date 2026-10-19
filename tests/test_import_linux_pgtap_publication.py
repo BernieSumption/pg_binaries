@@ -27,7 +27,8 @@ class LinuxPgtapPublicationImportTests(unittest.TestCase):
             shutil.copyfile(REPO / source, destination)
         profiles = coverage.load_json(self.root / "support/verification-profiles.json")["profiles"]
         source_paths = set()
-        for profile_id in ("pgtap-publication-current-x86_64",):
+        for profile_id in ("pgtap-publication-linux-x86_64-15.19",
+                           "pgtap-publication-linux-x86_64-18.6"):
             source_paths.update(profiles[profile_id]["sources"])
         for profile_source in source_paths:
             source = profile_source.partition("#profile-section=")[0]
@@ -96,7 +97,8 @@ class LinuxPgtapPublicationImportTests(unittest.TestCase):
         core_sha = self._sha(self.core_dir / self.core_name)
         pgtap_sha = self._sha(self.pgtap_dir / self.pgtap_name)
         for endpoint, profile_id, kernel, distribution, distribution_version in (
-                ("current", "pgtap-publication-current-x86_64", "6.8.0-test-kernel", "Alpine Linux", "3.22.6"),):
+                ("current", f"pgtap-publication-linux-x86_64-{self.postgresql_version}",
+                 "6.8.0-test-kernel", "Alpine Linux", "3.22.6"),):
             raw_result = {"failed": "failure"}.get(result, result)
             self._write_json(self.publication / f"{endpoint}-steps.json", {"pgtap-archive-suite": raw_result})
             profile = coverage.verification_profile(self.root, profile_id)
@@ -155,13 +157,31 @@ class LinuxPgtapPublicationImportTests(unittest.TestCase):
         self.assertEqual(record["assembled_core"]["archive"], self.core_name)
         self.assertEqual(len(retained), 4)
 
+    def test_same_run_retains_each_postgresql_target_separately(self):
+        self._import()
+        shutil.rmtree(self.core_dir)
+        shutil.rmtree(self.pgtap_dir / "static-analysis")
+        for path in self.pgtap_dir.glob("*.tar.gz*"):
+            path.unlink()
+        shutil.rmtree(self.records_dir)
+        self.core_dir.mkdir()
+        self.records_dir.mkdir(parents=True)
+        self.postgresql_version = "15.19"
+        self._make_archives()
+        self._make_records()
+        self._import()
+        evidence = self.root / "support/evidence" / f"pgtap-publication-{self.run_id}/x86_64"
+        self.assertTrue((evidence / "18.6/current-receipt.json").is_file())
+        self.assertTrue((evidence / "15.19/current-receipt.json").is_file())
+
     def test_retains_exact_bytes_and_is_idempotent(self):
         log = self.publication / "current-verifier.log"
         log.write_bytes(b"verifier output\n")
         retained = self._import()
         self.assertEqual(len(retained), 5)
         for source in [self.publication / "current-receipt.json", log]:
-            destination = self.root / "support/evidence" / f"pgtap-publication-{self.run_id}/x86_64" / source.name
+            destination = (self.root / "support/evidence" /
+                           f"pgtap-publication-{self.run_id}/x86_64/{self.postgresql_version}" / source.name)
             self.assertEqual(source.read_bytes(), destination.read_bytes())
         self.assertEqual(self._import(), retained)
 

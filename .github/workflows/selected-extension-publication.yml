@@ -105,6 +105,8 @@ jobs:
               ("HypoPG", "windows-x86_64"): "hypopg-windows-x86_64",
               ("pg_jsonschema", "linux-x86_64"): "pg-jsonschema-linux",
               ("pg_jsonschema", "linux-arm64"): "pg-jsonschema-linux",
+              ("pgtap", "linux-x86_64"): "pgtap-linux",
+              ("pgtap", "linux-arm64"): "pgtap-linux",
               ("pg_jsonschema", "macos-arm64"): "pg-jsonschema-macos",
               ("pg_jsonschema", "macos-x86_64"): "pg-jsonschema-macos",
               ("pgtap", "macos-x86_64"): "pgtap-macos-x86_64",
@@ -175,6 +177,15 @@ jobs:
     needs: plan
     if: needs.plan.outputs.should_dispatch == 'true' && needs.plan.outputs.route == 'pg-jsonschema-linux'
     uses: ./.github/workflows/pg-jsonschema-linux-selected-publication.yml
+    with:
+      postgresql_version: ${{ needs.plan.outputs.postgresql_version }}
+      extension_version: ${{ needs.plan.outputs.extension_version }}
+      architecture: ${{ needs.plan.outputs.architecture }}
+
+  pgtap_linux:
+    needs: plan
+    if: needs.plan.outputs.should_dispatch == 'true' && needs.plan.outputs.route == 'pgtap-linux'
+    uses: ./.github/workflows/pgtap-linux-selected-publication.yml
     with:
       postgresql_version: ${{ needs.plan.outputs.postgresql_version }}
       extension_version: ${{ needs.plan.outputs.extension_version }}
