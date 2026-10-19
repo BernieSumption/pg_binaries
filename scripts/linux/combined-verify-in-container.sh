@@ -67,10 +67,6 @@ run_phase core /usr/local/bin/verify-core
 export DIAGNOSTICS_EVIDENCE_DIR="$results/diagnostics"
 run_phase diagnostics /usr/local/bin/verify-diagnostics "$core" "$pg_version" "$architecture"
 
-link_dir /input "$core"
-link_dir /out /archives/postgis
-link_dir /analysis "$results/static-analysis/postgis"
-run_phase postgis /usr/local/bin/verify-postgis
 
 if (( failed )); then
   echo "One or more Alpine verification phases failed; see /results/status/phases.tsv" >&2

@@ -31,14 +31,6 @@ on:
       - 'tools/create_linux_publication_receipt.py'
       - 'tools/emit_linux_publication_records.py'
       - 'tools/read_combined_verification_phases.py'
-      - 'scripts/postgis/**'
-      - 'scripts/collection/**'
-      - 'tools/import_linux_collection_publication.py'
-      - 'tests/test_import_linux_collection_publication.py'
-      - 'scripts/pgaudit/**'
-      - 'tools/import_linux_pgaudit_publication.py'
-      - 'tools/check_postgis_license_inventory.py'
-      - 'tools/write_postgis_license_inventory.py'
       - 'tools/create_extension_publication_receipt.py'
       - 'tools/emit_extension_publication_records.py'
       - 'tools/write_linux_license_inventory.py'
@@ -53,8 +45,6 @@ jobs:
       - uses: actions/checkout@v4
       - name: Test profile-change gate
         run: python3 -m unittest tests/test_profile_change_gate.py
-      - name: Test collection publication evidence importer
-        run: python3 -m unittest tests/test_import_linux_collection_publication.py
       - name: Check whether a Linux publication profile changed
         id: profile_gate
         env:
@@ -76,9 +66,6 @@ jobs:
           fi
           profile_ids=(
             linux-publication-current-x86_64 linux-publication-current-arm64
-            postgis-publication-current-x86_64 postgis-publication-current-arm64
-            collection-publication-current-x86_64 collection-publication-current-arm64
-            pgaudit-publication-current-x86_64 pgaudit-publication-current-arm64
           )
           for profile_id in "${profile_ids[@]}"; do
             result=$(python3 tools/profile_change_gate.py \
@@ -125,23 +112,7 @@ jobs:
       - name: Build exact PostgreSQL and pgvector archives
         id: build
         run: scripts/linux/build.sh "$RUNNER_TEMP/pilot"
-      - name: Build PostGIS 3.6.4 against the publication PostgreSQL archive
-        if: ${{ always() && steps.build.outcome == 'success' }}
-        id: postgis_build
-        run: bash scripts/postgis/build.sh "$RUNNER_TEMP/pilot" "$RUNNER_TEMP/postgis"
       # profile-section: archive-builds end
-      # profile-section: collection-build begin
-      - name: Build collection 1.1.1 and 2.1.3 against the selected PostgreSQL archive
-        if: ${{ always() && steps.build.outcome == 'success' }}
-        id: collection_build
-        run: bash scripts/collection/build.sh "$RUNNER_TEMP/pilot" "$RUNNER_TEMP/collection"
-      # profile-section: collection-build end
-      # profile-section: pgaudit-build begin
-      - name: Build pgAudit 18.0 against PostgreSQL 18.6
-        if: ${{ always() && env.PG_VERSION == '18.6' && steps.build.outcome == 'success' }}
-        id: pgaudit_build
-        run: bash scripts/pgaudit/build.sh "$RUNNER_TEMP/pilot" "$RUNNER_TEMP/pgaudit"
-      # profile-section: pgaudit-build end
       # profile-section: core-current begin
       - name: Check launch without host shell or C library
         if: ${{ always() && steps.build.outcome == 'success' }}
@@ -151,13 +122,13 @@ jobs:
       # profile-section: combined-current begin
       - name: Verify assembled archives in one Alpine 3.22 container
         if: ${{ always() && steps.build.outcome == 'success' }}
-        id: combined_verify
-        run: bash scripts/linux/verify-combined.sh "$RUNNER_TEMP/pilot" "$RUNNER_TEMP/postgis" "$RUNNER_TEMP/combined-verification"
+        id: core_verify
+        run: bash scripts/linux/verify-combined.sh "$RUNNER_TEMP/pilot" "$RUNNER_TEMP/combined-verification"
       - name: Map combined verification phases to case outcomes
         if: ${{ always() }}
         id: phase_outcomes
         env:
-          VERIFICATION_SKIPPED: ${{ steps.combined_verify.outcome == 'skipped' }}
+          VERIFICATION_SKIPPED: ${{ steps.core_verify.outcome == 'skipped' }}
         run: |
           set -euo pipefail
           args=(--status "$RUNNER_TEMP/combined-verification/status/phases.tsv")
@@ -165,18 +136,6 @@ jobs:
           outcomes=$(python3 tools/read_combined_verification_phases.py "${args[@]}")
           printf 'outcomes=%s\n' "$outcomes" >> "$GITHUB_OUTPUT"
       # profile-section: combined-current end
-      # profile-section: collection-verify begin
-      - name: Verify relocated collection archives and runtime closure in Alpine 3.22
-        if: ${{ always() && steps.collection_build.outcome == 'success' }}
-        id: collection_verify
-        run: bash scripts/collection/verify.sh "$RUNNER_TEMP/pilot" "$RUNNER_TEMP/collection"
-      # profile-section: collection-verify end
-      # profile-section: pgaudit-verify begin
-      - name: Verify relocated pgAudit 18.0 archive and audit logging in Alpine 3.22
-        if: ${{ always() && env.PG_VERSION == '18.6' && steps.pgaudit_build.outcome == 'success' }}
-        id: pgaudit_verify
-        run: bash scripts/pgaudit/verify.sh "$RUNNER_TEMP/pilot" "$RUNNER_TEMP/pgaudit"
-      # profile-section: pgaudit-verify end
       # profile-section: core-current-report begin
       - name: Record current-OS publication case results
         if: ${{ always() }}
@@ -217,231 +176,6 @@ jobs:
             --archives "$archive_dir" --receipt "$archive_dir/publication/current-receipt.json" \
             --output "$archive_dir/publication/records"
       # profile-section: core-current-report end
-      # profile-section: postgis-report begin
-      - name: Record PostGIS publication step outcome
-        if: ${{ always() }}
-        env:
-          VERIFY_OUTCOME: ${{ fromJSON(steps.phase_outcomes.outputs.outcomes).postgis }}
-        run: |
-          set -euo pipefail
-          mkdir -p "$RUNNER_TEMP/postgis-publication"
-          printf '{"archive-suite":"%s"}\n' "$VERIFY_OUTCOME" \
-            > "$RUNNER_TEMP/postgis-publication/current-steps.json"
-      - name: Emit PostGIS publication records
-        if: ${{ always() }}
-        run: |
-          set -euo pipefail
-          core="$RUNNER_TEMP/pilot/postgresql-$PG_VERSION-linux-$PG_ARCHITECTURE.tar.gz"
-          extension="$RUNNER_TEMP/postgis/postgis-3.6.4-postgresql-$PG_VERSION-linux-$PG_ARCHITECTURE.tar.gz"
-          if [[ ! -f "$core" || ! -f "$core.sha256" || ! -f "$extension" || ! -f "$extension.sha256" ]]; then
-            echo 'No publication record: assembled archive bytes or sidecars are unavailable'
-            exit 0
-          fi
-          python3 - "$core" "$RUNNER_TEMP/pilot/publication/records" "$PG_VERSION" "$PG_ARCHITECTURE" "$GITHUB_RUN_ID" "$GITHUB_SHA" <<'PYCODE'
-          import hashlib
-          from pathlib import Path
-          import sys
-          sys.path.insert(0, 'tools')
-          import coverage
-          core, records, pg_version, architecture, run_id, revision = sys.argv[1:]
-          digest = hashlib.sha256(Path(core).read_bytes()).hexdigest()
-          support = coverage.load_json(Path('support.json'))
-          name = f'postgresql-{pg_version}-linux-{architecture}-current-{run_id}.json'
-          record = coverage.load_json(Path(records) / name)
-          coverage.validate_verification_record(record, support, Path('.'))
-          if (record['sha256'] != digest
-                  or record['ci']['run_id'] != run_id
-                  or record['test_revision'] != revision):
-              raise SystemExit('PostGIS core differs from publication record')
-          PYCODE
-          publication="$RUNNER_TEMP/postgis-publication"
-          image=$(docker image inspect --format '{{.Id}}' pg-binaries-linux-verifier 2>/dev/null || true)
-          if [[ ! "$image" =~ ^sha256:[0-9a-f]{64}$ ]]; then
-            echo 'No PostGIS publication record: verifier image identity is unavailable'
-            exit 0
-          fi
-          clean=false
-          dependencies=failure
-          if [[ "$(python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); print(all(v == "success" for v in d.values()))' "$publication/current-steps.json")" = True ]]; then
-            clean=true
-            dependencies=success
-          fi
-          distribution=$(docker run --rm --platform "${{ matrix.docker_platform }}" \
-            --entrypoint sh pg-binaries-linux-verifier -c '. /etc/os-release; printf "%s" "$NAME"')
-          distribution_version=$(docker run --rm --platform "${{ matrix.docker_platform }}" \
-            --entrypoint sh pg-binaries-linux-verifier -c '. /etc/os-release; printf "%s" "$VERSION_ID"')
-          python3 tools/create_extension_publication_receipt.py \
-            --archives "$RUNNER_TEMP/postgis" --core-archives "$RUNNER_TEMP/pilot" \
-            --receipt "$publication/current-receipt.json" \
-            --profile-id "postgis-publication-current-$PG_ARCHITECTURE" \
-            --project PostGIS --version 3.6.4 --postgresql-version "$PG_VERSION" \
-            --architecture "$PG_ARCHITECTURE" --endpoint current \
-            --kernel-release "$(uname -r)" --distribution "$distribution" \
-            --distribution-version "$distribution_version" --image-id "$image" \
-            --dependency-check-result "$dependencies" --clean-system "$clean" \
-            --step-results "$publication/current-steps.json"
-          python3 tools/emit_extension_publication_records.py \
-            --archives "$RUNNER_TEMP/postgis" --core-archives "$RUNNER_TEMP/pilot" \
-            --receipt "$publication/current-receipt.json" --output "$publication/records"
-      # profile-section: postgis-report end
-      # profile-section: collection-report begin
-      - name: Record collection publication outcomes and emit archive-bound evidence
-        if: ${{ always() }}
-        env:
-          CORE_BUILD_OUTCOME: ${{ steps.build.outcome }}
-          COLLECTION_BUILD_OUTCOME: ${{ steps.collection_build.outcome }}
-          COLLECTION_VERIFY_OUTCOME: ${{ steps.collection_verify.outcome }}
-        run: |
-          set -euo pipefail
-          publication="$RUNNER_TEMP/collection-publication"
-          mkdir -p "$publication"
-          image=$(docker image inspect --format '{{.Id}}' pg-binaries-collection-verifier 2>/dev/null || true)
-          if [[ ! "$image" =~ ^sha256:[0-9a-f]{64}$ ]]; then image=unknown; fi
-          IMAGE_ID="$image" python3 - "$publication/attempt.json" "$publication/current-steps.json" <<'PY'
-          import json, os, sys
-          from pathlib import Path
-          core, build, verify = (os.environ[key] for key in (
-              "CORE_BUILD_OUTCOME", "COLLECTION_BUILD_OUTCOME", "COLLECTION_VERIFY_OUTCOME"))
-          image = os.environ["IMAGE_ID"]
-          suite = "failure" if "failure" in (build, verify) or (
-              build == verify == "success" and image == "unknown") else (
-              "success" if build == verify == "success" else "skipped")
-          attempt = {
-              "schema_version": 1, "run_id": os.environ["GITHUB_RUN_ID"],
-              "source_revision": os.environ["GITHUB_SHA"], "postgresql_version": os.environ["PG_VERSION"],
-              "collection_versions": ["1.1.1", "2.1.3"],
-              "source_sha256": {
-                  "1.1.1": "ab99a969334442e4a3c77405bc9ffed0083595d18f3898d64a731353a32bec5e",
-                  "2.1.3": "a6b07864e5893d3b682bb3223fd6d33015709765c9d40d415c85112358f0e3e4"},
-              "architecture": os.environ["PG_ARCHITECTURE"], "verifier_image_id": image,
-              "steps": {"core_build": core, "collection_build": build, "collection_verify": verify},
-          }
-          Path(sys.argv[1]).write_text(json.dumps(attempt, indent=2, sort_keys=True) + "\n")
-          Path(sys.argv[2]).write_text(json.dumps({"collection-archive-suite": suite}, sort_keys=True) + "\n")
-          PY
-          core="$RUNNER_TEMP/pilot/postgresql-$PG_VERSION-linux-$PG_ARCHITECTURE.tar.gz"
-          suite=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["collection-archive-suite"])' "$publication/current-steps.json")
-          for version in 1.1.1 2.1.3; do
-            extension="$RUNNER_TEMP/collection/collection-${version}-postgresql-$PG_VERSION-linux-$PG_ARCHITECTURE.tar.gz"
-            if [[ ! -f "$core" || ! -f "$core.sha256" || ! -f "$extension" || ! -f "$extension.sha256" ]]; then
-              echo "No collection $version receipt: final archive bytes or checksum sidecars are unavailable"
-              continue
-            fi
-            if [[ "$image" == unknown ]]; then
-              echo "No collection $version receipt: verifier image identity is unavailable"
-              continue
-            fi
-            clean=false
-            dependencies=failure
-            if [[ "$suite" == success ]]; then clean=true; dependencies=success; fi
-            distribution=$(docker run --rm --platform "${{ matrix.docker_platform }}" --entrypoint sh pg-binaries-collection-verifier -c '. /etc/os-release; printf "%s" "$NAME"')
-            distribution_version=$(docker run --rm --platform "${{ matrix.docker_platform }}" --entrypoint sh pg-binaries-collection-verifier -c '. /etc/os-release; printf "%s" "$VERSION_ID"')
-            python3 tools/create_extension_publication_receipt.py \
-              --archives "$RUNNER_TEMP/collection" --core-archives "$RUNNER_TEMP/pilot" \
-              --receipt "$publication/current-receipt-$version.json" \
-              --profile-id "collection-publication-current-$PG_ARCHITECTURE" \
-              --project collection --version "$version" --postgresql-version "$PG_VERSION" \
-              --architecture "$PG_ARCHITECTURE" --endpoint current \
-              --kernel-release "$(uname -r)" --distribution "$distribution" \
-              --distribution-version "$distribution_version" --image-id "$image" \
-              --dependency-check-result "$dependencies" --clean-system "$clean" \
-              --step-results "$publication/current-steps.json"
-            python3 tools/emit_extension_publication_records.py \
-              --archives "$RUNNER_TEMP/collection" --core-archives "$RUNNER_TEMP/pilot" \
-              --receipt "$publication/current-receipt-$version.json" --output "$publication/records"
-          done
-      # profile-section: collection-report end
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: collection-publication-${{ matrix.architecture }}-evidence
-          path: |
-            ${{ runner.temp }}/collection/*.tar.gz
-            ${{ runner.temp }}/collection/*.sha256
-            ${{ runner.temp }}/collection/static-analysis/**
-            ${{ runner.temp }}/collection-publication/**
-          if-no-files-found: ignore
-          retention-days: 3
-      # profile-section: pgaudit-report begin
-      - name: Record pgAudit publication outcomes and emit archive-bound evidence
-        if: ${{ always() && env.PG_VERSION == '18.6' }}
-        env:
-          CORE_BUILD_OUTCOME: ${{ steps.build.outcome }}
-          PGAUDIT_BUILD_OUTCOME: ${{ steps.pgaudit_build.outcome }}
-          PGAUDIT_VERIFY_OUTCOME: ${{ steps.pgaudit_verify.outcome }}
-        run: |
-          set -euo pipefail
-          publication="$RUNNER_TEMP/pgaudit/pgaudit-publication"
-          mkdir -p "$publication"
-          image=$(docker image inspect --format '{{.Id}}' pg-binaries-pgaudit-verifier 2>/dev/null || true)
-          if [[ ! "$image" =~ ^sha256:[0-9a-f]{64}$ ]]; then image=unknown; fi
-          IMAGE_ID="$image" python3 - "$publication/attempt.json" "$publication/current-steps.json" <<'PY'
-          import json
-          import os
-          import sys
-          from pathlib import Path
-          core, build, verify = (os.environ[key] for key in (
-              "CORE_BUILD_OUTCOME", "PGAUDIT_BUILD_OUTCOME", "PGAUDIT_VERIFY_OUTCOME"))
-          image = os.environ["IMAGE_ID"]
-          suite = "failure" if "failure" in (build, verify) or (
-              build == verify == "success" and image == "unknown") else (
-              "success" if build == verify == "success" else "skipped")
-          attempt = {
-              "schema_version": 1,
-              "run_id": os.environ["GITHUB_RUN_ID"],
-              "source_revision": os.environ["GITHUB_SHA"],
-              "postgresql_version": "18.6",
-              "pgaudit_version": "18.0",
-              "architecture": os.environ["PG_ARCHITECTURE"],
-              "verifier_image_id": image,
-              "steps": {"core_build": core, "pgaudit_build": build, "pgaudit_verify": verify},
-          }
-          Path(sys.argv[1]).write_text(json.dumps(attempt, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-          Path(sys.argv[2]).write_text(json.dumps({"pgaudit-archive-suite": suite}, sort_keys=True) + "\n", encoding="utf-8")
-          PY
-          core="$RUNNER_TEMP/pilot/postgresql-18.6-linux-$PG_ARCHITECTURE.tar.gz"
-          extension="$RUNNER_TEMP/pgaudit/pgaudit-18.0-postgresql-18.6-linux-$PG_ARCHITECTURE.tar.gz"
-          if [[ ! -f "$core" || ! -f "$core.sha256" || ! -f "$extension" || ! -f "$extension.sha256" ]]; then
-            echo 'No pgAudit receipt: exact core and extension archives with checksum sidecars are required'
-            exit 0
-          fi
-          if [[ "$image" == unknown ]]; then
-            echo 'No pgAudit receipt: verifier image identity is unavailable'
-            exit 0
-          fi
-          clean=false
-          dependencies=failure
-          if [[ "$(python3 -c 'import json,sys; print(next(iter(json.load(open(sys.argv[1])).values())) == "success")' "$publication/current-steps.json")" == True ]]; then
-            clean=true
-            dependencies=success
-          fi
-          distribution=$(docker run --rm --platform "${{ matrix.docker_platform }}" --entrypoint sh pg-binaries-pgaudit-verifier -c '. /etc/os-release; printf "%s" "$NAME"')
-          distribution_version=$(docker run --rm --platform "${{ matrix.docker_platform }}" --entrypoint sh pg-binaries-pgaudit-verifier -c '. /etc/os-release; printf "%s" "$VERSION_ID"')
-          python3 tools/create_extension_publication_receipt.py \
-            --archives "$RUNNER_TEMP/pgaudit" --core-archives "$RUNNER_TEMP/pilot" \
-            --receipt "$publication/current-receipt.json" \
-            --profile-id "pgaudit-publication-current-$PG_ARCHITECTURE" \
-            --project pgaudit --version 18.0 --postgresql-version 18.6 \
-            --architecture "$PG_ARCHITECTURE" --endpoint current \
-            --kernel-release "$(uname -r)" --distribution "$distribution" \
-            --distribution-version "$distribution_version" --image-id "$image" \
-            --dependency-check-result "$dependencies" --clean-system "$clean" \
-            --step-results "$publication/current-steps.json"
-          python3 tools/emit_extension_publication_records.py \
-            --archives "$RUNNER_TEMP/pgaudit" --core-archives "$RUNNER_TEMP/pilot" \
-            --receipt "$publication/current-receipt.json" --output "$publication/records"
-      # profile-section: pgaudit-report end
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: pgaudit-publication-${{ matrix.architecture }}-evidence
-          path: |
-            ${{ runner.temp }}/pgaudit/*.tar.gz
-            ${{ runner.temp }}/pgaudit/*.sha256
-            ${{ runner.temp }}/pgaudit/static-analysis/**
-            ${{ runner.temp }}/pgaudit/pgaudit-publication/**
-          if-no-files-found: ignore
-          retention-days: 3
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -455,16 +189,4 @@ jobs:
             ${{ runner.temp }}/combined-verification/status/**
             ${{ runner.temp }}/combined-verification/logs/**
           include-hidden-files: true
-          retention-days: 3
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: postgis-publication-${{ matrix.architecture }}-evidence
-          path: |
-            ${{ runner.temp }}/postgis/*.tar.gz
-            ${{ runner.temp }}/postgis/*.sha256
-            ${{ runner.temp }}/postgis/debug-symbols/**
-            ${{ runner.temp }}/postgis/static-analysis/**
-            ${{ runner.temp }}/postgis-publication/**
-          if-no-files-found: ignore
           retention-days: 3

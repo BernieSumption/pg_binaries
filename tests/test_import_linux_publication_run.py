@@ -29,6 +29,13 @@ class LinuxPublicationRunImportTests(unittest.TestCase):
             destination.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(REPO / source, destination)
         registry = coverage.load_json(self.root / "support/verification-profiles.json")
+        postgis_profile = "postgis-publication-current-x86_64"
+        registry["profiles"][postgis_profile] = {
+            "scope": "publication", "platforms": ["linux-x86_64"],
+            "case_ids": ["archive-suite"], "sources": ["postgis-profile.txt"],
+        }
+        (self.root / "postgis-profile.txt").write_text("historical importer fixture\n")
+        (self.root / "support/verification-profiles.json").write_text(json.dumps(registry))
         source_paths = set()
         for profile_id, profile in registry["profiles"].items():
             if profile_id.startswith(("linux-publication-", "postgis-publication-")):

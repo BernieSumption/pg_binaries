@@ -8,12 +8,12 @@ import re
 import sys
 
 
-PHASES = ("core", "diagnostics", "postgis")
-_ROW = re.compile(r"^(core|diagnostics|postgis)\t(running|passed|skipped|failed\([0-9]+\))$")
+PHASES = ("core", "diagnostics")
+_ROW = re.compile(r"^(core|diagnostics)\t(running|passed|skipped|failed\([0-9]+\))$")
 
 
 def read_outcomes(status_path, verification_skipped=False):
-    """Return one GitHub Actions outcome for each registered verifier phase.
+    """Return one GitHub Actions outcome for each retained verifier phase.
 
     Missing, duplicate, malformed, running, or unreadable phase evidence fails
     closed. A verifier invocation intentionally skipped because its build input

@@ -27,10 +27,6 @@ class LinuxCoreCandidateTests(unittest.TestCase):
             target = self.root / name
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(source, target)
-        workflow = ROOT / candidate.LEGACY_CORE_WORKFLOW
-        workflow_target = self.root / candidate.LEGACY_CORE_WORKFLOW
-        workflow_target.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copyfile(workflow, workflow_target)
         for name in ("support.json", "support/postgresql-releases.json"):
             target = self.root / name
             target.parent.mkdir(parents=True, exist_ok=True)
@@ -51,11 +47,16 @@ class LinuxCoreCandidateTests(unittest.TestCase):
 
     def write_candidate(self, *, producer_revision=None, run_revision=None,
                         artifact_name="linux-publication-x86_64-evidence",
-                        builder_image_id=BUILDER_IMAGE_ID, architecture="x86_64"):
+                        builder_image_id=BUILDER_IMAGE_ID, architecture="x86_64",
+                        build_configuration=None):
         source = source_archive.source_archive("postgresql", "17.11", "tar.bz2", self.root)
         metadata = {"component": "postgresql", "version": "17.11", "platform": "linux",
                     "architecture": architecture, "source_revision": producer_revision or self.revision,
                     "source_archive": source, "builder_image_id": builder_image_id,
+                    "build_configuration": build_configuration or (
+                        "postgresql-17.11;builder=ubuntu-22.04;"
+                        "configure=icu,lz4,zstd,openssl,libxml,libxslt,zlib,uuid-e2fs,no-readline,no-rpath;"
+                        "cflags=-O2,-g;runtime=bundled-glibc-static-musl-launcher"),
                     "builder_inputs": {"base_image": "ubuntu:22.04",
                                        "base_image_digest": self.BASE_IMAGE_DIGEST,
                                        "packages_sha256": self.BUILDER_PACKAGES_SHA256}}
@@ -78,6 +79,26 @@ class LinuxCoreCandidateTests(unittest.TestCase):
         self.assertEqual(result["run_id"], "1234")
         self.assertEqual(result["source_revision"], self.revision)
 
+    def test_accepts_legacy_combined_build_configuration(self):
+        self.write_candidate(build_configuration=(
+            "postgresql-17.11;pgvector-0.8.7;builder=ubuntu-22.04;"
+            "configure=icu,lz4,zstd,openssl,libxml,libxslt,zlib,uuid-e2fs,no-readline,no-rpath;"
+            "cflags=-O2,-g;pgvector-optflags=empty;runtime=bundled-glibc-static-musl-launcher"))
+        result = candidate.validate_candidate(
+            self.manifest_path, self.archive_path, "17.11", self.BASE_IMAGE_DIGEST,
+            self.BUILDER_PACKAGES_SHA256, self.root)
+        self.assertEqual(result["run_id"], "1234")
+
+    def test_rejects_candidate_with_changed_core_build_configuration(self):
+        self.write_candidate(build_configuration=(
+            "postgresql-17.11;builder=ubuntu-22.04;"
+            "configure=icu,lz4,zstd,openssl,libxml,libxslt,zlib,uuid-e2fs,no-readline,no-rpath;"
+            "cflags=-O3,-g;runtime=bundled-glibc-static-musl-launcher"))
+        with self.assertRaisesRegex(ValueError, "unsupported build configuration"):
+            candidate.validate_candidate(
+                self.manifest_path, self.archive_path, "17.11", self.BASE_IMAGE_DIGEST,
+                self.BUILDER_PACKAGES_SHA256, self.root)
+
     def test_rejects_candidate_after_relevant_core_recipe_change(self):
         recipe = self.root / "scripts/linux/build-in-container.sh"
         recipe.write_text(recipe.read_text() + "\nchanged\n")
@@ -86,38 +107,18 @@ class LinuxCoreCandidateTests(unittest.TestCase):
                 self.manifest_path, self.archive_path, "17.11", self.BASE_IMAGE_DIGEST,
                 self.BUILDER_PACKAGES_SHA256, self.root)
 
-    def test_accepts_candidate_after_unrelated_extension_workflow_change(self):
-        workflow = self.root / candidate.LEGACY_CORE_WORKFLOW
-        workflow.write_text(workflow.read_text().replace(
-            "Build PostGIS 3.6.4 against the publication PostgreSQL archive",
-            "Build PostGIS 3.6.4 with an updated extension workflow label"))
+    def test_accepts_candidate_after_unrelated_extension_only_change(self):
+        extension_workflow = self.root / ".github/workflows/postgis-linux-selected-publication.yml"
+        extension_workflow.parent.mkdir(parents=True, exist_ok=True)
+        extension_workflow.write_text("extension-only change\n")
         result = candidate.validate_candidate(
             self.manifest_path, self.archive_path, "17.11", self.BASE_IMAGE_DIGEST,
             self.BUILDER_PACKAGES_SHA256, self.root)
         self.assertEqual(result["run_id"], "1234")
 
-    def test_rejects_candidate_after_legacy_core_build_invocation_change(self):
-        workflow = self.root / candidate.LEGACY_CORE_WORKFLOW
-        workflow.write_text(workflow.read_text().replace(
-            'run: scripts/linux/build.sh "$RUNNER_TEMP/pilot"',
-            'run: scripts/linux/build.sh "$RUNNER_TEMP/pilot" --core-only'))
-        with self.assertRaisesRegex(ValueError, "build inputs changed"):
-            candidate.validate_candidate(
-                self.manifest_path, self.archive_path, "17.11", self.BASE_IMAGE_DIGEST,
-                self.BUILDER_PACKAGES_SHA256, self.root)
-
-    def test_rejects_candidate_after_legacy_core_runner_setup_change(self):
-        workflow = self.root / candidate.LEGACY_CORE_WORKFLOW
-        workflow.write_text(workflow.read_text().replace(
-            "runner: ubuntu-24.04\n", "runner: ubuntu-22.04\n", 1))
-        with self.assertRaisesRegex(ValueError, "build inputs changed"):
-            candidate.validate_candidate(
-                self.manifest_path, self.archive_path, "17.11", self.BASE_IMAGE_DIGEST,
-                self.BUILDER_PACKAGES_SHA256, self.root)
-
-    def test_fails_closed_when_legacy_core_workflow_is_missing(self):
-        (self.root / candidate.LEGACY_CORE_WORKFLOW).unlink()
-        with self.assertRaisesRegex(ValueError, "legacy Linux core workflow is unavailable"):
+    def test_fails_closed_when_required_core_input_is_missing(self):
+        (self.root / candidate.CORE_INPUTS[0]).unlink()
+        with self.assertRaisesRegex(ValueError, "required core build input is unavailable"):
             candidate.validate_candidate(
                 self.manifest_path, self.archive_path, "17.11", self.BASE_IMAGE_DIGEST,
                 self.BUILDER_PACKAGES_SHA256, self.root)

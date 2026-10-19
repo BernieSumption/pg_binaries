@@ -18,34 +18,20 @@ class CombinedPhaseOutcomeTests(unittest.TestCase):
         self.temp.cleanup()
 
     def test_maps_complete_status_to_github_outcomes(self):
-        self.status.write_text(
-            "core\trunning\ncore\tpassed\ndiagnostics\trunning\ndiagnostics\tpassed\n"
-            "postgis\trunning\npostgis\tpassed\n")
-        self.assertEqual(phases.read_outcomes(self.status), {
-            "core": "success", "diagnostics": "success",
-            "postgis": "success",
-        })
+        self.status.write_text("core\trunning\ncore\tpassed\ndiagnostics\trunning\ndiagnostics\tpassed\n")
+        self.assertEqual(phases.read_outcomes(self.status), {"core": "success", "diagnostics": "success"})
 
-    def test_failed_and_skipped_phases_are_preserved(self):
-        self.status.write_text(
-            "core\trunning\ncore\tpassed\ndiagnostics\trunning\ndiagnostics\tfailed(7)\n"
-            "postgis\tskipped\n")
-        self.assertEqual(phases.read_outcomes(self.status), {
-            "core": "success", "diagnostics": "failure",
-            "postgis": "skipped",
-        })
+    def test_failed_phase_is_preserved(self):
+        self.status.write_text("core\trunning\ncore\tpassed\ndiagnostics\trunning\ndiagnostics\tfailed(7)\n")
+        self.assertEqual(phases.read_outcomes(self.status), {"core": "success", "diagnostics": "failure"})
 
     def test_missing_duplicate_and_running_rows_fail_closed(self):
-        self.status.write_text(
-            "core\trunning\ncore\tpassed\ncore\tpassed\ndiagnostics\trunning\npostgis\tskipped\n")
-        self.assertEqual(phases.read_outcomes(self.status), {
-            "core": "failure", "diagnostics": "failure",
-            "postgis": "skipped",
-        })
+        self.status.write_text("core\trunning\ncore\tpassed\ncore\tpassed\ndiagnostics\trunning\n")
+        self.assertEqual(phases.read_outcomes(self.status), {"core": "failure", "diagnostics": "failure"})
 
     def test_missing_or_corrupt_status_fails_closed(self):
         self.assertTrue(all(value == "failure" for value in phases.read_outcomes(self.status).values()))
-        self.status.write_text("core\trunning\ncore\tpassed\ndiagnostics\trunning\ndiagnostics\tpassed\npostgis\trunning\npostgis\tpassed\nextra\tpassed\n")
+        self.status.write_text("core\trunning\ncore\tpassed\ndiagnostics\trunning\ndiagnostics\tpassed\nextra\tpassed\n")
         self.assertTrue(all(value == "failure" for value in phases.read_outcomes(self.status).values()))
 
     def test_explicit_skipped_invocation_does_not_require_status_file(self):
@@ -54,15 +40,10 @@ class CombinedPhaseOutcomeTests(unittest.TestCase):
         })
 
     def test_cli_emits_compact_receipt_writer_json(self):
-        self.status.write_text("core\trunning\ncore\tpassed\ndiagnostics\trunning\ndiagnostics\tpassed\npostgis\tskipped\n")
-        result = subprocess.run(
-            [sys.executable, str(Path(phases.__file__)), "--status", str(self.status)],
-            check=True, capture_output=True, text=True,
-        )
-        self.assertEqual(json.loads(result.stdout), {
-            "core": "success", "diagnostics": "success",
-            "postgis": "skipped",
-        })
+        self.status.write_text("core\trunning\ncore\tpassed\ndiagnostics\trunning\ndiagnostics\tpassed\n")
+        result = subprocess.run([sys.executable, str(Path(phases.__file__)), "--status", str(self.status)],
+                                check=True, capture_output=True, text=True)
+        self.assertEqual(json.loads(result.stdout), {"core": "success", "diagnostics": "success"})
         self.assertNotIn(" ", result.stdout)
 
 

@@ -31,54 +31,31 @@ CORE_INPUTS = (
     "tools/source_archive.py",
     "tools/write_linux_license_inventory.py",
 )
-LEGACY_CORE_WORKFLOW = ".github/workflows/linux-publication.yml"
 SHA = re.compile(r"[0-9a-f]{40}|[0-9a-f]{64}")
+CORE_CONFIGURE = "icu,lz4,zstd,openssl,libxml,libxslt,zlib,uuid-e2fs,no-readline,no-rpath"
+CORE_RUNTIME = "bundled-glibc-static-musl-launcher"
+VECTOR_VERSION = re.compile(r"pgvector-[0-9]+(?:\.[0-9]+)+")
 
 
-def _section(text, name):
-    begin = f"# profile-section: {name} begin"
-    end = f"# profile-section: {name} end"
-    if text.count(begin) != 1 or text.count(end) != 1:
-        raise ValueError(f"legacy Linux core workflow lacks a unique {name} section")
-    start = text.index(begin)
-    finish = text.index(end, start) + len(end)
-    if finish <= start:
-        raise ValueError(f"legacy Linux core workflow has an invalid {name} section")
-    return text[start:finish]
-
-
-def _legacy_core_workflow_inputs(text):
-    """Return only runner setup and the named PostgreSQL archive build step."""
-    setup = _section(text, "job-setup")
-    builds = _section(text, "archive-builds")
-    lines = builds.splitlines(keepends=True)
-    ids = [i for i, line in enumerate(lines) if re.fullmatch(r"\s*id:\s*build\s*\n?", line)]
-    if len(ids) != 1:
-        raise ValueError("legacy Linux core workflow lacks a unique build step")
-    step_id = ids[0]
-    header = next((i for i in range(step_id - 1, -1, -1)
-                   if re.match(r"^\s{6}-\s+name:", lines[i])), None)
-    if header is None:
-        raise ValueError("legacy Linux core workflow build step has no named action")
-    indent = len(lines[header]) - len(lines[header].lstrip())
-    finish = next((i for i in range(step_id + 1, len(lines))
-                   if re.match(rf"^\s{{{indent}}}-\s+", lines[i])), len(lines))
-    invocation = "".join(lines[header:finish])
-    if "Build exact PostgreSQL and pgvector archives" not in invocation:
-        raise ValueError("legacy Linux core workflow has an unexpected named build step")
-    return setup + "\n" + invocation
-
-
-def _legacy_core_workflow_inputs_match(revision, root):
-    """Fail closed unless legacy runner setup and core invocation match the producer."""
-    try:
-        producer = subprocess.run(
-            ["git", "show", f"{revision}:{LEGACY_CORE_WORKFLOW}"], cwd=root,
-            check=True, capture_output=True, text=True).stdout
-        current = (Path(root) / LEGACY_CORE_WORKFLOW).read_text(encoding="utf-8")
-    except (OSError, subprocess.CalledProcessError) as exc:
-        raise ValueError("legacy Linux core workflow is unavailable for input comparison") from exc
-    return _legacy_core_workflow_inputs(producer) == _legacy_core_workflow_inputs(current)
+def _valid_core_build_configuration(value, version):
+    """Accept the current core-only and legacy combined Linux build contracts."""
+    if not isinstance(value, str):
+        return False
+    fields = value.split(";")
+    if fields[:1] != [f"postgresql-{version}"]:
+        return False
+    if len(fields) == 7:
+        if not VECTOR_VERSION.fullmatch(fields[1]):
+            return False
+        fields.pop(1)
+    expected = ["builder=ubuntu-22.04", f"configure={CORE_CONFIGURE}",
+                "cflags=-O2,-g"]
+    if fields[1:4] != expected:
+        return False
+    tail = fields[4:]
+    if tail == [f"runtime={CORE_RUNTIME}"]:
+        return True
+    return tail == ["pgvector-optflags=empty", f"runtime={CORE_RUNTIME}"] and len(fields) == 6
 
 
 def relevant_inputs_match(revision, root=ROOT):
@@ -93,12 +70,16 @@ def relevant_inputs_match(revision, root=ROOT):
                                  cwd=root, check=False, capture_output=True)
         if fetched.returncode:
             raise ValueError("candidate source revision is unavailable for core input comparison")
+    for name in CORE_INPUTS:
+        exists = subprocess.run(["git", "cat-file", "-e", f"{revision}:{name}"],
+                                cwd=root, check=False, capture_output=True)
+        if exists.returncode or not (root / name).is_file():
+            raise ValueError(f"required core build input is unavailable: {name}")
     changed = subprocess.run(["git", "diff", "--name-only", revision, "--", *CORE_INPUTS],
                              cwd=root, check=False, capture_output=True, text=True)
     if changed.returncode:
         raise ValueError("Git could not compare candidate and current core build inputs")
-    return (not changed.stdout.strip()
-            and _legacy_core_workflow_inputs_match(revision, root))
+    return not changed.stdout.strip()
 
 
 def validate_candidate(manifest_path, archive_path, version, base_image_digest,
@@ -154,6 +135,8 @@ def validate_candidate(manifest_path, archive_path, version, base_image_digest,
             or not SHA.fullmatch(str(build_revision))
             or not re.fullmatch(r"sha256:[0-9a-f]{64}", str(metadata.get("builder_image_id", "")))):
         raise ValueError("core manifest lacks a valid target or build revision")
+    if not _valid_core_build_configuration(metadata.get("build_configuration"), version):
+        raise ValueError("core manifest has an unsupported build configuration")
     builder_inputs = metadata.get("builder_inputs")
     if (not isinstance(builder_inputs, dict)
             or builder_inputs.get("base_image") != "ubuntu:22.04"
