@@ -22,9 +22,10 @@ cd /input
 sha256sum -c "$pg_archive.sha256"
 cd /out
 sha256sum -c "$postgis_archive.sha256"
-mkdir -p /tmp/first /tmp/moved /tmp/extension /tmp/data /tmp/socket
+mkdir -p /tmp/first /tmp/moved /tmp/extension /tmp/data /tmp/socket /tmp/assembly-archives
 tar -xzf "/input/$pg_archive" -C /tmp/first
 tar -xzf "/out/$postgis_archive" -C /tmp/extension
+ln -s "/out/$postgis_archive" "/tmp/assembly-archives/$postgis_archive"
 python3 - <<'PY'
 import json
 import os
@@ -89,21 +90,20 @@ for path in extension_dir.glob('*.sql'):
     assert name in allowed, f'Unselected SQL script in archive: {path.name}'
 PY
 python3 /usr/local/bin/check-postgis-license-inventory /tmp/extension/postgis
-mv /tmp/first/postgresql /tmp/moved/postgresql
+python3 /usr/local/bin/linux-project-assembly-inventory \
+  --support /work/support.json --postgresql-version "$pg_version" \
+  --platform "linux-$architecture" \
+  --project-archive "PostGIS=/out/$postgis_archive" \
+  --project-version "PostGIS=3.6.4" --output /tmp/assembly-inventory.json
+pgroot=/tmp/first/postgresql
+python3 /usr/local/bin/stage-extension-archive \
+  --inventory /tmp/assembly-inventory.json --support /work/support.json \
+  --postgresql-version "$pg_version" --platform "linux-$architecture" \
+  --project-version "PostGIS=3.6.4" --archive-directory /tmp/assembly-archives \
+  --prefix "$pgroot" --staging-root /tmp/extension-staging
+mv "$pgroot" /tmp/moved/postgresql
 pgroot=/tmp/moved/postgresql
 extroot=/tmp/extension/postgis
-while IFS= read -r -d '' source; do
-  relative=${source#"$extroot/"}
-  destination="$pgroot/$relative"
-  if [[ -e "$destination" || -L "$destination" ]]; then
-    if [[ -d "$source" && ! -L "$source" && -d "$destination" && ! -L "$destination" ]]; then
-      continue
-    fi
-    echo "PostGIS payload collision: $relative" >&2
-    exit 1
-  fi
-done < <(find "$extroot" -mindepth 1 -print0)
-cp -a "$extroot/." "$pgroot/"
 test -s "$extroot/LICENSES/postgis/proj-data.copyright"
 test -s "$extroot/LICENSES/postgis/gdal-data.copyright"
 python3 /usr/local/bin/check-elf-dependencies "$pgroot" --architecture "$architecture" \

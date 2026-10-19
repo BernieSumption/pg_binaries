@@ -1,0 +1,7 @@
+# Linux project-level archive assembly trial
+
+On 19 October 2026, the revised PostGIS and TIGER verifiers ran inside Alpine 3.22 Docker containers against the final PostgreSQL 18.6 Linux x86-64 archives retained from [CI run 39231132006](https://github.com/BernieSumption/pg_binaries/actions/runs/39231132006). The local run checked the archive sidecars, constructed a temporary inventory from the archive bytes, staged PostGIS once for its four advertised SQL names, and staged PostGIS before TIGER. Both verifiers then passed their existing relocation, ELF dependency and SQL probes. The TIGER path checked 290 ELF files and created `fuzzystrmatch`, `postgis` and `postgis_tiger_geocoder`; the PostGIS path created all four advertised PostGIS SQL extensions.
+
+The archive SHA-256 values were `e817abe99aea45047d198528934cc3c3ce1d714bc5304ada937deeeacd4c099f` for PostgreSQL, `c757829f1e49fb84f1e48367058610449891ea130cc7b063d62f1821a6f59249` for PostGIS and `bae1a967dfb50e8686e9ac7e348f0ac4a82839289ba190dae06ed3df401be170` for TIGER. The trial ran `scripts/postgis/verify.sh` and `scripts/tiger/verify.sh` with `PG_VERSION=18.6` and `PG_ARCHITECTURE=x86_64`. The staging, selector and assembly-inventory tests passed (22 tests), and both verifier scripts passed `bash -n`.
+
+This local trial proves the revised assembly procedure against one retained archive set. It does not create a current-profile publication record for the changed verifier code. Run and import selected-target CI evidence before counting this path as current publication verification.

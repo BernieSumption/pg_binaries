@@ -14,6 +14,11 @@ SPEC = importlib.util.spec_from_file_location(
     "stage_extension_archive", Path(__file__).resolve().parents[1] / "tools" / "stage_extension_archive.py")
 staging = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(staging)
+INVENTORY_SPEC = importlib.util.spec_from_file_location(
+    "linux_project_assembly_inventory",
+    Path(__file__).resolve().parents[1] / "tools" / "linux_project_assembly_inventory.py")
+assembly_inventory = importlib.util.module_from_spec(INVENTORY_SPEC)
+INVENTORY_SPEC.loader.exec_module(assembly_inventory)
 
 
 class StageExtensionArchiveTests(unittest.TestCase):
@@ -177,6 +182,27 @@ class StageExtensionArchiveTests(unittest.TestCase):
         self.assertTrue((prefix / "share/extension/postgis.control").is_file())
         self.assertTrue((prefix / "share/extension/postgis_tiger_geocoder.control").is_file())
 
+    def test_project_version_cli_stages_once_from_exact_hash_inventory(self):
+        support, inventory = self.project_fixture()
+        support_path = self.root / "project-support.json"
+        inventory_path = self.root / "project-inventory.json"
+        support_path.write_text(json.dumps(support), encoding="utf-8")
+        assembly_inventory.write_inventory(
+            support, "18.6", "linux-x86_64",
+            {"PostGIS": self.archives / "postgis-3.6.4-postgresql-18.6-linux-x86_64.tar.gz"},
+            {"PostGIS": "3.6.4"}, inventory_path)
+        prefix = self.root / "cli-project-prefix"
+        script = Path(__file__).resolve().parents[1] / "tools" / "stage_extension_archive.py"
+        result = subprocess.run(
+            [sys.executable, str(script), "--inventory", str(inventory_path),
+             "--support", str(support_path), "--postgresql-version", "18.6",
+             "--platform", "linux-x86_64", "--project-version", "PostGIS=3.6.4",
+             "--archive-directory", str(self.archives), "--prefix", str(prefix),
+             "--staging-root", str(self.staging)], capture_output=True, text=True, check=False)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertTrue((prefix / "share/extension/postgis_topology.control").is_file())
+        self.assertEqual(len(list(self.staging.iterdir())), 1)
+
     def project_fixture(self, include_tiger=False):
         projects = {
             "PostGIS": {
@@ -197,7 +223,7 @@ class StageExtensionArchiveTests(unittest.TestCase):
         inventory = {"schema_version": 1, "extensions": {}}
         for project, details in projects.items():
             slug = project.lower().replace(" ", "_")
-            archive_name = f"{slug}-{details['version']}-linux-x86_64.tar.gz"
+            archive_name = f"{slug}-{details['version']}-postgresql-18.6-linux-x86_64.tar.gz"
             archive_path = self.archives / archive_name
             metadata = {
                 "project": slug, "version": details["version"], "platform": "linux",

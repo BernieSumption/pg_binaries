@@ -234,6 +234,8 @@ def main():
     parser.add_argument("--postgresql-version")
     parser.add_argument("--platform")
     parser.add_argument("--project")
+    parser.add_argument("--project-version", action="append", default=[], metavar="PROJECT=VERSION",
+                        help="select a project archive and its prerequisites once each")
     parser.add_argument("--extension-version")
     parser.add_argument("--sql-name")
     parser.add_argument("--archive-directory", type=Path)
@@ -245,19 +247,36 @@ def main():
             merge_payload(args.merge_payload, args.prefix)
             return 0
 
-        required = ("support", "postgresql_version", "platform", "project",
-                    "extension_version", "sql_name", "archive_directory", "staging_root")
+        required = ("support", "postgresql_version", "platform",
+                    "archive_directory", "staging_root")
         missing = [option.replace("_", "-") for option in required
                    if getattr(args, option) is None]
         if missing:
             parser.error("inventory mode requires --" + ", --".join(missing))
         inventory = json.loads(args.inventory.read_text(encoding="utf-8"))
         support = json.loads(args.support.read_text(encoding="utf-8"))
-        download = select_and_stage(
-            inventory, support, args.postgresql_version, args.platform,
-            args.project, args.extension_version, args.sql_name,
-            args.archive_directory, args.prefix, args.staging_root)
-        print(json.dumps(download, sort_keys=True))
+        if args.project_version:
+            if args.project or args.extension_version or args.sql_name:
+                parser.error("project-version mode cannot be combined with project, extension-version, or sql-name")
+            project_versions = {}
+            for value in args.project_version:
+                project, separator, version = value.partition("=")
+                if not separator or not project or not version or project in project_versions:
+                    parser.error(f"invalid or duplicate project-version: {value!r}")
+                project_versions[project] = version
+            result = select_and_stage_projects(
+                inventory, support, args.postgresql_version, args.platform,
+                project_versions, args.archive_directory, args.prefix, args.staging_root)
+        else:
+            missing = [name for name in ("project", "extension_version", "sql_name")
+                       if getattr(args, name) is None]
+            if missing:
+                parser.error("inventory mode requires --" + ", --".join(missing))
+            result = select_and_stage(
+                inventory, support, args.postgresql_version, args.platform,
+                args.project, args.extension_version, args.sql_name,
+                args.archive_directory, args.prefix, args.staging_root)
+        print(json.dumps(result, sort_keys=True))
         return 0
     except StagingError as exc:
         print(f"stage-extension-archive: error: {exc}", file=sys.stderr)

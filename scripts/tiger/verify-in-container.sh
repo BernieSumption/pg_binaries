@@ -15,14 +15,15 @@ cd /core && sha256sum -c "${core_archive}.sha256"
 cd /postgis && sha256sum -c "${postgis_archive}.sha256"
 cd /tiger && sha256sum -c "${tiger_archive}.sha256"
 
-mkdir -p /tmp/install /tmp/postgis /tmp/tiger /tmp/data /tmp/socket
+mkdir -p /tmp/install /tmp/postgis /tmp/tiger /tmp/data /tmp/socket /tmp/assembly-archives
 tar -xzf "/core/$core_archive" -C /tmp/install
 tar -xzf "/postgis/$postgis_archive" -C /tmp/postgis
 tar -xzf "/tiger/$tiger_archive" -C /tmp/tiger
+ln -s "/postgis/$postgis_archive" "/tmp/assembly-archives/$postgis_archive"
+ln -s "/tiger/$tiger_archive" "/tmp/assembly-archives/$tiger_archive"
 python3 - "$architecture" "$pg_version" <<'PY'
 import json
 from pathlib import Path
-import shutil
 import sys
 
 architecture = sys.argv[1]
@@ -45,29 +46,22 @@ assert (payload / 'LICENSES/postgis_tiger_geocoder/COPYING').is_file()
 inventory = json.loads((payload / 'LICENSES/postgis_tiger_geocoder-inventory.json').read_text())
 assert inventory['components'][0]['source_sha256'] == metadata['source']['sha256']
 
-prefix = Path('/tmp/install/postgresql')
-for project, source in (
-    ('postgis', Path('/tmp/postgis/postgis')),
-    ('postgis_tiger_geocoder', Path('/tmp/tiger/postgis_tiger_geocoder')),
-):
-    for path in source.rglob('*'):
-        relative = path.relative_to(source)
-        target = prefix / relative
-        if path.is_symlink():
-            if target.exists() or target.is_symlink():
-                raise SystemExit(f'{project} payload collision: {relative}')
-            target.parent.mkdir(parents=True, exist_ok=True)
-            target.symlink_to(path.readlink())
-        elif path.is_dir():
-            if target.exists() and not target.is_dir():
-                raise SystemExit(f'{project} payload collision: {relative}')
-            target.mkdir(parents=True, exist_ok=True)
-        else:
-            if target.exists() or target.is_symlink():
-                raise SystemExit(f'{project} payload collision: {relative}')
-            target.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(path, target)
 PY
+python3 /usr/local/bin/linux-project-assembly-inventory \
+  --support /repo/support.json --postgresql-version "$pg_version" \
+  --platform "linux-$architecture" \
+  --project-archive "PostGIS=/postgis/$postgis_archive" \
+  --project-archive "PostGIS TIGER Geocoder=/tiger/$tiger_archive" \
+  --project-version "PostGIS=3.6.4" \
+  --project-version "PostGIS TIGER Geocoder=2025.2" \
+  --output /tmp/assembly-inventory.json
+python3 /usr/local/bin/stage-extension-archive \
+  --inventory /tmp/assembly-inventory.json --support /repo/support.json \
+  --postgresql-version "$pg_version" --platform "linux-$architecture" \
+  --project-version "PostGIS TIGER Geocoder=2025.2" \
+  --project-version "PostGIS=3.6.4" \
+  --archive-directory /tmp/assembly-archives --prefix /tmp/install/postgresql \
+  --staging-root /tmp/extension-staging
 pgroot=/tmp/install/postgresql
 test -s "$pgroot/share/extension/postgis_tiger_geocoder.control"
 test -s "$pgroot/share/extension/postgis_tiger_geocoder--2025.2.sql"
