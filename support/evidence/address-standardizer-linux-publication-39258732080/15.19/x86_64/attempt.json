@@ -1,0 +1,37 @@
+{
+  "architecture": "x86_64",
+  "archives": {
+    "address-standardizer-3.7.0-postgresql-15.19-linux-x86_64.tar.gz": "69a676763e738ef9a6ba6165daa3dc427e5a8f6d38e11d85231ac00ab586f120",
+    "postgresql-15.19-linux-x86_64.tar.gz": "6b02036f0d524a6768191bd2f76a7861871dfb073c9a54371f0c858620858e6d"
+  },
+  "archives_present": {
+    "address-standardizer-3.7.0-postgresql-15.19-linux-x86_64.tar.gz": true,
+    "postgresql-15.19-linux-x86_64.tar.gz": true
+  },
+  "core_run_id": "39258732080",
+  "postgresql_version": "15.19",
+  "profile_id": "address-standardizer-publication-linux-x86_64-15.19",
+  "redistribution_status": "pending-dependency-provenance-and-redistribution-review",
+  "release_eligible": false,
+  "reports": {
+    "address_standardizer_license": "70a4997d7edd308495346ba51bcf472b1abbe0dbabe8b42bd91ae0b0fa0053c5",
+    "build_evidence": "6d5cd6f93cb20895ce36e4b1fa72347a4d1a7f62990f73749708fe13d843c5c9",
+    "core_resolution": "6ba26227a735627ee4b65b3f76e2615c1fc51094f311fc76e955e08a414e10c3",
+    "elf_closure": "637eb8ee7fc2034ea5db8c4cb927e1f251686b13a659cb24a1c186fdf03fad16",
+    "pcre2_license": "99272c55f3dcfa07a8a7e15a5c1a33096e4727de74241d65fa049fccfdd59507",
+    "probe_output": "5a9b347ef55768721c91f7fde83869c7f2f77ae2d861faad66ae9e7f8fe270d6"
+  },
+  "run_id": "39258732080",
+  "schema_version": 1,
+  "source_revision": "13ee77f1034918454a833d65a6003b768a5cf519",
+  "steps": {
+    "archive-suite": "success",
+    "elf-closure": "success"
+  },
+  "version": "3.7.0",
+  "workflow_steps": {
+    "build": "success",
+    "core_resolution": "success",
+    "verify": "success"
+  }
+}
