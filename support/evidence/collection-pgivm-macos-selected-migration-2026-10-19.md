@@ -1,0 +1,11 @@
+# Collection and pg_ivm selected macOS migration, 19 October 2026
+
+At source revision `2ac8be1`, the shared dispatcher selected and ran every declared macOS target for collection and pg_ivm. Each run built against a checked PostgreSQL core archive and verified the final core and extension archives on a fresh runner. The collection verifier exercised both selected extension releases, 1.1.1 and 2.1.3; the pg_ivm verifier exercised 1.16.
+
+Collection passed on macOS arm64 for PostgreSQL [15.19](https://github.com/BernieSumption/pg_binaries/actions/runs/39199690148), [16.15](https://github.com/BernieSumption/pg_binaries/actions/runs/39199698197), [17.11](https://github.com/BernieSumption/pg_binaries/actions/runs/39199444414) and [18.6](https://github.com/BernieSumption/pg_binaries/actions/runs/39199710257). It passed on macOS x86-64 for PostgreSQL [15.19](https://github.com/BernieSumption/pg_binaries/actions/runs/39199694460), [16.15](https://github.com/BernieSumption/pg_binaries/actions/runs/39199702208), [17.11](https://github.com/BernieSumption/pg_binaries/actions/runs/39199706567) and [18.6](https://github.com/BernieSumption/pg_binaries/actions/runs/39199452577).
+
+pg_ivm passed on macOS arm64 for PostgreSQL [17.11](https://github.com/BernieSumption/pg_binaries/actions/runs/39199456962) and [18.6](https://github.com/BernieSumption/pg_binaries/actions/runs/39199628572), and on macOS x86-64 for PostgreSQL [17.11](https://github.com/BernieSumption/pg_binaries/actions/runs/39199624315) and [18.6](https://github.com/BernieSumption/pg_binaries/actions/runs/39199460862).
+
+The downloaded artifacts were independently imported using the exact `2ac8be1` source tree. All 88 collection and 20 pg_ivm retained files matched the CI copies byte-for-byte. The 20 passing verification records match their current profile revisions and report both archive-suite and static-analysis cases passed. The 12 runs consumed about 34.9 elapsed GitHub job-minutes in total, summed across non-skipped jobs; this is a runner-time measurement, not a billing estimate.
+
+The earlier PostgreSQL 18.6 arm64 trials [for collection](collection-macos-publication-39198736266/README.md) and [for pg_ivm](pgivm-macos-publication-39198744766/README.md) remain historical because their profiles changed when the legacy paths were removed.

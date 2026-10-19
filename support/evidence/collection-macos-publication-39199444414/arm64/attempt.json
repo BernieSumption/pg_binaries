@@ -1,0 +1,31 @@
+{
+  "architecture": "arm64",
+  "archives": {
+    "collection-1.1.1-postgresql-17.11-macos-arm64.tar.gz": "96ca62f486124761220afc57b59b2d370b8578564f581f010c287d21822d3061",
+    "collection-2.1.3-postgresql-17.11-macos-arm64.tar.gz": "e00cebbc9cdbfa70f28d9815f3e43c4840d45e6d005cfaf3eb29ffe7e89e9c79",
+    "postgresql-17.11-macos-arm64.tar.gz": "e2fe14b3967cd06f4e9695dac2d8649bc46a3e211a9fa63b0a686d3a53018d4b"
+  },
+  "archives_present": {
+    "collection-1.1.1-postgresql-17.11-macos-arm64.tar.gz": true,
+    "collection-2.1.3-postgresql-17.11-macos-arm64.tar.gz": true,
+    "postgresql-17.11-macos-arm64.tar.gz": true
+  },
+  "collection_versions": [
+    "1.1.1",
+    "2.1.3"
+  ],
+  "postgresql_version": "17.11",
+  "profile_id": "collection-publication-macos-arm64-17.11",
+  "release_eligibility": "blocked-pending-dependency-review",
+  "run_id": "39199444414",
+  "schema_version": 1,
+  "source_revision": "2ac8be1298e5eee10a3391824329e620f06d54c3",
+  "source_sha256": {
+    "1.1.1": "ab99a969334442e4a3c77405bc9ffed0083595d18f3898d64a731353a32bec5e",
+    "2.1.3": "a6b07864e5893d3b682bb3223fd6d33015709765c9d40d415c85112358f0e3e4"
+  },
+  "steps": {
+    "archive-suite": "success",
+    "static-analysis": "success"
+  }
+}

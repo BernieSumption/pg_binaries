@@ -1,0 +1,47 @@
+{
+  "assembled_core": {
+    "archive": "postgresql-17.11-macos-x86_64.tar.gz",
+    "sha256": "33244376a4b9063508d97c581281d2ad2a0d2f6c35136f266899c56319d1278e",
+    "version": "17.11"
+  },
+  "case_results": {
+    "archive-suite": "passed",
+    "static-analysis": "passed"
+  },
+  "ci": {
+    "build_revision": "2ac8be1298e5eee10a3391824329e620f06d54c3",
+    "provider": "github-actions",
+    "run_id": "39199706567",
+    "run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/39199706567",
+    "source_revision": "2ac8be1298e5eee10a3391824329e620f06d54c3",
+    "test_revision": "2ac8be1298e5eee10a3391824329e620f06d54c3"
+  },
+  "component": "collection",
+  "environment": {
+    "architecture": "x86_64",
+    "clean_system": true,
+    "dependency_check_profile": "macho-system-dependencies-v1",
+    "dependency_checks_passed": true,
+    "endpoint": "current",
+    "image_id": "macos15/20260824.0482.1",
+    "os": "macos",
+    "os_version": "15.7.9"
+  },
+  "outcome": "passed",
+  "platform": "macos-x86_64",
+  "postgresql_version": "17.11",
+  "prerequisite_archives": [],
+  "profile_id": "collection-publication-macos-x86_64-17.11",
+  "profile_revision": "2c92a1a077f80888d1d164e5685183f4afaa309c5d4e7aefd9819a4e4c2a3777",
+  "project": "collection",
+  "release_eligibility": "blocked-pending-dependency-review",
+  "schema_version": 2,
+  "scope": "publication",
+  "sha256": "ff91a5532f75c7a5d4edf9ada6640ec07df8c29be1d6f29d421282ad1476b75e",
+  "test_cases": [
+    "archive-suite",
+    "static-analysis"
+  ],
+  "test_revision": "2ac8be1298e5eee10a3391824329e620f06d54c3",
+  "version": "1.1.1"
+}

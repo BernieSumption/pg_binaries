@@ -1,0 +1,46 @@
+{
+  "assembled_core": {
+    "archive": "postgresql-17.11-macos-arm64.tar.gz",
+    "sha256": "e2fe14b3967cd06f4e9695dac2d8649bc46a3e211a9fa63b0a686d3a53018d4b",
+    "version": "17.11"
+  },
+  "case_results": {
+    "archive-suite": "passed",
+    "static-analysis": "passed"
+  },
+  "ci": {
+    "build_revision": "2ac8be1298e5eee10a3391824329e620f06d54c3",
+    "provider": "github-actions",
+    "run_id": "39199456962",
+    "run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/39199456962",
+    "source_revision": "2ac8be1298e5eee10a3391824329e620f06d54c3",
+    "test_revision": "2ac8be1298e5eee10a3391824329e620f06d54c3"
+  },
+  "component": "pg_ivm",
+  "environment": {
+    "architecture": "arm64",
+    "clean_system": true,
+    "dependency_check_profile": "macho-system-dependencies-v1",
+    "dependency_checks_passed": true,
+    "endpoint": "current",
+    "image_id": "macos15/20260907.0337.1",
+    "os": "macos",
+    "os_version": "15.7.9"
+  },
+  "outcome": "passed",
+  "platform": "macos-arm64",
+  "postgresql_version": "17.11",
+  "prerequisite_archives": [],
+  "profile_id": "pgivm-publication-macos-arm64-17.11",
+  "profile_revision": "d4559d91a422096bc1f10e93bc1094e8f354c308efc104f758c317f41a81f35c",
+  "project": "pg_ivm",
+  "schema_version": 2,
+  "scope": "publication",
+  "sha256": "9eef854796e72785bd436c4689408be3691b066da414427f7c69b4c8def6b414",
+  "test_cases": [
+    "archive-suite",
+    "static-analysis"
+  ],
+  "test_revision": "2ac8be1298e5eee10a3391824329e620f06d54c3",
+  "version": "1.16"
+}

@@ -1,0 +1,42 @@
+{
+  "architecture": "x86_64",
+  "archives": {
+    "collection-1.1.1-postgresql-15.19-macos-x86_64.tar.gz": "171aecb78930418fb5dd70fa2ac99ef9aea918a5b60b850b6499f801b3c716fd",
+    "postgresql-15.19-macos-x86_64.tar.gz": "8d2a55904819b9bb702e59df3ad2b53e02e0e35ca092a97873def78d21dd13b9"
+  },
+  "case_results": {
+    "archive-suite": "passed",
+    "static-analysis": "passed"
+  },
+  "ci": {
+    "build_revision": "2ac8be1298e5eee10a3391824329e620f06d54c3",
+    "provider": "github-actions",
+    "run_id": "39199694460",
+    "run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/39199694460",
+    "source_revision": "2ac8be1298e5eee10a3391824329e620f06d54c3",
+    "test_revision": "2ac8be1298e5eee10a3391824329e620f06d54c3"
+  },
+  "clean_system": true,
+  "dependency_check_profile": "macho-system-dependencies-v1",
+  "dependency_checks_passed": true,
+  "endpoint": "current",
+  "environment": {
+    "architecture": "x86_64",
+    "image_id": "macos15/20260824.0482.1",
+    "os": "macos",
+    "os_version": "15.7.9"
+  },
+  "extension_archive": "collection-1.1.1-postgresql-15.19-macos-x86_64.tar.gz",
+  "platform": "macos-x86_64",
+  "postgresql_version": "15.19",
+  "profile_id": "collection-publication-macos-x86_64-15.19",
+  "profile_revision": "947ca37214beb3b4c429d7497641078296baecc3d2b4b18d674f2815bc9341f4",
+  "project": "collection",
+  "release_eligibility": "blocked-pending-dependency-review",
+  "reports": {
+    "static_analysis": "9f2082ea1fc681e6c89971163d99f96cc89f3d52aea709370f692fadc0849e38"
+  },
+  "schema_version": 1,
+  "test_revision": "2ac8be1298e5eee10a3391824329e620f06d54c3",
+  "version": "1.1.1"
+}
