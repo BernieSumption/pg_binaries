@@ -31,19 +31,21 @@ class AddressStandardizerLinuxPublication(unittest.TestCase):
         with self.assertRaises(coverage.CoverageError):
             publication.profile_id("aarch64")
 
-    def test_core_pins_cover_selected_postgresql_releases_and_architectures(self):
-        self.assertEqual(set(publication.CORE_PINS), {"15.19", "16.15", "17.11", "18.6"})
-        self.assertEqual({version: set(pins[1]) for version, pins in publication.CORE_PINS.items()},
-                         {version: {"x86_64", "arm64"} for version in publication.CORE_PINS})
-
-    def test_matrix_workflow_plans_targets_before_matrix_expansion(self):
-        workflow = (ROOT / ".github/workflows/address-standardizer-linux-15-17-publication.yml").read_text()
-        publish = workflow.split("\n  publish:\n", 1)[1]
-        publish_header = publish.split("\n    steps:\n", 1)[0]
-        self.assertIn("matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}", publish_header)
-        self.assertNotIn("matrix.", publish_header.split("\n    strategy:", 1)[0])
-        self.assertIn("if: needs.plan.outputs.has_targets == 'true'", publish_header)
-        self.assertIn('os.environ["EVENT_NAME"] == "workflow_dispatch"', workflow)
+    def test_supported_targets_come_from_profiles_and_workflow_has_no_version_gate(self):
+        self.assertFalse(hasattr(publication, "CORE_PINS"))
+        registry = coverage.load_json(ROOT / "support/verification-profiles.json")
+        expected = {"15.19", "16.15", "17.11", "18.6"}
+        self.assertEqual({profile_id.rsplit("-", 1)[1] for profile_id in registry["profiles"]
+                          if profile_id.startswith("address-standardizer-publication-linux-x86_64-")}, expected)
+        workflow = (ROOT / ".github/workflows/address-standardizer-linux-selected-publication.yml").read_text()
+        self.assertNotIn("publication.VERSION", workflow)
+        self.assertIn("--extension-version \"$ADDRESS_STANDARDIZER_VERSION\"", workflow)
+        recipe = (ROOT / "scripts/address_standardizer/linux-build-in-container.sh").read_text()
+        self.assertIn('Address Standardizer recipe supports 3.7.0; selected $extension_version', recipe)
+        self.assertNotIn("15.19|16.15|17.11|18.6", recipe)
+        self.assertNotIn("15.19|16.15|17.11|18.6",
+                         (ROOT / "scripts/address_standardizer/linux-verify-in-container.sh").read_text())
+        self.assertIn('"sql_names":["address_standardizer","address_standardizer_data_us"]', recipe)
 
     def test_selected_workflow_accepts_exact_targets_and_plans_from_support(self):
         workflow = (ROOT / ".github/workflows/address-standardizer-linux-selected-publication.yml").read_text()
@@ -76,16 +78,16 @@ class AddressStandardizerLinuxPublication(unittest.TestCase):
             ".github/workflows/address-standardizer-linux-publication.yml",
             ".github/workflows/address-standardizer-linux-15-17-publication.yml",
         }
-        for pg_version, (_, architectures) in publication.CORE_PINS.items():
-            for architecture in architectures:
-                profile_id = publication.profile_id(architecture, pg_version)
-                with self.subTest(profile=profile_id):
-                    profile = registry["profiles"][profile_id]
-                    sources = set(profile["sources"])
-                    self.assertIn(workflow, sources)
-                    self.assertTrue(core_sources <= sources, core_sources - sources)
-                    self.assertTrue(legacy_workflows.isdisjoint(sources))
-                    coverage.verification_profile(ROOT, profile_id)
+        targets = [profile_id for profile_id in registry["profiles"]
+                   if profile_id.startswith("address-standardizer-publication-linux-")]
+        for target in targets:
+            with self.subTest(profile=target):
+                profile = registry["profiles"][target]
+                sources = set(profile["sources"])
+                self.assertIn(workflow, sources)
+                self.assertTrue(core_sources <= sources, core_sources - sources)
+                self.assertTrue(legacy_workflows.isdisjoint(sources))
+                coverage.verification_profile(ROOT, target)
 
     def test_case_results_preserve_failed_and_skipped_work(self):
         self.assertEqual(publication._case_results("success", "passed"),
@@ -95,22 +97,15 @@ class AddressStandardizerLinuxPublication(unittest.TestCase):
         self.assertEqual(publication._case_results("failure", "passed"),
                          {"archive-suite": "failed", "elf-closure": "passed"})
 
-    def test_core_artifact_download_preserves_its_pilot_subdirectory(self):
-        workflow = (ROOT / ".github/workflows/address-standardizer-linux-publication.yml").read_text()
-        self.assertEqual(workflow.count("path: ${{ runner.temp }}/core\n"), 2)
-        self.assertEqual(workflow.count('"$RUNNER_TEMP/core/pilot"'), 8)
-
     def test_emit_and_import_bind_candidate_to_both_archive_hashes(self):
-        cases = (("18.6", "x86_64", "39081368117",
-                  "f89a7047812324b85c3b0bb29a3118fc55a492b17956f1fe0d74d1788d33d680"),
-                 ("15.19", "arm64", "39082151857",
-                  "9b570ba3827c2255a668375ec09ffe8d249e473d8389a7191e7c1fd77fbdca97"))
-        for index, (pg_version, architecture, expected_core_run, core_hash) in enumerate(cases):
+        cases = (("18.6", "x86_64"), ("15.19", "arm64"))
+        for index, (pg_version, architecture) in enumerate(cases):
             with self.subTest(postgresql_version=pg_version, architecture=architecture), \
                     tempfile.TemporaryDirectory() as temporary:
                 root = Path(temporary) / "root"
                 (root / "support").mkdir(parents=True)
                 (root / "support.json").write_bytes((ROOT / "support.json").read_bytes())
+                (root / "support/postgresql-releases.json").write_bytes((ROOT / "support/postgresql-releases.json").read_bytes())
                 archives, core_dir = Path(temporary) / "archives", Path(temporary) / "core"
                 archives.mkdir()
                 core_dir.mkdir()
@@ -119,13 +114,12 @@ class AddressStandardizerLinuxPublication(unittest.TestCase):
                 archive, core = archives / archive_name, core_dir / core_name
                 archive.write_bytes(b"candidate archive containing both SQL extensions")
                 core.write_bytes(b"fixture core archive " + pg_version.encode())
+                core_hash = hashlib.sha256(core.read_bytes()).hexdigest()
                 archive_hash = hashlib.sha256(archive.read_bytes()).hexdigest()
                 for path, checksum in ((archive, archive_hash), (core, core_hash)):
                     Path(str(path) + ".sha256").write_text(f"{checksum}  {path.name}\n", encoding="utf-8")
-                resolution = None
-                if index == 0:
-                    resolution = core_dir / "core-resolution.json"
-                    resolution.write_text("{}\n", encoding="utf-8")
+                resolution = core_dir / "core-resolution.json"
+                resolution.write_text("{}\n", encoding="utf-8")
                 static = archives / "static-analysis"
                 static.mkdir()
                 (static / "address-standardizer.json").write_text(json.dumps({
@@ -145,7 +139,7 @@ class AddressStandardizerLinuxPublication(unittest.TestCase):
                 run_id = str(12345 + index)
                 args = (ROOT, archives, core_dir, output, architecture, "success", "success",
                         "c" * 40, run_id, "owner/repo", "https://github.com",
-                        "sha256:" + "d" * 64, "6.17.0-azure", pg_version)
+                        "sha256:" + "d" * 64, "6.17.0-azure", pg_version, resolution, "success", publication.VERSION)
                 resolution_record = {"provenance": {"run_id": "99887766"}}
                 with ExitStack() as stack:
                     stack.enter_context(patch.object(
@@ -154,12 +148,11 @@ class AddressStandardizerLinuxPublication(unittest.TestCase):
                         hashlib.sha256(Path(path).read_bytes()).hexdigest()))
                     stack.enter_context(patch.object(coverage, "verification_profile", return_value=self.profile))
                     stack.enter_context(patch.object(coverage, "validate_verification_record", return_value=True))
-                    if resolution is not None:
-                        stack.enter_context(patch.object(publication.linux_core_resolution,
-                                                         "validate_resolution", return_value=resolution_record))
-                        stack.enter_context(patch.object(importer.linux_core_resolution,
-                                                         "validate_resolution", return_value=resolution_record))
-                    emitted = publication.emit(*args, resolution)
+                    stack.enter_context(patch.object(publication.linux_core_resolution,
+                                                     "validate_resolution", return_value=resolution_record))
+                    stack.enter_context(patch.object(importer.linux_core_resolution,
+                                                     "validate_resolution", return_value=resolution_record))
+                    emitted = publication.emit(*args)
                     attempt = json.loads((output / "attempt.json").read_text(encoding="utf-8"))
                     receipt = json.loads((output / "current-receipt.json").read_text(encoding="utf-8"))
                     record = json.loads((output / "verification-record.json").read_text(encoding="utf-8"))
@@ -169,8 +162,7 @@ class AddressStandardizerLinuxPublication(unittest.TestCase):
                                            output / "verification-record.json"))
                 self.assertEqual(attempt["archives"], {archive_name: archive_hash, core_name: core_hash})
                 self.assertEqual(attempt["profile_id"], publication.profile_id(architecture, pg_version))
-                self.assertEqual(attempt["core_run_id"], "99887766" if resolution else expected_core_run)
-                self.assertEqual(core_hash, publication.CORE_PINS[pg_version][1][architecture])
+                self.assertEqual(attempt["core_run_id"], "99887766")
                 self.assertEqual(receipt["extension_archive"], archive_name)
                 self.assertEqual(receipt["release_eligible"], False)
                 self.assertEqual(receipt["redistribution_status"], publication.BLOCK)
@@ -193,6 +185,7 @@ class AddressStandardizerLinuxPublication(unittest.TestCase):
             root = Path(temporary) / "root"
             (root / "support").mkdir(parents=True)
             (root / "support.json").write_bytes((ROOT / "support.json").read_bytes())
+            (root / "support/postgresql-releases.json").write_bytes((ROOT / "support/postgresql-releases.json").read_bytes())
             archives, core_dir = Path(temporary) / "archives", Path(temporary) / "core"
             archives.mkdir()
             core_dir.mkdir()
@@ -228,18 +221,47 @@ class AddressStandardizerLinuxPublication(unittest.TestCase):
             self.assertIn("test \"$CORE_RESOLUTION\" = success",
                           (ROOT / ".github/workflows/address-standardizer-linux-selected-publication.yml").read_text())
 
-    def test_import_rejects_core_bytes_that_differ_from_pinned_archive(self):
+    def test_newly_selected_release_keeps_failure_attempt_when_recipe_has_not_been_updated(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary) / "root"
+            root.mkdir()
+            (root / "support").mkdir()
+            support = coverage.load_json(ROOT / "support.json")
+            support["extensions"]["Address Standardizer"]["versions"]["3.8.0"] = {
+                "postgresql_minimum_major": 15, "postgresql_maximum_major": 19,
+                "operating_systems": ["macos", "linux"]}
+            (root / "support.json").write_text(json.dumps(support), encoding="utf-8")
+            (root / "support/postgresql-releases.json").write_bytes((ROOT / "support/postgresql-releases.json").read_bytes())
+            archives, core = Path(temporary) / "archives", Path(temporary) / "core"
+            archives.mkdir()
+            core.mkdir()
+            output = archives / "publication"
+            resolution = core / "core-resolution.json"
+            resolution.write_text("{}\n", encoding="utf-8")
+            with patch.object(coverage, "verification_profile", return_value=self.profile), \
+                    patch.object(publication.linux_core_resolution, "validate_resolution",
+                                  return_value={"provenance": {"run_id": "123"}}):
+                emitted = publication.emit(root, archives, core, output, "x86_64", "failure", "skipped",
+                    "c" * 40, "87654", "owner/repo", "https://github.com", "unavailable",
+                    "6.17.0-azure", "18.6", resolution, "success", "3.8.0")
+            attempt = json.loads((output / "attempt.json").read_text(encoding="utf-8"))
+            self.assertEqual(emitted, (output / "attempt.json",))
+            self.assertEqual(attempt["version"], "3.8.0")
+            self.assertEqual(attempt["workflow_steps"]["build"], "failure")
+
+    def test_import_rejects_attempt_without_core_resolution_outcome(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             (root / "support").mkdir()
             (root / "support.json").write_bytes((ROOT / "support.json").read_bytes())
+            (root / "support/postgresql-releases.json").write_bytes((ROOT / "support/postgresql-releases.json").read_bytes())
             archives, core = root / "archives", root / "core"
             archives.mkdir()
             core.mkdir()
             (archives / "publication").mkdir()
             attempt = {"schema_version": 1, "run_id": "567", "source_revision": "c" * 40,
                        "profile_id": publication.profile_id("arm64"), "postgresql_version": "18.6",
-                       "version": publication.VERSION, "architecture": "arm64", "core_run_id": publication.CORE_PINS["18.6"][0],
+                       "version": publication.VERSION, "architecture": "arm64", "core_run_id": None,
                        "steps": {"archive-suite": "skipped", "elf-closure": "skipped"},
                        "workflow_steps": {"build": "failure", "verify": "skipped"},
                        "release_eligible": False, "redistribution_status": publication.BLOCK,
@@ -247,16 +269,7 @@ class AddressStandardizerLinuxPublication(unittest.TestCase):
                                             "address-standardizer-3.7.0-postgresql-18.6-linux-arm64.tar.gz": False},
                        "reports": {}}
             (archives / "publication/attempt.json").write_text(json.dumps(attempt), encoding="utf-8")
-            (core / "postgresql-18.6-linux-arm64.tar.gz").write_bytes(b"wrong core bytes")
-            (core / "postgresql-18.6-linux-arm64.tar.gz.sha256").write_text(
-                hashlib.sha256(b"wrong core bytes").hexdigest() + "  postgresql-18.6-linux-arm64.tar.gz\n",
-                encoding="utf-8")
-            archive_name = "address-standardizer-3.7.0-postgresql-18.6-linux-arm64.tar.gz"
-            (archives / archive_name).write_bytes(b"candidate")
-            attempt["archives_present"][archive_name] = True
-            (archives / "publication/attempt.json").write_text(json.dumps(attempt), encoding="utf-8")
             with patch.object(coverage, "verification_profile", return_value=self.profile), \
-                    patch.object(publication, "CORE_PINS", {"18.6": (publication.CORE_PINS["18.6"][0], {"arm64": "0" * 64})}), \
                     self.assertRaises(coverage.CoverageError):
                 importer.import_run(root, core, archives, "567")
 

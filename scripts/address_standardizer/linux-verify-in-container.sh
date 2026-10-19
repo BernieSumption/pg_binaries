@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 pg_version=${PG_VERSION:-18.6}
-case "$pg_version" in 15.19|16.15|17.11|18.6) ;; *) echo "Unsupported PostgreSQL version: $pg_version" >&2; exit 2 ;; esac
 extension_version=3.7.0
 architecture=${PG_ARCHITECTURE:-x86_64}
 case "$architecture:$(uname -m)" in x86_64:x86_64|arm64:aarch64) ;; *) echo "Architecture mismatch" >&2; exit 2 ;; esac

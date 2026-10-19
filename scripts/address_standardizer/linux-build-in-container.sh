@@ -2,8 +2,11 @@
 set -euo pipefail
 
 pg_version=${PG_VERSION:-18.6}
-case "$pg_version" in 15.19|16.15|17.11|18.6) ;; *) echo "Unsupported PostgreSQL version: $pg_version" >&2; exit 2 ;; esac
-extension_version=3.7.0
+extension_version=${ADDRESS_STANDARDIZER_VERSION:-3.7.0}
+if [[ "$extension_version" != 3.7.0 ]]; then
+  echo "Address Standardizer recipe supports 3.7.0; selected $extension_version" >&2
+  exit 2
+fi
 extension_sql_version=3.7
 extension_commit=fa11ff53eb49b863d9ffff37f6afd5ff9299c581
 pcre2_version=10.48

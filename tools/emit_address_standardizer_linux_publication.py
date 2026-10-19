@@ -10,38 +10,36 @@ import re
 import sys
 
 import coverage
+import extension_archive_plan
 import linux_core_resolution
 
 VERSION = "3.7.0"
 DEFAULT_PG_VERSION = "18.6"
 SOURCE_COMMIT = "fa11ff53eb49b863d9ffff37f6afd5ff9299c581"
 PCRE2_SHA256 = "b6c68fdf6f3ac31388b50aa89ff0fc49c00c987c16e7b5146491d12003f2c8ed"
-CORE_PINS = {
-    "15.19": ("39082151857", {
-        "x86_64": "f538b0f41d25b8eea530ce59897248e83dfe770265c7a53698e7a9c2bef45db5",
-        "arm64": "9b570ba3827c2255a668375ec09ffe8d249e473d8389a7191e7c1fd77fbdca97",
-    }),
-    "16.15": ("39082147531", {
-        "x86_64": "f8758cdcb93f6d177f1d01e10dc10ba590acc3bbdadb47b78110996678c599ff",
-        "arm64": "8602843a166b8de1944857b0bfe9eefc3139a9cb726f4296ee66e18a8e608b70",
-    }),
-    "17.11": ("39082111630", {
-        "x86_64": "ffc3160481f8d0cd5f7c14bd95f0e3964242ac78b01f6d4b0e3b03806d4b34dc",
-        "arm64": "82f22d4110bd8d82307d068d4416fc5d223dc6d68efc41cb3494677384509010",
-    }),
-    "18.6": ("39081368117", {
-        "x86_64": "f89a7047812324b85c3b0bb29a3118fc55a492b17956f1fe0d74d1788d33d680",
-        "arm64": "0eb9c0144fd0b1669c594ce1ebcf7abdf4e1ae3f8e29e59a92833e476001e42b",
-    }),
-}
 CASES = ("archive-suite", "elf-closure")
-BLOCK = "pending-human-review-of-upstream-only-source-and-runtime-load-path-policy"
+BLOCK = "pending-dependency-provenance-and-redistribution-review"
 
 
 def profile_id(architecture, pg_version=DEFAULT_PG_VERSION):
-    if pg_version not in CORE_PINS or architecture not in CORE_PINS[pg_version][1]:
+    if architecture not in {"x86_64", "arm64"}:
         raise coverage.CoverageError("unsupported architecture")
+    if not re.fullmatch(r"\d+\.\d+", str(pg_version)):
+        raise coverage.CoverageError("PostgreSQL target must be an exact major.minor release")
     return f"address-standardizer-publication-linux-{architecture}-{pg_version}"
+
+
+def validate_target(root, architecture, pg_version, extension_version):
+    support = coverage.load_json(Path(root) / "support.json")
+    releases = coverage.load_json(Path(root) / "support/postgresql-releases.json")
+    try:
+        extension_archive_plan.select_target(
+            extension_archive_plan.plan(support, releases), "Address Standardizer",
+            f"linux-{architecture}", pg_version, extension_version)
+    except (coverage.CoverageError, ValueError) as exc:
+        raise coverage.CoverageError(f"unsupported selected Address Standardizer target: {exc}") from exc
+    return coverage.verification_profile(
+        root, profile_id(architecture, pg_version))
 
 
 def digest(path):
@@ -91,10 +89,11 @@ def _case_results(verify_result, elf_outcome):
 
 def emit(root, archives, core_archives, output, architecture, build_result, verify_result,
          source_revision, run_id, repository, server_url, image_id, kernel_release,
-         pg_version=DEFAULT_PG_VERSION, core_resolution_path=None, core_resolution_result=None):
+         pg_version=DEFAULT_PG_VERSION, core_resolution_path=None, core_resolution_result=None,
+         extension_version=VERSION):
     root, archives, core_archives, output = map(Path, (root, archives, core_archives, output))
     selected = profile_id(architecture, pg_version)
-    core_run, core_hashes = CORE_PINS[pg_version]
+    profile = validate_target(root, architecture, pg_version, extension_version)
     if not coverage.REVISION.fullmatch(source_revision or "") or not str(run_id).isdigit():
         raise coverage.CoverageError("full source revision and numeric workflow run ID are required")
     if not repository or not server_url:
@@ -107,41 +106,40 @@ def emit(root, archives, core_archives, output, architecture, build_result, veri
     if coverage._os_version_parts(kernel, "Linux kernel release") < coverage._os_version_parts(minimum, "Linux minimum version"):
         raise coverage.CoverageError("Linux kernel is below the supported floor")
 
-    archive_name = f"address-standardizer-{VERSION}-postgresql-{pg_version}-linux-{architecture}.tar.gz"
+    archive_name = f"address-standardizer-{extension_version}-postgresql-{pg_version}-linux-{architecture}.tar.gz"
     core_name = f"postgresql-{pg_version}-linux-{architecture}.tar.gz"
     archive, core = archives / archive_name, core_archives / core_name
     resolution_path = Path(core_resolution_path) if core_resolution_path else None
     resolution = None
-    resolved_mode = resolution_path is not None
-    if resolved_mode and core_resolution_result is None and resolution_path.is_file():
+    if core_resolution_result is None and resolution_path is not None and resolution_path.is_file():
         core_resolution_result = "success"
-    if resolved_mode and core_resolution_result not in {"success", "failure", "skipped", "cancelled", "timed_out"}:
+    if core_resolution_result not in {"success", "failure", "skipped", "cancelled", "timed_out"}:
         raise coverage.CoverageError("core resolution result must be a GitHub Actions outcome")
-    if resolved_mode and core_resolution_result == "success" and resolution_path.is_file():
+    if core_resolution_result == "success" and resolution_path is not None and resolution_path.is_file():
         try:
             resolution = linux_core_resolution.validate_resolution(
                 resolution_path, core, pg_version, architecture)
         except (OSError, ValueError) as exc:
             raise coverage.CoverageError(f"invalid resolved PostgreSQL core provenance: {exc}") from exc
         core_run = str(resolution["provenance"]["run_id"])
-    elif resolved_mode and core_resolution_result == "success":
+    elif core_resolution_result == "success":
         raise coverage.CoverageError("successful core resolution is missing its provenance record")
+    else:
+        core_run = None
     static_path = archives / "static-analysis" / "address-standardizer.json"
     static_outcome = read_json(static_path).get("outcome") if static_path.is_file() else None
     if static_outcome not in {None, "passed", "failed"}:
         raise coverage.CoverageError("ELF report outcome must be passed or failed")
     _step(build_result)
     results = _case_results(verify_result, static_outcome)
-    profile = coverage.verification_profile(root, selected)
     output.mkdir(parents=True, exist_ok=True)
     attempt_path = output / "attempt.json"
     workflow_steps = {"build": build_result, "verify": verify_result}
-    if resolved_mode:
-        workflow_steps["core_resolution"] = core_resolution_result
+    workflow_steps["core_resolution"] = core_resolution_result
     attempt = {
         "schema_version": 1, "run_id": str(run_id), "source_revision": source_revision,
-        "profile_id": selected, "postgresql_version": pg_version, "version": VERSION,
-        "architecture": architecture, "core_run_id": core_run if resolution is not None or not resolved_mode else None,
+        "profile_id": selected, "postgresql_version": pg_version, "version": extension_version,
+        "architecture": architecture, "core_run_id": core_run,
         "steps": {case: ("success" if result == "passed" else "failure" if result == "failed" else "skipped")
                   for case, result in results.items()},
         "workflow_steps": workflow_steps,
@@ -150,7 +148,7 @@ def emit(root, archives, core_archives, output, architecture, build_result, veri
         "reports": {"elf_closure": digest(static_path)} if static_path.is_file() else {},
     }
     attempt_path.write_text(json.dumps(attempt, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    if resolved_mode and resolution is None:
+    if resolution is None or extension_version != VERSION:
         return (attempt_path,)
     if not archive.is_file() or not core.is_file():
         return (attempt_path,)
@@ -162,8 +160,6 @@ def emit(root, archives, core_archives, output, architecture, build_result, veri
         _sidecar(path, checksums[path.name])
     attempt["archives"] = checksums
     attempt_path.write_text(json.dumps(attempt, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    if resolution is None and checksums[core_name] != core_hashes[architecture]:
-        raise coverage.CoverageError(f"core archive differs from the pinned PostgreSQL {pg_version} archive")
     if static_path.is_file():
         static = read_json(static_path)
         if (static.get("architecture") != architecture or static.get("outcome") != static_outcome
@@ -234,7 +230,8 @@ def main():
     parser.add_argument("--core-archives", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--architecture", choices=("x86_64", "arm64"), required=True)
-    parser.add_argument("--postgresql-version", choices=tuple(CORE_PINS), default=DEFAULT_PG_VERSION)
+    parser.add_argument("--postgresql-version", required=True)
+    parser.add_argument("--extension-version", required=True)
     parser.add_argument("--build-result", required=True)
     parser.add_argument("--verify-result", required=True)
     parser.add_argument("--image-id", required=True)
@@ -247,7 +244,8 @@ def main():
                          args.build_result, args.verify_result, os.environ.get("GITHUB_SHA", ""),
                          os.environ.get("GITHUB_RUN_ID", ""), os.environ.get("GITHUB_REPOSITORY", ""),
                          os.environ.get("GITHUB_SERVER_URL", ""), args.image_id, args.kernel_release,
-                         args.postgresql_version, args.core_resolution, args.core_resolution_result):
+                         args.postgresql_version, args.core_resolution, args.core_resolution_result,
+                         args.extension_version):
             print(path)
         return 0
     except (coverage.CoverageError, OSError, ValueError, TypeError, KeyError) as exc:

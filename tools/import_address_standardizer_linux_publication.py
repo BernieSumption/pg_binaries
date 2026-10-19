@@ -58,25 +58,21 @@ def import_run(root, core_archives, archives, run_id):
     attempt = read_json(attempt_path)
     architecture = attempt.get("architecture")
     pg_version = attempt.get("postgresql_version")
-    if pg_version not in publication.CORE_PINS:
-        raise coverage.CoverageError("attempt PostgreSQL version is unsupported")
-    if architecture not in publication.CORE_PINS[pg_version][1]:
+    if architecture not in {"x86_64", "arm64"}:
         raise coverage.CoverageError("attempt architecture is unsupported")
     selected = publication.profile_id(architecture, pg_version)
-    profile = coverage.verification_profile(root, selected)
+    extension_version = attempt.get("version")
+    profile = publication.validate_target(root, architecture, pg_version, extension_version)
     if (attempt.get("schema_version") != 1 or str(attempt.get("run_id")) != run_id
             or attempt.get("profile_id") != selected or attempt.get("postgresql_version") != pg_version
-            or attempt.get("version") != publication.VERSION
             or attempt.get("release_eligible") is not False
             or attempt.get("redistribution_status") != publication.BLOCK
             or not coverage.REVISION.fullmatch(str(attempt.get("source_revision", "")))):
         raise coverage.CoverageError("raw attempt identity does not match this run and profile")
     workflow = attempt.get("workflow_steps")
-    if not isinstance(workflow, dict) or set(workflow) not in ({"build", "verify"},
-                                                                 {"build", "verify", "core_resolution"}):
-        raise coverage.CoverageError("raw attempt must retain build and verify outcomes")
-    resolved_mode = "core_resolution" in workflow
-    if resolved_mode and workflow["core_resolution"] not in {"success", "failure", "skipped", "cancelled", "timed_out"}:
+    if not isinstance(workflow, dict) or set(workflow) != {"build", "verify", "core_resolution"}:
+        raise coverage.CoverageError("raw attempt must retain build, verify and core resolution outcomes")
+    if workflow["core_resolution"] not in {"success", "failure", "skipped", "cancelled", "timed_out"}:
         raise coverage.CoverageError("raw attempt core resolution outcome is invalid")
     results = publication._case_results(workflow["verify"],
         "passed" if attempt.get("steps", {}).get("elf-closure") == "success" else
@@ -87,15 +83,15 @@ def import_run(root, core_archives, archives, run_id):
         raise coverage.CoverageError("raw attempt case outcomes do not match workflow outcomes")
 
     platform = f"linux-{architecture}"
-    archive_name = f"address-standardizer-{publication.VERSION}-postgresql-{pg_version}-{platform}.tar.gz"
+    archive_name = f"address-standardizer-{extension_version}-postgresql-{pg_version}-{platform}.tar.gz"
     core_name = f"postgresql-{pg_version}-{platform}.tar.gz"
     archive, core = archives / archive_name, core_archives / core_name
     if attempt.get("archives_present") != {core_name: core.is_file(), archive_name: archive.is_file()}:
         raise coverage.CoverageError("raw attempt archive presence differs from downloaded files")
     resolution_path = core_archives / "core-resolution.json"
     resolution = None
-    if resolved_mode:
-        if resolution_path.is_file() and workflow["core_resolution"] == "success":
+    if workflow["core_resolution"] == "success":
+        if resolution_path.is_file():
             try:
                 resolution = linux_core_resolution.validate_resolution(
                     resolution_path, core, pg_version, architecture)
@@ -104,17 +100,17 @@ def import_run(root, core_archives, archives, run_id):
             if (workflow["core_resolution"] != "success"
                     or attempt.get("core_run_id") != resolution["provenance"]["run_id"]):
                 raise coverage.CoverageError("raw attempt core provenance differs from resolution outcome")
-        elif (workflow["core_resolution"] == "success" or attempt.get("core_run_id") is not None):
+        else:
             raise coverage.CoverageError("selected attempt lacks required PostgreSQL core provenance")
-    elif attempt.get("core_run_id") != publication.CORE_PINS[pg_version][0]:
-        raise coverage.CoverageError("raw attempt core run ID differs from pinned core")
+    elif attempt.get("core_run_id") is not None:
+        raise coverage.CoverageError("unresolved core attempt must not claim core provenance")
     evidence = root / "support/evidence" / f"address-standardizer-linux-publication-{run_id}"
     if pg_version != "18.6":
         evidence /= pg_version
     evidence /= architecture
     copies = []
     retain(attempt_path, evidence / "attempt.json", copies)
-    if resolved_mode and resolution is None:
+    if resolution is None:
         if ((archives / "publication/current-receipt.json").exists()
                 or (archives / "publication/verification-record.json").exists()):
             raise coverage.CoverageError("archive-bound evidence exists without resolved core provenance")
@@ -127,10 +123,10 @@ def import_run(root, core_archives, archives, run_id):
             raise coverage.CoverageError("receipt or record exists without both archives")
         copy(copies, root)
         return [str(destination.relative_to(root)) for _, destination in copies]
+    if extension_version != publication.VERSION:
+        raise coverage.CoverageError("unsupported Address Standardizer recipe must not produce a candidate archive")
 
     checksums = {archive_name: publication.digest(archive), core_name: publication.digest(core)}
-    if resolution is None and checksums[core_name] != publication.CORE_PINS[pg_version][1][architecture]:
-        raise coverage.CoverageError(f"core archive differs from the pinned PostgreSQL {pg_version} bytes")
     for path in (archive, core):
         publication._sidecar(path, checksums[path.name])
     if attempt.get("archives") != checksums:
@@ -163,7 +159,7 @@ def import_run(root, core_archives, archives, run_id):
             raise coverage.CoverageError("ELF report is not bound to both final archives")
     if results["archive-suite"] == "passed":
         probe = report_names["probe_output"][0]
-        if not probe.is_file() or f"PASS: Address Standardizer 3.7.0 with PostgreSQL {pg_version}" not in probe.read_text(encoding="utf-8"):
+        if not probe.is_file() or f"PASS: Address Standardizer {publication.VERSION} with PostgreSQL {pg_version}" not in probe.read_text(encoding="utf-8"):
             raise coverage.CoverageError("passed archive suite lacks relocated Alpine probe output")
 
     receipt_path = archives / "publication/current-receipt.json"

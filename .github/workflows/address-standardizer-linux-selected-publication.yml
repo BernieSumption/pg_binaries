@@ -58,8 +58,6 @@ jobs:
           python3 - "$RUNNER_TEMP/selection.json" <<'PY'
           import json, os, sys
           selection = json.load(open(sys.argv[1], encoding="utf-8"))
-          sys.path.insert(0, "tools")
-          import emit_address_standardizer_linux_publication as publication
           expected = {
               "project": "Address Standardizer",
               "selected_version": os.environ["ADDRESS_STANDARDIZER_VERSION"],
@@ -68,10 +66,6 @@ jobs:
           }
           mismatches = [f"{key}: selected {selection.get(key)!r}, expected {value!r}"
                         for key, value in expected.items() if selection.get(key) != value]
-          if selection.get("selected_version") != publication.VERSION:
-              mismatches.append(
-                  f"selected_version: support selects {selection.get('selected_version')!r}, "
-                  f"workflow implementation supports {publication.VERSION!r}")
           if mismatches:
               raise SystemExit("selected Address Standardizer target mismatch: " + "; ".join(mismatches))
           PY
@@ -104,7 +98,7 @@ jobs:
         id: build
         if: always() && steps.core_resolution.outcome == 'success'
         continue-on-error: true
-        run: bash scripts/address_standardizer/linux-build.sh "$RUNNER_TEMP/core/pilot" "$RUNNER_TEMP/address-standardizer"
+        run: ADDRESS_STANDARDIZER_VERSION="$ADDRESS_STANDARDIZER_VERSION" bash scripts/address_standardizer/linux-build.sh "$RUNNER_TEMP/core/pilot" "$RUNNER_TEMP/address-standardizer"
       - name: Verify final archives with the relocated Alpine probe and ELF checks
         id: verify
         if: always() && steps.build.outcome == 'success'
@@ -125,7 +119,8 @@ jobs:
           python tools/emit_address_standardizer_linux_publication.py \
             --archives "$RUNNER_TEMP/address-standardizer" --core-archives "$RUNNER_TEMP/core/pilot" \
             --output "$RUNNER_TEMP/address-standardizer/publication" --architecture "$PG_ARCHITECTURE" \
-            --postgresql-version "$PG_VERSION" --build-result "${BUILD_RESULT:-skipped}" \
+            --postgresql-version "$PG_VERSION" --extension-version "$ADDRESS_STANDARDIZER_VERSION" \
+            --build-result "${BUILD_RESULT:-skipped}" \
             --verify-result "${VERIFY_RESULT:-skipped}" --core-resolution-result "${CORE_RESOLUTION_RESULT:-skipped}" \
             --core-resolution "$RUNNER_TEMP/core/pilot/core-resolution.json" \
             --image-id "$(docker image inspect pg-binaries-address-standardizer-alpine-probe --format '{{.Id}}' 2>/dev/null || echo unavailable)" \
