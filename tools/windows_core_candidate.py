@@ -18,7 +18,6 @@ ROOT = Path(__file__).resolve().parents[1]
 SHARED_CORE_INPUTS = (
     "scripts/windows", "tools/source_archive.py",
     "tools/postgresql_git_source.py", "tools/windows_core_target_config.py",
-    "support/postgresql-releases.json", "support/windows-postgresql-source-identities.json",
 )
 PILOT_WORKFLOW = ".github/workflows/windows-pilot.yml"
 SELECTED_WORKFLOW = ".github/workflows/postgresql-windows-selected-publication.yml"

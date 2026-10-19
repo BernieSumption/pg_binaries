@@ -108,13 +108,36 @@ class LinuxCoreCandidateTests(unittest.TestCase):
                 self.BUILDER_PACKAGES_SHA256, self.root)
 
     def test_accepts_candidate_after_unrelated_extension_only_change(self):
-        extension_workflow = self.root / ".github/workflows/postgis-linux-selected-publication.yml"
-        extension_workflow.parent.mkdir(parents=True, exist_ok=True)
-        extension_workflow.write_text("extension-only change\n")
+        support_path = self.root / "support.json"
+        support = json.loads(support_path.read_text())
+        support["extensions"]["pgvector"]["description"] = "unrelated extension metadata edit"
+        support_path.write_text(json.dumps(support))
         result = candidate.validate_candidate(
             self.manifest_path, self.archive_path, "17.11", self.BASE_IMAGE_DIGEST,
             self.BUILDER_PACKAGES_SHA256, self.root)
         self.assertEqual(result["run_id"], "1234")
+
+    def test_accepts_candidate_after_unselected_postgresql_snapshot_change(self):
+        snapshot_path = self.root / "support/postgresql-releases.json"
+        snapshot = json.loads(snapshot_path.read_text())
+        other_release = next(row for row in snapshot["releases"] if row["version"] != "17.11")
+        other_release["source_archives"]["tar.bz2"]["sha256"] = "e" * 64
+        snapshot_path.write_text(json.dumps(snapshot))
+        result = candidate.validate_candidate(
+            self.manifest_path, self.archive_path, "17.11", self.BASE_IMAGE_DIGEST,
+            self.BUILDER_PACKAGES_SHA256, self.root)
+        self.assertEqual(result["run_id"], "1234")
+
+    def test_rejects_candidate_after_selected_postgresql_source_digest_change(self):
+        snapshot_path = self.root / "support/postgresql-releases.json"
+        snapshot = json.loads(snapshot_path.read_text())
+        selected = next(row for row in snapshot["releases"] if row["version"] == "17.11")
+        selected["source_archives"]["tar.bz2"]["sha256"] = "e" * 64
+        snapshot_path.write_text(json.dumps(snapshot))
+        with self.assertRaisesRegex(ValueError, "source archive identity differs"):
+            candidate.validate_candidate(
+                self.manifest_path, self.archive_path, "17.11", self.BASE_IMAGE_DIGEST,
+                self.BUILDER_PACKAGES_SHA256, self.root)
 
     def test_fails_closed_when_required_core_input_is_missing(self):
         (self.root / candidate.CORE_INPUTS[0]).unlink()

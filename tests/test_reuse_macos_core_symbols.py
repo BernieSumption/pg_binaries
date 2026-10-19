@@ -5,6 +5,7 @@ import tarfile
 import unittest
 from pathlib import Path
 import sys
+import subprocess
 import zipfile
 from unittest.mock import patch
 
@@ -13,6 +14,36 @@ import reuse_macos_core_symbols as reuse
 
 
 class ReuseMacOSCoreSymbolsTests(unittest.TestCase):
+    def test_unrelated_release_snapshot_change_preserves_reuse(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            (root / "support").mkdir()
+            snapshot = root / "support/postgresql-releases.json"
+            snapshot.write_text('{"18.6": "old"}\n')
+            subprocess.run(["git", "init", "-q"], cwd=root, check=True)
+            subprocess.run(["git", "add", "support/postgresql-releases.json"], cwd=root, check=True)
+            subprocess.run(["git", "-c", "user.name=Test", "-c", "user.email=test@example.invalid",
+                            "commit", "-qm", "base"], cwd=root, check=True)
+            revision = subprocess.run(["git", "rev-parse", "HEAD"], cwd=root, check=True,
+                                      capture_output=True, text=True).stdout.strip()
+            snapshot.write_text('{"18.6": "new"}\n')
+            self.assertTrue(reuse.relevant_inputs_match(revision, root))
+
+    def test_core_recipe_change_rejects_reuse(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            recipe = root / "tools/create_macos_symbols.py"
+            recipe.parent.mkdir()
+            recipe.write_text("recipe v1\n")
+            subprocess.run(["git", "init", "-q"], cwd=root, check=True)
+            subprocess.run(["git", "add", "tools/create_macos_symbols.py"], cwd=root, check=True)
+            subprocess.run(["git", "-c", "user.name=Test", "-c", "user.email=test@example.invalid",
+                            "commit", "-qm", "base"], cwd=root, check=True)
+            revision = subprocess.run(["git", "rev-parse", "HEAD"], cwd=root, check=True,
+                                      capture_output=True, text=True).stdout.strip()
+            recipe.write_text("recipe v2\n")
+            self.assertFalse(reuse.relevant_inputs_match(revision, root))
+
     def test_candidate_requires_successful_other_run_on_same_branch_and_workflow(self):
         run = {"id": 12, "status": "completed", "conclusion": "success",
                "head_branch": "spike",
@@ -48,6 +79,16 @@ class ReuseMacOSCoreSymbolsTests(unittest.TestCase):
             with patch.object(reuse.source_archive, "source_archive", return_value=source):
                 reuse.validate_core_manifest(archive, version, architecture, run_id, attempt,
                                              revision, Path(temporary))
+                manifest["source_archive"] = dict(source, sha256="c" * 64)
+                encoded = json.dumps(manifest).encode()
+                with tarfile.open(archive, "w:gz") as bundle:
+                    info = tarfile.TarInfo("postgresql/manifest.json")
+                    info.size = len(encoded)
+                    bundle.addfile(info, io.BytesIO(encoded))
+                with self.assertRaisesRegex(RuntimeError, "manifest"):
+                    reuse.validate_core_manifest(archive, version, architecture, run_id, attempt,
+                                                 revision, Path(temporary))
+                manifest["source_archive"] = source
                 manifest["build_id"] = "github-999-1"
                 encoded = json.dumps(manifest).encode()
                 with tarfile.open(archive, "w:gz") as bundle:

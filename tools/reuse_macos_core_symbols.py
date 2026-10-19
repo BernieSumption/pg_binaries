@@ -26,7 +26,7 @@ MAX_ZIP_BYTES = 1024 * 1024 * 1024
 CORE_INPUTS = (
     "scripts/macos", "tools/create_macos_symbols.py", "tools/discover_builtins.py",
     "tools/source_archive.py", "tools/check_source_identity.py",
-    "support/postgresql-releases.json", ".github/workflows/postgresql-macos-selected-publication.yml",
+    ".github/workflows/postgresql-macos-selected-publication.yml",
 )
 
 

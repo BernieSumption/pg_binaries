@@ -20,8 +20,6 @@ CORE_INPUTS = (
     "scripts/linux/build-in-container.sh",
     "scripts/linux/bundle-glibc-in-container.sh",
     "scripts/linux/launcher.c",
-    "support.json",
-    "support/postgresql-releases.json",
     "support/licences/icu-70.1-LICENSE.txt",
     "support/licences/libxml2-2.9.13-dict-notice.txt",
     "tools/coverage.py",

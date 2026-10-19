@@ -2,6 +2,7 @@ import hashlib
 import io
 import json
 from pathlib import Path
+import subprocess
 import sys
 import tarfile
 import tempfile
@@ -145,6 +146,43 @@ class WindowsCoreCandidateTests(unittest.TestCase):
             result = self.resolve()
         self.assertEqual(result["status"], "stale")
         self.assertIn("recipe", result["reason"])
+
+    def test_core_recipe_comparison_ignores_unrelated_source_metadata(self):
+        root = self.output / "repository"
+        for name in (*candidate.SHARED_CORE_INPUTS, candidate.SELECTED_WORKFLOW):
+            path = root / name
+            if Path(name).suffix:
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_text("core recipe\n")
+            else:
+                path.mkdir(parents=True, exist_ok=True)
+                (path / "recipe.txt").write_text("core recipe\n")
+        snapshot = root / "support/postgresql-releases.json"
+        identities = root / "support/windows-postgresql-source-identities.json"
+        snapshot.parent.mkdir(parents=True, exist_ok=True)
+        snapshot.write_text('{"unrelated": 1}\n')
+        identities.write_text('{"unrelated": 1}\n')
+        subprocess.run(["git", "init", "-q"], cwd=root, check=True)
+        subprocess.run(["git", "config", "user.email", "test@example.invalid"], cwd=root, check=True)
+        subprocess.run(["git", "config", "user.name", "Test"], cwd=root, check=True)
+        subprocess.run(["git", "add", "."], cwd=root, check=True)
+        subprocess.run(["git", "commit", "-qm", "core inputs"], cwd=root, check=True)
+        revision = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=root, text=True).strip()
+        snapshot.write_text('{"unrelated": 2}\n')
+        identities.write_text('{"unrelated": 2}\n')
+        self.assertTrue(candidate._relevant_inputs_match(revision, root, selected=True))
+        (root / "scripts/windows/recipe.txt").write_text("changed recipe\n")
+        self.assertFalse(candidate._relevant_inputs_match(revision, root, selected=True))
+
+    def test_rejects_selected_release_source_change(self):
+        altered_source = dict(self.manifest["source_archive"])
+        altered_source["sha256"] = "0" * 64
+        with patch.object(candidate.discovery, "discover", side_effect=self.discovery_result(None, [self.row])), \
+             patch.object(candidate, "_relevant_inputs_match", return_value=True), \
+             patch.object(candidate.source_archive, "source_archive", return_value=altered_source):
+            result = self.resolve()
+        self.assertEqual(result["status"], "stale")
+        self.assertIn("source archive identity", result["reason"])
 
     def test_reports_missing_candidate(self):
         with patch.object(candidate.discovery, "discover", side_effect=self.discovery_result(None, [])):
