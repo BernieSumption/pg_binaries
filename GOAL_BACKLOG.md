@@ -71,6 +71,8 @@ The selected Linux pg_ivm path passed all eight PostgreSQL and architecture targ
 
 The [Collection selected Linux trial](support/evidence/collection-publication-39227491808/README.md) passed version 2.1.3 against PostgreSQL 18.6 on x86-64, with checked core reuse, fresh-runner Alpine verification and exact-byte independent evidence import. Enable the remaining declared Collection targets through the changed-profile scheduler, then remove the superseded combined-workflow section after they pass.
 
+[Run 39227461686](https://github.com/BernieSumption/pg_binaries/actions/runs/39227461686) passed the refreshed PostGIS and pgAudit selected Linux paths for all eight PostgreSQL/architecture targets each. Independent imports retained 32 [PostGIS](support/evidence/postgis-publication-39227461686/README.md) SQL component records and eight [pgAudit](support/evidence/pgaudit-publication-39227461686/README.md) records; imported bytes matched the available CI copies. This resolves the prior pgAudit artifact-directory failure. These records match the producer profiles at `b9434e2`; future source changes must be considered when choosing current evidence.
+
 ### Migrate active paths
 
 - [ ] Migrate remaining active PostgreSQL and extension build recipes, verification profiles, SQL probes, evidence emitters and importers, and workflows in batches. Cover every currently implemented platform, architecture, PostgreSQL release and project path; preserve required cases and exact archive identity checks. A batch is complete when its new path passes the applicable CI checks and the superseded path is removed.
