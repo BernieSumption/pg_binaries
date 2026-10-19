@@ -18,15 +18,16 @@ class LinuxChangedProfilesTests(unittest.TestCase):
         plan = module.extension_archive_plan.plan(support, releases)
         self.expected = []
         for target in plan["candidate_archives"]:
-            if target["project"] == "pg_jsonschema" and target["platform"].startswith("linux-"):
+            if target["project"] in {"HypoPG", "pg_jsonschema"} and target["platform"].startswith("linux-"):
                 self.expected.append({
-                    "project": "pg_jsonschema",
+                    "project": target["project"],
                     "extension_version": target["selected_version"],
                     "postgresql_version": target["postgresql_version"],
                     "platform": target["platform"],
                 })
         self.expected.sort(key=lambda item: (item["project"], item["postgresql_version"], item["platform"]))
-        self.profile_ids = [module._profile_id("pg-jsonschema", item["platform"].split("-")[1],
+        self.profile_ids = [module._profile_id("hypopg" if item["project"] == "HypoPG" else "pg-jsonschema",
+                                               item["platform"].split("-")[1],
                                                item["postgresql_version"])
                             for item in self.expected]
 
@@ -42,7 +43,7 @@ class LinuxChangedProfilesTests(unittest.TestCase):
 
     def test_initial_or_missing_base_selects_all_support_derived_targets(self):
         self.assertEqual(len(self.expected), len(self.profile_ids))
-        self.assertEqual({target["project"] for target in self.expected}, {"pg_jsonschema"})
+        self.assertEqual({target["project"] for target in self.expected}, {"HypoPG", "pg_jsonschema"})
         self.assertEqual({target["platform"] for target in self.expected},
                          {"linux-x86_64", "linux-arm64"})
         self.assertEqual(module.changed_targets(ROOT / "no-such-base", ROOT), self.expected)

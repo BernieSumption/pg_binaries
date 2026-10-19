@@ -16,7 +16,7 @@ MAX_EVIDENCE_BYTES = 1024 * 1024
 def import_run(root, core_artifact, extension_artifact, run_id, architecture,
                postgresql_version, *, slug, project, version, profile_prefix,
                publication_dir, extension_dir_name, report_name,
-               extension_dir_fallback=False):
+               extension_dir_fallback=False, target_profile=False):
     root, core_artifact, extension_artifact = map(Path, (root, core_artifact, extension_artifact))
     run_id = str(run_id)
     if (not re.fullmatch(r"\d+", run_id) or architecture not in ARCHITECTURES
@@ -27,7 +27,8 @@ def import_run(root, core_artifact, extension_artifact, run_id, architecture,
     if postgresql_version not in coverage.release_snapshot(snapshot, support):
         raise coverage.CoverageError(f"PostgreSQL {postgresql_version} is not selected")
     platform = f"linux-{architecture}"
-    profile_id = f"{profile_prefix}-publication-current-{architecture}"
+    profile_id = (f"{profile_prefix}-publication-linux-{architecture}-{postgresql_version}"
+                  if target_profile else f"{profile_prefix}-publication-current-{architecture}")
     profile = coverage.verification_profile(root, profile_id)
     if profile["scope"] != "publication" or platform not in profile["platforms"]:
         raise coverage.CoverageError("profile does not match publication platform")

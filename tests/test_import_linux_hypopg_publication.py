@@ -27,7 +27,8 @@ class LinuxHypopgPublicationImportTests(unittest.TestCase):
             shutil.copyfile(REPO / source, destination)
         profiles = coverage.load_json(self.root / "support/verification-profiles.json")["profiles"]
         source_paths = set()
-        for profile_id in ("hypopg-publication-current-x86_64",):
+        for profile_id in ("hypopg-publication-linux-x86_64-15.19",
+                           "hypopg-publication-linux-x86_64-18.6"):
             source_paths.update(profiles[profile_id]["sources"])
         for profile_source in source_paths:
             source = profile_source.partition("#profile-section=")[0]
@@ -96,7 +97,8 @@ class LinuxHypopgPublicationImportTests(unittest.TestCase):
         core_sha = self._sha(self.core_dir / self.core_name)
         hypopg_sha = self._sha(self.hypopg_dir / self.hypopg_name)
         for endpoint, profile_id, kernel, distribution, distribution_version in (
-                ("current", "hypopg-publication-current-x86_64", "6.8.0-test-kernel", "Alpine Linux", "3.22.6"),):
+                ("current", f"hypopg-publication-linux-x86_64-{self.postgresql_version}",
+                 "6.8.0-test-kernel", "Alpine Linux", "3.22.6"),):
             raw_result = {"failed": "failure"}.get(result, result)
             self._write_json(self.publication / f"{endpoint}-steps.json", {"archive-suite": raw_result})
             profile = coverage.verification_profile(self.root, profile_id)
