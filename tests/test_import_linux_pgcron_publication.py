@@ -28,7 +28,9 @@ class LinuxPgcronPublicationImportTests(unittest.TestCase):
             shutil.copyfile(REPO / source, destination)
         profiles = coverage.load_json(self.root / "support/verification-profiles.json")["profiles"]
         source_paths = set()
-        for profile_id in ("pgcron-publication-current-x86_64", "pgcron-publication-current-arm64"):
+        for profile_id in ("pgcron-publication-linux-x86_64-15.19",
+                           "pgcron-publication-linux-x86_64-18.6",
+                           "pgcron-publication-linux-arm64-18.6"):
             source_paths.update(profiles[profile_id]["sources"])
         for profile_source in source_paths:
             source = profile_source.partition("#profile-section=")[0]
@@ -103,7 +105,7 @@ class LinuxPgcronPublicationImportTests(unittest.TestCase):
         self.publication = self.pgcron_artifact / "pgcron-publication"
         self.records_dir = self.publication / "records"
         self.records_dir.mkdir(parents=True, exist_ok=True)
-        profile_id = f"pgcron-publication-current-{self.architecture}"
+        profile_id = f"pgcron-publication-linux-{self.architecture}-{self.postgresql_version}"
         profile = coverage.verification_profile(self.root, profile_id)
         image = "sha256:" + "b" * 64
         step_outcomes = {
@@ -262,6 +264,19 @@ class LinuxPgcronPublicationImportTests(unittest.TestCase):
         data = json.loads(record.read_text())
         self.assertEqual(data["assembled_core"]["archive"], self.core_name)
         self.assertEqual(data["assembled_core"]["sha256"], self._sha(self.core_dir / self.core_name))
+
+    def test_same_run_retains_each_postgresql_target_separately(self):
+        self._import()
+        self.postgresql_version = "15.19"
+        self.pgcron_version = self._selected_version(self.postgresql_version)
+        shutil.rmtree(self.pgcron_artifact)
+        shutil.rmtree(self.core_artifact)
+        self._make_artifacts()
+        self._make_publication()
+        self._import()
+        evidence = self.root / "support/evidence" / f"pgcron-publication-{self.run_id}/x86_64"
+        self.assertTrue((evidence / "18.6/current-receipt.json").is_file())
+        self.assertTrue((evidence / "15.19/current-receipt.json").is_file())
 
     def test_rejects_unselected_postgresql_minor(self):
         with self.assertRaisesRegex(coverage.CoverageError, "18.5 is not selected"):

@@ -41,7 +41,7 @@ def import_run(root, core_artifact, pgcron_artifact, run_id, architecture,
     releases = coverage.release_snapshot(snapshot, support)
     if postgresql_version not in releases:
         raise coverage.CoverageError(f"PostgreSQL {postgresql_version} is not selected")
-    profile_id = f"pgcron-publication-current-{architecture}"
+    profile_id = f"pgcron-publication-linux-{architecture}-{postgresql_version}"
     profile = coverage.verification_profile(root, profile_id)
     platform = f"linux-{architecture}"
     version = _selected_version(support, releases, postgresql_version, platform)
@@ -92,7 +92,8 @@ def import_run(root, core_artifact, pgcron_artifact, run_id, architecture,
     if bound and (len(digests) != 2 or set(digests) != {core_name, extension_name}):
         raise coverage.CoverageError("receipt or records exist but referenced archives are missing")
 
-    target = root / "support/evidence" / f"pgcron-publication-{run_id}" / architecture
+    target = (root / "support/evidence" / f"pgcron-publication-{run_id}"
+              / architecture / postgresql_version)
     copies = [(steps_path, target / steps_path.name), (attempt_path, target / attempt_path.name)]
     if receipt is not None:
         ci = receipt.get("ci", {})

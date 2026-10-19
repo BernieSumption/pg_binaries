@@ -109,6 +109,8 @@ jobs:
               ("pgtap", "linux-arm64"): "pgtap-linux",
               ("pg_ivm", "linux-x86_64"): "pgivm-linux",
               ("pg_ivm", "linux-arm64"): "pgivm-linux",
+              ("pg_cron", "linux-x86_64"): "pgcron-linux",
+              ("pg_cron", "linux-arm64"): "pgcron-linux",
               ("pg_jsonschema", "macos-arm64"): "pg-jsonschema-macos",
               ("pg_jsonschema", "macos-x86_64"): "pg-jsonschema-macos",
               ("pgtap", "macos-x86_64"): "pgtap-macos-x86_64",
@@ -197,6 +199,15 @@ jobs:
     needs: plan
     if: needs.plan.outputs.should_dispatch == 'true' && needs.plan.outputs.route == 'pgivm-linux'
     uses: ./.github/workflows/pgivm-linux-selected-publication.yml
+    with:
+      postgresql_version: ${{ needs.plan.outputs.postgresql_version }}
+      extension_version: ${{ needs.plan.outputs.extension_version }}
+      architecture: ${{ needs.plan.outputs.architecture }}
+
+  pgcron_linux:
+    needs: plan
+    if: needs.plan.outputs.should_dispatch == 'true' && needs.plan.outputs.route == 'pgcron-linux'
+    uses: ./.github/workflows/pgcron-linux-selected-publication.yml
     with:
       postgresql_version: ${{ needs.plan.outputs.postgresql_version }}
       extension_version: ${{ needs.plan.outputs.extension_version }}
