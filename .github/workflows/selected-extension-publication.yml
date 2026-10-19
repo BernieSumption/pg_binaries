@@ -136,6 +136,7 @@ jobs:
               ("pg_jsonschema", "macos-arm64"): "pg-jsonschema-macos",
               ("pg_jsonschema", "macos-x86_64"): "pg-jsonschema-macos",
               ("pg_jsonschema", "windows-x86_64"): "pg-jsonschema-windows",
+              ("pgtap", "macos-arm64"): "pgtap-macos-arm64",
               ("pgtap", "macos-x86_64"): "pgtap-macos-x86_64",
               ("pg_cron", "macos-arm64"): "pgcron-macos",
               ("pg_cron", "macos-x86_64"): "pgcron-macos",
@@ -302,6 +303,14 @@ jobs:
     needs: plan
     if: needs.plan.outputs.should_dispatch == 'true' && needs.plan.outputs.route == 'pgtap-macos-x86_64'
     uses: ./.github/workflows/pgtap-macos-x86_64-selected-publication.yml
+    with:
+      postgresql_version: ${{ needs.plan.outputs.postgresql_version }}
+      extension_version: ${{ needs.plan.outputs.extension_version }}
+
+  pgtap_macos_arm64:
+    needs: plan
+    if: needs.plan.outputs.should_dispatch == 'true' && needs.plan.outputs.route == 'pgtap-macos-arm64'
+    uses: ./.github/workflows/pgtap-macos-arm64-selected-publication.yml
     with:
       postgresql_version: ${{ needs.plan.outputs.postgresql_version }}
       extension_version: ${{ needs.plan.outputs.extension_version }}

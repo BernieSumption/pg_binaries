@@ -73,6 +73,22 @@ class PgtapMacosFreshRunnerBoundaryTests(unittest.TestCase):
                 self.assertIn(f"support/evidence/pgtap-macos-publication-${{{{ github.run_id }}}}/{architecture}/**", verify)
                 self.assertIn(f"-macos-{architecture}-current-", verify)
 
+    def test_arm64_target_is_derived_from_selected_work_and_callable_by_dispatcher(self):
+        workflow = (ROOT / ".github/workflows/pgtap-macos-arm64-selected-publication.yml").read_text()
+        select = self._workflow_job("arm64", "select")
+        self.assertIn("workflow_call:", workflow)
+        self.assertIn("--postgresql-version \"$POSTGRESQL_VERSION\"", select)
+        self.assertIn("work.get('version') != version", select)
+        self.assertIn("work.get('postgresql_version') != pg", select)
+        self.assertIn("version: ${{ steps.work.outputs.version }}", workflow)
+        self.assertIn("pgtap-${{ needs.select.outputs.extension_version }}-postgresql-", workflow)
+        self.assertNotIn("The selected pgTAP release is", select)
+        self.assertNotIn("15.19|16.15|17.11|18.6", select)
+
+        dispatcher = (ROOT / ".github/workflows/selected-extension-publication.yml").read_text()
+        self.assertIn('(\"pgtap\", \"macos-arm64\"): \"pgtap-macos-arm64\"', dispatcher)
+        self.assertIn("uses: ./.github/workflows/pgtap-macos-arm64-selected-publication.yml", dispatcher)
+
 
 if __name__ == "__main__":
     unittest.main()
