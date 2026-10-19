@@ -10,6 +10,7 @@ import re
 import sys
 
 import coverage
+import linux_core_resolution
 
 VERSION = "3.7.0"
 DEFAULT_PG_VERSION = "18.6"
@@ -90,14 +91,14 @@ def _case_results(verify_result, elf_outcome):
 
 def emit(root, archives, core_archives, output, architecture, build_result, verify_result,
          source_revision, run_id, repository, server_url, image_id, kernel_release,
-         pg_version=DEFAULT_PG_VERSION):
+         pg_version=DEFAULT_PG_VERSION, core_resolution_path=None, core_resolution_result=None):
     root, archives, core_archives, output = map(Path, (root, archives, core_archives, output))
     selected = profile_id(architecture, pg_version)
     core_run, core_hashes = CORE_PINS[pg_version]
     if not coverage.REVISION.fullmatch(source_revision or "") or not str(run_id).isdigit():
         raise coverage.CoverageError("full source revision and numeric workflow run ID are required")
-    if not repository or not server_url or not image_id:
-        raise coverage.CoverageError("GitHub and runner image provenance are required")
+    if not repository or not server_url:
+        raise coverage.CoverageError("GitHub provenance is required")
     match = re.fullmatch(r"(\d+(?:\.\d+)+)(?:[-+].*)?", kernel_release or "")
     if not match:
         raise coverage.CoverageError("Linux kernel release must start with a numeric dotted version")
@@ -109,6 +110,22 @@ def emit(root, archives, core_archives, output, architecture, build_result, veri
     archive_name = f"address-standardizer-{VERSION}-postgresql-{pg_version}-linux-{architecture}.tar.gz"
     core_name = f"postgresql-{pg_version}-linux-{architecture}.tar.gz"
     archive, core = archives / archive_name, core_archives / core_name
+    resolution_path = Path(core_resolution_path) if core_resolution_path else None
+    resolution = None
+    resolved_mode = resolution_path is not None
+    if resolved_mode and core_resolution_result is None and resolution_path.is_file():
+        core_resolution_result = "success"
+    if resolved_mode and core_resolution_result not in {"success", "failure", "skipped", "cancelled", "timed_out"}:
+        raise coverage.CoverageError("core resolution result must be a GitHub Actions outcome")
+    if resolved_mode and core_resolution_result == "success" and resolution_path.is_file():
+        try:
+            resolution = linux_core_resolution.validate_resolution(
+                resolution_path, core, pg_version, architecture)
+        except (OSError, ValueError) as exc:
+            raise coverage.CoverageError(f"invalid resolved PostgreSQL core provenance: {exc}") from exc
+        core_run = str(resolution["provenance"]["run_id"])
+    elif resolved_mode and core_resolution_result == "success":
+        raise coverage.CoverageError("successful core resolution is missing its provenance record")
     static_path = archives / "static-analysis" / "address-standardizer.json"
     static_outcome = read_json(static_path).get("outcome") if static_path.is_file() else None
     if static_outcome not in {None, "passed", "failed"}:
@@ -118,27 +135,34 @@ def emit(root, archives, core_archives, output, architecture, build_result, veri
     profile = coverage.verification_profile(root, selected)
     output.mkdir(parents=True, exist_ok=True)
     attempt_path = output / "attempt.json"
+    workflow_steps = {"build": build_result, "verify": verify_result}
+    if resolved_mode:
+        workflow_steps["core_resolution"] = core_resolution_result
     attempt = {
         "schema_version": 1, "run_id": str(run_id), "source_revision": source_revision,
         "profile_id": selected, "postgresql_version": pg_version, "version": VERSION,
-        "architecture": architecture, "core_run_id": core_run,
+        "architecture": architecture, "core_run_id": core_run if resolution is not None or not resolved_mode else None,
         "steps": {case: ("success" if result == "passed" else "failure" if result == "failed" else "skipped")
                   for case, result in results.items()},
-        "workflow_steps": {"build": build_result, "verify": verify_result},
+        "workflow_steps": workflow_steps,
         "release_eligible": False, "redistribution_status": BLOCK,
         "archives_present": {core_name: core.is_file(), archive_name: archive.is_file()},
         "reports": {"elf_closure": digest(static_path)} if static_path.is_file() else {},
     }
     attempt_path.write_text(json.dumps(attempt, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    if resolved_mode and resolution is None:
+        return (attempt_path,)
     if not archive.is_file() or not core.is_file():
         return (attempt_path,)
+    if not image_id or image_id == "unavailable":
+        raise coverage.CoverageError("runner verifier image provenance is required for complete archives")
 
     checksums = {archive_name: digest(archive), core_name: digest(core)}
     for path in (archive, core):
         _sidecar(path, checksums[path.name])
     attempt["archives"] = checksums
     attempt_path.write_text(json.dumps(attempt, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    if checksums[core_name] != core_hashes[architecture]:
+    if resolution is None and checksums[core_name] != core_hashes[architecture]:
         raise coverage.CoverageError(f"core archive differs from the pinned PostgreSQL {pg_version} archive")
     if static_path.is_file():
         static = read_json(static_path)
@@ -156,6 +180,8 @@ def emit(root, archives, core_archives, output, architecture, build_result, veri
     report_paths = {"elf_closure": static_path, "build_evidence": build_evidence,
                     "address_standardizer_license": archives / "Address-Standardizer-COPYING.txt",
                     "pcre2_license": archives / "PCRE2-COPYING.txt"}
+    if resolution is not None:
+        report_paths["core_resolution"] = resolution_path
     for key, path in report_paths.items():
         if not path.is_file():
             raise coverage.CoverageError(f"candidate evidence is missing {path.name}")
@@ -213,13 +239,15 @@ def main():
     parser.add_argument("--verify-result", required=True)
     parser.add_argument("--image-id", required=True)
     parser.add_argument("--kernel-release", required=True)
+    parser.add_argument("--core-resolution", type=Path)
+    parser.add_argument("--core-resolution-result", choices=("success", "failure", "skipped", "cancelled", "timed_out"))
     args = parser.parse_args()
     try:
         for path in emit(args.root, args.archives, args.core_archives, args.output, args.architecture,
                          args.build_result, args.verify_result, os.environ.get("GITHUB_SHA", ""),
                          os.environ.get("GITHUB_RUN_ID", ""), os.environ.get("GITHUB_REPOSITORY", ""),
                          os.environ.get("GITHUB_SERVER_URL", ""), args.image_id, args.kernel_release,
-                         args.postgresql_version):
+                         args.postgresql_version, args.core_resolution, args.core_resolution_result):
             print(path)
         return 0
     except (coverage.CoverageError, OSError, ValueError, TypeError, KeyError) as exc:

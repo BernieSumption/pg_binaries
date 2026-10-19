@@ -5,6 +5,10 @@ on:
     branches: [spike]
     paths:
       - '.github/workflows/postgresql-macos-selected-publication.yml'
+      - 'tools/reuse_macos_core_symbols.py'
+      - 'tools/stage_macos_core_symbols.py'
+      - 'tests/test_reuse_macos_core_symbols.py'
+      - 'tests/test_stage_macos_core_symbols.py'
   workflow_call:
     inputs:
       postgresql_version:
@@ -72,8 +76,19 @@ jobs:
       PG_ARCHITECTURE: ${{ needs.select.outputs.architecture }}
     steps:
       - uses: actions/checkout@v4
+      - name: Check macOS core symbol reuse helpers
+        run: python3 -m unittest tests/test_reuse_macos_core_symbols.py tests/test_stage_macos_core_symbols.py
       - name: Build and package selected PostgreSQL core and symbols
+        id: reuse
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 tools/reuse_macos_core_symbols.py \
+            --postgresql-version "$PG_VERSION" --architecture "$PG_ARCHITECTURE" \
+            --destination "$RUNNER_TEMP/archives" --github-output "$GITHUB_OUTPUT"
+      - name: Build selected PostgreSQL core and symbols
         id: package
+        if: steps.reuse.outputs.reused != 'true'
         continue-on-error: true
         run: bash scripts/macos/build.sh "$RUNNER_TEMP/archives" "$PG_ARCHITECTURE" "$PG_VERSION" core-only
       - uses: actions/upload-artifact@v4
@@ -89,8 +104,8 @@ jobs:
       - name: Require core build
         if: always()
         run: |
-          if [[ '${{ steps.package.outcome }}' != success ]]; then
-            echo 'Selected macOS PostgreSQL core build must pass' >&2
+          if [[ '${{ steps.reuse.outputs.reused }}' != true && '${{ steps.package.outcome }}' != success ]]; then
+            echo 'Selected macOS PostgreSQL core reuse or build must pass' >&2
             exit 1
           fi
 

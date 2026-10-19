@@ -1,5 +1,6 @@
 """Focused checks for Linux Address Standardizer candidate evidence."""
 
+from contextlib import ExitStack
 import hashlib
 import json
 import sys
@@ -44,6 +45,20 @@ class AddressStandardizerLinuxPublication(unittest.TestCase):
         self.assertIn("if: needs.plan.outputs.has_targets == 'true'", publish_header)
         self.assertIn('os.environ["EVENT_NAME"] == "workflow_dispatch"', workflow)
 
+    def test_selected_18_6_trial_uses_shared_target_and_core_resolution(self):
+        workflow = (ROOT / ".github/workflows/address-standardizer-linux-selected-publication.yml").read_text()
+        self.assertIn("tools/extension_archive_plan.py", workflow)
+        self.assertIn("--project 'Address Standardizer'", workflow)
+        self.assertIn("--postgresql-version \"$PG_VERSION\"", workflow)
+        self.assertIn("scripts/linux/resolve-core.sh", workflow)
+        self.assertIn("core-resolution.json", workflow)
+        self.assertIn("tools/import_address_standardizer_linux_publication.py", workflow)
+        self.assertIn("'18.6'", workflow)
+        self.assertIn("PG_ARCHITECTURE: x86_64", workflow)
+        registry = coverage.load_json(ROOT / "support/verification-profiles.json")
+        sources = registry["profiles"][publication.profile_id("x86_64")]["sources"]
+        self.assertIn(".github/workflows/address-standardizer-linux-selected-publication.yml", sources)
+
     def test_case_results_preserve_failed_and_skipped_work(self):
         self.assertEqual(publication._case_results("success", "passed"),
                          {"archive-suite": "passed", "elf-closure": "passed"})
@@ -79,6 +94,10 @@ class AddressStandardizerLinuxPublication(unittest.TestCase):
                 archive_hash = hashlib.sha256(archive.read_bytes()).hexdigest()
                 for path, checksum in ((archive, archive_hash), (core, core_hash)):
                     Path(str(path) + ".sha256").write_text(f"{checksum}  {path.name}\n", encoding="utf-8")
+                resolution = None
+                if index == 0:
+                    resolution = core_dir / "core-resolution.json"
+                    resolution.write_text("{}\n", encoding="utf-8")
                 static = archives / "static-analysis"
                 static.mkdir()
                 (static / "address-standardizer.json").write_text(json.dumps({
@@ -99,12 +118,20 @@ class AddressStandardizerLinuxPublication(unittest.TestCase):
                 args = (ROOT, archives, core_dir, output, architecture, "success", "success",
                         "c" * 40, run_id, "owner/repo", "https://github.com",
                         "sha256:" + "d" * 64, "6.17.0-azure", pg_version)
-                with patch.object(publication, "digest",
-                                  side_effect=lambda path: core_hash if Path(path) == core else
-                                  hashlib.sha256(Path(path).read_bytes()).hexdigest()), \
-                        patch.object(coverage, "verification_profile", return_value=self.profile), \
-                        patch.object(coverage, "validate_verification_record", return_value=True):
-                    emitted = publication.emit(*args)
+                resolution_record = {"provenance": {"run_id": "99887766"}}
+                with ExitStack() as stack:
+                    stack.enter_context(patch.object(
+                        publication, "digest",
+                        side_effect=lambda path: core_hash if Path(path) == core else
+                        hashlib.sha256(Path(path).read_bytes()).hexdigest()))
+                    stack.enter_context(patch.object(coverage, "verification_profile", return_value=self.profile))
+                    stack.enter_context(patch.object(coverage, "validate_verification_record", return_value=True))
+                    if resolution is not None:
+                        stack.enter_context(patch.object(publication.linux_core_resolution,
+                                                         "validate_resolution", return_value=resolution_record))
+                        stack.enter_context(patch.object(importer.linux_core_resolution,
+                                                         "validate_resolution", return_value=resolution_record))
+                    emitted = publication.emit(*args, resolution)
                     attempt = json.loads((output / "attempt.json").read_text(encoding="utf-8"))
                     receipt = json.loads((output / "current-receipt.json").read_text(encoding="utf-8"))
                     record = json.loads((output / "verification-record.json").read_text(encoding="utf-8"))
@@ -114,7 +141,7 @@ class AddressStandardizerLinuxPublication(unittest.TestCase):
                                            output / "verification-record.json"))
                 self.assertEqual(attempt["archives"], {archive_name: archive_hash, core_name: core_hash})
                 self.assertEqual(attempt["profile_id"], publication.profile_id(architecture, pg_version))
-                self.assertEqual(attempt["core_run_id"], expected_core_run)
+                self.assertEqual(attempt["core_run_id"], "99887766" if resolution else expected_core_run)
                 self.assertEqual(core_hash, publication.CORE_PINS[pg_version][1][architecture])
                 self.assertEqual(receipt["extension_archive"], archive_name)
                 self.assertEqual(receipt["release_eligible"], False)
@@ -132,6 +159,46 @@ class AddressStandardizerLinuxPublication(unittest.TestCase):
                 self.assertTrue((evidence / "verification-record.json").is_file())
                 installed = root / "support/verification" / f"address-standardizer-3.7.0-postgresql-{pg_version}-linux-{architecture}-current-{run_id}.json"
                 self.assertTrue(installed.is_file())
+
+    def test_failed_core_resolution_retains_attempt_but_cannot_publish_complete_archives(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary) / "root"
+            (root / "support").mkdir(parents=True)
+            (root / "support.json").write_bytes((ROOT / "support.json").read_bytes())
+            archives, core_dir = Path(temporary) / "archives", Path(temporary) / "core"
+            archives.mkdir()
+            core_dir.mkdir()
+            output = archives / "publication"
+            args = (root, archives, core_dir, output, "x86_64", "skipped", "skipped",
+                    "c" * 40, "76543", "owner/repo", "https://github.com",
+                    "unavailable", "6.17.0-azure", "18.6", core_dir / "core-resolution.json", "failure")
+            with patch.object(coverage, "verification_profile", return_value=self.profile):
+                emitted = publication.emit(*args)
+            self.assertEqual(emitted, (output / "attempt.json",))
+            attempt = json.loads((output / "attempt.json").read_text(encoding="utf-8"))
+            self.assertEqual(attempt["workflow_steps"], {
+                "build": "skipped", "verify": "skipped", "core_resolution": "failure"})
+            self.assertIsNone(attempt["core_run_id"])
+            with patch.object(coverage, "verification_profile", return_value=self.profile):
+                retained = importer.import_run(root, core_dir, archives, "76543")
+            self.assertTrue(any(name.endswith("/attempt.json") for name in retained))
+
+            archive = archives / "address-standardizer-3.7.0-postgresql-18.6-linux-x86_64.tar.gz"
+            core = core_dir / "postgresql-18.6-linux-x86_64.tar.gz"
+            archive.write_bytes(b"complete extension archive")
+            core.write_bytes(b"complete core archive")
+            (core_dir / "core-resolution.json").write_text("invalid provenance\n", encoding="utf-8")
+            complete_args = list(args)
+            complete_args[8] = "76544"
+            with patch.object(coverage, "verification_profile", return_value=self.profile):
+                emitted = publication.emit(*complete_args)
+            self.assertEqual(emitted, (output / "attempt.json",))
+            with patch.object(coverage, "verification_profile", return_value=self.profile):
+                importer.import_run(root, core_dir, archives, "76544")
+            self.assertFalse((output / "current-receipt.json").exists())
+            self.assertFalse((output / "verification-record.json").exists())
+            self.assertIn("test \"$CORE_RESOLUTION\" = success",
+                          (ROOT / ".github/workflows/address-standardizer-linux-selected-publication.yml").read_text())
 
     def test_import_rejects_core_bytes_that_differ_from_pinned_archive(self):
         with tempfile.TemporaryDirectory() as temporary:

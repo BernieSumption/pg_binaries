@@ -11,6 +11,7 @@ import sys
 
 import coverage
 import emit_address_standardizer_linux_publication as publication
+import linux_core_resolution
 
 MAX_FILE_BYTES = 8 * 1024 * 1024
 
@@ -66,14 +67,17 @@ def import_run(root, core_archives, archives, run_id):
     if (attempt.get("schema_version") != 1 or str(attempt.get("run_id")) != run_id
             or attempt.get("profile_id") != selected or attempt.get("postgresql_version") != pg_version
             or attempt.get("version") != publication.VERSION
-            or attempt.get("core_run_id") != publication.CORE_PINS[pg_version][0]
             or attempt.get("release_eligible") is not False
             or attempt.get("redistribution_status") != publication.BLOCK
             or not coverage.REVISION.fullmatch(str(attempt.get("source_revision", "")))):
         raise coverage.CoverageError("raw attempt identity does not match this run and profile")
     workflow = attempt.get("workflow_steps")
-    if not isinstance(workflow, dict) or set(workflow) != {"build", "verify"}:
+    if not isinstance(workflow, dict) or set(workflow) not in ({"build", "verify"},
+                                                                 {"build", "verify", "core_resolution"}):
         raise coverage.CoverageError("raw attempt must retain build and verify outcomes")
+    resolved_mode = "core_resolution" in workflow
+    if resolved_mode and workflow["core_resolution"] not in {"success", "failure", "skipped", "cancelled", "timed_out"}:
+        raise coverage.CoverageError("raw attempt core resolution outcome is invalid")
     results = publication._case_results(workflow["verify"],
         "passed" if attempt.get("steps", {}).get("elf-closure") == "success" else
         "failed" if attempt.get("steps", {}).get("elf-closure") == "failure" else None)
@@ -88,12 +92,34 @@ def import_run(root, core_archives, archives, run_id):
     archive, core = archives / archive_name, core_archives / core_name
     if attempt.get("archives_present") != {core_name: core.is_file(), archive_name: archive.is_file()}:
         raise coverage.CoverageError("raw attempt archive presence differs from downloaded files")
+    resolution_path = core_archives / "core-resolution.json"
+    resolution = None
+    if resolved_mode:
+        if resolution_path.is_file() and workflow["core_resolution"] == "success":
+            try:
+                resolution = linux_core_resolution.validate_resolution(
+                    resolution_path, core, pg_version, architecture)
+            except (OSError, ValueError) as exc:
+                raise coverage.CoverageError(f"invalid resolved PostgreSQL core provenance: {exc}") from exc
+            if (workflow["core_resolution"] != "success"
+                    or attempt.get("core_run_id") != resolution["provenance"]["run_id"]):
+                raise coverage.CoverageError("raw attempt core provenance differs from resolution outcome")
+        elif (workflow["core_resolution"] == "success" or attempt.get("core_run_id") is not None):
+            raise coverage.CoverageError("selected attempt lacks required PostgreSQL core provenance")
+    elif attempt.get("core_run_id") != publication.CORE_PINS[pg_version][0]:
+        raise coverage.CoverageError("raw attempt core run ID differs from pinned core")
     evidence = root / "support/evidence" / f"address-standardizer-linux-publication-{run_id}"
     if pg_version != "18.6":
         evidence /= pg_version
     evidence /= architecture
     copies = []
     retain(attempt_path, evidence / "attempt.json", copies)
+    if resolved_mode and resolution is None:
+        if ((archives / "publication/current-receipt.json").exists()
+                or (archives / "publication/verification-record.json").exists()):
+            raise coverage.CoverageError("archive-bound evidence exists without resolved core provenance")
+        copy(copies, root)
+        return [str(destination.relative_to(root)) for _, destination in copies]
     if archive.is_symlink() or core.is_symlink():
         raise coverage.CoverageError("archives must not be symbolic links")
     if not archive.is_file() or not core.is_file():
@@ -103,7 +129,7 @@ def import_run(root, core_archives, archives, run_id):
         return [str(destination.relative_to(root)) for _, destination in copies]
 
     checksums = {archive_name: publication.digest(archive), core_name: publication.digest(core)}
-    if checksums[core_name] != publication.CORE_PINS[pg_version][1][architecture]:
+    if resolution is None and checksums[core_name] != publication.CORE_PINS[pg_version][1][architecture]:
         raise coverage.CoverageError(f"core archive differs from the pinned PostgreSQL {pg_version} bytes")
     for path in (archive, core):
         publication._sidecar(path, checksums[path.name])
@@ -117,6 +143,8 @@ def import_run(root, core_archives, archives, run_id):
                     "address_standardizer_license": (archives / "Address-Standardizer-COPYING.txt", "Address-Standardizer-COPYING.txt"),
                     "pcre2_license": (archives / "PCRE2-COPYING.txt", "PCRE2-COPYING.txt"),
                     "probe_output": (archives / "probe-output.txt", "probe-output.txt")}
+    if resolution is not None:
+        report_names["core_resolution"] = (resolution_path, "core-resolution.json")
     reports = {}
     for key, (source, name) in report_names.items():
         if source.is_file():
