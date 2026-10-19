@@ -97,6 +97,17 @@ class PgIvmSelectedMacosPublicationTests(unittest.TestCase):
         self.assertIn('--archives "$RUNNER_TEMP/pgivm/verification"', workflow)
         self.assertIn('--pgivm-artifact "$RUNNER_TEMP/pgivm/verification"', workflow)
 
+    def test_selected_workflow_derives_versions_from_declared_work(self):
+        workflow = (ROOT / ".github/workflows/pgivm-macos-selected-publication.yml").read_text()
+        self.assertIn("type: string\n      extension_version:", workflow)
+        self.assertNotIn("options: ['17.11', '18.6']", workflow)
+        self.assertNotIn("work.get('version') != '1.16'", workflow)
+        self.assertNotIn("work.get('postgresql_version') != pg", workflow)
+        self.assertIn("version != requested_version", workflow)
+        self.assertIn("pg != requested_pg", workflow)
+        self.assertIn("out.write(f'postgresql_version={pg}\\nextension_version={version}", workflow)
+        self.assertIn("pg_ivm-${{ needs.select.outputs.extension_version }}-postgresql-", workflow)
+
 
 if __name__ == "__main__":
     unittest.main()
