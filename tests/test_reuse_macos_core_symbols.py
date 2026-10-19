@@ -97,10 +97,10 @@ class ReuseMacOSCoreSymbolsTests(unittest.TestCase):
             data = io.BytesIO()
             with zipfile.ZipFile(data, "w") as archive:
                 archive.writestr(f"_temp/verification/{filename}", body)
-                archive.writestr(f"support/verification/{filename}", body)
+                archive.writestr(f"pg_binaries/pg_binaries/support/verification/{filename}", body)
             reuse.extract_zip(data.getvalue(), root)
             self.assertEqual(reuse._artifact_file(root, filename), body)
-            (root / "support/verification" / filename).write_bytes(b'{"outcome":"failed"}')
+            (root / "pg_binaries/pg_binaries/support/verification" / filename).write_bytes(b'{"outcome":"failed"}')
             with self.assertRaisesRegex(RuntimeError, "copies disagree"):
                 reuse._artifact_file(root, filename)
 
