@@ -197,6 +197,29 @@ class PgJsonschemaMacOSPublicationTests(unittest.TestCase):
                 self.assertEqual(target.module_filename, "pg_jsonschema.so" if name.startswith("15.")
                                  else "pg_jsonschema.dylib")
 
+    def test_target_loader_accepts_stable_core_pin_without_inventing_provenance(self):
+        value = json.loads(self.fixture.target_config.read_text())
+        value["core_archive"] = {key: value["core_archive"][key] for key in ("basename", "sha256")}
+        self.fixture.target_config.write_text(json.dumps(value))
+        target = load_target(self.fixture.target_config)
+        self.assertEqual(target.core_sha256, self.fixture.core_hash)
+        self.assertIsNone(target.core_run_id)
+        self.assertIsNone(target.core_build_id)
+        self.assertIsNone(target.core_source_revision)
+        self.assertEqual(target.shell_values()[6], "")
+        self.assertEqual(target.shell_values()[8:10], ("", ""))
+
+    def test_target_loader_accepts_positive_runtime_attempt_and_rejects_invalid_attempt(self):
+        value = json.loads(self.fixture.target_config.read_text())
+        run_id = value["core_archive"]["run_id"]
+        value["core_archive"]["build_id"] = f"github-{run_id}-3"
+        self.fixture.target_config.write_text(json.dumps(value))
+        self.assertEqual(load_target(self.fixture.target_config).core_build_id, f"github-{run_id}-3")
+        value["core_archive"]["build_id"] = f"github-{run_id}-0"
+        self.fixture.target_config.write_text(json.dumps(value))
+        with self.assertRaisesRegex(ValueError, "core identity is invalid"):
+            load_target(self.fixture.target_config)
+
     def test_pg15_and_pg16_targets_emit_and_import_archive_bound_records(self):
         for name in ("15.19-arm64", "15.19-x86_64", "16.15-arm64", "16.15-x86_64"):
             with self.subTest(target=name):

@@ -12,7 +12,8 @@ CARGO_LOCK_SHA256 = "ab865dc25d9eea4bf7dbfaf8fae13283e5c0bce4bca460fe10464c6716e
 BLOCKERS = ["seahash-4.1.0-notice-unresolved", "postgresql-core-redistribution-review-pending"]
 EXPECTED_KEYS = {"schema_version", "profile_id", "postgresql_version", "pg_jsonschema_version",
                  "architecture", "platform", "core_archive", "source"}
-CORE_KEYS = {"basename", "run_id", "sha256", "build_id", "source_revision"}
+CORE_KEYS = {"basename", "sha256"}
+RESOLVED_CORE_KEYS = CORE_KEYS | {"run_id", "build_id", "source_revision"}
 
 
 @dataclass(frozen=True)
@@ -54,10 +55,11 @@ class Target:
                 f"{self.platform}.tar.gz")
 
     def shell_values(self):
-        return (self.postgresql_version, self.extension_version, self.architecture, self.platform,
-                self.profile_id, self.core_basename, self.core_run_id, self.core_sha256,
-                self.core_build_id, self.core_source_revision, self.source_url,
-                self.source_commit, self.cargo_lock_sha256, self.module_filename)
+        return tuple(value or "" for value in
+                     (self.postgresql_version, self.extension_version, self.architecture, self.platform,
+                      self.profile_id, self.core_basename, self.core_run_id, self.core_sha256,
+                      self.core_build_id, self.core_source_revision, self.source_url,
+                      self.source_commit, self.cargo_lock_sha256, self.module_filename))
 
 
 def _unique_object(pairs):
@@ -78,7 +80,7 @@ def load_target(path):
     if not isinstance(value, dict) or set(value) != EXPECTED_KEYS:
         raise ValueError("pg_jsonschema target has an unexpected field set")
     core, source = value.get("core_archive"), value.get("source")
-    if not isinstance(core, dict) or set(core) != CORE_KEYS:
+    if not isinstance(core, dict) or frozenset(core) not in {frozenset(CORE_KEYS), frozenset(RESOLVED_CORE_KEYS)}:
         raise ValueError("pg_jsonschema core_archive has an unexpected field set")
     if not isinstance(source, dict) or set(source) != {"url", "commit", "cargo_lock_sha256"}:
         raise ValueError("pg_jsonschema source has an unexpected field set")
@@ -92,16 +94,22 @@ def load_target(path):
     platform = f"macos-{architecture}"
     profile = f"pg-jsonschema-publication-macos-{architecture}-{pg_version}"
     basename = f"postgresql-{pg_version}-{platform}.tar.gz"
+    resolved = set(core) == RESOLVED_CORE_KEYS
     run_id, digest, build_id, revision = (core.get(key) for key in
                                           ("run_id", "sha256", "build_id", "source_revision"))
     if (value.get("profile_id") != profile or value.get("platform") != platform
             or core.get("basename") != basename):
         raise ValueError("pg_jsonschema target profile or archive identity is inconsistent")
-    if (not isinstance(run_id, str) or not run_id.isdigit()
-            or not isinstance(digest, str) or not re.fullmatch(r"[0-9a-f]{64}", digest)
-            or build_id != f"github-{run_id}-1"
-            or not isinstance(revision, str) or not re.fullmatch(r"[0-9a-f]{40}", revision)):
+    if (not isinstance(digest, str) or not re.fullmatch(r"[0-9a-f]{64}", digest)):
         raise ValueError("pg_jsonschema core identity is invalid")
+    if resolved:
+        build_match = re.fullmatch(r"github-([0-9]+)-([1-9][0-9]*)", build_id) if isinstance(build_id, str) else None
+        if (not isinstance(run_id, str) or not run_id.isdigit()
+                or not build_match or build_match.group(1) != run_id
+                or not isinstance(revision, str) or not re.fullmatch(r"[0-9a-f]{40}", revision)):
+            raise ValueError("pg_jsonschema core identity is invalid")
+    else:
+        run_id = build_id = revision = None
     if (source.get("url") != SOURCE_URL or source.get("commit") != SOURCE_COMMIT
             or source.get("cargo_lock_sha256") != CARGO_LOCK_SHA256):
         raise ValueError("pg_jsonschema source must match pinned 0.3.4 inputs")

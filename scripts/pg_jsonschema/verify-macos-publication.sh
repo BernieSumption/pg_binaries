@@ -46,21 +46,15 @@ cleanup() {
 }
 trap cleanup EXIT
 mkdir -p "$work/core" "$work/extension" "$work/merged" "$work/compiled-prefix" "$work/socket"
-python3 - "$core_archives/$core_name" "$extension_archives/$extension_name" "$work/core" "$work/extension" <<'PY'
-import pathlib
+python3 - "$repo/tools" "$core_archives/$core_name" "$extension_archives/$extension_name" "$work/core" "$work/extension" <<'PY'
 import sys
-import tarfile
+from pathlib import Path
 
-for archive_path, destination in zip(map(pathlib.Path, sys.argv[1:3]), map(pathlib.Path, sys.argv[3:5])):
-    with tarfile.open(archive_path, "r:gz") as archive:
-        seen = set()
-        for member in archive.getmembers():
-            path = pathlib.PurePosixPath(member.name)
-            if (member.name in seen or path.is_absolute() or ".." in path.parts
-                    or member.issym() or member.islnk()):
-                raise SystemExit(f"unsafe archive member in {archive_path.name}: {member.name}")
-            seen.add(member.name)
-        archive.extractall(destination)
+sys.path.insert(0, sys.argv[1])
+from stage_extension_archive import _extract_checked
+
+for archive_path, destination in zip(map(Path, sys.argv[2:4]), map(Path, sys.argv[4:6])):
+    _extract_checked(archive_path, destination)
 PY
 python3 - "$work/extension/metadata.json" "$core_name" "$core_sha256" "$pg_version" \
   "$architecture" "$source_url" "$extension_commit" "$cargo_lock_sha256" <<'PY'
@@ -108,10 +102,10 @@ for source in payload.rglob("*"):
 PY
 cp "$payload/LICENSES/pg_jsonschema-cargo-license-inventory.json" "$output/cargo-license-inventory.json"
 
-python3 - "$testroot" "$pg_version" "$architecture" "$core_build_id" "$core_revision" <<'PY'
+python3 - "$testroot" "$pg_version" "$architecture" "$core_build_id" "$core_revision" "$work/prefix.txt" <<'PY'
 import json, pathlib, re, sys
 root = pathlib.Path(sys.argv[1])
-version, architecture, build_id, revision = sys.argv[2:]
+version, architecture, build_id, revision = sys.argv[2:6]
 manifest = json.loads((root / "manifest.json").read_text())
 expected = {"component": "postgresql", "version": version, "postgresql_version": version,
             "platform": "macos", "architecture": architecture, "build_id": build_id,
@@ -124,14 +118,9 @@ if not match: raise SystemExit("cannot read PostgreSQL archive installation pref
 prefix = pathlib.Path(match.group(1))
 if not re.fullmatch(r"/Users/runner/work/_temp/pg-macos-pilot\.[A-Za-z0-9]+/install/postgresql", str(prefix)):
     raise SystemExit(f"unexpected PostgreSQL archive installation prefix: {prefix}")
-print(prefix)
+pathlib.Path(sys.argv[6]).write_text(str(prefix))
 PY
-prefix=$(python3 - "$testroot" <<'PY'
-import pathlib, re, sys
-header = (pathlib.Path(sys.argv[1]) / "include/server/pg_config.h").read_text()
-print(re.search(r'#define CONFIGURE_ARGS "[^\n]*?--prefix=([^\']+)', header).group(1))
-PY
-)
+prefix=$(<"$work/prefix.txt")
 if [[ -e $prefix || -L $prefix ]]; then echo "Refusing to replace existing PostgreSQL prefix path: $prefix" >&2; exit 1; fi
 mkdir -p "$(dirname "$prefix")"
 ln -s "$prefix_target" "$prefix"
