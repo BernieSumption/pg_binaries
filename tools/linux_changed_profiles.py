@@ -82,9 +82,8 @@ def changed_targets(before_root, current_root):
             try:
                 previous = coverage.verification_profile(before_root, target["profile_id"])
             except Exception as exc:
-                print(f"Cannot resolve base profile {target['profile_id']!r}; selecting all routed targets: {exc}",
+                print(f"Cannot resolve base profile {target['profile_id']!r}; selecting this target: {exc}",
                       file=sys.stderr)
-                selected = True
                 should_select = True
             else:
                 should_select = (previous["profile_revision"] != target["profile_revision"])
