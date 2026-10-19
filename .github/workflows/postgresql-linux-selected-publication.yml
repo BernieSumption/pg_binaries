@@ -218,6 +218,7 @@ jobs:
             support/verification/postgresql-${{ needs.select.outputs.postgresql_version }}-linux-${{ needs.select.outputs.architecture }}-current-${{ github.run_id }}.json
           if-no-files-found: warn
           retention-days: 7
+          include-hidden-files: true
       - name: Require every core publication check and evidence import
         if: always()
         env:

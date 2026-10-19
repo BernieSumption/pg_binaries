@@ -1,0 +1,7 @@
+# PostgreSQL 18.6 macOS arm64 core publication run 39264498472
+
+[Run 39264498472](https://github.com/BernieSumption/pg_binaries/actions/runs/39264498472) passed selection, build, fresh-runner verification and the publication gate in 2m40s (13:56:36–13:59:16 UTC on 2026-10-19). Its source revision was `1d0181de66831b039b8a8815cd5360ed977ec015`. The exact-revision importer retained the archive-bound record and evidence. The archive SHA-256 is `33807e7b17519acf8643ed73429ba7c983cf9572be12048bdb7b6a872f682608`, matching preceding run 39260057987.
+
+The build log confirms reuse: `reuse_macos_core_symbols.py` reported “Reused passing macOS core archive and dSYMs with matching build inputs”; the compile step was skipped. The current profile `postgresql-publication-macos-arm64-18.6` at revision `cfe84735d9c7a7e843c9bba37dcca65daa7404e46e7f1dca2b52148b1137412d` passed all three cases (`archive-suite`, `diagnostics`, `symbols`) on a clean macOS 15.7.9 arm64 verifier, including dependency checks.
+
+The build artifact was `postgresql-macos-selected-18.6-arm64-build-39264498472` (ID `12192063860`, ZIP SHA-256 `abdca7f7beec38b41de5b3143707fdac7e09f9f5d95c0760f3988e708798e464`). The verification artifact was `postgresql-macos-selected-18.6-arm64-verification-39264498472` (ID `12192336521`, ZIP SHA-256 `bef8e9c4cd661776bf2cca47915eb688127832a70a0024f93f5ad957dd926941`). The importer validated the record against the downloaded archive and sidecar; all six retained evidence files and the verification record match their downloaded artifact copies byte-for-byte.
