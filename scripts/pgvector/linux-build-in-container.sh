@@ -2,7 +2,7 @@
 set -euo pipefail
 pg_version=${PG_VERSION:?}; architecture=${PG_ARCHITECTURE:?}
 vector_version=${PGVECTOR_VERSION:-0.8.7}
-[[ "$pg_version" =~ ^(17|18)\.[0-9]+$ && "$architecture" == x86_64 ]] || { echo "Selected path supports PostgreSQL 17 and 18 on x86_64 only" >&2; exit 2; }
+[[ "$pg_version" =~ ^(15|16|17|18)\.[0-9]+$ && "$architecture" =~ ^(x86_64|arm64)$ ]] || { echo "Selected path supports PostgreSQL 15 through 18 on x86_64 or arm64" >&2; exit 2; }
 [[ "$vector_version" =~ ^[0-9]+(\.[0-9]+)+$ ]] || { echo "PGVECTOR_VERSION must be a dotted numeric release" >&2; exit 2; }
 pg_major=${pg_version%%.*}
 core_archive=${CORE_ARCHIVE:?}; source_archive=${SOURCE_ARCHIVE:?}; source_sha=${VECTOR_SOURCE_SHA256:?}
@@ -48,7 +48,10 @@ metadata = json.loads(metadata_path.read_text())
 identity = json.loads(identity_path.read_text())
 if (identity['upstream_sources']['pgvector']['sha256'] != metadata['source_archive']['sha256']
         or identity['dependencies']['builder_packages']['sha256'] != metadata['builder_packages_sha256']
-        or identity['target']['platform'] != 'linux-x86_64'
+        or identity['dependencies']['postgresql']['sha256'] != metadata['core_archive']['sha256']
+        or identity['target']['platform'] != 'linux-' + metadata['architecture']
+        or identity['target']['version'] != metadata['version']
+        or identity['build_configuration']['architecture'] != metadata['architecture']
         or identity['target']['postgresql_major'] != int(os.environ['PG_MAJOR'])):
     raise SystemExit('build input identity disagrees with the checked build inputs')
 metadata['build_inputs'] = identity

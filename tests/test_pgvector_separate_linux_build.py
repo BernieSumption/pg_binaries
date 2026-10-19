@@ -72,8 +72,18 @@ class SeparateLinuxPgvectorBuildInputs(unittest.TestCase):
             archive_input.validate_core(self.core, self.sidecar, archive_input.sha256(self.core), "17.11", "x86_64", "a" * 64)
         arm_name = self.directory / "postgresql-18.6-linux-arm64.tar.gz"
         arm_name.write_bytes(self.core.read_bytes())
-        with self.assertRaisesRegex(ValueError, "requires"):
+        with self.assertRaisesRegex(ValueError, "checksum sidecar"):
             archive_input.validate_core(arm_name, self.sidecar, archive_input.sha256(arm_name), "18.6", "arm64", "a" * 64)
+
+    def test_accepts_selected_arm64_core_with_matching_manifest(self):
+        self.core = self.directory / "postgresql-15.19-linux-arm64.tar.gz"
+        self.manifest.update(version="15.19", architecture="arm64")
+        self.write_core()
+        self.sidecar = self.directory / (self.core.name + ".sha256")
+        self.refresh_sidecar()
+        self.assertEqual(archive_input.validate_core(
+            self.core, self.sidecar, archive_input.sha256(self.core), "15.19", "arm64", "a" * 64),
+            archive_input.sha256(self.core))
 
     def test_rejects_replaced_archive_even_when_sidecar_is_replaced_too(self):
         self.manifest["build_id"] = "replacement"

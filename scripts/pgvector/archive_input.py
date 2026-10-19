@@ -24,9 +24,9 @@ def validate_source(path, expected, version="0.8.7"):
 def validate_core(path, sidecar, expected_sha, version, architecture, expected_source_sha):
     path = Path(path)
     expected_name = f"postgresql-{version}-linux-{architecture}.tar.gz"
-    if (path.name != expected_name or not re.fullmatch(r"(17|18)\.[0-9]+", version)
-            or architecture != "x86_64"):
-        raise ValueError(f"selected path requires PostgreSQL 17 or 18 x86_64 archive {expected_name}")
+    if (path.name != expected_name or not re.fullmatch(r"(15|16|17|18)\.[0-9]+", version)
+            or architecture not in {"x86_64", "arm64"}):
+        raise ValueError(f"selected path requires PostgreSQL 15 through 18 on x86_64 or arm64: {expected_name}")
     fields = Path(sidecar).read_text(encoding="utf-8").split()
     if len(fields) < 2 or not re.fullmatch(r"[0-9a-fA-F]{64}", fields[0]) or fields[-1] != path.name:
         raise ValueError("core checksum sidecar must identify supplied archive basename")

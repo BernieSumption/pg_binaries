@@ -1,7 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 out=${1:?usage: builder-packages.sh OUTPUT_PATH}
-docker run --rm --platform linux/amd64 --entrypoint dpkg-query \
+architecture=${PG_ARCHITECTURE:-x86_64}
+case "$architecture" in
+  x86_64) docker_platform=linux/amd64 ;;
+  arm64) docker_platform=linux/arm64 ;;
+  *) echo "Unsupported Linux architecture: $architecture" >&2; exit 2 ;;
+esac
+docker run --rm --platform "$docker_platform" --entrypoint dpkg-query \
   pg-binaries-pgvector-separate-linux -W \
   -f='${binary:Package}\t${Version}\t${Architecture}\t${db:Status-Abbrev}\n' \
   | LC_ALL=C sort > "$out"
