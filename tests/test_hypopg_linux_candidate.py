@@ -98,7 +98,7 @@ class HypoPGLinuxCandidateTests(unittest.TestCase):
 
     def test_rejects_expired_artifact(self):
         self.artifact["expires_at"] = "2000-01-01T00:00:00Z"
-        with self.assertRaisesRegex(candidate.CandidateRetrievalError, "expired"):
+        with self.assertRaisesRegex(candidate.CandidateRetrievalError, "expiry"):
             self.retrieve()
 
     def test_rejects_artifact_claiming_a_different_run(self):

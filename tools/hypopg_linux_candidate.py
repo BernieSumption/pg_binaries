@@ -1,6 +1,5 @@
 """Retrieve one exact selected HypoPG Linux Actions artifact as a checked manifest."""
 
-from datetime import datetime, timezone
 import hashlib
 import json
 from pathlib import Path, PurePosixPath
@@ -8,11 +7,11 @@ import re
 import shutil
 import sys
 import tempfile
-from urllib.parse import quote
 import zipfile
 
 import actions_candidate_bundle as bundle
 import actions_candidate_discovery as discovery
+import actions_candidate_retrieval as retrieval
 
 
 PRODUCER_WORKFLOWS = (
@@ -23,8 +22,6 @@ PRODUCER_WORKFLOWS = (
 ARTIFACT_TEMPLATE = "hypopg-linux-selected-{postgresql_version}-{architecture}-{run_id}"
 EXTENSION_VERSION = "1.4.3"
 MAX_RUNS = 10
-MAX_ARTIFACTS = 100
-MAX_ARTIFACT_PAGES = 5
 MAX_CANDIDATE_ATTEMPTS = 3
 
 
@@ -49,49 +46,16 @@ def _safe_target(repository, branch, current_run_id, postgresql_version,
 
 
 def _producer_runs(repository, branch, current_run_id, postgresql_version, architecture):
-    encoded_branch = quote(branch, safe="")
-    runs = []
-    for workflow in PRODUCER_WORKFLOWS:
-        payload = discovery._gh([
-            f"repos/{repository}/actions/workflows/{workflow}/runs?branch={encoded_branch}"
-            f"&status=success&per_page={MAX_RUNS}"
-        ])
-        rows = payload.get("workflow_runs", []) if isinstance(payload, dict) else []
-        runs.extend((run, workflow) for run in rows if isinstance(run, dict))
-    runs.sort(key=lambda item: int(item[0].get("id", 0)) if str(item[0].get("id", "")).isdigit() else 0,
-              reverse=True)
-    for run, workflow in runs:
-        if not discovery._run_matches(run, repository, workflow, branch, current_run_id):
-            continue
+    runs = retrieval.enumerate_successful_runs(
+        repository, branch, current_run_id, PRODUCER_WORKFLOWS, max_runs=MAX_RUNS)
+    for _, run in runs:
         run_id = str(run.get("id", ""))
-        expected_name = ARTIFACT_TEMPLATE.format(postgresql_version=postgresql_version,
-                                                 architecture=architecture, run_id=run_id)
-        found = []
-        for page in range(1, MAX_ARTIFACT_PAGES + 1):
-            artifact_payload = discovery._gh([
-                f"repos/{repository}/actions/runs/{run_id}/artifacts?"
-                f"per_page={MAX_ARTIFACTS}&page={page}"
-            ])
-            artifacts = artifact_payload.get("artifacts", []) if isinstance(artifact_payload, dict) else []
-            if not isinstance(artifacts, list):
-                break
-            found.extend(item for item in artifacts if isinstance(item, dict)
-                         and item.get("name") == expected_name)
-            if len(artifacts) < MAX_ARTIFACTS:
-                break
-        if len(found) > 1:
-            raise CandidateRetrievalError(f"run {run_id} has duplicate exact HypoPG candidate artifacts")
-        if not found:
-            continue
-        artifact = found[0]
-        claim = artifact.get("workflow_run")
-        claim_sha = claim.get("head_sha") if isinstance(claim, dict) else None
-        if (not isinstance(claim, dict) or str(claim.get("id")) != run_id
-                or not isinstance(claim_sha, str)
-                or claim_sha.lower() != str(run.get("head_sha", "")).lower()
-                or ("run_attempt" in claim and claim.get("run_attempt") != run.get("run_attempt"))):
-            continue
-        yield run, artifact
+        template = ARTIFACT_TEMPLATE.format(postgresql_version=postgresql_version,
+                                            architecture=architecture, run_id="{run_id}")
+        found = retrieval.exact_run_artifacts(
+            repository, run, template)
+        if found:
+            yield run, found[0]
 
 
 def _selected_members(zip_path, basenames, record_name):
@@ -147,18 +111,15 @@ def retrieve(*, repository, branch, current_run_id, postgresql_version,
             break
         run_id = str(run["id"])
         artifact_id = str(artifact.get("id", ""))
-        expiry = discovery._expiry(artifact.get("expires_at"))
-        digest_claim = artifact.get("digest")
-        if (artifact.get("expired") is True or expiry is None
-                or expiry <= datetime.now(timezone.utc)):
-            failures.append(f"run {run_id}: artifact expired or expiry metadata invalid")
+        try:
+            retrieval.validate_artifact_metadata(artifact, run)
+        except retrieval.RetrievalError as exc:
+            failures.append(f"run {run_id}: {exc}")
             continue
         if not re.fullmatch(r"[1-9][0-9]*", artifact_id):
             failures.append(f"run {run_id}: artifact ID is invalid")
             continue
-        if not isinstance(digest_claim, str) or not re.fullmatch(r"sha256:[0-9a-fA-F]{64}", digest_claim):
-            failures.append(f"run {run_id}: artifact lacks SHA-256 ZIP digest")
-            continue
+        digest_claim = artifact["digest"]
         record_basename = record_name.format(run_id=run_id)
         basenames = (core_name, core_name + ".sha256", extension_name,
                      extension_name + ".sha256", "core-resolution.json", record_basename)
@@ -230,7 +191,7 @@ def main(argv=None):
     args = parser.parse_args(argv)
     try:
         retrieve(**vars(args))
-    except (CandidateRetrievalError, discovery.ApiError) as exc:
+    except (CandidateRetrievalError, retrieval.RetrievalError, discovery.ApiError) as exc:
         print(f"hypopg-linux-candidate: error: {exc}", file=sys.stderr)
         return 2
     return 0
