@@ -1,0 +1,7 @@
+# pg_cron 1.6.8 macOS arm64 failed publication attempt
+
+[Run 39242434021](https://github.com/BernieSumption/pg_binaries/actions/runs/39242434021) built pg_cron 1.6.8 for PostgreSQL 15.19 on macOS arm64 at revision `6fd48d60f7540c1417d3853d43db1e0eb5011cef`. The archive-suite passed. Static analysis failed when the workflow Mach-O assertion required a hard-coded `libpq.5` dependency name. The run failed at its final fresh-runner verification requirement.
+
+The [verification record](../../verification/pg_cron-1.6.8-postgresql-15.19-macos-arm64-current-39242434021.json) records the failed static-analysis case. The [receipt](arm64/current-receipt.json), [attempt](arm64/attempt.json), [static report](arm64/static-analysis.json), [Mach-O inspection](arm64/pg-cron-macho-inspection.json), and [probe output](arm64/probe-output.txt) preserve the publication evidence.
+
+As an independent byte check, SHA-256 was computed for the PostgreSQL and pg_cron archives from both the run's build artifact and publication artifact. Both copies matched: `postgresql-15.19-macos-arm64.tar.gz` is `dc0a0c59c0f65f65f2632d9c167029343f25783c052711e7b3d845c77c8743df`, and `pg_cron-1.6.8-postgresql-15.19-macos-arm64.tar.gz` is `2372d13a4267eddbd86a8ecf1923375961ff823f9db8190ba12940fcd1406418`. The importer from the run's source revision independently validated and retained the receipt, reports, attempt and verification record against those archive bytes. The CI archives remain temporary artifacts.

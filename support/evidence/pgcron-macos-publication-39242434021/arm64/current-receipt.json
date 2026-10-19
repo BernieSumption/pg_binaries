@@ -1,0 +1,43 @@
+{
+  "architecture": "arm64",
+  "archives": {
+    "pg_cron-1.6.8-postgresql-15.19-macos-arm64.tar.gz": "2372d13a4267eddbd86a8ecf1923375961ff823f9db8190ba12940fcd1406418",
+    "postgresql-15.19-macos-arm64.tar.gz": "dc0a0c59c0f65f65f2632d9c167029343f25783c052711e7b3d845c77c8743df"
+  },
+  "case_results": {
+    "archive-suite": "passed",
+    "static-analysis": "failed"
+  },
+  "ci": {
+    "build_revision": "6fd48d60f7540c1417d3853d43db1e0eb5011cef",
+    "provider": "github-actions",
+    "run_id": "39242434021",
+    "run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/39242434021",
+    "source_revision": "6fd48d60f7540c1417d3853d43db1e0eb5011cef",
+    "test_revision": "6fd48d60f7540c1417d3853d43db1e0eb5011cef"
+  },
+  "clean_system": true,
+  "dependency_check_profile": "macho-system-dependencies-v1",
+  "dependency_checks_passed": false,
+  "endpoint": "current",
+  "environment": {
+    "architecture": "arm64",
+    "image_id": "macos15/20260907.0337.1",
+    "os": "macos",
+    "os_version": "15.7.9"
+  },
+  "extension_archive": "pg_cron-1.6.8-postgresql-15.19-macos-arm64.tar.gz",
+  "platform": "macos-arm64",
+  "postgresql_version": "15.19",
+  "profile_id": "pgcron-publication-macos-arm64-15.19",
+  "profile_revision": "c9f580b6014600cd509105e3fe23acf75c6ed254b60fdf6b52b1842b633eb3b5",
+  "project": "pg_cron",
+  "reports": {
+    "macho_inspection": "b6d7fe28c9dad41ca02d4f1dbec76260c23404b7813a0ac5f92eea304a0e6759",
+    "probe_output": "9d3d9b2c2006a7291b488b5beb9828a7d6e164c928350b04055fad5712180139",
+    "static_analysis": "c4406b5b2d33d11455cda1460fee64c99eba85c09241936cc1cdd94250801808"
+  },
+  "schema_version": 1,
+  "test_revision": "6fd48d60f7540c1417d3853d43db1e0eb5011cef",
+  "version": "1.6.8"
+}

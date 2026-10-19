@@ -194,8 +194,18 @@ jobs:
           if static.get("passed") is not True or not static.get("inspected_files") or actual != expected:
               raise SystemExit("PostgreSQL static analysis does not bind the final archive bytes")
           macho = json.loads(macho_path.read_text())
+          libpq = {
+              dependency: resolved
+              for dependency, resolved in macho.get("dependencies", {}).items()
+              if dependency.startswith("@rpath/libpq.5")
+          }
           if (macho.get("passed") is not True or macho.get("archives") != expected
-                  or macho.get("dependencies", {}).get("@rpath/libpq.5.dylib") != "lib/libpq.5.dylib"
+                  or len(libpq) != 1
+                  or not pathlib.PurePosixPath(next(iter(libpq))).name.startswith("libpq.5.")
+                  or pathlib.PurePosixPath(next(iter(libpq))).suffix != ".dylib"
+                  or pathlib.PurePosixPath(next(iter(libpq.values()))).name
+                      != pathlib.PurePosixPath(next(iter(libpq))).name
+                  or not next(iter(libpq.values())).startswith("lib/")
                   or "@loader_path" not in macho.get("module_rpaths", [])):
               raise SystemExit("pg_cron Mach-O closure does not pass against final archive bytes")
           PY
