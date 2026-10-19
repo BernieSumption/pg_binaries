@@ -48,6 +48,10 @@ on:
         required: false
         type: boolean
         default: false
+  push:
+    branches: [spike]
+    paths:
+      - experiments/selected-extension-target-trial/request.json
 
 permissions:
   actions: read
@@ -67,11 +71,12 @@ jobs:
       - name: Resolve the declared target and its work prerequisites
         id: select
         env:
-          REQUEST_PROJECT: ${{ inputs.project }}
-          REQUEST_VERSION: ${{ inputs.extension_version }}
-          REQUEST_POSTGRESQL_VERSION: ${{ inputs.postgresql_version }}
-          REQUEST_PLATFORM: ${{ inputs.platform }}
-          REQUEST_RETRY: ${{ inputs.retry }}
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_PROJECT: ${{ inputs.project }}
+          INPUT_VERSION: ${{ inputs.extension_version }}
+          INPUT_POSTGRESQL_VERSION: ${{ inputs.postgresql_version }}
+          INPUT_PLATFORM: ${{ inputs.platform }}
+          INPUT_RETRY: ${{ inputs.retry }}
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
@@ -80,16 +85,27 @@ jobs:
           import os
           import sys
 
-          request = {
-              "project": os.environ["REQUEST_PROJECT"],
-              "version": os.environ["REQUEST_VERSION"],
-              "postgresql_version": os.environ["REQUEST_POSTGRESQL_VERSION"],
-              "platform": os.environ["REQUEST_PLATFORM"],
-              "retry": os.environ["REQUEST_RETRY"].lower() == "true",
-          }
+          if os.environ["INPUT_PROJECT"]:
+              request = {
+                  "project": os.environ["INPUT_PROJECT"],
+                  "version": os.environ["INPUT_VERSION"],
+                  "postgresql_version": os.environ["INPUT_POSTGRESQL_VERSION"],
+                  "platform": os.environ["INPUT_PLATFORM"],
+                  "retry": os.environ["INPUT_RETRY"].lower() == "true",
+              }
+          elif os.environ["EVENT_NAME"] == "push":
+              with open("experiments/selected-extension-target-trial/request.json", encoding="utf-8") as source:
+                  request = json.load(source)
+          else:
+              raise SystemExit("selected extension request is missing")
           with open(sys.argv[1], "w", encoding="utf-8") as output:
               json.dump(request, output)
           PY
+          REQUEST_PROJECT="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["project"])' "$RUNNER_TEMP/request.json")"
+          REQUEST_VERSION="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["version"])' "$RUNNER_TEMP/request.json")"
+          REQUEST_POSTGRESQL_VERSION="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["postgresql_version"])' "$RUNNER_TEMP/request.json")"
+          REQUEST_PLATFORM="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["platform"])' "$RUNNER_TEMP/request.json")"
+          REQUEST_RETRY="$(python3 -c 'import json,sys; print(str(json.load(open(sys.argv[1])).get("retry", False)).lower())' "$RUNNER_TEMP/request.json")"
           if [[ "$REQUEST_PROJECT" == pgvector && "$REQUEST_PLATFORM" == linux-x86_64 && "$REQUEST_RETRY" != true ]]; then
             bash tools/pgvector_checked_dispatch.sh "$RUNNER_TEMP/request.json" \
               "$RUNNER_TEMP/dispatch-plan.json" "$REQUEST_VERSION" "$REQUEST_POSTGRESQL_VERSION" \
@@ -151,6 +167,8 @@ jobs:
               raise SystemExit(f"No selected publication workflow serves {project} on {platform}")
           with open(sys.argv[2], "a", encoding="utf-8") as output:
               for key, value in (
+                  ("project", project),
+                  ("platform", platform),
                   ("should_dispatch", str(plan["should_dispatch"]).lower()),
                   ("route", route),
                   ("extension_version", target["version"]),
@@ -159,8 +177,9 @@ jobs:
               ):
                   output.write(f"{key}={value}\n")
           PY
+          printf 'retry=%s\n' "$REQUEST_RETRY" >> "$GITHUB_OUTPUT"
       - name: Retain checked pgvector planning evidence
-        if: always() && inputs.project == 'pgvector' && inputs.platform == 'linux-x86_64' && inputs.retry != true
+        if: always() && steps.select.outputs.project == 'pgvector' && steps.select.outputs.platform == 'linux-x86_64' && steps.select.outputs.retry != 'true'
         uses: actions/upload-artifact@v4
         with:
           name: pgvector-checked-plan-${{ github.run_id }}

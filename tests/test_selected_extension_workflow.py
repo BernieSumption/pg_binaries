@@ -11,16 +11,16 @@ PG_JSONSCHEMA_WINDOWS = (ROOT / ".github/workflows/pg-jsonschema-windows-selecte
 
 
 class SelectedExtensionWorkflowTests(unittest.TestCase):
-    def test_dispatcher_accepts_exact_request_without_trial_push(self):
+    def test_dispatcher_accepts_exact_request_with_scoped_branch_trial(self):
         self.assertIn("workflow_dispatch:", DISPATCHER)
         self.assertIn("workflow_call:", DISPATCHER)
-        self.assertNotIn("  push:", DISPATCHER)
+        self.assertIn("  push:\n    branches: [spike]\n    paths:\n      - experiments/selected-extension-target-trial/request.json", DISPATCHER)
         self.assertNotIn("experiments/selected-extension-dispatch-trial", DISPATCHER)
         self.assertIn("python3 tools/dispatch_plan.py --request", DISPATCHER)
         self.assertIn('"$RUNNER_TEMP/pgvector-plan-evidence.json"', DISPATCHER)
         self.assertIn("name: pgvector-checked-plan-${{ github.run_id }}", DISPATCHER)
         self.assertIn("pgvector-plan-evidence.json", DISPATCHER)
-        self.assertIn("if: always() && inputs.project == 'pgvector'", DISPATCHER)
+        self.assertIn("if: always() && steps.select.outputs.project == 'pgvector'", DISPATCHER)
         self.assertIn('bash tools/hypopg_checked_dispatch.sh "$RUNNER_TEMP/request.json"', DISPATCHER)
         self.assertIn("needs.plan.outputs.should_dispatch == 'true'", DISPATCHER)
         self.assertIn("uses: ./.github/workflows/hypopg-linux-selected-publication.yml", DISPATCHER)
