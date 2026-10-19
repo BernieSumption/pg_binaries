@@ -1,0 +1,47 @@
+{
+  "assembled_core": {
+    "archive": "postgresql-15.19-linux-arm64.tar.gz",
+    "sha256": "eee5b48bb34614b759ab89db4525941451bc208616dedbbd89e9e67b9941bd0c",
+    "version": "15.19"
+  },
+  "case_results": {
+    "pgtap-archive-suite": "passed"
+  },
+  "ci": {
+    "build_revision": "de32190cc638fa45cc8b56f779a0e760be4b2f2e",
+    "provider": "github-actions",
+    "run_id": "39222288263",
+    "run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/39222288263",
+    "source_revision": "de32190cc638fa45cc8b56f779a0e760be4b2f2e",
+    "test_revision": "de32190cc638fa45cc8b56f779a0e760be4b2f2e"
+  },
+  "component": "pgtap",
+  "environment": {
+    "architecture": "arm64",
+    "clean_system": true,
+    "dependency_check_profile": "pgtap-runtime-v1",
+    "dependency_checks_passed": true,
+    "distribution": "Alpine Linux",
+    "distribution_version": "3.22.6",
+    "endpoint": "current",
+    "image_id": "sha256:d2554daa5de367ded0caa9fcbe78ca185f655cd8e552e76e60581b29284eeeb3",
+    "kernel_release": "6.17.0-1022-azure",
+    "os": "linux",
+    "os_version": "6.17.0"
+  },
+  "outcome": "passed",
+  "platform": "linux-arm64",
+  "postgresql_version": "15.19",
+  "prerequisite_archives": [],
+  "profile_id": "pgtap-publication-linux-arm64-15.19",
+  "profile_revision": "66b1bc115111c1f7ffcb74353da403fb88211c06fa8bca2a93944d3cdb50fcc8",
+  "project": "pgtap",
+  "schema_version": 2,
+  "scope": "publication",
+  "sha256": "ca87993f84120fb4adea8c49955ed4802857d6345baef19e2d2043264918d64c",
+  "test_cases": [
+    "pgtap-archive-suite"
+  ],
+  "test_revision": "de32190cc638fa45cc8b56f779a0e760be4b2f2e",
+  "version": "1.3.4"
+}

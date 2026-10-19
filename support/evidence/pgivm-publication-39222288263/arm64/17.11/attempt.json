@@ -1,0 +1,14 @@
+{
+  "architecture": "arm64",
+  "pg_ivm_version": "1.16",
+  "postgresql_version": "17.11",
+  "run_id": "39222288263",
+  "schema_version": 1,
+  "source_revision": "de32190cc638fa45cc8b56f779a0e760be4b2f2e",
+  "steps": {
+    "core_build": "success",
+    "pgivm_build": "success",
+    "pgivm_verify": "success"
+  },
+  "verifier_image_id": "sha256:8c968bac99e4abc40abbd32f03bbbcda536bd2ed7673db512997cd1a39adfdb0"
+}
