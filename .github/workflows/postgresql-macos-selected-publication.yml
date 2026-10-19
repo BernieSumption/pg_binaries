@@ -1,14 +1,6 @@
 name: PostgreSQL selected macOS publication
 
 on:
-  push:
-    branches: [spike]
-    paths:
-      - '.github/workflows/postgresql-macos-selected-publication.yml'
-      - 'tools/reuse_macos_core_symbols.py'
-      - 'tools/stage_macos_core_symbols.py'
-      - 'tests/test_reuse_macos_core_symbols.py'
-      - 'tests/test_stage_macos_core_symbols.py'
   workflow_call:
     inputs:
       postgresql_version:
