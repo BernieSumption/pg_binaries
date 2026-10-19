@@ -124,6 +124,7 @@ The macOS PostgreSQL builder also supports core-only mode. The shared verifier a
 
 - [ ] Review every remaining build, test and investigation file. Move reusable investigation code into its owning recipe or shared tool. Put continuing investigations under `experiments/<name>/` with the policy's creation date, purpose, inputs and exit condition; retain useful results under `support/evidence/`. Delete obsolete workflows, scripts, tools, fixtures and tests after their replacements are verified.
 The Linux HypoPG target-trial request was removed after all eight selected Linux targets passed and no workflow or tool referenced its fixed target file. Continue the file-by-file audit; retain experiments that still provide an active request or a concrete unfinished investigation.
+The separate Linux pgvector experiment ended when its builder became the selected publication recipe and its results were retained under `support/evidence/`; its obsolete experiment README has been removed.
 - [ ] Confirm that selected targets derive from the support declaration, no active publication path depends on a permanent run-ID pin or a target-specific workflow copy, and no active path still uses superseded build or evidence machinery. Report remaining justified architecture exceptions, coverage gaps, CI costs and cleanup decisions. The project is complete when all active paths have migrated and this audit passes; release publication remains a separate decision.
 
 ## Build and testing architecture goal
