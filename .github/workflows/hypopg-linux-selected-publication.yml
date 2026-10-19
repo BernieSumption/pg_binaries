@@ -97,6 +97,8 @@ jobs:
             )
           fi
           sources+=(
+            linux-changed-profiles.yml "hypopg-linux-core-$PG_VERSION-$PG_ARCHITECTURE-{run_id}"
+            linux-changed-profiles.yml "pg-jsonschema-linux-core-$PG_VERSION-$PG_ARCHITECTURE-{run_id}"
             hypopg-linux-selected-publication.yml "hypopg-linux-core-$PG_VERSION-$PG_ARCHITECTURE-{run_id}"
             hypopg-linux-selected-publication.yml "hypopg-linux-$PG_VERSION-$PG_ARCHITECTURE-trial-{run_id}"
             linux-publication.yml "linux-publication-$PG_ARCHITECTURE-evidence"
