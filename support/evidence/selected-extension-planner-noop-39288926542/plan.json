@@ -1,0 +1,213 @@
+{
+  "candidate": {
+    "archive_sha256": {
+      "pgvector-0.8.7-postgresql-17.11-linux-x86_64.tar.gz": "4b0a4b33e365e3f5e666080978e2d6a05dfe84f523a86f5b42ac2136380dd155",
+      "postgresql-17.11-linux-x86_64.tar.gz": "f770c4525fd2317a45d7095f8850b67943f7675de3bf0022a3aa77a8990e0214"
+    },
+    "retrieval_outcome": "retrieved",
+    "source": {
+      "artifact_expires_at": "2026-10-26T16:12:32Z",
+      "artifact_id": "12202297165",
+      "artifact_name": "pgvector-linux-selected-17.11-39282972882",
+      "artifact_zip_digest": "sha256:64eb9df866f1bc8b5a8e8fc3beece40bbd912bfb0f1bc3aca4ccaa892575c1d4",
+      "branch": "spike",
+      "head_sha": "509bc07b00a6c0f8a2d0d7c269f1285b6bc5fc77",
+      "repository": "BernieSumption/pg_binaries",
+      "run_attempt": 1,
+      "run_id": "39282972882",
+      "workflow": "selected-extension-publication.yml"
+    },
+    "target": {
+      "pgvector_version": "0.8.7",
+      "platform": "linux-x86_64",
+      "postgresql_version": "17.11"
+    },
+    "validation_outcome": "passed"
+  },
+  "dispatch": {
+    "exit_code": 0,
+    "outcome": "checked_candidate",
+    "plan": {
+      "retry": false,
+      "runner": "ubuntu-24.04",
+      "schema_version": 1,
+      "should_dispatch": false,
+      "target": {
+        "platform": "linux-x86_64",
+        "postgresql_major": 17,
+        "postgresql_version": "17.11",
+        "project": "pgvector",
+        "version": "0.8.7"
+      },
+      "work_items": [
+        {
+          "candidate_archive": {
+            "archive_name": "postgresql-17.11-linux-x86_64.tar.gz",
+            "build_inputs": {
+              "base_image": "ubuntu:22.04",
+              "base_image_digest": "sha256:0a9887931b0e38af2e3487ed39e29436b0535c4f3f52e57745baaf79d1898956",
+              "packages_sha256": "e5b948714779db8f9f3763fc5ef06d7c11f0438d94a7b890a58446d8522e54be"
+            },
+            "component": "postgresql",
+            "path": "/home/runner/work/_temp/pgvector-candidate/_temp/bundle/pilot/postgresql-17.11-linux-x86_64.tar.gz",
+            "platform": "linux-x86_64",
+            "postgresql_version": "17.11",
+            "sha256": "f770c4525fd2317a45d7095f8850b67943f7675de3bf0022a3aa77a8990e0214",
+            "source_claims": {
+              "artifact_name": "pgvector-linux-selected-17.11-39282972882",
+              "expires_at": "2026-10-26T16:12:32Z",
+              "head_sha": "509bc07b00a6c0f8a2d0d7c269f1285b6bc5fc77",
+              "provider": "github-actions",
+              "run_attempt": 1,
+              "run_id": "39282972882"
+            },
+            "source_revision": "509bc07b00a6c0f8a2d0d7c269f1285b6bc5fc77",
+            "validation": "linux-core-candidate-and-current-inputs",
+            "version": "17.11"
+          },
+          "component": "postgresql",
+          "depends_on": [],
+          "evidence": "retrieved-unpublished-candidate-archive",
+          "id": "build-core:458598f73f8e0efb",
+          "kind": "build-core",
+          "platform": "linux-x86_64",
+          "postgresql_version": "17.11",
+          "status": "complete",
+          "version": "17.11"
+        },
+        {
+          "blocked_by_unresolved_prerequisite": false,
+          "candidate_archive": {
+            "archive_name": "pgvector-0.8.7-postgresql-17.11-linux-x86_64.tar.gz",
+            "build_input_identity": {
+              "build_configuration": {
+                "architecture": "x86_64",
+                "builder_image": "ubuntu:22.04",
+                "optflags": ""
+              },
+              "component": "pgvector",
+              "dependencies": {
+                "builder_base": {
+                  "image": "ubuntu:22.04",
+                  "platform": "linux/amd64",
+                  "sha256": "0a9887931b0e38af2e3487ed39e29436b0535c4f3f52e57745baaf79d1898956"
+                },
+                "builder_packages": {
+                  "sha256": "9fd1fcee7a4b4c54bd0b2984196fc1b35755fbc53f65d51889cced97dd8a21f1"
+                },
+                "postgresql": {
+                  "major": 17,
+                  "sha256": "f770c4525fd2317a45d7095f8850b67943f7675de3bf0022a3aa77a8990e0214"
+                }
+              },
+              "recipes": {
+                "scripts/pgvector/archive_input.py": "939dc51872bfc9b6db36e6b7a107d4071e155d46f1055fc2262b60f2090ae2b5",
+                "scripts/pgvector/build_inputs.py": "548cde2308256be0546ab6f3436e09e15c1d59acd4c68ea03097cdf979871c70",
+                "scripts/pgvector/builder-packages.sh": "678ad6807e7b58d50bdf8551c047239701f8d66e24d315cc5c5c57abbd442492",
+                "scripts/pgvector/linux-build-in-container.sh": "7252e9a190c79476580f94c4c39a18f92fe73d904595135f185692f84c4bfb86",
+                "scripts/pgvector/linux-build.Dockerfile": "ffeab7e1f23df4d0645d086a083758800d5933986ce72977ffe206c66d90ffad",
+                "scripts/pgvector/linux-build.sh": "b3c4b9193119c0c8e96db3c431c498f151cce68d49ad26aded7e3015ca45cc1b",
+                "tools/build_input_identity.py": "1d32f88ac1fe1779ce588319d40b15d65dad9598e93f6b0013bbc3876d5619e3",
+                "tools/selected_build_inputs.py": "4bbf6663663012069cc07bf2964be506764cac6079ac5cebdc0a5c112d47068d",
+                "tools/source_archive.py": "74cefc8618a4bf4f118813fa165333ae2f1af066d34f502d5c84e58619a32db6"
+              },
+              "schema_version": 1,
+              "sha256": "9bb8ccea20772eef955ea9e9bb8f5e929f71fe1c0fe6666ab8adea1077f241f5",
+              "target": {
+                "platform": "linux-x86_64",
+                "postgresql_major": 17,
+                "project": "pgvector",
+                "version": "0.8.7"
+              },
+              "upstream_sources": {
+                "pgvector": {
+                  "sha256": "cac0b10c360f05b2d521200105ba3697e773d4cd3731f5a915a7e37ebe0bea85",
+                  "url": "https://github.com/pgvector/pgvector/archive/refs/tags/v0.8.7.tar.gz"
+                }
+              }
+            },
+            "component": "pgvector",
+            "path": "/home/runner/work/_temp/pgvector-candidate/_temp/bundle/pilot/pgvector-0.8.7-postgresql-17.11-linux-x86_64.tar.gz",
+            "platform": "linux-x86_64",
+            "postgresql_version": "17.11",
+            "project": "pgvector",
+            "sha256": "4b0a4b33e365e3f5e666080978e2d6a05dfe84f523a86f5b42ac2136380dd155",
+            "source_claims": {
+              "artifact_name": "pgvector-linux-selected-17.11-39282972882",
+              "expires_at": "2026-10-26T16:12:32Z",
+              "provider": "github-actions",
+              "run_id": "39282972882"
+            },
+            "validation": "current-pgvector-build-input-identity",
+            "version": "0.8.7"
+          },
+          "component": "pgvector",
+          "depends_on": [
+            "build-core:458598f73f8e0efb"
+          ],
+          "evidence": "retrieved-unpublished-candidate-archive",
+          "id": "build-extension:72f418f04ec8ea12",
+          "kind": "build-extension",
+          "platform": "linux-x86_64",
+          "postgresql_major": 17,
+          "postgresql_version": "17.11",
+          "prerequisite_candidate_groups": [],
+          "project": "pgvector",
+          "sql_names": [
+            "vector"
+          ],
+          "status": "complete",
+          "verification_status": "complete",
+          "version": "0.8.7"
+        },
+        {
+          "component": "postgresql",
+          "depends_on": [
+            "build-core:458598f73f8e0efb"
+          ],
+          "endpoint": "current",
+          "evidence": "current-passing-record",
+          "id": "verify-core:6d5af5732b1901b9",
+          "kind": "verify-core",
+          "observed_records": [],
+          "platform": "linux-x86_64",
+          "postgresql_version": "17.11",
+          "status": "complete",
+          "version": "17.11"
+        },
+        {
+          "blocked_by_unresolved_prerequisite": false,
+          "component": "vector",
+          "depends_on": [
+            "build-extension:72f418f04ec8ea12",
+            "verify-core:6d5af5732b1901b9"
+          ],
+          "endpoint": "current",
+          "evidence": "current-passing-record",
+          "id": "verify-extension:71ba6fe0bce4353b",
+          "kind": "verify-extension",
+          "observed_records": [],
+          "platform": "linux-x86_64",
+          "postgresql_major": 17,
+          "postgresql_version": "17.11",
+          "project": "pgvector",
+          "status": "complete",
+          "version": "0.8.7"
+        }
+      ]
+    }
+  },
+  "errors": {
+    "dispatch": null,
+    "retrieval": null,
+    "validation": null
+  },
+  "request": {
+    "platform": "linux-x86_64",
+    "postgresql_version": "17.11",
+    "project": "pgvector",
+    "retry": false,
+    "version": "0.8.7"
+  },
+  "schema_version": 1
+}
