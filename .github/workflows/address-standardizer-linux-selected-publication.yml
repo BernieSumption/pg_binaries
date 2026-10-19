@@ -1,11 +1,34 @@
-name: Address Standardizer selected PostgreSQL Linux publication trial
+name: Address Standardizer selected PostgreSQL Linux publication
 
 on:
+  workflow_call:
+    inputs:
+      postgresql_version:
+        description: Exact selected PostgreSQL release
+        required: true
+        type: string
+      architecture:
+        description: Selected Linux architecture
+        required: true
+        type: string
+      extension_version:
+        description: Selected Address Standardizer release
+        required: true
+        type: string
   workflow_dispatch:
-  push:
-    branches: [spike]
-    paths:
-      - '.github/workflows/address-standardizer-linux-selected-publication.yml'
+    inputs:
+      postgresql_version:
+        description: Exact selected PostgreSQL release
+        required: true
+        type: string
+      architecture:
+        description: Selected Linux architecture
+        required: true
+        type: string
+      extension_version:
+        description: Selected Address Standardizer release
+        required: true
+        type: string
 
 permissions:
   actions: read
@@ -13,29 +36,44 @@ permissions:
 
 jobs:
   selected:
-    runs-on: ubuntu-24.04
+    runs-on: ${{ inputs.architecture == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-24.04' }}
     timeout-minutes: 110
     env:
-      PG_VERSION: '18.6'
-      PG_ARCHITECTURE: x86_64
+      PG_VERSION: ${{ inputs.postgresql_version }}
+      PG_ARCHITECTURE: ${{ inputs.architecture }}
+      ADDRESS_STANDARDIZER_VERSION: ${{ inputs.extension_version }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
       - name: Plan the exact selected Address Standardizer target
+        id: plan
         run: |
           set -euo pipefail
           python3 tools/extension_archive_plan.py \
             --project 'Address Standardizer' --platform "linux-$PG_ARCHITECTURE" \
-            --postgresql-version "$PG_VERSION" --extension-version 3.7.0 \
+            --postgresql-version "$PG_VERSION" --extension-version "$ADDRESS_STANDARDIZER_VERSION" \
             --github-output "$GITHUB_OUTPUT" > "$RUNNER_TEMP/selection.json"
           python3 - "$RUNNER_TEMP/selection.json" <<'PY'
-          import json, sys
+          import json, os, sys
           selection = json.load(open(sys.argv[1], encoding="utf-8"))
-          assert selection["selected_version"] == "3.7.0"
-          assert selection["postgresql_version"] == "18.6"
-          assert selection["platform"] == "linux-x86_64"
+          sys.path.insert(0, "tools")
+          import emit_address_standardizer_linux_publication as publication
+          expected = {
+              "project": "Address Standardizer",
+              "selected_version": os.environ["ADDRESS_STANDARDIZER_VERSION"],
+              "postgresql_version": os.environ["PG_VERSION"],
+              "platform": f"linux-{os.environ['PG_ARCHITECTURE']}",
+          }
+          mismatches = [f"{key}: selected {selection.get(key)!r}, expected {value!r}"
+                        for key, value in expected.items() if selection.get(key) != value]
+          if selection.get("selected_version") != publication.VERSION:
+              mismatches.append(
+                  f"selected_version: support selects {selection.get('selected_version')!r}, "
+                  f"workflow implementation supports {publication.VERSION!r}")
+          if mismatches:
+              raise SystemExit("selected Address Standardizer target mismatch: " + "; ".join(mismatches))
           PY
       - name: Resolve a checked PostgreSQL core or build the selected release
         id: core_resolution
@@ -100,7 +138,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: address-standardizer-selected-18.6-x86_64-${{ github.run_id }}
+          name: address-standardizer-selected-${{ inputs.extension_version }}-postgresql-${{ inputs.postgresql_version }}-linux-${{ inputs.architecture }}-${{ github.run_id }}
           path: |
             ${{ runner.temp }}/core/pilot/*.tar.gz
             ${{ runner.temp }}/core/pilot/*.sha256
@@ -112,7 +150,7 @@ jobs:
             ${{ runner.temp }}/address-standardizer/static-analysis/**
             ${{ runner.temp }}/address-standardizer/publication/**
             support/evidence/address-standardizer-linux-publication-${{ github.run_id }}/**
-            support/verification/address-standardizer-3.7.0-postgresql-18.6-linux-x86_64-current-${{ github.run_id }}.json
+            support/verification/address-standardizer-${{ inputs.extension_version }}-postgresql-${{ inputs.postgresql_version }}-linux-${{ inputs.architecture }}-current-${{ github.run_id }}.json
           if-no-files-found: warn
           retention-days: 7
       - name: Require core resolution, build, verification and evidence import

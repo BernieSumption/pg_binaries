@@ -45,16 +45,19 @@ class AddressStandardizerLinuxPublication(unittest.TestCase):
         self.assertIn("if: needs.plan.outputs.has_targets == 'true'", publish_header)
         self.assertIn('os.environ["EVENT_NAME"] == "workflow_dispatch"', workflow)
 
-    def test_selected_18_6_trial_uses_shared_target_and_core_resolution(self):
+    def test_selected_workflow_accepts_exact_targets_and_plans_from_support(self):
         workflow = (ROOT / ".github/workflows/address-standardizer-linux-selected-publication.yml").read_text()
         self.assertIn("tools/extension_archive_plan.py", workflow)
         self.assertIn("--project 'Address Standardizer'", workflow)
         self.assertIn("--postgresql-version \"$PG_VERSION\"", workflow)
+        self.assertIn("--extension-version \"$ADDRESS_STANDARDIZER_VERSION\"", workflow)
+        self.assertIn("workflow_call:", workflow)
+        self.assertIn("workflow_dispatch:", workflow)
+        self.assertNotIn("  push:", workflow)
+        self.assertIn("inputs.architecture == 'arm64' && 'ubuntu-24.04-arm'", workflow)
         self.assertIn("scripts/linux/resolve-core.sh", workflow)
         self.assertIn("core-resolution.json", workflow)
         self.assertIn("tools/import_address_standardizer_linux_publication.py", workflow)
-        self.assertIn("'18.6'", workflow)
-        self.assertIn("PG_ARCHITECTURE: x86_64", workflow)
         registry = coverage.load_json(ROOT / "support/verification-profiles.json")
         sources = registry["profiles"][publication.profile_id("x86_64")]["sources"]
         self.assertIn(".github/workflows/address-standardizer-linux-selected-publication.yml", sources)
