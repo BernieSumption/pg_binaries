@@ -16,9 +16,83 @@ sys.path.insert(0, str(ROOT / "tools"))
 import emit_pg_jsonschema_linux_publication as publication
 import import_pg_jsonschema_linux_publication as importer
 import coverage
+import linux_core_resolution
 
 
 class LinuxPublicationHelpers(unittest.TestCase):
+    def _core_resolution_fixture(self, directory, origin="built"):
+        base = Path(directory)
+        core_dir = base / "core"
+        core_dir.mkdir(exist_ok=True)
+        core = core_dir / "postgresql-18.6-linux-x86_64.tar.gz"
+        manifest = {
+            "component": "postgresql", "version": "18.6", "platform": "linux",
+            "architecture": "x86_64", "source_revision": "e" * 40, "build_id": "linux-core-1",
+            "builder_inputs": {"base_image": "ubuntu:22.04", "base_image_digest": "sha256:" + "f" * 64,
+                               "packages_sha256": "a" * 64},
+        }
+        with tarfile.open(core, "w:gz") as archive:
+            payload = json.dumps(manifest).encode()
+            member = tarfile.TarInfo("postgresql/manifest.json")
+            member.size = len(payload)
+            archive.addfile(member, io.BytesIO(payload))
+        provenance = {"source_revision": "e" * 40, "build_id": "linux-core-1",
+                      "build_inputs": manifest["builder_inputs"], "provider": "github-actions",
+                      "run_id": "12345", "run_attempt": 1}
+        if origin == "built":
+            provenance.update({"run_sha": "c" * 40, "repository": "owner/repo",
+                               "workflow_ref": "owner/repo/.github/workflows/core.yml@refs/heads/spike"})
+        else:
+            provenance.update({"artifact_name": "postgresql-linux-x86_64", "head_sha": "d" * 40})
+        record = {"schema_version": 1, "archive": core.name, "sha256": hashlib.sha256(core.read_bytes()).hexdigest(),
+                  "postgresql_version": "18.6", "architecture": "x86_64", "origin": origin,
+                  "provenance": provenance}
+        resolution_path = base / "core-resolution.json"
+        resolution_path.write_text(json.dumps(record), encoding="utf-8")
+        return core_dir, resolution_path, record
+
+    def test_dynamic_built_core_resolution_is_recorded_and_bound_to_run(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            archives = base / "archives"
+            archives.mkdir()
+            core_dir, resolution_path, resolution = self._core_resolution_fixture(base)
+            profile = {"profile_revision": "b" * 64, "case_ids": list(publication.CASES)}
+            with patch.object(coverage, "verification_profile", return_value=profile):
+                paths = publication.emit(ROOT, archives, core_dir, archives / "publication", "x86_64",
+                                         "failure", "skipped", "c" * 40, "12345", "owner/repo",
+                                         "https://github.com", "image", "6.17.0-azure",
+                                         core_resolution_path=resolution_path)
+            attempt = json.loads(paths[0].read_text(encoding="utf-8"))
+            self.assertEqual(attempt["core_resolution"], resolution)
+            self.assertEqual(attempt["core_origin"], "built")
+            self.assertEqual(attempt["core_provenance"], resolution["provenance"])
+            self.assertEqual(attempt["core_run_id"], "12345")
+            self.assertEqual(json.loads((archives / "publication/core-resolution.json").read_text()), resolution)
+            with patch.object(coverage, "verification_profile", return_value=profile), \
+                    self.assertRaises(coverage.CoverageError):
+                publication.emit(ROOT, archives, core_dir, archives / "mismatch", "x86_64",
+                                 "failure", "skipped", "b" * 40, "12345", "owner/repo",
+                                 "https://github.com", "image", "6.17.0-azure",
+                                 core_resolution_path=resolution_path)
+
+    def test_dynamic_reused_resolution_accepts_checked_producer_run(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            archives = base / "archives"
+            archives.mkdir()
+            core_dir, resolution_path, resolution = self._core_resolution_fixture(base, "reused")
+            profile = {"profile_revision": "b" * 64, "case_ids": list(publication.CASES)}
+            with patch.object(coverage, "verification_profile", return_value=profile):
+                attempt_path, = publication.emit(ROOT, archives, core_dir, archives / "publication", "x86_64",
+                                                 "failure", "skipped", "c" * 40, "99999", "owner/repo",
+                                                 "https://github.com", "image", "6.17.0-azure",
+                                                 core_resolution_path=resolution_path)
+            attempt = json.loads(attempt_path.read_text(encoding="utf-8"))
+            self.assertEqual(attempt["core_origin"], "reused")
+            self.assertEqual(attempt["core_provenance"]["run_id"], "12345")
+            self.assertEqual(attempt["core_resolution"], resolution)
+
     def test_evidence_directory_discriminates_postgresql_version(self):
         root = Path("/repo")
         pg15 = importer._evidence_directory(root, "39113295355", "15.19", "x86_64")

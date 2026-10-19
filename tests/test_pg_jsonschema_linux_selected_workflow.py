@@ -20,28 +20,30 @@ class SelectedLinuxWorkflowTests(unittest.TestCase):
         workflow = WORKFLOW.read_text(encoding="utf-8")
         self.assertIn("tools/extension_archive_plan.py", workflow)
         self.assertIn("--project pg_jsonschema", workflow)
-        self.assertIn("linux-publication-${{ needs.select.outputs.architecture }}-evidence", workflow)
+        self.assertIn("linux-publication-$PG_ARCHITECTURE-evidence", workflow)
         self.assertIn("scripts/pg_jsonschema/linux-build.sh", workflow)
         self.assertIn("scripts/pg_jsonschema/linux-verify.sh", workflow)
         self.assertIn("tools/emit_pg_jsonschema_linux_publication.py", workflow)
         self.assertIn("tools/import_pg_jsonschema_linux_publication.py", workflow)
         self.assertNotIn("--postgresql-version 17.11", workflow)
 
-    def test_final_archive_is_verified_on_a_separate_runner_with_pinned_core(self):
+    def test_final_archive_is_verified_on_a_separate_runner_with_resolved_core(self):
         workflow = WORKFLOW.read_text(encoding="utf-8")
         self.assertIn("  build:\n", workflow)
         self.assertIn("  verify:\n", workflow)
         self.assertIn("needs: [select, build]", workflow)
         self.assertIn("Download final extension archive from the build job", workflow)
-        self.assertIn("Download independent pinned PostgreSQL core archive", workflow)
-        self.assertIn("linux-publication-${{ needs.select.outputs.architecture }}-evidence", workflow)
+        self.assertIn("Download exact resolved PostgreSQL core archive", workflow)
+        self.assertIn("Validate transferred core identity and provenance", workflow)
+        self.assertIn("linux-publication-$PG_ARCHITECTURE-evidence", workflow)
         self.assertIn("scripts/pg_jsonschema/linux-verify.sh", workflow)
 
-    def test_emitter_core_run_ids_match_downloaded_prerequisite_selection(self):
+    def test_emitter_uses_transferred_core_resolution(self):
         workflow = WORKFLOW.read_text(encoding="utf-8")
         emitter = (ROOT / "tools/emit_pg_jsonschema_linux_publication.py").read_text(encoding="utf-8")
-        self.assertIn("p.CORE_RUNS[sys.argv[1]]", workflow)
-        self.assertIn('"core_run_id": CORE_RUNS[pg_version]', emitter)
+        self.assertIn("scripts/linux/resolve-core.sh", workflow)
+        self.assertIn("--core-resolution", workflow)
+        self.assertIn("linux_core_resolution.validate_resolution", emitter)
 
 
 if __name__ == "__main__":

@@ -10,6 +10,7 @@ import re
 import sys
 
 import coverage
+import linux_core_resolution
 
 DEFAULT_PG_VERSION = "18.6"
 EXTENSION_VERSION = "0.3.4"
@@ -57,7 +58,7 @@ def read_json(path):
 
 def emit(root, archives, core_archives, output, architecture, build_result,
          verify_result, source_revision, run_id, repository, server_url, image_id,
-         kernel_release, pg_version=DEFAULT_PG_VERSION):
+         kernel_release, pg_version=DEFAULT_PG_VERSION, core_resolution_path=None):
     root, archives, core_archives, output = map(Path, (root, archives, core_archives, output))
     selected_profile = profile_id(architecture, pg_version)
     if not coverage.REVISION.fullmatch(source_revision or "") or not str(run_id).isdigit():
@@ -82,19 +83,37 @@ def emit(root, archives, core_archives, output, architecture, build_result,
     archive_name = f"pg_jsonschema-{EXTENSION_VERSION}-postgresql-{pg_version}-{platform}.tar.gz"
     core_name = f"postgresql-{pg_version}-{platform}.tar.gz"
     archive, core = archives / archive_name, core_archives / core_name
+    resolution = None
+    if core_resolution_path is not None:
+        try:
+            resolution = linux_core_resolution.validate_resolution(
+                core_resolution_path, core, pg_version, architecture)
+        except (ValueError, OSError, TypeError) as exc:
+            raise coverage.CoverageError(f"invalid resolved core evidence: {exc}") from exc
+        provenance = resolution["provenance"]
+        if (resolution["origin"] == "built"
+                and (provenance.get("run_id") != str(run_id)
+                     or provenance.get("run_sha") != source_revision)):
+            raise coverage.CoverageError("built core provenance does not match this workflow run and source revision")
+        output.mkdir(parents=True, exist_ok=True)
+        (output / "core-resolution.json").write_text(
+            json.dumps(resolution, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     output.mkdir(parents=True, exist_ok=True)
     attempt_path = output / "attempt.json"
     attempt = {
         "schema_version": 1, "run_id": str(run_id), "source_revision": source_revision,
         "profile_id": selected_profile, "postgresql_version": pg_version,
         "pg_jsonschema_version": EXTENSION_VERSION, "architecture": architecture,
-        "core_run_id": CORE_RUNS[pg_version],
+        "core_run_id": CORE_RUNS[pg_version] if resolution is None else resolution["provenance"]["run_id"],
         "steps": {"archive-suite": raw_archive_result, "elf-closure": raw_elf_result},
         "workflow_steps": {"build": build_result, "verify": verify_result},
         "release_eligible": False, "redistribution_status": "seahash-4.1.0-notice-unresolved",
         "archives_present": {core_name: core.is_file(), archive_name: archive.is_file()},
         "reports": {"elf_closure": digest(static_path)} if static_path.is_file() else {},
     }
+    if resolution is not None:
+        attempt.update({"core_resolution": resolution, "core_origin": resolution["origin"],
+                        "core_provenance": resolution["provenance"]})
     attempt_path.write_text(json.dumps(attempt, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     if not archive.is_file() or not core.is_file():
         return (attempt_path,)
@@ -103,7 +122,7 @@ def emit(root, archives, core_archives, output, architecture, build_result,
     _sidecar(core, checksums[core_name])
     attempt["archives"] = checksums
     attempt_path.write_text(json.dumps(attempt, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    if checksums[core_name] != CORE_SHA256[pg_version][architecture]:
+    if resolution is None and checksums[core_name] != CORE_SHA256[pg_version][architecture]:
         raise coverage.CoverageError(f"core archive differs from the pinned current PostgreSQL {pg_version} archive")
     static = read_json(static_path)
     static_archives = static.get("archives", [])
@@ -147,6 +166,9 @@ def emit(root, archives, core_archives, output, architecture, build_result,
         "release_eligible": False, "redistribution_status": "seahash-4.1.0-notice-unresolved",
         "environment": environment, "ci": ci,
     }
+    if resolution is not None:
+        receipt.update({"core_resolution": resolution, "core_origin": resolution["origin"],
+                        "core_provenance": resolution["provenance"]})
     receipt_path = output / "current-receipt.json"
     receipt_path.write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     record = {
@@ -160,6 +182,9 @@ def emit(root, archives, core_archives, output, architecture, build_result,
         "redistribution_status": "seahash-4.1.0-notice-unresolved",
         "environment": environment,
     }
+    if resolution is not None:
+        record.update({"core_resolution": resolution, "core_origin": resolution["origin"],
+                       "core_provenance": resolution["provenance"]})
     coverage.validate_verification_record(record, coverage.load_json(root / "support.json"), root)
     record_path = output / "verification-record.json"
     record_path.write_text(json.dumps(record, indent=2, sort_keys=True) + "\n", encoding="utf-8")
@@ -205,6 +230,7 @@ def main():
     parser.add_argument("--verify-result", required=True)
     parser.add_argument("--image-id", required=True)
     parser.add_argument("--kernel-release", required=True)
+    parser.add_argument("--core-resolution", type=Path)
     args = parser.parse_args()
     try:
         env = os.environ
@@ -212,7 +238,7 @@ def main():
                          args.build_result, args.verify_result, env.get("GITHUB_SHA", ""),
                          env.get("GITHUB_RUN_ID", ""), env.get("GITHUB_REPOSITORY", ""),
                          env.get("GITHUB_SERVER_URL", ""), args.image_id,
-                         args.kernel_release, args.postgresql_version):
+                         args.kernel_release, args.postgresql_version, args.core_resolution):
             print(path)
         return 0
     except (coverage.CoverageError, OSError, ValueError, TypeError, KeyError) as exc:

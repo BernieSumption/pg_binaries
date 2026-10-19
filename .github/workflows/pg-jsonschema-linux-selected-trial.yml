@@ -44,7 +44,6 @@ jobs:
       postgresql_version: ${{ steps.plan.outputs.postgresql_version }}
       extension_version: ${{ steps.plan.outputs.selected_version }}
       architecture: ${{ steps.plan.outputs.architecture }}
-      core_run_id: ${{ steps.plan.outputs.core_run_id }}
     steps:
       - uses: actions/checkout@v4
       - name: Plan the exact selected target
@@ -71,9 +70,7 @@ jobs:
             echo "The selected pg_jsonschema release is $selected_version; the current Linux recipe supports only 0.3.4." >&2
             exit 1
           fi
-          core_run_id=$(python3 -c 'import sys; sys.path.insert(0,"tools"); import emit_pg_jsonschema_linux_publication as p; print(p.CORE_RUNS[sys.argv[1]])' "$POSTGRESQL_VERSION")
           echo "architecture=$REQUESTED_ARCHITECTURE" >> "$GITHUB_OUTPUT"
-          echo "core_run_id=$core_run_id" >> "$GITHUB_OUTPUT"
 
   build:
     needs: select
@@ -90,14 +87,13 @@ jobs:
         with:
           python-version: '3.12'
       - name: Validate publication tooling
-        run: python -B -m unittest tests/test_pg_jsonschema_linux_publication.py tests/test_pg_jsonschema_linux_selected_workflow.py
-      - name: Download pinned PostgreSQL core prerequisite
-        uses: actions/download-artifact@v4
-        with:
-          name: linux-publication-${{ needs.select.outputs.architecture }}-evidence
-          run-id: ${{ needs.select.outputs.core_run_id }}
-          github-token: ${{ github.token }}
-          path: ${{ runner.temp }}/core
+        run: python -B -m unittest tests/test_pg_jsonschema_linux_publication.py tests/test_pg_jsonschema_linux_selected_workflow.py tests/test_linux_core_resolution.py
+      - name: Resolve checked PostgreSQL core prerequisite
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          scripts/linux/resolve-core.sh "$PG_VERSION" "$PG_ARCHITECTURE" "$RUNNER_TEMP/core/pilot" \
+            linux-publication.yml "linux-publication-$PG_ARCHITECTURE-evidence"
       - name: Build selected pg_jsonschema final archive
         id: build
         continue-on-error: true
@@ -114,6 +110,17 @@ jobs:
             ${{ runner.temp }}/pg_jsonschema/*.json
           if-no-files-found: warn
           retention-days: 7
+      - name: Upload exact resolved PostgreSQL core and provenance
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pg-jsonschema-linux-core-${{ needs.select.outputs.postgresql_version }}-${{ needs.select.outputs.architecture }}-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/core/pilot/*.tar.gz
+            ${{ runner.temp }}/core/pilot/*.sha256
+            ${{ runner.temp }}/core/pilot/core-resolution.json
+          if-no-files-found: warn
+          retention-days: 7
   verify:
     needs: [select, build]
     if: always() && needs.select.result == 'success' && needs.build.result == 'success'
@@ -128,19 +135,23 @@ jobs:
         with:
           python-version: '3.12'
       - name: Validate publication evidence tooling
-        run: python -B -m unittest tests/test_pg_jsonschema_linux_publication.py tests/test_pg_jsonschema_linux_selected_workflow.py
+        run: python -B -m unittest tests/test_pg_jsonschema_linux_publication.py tests/test_pg_jsonschema_linux_selected_workflow.py tests/test_linux_core_resolution.py
       - name: Download final extension archive from the build job
         uses: actions/download-artifact@v4
         with:
           name: pg-jsonschema-linux-built-${{ needs.select.outputs.postgresql_version }}-${{ needs.select.outputs.architecture }}-${{ github.run_id }}
           path: ${{ runner.temp }}/pg_jsonschema
-      - name: Download independent pinned PostgreSQL core archive
+      - name: Download exact resolved PostgreSQL core archive
         uses: actions/download-artifact@v4
         with:
-          name: linux-publication-${{ needs.select.outputs.architecture }}-evidence
-          run-id: ${{ needs.select.outputs.core_run_id }}
-          github-token: ${{ github.token }}
-          path: ${{ runner.temp }}/core
+          name: pg-jsonschema-linux-core-${{ needs.select.outputs.postgresql_version }}-${{ needs.select.outputs.architecture }}-${{ github.run_id }}
+          path: ${{ runner.temp }}/core/pilot
+      - name: Validate transferred core identity and provenance
+        run: |
+          python tools/linux_core_resolution.py \
+            --validate-record "$RUNNER_TEMP/core/pilot/core-resolution.json" \
+            --archive "$RUNNER_TEMP/core/pilot/postgresql-$PG_VERSION-linux-$PG_ARCHITECTURE.tar.gz" \
+            --postgresql-version "$PG_VERSION" --architecture "$PG_ARCHITECTURE"
       - name: Verify final archives on this fresh runner
         id: verify
         continue-on-error: true
@@ -156,6 +167,7 @@ jobs:
           mkdir -p "$RUNNER_TEMP/pg_jsonschema/publication"
           python tools/emit_pg_jsonschema_linux_publication.py \
             --archives "$RUNNER_TEMP/pg_jsonschema" --core-archives "$RUNNER_TEMP/core/pilot" \
+            --core-resolution "$RUNNER_TEMP/core/pilot/core-resolution.json" \
             --output "$RUNNER_TEMP/pg_jsonschema/publication" --architecture "$PG_ARCHITECTURE" --postgresql-version "$PG_VERSION" \
             --build-result "${BUILD_RESULT:-skipped}" --verify-result "${VERIFY_RESULT:-skipped}" \
             --image-id "$(docker image inspect pg-binaries-pg-jsonschema-alpine-probe --format '{{.Id}}' 2>/dev/null || echo unavailable)" \

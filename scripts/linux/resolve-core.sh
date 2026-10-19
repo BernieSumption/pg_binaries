@@ -27,6 +27,7 @@ if [[ ! $version =~ ^[1-9][0-9]*\.[0-9]+$ ]]; then
 fi
 mkdir -p "$out"
 out=$(cd "$out" && pwd)
+rm -f "$out/core-resolution.json"
 core_name="postgresql-$version-linux-$architecture.tar.gz"
 docker pull --platform "$docker_platform" ubuntu:22.04
 base_image_ref=$(docker image inspect ubuntu:22.04 --format '{{index .RepoDigests 0}}')
@@ -46,6 +47,7 @@ if [[ ! $builder_packages_sha256 =~ ^[0-9a-f]{64}$ ]]; then
   exit 2
 fi
 candidate_fresh=false
+candidate_provenance=
 while (( $# )); do
   source_workflow=$1
   artifact_template=$2
@@ -61,12 +63,12 @@ while (( $# )); do
     continue
   fi
   if [[ -s "$out/$core_name" && -s "$out/$core_name.sha256" ]] && \
-    python3 "$repo/tools/linux_core_candidate.py" \
+    candidate_provenance=$(python3 "$repo/tools/linux_core_candidate.py" \
       --manifest "$out/core-candidate-manifest.json" --archive "$out/$core_name" \
       --postgresql-version "$version" --architecture "$architecture" \
       --artifact-name-template "$artifact_template" \
       --base-image-digest "$base_image_digest" \
-      --builder-packages-sha256 "$builder_packages_sha256"; then
+      --builder-packages-sha256 "$builder_packages_sha256"); then
     candidate_fresh=true
     break
   fi
@@ -80,4 +82,13 @@ else
   PG_VERSION="$version" PG_ARCHITECTURE="$architecture" CORE_ONLY=1 \
     "$repo/scripts/linux/build.sh" "$out"
 fi
+record_args=(--archive "$out/$core_name" --output "$out/core-resolution.json"
+  --postgresql-version "$version" --architecture "$architecture")
+if [[ $candidate_fresh == true ]]; then
+  record_args+=(--origin reused --candidate-json "$candidate_provenance"
+    --candidate-manifest "$out/core-candidate-manifest.json")
+else
+  record_args+=(--origin built)
+fi
+python3 "$repo/tools/linux_core_resolution.py" "${record_args[@]}"
 printf '%s\n' "$out/$core_name"

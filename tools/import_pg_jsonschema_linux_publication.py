@@ -11,6 +11,7 @@ from pathlib import PurePosixPath
 
 import coverage
 import emit_pg_jsonschema_linux_publication as publication
+import linux_core_resolution
 
 MAX_FILE_BYTES = 8 * 1024 * 1024
 
@@ -120,6 +121,9 @@ def _validate_package(path, architecture, pg_version):
 
 def _retain_available(attempt_path, attempt, archives, evidence, copies):
     _retain(attempt_path, evidence / "attempt.json", copies)
+    if attempt.get("core_resolution") is not None:
+        resolution_path = archives / "publication" / "core-resolution.json"
+        _retain(resolution_path, evidence / "core-resolution.json", copies)
     names = {
         "elf_closure": (archives / "static-analysis" / "pg_jsonschema.json", "elf-closure.json"),
         "probe_output": (archives / "probe-output.txt", "probe-output.txt"),
@@ -153,14 +157,25 @@ def import_run(root, core_archives, archives, run_id):
         raise coverage.CoverageError("attempt architecture is unsupported")
     selected_profile = publication.profile_id(architecture, pg_version)
     profile = coverage.verification_profile(root, selected_profile)
+    resolution = attempt.get("core_resolution")
     if (attempt.get("schema_version") != 1 or str(attempt.get("run_id")) != run_id
             or attempt.get("profile_id") != selected_profile
-            or attempt.get("core_run_id") != publication.CORE_RUNS[pg_version]
+            or (resolution is None and attempt.get("core_run_id") != publication.CORE_RUNS[pg_version])
+            or (resolution is not None and (not isinstance(resolution, dict)
+                 or attempt.get("core_run_id") != resolution.get("provenance", {}).get("run_id")))
             or attempt.get("pg_jsonschema_version") != publication.EXTENSION_VERSION
             or attempt.get("release_eligible") is not False
             or attempt.get("redistribution_status") != "seahash-4.1.0-notice-unresolved"
             or not coverage.REVISION.fullmatch(str(attempt.get("source_revision", "")))):
         raise coverage.CoverageError("raw attempt identity does not match this run and profile")
+    resolution_path = archives / "publication" / "core-resolution.json"
+    if resolution is not None:
+        if (not isinstance(resolution, dict)
+                or attempt.get("core_origin") != resolution.get("origin")
+                or attempt.get("core_provenance") != resolution.get("provenance")):
+            raise coverage.CoverageError("raw attempt core resolution fields are inconsistent")
+        if not resolution_path.is_file():
+            raise coverage.CoverageError("raw attempt lacks its core resolution JSON")
     results = _step_results(attempt)
     workflow_steps = attempt.get("workflow_steps")
     if (not isinstance(workflow_steps, dict) or set(workflow_steps) != {"build", "verify"}
@@ -190,8 +205,23 @@ def import_run(root, core_archives, archives, run_id):
     digests = {archive_name: publication.digest(extension_archive), core_name: publication.digest(core_archive)}
     publication._sidecar(extension_archive, digests[archive_name])
     publication._sidecar(core_archive, digests[core_name])
-    if digests[core_name] != publication.CORE_SHA256[pg_version][architecture]:
-        raise coverage.CoverageError("downloaded core archive differs from the pinned current-profile archive")
+    if resolution is None:
+        if (attempt.get("core_run_id") != publication.CORE_RUNS[pg_version]
+                or digests[core_name] != publication.CORE_SHA256[pg_version][architecture]):
+            raise coverage.CoverageError("downloaded core archive differs from the pinned current-profile archive")
+    else:
+        try:
+            checked = linux_core_resolution.validate_resolution(resolution_path, core_archive,
+                                                                pg_version, architecture)
+        except (ValueError, OSError, TypeError) as exc:
+            raise coverage.CoverageError(f"invalid downloaded core resolution evidence: {exc}") from exc
+        if checked != resolution:
+            raise coverage.CoverageError("core resolution JSON differs from raw attempt")
+        provenance = checked["provenance"]
+        if (checked["origin"] == "built"
+                and (provenance.get("run_id") != run_id
+                     or provenance.get("run_sha") != attempt.get("source_revision"))):
+            raise coverage.CoverageError("built core provenance does not match this workflow run and source revision")
     _validate_package(extension_archive, architecture, pg_version)
     if attempt.get("archives") != digests:
         raise coverage.CoverageError("downloaded archive bytes differ from raw attempt hashes")
@@ -256,6 +286,10 @@ def import_run(root, core_archives, archives, run_id):
             or receipt.get("dependency_check_profile") != "linux-elf-alpine-relocation-v1"
             or receipt.get("dependency_checks_passed") != (results["elf-closure"] == "passed")):
         raise coverage.CoverageError("receipt identity, archive hashes or report hashes differ from evidence")
+    if (receipt.get("core_resolution") != resolution
+            or receipt.get("core_origin") != (resolution.get("origin") if resolution else None)
+            or receipt.get("core_provenance") != (resolution.get("provenance") if resolution else None)):
+        raise coverage.CoverageError("receipt core resolution differs from raw attempt")
     if (not isinstance(ci, dict) or ci.get("provider") != "github-actions" or str(ci.get("run_id")) != run_id
             or any(ci.get(key) != attempt["source_revision"] for key in ("source_revision", "build_revision", "test_revision"))
             or not str(ci.get("run_url", "")).endswith(f"/actions/runs/{run_id}")):
@@ -271,6 +305,10 @@ def import_run(root, core_archives, archives, run_id):
             or record.get("release_eligible") is not False
             or record.get("redistribution_status") != "seahash-4.1.0-notice-unresolved"):
         raise coverage.CoverageError("verification record identity or checksums differ from receipt")
+    if (record.get("core_resolution") != resolution
+            or record.get("core_origin") != (resolution.get("origin") if resolution else None)
+            or record.get("core_provenance") != (resolution.get("provenance") if resolution else None)):
+        raise coverage.CoverageError("verification record core resolution differs from raw attempt")
     if record.get("environment") != receipt.get("environment"):
         raise coverage.CoverageError("verification record environment differs from receipt")
     output_names = ((receipt_path, "current-receipt.json"),
