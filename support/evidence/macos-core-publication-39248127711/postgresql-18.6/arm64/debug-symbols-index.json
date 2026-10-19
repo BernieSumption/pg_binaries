@@ -1,0 +1,1235 @@
+{
+  "files": [
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/lib/basic_archive.dylib.dSYM",
+      "dsym_sha256": "90299e3f2d0e2735fd973a576dcfe2b5b4fe24d35eb7cff155b416ad8a471e3c",
+      "module_path": "postgresql/lib/basic_archive.dylib",
+      "module_sha256": "e8c8e8e6985c03463c718a3f34876adcce64379dd2431b7bad1cac8d093d9c78",
+      "uuid": "fae7f3f2-0c1c-3dac-b092-b98fc4d39c48"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/lib/latin_and_mic.dylib.dSYM",
+      "dsym_sha256": "e0605ff8d06b8f8a96787e4b849e7946df74ed4d076490c4799a10e7c8ae2e98",
+      "module_path": "postgresql/lib/latin_and_mic.dylib",
+      "module_sha256": "09c10a1d901f9ef0358fdef86a424a8d8fefe009f5d3e1a79e0116e893771307",
+      "uuid": "c2589cf8-6978-34de-9eb7-8e6f07ba3539"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/lib/pg_stat_statements.dylib.dSYM",
+      "dsym_sha256": "f75a03544306a63ece06cecd86d5bea0a65ec6b253cf446fa719e7c9939fbe0c",
+      "module_path": "postgresql/lib/pg_stat_statements.dylib",
+      "module_sha256": "2a133fa277592eeea9215f812800af17a2ebd53ce28184fe903c242c92638fd9",
+      "uuid": "0a035fcb-6de1-344f-a665-3b05f855ca5f"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/lib/moddatetime.dylib.dSYM",
+      "dsym_sha256": "4fe0b69e9f91816b8fef4a2d67e5e9b278704d1171c83f8ca0eeec4374ea0ead",
+      "module_path": "postgresql/lib/moddatetime.dylib",
+      "module_sha256": "c70538e78717fb44bf98f5c640d6520e22e9f2b33db62bedbb811ff72637393c",
+      "uuid": "ea944fe2-235a-388b-94bb-4bf4976e9112"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/lib/test_decoding.dylib.dSYM",
+      "dsym_sha256": "7b80feba2c8efbda932ed118447b7009a63f1973fbc5e3c991f22cc269e44edc",
+      "module_path": "postgresql/lib/test_decoding.dylib",
+      "module_sha256": "d529c3c5a55c24cd4dce96f83677c0fb3bb0a9402bddcf5fdc50a154ae6b656c",
+      "uuid": "b35c2667-f659-3f41-b10e-2ff1ae168d3d"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/lib/utf8_and_gbk.dylib.dSYM",
+      "dsym_sha256": "1a7299f0a9cde5ae2880ebe9f3f631b05ce2502c36b19a3edae2a11012c0ee1e",
+      "module_path": "postgresql/lib/utf8_and_gbk.dylib",
+      "module_sha256": "b0d66e878bfb45998b1f2e2eb2d44d43424abe7c8cc3e1c9f13430766372ab99",
+      "uuid": "2adbd2d7-8596-3ffe-a34f-61c3856be5d2"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/lib/euc2004_sjis2004.dylib.dSYM",
+      "dsym_sha256": "4c282d441f4b1ef759a070f120312a9dfa9b407fdec27d9412deaf4f62e36b50",
+      "module_path": "postgresql/lib/euc2004_sjis2004.dylib",
+      "module_sha256": "a7e0ec9b3f142080130e99a5ebcb2b840d2ba48304efc7e55438d9b86057ff22",
+      "uuid": "0132d60d-fa62-3c22-9416-b5532dadb0fb"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/lib/utf8_and_uhc.dylib.dSYM",
+      "dsym_sha256": "2448336bdec1e095cddc4a83356e57a37ca712fba55a8755aa334051ce787df4",
+      "module_path": "postgresql/lib/utf8_and_uhc.dylib",
+      "module_sha256": "d67e6efc41c9e0d504ae78b6274198e3164e9e68d028f94d292c63f895af1896",
+      "uuid": "89c27978-c4e8-3ea8-89e6-768d602185f3"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/lib/pg_overexplain.dylib.dSYM",
+      "dsym_sha256": "d26f1c34935c56df92f1886809e656cf7df4afd4f919c6ee572a7aeb6e39fd7f",
+      "module_path": "postgresql/lib/pg_overexplain.dylib",
+      "module_sha256": "682b1863eff3b3f0df8c343675089c2f8912ec9d6f6517a3c684ac5cd89578d9",
+      "uuid": "d80e2e16-b8de-3295-883b-9a5546be0eb4"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/lib/autoinc.dylib.dSYM",
+      "dsym_sha256": "cfd55fbdcddba1cd39799fce02bf64c89766e989a41846456a1bd4629c9611e1",
+      "module_path": "postgresql/lib/autoinc.dylib",
+      "module_sha256": "d09fe85a1ef037cbd138ba85c7bc1d7576c2965575b127165c3075faa3122d1a",
+      "uuid": "3b36c7db-2be9-3159-b4fa-280c18a15e66"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/lib/sslinfo.dylib.dSYM",
+      "dsym_sha256": "4743357c0ddf7fc6c2c433e154e839a7c45bb80c51186d4a3fac8ab226b2be3b",
+      "module_path": "postgresql/lib/sslinfo.dylib",
+      "module_sha256": "d80d1f5ab90955bd77acb3d6c7e2584b0043fb1add980580963c01f4141b7231",
+      "uuid": "c1ce5245-2060-3afa-afa5-153e50d5f74a"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/lib/utf8_and_euc2004.dylib.dSYM",
+      "dsym_sha256": "03a14c146eb4390908b3e55f915c3642041fe9109b5e8598ec3630c6874ed2a9",
+      "module_path": "postgresql/lib/utf8_and_euc2004.dylib",
+      "module_sha256": "7bb52a8948a8de4f7649b5c7409ae079e7578eadd4ba8f3249db13337fefc3ee",
+      "uuid": "35eb0df1-ff97-3b0e-9a8a-0440ff791ff9"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/lib/insert_username.dylib.dSYM",
+      "dsym_sha256": "eab431226dccd3c9a49a8f1188adf62f05c71272a86263c3b9a584ef2ce1db0b",
+      "module_path": "postgresql/lib/insert_username.dylib",
+      "module_sha256": "7bc8289cc4738b706f3f774db7fe034f4c84a87d93c6f9ab3506373b0a1bcb57",
+      "uuid": "889c2e6b-6923-3e9f-aaab-e80a568bd53b"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/lib/pageinspect.dylib.dSYM",
+      "dsym_sha256": "276e4a8ae26bb22363fc27cdf023e17cbb58f2b0651c19e46de9a04444a28f99",
+      "module_path": "postgresql/lib/pageinspect.dylib",
+      "module_sha256": "d652f797afcfa99a1c4f179ed4d2dcf6f6e44755ff7e7b11b04cedb2ebba6cf2",
+      "uuid": "c7139a41-babb-3a4f-ae16-3a21c13ad12c"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/lib/tsm_system_time.dylib.dSYM",
+      "dsym_sha256": "c5ca9cae93304b97f19acc3155cc3698c8fe378e8f69cc974b76a6aa7be82737",
+      "module_path": "postgresql/lib/tsm_system_time.dylib",
+      "module_sha256": "dd8bf4f9390eec11961f6ef546f0f38ef6362996e4157d8f7f5fd5fbd2b8bb25",
+      "uuid": "bc06bb55-f253-3f70-949c-16d7ceac4166"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/lib/latin2_and_win1250.dylib.dSYM",
+      "dsym_sha256": "c85bb9650f50579d146eee1cd529ff3f06a088faafcb6894499a4233a0a64ac3",
+      "module_path": "postgresql/lib/latin2_and_win1250.dylib",
+      "module_sha256": "d66be8eed63f3906aee1ea37e56f955cc744905e837cbb9399cd39867ce9bd05",
+      "uuid": "1a1e3b75-b07e-3445-927f-fa1b43a4d680"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/lib/pg_visibility.dylib.dSYM",
+      "dsym_sha256": "2ce02a2624ef6e1e67d6eab748b7f526a8a66dcc8d293b366c95b0d3889526c7",
+      "module_path": "postgresql/lib/pg_visibility.dylib",
+      "module_sha256": "7ea9ba9417f1a3fb5a1586e601d1af7f71e73ac70bd484b400377c4b43380995",
+      "uuid": "3bd5d2a7-87e1-3d46-9601-cd4b956f7f2d"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/lib/earthdistance.dylib.dSYM",
+      "dsym_sha256": "9bb417c850be42e562540817e435f4f8e8cf27e474d412b7778ac03b4cf963da",
+      "module_path": "postgresql/lib/earthdistance.dylib",
+      "module_sha256": "4cd7d5bee7189ca880faf7a2410b5ceee9764e8eb2688f9fb06389ac4e2ff0fe",
+      "uuid": "f15b66cd-65c9-3a20-9b75-925fe82ec5a5"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/lib/utf8_and_gb18030.dylib.dSYM",
+      "dsym_sha256": "7af38f76567c2415e08675759a9d15c65cce974853617b592f2e51974223b9ee",
+      "module_path": "postgresql/lib/utf8_and_gb18030.dylib",
+      "module_sha256": "6744da2385a113a475032a724fec7c65d1056af044b69ac01609bfd58185f68b",
+      "uuid": "22aa99f6-bf7f-3c38-beee-06fe63d6e7bd"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/lib/libpq.5.dylib.dSYM",
+      "dsym_sha256": "895b8372bd5fb00d667ac40660256299cc26f7f87288c5287dc6f58d7569844f",
+      "module_path": "postgresql/lib/libpq.5.dylib",
+      "module_sha256": "c9804649c74fc85152b642c1cc985a07c9f6dce10fc023a19589e725bf6ac129",
+      "uuid": "d2eb91ab-9d90-3a27-81d9-db853cf40447"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/lib/utf8_and_euc_cn.dylib.dSYM",
+      "dsym_sha256": "4920e7ca2f5bb911906723d69914679833f77fad48f2727d6d8e1be3fb5a0a3d",
+      "module_path": "postgresql/lib/utf8_and_euc_cn.dylib",
+      "module_sha256": "25f95ea2fb843cdb14e0c9c83a219db2942c92d0c11dbc72e136cde9c25b9193",
+      "uuid": "5d666916-6462-3286-9e80-4f32fa936c03"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/lib/plpgsql.dylib.dSYM",
+      "dsym_sha256": "eaed9592936dc22d3c388ce24b7c555296e7dad9090689d425c0c6749001a19b",
+      "module_path": "postgresql/lib/plpgsql.dylib",
+      "module_sha256": "b0516b659f9a41f41d8a615cd37b9b8dfc8dff0de644dea9be6b9fd875009940",
+      "uuid": "cb4ec313-b305-332e-a041-70f8022550c7"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/lib/citext.dylib.dSYM",
+      "dsym_sha256": "0d349632cc2af8514c547689d2ef4b282e6eb8bed7b643d9ff119ddc13d0b6cd",
+      "module_path": "postgresql/lib/citext.dylib",
+      "module_sha256": "e239b82e3c9fdd73885a951536cfe00c7b91cffcf7ff8987a434312726e3ad03",
+      "uuid": "c4f8ea91-d355-3a82-8696-702a818a304a"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/lib/utf8_and_win.dylib.dSYM",
+      "dsym_sha256": "ecbc6e224c29b618da5d0bad7b520e84363848f5df41d704fc16dac26975f752",
+      "module_path": "postgresql/lib/utf8_and_win.dylib",
+      "module_sha256": "e14ab21fa3ce913f324a7fa830b40e51ad440323e6588a42cd98d7c829c88531",
+      "uuid": "6f064ab7-1373-3e39-a44a-3c7b993a014e"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/lib/dict_xsyn.dylib.dSYM",
+      "dsym_sha256": "0f105fdeb0cdc49ab3bea02cf796ee9e2baaadf2f04fc15eee86f99037ea397d",
+      "module_path": "postgresql/lib/dict_xsyn.dylib",
+      "module_sha256": "4c22f28c157cf581c64590ada30eb1d27885a86b850f91f4d69f9bcde5c950f5",
+      "uuid": "da390c43-2bd4-35b7-a256-30518ceda15e"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/lib/utf8_and_big5.dylib.dSYM",
+      "dsym_sha256": "d0478f8658ea08b2e93a5aa928daa8065490b29fec2e09f1d6b0480de873840e",
+      "module_path": "postgresql/lib/utf8_and_big5.dylib",
+      "module_sha256": "98ac053cda975857895cbb0e24db53db87a335116cc15a406dfc7378f4351f57",
+      "uuid": "453537cf-4b32-3c3d-b8f1-d7904292b329"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/lib/utf8_and_euc_kr.dylib.dSYM",
+      "dsym_sha256": "c52bb8ab704c2fbe0c6a941a7e425d724abb59890889ab4b7914513a3a5b7aa9",
+      "module_path": "postgresql/lib/utf8_and_euc_kr.dylib",
+      "module_sha256": "44ded72a9f8680afdb4a3c8363b55164bda711fd6ed7292927e7146c661f00b0",
+      "uuid": "560d0481-f704-35e1-9b17-663af98dab70"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/lib/utf8_and_sjis2004.dylib.dSYM",
+      "dsym_sha256": "c31a513d89c32c4f156cf83679b6274cc07732a82bec257cd3dffdbaef8b5f9d",
+      "module_path": "postgresql/lib/utf8_and_sjis2004.dylib",
+      "module_sha256": "ebee8910762aced6f354fa6a170733c6af8f57db366915b05b8bfacd90efe160",
+      "uuid": "2ea9e59f-400f-303b-ba96-9773a6bb6907"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/lib/pgrowlocks.dylib.dSYM",
+      "dsym_sha256": "88e4c82859eb17084e700114a94fc350d7fc3648565398d0cc5e710475dce339",
+      "module_path": "postgresql/lib/pgrowlocks.dylib",
+      "module_sha256": "15375848a9fe50694d9453f118514bb5712dc2fe4e6ae3e8de235430c9afa38a",
+      "uuid": "4b69c793-2fdf-3251-8d47-5ca2f609349f"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/lib/tsm_system_rows.dylib.dSYM",
+      "dsym_sha256": "d29f0357916b6757bc237715f1b907685399a42361cf2f91ffe623442169640f",
+      "module_path": "postgresql/lib/tsm_system_rows.dylib",
+      "module_sha256": "304a2eaf156758779ae05e031072b4a815ff2e6ec5accf06a0aa961d0eb58265",
+      "uuid": "a32d46d6-4d8b-3e4b-8b45-790a31d08204"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/lib/libecpg.6.dylib.dSYM",
+      "dsym_sha256": "760f1cdb96c46c30dc20d30a712d8adb732f5caa1c387bcc706331368c5104ed",
+      "module_path": "postgresql/lib/libecpg.6.dylib",
+      "module_sha256": "fe16ce55e74667b64f439858c57ea3cf0a4cdf3d33458cb6f8439e8ddf02d7a5",
+      "uuid": "4b1c1a17-90df-3aeb-94cf-95fac2d81955"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/lib/file_fdw.dylib.dSYM",
+      "dsym_sha256": "095321fb3ae89948c73fb1f4bd9cce2ae7f19c5933b59b74571eb08b1a384e4e",
+      "module_path": "postgresql/lib/file_fdw.dylib",
+      "module_sha256": "87de5275cc17fbf483b061227d143fa772074afe0607ffff2ae706c013eaec93",
+      "uuid": "0a69fae0-0deb-3097-b7d4-0b1e8428b606"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/lib/passwordcheck.dylib.dSYM",
+      "dsym_sha256": "875c5ddb04b109593982c4ddb1e5af5cfdd69b66b496475478f6ea6cdbc264e6",
+      "module_path": "postgresql/lib/passwordcheck.dylib",
+      "module_sha256": "bc5d413969c6ab7ed6cf66af39fdffd43a82e4db419c5e6da9e3cbc57b408828",
+      "uuid": "de6c5346-1d6f-301e-a7d9-3042df89d7c2"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/lib/unaccent.dylib.dSYM",
+      "dsym_sha256": "a12d4a0199e67c817df21cec0b8b736f9789bfab1468f246cd7b0764b6cb0c55",
+      "module_path": "postgresql/lib/unaccent.dylib",
+      "module_sha256": "3932d617a4a4a687f54cfbc87e89228388c56334253200936d538ce030b44cc8",
+      "uuid": "b7878fd4-1719-302e-8dbd-b04d14f0ce44"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/lib/pgxml.dylib.dSYM",
+      "dsym_sha256": "ac9add6b59763bd74940deb953674506f3bc28aa0551e2ee5c3ff742b94b3afb",
+      "module_path": "postgresql/lib/pgxml.dylib",
+      "module_sha256": "bbb9a3584375912a57a6495dda3e9020d313a5e9476a6bac013ce36b1303807b",
+      "uuid": "f1fa2e70-45c2-303d-b050-725092079202"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/lib/libpgtypes.3.dylib.dSYM",
+      "dsym_sha256": "338363939e93213115c0d65d5fabd9fe83c01983b338ec1c1290b75d10886174",
+      "module_path": "postgresql/lib/libpgtypes.3.dylib",
+      "module_sha256": "310539ad305c22c34117f9eded34373a0797ff04565fcd3961c3fa678a7a54bc",
+      "uuid": "16983134-816b-3d7a-8db1-7ec8335c8501"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/lib/pgoutput.dylib.dSYM",
+      "dsym_sha256": "fbd9678479d4df4acf9cb6fa4c38a26fd3e6da38396f168cb6b8bb498019b59a",
+      "module_path": "postgresql/lib/pgoutput.dylib",
+      "module_sha256": "123b533c49bbb7e4df0f7bb373d49d9db7c593ba99294d5a354e9a1db24f8068",
+      "uuid": "230935c5-6909-39c8-b9ad-69eee6e30296"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/lib/utf8_and_cyrillic.dylib.dSYM",
+      "dsym_sha256": "a4fa0d60540329e3309363ffce074c2638d6c661fbd0eb127342bd90bfc017e1",
+      "module_path": "postgresql/lib/utf8_and_cyrillic.dylib",
+      "module_sha256": "b5d0e327a89f7b3d7a979b970899ff36e3f4edb3ee36db7a9945f1f1d245c12a",
+      "uuid": "a0a98a7e-d2c8-3edb-90a5-9e96ac5596a9"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/lib/basebackup_to_shell.dylib.dSYM",
+      "dsym_sha256": "a0676ae7afc5ff747f8be423843bfec9be11aa4c7cbd05ac1c71d8dae1ace9b0",
+      "module_path": "postgresql/lib/basebackup_to_shell.dylib",
+      "module_sha256": "751d519fb79a1632712ba961e437f64d7b63319182088723143e6020da984701",
+      "uuid": "f43b810f-b74c-3c07-a3b0-035bcb53078e"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/lib/pg_logicalinspect.dylib.dSYM",
+      "dsym_sha256": "7576456372af95503aee9c727075a2ded6ca3e5f5e44e573230beb8180a0919c",
+      "module_path": "postgresql/lib/pg_logicalinspect.dylib",
+      "module_sha256": "27dbd434c4e737afb34d5c2ec183513f3f4d1f821cbd34e72ac32376f485a5af",
+      "uuid": "729af71c-9788-3b02-bd6e-7805bf1959e4"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/lib/tablefunc.dylib.dSYM",
+      "dsym_sha256": "305ec61d1678e9303135d1208b9ad2270b97960e9771fde24e84504284b4f2bb",
+      "module_path": "postgresql/lib/tablefunc.dylib",
+      "module_sha256": "97280b752b5ae27705cf83d71ddd599976a7e6c348f89d6bf496d5105820a505",
+      "uuid": "911a79d0-ee7a-3420-b956-39185636bee2"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/lib/utf8_and_johab.dylib.dSYM",
+      "dsym_sha256": "21e7f5cc3f47849b5a91d13c47fb8eaa512ca2c479351d3b9ec949d8093009b6",
+      "module_path": "postgresql/lib/utf8_and_johab.dylib",
+      "module_sha256": "c2013fa9e84376105e26fa4dbc42908b2e1ae30a3d92f507c27334b0337aea7a",
+      "uuid": "dff7f541-2c36-38de-914a-b303224a2149"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/lib/pg_freespacemap.dylib.dSYM",
+      "dsym_sha256": "b4c1b52428fa61e889bc6131152feecec1f86a60e840018c640b18990d4e1d8f",
+      "module_path": "postgresql/lib/pg_freespacemap.dylib",
+      "module_sha256": "bcafd3d519b4782d7dd301020fef1fb3558fbe70cf620d4d669bd8faa5a9ca55",
+      "uuid": "b6be3267-f653-33b9-8cb6-213756993ee0"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/lib/amcheck.dylib.dSYM",
+      "dsym_sha256": "934b4d3ebbe8f58040a5dae76a0eaaab0a965b892ec9506cba3e787bb535299b",
+      "module_path": "postgresql/lib/amcheck.dylib",
+      "module_sha256": "19f11dd9005e798821930726d67b770842e08a58cdee02dc86df0ab300183a7a",
+      "uuid": "51ab3f90-1511-3d73-aa0c-1be532f52da6"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/lib/auth_delay.dylib.dSYM",
+      "dsym_sha256": "4cf8d12cdb13308a242cb734eba2df23c36acad8a3ff1ae4e862c377fffbc7a1",
+      "module_path": "postgresql/lib/auth_delay.dylib",
+      "module_sha256": "8335a8b4519c03f67d784b98acb1505e00c61ae8b8f514d00c45d58622db80a1",
+      "uuid": "cfee3485-9c04-3a07-8a9c-6189dcb88965"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/lib/uuid-ossp.dylib.dSYM",
+      "dsym_sha256": "4e7092797d1961e72707df565ed23e3dddde51e339e6e439cde2e1f1cd9f7fa3",
+      "module_path": "postgresql/lib/uuid-ossp.dylib",
+      "module_sha256": "4017e64d92185d0a2bc9eafb255f568c146bb133e4932634de0cd0425ff0f5ce",
+      "uuid": "43e29751-2690-3b36-8da8-3e877b7ec6fb"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/lib/seg.dylib.dSYM",
+      "dsym_sha256": "bc9e84f1cb6a820f455135c6ae0c7e49dde18ec672f94d6d3cbe28c08bf01cf4",
+      "module_path": "postgresql/lib/seg.dylib",
+      "module_sha256": "b7104d637f0126dfc8cf4c1f7adb4d89246fb491d235c55302ff2797444bc98d",
+      "uuid": "eec59729-20cb-39b6-b703-c9e6664bbad3"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/lib/pgstattuple.dylib.dSYM",
+      "dsym_sha256": "8e93c5c2ea04773e5d0b14b2370b5362fc444d3b7885d710deb8edfe0534bca7",
+      "module_path": "postgresql/lib/pgstattuple.dylib",
+      "module_sha256": "790d7fc31376fffa5f2a67ff3872f2fdd7021617fecdd7877a3d4b6719941f6d",
+      "uuid": "4538b335-ab68-3ecb-a2ca-e6295768c0b3"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/lib/isn.dylib.dSYM",
+      "dsym_sha256": "402a3ba2b79b148edd12d97a71a24174e140bc8c2f1c14c70122dc7f2df03896",
+      "module_path": "postgresql/lib/isn.dylib",
+      "module_sha256": "f3bc165916187812baef9eb89bcb2a689418211ac6fcd7f0325c752d248d26d6",
+      "uuid": "aae3eda6-ef49-3b54-a2f0-2dc4dc8de6b7"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/lib/pg_buffercache.dylib.dSYM",
+      "dsym_sha256": "2cb1b3dc490f690dc6eb66d478f4fc024e733b65125f985232d1a78d6a3bcbb5",
+      "module_path": "postgresql/lib/pg_buffercache.dylib",
+      "module_sha256": "2bbda6b7c908b46a533865422a22bd3200f3bd711075a25f60ee5d9ba0d29c85",
+      "uuid": "c56111bf-d2ad-3933-9bfb-f5965cf599bf"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/lib/pgcrypto.dylib.dSYM",
+      "dsym_sha256": "5fc450a85b674666af139c70901f812316dac28af795d534e4656c3985ac2f78",
+      "module_path": "postgresql/lib/pgcrypto.dylib",
+      "module_sha256": "0338c2fb968782a768e5ad3e67950b64ff7d61907a3cda3f62ab47bae2383a8d",
+      "uuid": "3f181fe4-82b1-3634-889f-b5997c82c037"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/lib/dict_snowball.dylib.dSYM",
+      "dsym_sha256": "c7b6b584849d9071bfc58ec606654f83763ffc3aa31a5c131d91e603169c71b9",
+      "module_path": "postgresql/lib/dict_snowball.dylib",
+      "module_sha256": "129d6538f07a9f3c2f02fefd087a987140dbb7e94af6e5f9669097b22426a55b",
+      "uuid": "d8af0541-3c1b-3f38-a660-92b5d2f7e54b"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/lib/euc_cn_and_mic.dylib.dSYM",
+      "dsym_sha256": "2032291f4bc3d6e22e18d90daf37aa57d121abadb08f02520f4f5377f20192b3",
+      "module_path": "postgresql/lib/euc_cn_and_mic.dylib",
+      "module_sha256": "f0dcd4176f761c22e3718f08a7032b84535683f45c99e97547156098eca5ec41",
+      "uuid": "b17523c0-2e80-3f54-a90f-9c188facb746"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/lib/dblink.dylib.dSYM",
+      "dsym_sha256": "8e8f381cc7e455fb01598d948ce292683d6d2a4def09f395ad22ddf4e0e06174",
+      "module_path": "postgresql/lib/dblink.dylib",
+      "module_sha256": "700dc6befb0b15b4405b09d27f7be7f2568cac5221e1677a6cb6d466f8ad2eae",
+      "uuid": "a017800d-7dd3-3170-b883-e4e67a4fc435"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/lib/cyrillic_and_mic.dylib.dSYM",
+      "dsym_sha256": "8a5a3b020e0ffea3f0cd2f5363745afc6f88f1b3894e4e57f5e603b04d6b5907",
+      "module_path": "postgresql/lib/cyrillic_and_mic.dylib",
+      "module_sha256": "7de23ed02075d3796bce10789450b91a31420ac12162c071b8138ea282b19903",
+      "uuid": "9b2ca02d-3c7c-3073-869c-8b2e1ae67e47"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/lib/dict_int.dylib.dSYM",
+      "dsym_sha256": "44d47c4b483f31ead715cf399817e44819f80990f31479f600c47ce99301613c",
+      "module_path": "postgresql/lib/dict_int.dylib",
+      "module_sha256": "6a0572bed9d05fc1834bc30d9f1c137e097b0717e2ca9b5984253952dcb9fce2",
+      "uuid": "ad241319-8fd2-3e0b-b4ac-07174a8e150b"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/lib/auto_explain.dylib.dSYM",
+      "dsym_sha256": "92c013b93848a37e15d73b6bcc03538ce7f8eeda4d800a2611afeb959c74cc30",
+      "module_path": "postgresql/lib/auto_explain.dylib",
+      "module_sha256": "a23565793c5dacd886c0b7cca7a38fcf7c81296c9c46be2df84a5a37ffa5ba06",
+      "uuid": "fcecc013-882f-3ef5-8a60-d0f9ee75156c"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/lib/ltree.dylib.dSYM",
+      "dsym_sha256": "616962bfb25dccba44ea1ea665dc4c8ccdf3a4e0378f562788196fc472633a39",
+      "module_path": "postgresql/lib/ltree.dylib",
+      "module_sha256": "58eba495b1e5e1c0fb82b9a4bdde6ce4e04fdf648e296a03ac54787d04b0dd17",
+      "uuid": "87be86a4-29e6-3434-abd7-b183bc7a1399"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/lib/btree_gist.dylib.dSYM",
+      "dsym_sha256": "d98e56b1a4ceff1a80b019e3f1d9939e7ad386f75f1f482a0028c6f325b022d1",
+      "module_path": "postgresql/lib/btree_gist.dylib",
+      "module_sha256": "4fc0df2523b43759bf00c6eef38fc75e569d9b1458786337ce046bccb6404049",
+      "uuid": "95e7f886-c71a-30ea-bebe-c6ea084fea29"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/lib/hstore.dylib.dSYM",
+      "dsym_sha256": "9d599b5bed86a86967e585cd1906aa5f59d8d645786fa7bbf68ab8c395caa8fd",
+      "module_path": "postgresql/lib/hstore.dylib",
+      "module_sha256": "6142d423fede09cf4aa9eba224fb07876aa95039b50fed7cfa72a4ddbde67cdb",
+      "uuid": "7189f053-66c1-348d-bf63-35e24fec1b12"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/lib/refint.dylib.dSYM",
+      "dsym_sha256": "6ef88ee9d509473a22ffed3614430aa132bb4dc874ea87ecc0a1e4f90efb4c49",
+      "module_path": "postgresql/lib/refint.dylib",
+      "module_sha256": "2551e1dee03ebc64ab5cc615f72462465d34343a0f959815b401aee44dac18f0",
+      "uuid": "baf144f5-0c24-34db-a53d-874b143534f1"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/lib/libecpg_compat.3.dylib.dSYM",
+      "dsym_sha256": "b42d66466426fbe42a7979fe2b43613aafe979dc12ce4df523cac1e11250c1ab",
+      "module_path": "postgresql/lib/libecpg_compat.3.dylib",
+      "module_sha256": "2405d5ef6eadb501c900c456d004787a15eb85dddfc2910198b5125f9e10bf09",
+      "uuid": "fbea0fd1-c90e-3467-9b96-8a512c1ed00a"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/lib/utf8_and_sjis.dylib.dSYM",
+      "dsym_sha256": "b43b964ab32662a0923d5848cc94db59d590205e885b281f6eeac773114302c8",
+      "module_path": "postgresql/lib/utf8_and_sjis.dylib",
+      "module_sha256": "6e093b3b38964031b90249191f22b2906afeda7c1be4a5ea551f08d39b6ae0a8",
+      "uuid": "75c919c5-2158-3b3d-a0fa-a5cef458eb62"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/lib/utf8_and_euc_jp.dylib.dSYM",
+      "dsym_sha256": "f92a7b47ea7e675d131d5381b614fe284acd0d6779d1255e98bbc61b25f71b32",
+      "module_path": "postgresql/lib/utf8_and_euc_jp.dylib",
+      "module_sha256": "a5d2a5072753e4447a817ba02b0c588551e1f60e6def068300ee08f8ec9b3298",
+      "uuid": "1590ff11-85ab-32a9-baa1-79e909ed8a91"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/lib/pg_trgm.dylib.dSYM",
+      "dsym_sha256": "ca9e7f1b4ce206d41513d2661622c654ddecd27a92fc5fb4e55c5ca06573f3c7",
+      "module_path": "postgresql/lib/pg_trgm.dylib",
+      "module_sha256": "886fd26cc239e6f4945d60bb097f2fdc9fb24a230a3d107a0357d0db595464cf",
+      "uuid": "c2ac2cdd-cabb-3504-8466-55d0f8d5ec4d"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/lib/euc_kr_and_mic.dylib.dSYM",
+      "dsym_sha256": "4992ce50912f9681fb6b3d042c8da4ae20e2e918e036295b73ab6d8cad58e996",
+      "module_path": "postgresql/lib/euc_kr_and_mic.dylib",
+      "module_sha256": "a95441c93296209c6de853a68630418863f90f487c90f1efe9ad3cdebd78e784",
+      "uuid": "ce76e0ab-0e6f-3c4f-82ae-a0b9f6e3c2b4"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/lib/lo.dylib.dSYM",
+      "dsym_sha256": "ca0ef59603ba075be944d7d6239fea03a4d20229f405136eb7c2ace8449c4e07",
+      "module_path": "postgresql/lib/lo.dylib",
+      "module_sha256": "5db0ce0b1540e62e629fb62d9cdfa308bd1f3d0f8f050e6ae19655074f87c555",
+      "uuid": "67fb9a5a-40ae-3a3b-80d6-f2ca136f063f"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/lib/utf8_and_iso8859_1.dylib.dSYM",
+      "dsym_sha256": "84240a62c6269d16eda800d57d813eb234fc2d946987ff1a839f35b31114c02b",
+      "module_path": "postgresql/lib/utf8_and_iso8859_1.dylib",
+      "module_sha256": "cc15a3d037e1f10fc4dbf5f826d94ac3dc9b807c417b469fdf3eab35528858f5",
+      "uuid": "958325b9-8038-34dd-96ad-838aa26bf828"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/lib/cube.dylib.dSYM",
+      "dsym_sha256": "7e38501f9f9a7640bcb9648cc8f48e72543b47f6ce46b9af31d9b8ed7d4b74b5",
+      "module_path": "postgresql/lib/cube.dylib",
+      "module_sha256": "143f7f8fed9a6ba0995f15eebdc4847fdeb3820e99c0d60a184d2ea1001a5028",
+      "uuid": "7b5ac2d6-8495-30a0-9c90-6790e8872936"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/lib/euc_jp_and_sjis.dylib.dSYM",
+      "dsym_sha256": "e007ee7e7d2fd80e3e9702b2cf120417970bb29a9d9e197c3e3ea0213d47eeca",
+      "module_path": "postgresql/lib/euc_jp_and_sjis.dylib",
+      "module_sha256": "989bf5f7b30b267293cb0335e8c29b70d2675ecd6c9b7e109192aed9e70125a8",
+      "uuid": "2e2a2541-a9a0-390f-81f1-82856fe4d4e5"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/lib/fuzzystrmatch.dylib.dSYM",
+      "dsym_sha256": "70288c6ef6e33fd2590091e038797a53a7cc6820c7971a4fe6abc791d6b679c1",
+      "module_path": "postgresql/lib/fuzzystrmatch.dylib",
+      "module_sha256": "24840bd3121af37cf8d6bfede039cac58262a41ed31e1b4fca2e6f07241cf8fa",
+      "uuid": "a707e3c3-f41a-3837-86c6-2e9f813b2e29"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/lib/utf8_and_iso8859.dylib.dSYM",
+      "dsym_sha256": "3ea8115166ac5f4f0fb2a5af35b314657e7399d8b2e765ae5d2821dcc775a832",
+      "module_path": "postgresql/lib/utf8_and_iso8859.dylib",
+      "module_sha256": "347506b68d5c397aea42bc45293a5550e8281fc3f1da0eb5d27bbaad7d121b6f",
+      "uuid": "6e0c66c8-9f72-3401-a931-100b52e260c7"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/lib/_int.dylib.dSYM",
+      "dsym_sha256": "4d05e0d68b010dfa9eca92d02b3d9869b5b28a444d6bd40202147337ca515669",
+      "module_path": "postgresql/lib/_int.dylib",
+      "module_sha256": "8a7f7a7b30dada225dd8c6b07cfd3fd93d525ea83040859e567d9fe0ec5c920e",
+      "uuid": "e7674289-d3c6-3ddb-b328-c0fc477c2670"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/lib/euc_tw_and_big5.dylib.dSYM",
+      "dsym_sha256": "a95b299ffc7b450cb8619bb9efc424fce4a8431946318c3191d66bd2d53f885a",
+      "module_path": "postgresql/lib/euc_tw_and_big5.dylib",
+      "module_sha256": "103fa0b365303076b1915d9070c7998cbadf1829067d02987ee7f1d88d30eeee",
+      "uuid": "54f7a97b-36d9-34d2-abfb-5ee0f32b7d95"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/lib/libpqwalreceiver.dylib.dSYM",
+      "dsym_sha256": "030c9c21036b7211a2f1e0cddf21260da90c09afa584704274e1be5b4d7d824f",
+      "module_path": "postgresql/lib/libpqwalreceiver.dylib",
+      "module_sha256": "7aa84618ca193a26750d1363e878caab3269ba7fc88720f3bd91bb94992b76c9",
+      "uuid": "d0f43386-676e-34e2-88ce-a545d123c40c"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/lib/pg_walinspect.dylib.dSYM",
+      "dsym_sha256": "e15e52006c4a9c85ac230a6a46f12a612147f5ac530c16319e470dcd7c67fb1f",
+      "module_path": "postgresql/lib/pg_walinspect.dylib",
+      "module_sha256": "65ad9a78ace979b854af1262006e4af132edd61b1d4fc9f6dca91ca7d22ba124",
+      "uuid": "272f5480-f469-3a24-bc0e-301e6b40c100"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/lib/postgres_fdw.dylib.dSYM",
+      "dsym_sha256": "18d65a67c8c08b84bcabbb8e1d9043274808125dab0b1400dd187ff090b817f5",
+      "module_path": "postgresql/lib/postgres_fdw.dylib",
+      "module_sha256": "cb5cb17474b778e7d7d73489411b195bd1d15c3e92973fb4a4cf59e876b5c0b1",
+      "uuid": "b27b0b77-f659-3371-8346-70a754f3091a"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/lib/bloom.dylib.dSYM",
+      "dsym_sha256": "b926719fd7cf9a0480d190e56ff8ba227c31d526531d18aedae7e15800717cfe",
+      "module_path": "postgresql/lib/bloom.dylib",
+      "module_sha256": "1987b52f5a7f61d1e587dcb170ff980010f2f9629090665931d2e7600316928a",
+      "uuid": "74f30c5c-5eb2-3770-b979-b5bd02149903"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/lib/utf8_and_euc_tw.dylib.dSYM",
+      "dsym_sha256": "7c191fee3cc340af85db6430faf1736589028791ec7cacf6d05c5cf553b0d768",
+      "module_path": "postgresql/lib/utf8_and_euc_tw.dylib",
+      "module_sha256": "7bb8bd56236b19f09a07671fed14e17740b5e5913cc0d5851c21c103fa261bfe",
+      "uuid": "510ffffb-efcb-3453-b4ee-1618310dbd60"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/lib/pg_prewarm.dylib.dSYM",
+      "dsym_sha256": "b852929982cf721316645e05ce9ddd0d9d6ffae6b656d62e3e9c51c056e9ce9e",
+      "module_path": "postgresql/lib/pg_prewarm.dylib",
+      "module_sha256": "ee77e124104d02c5b16c780a49970daf6da7ab548df084ab75d09ea15175eeb6",
+      "uuid": "d41901f8-275c-33e4-93ae-559bf2f28066"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/lib/pg_surgery.dylib.dSYM",
+      "dsym_sha256": "783ff97a120edde4715ff26a049cd40968fddc0c700b6a06bf8bf5d41a206f43",
+      "module_path": "postgresql/lib/pg_surgery.dylib",
+      "module_sha256": "c439446fdccf60c130fbe3cd5d2ef1f8ce5ec791f4ca2f41569e180fac3b3ae1",
+      "uuid": "9b3a2e3c-858d-3ce3-84bc-117f9e3e582f"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/lib/tcn.dylib.dSYM",
+      "dsym_sha256": "210c632e079d4122914f5f51553e9fb68cf412c8078733cf7e57ceab4f212efe",
+      "module_path": "postgresql/lib/tcn.dylib",
+      "module_sha256": "c2f9480956c1eb38f00d3ca2413d19d656b465a13102f1b918b41d7c2cebe872",
+      "uuid": "6e5b6123-dc21-3803-bf38-2b1efffbc3f3"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/lib/btree_gin.dylib.dSYM",
+      "dsym_sha256": "ac0df9015d86799929001ba5bc6a7f16170a0c46e0d602474feb5c8db590401a",
+      "module_path": "postgresql/lib/btree_gin.dylib",
+      "module_sha256": "6c048d9646ccaa1bc3e0c5c3f446da0c585b9906cfe0eb2f321df7d9f6e379ec",
+      "uuid": "33422825-c746-36b8-9238-18f9455f045d"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/lib/pgxs/src/test/isolation/isolationtester.dSYM",
+      "dsym_sha256": "01ce7a5dc734882ad9456a11f0de792544afaa1905a6527c8c5500ef4d7bc135",
+      "module_path": "postgresql/lib/pgxs/src/test/isolation/isolationtester",
+      "module_sha256": "a8781e7ce08a6608d040b6f898849443a0f7d3886501fd87f86e82425bc24522",
+      "uuid": "0a949137-5cc8-397b-bc11-686e9fd712c9"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/lib/pgxs/src/test/isolation/pg_isolation_regress.dSYM",
+      "dsym_sha256": "181ca2027042060f68cf2c2432d3af51e792267028db6c35fbca4ee10102c466",
+      "module_path": "postgresql/lib/pgxs/src/test/isolation/pg_isolation_regress",
+      "module_sha256": "27aabe405d75992f3dca1e01e49eb8d1b038d1f33beef5fc970633a855376baa",
+      "uuid": "be352143-0bcd-3aef-8938-7a04b5b25f6c"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/lib/pgxs/src/test/regress/pg_regress.dSYM",
+      "dsym_sha256": "f1a27839933f26e36d81d4d83fe755fb5512db0f78fdec60cee06f39a3c61913",
+      "module_path": "postgresql/lib/pgxs/src/test/regress/pg_regress",
+      "module_sha256": "ea08ce66233226782ac396de02a543fc8fd15f229c5ab5b07186dc30b53202aa",
+      "uuid": "5309c987-1be6-3905-8bf2-d09bacdcecaf"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/bin/pg_rewind.dSYM",
+      "dsym_sha256": "87529231ef22d6b00dc3e63b4ab7f345530de7572e5413a285aaac588e947b3c",
+      "module_path": "postgresql/bin/pg_rewind",
+      "module_sha256": "fd954333ff6d751a80e54e5eb40c2b3c6e5e79807f766758f2bfe903f353bc3c",
+      "uuid": "99cccf61-e267-3b23-bc46-6fb98497f8c2"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/bin/ecpg.dSYM",
+      "dsym_sha256": "32c0fe1344ba2900ec49255e3de43b4f210a9de854380c63d364b7367915cdef",
+      "module_path": "postgresql/bin/ecpg",
+      "module_sha256": "fc1c4bd2415a5ff9866312d476de619ee26ff2128ad8e5a87b75e64039e8356f",
+      "uuid": "4cdc5497-e45d-3b7f-8f60-d0bc722f3c9c"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/bin/pg_basebackup.dSYM",
+      "dsym_sha256": "f553895732bc6ccaa889f83719976cdb2596712781eaa66a2da0e75741ee4611",
+      "module_path": "postgresql/bin/pg_basebackup",
+      "module_sha256": "f56cfbde45fe1302cdb427dcee324bc815f471b397148b69c4c1390e63fac178",
+      "uuid": "23545942-f29c-38af-ab8d-424e0cd51cbe"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/bin/pg_restore.dSYM",
+      "dsym_sha256": "39657355891b3d862feafa21bd6014f6c701ded19d09cc1fb6683c91cf8e45e0",
+      "module_path": "postgresql/bin/pg_restore",
+      "module_sha256": "3a36b6bbecfcc6209aabc7c9036cb91d9f27f2fdea2cced69ef2be667fe0d75a",
+      "uuid": "415d9439-1221-32b8-bc5f-c9b67f0386e7"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/bin/pg_isready.dSYM",
+      "dsym_sha256": "f1302289989a41a797c7b6bc603766654560bf1bb9c526d9ba48261a4960d53d",
+      "module_path": "postgresql/bin/pg_isready",
+      "module_sha256": "989f5931da03aa34360142207902b0dd41f31f152545d2f03f274f3fc039ac0e",
+      "uuid": "831ceb63-3cfb-3ba3-a34e-3041fc3fece9"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/bin/createuser.dSYM",
+      "dsym_sha256": "fb04c2778e5f17cc9ca20875f9c4e0d9c407dd86d1d11364859b54e81bf37300",
+      "module_path": "postgresql/bin/createuser",
+      "module_sha256": "51a09779a91fa0217b5091e9e25ab30cb9ec3114c1f06140227a26db4da3d150",
+      "uuid": "cf38372e-22a5-3918-a5cc-c5d644e97f3e"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/bin/pg_config.dSYM",
+      "dsym_sha256": "62ccc53bb8d649fabe939395af2c2d8102756d9aea30b1ead247e2388f73aeba",
+      "module_path": "postgresql/bin/pg_config",
+      "module_sha256": "a6aa9a5f8540e4a7d8d80400444b626b1c8bd20031b17f7d7bd83b5cd1b475f0",
+      "uuid": "44562fa1-6333-3755-8a55-8917b15d8be2"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/bin/pg_dumpall.dSYM",
+      "dsym_sha256": "07f8148c245746a1caad95a2fcf5021dd01b0bcd6639356fab4669e123975b6e",
+      "module_path": "postgresql/bin/pg_dumpall",
+      "module_sha256": "7c784705a543b2574462a8f102c18be1937f10421d65c017f07a4205f46f9c01",
+      "uuid": "d7a534c8-7253-326b-88ba-db89ec0dd76d"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/bin/pg_createsubscriber.dSYM",
+      "dsym_sha256": "a8190432171e9c602c2178fb7095696685fa4dc7e20991a75fbc7b51ff2d3a5c",
+      "module_path": "postgresql/bin/pg_createsubscriber",
+      "module_sha256": "6ab0132aa4ddfc6ef089ef19722cba165665ebcfde4376977c693b2957910b77",
+      "uuid": "41cc59e8-94cd-35c6-ba6e-d31c54155d96"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/bin/pg_test_fsync.dSYM",
+      "dsym_sha256": "40cf3bcc8eed771f5dfe2b30ea369f602abcf55821bc2dc371c6b07de9e86753",
+      "module_path": "postgresql/bin/pg_test_fsync",
+      "module_sha256": "425b1656815ab9153392b930289877e14ce8951fb1ab81cd4bfa92523d6c905b",
+      "uuid": "d5aae0fa-8010-3dd0-b61d-ab56b6730f05"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/bin/pg_walsummary.dSYM",
+      "dsym_sha256": "51d5ee45246794718a260457f46da1de821f9aa7c5fca493ac9a8f81ada4fed4",
+      "module_path": "postgresql/bin/pg_walsummary",
+      "module_sha256": "937e820f20d717703c2226c8c595c7907d8c376d18f658ea73fcecf2c7e1ccf9",
+      "uuid": "670b6c0c-db00-339e-b7e0-03cef82fd536"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/bin/pg_combinebackup.dSYM",
+      "dsym_sha256": "0004acf10e29e4abc2f0c3371031a714781686d54ad3ef4dca8581738c264a22",
+      "module_path": "postgresql/bin/pg_combinebackup",
+      "module_sha256": "c03590923138bb8c2ab50c32d7e821ad1f83182155254816d7fd1ae15fcd4ae4",
+      "uuid": "d6adebcd-35e1-33c6-8e42-fd01160f0fea"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/bin/initdb.dSYM",
+      "dsym_sha256": "caeb279d05618c79af4c13bd9eec1b9c3b6a86d5ca517c03f1c97f9486383a93",
+      "module_path": "postgresql/bin/initdb",
+      "module_sha256": "9fc270cce188caef9a60297dfd0f08ccca078e7620c92d08894cc9ae3d8d6875",
+      "uuid": "6acba450-3bd8-3aea-a5e4-5ed547885b9b"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/bin/pg_waldump.dSYM",
+      "dsym_sha256": "7ffdec5b621994dcb2296b5d17134ad2ab3a05aaaea6edbd449f88cac0126c6a",
+      "module_path": "postgresql/bin/pg_waldump",
+      "module_sha256": "190fd985fbd5d0b725fc14c619dc25f1b635fa0847177979cb3dd1a93f14df8f",
+      "uuid": "67d3f934-3cab-3aa7-b734-c727ecbefd80"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/bin/createdb.dSYM",
+      "dsym_sha256": "159714a8dddbfc7f1f8b274c745ed1229766decaf68d4747153c944c5beff6b5",
+      "module_path": "postgresql/bin/createdb",
+      "module_sha256": "35305f2c7d1462d8baa3eecb0abc19ce363b262b6b7083d32650fc7d92a846cb",
+      "uuid": "0ee1a7da-0405-3160-b378-880b8d9b5558"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/bin/reindexdb.dSYM",
+      "dsym_sha256": "4ed7b2289d56b4cfc2ce46ff688bad5306a2e9b5c8b0c0795b3f878e03f741db",
+      "module_path": "postgresql/bin/reindexdb",
+      "module_sha256": "54e9f8941b7c3f609141fd28786988c80ddf2494012a84671c6aae22a68aa64d",
+      "uuid": "763d26e0-a06d-3b6e-9655-cf3f6888de8d"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/bin/pg_verifybackup.dSYM",
+      "dsym_sha256": "a5b226a5bcdcad532c36ebf3f58f6d85c3ac24ff463f2205ef25de0bb4ad1744",
+      "module_path": "postgresql/bin/pg_verifybackup",
+      "module_sha256": "6d3beb3b0d0e09d28ce4b637d03200a32b3b38c289ab84c2731db456cd286c6a",
+      "uuid": "15a5529d-9092-3593-9006-f9a73c1f71a1"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/bin/pg_receivewal.dSYM",
+      "dsym_sha256": "1b8ccc2c5ad6ad266feeb2cc9e2e5b2ae23be500016ce0ec17c14a8ef2f668bd",
+      "module_path": "postgresql/bin/pg_receivewal",
+      "module_sha256": "9ef7395c13b01447ecae7ccf2776f8a04bcfc994ee7e395d1b9af0cda7f9a15d",
+      "uuid": "8ff639c8-389f-378e-9c62-ce6310a404f3"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/bin/pg_amcheck.dSYM",
+      "dsym_sha256": "b198d1fdea5742cb9d5d4cbc81bfdb80ea31da170c9145fa3f7ff9cd4f23c5eb",
+      "module_path": "postgresql/bin/pg_amcheck",
+      "module_sha256": "f69ccddd5c8efaf39ddbb914579b04cadeb05e8fdb2e297d01f964dd6e0c7bb4",
+      "uuid": "b5760528-8887-3a2a-9fa9-670a09987a17"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/bin/dropdb.dSYM",
+      "dsym_sha256": "38064b825dbbe919648119aa0c5aeac10d5162bb7d7dc10c723745a5eaf19faa",
+      "module_path": "postgresql/bin/dropdb",
+      "module_sha256": "e8747a024338a69dc5489767e7062087371ee5beeee7197bb175fb351eba9bca",
+      "uuid": "91c63fdb-9d7f-3f22-befe-2e83c0e487cf"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/bin/psql.dSYM",
+      "dsym_sha256": "e8ee58086bb4ee4a5b363065cc21fae2150aef34fc2c8acd371da01930f19299",
+      "module_path": "postgresql/bin/psql",
+      "module_sha256": "7cc2f2fa65d98caed3ea62b6fbe6c45a1060f41fb41a8b7977a80e913d78c60b",
+      "uuid": "dee0f71a-03f1-3d7d-afab-2cce05f8c1be"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/bin/pg_checksums.dSYM",
+      "dsym_sha256": "3728d6b95d0fa7b4954311d8108e88f148531d0fc35f33a6df30a72fdf358641",
+      "module_path": "postgresql/bin/pg_checksums",
+      "module_sha256": "436c2973a41830f5dd3a9768f3b2c8e317649d2555021ba979e9adea1bc543ab",
+      "uuid": "b15ded3b-0058-36de-affb-19d7bb4f6596"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/bin/clusterdb.dSYM",
+      "dsym_sha256": "bb9706571de7f123c44bddbc2c38f7440cd5adb3f85c82967e37e6dddf39b07d",
+      "module_path": "postgresql/bin/clusterdb",
+      "module_sha256": "e34dffd5a47222c04710fcad6d2672abdd2b0588870bc781c3c96f34dfe1f001",
+      "uuid": "9ef9bf6c-b119-33f1-83c6-5c30b511ae76"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/bin/postgres.dSYM",
+      "dsym_sha256": "acf8e077ab2b6ff38bf2c89d0a0443220e3b23500718f23d1b46e6a6a3730ca0",
+      "module_path": "postgresql/bin/postgres",
+      "module_sha256": "ca55b9a9fefcf2b4be650516a704945a699358eba2e0686343f74d2480d4443e",
+      "uuid": "390af78c-e2ac-3b78-a024-d768438a7ca5"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/bin/pg_archivecleanup.dSYM",
+      "dsym_sha256": "3d5cadc0e1f658bbde4436d4acdf7221c837f65129b421c6da51c7974fc3e1df",
+      "module_path": "postgresql/bin/pg_archivecleanup",
+      "module_sha256": "be92c2cfa1cfa69ecc8ad928578e80d126cf766a50f458eb6cd099ed95f06926",
+      "uuid": "c16716c8-e965-34b3-80b8-650837e9f763"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/bin/dropuser.dSYM",
+      "dsym_sha256": "55e5cb1f9cb6e14874985d1a46b7534a1ddaf3c0b8974764c4ce8df1416177fd",
+      "module_path": "postgresql/bin/dropuser",
+      "module_sha256": "ea194490ccafeeab30df75b967e1db597019e91610b763e30dfcb376f5a34147",
+      "uuid": "a2b6a508-40f2-3a7b-8e72-e1dee82b5788"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/bin/pg_controldata.dSYM",
+      "dsym_sha256": "42fe7251b5f36c7fb05459943e15636a049f3aa2ecb4e8c7fea0e50d52e1299a",
+      "module_path": "postgresql/bin/pg_controldata",
+      "module_sha256": "1e982287f2a225b3698a18d5e2b7b642d006d17accdcfbb9df1739380edf4392",
+      "uuid": "a15541eb-9f0d-3d7f-a43d-39bda0fc6c9f"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/bin/pg_recvlogical.dSYM",
+      "dsym_sha256": "c1b0373fa208e8138a1dd63f093a34d7eccf171d6ca4730e5d607ee9c64857b6",
+      "module_path": "postgresql/bin/pg_recvlogical",
+      "module_sha256": "22848e9d33972a63a51064ae44c95a1675fd39197d30670a0e1d343558f7c626",
+      "uuid": "625dbb07-5c6f-39fd-82d2-e687ec8314fb"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/bin/pg_test_timing.dSYM",
+      "dsym_sha256": "8a7350755c3db52e4e8e18d62260a74164d4812e055a704e92f30a3bc2fb023e",
+      "module_path": "postgresql/bin/pg_test_timing",
+      "module_sha256": "71d9d66448b215dbea065c0823f9f19bfb57a0512a581f276781ca2a708981af",
+      "uuid": "5b237429-9154-3f67-9050-aedb1caa5571"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/bin/vacuumlo.dSYM",
+      "dsym_sha256": "4de53aec7c31da65de8e6d812ba24aa4cec9c8bd834684194bbee334eb3042b1",
+      "module_path": "postgresql/bin/vacuumlo",
+      "module_sha256": "629de500c7a6d4df0f43315e87ee46887e406643fcfda1ee2cb5f662db6428a6",
+      "uuid": "be3db1ac-7c45-3dbe-91e5-ec71ea71b5e8"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/bin/oid2name.dSYM",
+      "dsym_sha256": "58b8f3baa331aa9c04b83c222c2516fd3fad9121b648f586ec12c003586c1abb",
+      "module_path": "postgresql/bin/oid2name",
+      "module_sha256": "e443ef3c6814daee8a3701bdf487fa6124746aa0b4d26c91cfbc8ede1e05d2d4",
+      "uuid": "240f1ccc-b990-36f0-83fb-64b5116a3ff4"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/bin/pg_upgrade.dSYM",
+      "dsym_sha256": "1c59304b08309921c724c5722c6c2544c8f106611537bfc0a4b9bd53b296c049",
+      "module_path": "postgresql/bin/pg_upgrade",
+      "module_sha256": "becbb72a2ff07bd965b10b5f5bddf4ac63b126b08c7208926328b05bb6109a51",
+      "uuid": "3cf3414e-0d75-39bc-8fd9-0efd15ea84f3"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/bin/pg_ctl.dSYM",
+      "dsym_sha256": "ae6e7b529d23377a3e5e8fd036dade998fc9f9e4abd807878b68bc4855325f90",
+      "module_path": "postgresql/bin/pg_ctl",
+      "module_sha256": "967df03ee8bcc4811399fe88b3fa3651d0be5631cd008d15fd9912ba2eead0d4",
+      "uuid": "af292357-df6d-3138-bac7-02761a55de2f"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/bin/vacuumdb.dSYM",
+      "dsym_sha256": "402d40f5d6b9cbba63dded30b68a6c466bacc919acd80070444c4d7720cae433",
+      "module_path": "postgresql/bin/vacuumdb",
+      "module_sha256": "85cb078976a5c7e2cf82bc92c6a4074f09a1e74167793240da84127a8a638790",
+      "uuid": "bc0028a6-12d5-39a0-ab4a-e8cdd2d0368e"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/bin/pgbench.dSYM",
+      "dsym_sha256": "f5c18e0a4c766754f35a35c7b2ba9d4eb2a675d816ba4d99001983c473d76f61",
+      "module_path": "postgresql/bin/pgbench",
+      "module_sha256": "a44b7e2c104ab31de14a20dfc5d7e289177592a5def7987363e3fb9bf36f9d8e",
+      "uuid": "ef6b5bce-8206-3d1e-b21c-6c7711038b3d"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/bin/pg_resetwal.dSYM",
+      "dsym_sha256": "822531aaa48bd70c0506ec4721c5e3c248ab8bba461c2a31fe99d8a048fbaecb",
+      "module_path": "postgresql/bin/pg_resetwal",
+      "module_sha256": "dbf6a30cb68b035982082b2f2a2ff225e47c101127e46e14c5034f4b36c8959e",
+      "uuid": "d269b67a-2a06-332f-ba9f-dc28045aff73"
+    },
+    {
+      "architecture": "arm64",
+      "archive": "postgresql-18.6-macos-arm64.tar.gz",
+      "archive_sha256": "93f853292f3527279781a968ceba4660175d3e1bb1435ac048b8ceb4423b5019",
+      "dsym_path": "dSYMs/postgresql/bin/pg_dump.dSYM",
+      "dsym_sha256": "a8ed264a353c3641602d147c18b22d24f423c0351d0f08b3b272f231caa400a5",
+      "module_path": "postgresql/bin/pg_dump",
+      "module_sha256": "d36e39a04784c77643e60bc286b86bf828c8f75cb60a722f231d7dc01e4b7300",
+      "uuid": "526c26da-c50f-3a86-8929-180cc987bc74"
+    }
+  ],
+  "schema_version": 1
+}
