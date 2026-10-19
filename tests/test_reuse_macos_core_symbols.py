@@ -104,6 +104,24 @@ class ReuseMacOSCoreSymbolsTests(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, "copies disagree"):
                 reuse._artifact_file(root, filename)
 
+    def test_finds_attempt_in_real_temp_layout_and_checks_retained_copy(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            name = "publication-attempt.json"
+            body = b'{"run_id":"123"}'
+            data = io.BytesIO()
+            with zipfile.ZipFile(data, "w") as archive:
+                archive.writestr(f"_temp/verification/{name}", body)
+                archive.writestr(
+                    f"pg_binaries/pg_binaries/support/evidence/macos-core-publication-123/"
+                    f"postgresql-18.6/arm64/{name}", body)
+            reuse.extract_zip(data.getvalue(), root)
+            self.assertEqual(reuse._artifact_file(root, name), body)
+            retained = root / "pg_binaries/pg_binaries/support/evidence/macos-core-publication-123/postgresql-18.6/arm64" / name
+            retained.write_bytes(b'{"run_id":"456"}')
+            with self.assertRaisesRegex(RuntimeError, "copies disagree"):
+                reuse._artifact_file(root, name)
+
 
 if __name__ == "__main__":
     unittest.main()

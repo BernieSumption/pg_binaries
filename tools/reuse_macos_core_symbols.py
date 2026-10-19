@@ -116,7 +116,10 @@ def _artifact_file(root: Path, filename: str, *, required: bool = True) -> bytes
     found = []
     for path in root.rglob(filename):
         relative = path.relative_to(root).parent.as_posix()
-        if relative in allowed_parents or relative.endswith("/support/verification"):
+        retained_attempt = (filename == "publication-attempt.json" and re.search(
+            r"(?:^|/)support/evidence/macos-core-publication-[1-9][0-9]*/"
+            r"postgresql-[0-9]+\.[0-9]+/(?:arm64|x86_64)$", relative) is not None)
+        if relative in allowed_parents or relative.endswith("/support/verification") or retained_attempt:
             found.append((relative, path.read_bytes()))
         else:
             raise RuntimeError(f"candidate has {filename} outside its verification layout")
