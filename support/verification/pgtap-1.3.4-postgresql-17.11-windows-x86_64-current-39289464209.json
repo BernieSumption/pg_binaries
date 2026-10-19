@@ -1,0 +1,46 @@
+{
+  "assembled_core": {
+    "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+    "sha256": "c729d030546991367165f94286bd8a88f2e5f29b1001efd1c21c10502ed6f0e5",
+    "version": "17.11"
+  },
+  "case_results": {
+    "archive-suite": "passed",
+    "static-analysis": "passed"
+  },
+  "ci": {
+    "build_revision": "4bb83738642db22d5360e02f5b6dfd5c7bbc82cd",
+    "provider": "github-actions",
+    "run_id": "39289464209",
+    "run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/39289464209",
+    "source_revision": "4bb83738642db22d5360e02f5b6dfd5c7bbc82cd",
+    "test_revision": "4bb83738642db22d5360e02f5b6dfd5c7bbc82cd"
+  },
+  "component": "pgtap",
+  "environment": {
+    "architecture": "x86_64",
+    "clean_system": true,
+    "dependency_check_profile": "windows-sql-archive-relocation-v1",
+    "dependency_checks_passed": true,
+    "endpoint": "current",
+    "image_id": "win22/20261012.333.1",
+    "os": "windows",
+    "os_version": "10.0.20348"
+  },
+  "outcome": "passed",
+  "platform": "windows-x86_64",
+  "postgresql_version": "17.11",
+  "prerequisite_archives": [],
+  "profile_id": "pgtap-publication-windows-x86_64-17.11",
+  "profile_revision": "2b25ad83b99ab474673f7780558273cef6957f9edabc72e0949604a4b9a6c73c",
+  "project": "pgtap",
+  "schema_version": 2,
+  "scope": "publication",
+  "sha256": "390b91c7d3acccf924709ac33dea10a9cf06173c7e9728acc19343c9ac8016a6",
+  "test_cases": [
+    "archive-suite",
+    "static-analysis"
+  ],
+  "test_revision": "4bb83738642db22d5360e02f5b6dfd5c7bbc82cd",
+  "version": "1.3.4"
+}
