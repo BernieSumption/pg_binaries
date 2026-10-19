@@ -37,14 +37,17 @@ def _copy(copies):
             shutil.copyfile(source, destination)
 
 
-def import_run(root, core_artifact, collection_artifact, run_id):
+def import_run(root, core_artifact, collection_artifact, run_id, target_config=None):
     root, core_artifact, collection_artifact = map(Path, (root, core_artifact, collection_artifact))
+    target = publication.selected_target(target_config)
+    pg_version, architecture = target.postgresql_version, target.architecture
+    platform, profile_id, core_name = target.platform, target.profile_id, target.core_basename
     run_id = str(run_id)
     if not run_id.isdigit():
         raise coverage.CoverageError("run_id must be numeric")
     support = coverage.load_json(root / "support.json")
-    profile = coverage.verification_profile(root, publication.PROFILE_ID)
-    if (profile["scope"] != "publication" or profile["platforms"] != [publication.PLATFORM]
+    profile = coverage.verification_profile(root, profile_id)
+    if (profile["scope"] != "publication" or profile["platforms"] != [platform]
             or profile["case_ids"] != sorted(publication.CASES)):
         raise coverage.CoverageError("registered profile does not match scoped collection target")
 
@@ -52,9 +55,9 @@ def import_run(root, core_artifact, collection_artifact, run_id):
     attempt_path = publication_dir / "attempt.json"
     attempt = _read(attempt_path)
     if (attempt.get("schema_version") != 1 or str(attempt.get("run_id")) != run_id
-            or attempt.get("profile_id") != publication.PROFILE_ID
-            or attempt.get("architecture") != publication.ARCHITECTURE
-            or attempt.get("postgresql_version") != publication.PG_VERSION
+            or attempt.get("profile_id") != profile_id
+            or attempt.get("architecture") != architecture
+            or attempt.get("postgresql_version") != pg_version
             or attempt.get("collection_versions") != list(publication.VERSIONS)
             or attempt.get("source_sha256") != publication.VERSIONS
             or attempt.get("release_eligibility") != "blocked-pending-dependency-review"
@@ -67,14 +70,13 @@ def import_run(root, core_artifact, collection_artifact, run_id):
     results = {case: {"success": "passed", "failure": "failed", "timed_out": "failed",
                       "skipped": "skipped", "cancelled": "skipped"}[raw_steps[case]]
                for case in sorted(publication.CASES)}
-    evidence = root / "support/evidence" / f"collection-macos-publication-{run_id}" / publication.ARCHITECTURE
+    evidence = root / "support/evidence" / f"collection-macos-publication-{run_id}" / architecture
     copies = []
     _retain(attempt_path, evidence / "attempt.json", copies)
 
-    core = core_artifact / publication.CORE_NAME
-    extension_names = {version: f"collection-{version}-postgresql-{publication.PG_VERSION}-{publication.PLATFORM}.tar.gz"
-                       for version in publication.VERSIONS}
-    archives = {publication.CORE_NAME: core}
+    core = core_artifact / core_name
+    extension_names = {version: target.extension_basename(version) for version in publication.VERSIONS}
+    archives = {core_name: core}
     archives.update({name: collection_artifact / name for name in extension_names.values()})
     receipt_paths = {version: publication_dir / f"current-receipt-{version}.json"
                      for version in publication.VERSIONS}
@@ -107,13 +109,13 @@ def import_run(root, core_artifact, collection_artifact, run_id):
         return [str(destination.relative_to(root)) for _, destination in copies]
 
     digests = {name: publication.sha256(path) for name, path in archives.items()}
-    publication._sidecar(core, digests[publication.CORE_NAME])
-    if digests[publication.CORE_NAME] != publication.CORE_SHA256:
-        raise coverage.CoverageError("core archive differs from pinned PostgreSQL artifact")
+    publication._sidecar(core, digests[core_name])
+    if digests[core_name] != target.core_sha256:
+        raise coverage.CoverageError("core archive differs from resolved target")
     for version, name in extension_names.items():
         path = archives[name]
         publication._sidecar(path, digests[name])
-        publication._metadata(path, version)
+        publication._metadata(path, version, target)
     if attempt.get("archives") != digests:
         raise coverage.CoverageError("raw attempt hashes differ from final archive bytes")
 
@@ -128,13 +130,13 @@ def import_run(root, core_artifact, collection_artifact, run_id):
         if not receipt_path.is_file():
             continue
         receipt = _read(receipt_path)
-        expected_archives = {publication.CORE_NAME: digests[publication.CORE_NAME], name: digests[name]}
+        expected_archives = {core_name: digests[core_name], name: digests[name]}
         ci = receipt.get("ci")
-        expected = {"schema_version": 1, "profile_id": publication.PROFILE_ID,
+        expected = {"schema_version": 1, "profile_id": profile_id,
                     "profile_revision": profile["profile_revision"],
                     "test_revision": attempt["source_revision"], "project": "collection",
-                    "version": version, "postgresql_version": publication.PG_VERSION,
-                    "architecture": publication.ARCHITECTURE, "platform": publication.PLATFORM,
+                    "version": version, "postgresql_version": pg_version,
+                    "architecture": architecture, "platform": platform,
                     "endpoint": "current", "case_results": results,
                     "archives": expected_archives, "extension_archive": name,
                     "release_eligibility": "blocked-pending-dependency-review"}
@@ -147,7 +149,7 @@ def import_run(root, core_artifact, collection_artifact, run_id):
                                                  if report_path.is_file() else {})
                 or not isinstance(receipt.get("environment"), dict)
                 or receipt["environment"].get("os") != "macos"
-                or receipt["environment"].get("architecture") != publication.ARCHITECTURE
+                or receipt["environment"].get("architecture") != architecture
                 or not receipt["environment"].get("image_id")):
             raise coverage.CoverageError(f"collection {version} receipt environment or report hashes are invalid")
         if (not isinstance(ci, dict) or ci.get("provider") != "github-actions"
@@ -158,9 +160,9 @@ def import_run(root, core_artifact, collection_artifact, run_id):
             raise coverage.CoverageError("receipt CI provenance differs from raw attempt")
         if results["static-analysis"] == "passed":
             publication._report(report_path, expected_archives,
-                                 publication._module_path(archives[extension_names[version]]))
+                                 publication._module_path(archives[extension_names[version]]), target)
         _retain(receipt_path, evidence / receipt_path.name, copies)
-        expected_records.add(f"collection-{version}-postgresql-{publication.PG_VERSION}-{publication.PLATFORM}-current-{run_id}.json")
+        expected_records.add(f"collection-{version}-postgresql-{pg_version}-{platform}-current-{run_id}.json")
 
     if record_paths and {path.name for path in record_paths} != expected_records:
         raise coverage.CoverageError("expected exactly one verification record per collection receipt")
@@ -174,17 +176,17 @@ def import_run(root, core_artifact, collection_artifact, run_id):
             raise coverage.CoverageError("record names an unexpected collection release")
         name = extension_names[version]
         receipt = _read(receipt_paths[version])
-        expected = {"profile_id": publication.PROFILE_ID, "component": "collection",
+        expected = {"profile_id": profile_id, "component": "collection",
                     "project": "collection", "version": version,
-                    "postgresql_version": publication.PG_VERSION, "platform": publication.PLATFORM,
+                    "postgresql_version": pg_version, "platform": platform,
                     "case_results": results,
                     "outcome": ("failed" if "failed" in results.values() else
                                 "skipped" if "skipped" in results.values() else "passed"),
                     "test_cases": profile["case_ids"], "ci": receipt["ci"],
                     "test_revision": attempt["source_revision"], "sha256": digests[name],
-                    "assembled_core": {"archive": publication.CORE_NAME,
-                                       "sha256": digests[publication.CORE_NAME],
-                                       "version": publication.PG_VERSION},
+                    "assembled_core": {"archive": core_name,
+                                       "sha256": digests[core_name],
+                                       "version": pg_version},
                     "prerequisite_archives": [],
                     "release_eligibility": "blocked-pending-dependency-review"}
         if (any(record.get(key) != value for key, value in expected.items())
@@ -211,13 +213,14 @@ def import_run(root, core_artifact, collection_artifact, run_id):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[1])
+    parser.add_argument("--target-config", type=Path)
     parser.add_argument("--core-artifact", type=Path, required=True)
     parser.add_argument("--collection-artifact", type=Path, required=True)
     parser.add_argument("--run-id", required=True)
     args = parser.parse_args()
     try:
         print("\n".join(import_run(args.root, args.core_artifact,
-                                   args.collection_artifact, args.run_id)))
+                                   args.collection_artifact, args.run_id, args.target_config)))
         return 0
     except (coverage.CoverageError, OSError, ValueError, TypeError, KeyError) as exc:
         print(f"collection macOS publication import: {exc}", file=sys.stderr)

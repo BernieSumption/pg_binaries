@@ -23,6 +23,32 @@ CORE_SHA256 = "ec3f624ecfbea6dad20672106ec11bfafadde42e0454bc90bef992caa4be0033"
 SOURCE_URL = "https://github.com/sraoss/pg_ivm/archive/refs/tags/v1.16.tar.gz"
 SOURCE_SHA256 = "87807d6af1974fce591715d55f75d939dffea33ea6908b413e62d3dd79b9c583"
 CASES = {"archive-suite", "static-analysis"}
+TARGETS = {
+    ("17.11", "arm64"): "pgivm-publication-macos-arm64-17.11",
+    ("17.11", "x86_64"): "pgivm-publication-macos-x86_64-17.11",
+    ("18.6", "arm64"): "pgivm-publication-macos-arm64-18.6",
+    ("18.6", "x86_64"): "pgivm-publication-macos-x86_64-18.6",
+}
+
+
+def configure_target(path):
+    """Bind the existing evidence writer to one resolver-produced core target."""
+    global PROFILE_ID, PG_VERSION, ARCHITECTURE, PLATFORM, CORE_SHA256
+    try:
+        target = evidence.read_json_object(path)
+    except coverage.CoverageError:
+        raise
+    version, architecture = target.get("postgresql_version"), target.get("architecture")
+    profile_id = TARGETS.get((version, architecture))
+    core = target.get("core_archive")
+    if (profile_id is None or target.get("platform") != f"macos-{architecture}"
+            or not isinstance(core, dict)
+            or core.get("basename") != f"postgresql-{version}-macos-{architecture}.tar.gz"
+            or not re.fullmatch(r"[0-9a-f]{64}", str(core.get("sha256", "")))):
+        _fail("resolver target does not identify a supported pg_ivm macOS publication")
+    PROFILE_ID = profile_id
+    PG_VERSION, ARCHITECTURE = version, architecture
+    PLATFORM, CORE_SHA256 = f"macos-{architecture}", core["sha256"]
 
 
 def _fail(message):
@@ -72,6 +98,13 @@ def _step_result(value, name):
     if value not in mapping:
         _fail(f"{name} result must be a GitHub Actions step outcome")
     return mapping[value]
+
+
+def _validate_probe_output(probe):
+    if ("CREATE EXTENSION" not in probe or "CREATE TABLE" not in probe
+            or "create_immv" not in probe or probe.count("DO") < 3
+            or not re.search(rf"(?m)^\s*{re.escape(PG_VERSION)}\s*$", probe)):
+        _fail("pg_ivm probe output does not show the selected PostgreSQL version and IMMV checks")
 
 
 def emit(root, core_dir, archives, output, step_results, os_version, image_id, environ=None):
@@ -136,10 +169,7 @@ def emit(root, core_dir, archives, output, step_results, os_version, image_id, e
         if not probe_path.is_file():
             _fail("passing archive suite is missing pg_ivm probe output")
         probe = probe_path.read_text(encoding="utf-8")
-        if ("CREATE EXTENSION" not in probe or "CREATE TABLE" not in probe
-                or "create_immv" not in probe or probe.count("DO") < 3
-                or not re.search(r"(?m)^\s*18\.6\s*$", probe)):
-            _fail("pg_ivm probe output does not show the expected extension and IMMV checks")
+        _validate_probe_output(probe)
     if results["static-analysis"] == "passed":
         static = _json(static_path, "static analysis")
         actual = static.get("archives")
@@ -198,6 +228,7 @@ def emit(root, core_dir, archives, output, step_results, os_version, image_id, e
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[1])
+    parser.add_argument("--target", type=Path)
     parser.add_argument("--core-archives", type=Path, required=True)
     parser.add_argument("--archives", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
@@ -207,6 +238,8 @@ def main():
     parser.add_argument("--static-analysis-result", required=True)
     args = parser.parse_args()
     try:
+        if args.target is not None:
+            configure_target(args.target)
         for path in emit(args.root, args.core_archives, args.archives, args.output,
                          {"archive-suite": args.archive_suite_result,
                           "static-analysis": args.static_analysis_result},

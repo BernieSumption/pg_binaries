@@ -4,7 +4,6 @@
 import argparse
 import hashlib
 import json
-import os
 from pathlib import Path
 import re
 import sys
@@ -12,19 +11,18 @@ import tarfile
 
 import coverage
 import collection_macos_identity
-
-
-PG_VERSION, ARCHITECTURE, CORE_IDENTITY = collection_macos_identity.selected_identity()
-PROFILE_ID = f"collection-publication-macos-{ARCHITECTURE}-{PG_VERSION}"
-PLATFORM = f"macos-{ARCHITECTURE}"
-CORE_NAME = f"postgresql-{PG_VERSION}-{PLATFORM}.tar.gz"
-CORE_SHA256 = CORE_IDENTITY["sha256"]
-VERSIONS = {
-    "1.1.1": "ab99a969334442e4a3c77405bc9ffed0083595d18f3898d64a731353a32bec5e",
-    "2.1.3": "a6b07864e5893d3b682bb3223fd6d33015709765c9d40d415c85112358f0e3e4",
-}
+from collection_macos_target import load_target, Target, VERSIONS
 CASES = {"archive-suite", "static-analysis"}
 ALLOWED_STEPS = {"success", "failure", "skipped", "cancelled", "timed_out"}
+
+
+def selected_target(target_config):
+    if target_config is not None:
+        return load_target(target_config, require_resolved=True)
+    pg, architecture, identity = collection_macos_identity.selected_identity()
+    return Target(pg, architecture, f"postgresql-{pg}-macos-{architecture}.tar.gz",
+                  identity["sha256"], identity.get("run_id"), identity["build_id"],
+                  identity["source_revision"])
 
 
 def _fail(message):
@@ -50,7 +48,7 @@ def _sidecar(path, digest):
         _fail(f"checksum sidecar does not match {Path(path).name}")
 
 
-def _metadata(path, version):
+def _metadata(path, version, target):
     source_url = f"https://github.com/aws/pgcollection/archive/refs/tags/v{version}.tar.gz"
     try:
         with tarfile.open(path, "r:gz") as archive:
@@ -65,9 +63,9 @@ def _metadata(path, version):
     expected = {
         "project": "collection", "version": version, "sql_names": ["collection"],
         "requires": [], "configuration_prerequisites": [], "runtime_prerequisites": [],
-        "postgresql_version": PG_VERSION, "platform": "macos", "architecture": ARCHITECTURE,
+        "postgresql_version": target.postgresql_version, "platform": "macos", "architecture": target.architecture,
         "source": {"url": source_url, "sha256": VERSIONS[version]},
-        "core_archive": {"basename": CORE_NAME, "sha256": CORE_SHA256},
+        "core_archive": {"basename": target.core_basename, "sha256": target.core_sha256},
     }
     if value != expected:
         _fail(f"collection {version} archive metadata differs from pinned identity")
@@ -85,7 +83,7 @@ def _module_path(path):
     return modules[0]
 
 
-def _report(path, digests, module_path):
+def _report(path, digests, module_path, target):
     try:
         report = json.loads(Path(path).read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
@@ -97,15 +95,18 @@ def _report(path, digests, module_path):
         except (KeyError, TypeError):
             actual = None
     if (actual != digests or report.get("passed") is not True
-            or report.get("architecture") != ARCHITECTURE
+            or report.get("architecture") != target.architecture
             or not any(item.get("file") == module_path
                        for item in report.get("inspected_files", []) if isinstance(item, dict))):
         _fail("collection Mach-O report does not pass against the final core and extension archives")
 
 
-def emit(root, core_dir, archives, output, step_results, os_version, image_id, environ=None):
+def emit(root, core_dir, archives, output, step_results, os_version, image_id,
+         target_config=None, environ=None):
     root, core_dir, archives, output = map(Path, (root, core_dir, archives, output))
-    environ = os.environ if environ is None else environ
+    target = selected_target(target_config)
+    pg_version, architecture = target.postgresql_version, target.architecture
+    platform, profile_id, core_name = target.platform, target.profile_id, target.core_basename
     if not isinstance(step_results, dict) or set(step_results) != CASES or any(
             result not in ALLOWED_STEPS for result in step_results.values()):
         _fail("step_results must identify valid archive-suite and static-analysis outcomes")
@@ -121,35 +122,34 @@ def emit(root, core_dir, archives, output, step_results, os_version, image_id, e
     publication_dir = output / "publication"
     publication_dir.mkdir(parents=True, exist_ok=True)
     attempt_path = publication_dir / "attempt.json"
-    present = {CORE_NAME: (core_dir / CORE_NAME).is_file()}
-    names = {version: f"collection-{version}-postgresql-{PG_VERSION}-{PLATFORM}.tar.gz"
-             for version in VERSIONS}
+    present = {core_name: (core_dir / core_name).is_file()}
+    names = {version: target.extension_basename(version) for version in VERSIONS}
     present.update({name: (archives / name).is_file() for name in names.values()})
     attempt = {"schema_version": 1, "run_id": run_id, "source_revision": revision,
-               "profile_id": PROFILE_ID, "postgresql_version": PG_VERSION,
+               "profile_id": profile_id, "postgresql_version": pg_version,
                "collection_versions": list(VERSIONS), "source_sha256": VERSIONS,
-               "architecture": ARCHITECTURE, "steps": step_results,
+               "architecture": architecture, "steps": step_results,
                "archives_present": present,
                "release_eligibility": "blocked-pending-dependency-review"}
     attempt_path.write_text(json.dumps(attempt, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    profile = coverage.verification_profile(root, PROFILE_ID)
-    if (profile["scope"] != "publication" or profile["platforms"] != [PLATFORM]
+    profile = coverage.verification_profile(root, profile_id)
+    if (profile["scope"] != "publication" or profile["platforms"] != [platform]
             or profile["case_ids"] != sorted(CASES) or not profile["sources_available"]):
         _fail("registered profile does not match this collection publication suite")
     if not all(present.values()):
         return [attempt_path]
 
-    core = core_dir / CORE_NAME
-    digests = {CORE_NAME: sha256(core)}
+    core = core_dir / core_name
+    digests = {core_name: sha256(core)}
     module_paths = {}
-    _sidecar(core, digests[CORE_NAME])
-    if digests[CORE_NAME] != CORE_SHA256:
-        _fail("PostgreSQL core archive differs from the selected passed build")
+    _sidecar(core, digests[core_name])
+    if digests[core_name] != target.core_sha256:
+        _fail("PostgreSQL core archive differs from the resolved target")
     for version, name in names.items():
         path = archives / name
         digests[name] = sha256(path)
         _sidecar(path, digests[name])
-        _metadata(path, version)
+        _metadata(path, version, target)
         module_paths[name] = _module_path(path)
     attempt["archives"] = digests
     attempt_path.write_text(json.dumps(attempt, indent=2, sort_keys=True) + "\n", encoding="utf-8")
@@ -162,35 +162,35 @@ def emit(root, core_dir, archives, output, step_results, os_version, image_id, e
         report_path = archives / f"static-analysis-collection-{version}.json"
         report_hash = sha256(report_path) if report_path.is_file() else None
         if results["static-analysis"] == "passed":
-            _report(report_path, {CORE_NAME: digests[CORE_NAME], name: digests[name]}, module_paths[name])
-        receipt = {"schema_version": 1, "profile_id": PROFILE_ID,
+            _report(report_path, {core_name: digests[core_name], name: digests[name]}, module_paths[name], target)
+        receipt = {"schema_version": 1, "profile_id": profile_id,
                    "profile_revision": profile["profile_revision"], "test_revision": revision,
                    "project": "collection", "version": version,
-                   "postgresql_version": PG_VERSION, "architecture": ARCHITECTURE,
-                   "platform": PLATFORM, "endpoint": "current", "case_results": results,
-                   "archives": {CORE_NAME: digests[CORE_NAME], name: digests[name]},
+                   "postgresql_version": pg_version, "architecture": architecture,
+                   "platform": platform, "endpoint": "current", "case_results": results,
+                   "archives": {core_name: digests[core_name], name: digests[name]},
                    "extension_archive": name, "reports": ({"static_analysis": report_hash}
                                                                if report_hash else {}),
                    "clean_system": True,
                    "dependency_check_profile": "macho-system-dependencies-v1",
                    "dependency_checks_passed": results["static-analysis"] == "passed",
                    "environment": {"os": "macos", "os_version": os_version,
-                                   "architecture": ARCHITECTURE, "image_id": image_id},
+                                   "architecture": architecture, "image_id": image_id},
                    "release_eligibility": "blocked-pending-dependency-review", "ci": ci}
         receipt_path = publication_dir / f"current-receipt-{version}.json"
         receipt_path.write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-        record = {"schema_version": 2, "scope": "publication", "profile_id": PROFILE_ID,
+        record = {"schema_version": 2, "scope": "publication", "profile_id": profile_id,
                   "profile_revision": profile["profile_revision"], "test_cases": profile["case_ids"],
                   "case_results": results, "test_revision": revision, "ci": ci,
                   "outcome": ("failed" if "failed" in results.values() else
                               "skipped" if "skipped" in results.values() else "passed"),
                   "sha256": digests[name], "component": "collection", "project": "collection",
-                  "version": version, "platform": PLATFORM, "postgresql_version": PG_VERSION,
-                  "assembled_core": {"archive": CORE_NAME, "sha256": digests[CORE_NAME],
-                                     "version": PG_VERSION},
+                  "version": version, "platform": platform, "postgresql_version": pg_version,
+                  "assembled_core": {"archive": core_name, "sha256": digests[core_name],
+                                     "version": pg_version},
                   "prerequisite_archives": [],
                   "environment": {"os": "macos", "os_version": os_version,
-                                  "architecture": ARCHITECTURE, "clean_system": True,
+                                  "architecture": architecture, "clean_system": True,
                                   "endpoint": "current", "image_id": image_id,
                                   "dependency_check_profile": receipt["dependency_check_profile"],
                                   "dependency_checks_passed": receipt["dependency_checks_passed"]},
@@ -198,7 +198,7 @@ def emit(root, core_dir, archives, output, step_results, os_version, image_id, e
         coverage.validate_verification_record(record, coverage.load_json(root / "support.json"), root)
         record_dir = publication_dir / "records"
         record_dir.mkdir(parents=True, exist_ok=True)
-        record_path = record_dir / f"collection-{version}-postgresql-{PG_VERSION}-{PLATFORM}-current-{run_id}.json"
+        record_path = record_dir / f"collection-{version}-postgresql-{pg_version}-{platform}-current-{run_id}.json"
         record_path.write_text(json.dumps(record, indent=2, sort_keys=True) + "\n", encoding="utf-8")
         outputs.extend((receipt_path, report_path, record_path))
     return outputs
@@ -207,6 +207,7 @@ def emit(root, core_dir, archives, output, step_results, os_version, image_id, e
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[1])
+    parser.add_argument("--target-config", type=Path)
     parser.add_argument("--core-archives", type=Path, required=True)
     parser.add_argument("--archives", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
@@ -219,7 +220,7 @@ def main():
         result = emit(args.root, args.core_archives, args.archives, args.output,
                       {"archive-suite": args.archive_suite_result,
                        "static-analysis": args.static_analysis_result},
-                      args.os_version, args.image_id)
+                      args.os_version, args.image_id, args.target_config)
         print("\n".join(map(str, result)))
         return 0
     except (coverage.CoverageError, OSError, ValueError, TypeError, KeyError) as exc:

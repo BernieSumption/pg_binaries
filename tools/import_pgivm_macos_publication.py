@@ -22,8 +22,10 @@ def _retain(source, destination, copies):
     evidence.retain(source, destination, copies)
 
 
-def import_run(root, core_artifact, pgivm_artifact, run_id):
+def import_run(root, core_artifact, pgivm_artifact, run_id, target=None):
     root, core_artifact, pgivm_artifact = map(Path, (root, core_artifact, pgivm_artifact))
+    if target is not None:
+        publication.configure_target(target)
     run_id = str(run_id)
     if not run_id.isdigit():
         raise coverage.CoverageError("run_id must be numeric")
@@ -76,7 +78,7 @@ def import_run(root, core_artifact, pgivm_artifact, run_id):
     for archive in (core_archive, extension_archive):
         publication._sidecar(archive, digests[archive.name])
     if digests[core_name] != publication.CORE_SHA256:
-        raise coverage.CoverageError("core archive does not match pinned PostgreSQL 18.6 artifact")
+        raise coverage.CoverageError("core archive digest does not match the selected pg_ivm target")
     publication._metadata(extension_archive)
     try:
         components, native_files = publication.check_archive(extension_archive)
@@ -182,12 +184,14 @@ def _copy(copies):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[1])
+    parser.add_argument("--target", type=Path)
     parser.add_argument("--core-artifact", type=Path, required=True)
     parser.add_argument("--pgivm-artifact", type=Path, required=True)
     parser.add_argument("--run-id", required=True)
     args = parser.parse_args()
     try:
-        print("\n".join(import_run(args.root, args.core_artifact, args.pgivm_artifact, args.run_id)))
+        print("\n".join(import_run(args.root, args.core_artifact, args.pgivm_artifact, args.run_id,
+                                   args.target)))
         return 0
     except (coverage.CoverageError, OSError, ValueError, TypeError, KeyError) as exc:
         print(f"pg_ivm macOS publication import: {exc}", file=sys.stderr)

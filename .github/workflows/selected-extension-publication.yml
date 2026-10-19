@@ -108,6 +108,10 @@ jobs:
               ("pgtap", "macos-x86_64"): "pgtap-macos-x86_64",
               ("pg_cron", "macos-arm64"): "pgcron-macos",
               ("pg_cron", "macos-x86_64"): "pgcron-macos",
+              ("collection", "macos-arm64"): "collection-macos",
+              ("collection", "macos-x86_64"): "collection-macos",
+              ("pg_ivm", "macos-arm64"): "pgivm-macos",
+              ("pg_ivm", "macos-x86_64"): "pgivm-macos",
           }
           route = routes.get((project, platform))
           if route is None:
@@ -177,6 +181,23 @@ jobs:
     needs: plan
     if: needs.plan.outputs.should_dispatch == 'true' && needs.plan.outputs.route == 'pgcron-macos'
     uses: ./.github/workflows/pgcron-macos-selected-publication.yml
+    with:
+      architecture: ${{ needs.plan.outputs.architecture }}
+      postgresql_version: ${{ needs.plan.outputs.postgresql_version }}
+      extension_version: ${{ needs.plan.outputs.extension_version }}
+
+  collection_macos:
+    needs: plan
+    if: needs.plan.outputs.should_dispatch == 'true' && needs.plan.outputs.route == 'collection-macos'
+    uses: ./.github/workflows/collection-macos-selected-publication.yml
+    with:
+      architecture: ${{ needs.plan.outputs.architecture }}
+      postgresql_version: ${{ needs.plan.outputs.postgresql_version }}
+
+  pgivm_macos:
+    needs: plan
+    if: needs.plan.outputs.should_dispatch == 'true' && needs.plan.outputs.route == 'pgivm-macos'
+    uses: ./.github/workflows/pgivm-macos-selected-publication.yml
     with:
       architecture: ${{ needs.plan.outputs.architecture }}
       postgresql_version: ${{ needs.plan.outputs.postgresql_version }}

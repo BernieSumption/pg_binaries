@@ -1,0 +1,232 @@
+name: Collection selected macOS publication
+
+on:
+  workflow_call:
+    inputs:
+      architecture:
+        description: Native macOS architecture
+        required: true
+        type: string
+      postgresql_version:
+        description: Exact PostgreSQL release
+        required: false
+        type: string
+        default: '18.6'
+  workflow_dispatch:
+    inputs:
+      architecture:
+        description: Native macOS architecture
+        required: true
+        type: choice
+        options: [arm64, x86_64]
+        default: arm64
+      postgresql_version:
+        description: Exact PostgreSQL release
+        required: true
+        type: choice
+        options: ['15.19', '16.15', '17.11', '18.6']
+        default: '18.6'
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  select:
+    runs-on: ubuntu-latest
+    outputs:
+      architecture: ${{ steps.target.outputs.architecture }}
+      platform: ${{ steps.target.outputs.platform }}
+      postgresql_version: ${{ steps.target.outputs.postgresql_version }}
+      target: ${{ steps.target.outputs.target }}
+      runner: ${{ steps.target.outputs.runner }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate the selected collection target
+        id: target
+        env:
+          ARCHITECTURE: ${{ inputs.architecture }}
+          POSTGRESQL_VERSION: ${{ inputs.postgresql_version }}
+        run: |
+          set -euo pipefail
+          [[ "$ARCHITECTURE" == arm64 || "$ARCHITECTURE" == x86_64 ]] || {
+            echo "Unsupported macOS architecture: $ARCHITECTURE" >&2
+            exit 1
+          }
+          case "$POSTGRESQL_VERSION" in 15.19|16.15|17.11|18.6) ;; *)
+            echo "Unsupported collection PostgreSQL release: $POSTGRESQL_VERSION" >&2
+            exit 1
+          esac
+          for version in 1.1.1 2.1.3; do
+            python3 tools/select_extension_work.py \
+              --project collection --version "$version" \
+              --platform "macos-$ARCHITECTURE" \
+              --postgresql-version "$POSTGRESQL_VERSION" \
+              > "$RUNNER_TEMP/collection-$version-selection.json"
+          done
+          target="tools/collection_macos_targets/${POSTGRESQL_VERSION}-${ARCHITECTURE}.json"
+          python3 - "$target" "$ARCHITECTURE" "$POSTGRESQL_VERSION" <<'PY' >> "$GITHUB_OUTPUT"
+          import sys
+          from pathlib import Path
+          sys.path.insert(0, "tools")
+          from collection_macos_target import load_target
+          path = Path(sys.argv[1])
+          target = load_target(path)
+          if target.architecture != sys.argv[2] or target.postgresql_version != sys.argv[3]:
+              raise SystemExit("selected collection target does not match requested identity")
+          print(f"target={path}")
+          print(f"architecture={target.architecture}")
+          print(f"platform={target.platform}")
+          print(f"postgresql_version={target.postgresql_version}")
+          print("runner=macos-15" if target.architecture == "arm64" else "runner=macos-15-intel")
+          PY
+
+  build:
+    needs: select
+    runs-on: ${{ needs.select.outputs.runner }}
+    timeout-minutes: 100
+    steps:
+      - uses: actions/checkout@v4
+      - name: Resolve the checked PostgreSQL core archive
+        id: core
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/core-archives" "$RUNNER_TEMP/collection-build"
+          cp '${{ needs.select.outputs.target }}' "$RUNNER_TEMP/collection-build/base-target.json"
+          bash scripts/macos/resolve-core.sh \
+            "$RUNNER_TEMP/collection-build/base-target.json" "$RUNNER_TEMP/core-archives"
+      - name: Build and package collection 1.1.1 and 2.1.3
+        id: package
+        if: always() && steps.core.outcome == 'success'
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          bash scripts/collection/build-macos.sh \
+            "$RUNNER_TEMP/core-archives" "$RUNNER_TEMP/core-archives/target.json" \
+            "$RUNNER_TEMP/collection-build" 2>&1 | tee "$RUNNER_TEMP/collection-build/build-log.txt"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: collection-macos-${{ needs.select.outputs.architecture }}-${{ needs.select.outputs.postgresql_version }}-build-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/core-archives/**
+            ${{ runner.temp }}/collection-build/**
+          if-no-files-found: warn
+          retention-days: 7
+      - name: Require core resolution and both archive builds to pass
+        if: always()
+        run: |
+          if [[ '${{ steps.core.outcome }}' != success || '${{ steps.package.outcome }}' != success ]]; then
+            echo 'Checked core resolution and both collection archive builds must pass.' >&2
+            exit 1
+          fi
+
+  verify:
+    needs: [select, build]
+    if: always() && needs.select.result == 'success'
+    runs-on: ${{ needs.select.outputs.runner }}
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check collection selected-target publication tools
+        run: python3 -B -m unittest tests/test_collection_macos_target.py tests/test_collection_macos_publication.py
+      - name: Download core and collection archives from the build runner
+        id: download
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: collection-macos-${{ needs.select.outputs.architecture }}-${{ needs.select.outputs.postgresql_version }}-build-${{ github.run_id }}
+          path: ${{ runner.temp }}/collection-bundle
+      - name: Prepare fresh-runner verification inputs
+        if: always()
+        run: |
+          mkdir -p "$RUNNER_TEMP/core-archives" "$RUNNER_TEMP/collection-verification"
+          if [[ -d "$RUNNER_TEMP/collection-bundle/core-archives" ]]; then cp -a "$RUNNER_TEMP/collection-bundle/core-archives/." "$RUNNER_TEMP/core-archives/"; fi
+          if [[ -d "$RUNNER_TEMP/collection-bundle/collection-build" ]]; then cp -a "$RUNNER_TEMP/collection-bundle/collection-build/." "$RUNNER_TEMP/collection-verification/"; fi
+      - name: Relocate, inspect and exercise both final collection archives
+        id: archive_suite
+        if: always() && steps.download.outcome == 'success'
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          bash scripts/collection/verify-macos.sh \
+            "$RUNNER_TEMP/core-archives" "$RUNNER_TEMP/collection-verification" \
+            "$RUNNER_TEMP/core-archives/target.json" "$RUNNER_TEMP/collection-verification" 2>&1 \
+            | tee "$RUNNER_TEMP/collection-verification/verification-log.txt"
+      - name: Confirm static reports bind to the final archive bytes
+        id: static_analysis
+        if: always() && steps.download.outcome == 'success'
+        continue-on-error: true
+        env:
+          ARCHITECTURE: ${{ needs.select.outputs.architecture }}
+          POSTGRESQL_VERSION: ${{ needs.select.outputs.postgresql_version }}
+        run: |
+          python3 - "$RUNNER_TEMP/core-archives" "$RUNNER_TEMP/collection-verification" "$ARCHITECTURE" "$POSTGRESQL_VERSION" <<'PY'
+          import hashlib, json, pathlib, sys
+          core_dir, output, architecture, pg_version = pathlib.Path(sys.argv[1]), pathlib.Path(sys.argv[2]), sys.argv[3], sys.argv[4]
+          core = core_dir / f"postgresql-{pg_version}-macos-{architecture}.tar.gz"
+          expected_core = {core.name: hashlib.sha256(core.read_bytes()).hexdigest()}
+          for version in ("1.1.1", "2.1.3"):
+              extension = output / f"collection-{version}-postgresql-{pg_version}-macos-{architecture}.tar.gz"
+              expected = {**expected_core, extension.name: hashlib.sha256(extension.read_bytes()).hexdigest()}
+              report = json.loads((output / f"static-analysis-collection-{version}.json").read_text())
+              archives = report.get("archives")
+              if isinstance(archives, list):
+                  archives = {item["basename"]: item["sha256"] for item in archives}
+              if (report.get("passed") is not True or report.get("architecture") != architecture
+                      or archives != expected or not report.get("inspected_files")):
+                  raise SystemExit(f"collection {version} static report does not bind the final archives")
+          PY
+      - name: Emit archive-bound collection attempt and receipts
+        id: evidence
+        if: always()
+        continue-on-error: true
+        env:
+          ARCHIVE_SUITE_OUTCOME: ${{ steps.archive_suite.outcome }}
+          STATIC_ANALYSIS_OUTCOME: ${{ steps.static_analysis.outcome }}
+          GITHUB_SHA: ${{ github.sha }}
+        run: |
+          python3 tools/emit_collection_macos_publication.py \
+            --target-config "$RUNNER_TEMP/core-archives/target.json" \
+            --core-archives "$RUNNER_TEMP/core-archives" \
+            --archives "$RUNNER_TEMP/collection-verification" \
+            --output "$RUNNER_TEMP/collection-verification" \
+            --os-version "$(sw_vers -productVersion)" \
+            --image-id "${ImageOS:-unknown}/${ImageVersion:-unknown}" \
+            --archive-suite-result "${ARCHIVE_SUITE_OUTCOME:-failure}" \
+            --static-analysis-result "${STATIC_ANALYSIS_OUTCOME:-failure}"
+      - name: Import retained collection evidence when an attempt was emitted
+        if: always()
+        continue-on-error: true
+        run: |
+          if [[ -f "$RUNNER_TEMP/collection-verification/publication/attempt.json" ]]; then
+            python3 tools/import_collection_macos_publication.py \
+              --target-config "$RUNNER_TEMP/core-archives/target.json" \
+              --core-artifact "$RUNNER_TEMP/core-archives" \
+              --collection-artifact "$RUNNER_TEMP/collection-verification" \
+              --run-id "$GITHUB_RUN_ID"
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: collection-macos-${{ needs.select.outputs.architecture }}-${{ needs.select.outputs.postgresql_version }}-publication-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/core-archives/**
+            ${{ runner.temp }}/collection-verification/*.tar.gz
+            ${{ runner.temp }}/collection-verification/*.sha256
+            ${{ runner.temp }}/collection-verification/*.json
+            ${{ runner.temp }}/collection-verification/*.txt
+            ${{ runner.temp }}/collection-verification/publication/**
+            support/evidence/collection-macos-publication-${{ github.run_id }}/${{ needs.select.outputs.architecture }}/**
+            support/verification/collection-*-postgresql-${{ needs.select.outputs.postgresql_version }}-macos-${{ needs.select.outputs.architecture }}-current-${{ github.run_id }}.json
+          if-no-files-found: warn
+          retention-days: 7
+      - name: Require fresh-runner archive and static checks to pass
+        if: always()
+        run: |
+          if [[ '${{ needs.build.result }}' != success || '${{ steps.download.outcome }}' != success || '${{ steps.archive_suite.outcome }}' != success || '${{ steps.static_analysis.outcome }}' != success || '${{ steps.evidence.outcome }}' != success || '${{ steps.import.outcome }}' != success ]]; then
+            echo 'Collection relocation, SQL probes, static/Mach-O checks and evidence import must pass on the fresh runner.' >&2
+            exit 1
+          fi
