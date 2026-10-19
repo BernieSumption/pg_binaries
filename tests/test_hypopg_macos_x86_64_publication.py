@@ -150,6 +150,10 @@ class HypoPGMacOSIntelPublicationTests(unittest.TestCase):
         self.assertIn('"x86_64"', resolver)
         self.assertIn('hypopg-macos-x86_64-selected-publication.yml', resolver)
         self.assertIn('hypopg-macos-arm64-selected-publication.yml', resolver)
+        self.assertIn('pg-jsonschema-macos-changed-profiles.yml', resolver)
+        self.assertIn('pg-jsonschema-macos-selected-publication.yml', resolver)
+        self.assertIn('pg-jsonschema-macos-${version}-${architecture}-build-{run_id}', resolver)
+        self.assertIn('allowed.add(candidate_workflow)', resolver)
 
     def test_emits_and_imports_archive_bound_intel_record(self):
         legacy = emitter.implementation

@@ -7,10 +7,7 @@
   "platform": "macos-x86_64",
   "core_archive": {
     "basename": "postgresql-18.6-macos-x86_64.tar.gz",
-    "run_id": "39093802497",
-    "sha256": "898256ad26f29cc055208ab443aff9ef9813bc5cbf150539b15dfce7e4ad017d",
-    "build_id": "github-39093802497-1",
-    "source_revision": "42082a506adfca1628c509f2c7b17037b9a12123"
+    "sha256": "898256ad26f29cc055208ab443aff9ef9813bc5cbf150539b15dfce7e4ad017d"
   },
   "source": {
     "url": "https://github.com/supabase/pg_jsonschema.git",

@@ -1,0 +1,52 @@
+name: pg_jsonschema macOS changed-profile scheduler
+
+on:
+  push:
+    branches: [spike]
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  select:
+    runs-on: ubuntu-latest
+    outputs:
+      targets: ${{ steps.plan.outputs.targets }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: plan
+        env:
+          EVENT_BEFORE: ${{ github.event.before }}
+        run: |
+          before_root="$RUNNER_TEMP/profile-before"
+          if [[ -z "$EVENT_BEFORE" || "$EVENT_BEFORE" =~ ^0+$ ]]; then
+            python3 tools/pg_jsonschema_macos_changed_profiles.py \
+              --current-root "$GITHUB_WORKSPACE" \
+              --github-output "$GITHUB_OUTPUT"
+          elif ! git worktree add --detach "$before_root" "$EVENT_BEFORE"; then
+            echo 'Could not materialize the event base; selecting all declared targets.' >&2
+            python3 tools/pg_jsonschema_macos_changed_profiles.py \
+              --current-root "$GITHUB_WORKSPACE" \
+              --github-output "$GITHUB_OUTPUT"
+          else
+            python3 tools/pg_jsonschema_macos_changed_profiles.py \
+              --before-root "$before_root" \
+              --current-root "$GITHUB_WORKSPACE" \
+              --github-output "$GITHUB_OUTPUT"
+          fi
+
+  publish:
+    needs: select
+    if: needs.select.outputs.targets != '[]'
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.select.outputs.targets) }}
+    uses: ./.github/workflows/pg-jsonschema-macos-selected-publication.yml
+    with:
+      postgresql_version: ${{ matrix.postgresql_version }}
+      extension_version: ${{ matrix.extension_version }}
+      architecture: ${{ matrix.architecture }}

@@ -7,10 +7,7 @@
   "platform": "macos-x86_64",
   "core_archive": {
     "basename": "postgresql-17.11-macos-x86_64.tar.gz",
-    "run_id": "39093802542",
-    "sha256": "326b7b5763168794489a361f0b0c1e05f2bb619d6082d32881c65db5f872e061",
-    "build_id": "github-39093802542-1",
-    "source_revision": "42082a506adfca1628c509f2c7b17037b9a12123"
+    "sha256": "326b7b5763168794489a361f0b0c1e05f2bb619d6082d32881c65db5f872e061"
   },
   "source": {
     "url": "https://github.com/supabase/pg_jsonschema.git",

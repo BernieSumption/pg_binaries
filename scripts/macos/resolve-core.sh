@@ -114,18 +114,21 @@ PY
     exit 1
   fi
   if ! python3 - "$builder_json" "$GITHUB_REPOSITORY" "$GITHUB_REF_NAME" \
-      "$builder_run_id" "$builder_attempt" "$source_revision" "$architecture" <<'PY'
+      "$builder_run_id" "$builder_attempt" "$source_revision" "$architecture" "$workflow" <<'PY'
 import json
 import re
 import sys
 
 run = json.loads(sys.argv[1])
-repository, branch, run_id, attempt, revision, architecture = sys.argv[2:]
+repository, branch, run_id, attempt, revision, architecture, candidate_workflow = sys.argv[2:]
 suffix = "arm64" if architecture == "arm64" else "x86_64"
 pilot = f"macos-{suffix}-pilot.yml" if architecture == "arm64" else "macos-pilot.yml"
 allowed = {pilot, f"hypopg-macos-{suffix}-selected-publication.yml"}
 if architecture == "arm64":
     allowed.add("pgtap-macos-arm64-selected-publication.yml")
+if candidate_workflow in {"pg-jsonschema-macos-changed-profiles.yml",
+                          "pg-jsonschema-macos-selected-publication.yml"}:
+    allowed.add(candidate_workflow)
 repo = run.get("repository") if isinstance(run, dict) else None
 head_repo = run.get("head_repository") if isinstance(run, dict) else None
 valid = (isinstance(repo, dict) and str(repo.get("full_name", "")).casefold() == repository.casefold()
@@ -173,6 +176,12 @@ else
 fi
 
 if try_source "$selected_workflow" "$selected_artifact"; then
+  candidate_usable=true
+elif try_source "pg-jsonschema-macos-changed-profiles.yml" \
+    "pg-jsonschema-macos-${version}-${architecture}-build-{run_id}"; then
+  candidate_usable=true
+elif try_source "pg-jsonschema-macos-selected-publication.yml" \
+    "pg-jsonschema-macos-${version}-${architecture}-build-{run_id}"; then
   candidate_usable=true
 elif try_source "$pilot_workflow" macos-pilot-archives; then
   candidate_usable=true

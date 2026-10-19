@@ -189,30 +189,21 @@ class PgJsonschemaMacOSPublicationTests(unittest.TestCase):
         with self.assertRaises(emitter.coverage.CoverageError):
             emitter._metadata(malformed)
 
-    def test_target_configs_keep_declared_core_identities_stable_or_pinned(self):
+    def test_target_configs_leave_core_provenance_to_checked_resolution(self):
         root = Path(__file__).resolve().parents[1]
         expected = {
-            "15.19-arm64": ("39093804765", "856956cd7615bc56222de954c83f156fe5bc73d75512d230c6b91d386229f432"),
-            "15.19-x86_64": ("39093802499", "8356f1793fb88c7713627bd1f05d95325fc013aed47be08bb0fb29c7180aef08"),
-            "16.15-arm64": ("39093805055", "716083752061eebab60923ae2e8cb269bc2e4bdb7401d951465cd726a50e6cbf"),
-            "16.15-x86_64": ("39093802500", "958382229c95a440582dc34c83f7fdd8096f7247417b45f87046d716dff663cc"),
-            "17.11-arm64": ("39093804725", "d9ac809946cd87bbb585135d0ff329d33d5563047b9caaa312aea9116a8d9eaa"),
-            "17.11-x86_64": ("39093802542", "326b7b5763168794489a361f0b0c1e05f2bb619d6082d32881c65db5f872e061"),
-            "18.6-arm64": ("39093804232", "ec3f624ecfbea6dad20672106ec11bfafadde42e0454bc90bef992caa4be0033"),
-            "18.6-x86_64": ("39093802497", "898256ad26f29cc055208ab443aff9ef9813bc5cbf150539b15dfce7e4ad017d"),
+            "15.19-arm64", "15.19-x86_64", "16.15-arm64", "16.15-x86_64",
+            "17.11-arm64", "17.11-x86_64", "18.6-arm64", "18.6-x86_64",
         }
-        for name, (run_id, digest) in expected.items():
+        self.assertEqual({path.stem for path in (root / "tools/pg_jsonschema_macos_targets").glob("*.json")}, expected)
+        for name in expected:
             with self.subTest(target=name):
-                target = load_target(root / "tools/pg_jsonschema_macos_targets" / f"{name}.json")
-                self.assertEqual(target.core_sha256, digest)
-                if name == "18.6-arm64":
-                    self.assertIsNone(target.core_run_id)
-                    self.assertIsNone(target.core_build_id)
-                    self.assertIsNone(target.core_source_revision)
-                else:
-                    self.assertEqual(target.core_run_id, run_id)
-                    self.assertEqual(target.core_build_id, f"github-{run_id}-1")
-                    self.assertEqual(target.core_source_revision, "42082a506adfca1628c509f2c7b17037b9a12123")
+                path = root / "tools/pg_jsonschema_macos_targets" / f"{name}.json"
+                target = load_target(path)
+                self.assertEqual(set(json.loads(path.read_text())["core_archive"]), {"basename", "sha256"})
+                self.assertIsNone(target.core_run_id)
+                self.assertIsNone(target.core_build_id)
+                self.assertIsNone(target.core_source_revision)
                 self.assertEqual(target.module_filename, "pg_jsonschema.so" if name.startswith("15.")
                                  else "pg_jsonschema.dylib")
 
