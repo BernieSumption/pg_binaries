@@ -62,6 +62,31 @@ class AddressStandardizerLinuxPublication(unittest.TestCase):
         sources = registry["profiles"][publication.profile_id("x86_64")]["sources"]
         self.assertIn(".github/workflows/address-standardizer-linux-selected-publication.yml", sources)
 
+    def test_all_publication_profiles_track_selected_workflow_and_core_build(self):
+        registry = coverage.load_json(ROOT / "support/verification-profiles.json")
+        workflow = ".github/workflows/address-standardizer-linux-selected-publication.yml"
+        core_sources = {
+            "scripts/linux/Dockerfile", "scripts/linux/build-in-container.sh",
+            "scripts/linux/build.sh", "scripts/linux/resolve-core.sh",
+            "tools/actions_candidate_discovery.py", "tools/extension_archive_plan.py",
+            "tools/linux_core_candidate.py", "tools/linux_core_resolution.py",
+            "tools/plan_work.py", "tools/source_archive.py",
+        }
+        legacy_workflows = {
+            ".github/workflows/address-standardizer-linux-publication.yml",
+            ".github/workflows/address-standardizer-linux-15-17-publication.yml",
+        }
+        for pg_version, (_, architectures) in publication.CORE_PINS.items():
+            for architecture in architectures:
+                profile_id = publication.profile_id(architecture, pg_version)
+                with self.subTest(profile=profile_id):
+                    profile = registry["profiles"][profile_id]
+                    sources = set(profile["sources"])
+                    self.assertIn(workflow, sources)
+                    self.assertTrue(core_sources <= sources, core_sources - sources)
+                    self.assertTrue(legacy_workflows.isdisjoint(sources))
+                    coverage.verification_profile(ROOT, profile_id)
+
     def test_case_results_preserve_failed_and_skipped_work(self):
         self.assertEqual(publication._case_results("success", "passed"),
                          {"archive-suite": "passed", "elf-closure": "passed"})
