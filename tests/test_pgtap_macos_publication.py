@@ -181,6 +181,16 @@ class PgtapMacOSPublicationTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "profile or archive identity"):
                 load_target_config(path)
 
+    def test_target_parser_accepts_a_new_postgresql_release_selected_upstream(self):
+        value = json.loads(TARGET_CONFIGS[0].read_text())
+        value["postgresql_version"] = "19.1"
+        value["profile_id"] = f'pgtap-publication-{value["platform"]}-19.1'
+        value["core_archive"]["basename"] = f'postgresql-19.1-{value["platform"]}.tar.gz'
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "target.json"
+            path.write_text(json.dumps(value))
+            self.assertEqual(load_target_config(path).postgresql_version, "19.1")
+
     def test_unrelated_profile_addition_does_not_change_pgtap_revision(self):
         for config in TARGET_CONFIGS:
             target = load_target_config(config)

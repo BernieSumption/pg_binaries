@@ -70,7 +70,9 @@ def load_target_config(path):
     pg_version = value.get("postgresql_version")
     version = value.get("pgtap_version")
     architecture = value.get("architecture")
-    if value.get("schema_version") != 1 or pg_version not in {"15.19", "16.15", "17.11", "18.6"} or version != "1.3.4":
+    if (value.get("schema_version") != 1 or not isinstance(pg_version, str)
+            or re.fullmatch(r"[1-9][0-9]*\.[0-9]+", pg_version) is None
+            or version != "1.3.4"):
         raise ValueError("unsupported pgTAP PostgreSQL target version")
     if architecture not in {"arm64", "x86_64"}:
         raise ValueError("unsupported pgTAP macOS architecture")
