@@ -69,6 +69,8 @@ The selected Linux pg_ivm path passed all eight PostgreSQL and architecture targ
 
 [Run 39222288263](https://github.com/BernieSumption/pg_binaries/actions/runs/39222288263) passed all 40 selected Linux targets for HypoPG, pg_cron, pg_ivm, pg_jsonschema and pgTAP across PostgreSQL 15.19, 16.15, 17.11 and 18.6 on both architectures. All 40 final-archive records were independently imported under their project evidence directories. The checked PostgreSQL cores were reused for every target, proving the narrowed core-input comparison and the selected build fallback can avoid unnecessary core rebuilds. The old combined-workflow pg_cron section has been removed. Later profile-source edits may make these records historical; pg_jsonschema also retains an unresolved seahash redistribution notice, independent of this migration result.
 
+The [Collection selected Linux trial](support/evidence/collection-publication-39227491808/README.md) passed version 2.1.3 against PostgreSQL 18.6 on x86-64, with checked core reuse, fresh-runner Alpine verification and exact-byte independent evidence import. Enable the remaining declared Collection targets through the changed-profile scheduler, then remove the superseded combined-workflow section after they pass.
+
 ### Migrate active paths
 
 - [ ] Migrate remaining active PostgreSQL and extension build recipes, verification profiles, SQL probes, evidence emitters and importers, and workflows in batches. Cover every currently implemented platform, architecture, PostgreSQL release and project path; preserve required cases and exact archive identity checks. A batch is complete when its new path passes the applicable CI checks and the superseded path is removed.

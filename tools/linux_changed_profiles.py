@@ -22,7 +22,8 @@ extension_archive_plan = _load_tool("linux_changed_profiles_plan", "extension_ar
 # Add a project here when its reusable selected Linux workflow is ready.
 LINUX_ROUTES = {"hypopg": "HypoPG", "pg-jsonschema": "pg_jsonschema",
                 "pgtap": "pgtap", "pgivm": "pg_ivm", "pgcron": "pg_cron",
-                "pgaudit": "pgaudit", "postgis": "PostGIS"}
+                "pgaudit": "pgaudit", "postgis": "PostGIS",
+                "collection": "collection"}
 MAX_TARGETS = 128
 
 

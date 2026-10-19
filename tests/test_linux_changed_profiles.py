@@ -18,7 +18,7 @@ class LinuxChangedProfilesTests(unittest.TestCase):
         plan = module.extension_archive_plan.plan(support, releases)
         self.expected = []
         for target in plan["candidate_archives"]:
-            if target["project"] in {"HypoPG", "pg_jsonschema", "pgtap", "pg_ivm", "pg_cron", "pgaudit", "PostGIS"} and target["platform"].startswith("linux-"):
+            if target["project"] in {"HypoPG", "pg_jsonschema", "pgtap", "pg_ivm", "pg_cron", "pgaudit", "PostGIS", "collection"} and target["platform"].startswith("linux-"):
                 self.expected.append({
                     "project": target["project"],
                     "extension_version": target["selected_version"],
@@ -28,9 +28,10 @@ class LinuxChangedProfilesTests(unittest.TestCase):
         self.expected.sort(key=lambda item: (item["project"], item["postgresql_version"], item["platform"]))
         self.profile_ids = [module._profile_id({"HypoPG": "hypopg", "pg_jsonschema": "pg-jsonschema",
                                                "pgtap": "pgtap", "pg_ivm": "pgivm",
-                                               "pg_cron": "pgcron", "pgaudit": "pgaudit", "PostGIS": "postgis"}[item["project"]],
+                                               "pg_cron": "pgcron", "pgaudit": "pgaudit", "PostGIS": "postgis",
+                                               "collection": "collection"}[item["project"]],
                                                item["platform"].split("-")[1],
-                                               item["postgresql_version"])
+                                               item["postgresql_version"], item["extension_version"])
                             for item in self.expected]
 
     def resolve_profiles(self, base, changed_id=None, unavailable_base=False, missing_id=None):
@@ -46,7 +47,7 @@ class LinuxChangedProfilesTests(unittest.TestCase):
     def test_initial_or_missing_base_selects_all_support_derived_targets(self):
         self.assertEqual(len(self.expected), len(self.profile_ids))
         self.assertEqual({target["project"] for target in self.expected},
-                         {"HypoPG", "pg_jsonschema", "pgtap", "pg_ivm", "pg_cron", "pgaudit", "PostGIS"})
+                         {"HypoPG", "pg_jsonschema", "pgtap", "pg_ivm", "pg_cron", "pgaudit", "PostGIS", "collection"})
         self.assertEqual({target["platform"] for target in self.expected},
                          {"linux-x86_64", "linux-arm64"})
         self.assertEqual(module.changed_targets(ROOT / "no-such-base", ROOT), self.expected)
