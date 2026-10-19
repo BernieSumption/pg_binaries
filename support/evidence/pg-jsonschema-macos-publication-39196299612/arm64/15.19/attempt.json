@@ -1,0 +1,34 @@
+{
+  "architecture": "arm64",
+  "archives": {
+    "pg_jsonschema-0.3.4-postgresql-15.19-macos-arm64.tar.gz": "e21ed163ea6053f46b99b63c339142b4c676c060aa533715d1ed07c061b1a629",
+    "postgresql-15.19-macos-arm64.tar.gz": "22bb57371ed7cbc2e8f07873aabf686fe81dcaf063ad4e5feb81cec38959efb8"
+  },
+  "archives_present": {
+    "pg_jsonschema-0.3.4-postgresql-15.19-macos-arm64.tar.gz": true,
+    "postgresql-15.19-macos-arm64.tar.gz": true
+  },
+  "core_run_id": "39184121333",
+  "core_status": "current-profile-core-redistribution-pending",
+  "pg_jsonschema_version": "0.3.4",
+  "postgresql_version": "15.19",
+  "profile_id": "pg-jsonschema-publication-macos-arm64-15.19",
+  "release_blockers": [
+    "seahash-4.1.0-notice-unresolved",
+    "postgresql-core-redistribution-review-pending"
+  ],
+  "release_eligible": false,
+  "reports": {
+    "build_evidence": "be3eeb4f9db774a1654bb3553827ad7c9e76c8bf5f150da3f8be27ed3514859a",
+    "cargo_license_inventory": "98e4b6c347de019cd53448b302bb9a5e8bd92f9f6f5ec76b7b12f6e32a71dab3",
+    "probe_output": "6dc11dd0522237f6a61b7c16b70e5ae1ec25217a82be4e6549194de60bcb0354",
+    "static_analysis": "e2b7101fc9b2b94fe330da5fa93b28c1706dc23006b05a8c66415bdd6ded6cf0"
+  },
+  "run_id": "39196299612",
+  "schema_version": 1,
+  "source_revision": "898aeaaf5ea75d3f02cf1766791633194e8758a6",
+  "steps": {
+    "archive-suite": "success",
+    "static-analysis": "success"
+  }
+}
