@@ -10,6 +10,7 @@ import sys
 import coverage
 import emit_pg_jsonschema_windows_publication as publication
 from windows_core_pin import PG_VERSIONS
+import windows_core_target
 
 MAX_EVIDENCE_BYTES = 1024 * 1024
 
@@ -44,7 +45,20 @@ def import_run(root, core_artifact, extension_artifact, run_id,
         raise coverage.CoverageError("run_id must be numeric")
     if postgresql_version not in PG_VERSIONS:
         raise coverage.CoverageError("unsupported Windows PostgreSQL target")
-    identity = publication.load_core_identity(postgresql_version, core_identity_path)
+    core_name = f"postgresql-{postgresql_version}-{publication.PLATFORM}.tar.gz"
+    extension_name = f"pg_jsonschema-{publication.PG_JSONSCHEMA_VERSION}-postgresql-{postgresql_version}-{publication.PLATFORM}.tar.gz"
+    core_archive, extension_archive = core_artifact / core_name, extension_artifact / extension_name
+    archives_present = core_archive.is_file() and extension_archive.is_file()
+    try:
+        identity = publication.load_core_identity(postgresql_version, core_identity_path)
+        identity_known = True
+    except ValueError:
+        if archives_present or core_identity_path is None:
+            raise
+        target = windows_core_target.load_target(
+            core_identity_path, postgresql_version=postgresql_version, root=root)
+        identity = {"status": target["status"]}
+        identity_known = False
     profile_id = f"pg-jsonschema-publication-windows-x86_64-{postgresql_version}"
     support = coverage.load_json(root / "support.json")
     profile = coverage.verification_profile(root, profile_id)
@@ -61,6 +75,7 @@ def import_run(root, core_artifact, extension_artifact, run_id,
             or attempt.get("pg_jsonschema_version") != publication.PG_JSONSCHEMA_VERSION
             or attempt.get("release_eligible") is not False
             or attempt.get("core_status") != identity["status"]
+            or attempt.get("core_identity_known") is not identity_known
             or not coverage.REVISION.fullmatch(str(attempt.get("source_revision", "")))):
         raise coverage.CoverageError("raw attempt identity does not match the requested run and profile")
     raw_steps = attempt.get("steps")
@@ -75,14 +90,11 @@ def import_run(root, core_artifact, extension_artifact, run_id,
     _copy(copies)
     retained = [str((evidence / "attempt.json").relative_to(root))]
     copies = []
-    core_name = f"postgresql-{postgresql_version}-{publication.PLATFORM}.tar.gz"
-    extension_name = f"pg_jsonschema-{publication.PG_JSONSCHEMA_VERSION}-postgresql-{postgresql_version}-{publication.PLATFORM}.tar.gz"
-    core_archive, extension_archive = core_artifact / core_name, extension_artifact / extension_name
     receipt_path = pub / "current-receipt.json"
     record_paths = sorted((pub / "records").glob("*.json"))
     if not core_archive.is_file() or not extension_archive.is_file():
-        if receipt_path.exists() or record_paths:
-            raise coverage.CoverageError("archive-bound receipt or record exists without both archives")
+        if attempt.get("archives") or receipt_path.exists() or record_paths:
+            raise coverage.CoverageError("partial archive attempt cannot contain archive-bound records")
         for name in ("static-analysis.json", "probe-output.txt", "prerequisite-output.txt",
                      "first-run-probe-output.txt", "failure.txt", "windows-build.log",
                      "build-identity.txt", "server.log", "first-run-server.log"):

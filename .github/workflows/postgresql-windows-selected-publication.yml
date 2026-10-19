@@ -73,7 +73,10 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           $candidateDir = Join-Path $env:RUNNER_TEMP 'core-candidate'
-          python tools/windows_core_candidate.py --selected-core --base-pin "support/windows-core-pins/${env:PG_VERSION}-x86_64.json" --output-directory $candidateDir
+          $baseTarget = Join-Path $candidateDir 'base-target.json'
+          python tools/windows_core_target.py --postgresql-version $env:PG_VERSION --output $baseTarget
+          if ($LASTEXITCODE -ne 0) { throw 'Selected PostgreSQL core target generation failed.' }
+          python tools/windows_core_candidate.py --selected-core --base-target $baseTarget --output-directory $candidateDir
           if ($LASTEXITCODE -ne 0) { throw 'PostgreSQL core candidate resolution failed.' }
           $result = Get-Content (Join-Path $candidateDir 'result.json') -Raw | ConvertFrom-Json
           if ($result.status -notin @('checked', 'missing', 'stale')) { throw "Unexpected PostgreSQL core candidate status: $($result.status)" }

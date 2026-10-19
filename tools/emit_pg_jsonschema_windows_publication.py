@@ -12,6 +12,7 @@ import tarfile
 
 import coverage
 from windows_core_pin import load_identity, PG_VERSIONS
+import windows_core_target
 
 PROFILE_ID = "pg-jsonschema-publication-windows-x86_64-18.6"
 PG_VERSION = "18.6"
@@ -126,7 +127,6 @@ def emit(root, core_dir, archives, output, step_results, os_version, image_id, e
         _fail("Windows runner version and image identifier are required")
     if postgresql_version not in PG_VERSIONS:
         _fail("unsupported Windows PostgreSQL target")
-    core_identity = load_core_identity(postgresql_version, core_identity_path)
     profile_id = f"pg-jsonschema-publication-windows-x86_64-{postgresql_version}"
     profile = coverage.verification_profile(root, profile_id)
     if (profile["scope"] != "publication" or profile["platforms"] != [PLATFORM]
@@ -135,6 +135,21 @@ def emit(root, core_dir, archives, output, step_results, os_version, image_id, e
     core_name = f"postgresql-{postgresql_version}-{PLATFORM}.tar.gz"
     extension_name = f"pg_jsonschema-{PG_JSONSCHEMA_VERSION}-postgresql-{postgresql_version}-{PLATFORM}.tar.gz"
     core_archive, extension_archive = core_dir / core_name, archives / extension_name
+    archives_present = {core_name: core_archive.is_file(), extension_name: extension_archive.is_file()}
+    if all(archives_present.values()):
+        core_identity = load_core_identity(postgresql_version, core_identity_path)
+        core_identity_known = True
+    else:
+        try:
+            core_identity = load_core_identity(postgresql_version, core_identity_path)
+            core_identity_known = True
+        except ValueError:
+            if core_identity_path is None:
+                raise
+            target = windows_core_target.load_target(
+                core_identity_path, postgresql_version=postgresql_version, root=root)
+            core_identity = {"status": target["status"]}
+            core_identity_known = False
     publication = output / "publication"
     publication.mkdir(parents=True, exist_ok=True)
     attempt_path = publication / "attempt.json"
@@ -143,7 +158,8 @@ def emit(root, core_dir, archives, output, step_results, os_version, image_id, e
         "profile_id": profile_id, "postgresql_version": postgresql_version, "pg_jsonschema_version": PG_JSONSCHEMA_VERSION,
         "architecture": ARCHITECTURE, "steps": {c: step_results[c] for c in sorted(CASES)},
         "release_eligible": False, "core_status": core_identity["status"],
-        "archives_present": {core_name: core_archive.is_file(), extension_name: extension_archive.is_file()},
+        "core_identity_known": core_identity_known,
+        "archives_present": archives_present,
     }
     attempt_path.write_text(json.dumps(attempt, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     if not core_archive.is_file() or not extension_archive.is_file():

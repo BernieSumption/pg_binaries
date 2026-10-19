@@ -67,23 +67,28 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Resolve checked PostgreSQL core archive
-        id: candidate
+      - name: Resolve checked PostgreSQL core target and archive
+        id: core_candidate
         env:
           GH_TOKEN: ${{ github.token }}
           PG_VERSION: ${{ needs.select.outputs.postgresql_version }}
         run: |
-          python tools/windows_core_candidate.py --base-pin "support/windows-core-pins/$env:PG_VERSION-x86_64.json" --output-directory "$env:RUNNER_TEMP/core-archives" --selected-core
+          $coreDir = Join-Path $env:RUNNER_TEMP 'core-archives'
+          $baseTarget = Join-Path $coreDir 'base-target.json'
+          python tools/windows_core_target.py --postgresql-version $env:PG_VERSION --output $baseTarget
+          if ($LASTEXITCODE -ne 0) { throw 'Selected PostgreSQL core target generation failed.' }
+          python tools/windows_core_candidate.py --selected-core --base-target $baseTarget --output-directory $coreDir
           if ($LASTEXITCODE -ne 0) { throw 'Windows core discovery failed.' }
-          $result = Get-Content (Join-Path $env:RUNNER_TEMP 'core-archives/result.json') -Raw | ConvertFrom-Json
+          $result = Get-Content (Join-Path $coreDir 'result.json') -Raw | ConvertFrom-Json
+          if ($result.status -notin @('checked', 'missing', 'stale')) { throw "Unexpected core candidate status: $($result.status)" }
           "status=$($result.status)" | Add-Content $env:GITHUB_OUTPUT
       - name: Set up PostgreSQL core build dependencies
-        if: steps.candidate.outputs.status == 'missing' || steps.candidate.outputs.status == 'stale'
+        if: steps.core_candidate.outputs.status == 'missing' || steps.core_candidate.outputs.status == 'stale'
         env:
           PG_VERSION: ${{ needs.select.outputs.postgresql_version }}
         run: ./scripts/windows/setup-core-dependencies.ps1 -PostgreSQLVersion $env:PG_VERSION
       - name: Build selected PostgreSQL core when no current candidate is available
-        if: steps.candidate.outputs.status == 'missing' || steps.candidate.outputs.status == 'stale'
+        if: steps.core_candidate.outputs.status == 'missing' || steps.core_candidate.outputs.status == 'stale'
         env:
           PG_VERSION: ${{ needs.select.outputs.postgresql_version }}
           BUILD_MODE: core-only
@@ -95,12 +100,12 @@ jobs:
           Copy-Item "dist/windows/$archiveName" $archive -Force
           Copy-Item "dist/windows/$archiveName.sha256" "$archive.sha256" -Force
           $artifactName = "pg-jsonschema-${{ needs.select.outputs.extension_version }}-postgresql-$env:PG_VERSION-windows-x86_64-candidate-$env:GITHUB_RUN_ID"
-          python tools/windows_core_target_config.py --base-pin "support/windows-core-pins/$env:PG_VERSION-x86_64.json" --core-archive $archive --source-run-id $env:GITHUB_RUN_ID --source-run-attempt $env:GITHUB_RUN_ATTEMPT --source-artifact-name $artifactName --output (Join-Path $env:RUNNER_TEMP 'core-archives/candidate-target.json')
+          python tools/windows_core_target_config.py --base-target (Join-Path $env:RUNNER_TEMP 'core-archives/base-target.json') --core-archive $archive --source-run-id $env:GITHUB_RUN_ID --source-run-attempt $env:GITHUB_RUN_ATTEMPT --source-artifact-name $artifactName --output (Join-Path $env:RUNNER_TEMP 'core-archives/candidate-target.json')
           if ($LASTEXITCODE -ne 0) { throw 'Generated core target identity validation failed.' }
-      - name: Select core identity
+      - name: Select PostgreSQL core identity
         run: |
           $candidate = Join-Path $env:RUNNER_TEMP 'core-archives/candidate-target.json'
-          if (-not (Test-Path $candidate)) { Copy-Item "support/windows-core-pins/${{ needs.select.outputs.postgresql_version }}-x86_64.json" $candidate }
+          if (-not (Test-Path $candidate -PathType Leaf)) { throw 'Checked or rebuilt PostgreSQL core identity is missing.' }
           Copy-Item $candidate (Join-Path $env:RUNNER_TEMP 'core-archives/identity.json') -Force
       - name: Check Windows publication evidence tooling
         run: python -B -m unittest tests/test_pg_jsonschema_windows_publication.py
@@ -166,14 +171,18 @@ jobs:
           foreach ($report in @('probe-output.txt', 'pe-dependency-analysis.json', 'static-analysis.json')) {
             Remove-Item (Join-Path $extension $report) -ErrorAction SilentlyContinue
           }
-      - name: Supply the checked base identity when build identity is unavailable
+      - name: Supply the static core target when build identity is unavailable
         if: always()
         env:
           PG_VERSION: ${{ needs.select.outputs.postgresql_version }}
         run: |
+          $coreDir = Join-Path $env:RUNNER_TEMP 'core-archives'
+          $baseTarget = Join-Path $coreDir 'base-target.json'
           $identity = Join-Path $env:RUNNER_TEMP 'core-archives/identity.json'
           if (-not (Test-Path $identity)) {
-            Copy-Item "support/windows-core-pins/$env:PG_VERSION-x86_64.json" $identity
+            python tools/windows_core_target.py --postgresql-version $env:PG_VERSION --output $baseTarget
+            if ($LASTEXITCODE -ne 0) { throw 'Selected PostgreSQL core target generation failed on the verification runner.' }
+            Copy-Item $baseTarget $identity
           }
       - name: Exercise downloaded archives on a fresh runner
         id: archive_suite
