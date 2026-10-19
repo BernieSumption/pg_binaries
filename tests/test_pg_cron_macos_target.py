@@ -10,16 +10,19 @@ from macos_target import SOURCE_SHA256, SOURCE_URL, load_target
 
 class PgCronMacosTargetTests(unittest.TestCase):
     def setUp(self):
-        self.target = {
+        self.target = self.target_for("18.6")
+
+    def target_for(self, version):
+        return {
             "schema_version": 1,
-            "profile_id": "pgcron-publication-macos-arm64-18.6",
-            "postgresql_version": "18.6",
+            "profile_id": f"pgcron-publication-macos-arm64-{version}",
+            "postgresql_version": version,
             "pg_cron_version": "1.6.8",
             "architecture": "arm64",
             "platform": "macos-arm64",
             "source": {"url": SOURCE_URL, "sha256": SOURCE_SHA256},
             "core_archive": {
-                "basename": "postgresql-18.6-macos-arm64.tar.gz",
+                "basename": f"postgresql-{version}-macos-arm64.tar.gz",
                 "run_id": "39123456789",
                 "sha256": "a" * 64,
                 "build_id": "github-39123456789-2",
@@ -38,6 +41,20 @@ class PgCronMacosTargetTests(unittest.TestCase):
         self.assertEqual(values["core_build_id"], "github-39123456789-2")
         self.assertEqual(values["extension_basename"],
                          "pg_cron-1.6.8-postgresql-18.6-macos-arm64.tar.gz")
+
+    def test_accepts_each_postgresql_release_selected_for_macos(self):
+        for version in ("15.19", "16.15", "17.11", "18.6"):
+            with self.subTest(version=version):
+                values = self.load(self.target_for(version))
+                self.assertEqual(values["postgresql_version"], version)
+                self.assertEqual(values["core_basename"],
+                                 f"postgresql-{version}-macos-arm64.tar.gz")
+                self.assertEqual(values["extension_basename"],
+                                 f"pg_cron-1.6.8-postgresql-{version}-macos-arm64.tar.gz")
+
+    def test_rejects_postgresql_release_not_in_selected_target_matrix(self):
+        with self.assertRaisesRegex(ValueError, "not selected for pg_cron macOS"):
+            self.load(self.target_for("14.22"))
 
     def test_accepts_unpinned_base_target(self):
         target = json.loads(json.dumps(self.target))

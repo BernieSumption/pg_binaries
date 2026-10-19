@@ -64,16 +64,16 @@ jobs:
             echo "Unsupported macOS architecture: $ARCHITECTURE" >&2
             exit 1
           }
-          [[ "$POSTGRESQL_VERSION" == 18.6 && "$EXTENSION_VERSION" == 1.6.8 ]] || {
-            echo 'This selected pg_cron macOS workflow supports PostgreSQL 18.6 and pg_cron 1.6.8.' >&2
+          [[ "$EXTENSION_VERSION" == 1.6.8 ]] || {
+            echo 'This selected pg_cron macOS workflow supports pg_cron 1.6.8.' >&2
             exit 1
           }
-          target="tools/pgcron_macos_targets/18.6-${ARCHITECTURE}.json"
+          target="tools/pgcron_macos_targets/${POSTGRESQL_VERSION}-${ARCHITECTURE}.json"
           python3 tools/extension_archive_plan.py \
             --project pg_cron --platform "macos-$ARCHITECTURE" \
-            --postgresql-version 18.6 --github-output "$GITHUB_OUTPUT" \
+            --postgresql-version "$POSTGRESQL_VERSION" --github-output "$GITHUB_OUTPUT" \
             > "$RUNNER_TEMP/selection.json"
-          python3 - "$target" "$ARCHITECTURE" "$RUNNER_TEMP/selection.json" <<'PY' >> "$GITHUB_OUTPUT"
+          python3 - "$target" "$ARCHITECTURE" "$POSTGRESQL_VERSION" "$RUNNER_TEMP/selection.json" <<'PY' >> "$GITHUB_OUTPUT"
           import json
           import sys
           from pathlib import Path
@@ -81,8 +81,8 @@ jobs:
           from macos_target import load_target
           target_path = Path(sys.argv[1])
           target = load_target(target_path)
-          selection = json.loads(Path(sys.argv[3]).read_text())
-          if target["architecture"] != sys.argv[2] or target["postgresql_version"] != "18.6":
+          selection = json.loads(Path(sys.argv[4]).read_text())
+          if target["architecture"] != sys.argv[2] or target["postgresql_version"] != sys.argv[3]:
               raise SystemExit("selected target does not match requested PostgreSQL release and architecture")
           if selection.get("selected_version") != target["pg_cron_version"]:
               raise SystemExit("selected pg_cron release does not match the configured macOS recipe")
@@ -174,11 +174,13 @@ jobs:
         continue-on-error: true
         env:
           ARCHITECTURE: ${{ needs.select.outputs.architecture }}
+          POSTGRESQL_VERSION: ${{ needs.select.outputs.postgresql_version }}
+          EXTENSION_VERSION: ${{ needs.select.outputs.extension_version }}
         run: |
           python3 - "$RUNNER_TEMP/pgcron-publication/static-analysis.json" \
             "$RUNNER_TEMP/pgcron-publication/pg-cron-macho-inspection.json" \
-            "$RUNNER_TEMP/core-archives/postgresql-18.6-macos-${ARCHITECTURE}.tar.gz" \
-            "$RUNNER_TEMP/pgcron-publication/pg_cron-1.6.8-postgresql-18.6-macos-${ARCHITECTURE}.tar.gz" <<'PY'
+            "$RUNNER_TEMP/core-archives/postgresql-${POSTGRESQL_VERSION}-macos-${ARCHITECTURE}.tar.gz" \
+            "$RUNNER_TEMP/pgcron-publication/pg_cron-${EXTENSION_VERSION}-postgresql-${POSTGRESQL_VERSION}-macos-${ARCHITECTURE}.tar.gz" <<'PY'
           import hashlib
           import json
           import pathlib
@@ -238,7 +240,7 @@ jobs:
             ${{ runner.temp }}/pgcron-publication/*.txt
             ${{ runner.temp }}/pgcron-publication/publication/**
             support/evidence/pgcron-macos-publication-${{ github.run_id }}/${{ needs.select.outputs.architecture }}/**
-            support/verification/pg_cron-1.6.8-postgresql-18.6-macos-${{ needs.select.outputs.architecture }}-current-${{ github.run_id }}.json
+            support/verification/pg_cron-${{ needs.select.outputs.extension_version }}-postgresql-${{ needs.select.outputs.postgresql_version }}-macos-${{ needs.select.outputs.architecture }}-current-${{ github.run_id }}.json
           if-no-files-found: warn
           retention-days: 7
       - name: Require fresh-runner verification to pass

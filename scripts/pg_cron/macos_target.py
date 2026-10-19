@@ -16,6 +16,25 @@ CORE_BASE_KEYS = {"basename"}
 CORE_RESOLVED_KEYS = CORE_BASE_KEYS | {"run_id", "sha256", "build_id", "source_revision"}
 
 
+def _selected_postgresql_target(version, architecture):
+    root = Path(__file__).resolve().parents[2]
+    tools = root / "tools"
+    sys.path.insert(0, str(tools))
+    try:
+        import extension_archive_plan
+    finally:
+        sys.path.remove(str(tools))
+    try:
+        support = json.loads((root / "support.json").read_text(encoding="utf-8"))
+        releases = json.loads(
+            (root / "support" / "postgresql-releases.json").read_text(encoding="utf-8"))
+        selection = extension_archive_plan.plan(support, releases)
+        return extension_archive_plan.select_target(
+            selection, "pg_cron", f"macos-{architecture}", version, "1.6.8")
+    except (OSError, ValueError, TypeError, extension_archive_plan._coverage.CoverageError) as exc:
+        raise ValueError(f"PostgreSQL target is not selected for pg_cron macOS: {exc}") from exc
+
+
 def _unique_object(pairs):
     value = {}
     for key, item in pairs:
@@ -37,9 +56,10 @@ def load_target(path, require_resolved=False):
     cron_version = value.get("pg_cron_version")
     architecture = value.get("architecture")
     platform = value.get("platform")
-    if (value.get("schema_version") != 1 or version != "18.6" or cron_version != "1.6.8"
+    if (value.get("schema_version") != 1 or cron_version != "1.6.8"
             or architecture not in {"arm64", "x86_64"} or platform != f"macos-{architecture}"):
         raise ValueError("unsupported pg_cron macOS target")
+    _selected_postgresql_target(version, architecture)
     profile_id = f"pgcron-publication-macos-{architecture}-{version}"
     if value.get("profile_id") != profile_id:
         raise ValueError("pg_cron target profile does not match selected architecture")
