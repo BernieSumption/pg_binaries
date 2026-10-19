@@ -171,14 +171,14 @@ jobs:
         continue-on-error: true
         run: |
           set -o pipefail
-          PG_VERSION="$PG_VERSION" PG_ARCHITECTURE="$PG_ARCHITECTURE" scripts/tiger/verify.sh "$RUNNER_TEMP/core/pilot" "$RUNNER_TEMP/postgis" "$RUNNER_TEMP/tiger" 2>&1 | tee "$RUNNER_TEMP/tiger/probe-output.txt"
+          PG_VERSION="$PG_VERSION" PG_ARCHITECTURE="$PG_ARCHITECTURE" bash scripts/tiger/verify.sh "$RUNNER_TEMP/core/pilot" "$RUNNER_TEMP/postgis" "$RUNNER_TEMP/tiger" 2>&1 | tee "$RUNNER_TEMP/tiger/probe-output.txt"
       - name: Verify the exact PostGIS prerequisite archive on the fresh Alpine verifier
         id: postgis_verification
         if: always() && steps.download_postgis.outcome == 'success' && steps.download_core.outcome == 'success' && steps.core_validation.outcome == 'success'
         continue-on-error: true
         run: |
           set -o pipefail
-          PG_VERSION="$PG_VERSION" PG_ARCHITECTURE="$PG_ARCHITECTURE" scripts/postgis/verify.sh "$RUNNER_TEMP/core/pilot" "$RUNNER_TEMP/postgis" 2>&1 | tee "$RUNNER_TEMP/postgis/probe-output.txt"
+          PG_VERSION="$PG_VERSION" PG_ARCHITECTURE="$PG_ARCHITECTURE" bash scripts/postgis/verify.sh "$RUNNER_TEMP/core/pilot" "$RUNNER_TEMP/postgis" 2>&1 | tee "$RUNNER_TEMP/postgis/probe-output.txt"
       - name: Record PostGIS verification outcome
         if: always()
         env:
