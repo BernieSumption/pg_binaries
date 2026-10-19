@@ -86,7 +86,7 @@ jobs:
           if [[ "$CALLER_WORKFLOW_REF" == */.github/workflows/selected-extension-publication.yml@* ]]; then
             sources+=(selected-extension-publication.yml "postgis-linux-core-$PG_VERSION-$PG_ARCHITECTURE-{run_id}")
           fi
-          sources+=(linux-changed-profiles.yml "postgis-linux-core-$PG_VERSION-$PG_ARCHITECTURE-{run_id}" postgis-linux-selected-publication.yml "postgis-linux-core-$PG_VERSION-$PG_ARCHITECTURE-{run_id}" linux-publication.yml "linux-publication-$PG_ARCHITECTURE-evidence")
+          sources+=(linux-changed-profiles.yml "postgis-linux-core-$PG_VERSION-$PG_ARCHITECTURE-{run_id}" postgis-linux-selected-publication.yml "postgis-linux-core-$PG_VERSION-$PG_ARCHITECTURE-{run_id}")
           scripts/linux/resolve-core.sh "$PG_VERSION" "$PG_ARCHITECTURE" "$RUNNER_TEMP/core/pilot" "${sources[@]}"
       - name: Build the selected PostGIS prerequisite archive
         id: postgis_build

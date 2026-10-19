@@ -107,7 +107,6 @@ jobs:
             pgtap-linux-selected-publication.yml "pgtap-linux-core-$PG_VERSION-$PG_ARCHITECTURE-{run_id}"
             pgivm-linux-selected-publication.yml "pgivm-linux-core-$PG_VERSION-$PG_ARCHITECTURE-{run_id}"
             pg-jsonschema-linux-selected-publication.yml "pg-jsonschema-linux-core-$PG_VERSION-$PG_ARCHITECTURE-{run_id}"
-            linux-publication.yml "linux-publication-$PG_ARCHITECTURE-evidence"
           )
           scripts/linux/resolve-core.sh "$PG_VERSION" "$PG_ARCHITECTURE" "$RUNNER_TEMP/core/pilot" "${sources[@]}"
       - name: Build selected pg_cron archive against that core

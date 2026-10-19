@@ -95,8 +95,7 @@ jobs:
             selected-extension-publication.yml "pgtap-linux-core-$PG_VERSION-$PG_ARCHITECTURE-{run_id}" \
             selected-extension-publication.yml "hypopg-linux-core-$PG_VERSION-$PG_ARCHITECTURE-{run_id}" \
             selected-extension-publication.yml "pg-jsonschema-linux-core-$PG_VERSION-$PG_ARCHITECTURE-{run_id}" \
-            pgtap-linux-selected-publication.yml "pgtap-linux-core-$PG_VERSION-$PG_ARCHITECTURE-{run_id}" \
-            linux-publication.yml "linux-publication-$PG_ARCHITECTURE-evidence"
+            pgtap-linux-selected-publication.yml "pgtap-linux-core-$PG_VERSION-$PG_ARCHITECTURE-{run_id}"
       - name: Build selected pgTAP archive against that core
         id: extension_build
         if: always() && steps.core_resolution.outcome == 'success'

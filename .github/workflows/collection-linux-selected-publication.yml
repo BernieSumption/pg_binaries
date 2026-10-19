@@ -114,7 +114,6 @@ jobs:
             pg-jsonschema-linux-selected-publication.yml "pg-jsonschema-linux-core-$PG_VERSION-$PG_ARCHITECTURE-{run_id}"
             postgis-linux-selected-publication.yml "postgis-linux-core-$PG_VERSION-$PG_ARCHITECTURE-{run_id}"
             collection-linux-selected-publication.yml "collection-linux-core-$PG_VERSION-$PG_ARCHITECTURE-{run_id}"
-            linux-publication.yml "linux-publication-$PG_ARCHITECTURE-evidence"
           )
           scripts/linux/resolve-core.sh "$PG_VERSION" "$PG_ARCHITECTURE" "$RUNNER_TEMP/core/pilot" "${sources[@]}"
       - name: Build the selected checksum-pinned Collection archive against that core

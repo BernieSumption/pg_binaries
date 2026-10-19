@@ -101,7 +101,6 @@ jobs:
             linux-changed-profiles.yml "pg-jsonschema-linux-core-$PG_VERSION-$PG_ARCHITECTURE-{run_id}"
             hypopg-linux-selected-publication.yml "hypopg-linux-core-$PG_VERSION-$PG_ARCHITECTURE-{run_id}"
             hypopg-linux-selected-publication.yml "hypopg-linux-$PG_VERSION-$PG_ARCHITECTURE-trial-{run_id}"
-            linux-publication.yml "linux-publication-$PG_ARCHITECTURE-evidence"
           )
           scripts/linux/resolve-core.sh "$PG_VERSION" "$PG_ARCHITECTURE" "$RUNNER_TEMP/core/pilot" "${sources[@]}"
       - name: Build selected HypoPG archive against that core

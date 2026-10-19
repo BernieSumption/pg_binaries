@@ -107,7 +107,6 @@ def validate_candidate(manifest_path, archive_path, version, base_image_digest,
     run_id = str(source.get("run_id", "")) if isinstance(source, dict) else ""
     artifact_name = source.get("artifact_name") if isinstance(source, dict) else None
     expected_artifacts = {
-        f"linux-publication-{architecture}-evidence",
         f"pgvector-linux-selected-{version}-{run_id}",
     }
     if artifact_name_template is not None:

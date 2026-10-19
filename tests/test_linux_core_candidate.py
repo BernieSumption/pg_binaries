@@ -46,7 +46,7 @@ class LinuxCoreCandidateTests(unittest.TestCase):
         self.temp.cleanup()
 
     def write_candidate(self, *, producer_revision=None, run_revision=None,
-                        artifact_name="linux-publication-x86_64-evidence",
+                        artifact_name="pgvector-linux-selected-17.11-1234",
                         builder_image_id=BUILDER_IMAGE_ID, architecture="x86_64",
                         build_configuration=None):
         source = source_archive.source_archive("postgresql", "17.11", "tar.bz2", self.root)
@@ -197,7 +197,7 @@ class LinuxCoreCandidateTests(unittest.TestCase):
                 "hypopg-linux-selected-18.0-{run_id}")
 
     def test_accepts_arm64_candidate_and_rejects_wrong_architecture(self):
-        self.write_candidate(artifact_name="linux-publication-arm64-evidence", architecture="arm64")
+        self.write_candidate(artifact_name="pgvector-linux-selected-17.11-1234", architecture="arm64")
         result = candidate.validate_candidate(
             self.manifest_path, self.archive_path, "17.11", self.BASE_IMAGE_DIGEST,
             self.BUILDER_PACKAGES_SHA256, self.root, "arm64")
@@ -206,6 +206,17 @@ class LinuxCoreCandidateTests(unittest.TestCase):
             candidate.validate_candidate(
                 self.manifest_path, self.archive_path, "17.11", self.BASE_IMAGE_DIGEST,
                 self.BUILDER_PACKAGES_SHA256, self.root, "x86_64")
+
+    def test_rejects_legacy_combined_publication_artifact_identity(self):
+        for architecture in ("x86_64", "arm64"):
+            with self.subTest(architecture=architecture):
+                self.write_candidate(
+                    artifact_name=f"linux-publication-{architecture}-evidence",
+                    architecture=architecture)
+                with self.assertRaisesRegex(ValueError, "artifact identity"):
+                    candidate.validate_candidate(
+                        self.manifest_path, self.archive_path, "17.11", self.BASE_IMAGE_DIGEST,
+                        self.BUILDER_PACKAGES_SHA256, self.root, architecture)
 
     def test_rejects_selected_artifact_with_mismatched_version_or_run(self):
         for name in ("pgvector-linux-selected-18.0-1234", "pgvector-linux-selected-17.11-9876"):

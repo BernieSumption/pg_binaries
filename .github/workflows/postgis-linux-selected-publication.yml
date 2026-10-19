@@ -101,7 +101,6 @@ jobs:
             linux-changed-profiles.yml "pgtap-linux-core-$PG_VERSION-$PG_ARCHITECTURE-{run_id}"
             postgis-linux-selected-publication.yml "postgis-linux-core-$PG_VERSION-$PG_ARCHITECTURE-{run_id}"
             pgtap-linux-selected-publication.yml "pgtap-linux-core-$PG_VERSION-$PG_ARCHITECTURE-{run_id}"
-            linux-publication.yml "linux-publication-$PG_ARCHITECTURE-evidence"
           )
           scripts/linux/resolve-core.sh "$PG_VERSION" "$PG_ARCHITECTURE" "$RUNNER_TEMP/core/pilot" "${sources[@]}"
       - name: Build selected PostGIS archive against that core

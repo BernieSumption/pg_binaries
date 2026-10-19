@@ -90,8 +90,7 @@ jobs:
           set -euo pipefail
           scripts/linux/resolve-core.sh "$PG_VERSION" "$PG_ARCHITECTURE" "$RUNNER_TEMP/core" \
             pgvector-linux-selected-publication.yml "pgvector-linux-selected-$PG_VERSION-{run_id}" \
-            pgvector-linux-selected-publication.yml "pgvector-linux-core-$PG_VERSION-$PG_ARCHITECTURE-{run_id}" \
-            linux-publication.yml "linux-publication-$PG_ARCHITECTURE-evidence"
+            pgvector-linux-selected-publication.yml "pgvector-linux-core-$PG_VERSION-$PG_ARCHITECTURE-{run_id}"
       - name: Fetch and build selected pgvector against the resolved core
         id: extension_build
         if: always() && steps.core_resolution.outcome == 'success'

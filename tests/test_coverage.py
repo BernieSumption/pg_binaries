@@ -724,7 +724,7 @@ class CoverageTests(unittest.TestCase):
             self.assertNotEqual(binary_crlf["profile_revision"], binary_lf["profile_revision"])
 
     @staticmethod
-    def add_workflow_section_profile(root, source=".github/workflows/linux-publication.yml#profile-section=build"):
+    def add_workflow_source_profile(root, source=".github/workflows/linux-publication.yml"):
         root = Path(root)
         registry = root / "support" / "verification-profiles.json"
         registry.parent.mkdir(parents=True, exist_ok=True)
@@ -737,17 +737,15 @@ class CoverageTests(unittest.TestCase):
             },
         }}), encoding="utf-8")
 
-    def test_workflow_profile_section_hashes_only_execution_section(self):
+    def test_workflow_profile_hashes_the_whole_file(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            self.add_workflow_section_profile(root)
+            self.add_workflow_source_profile(root)
             workflow = root / ".github" / "workflows" / "linux-publication.yml"
             workflow.parent.mkdir(parents=True)
             workflow.write_text(
                 "name: Linux publication\n"
-                "# profile-section: build begin\n"
                 "run: ./verify.sh\n"
-                "# profile-section: build end\n"
                 "name: reporting\n",
                 encoding="utf-8",
             )
@@ -755,76 +753,45 @@ class CoverageTests(unittest.TestCase):
 
             workflow.write_text(
                 "name: Updated Linux publication report\n"
-                "# profile-section: build begin\n"
                 "run: ./verify.sh\n"
-                "# profile-section: build end\n"
                 "name: updated reporting\n",
                 encoding="utf-8",
             )
             reporting_edit = coverage.verification_profile(root, "fixture-workflow")
-            self.assertEqual(original["profile_revision"], reporting_edit["profile_revision"])
+            self.assertNotEqual(original["profile_revision"], reporting_edit["profile_revision"])
 
             workflow.write_text(
                 "name: Updated Linux publication report\n"
-                "# profile-section: build begin\n"
                 "run: ./verify-changed.sh\n"
-                "# profile-section: build end\n"
                 "name: updated reporting\n",
                 encoding="utf-8",
             )
             execution_edit = coverage.verification_profile(root, "fixture-workflow")
             self.assertNotEqual(reporting_edit["profile_revision"], execution_edit["profile_revision"])
 
-    def test_workflow_profile_section_normalizes_utf8_crlf(self):
+    def test_workflow_profile_hash_normalizes_utf8_crlf(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
-            self.add_workflow_section_profile(root)
+            self.add_workflow_source_profile(root)
             workflow = root / ".github" / "workflows" / "linux-publication.yml"
             workflow.parent.mkdir(parents=True)
             workflow.write_bytes(
-                b"metadata\n# profile-section: build begin\nrun: ./verify.sh\n"
-                b"# profile-section: build end\nreport\n"
+                b"metadata\nrun: ./verify.sh\nreport\n"
             )
             lf_profile = coverage.verification_profile(root, "fixture-workflow")
             workflow.write_bytes(workflow.read_bytes().replace(b"\n", b"\r\n"))
             crlf_profile = coverage.verification_profile(root, "fixture-workflow")
             self.assertEqual(lf_profile["profile_revision"], crlf_profile["profile_revision"])
 
-    def test_workflow_profile_section_rejects_missing_duplicate_and_reversed_markers(self):
-        invalid_sections = {
-            "missing begin": "# profile-section: build wrong\ncommand\n",
-            "missing end": "# profile-section: build begin\ncommand\n",
-            "duplicate begin": (
-                "# profile-section: build begin\ncommand\n"
-                "# profile-section: build begin\ncommand\n"
-                "# profile-section: build end\n"
-            ),
-            "duplicate end": (
-                "# profile-section: build begin\ncommand\n"
-                "# profile-section: build end\n"
-                "# profile-section: build end\n"
-            ),
-            "reversed": "# profile-section: build end\ncommand\n# profile-section: build begin\n",
-        }
-        for label, content in invalid_sections.items():
-            with self.subTest(label=label), tempfile.TemporaryDirectory() as temporary:
-                root = Path(temporary)
-                self.add_workflow_section_profile(root)
-                workflow = root / ".github" / "workflows" / "linux-publication.yml"
-                workflow.parent.mkdir(parents=True)
-                workflow.write_text(content, encoding="utf-8")
-                with self.assertRaises(coverage.CoverageError):
-                    coverage.verification_profile(root, "fixture-workflow")
-
-    def test_workflow_profile_section_syntax_is_limited_to_publication_workflow(self):
+    def test_workflow_profile_fragment_syntax_is_rejected(self):
         for source in (
             "tests/fixture.sh#profile-section=build",
             ".github/workflows/other.yml#profile-section=build",
-            ".github/workflows/linux-publication.yml#other-fragment=build",
+            ".github/workflows/linux-publication.yml#profile-section=build",
         ):
             with self.subTest(source=source), tempfile.TemporaryDirectory() as temporary:
                 root = Path(temporary)
-                self.add_workflow_section_profile(root, source=source)
+                self.add_workflow_source_profile(root, source=source)
                 with self.assertRaises(coverage.CoverageError):
                     coverage.verification_profile(root, "fixture-workflow")
 

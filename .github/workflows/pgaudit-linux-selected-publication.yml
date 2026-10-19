@@ -108,7 +108,6 @@ jobs:
             linux-changed-profiles.yml "pgtap-linux-core-$PG_VERSION-$PG_ARCHITECTURE-{run_id}"
             pgaudit-linux-selected-publication.yml "pgaudit-linux-core-$PG_VERSION-$PG_ARCHITECTURE-{run_id}"
             pgtap-linux-selected-publication.yml "pgtap-linux-core-$PG_VERSION-$PG_ARCHITECTURE-{run_id}"
-            linux-publication.yml "linux-publication-$PG_ARCHITECTURE-evidence"
           )
           scripts/linux/resolve-core.sh "$PG_VERSION" "$PG_ARCHITECTURE" "$RUNNER_TEMP/core/pilot" "${sources[@]}"
       - name: Build selected pgAudit archive against that core

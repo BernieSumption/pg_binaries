@@ -83,8 +83,7 @@ jobs:
         run: |
           scripts/linux/resolve-core.sh "$PG_VERSION" "$PG_ARCHITECTURE" "$RUNNER_TEMP/core/pilot" \
             linux-changed-profiles.yml "pg-jsonschema-linux-core-$PG_VERSION-$PG_ARCHITECTURE-{run_id}" \
-            selected-extension-publication.yml "pg-jsonschema-linux-core-$PG_VERSION-$PG_ARCHITECTURE-{run_id}" \
-            linux-publication.yml "linux-publication-$PG_ARCHITECTURE-evidence"
+            selected-extension-publication.yml "pg-jsonschema-linux-core-$PG_VERSION-$PG_ARCHITECTURE-{run_id}"
       - name: Build selected pg_jsonschema final archive
         id: build
         continue-on-error: true
