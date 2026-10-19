@@ -1,0 +1,90 @@
+{
+  "architecture": "arm64",
+  "archives": {
+    "pg_jsonschema-0.3.4-postgresql-17.11-linux-arm64.tar.gz": "c443aeb65ed77b26a3fdb5e127e0641cf5ba10254c696c389a48be08a62d0834",
+    "postgresql-17.11-linux-arm64.tar.gz": "6815bbd99bd0851660b6549ba7f8577da19570cd52542cc98d815620ca27cfa5"
+  },
+  "case_results": {
+    "archive-suite": "passed",
+    "elf-closure": "passed"
+  },
+  "ci": {
+    "build_revision": "614b9a59625dfe35aeb26af7c1e73c9c6e8ab225",
+    "provider": "github-actions",
+    "run_id": "39203560220",
+    "run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/39203560220",
+    "source_revision": "614b9a59625dfe35aeb26af7c1e73c9c6e8ab225",
+    "test_revision": "614b9a59625dfe35aeb26af7c1e73c9c6e8ab225"
+  },
+  "clean_system": true,
+  "core_origin": "built",
+  "core_provenance": {
+    "build_id": "github-39203560220-1",
+    "build_inputs": {
+      "base_image": "ubuntu:22.04",
+      "base_image_digest": "sha256:0a9887931b0e38af2e3487ed39e29436b0535c4f3f52e57745baaf79d1898956",
+      "packages_sha256": "410a8ca758b0320b948ed25b65af9f495f660d49ab8fdca3417964a12b2454d0"
+    },
+    "provider": "github-actions",
+    "repository": "BernieSumption/pg_binaries",
+    "run_attempt": 1,
+    "run_id": "39203560220",
+    "run_sha": "614b9a59625dfe35aeb26af7c1e73c9c6e8ab225",
+    "source_revision": "614b9a59625dfe35aeb26af7c1e73c9c6e8ab225",
+    "workflow_ref": "BernieSumption/pg_binaries/.github/workflows/selected-extension-publication.yml@refs/heads/spike"
+  },
+  "core_resolution": {
+    "architecture": "arm64",
+    "archive": "postgresql-17.11-linux-arm64.tar.gz",
+    "origin": "built",
+    "postgresql_version": "17.11",
+    "provenance": {
+      "build_id": "github-39203560220-1",
+      "build_inputs": {
+        "base_image": "ubuntu:22.04",
+        "base_image_digest": "sha256:0a9887931b0e38af2e3487ed39e29436b0535c4f3f52e57745baaf79d1898956",
+        "packages_sha256": "410a8ca758b0320b948ed25b65af9f495f660d49ab8fdca3417964a12b2454d0"
+      },
+      "provider": "github-actions",
+      "repository": "BernieSumption/pg_binaries",
+      "run_attempt": 1,
+      "run_id": "39203560220",
+      "run_sha": "614b9a59625dfe35aeb26af7c1e73c9c6e8ab225",
+      "source_revision": "614b9a59625dfe35aeb26af7c1e73c9c6e8ab225",
+      "workflow_ref": "BernieSumption/pg_binaries/.github/workflows/selected-extension-publication.yml@refs/heads/spike"
+    },
+    "schema_version": 1,
+    "sha256": "6815bbd99bd0851660b6549ba7f8577da19570cd52542cc98d815620ca27cfa5"
+  },
+  "dependency_check_profile": "linux-elf-alpine-relocation-v1",
+  "dependency_checks_passed": true,
+  "endpoint": "current",
+  "environment": {
+    "architecture": "arm64",
+    "clean_system": true,
+    "dependency_check_profile": "linux-elf-alpine-relocation-v1",
+    "dependency_checks_passed": true,
+    "distribution": "Alpine Linux 3.22",
+    "endpoint": "current",
+    "image_id": "sha256:251b724f12761df59c27c9655b182aa7948acdb58c2b5926b0043922dcd06519",
+    "os": "linux",
+    "os_version": "6.17.0"
+  },
+  "extension_archive": "pg_jsonschema-0.3.4-postgresql-17.11-linux-arm64.tar.gz",
+  "platform": "linux-arm64",
+  "postgresql_version": "17.11",
+  "profile_id": "pg-jsonschema-publication-linux-arm64-17.11",
+  "profile_revision": "80a6ec405fbfb6d983edb6f0c5b5a7d37f6adb45ddc74bfed5461fd019e567d0",
+  "project": "pg_jsonschema",
+  "redistribution_status": "seahash-4.1.0-notice-unresolved",
+  "release_eligible": false,
+  "reports": {
+    "build_evidence": "2b01e32f6d90383c678a2bf791b573526f82eade353de20f70937fad469b1de2",
+    "cargo_license_inventory": "42a6c31255c6849d0078edf157dfde0c43389319a1634c9d3d2cc1ccc3991ccc",
+    "elf_closure": "5bdddb6804601f36276b6f83b8c1ae7f4f0fe5be33a124bd82d8491c2ae36240",
+    "probe_output": "4cfb998745668201dd01f4f0900b8ae225b8b30896bf319703e9866ce4e9459f"
+  },
+  "schema_version": 1,
+  "test_revision": "614b9a59625dfe35aeb26af7c1e73c9c6e8ab225",
+  "version": "0.3.4"
+}

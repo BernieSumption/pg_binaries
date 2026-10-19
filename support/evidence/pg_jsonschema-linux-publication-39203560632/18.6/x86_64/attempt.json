@@ -1,0 +1,71 @@
+{
+  "architecture": "x86_64",
+  "archives": {
+    "pg_jsonschema-0.3.4-postgresql-18.6-linux-x86_64.tar.gz": "9b0d2b7bac9b90c7b438d27338c15f236455c604da5e5cc124eb1006ac108cf8",
+    "postgresql-18.6-linux-x86_64.tar.gz": "d8ad6a2feb1b77ebf28332a4b8f8b67cb3f2c4e01411722610e5b827588a1082"
+  },
+  "archives_present": {
+    "pg_jsonschema-0.3.4-postgresql-18.6-linux-x86_64.tar.gz": true,
+    "postgresql-18.6-linux-x86_64.tar.gz": true
+  },
+  "core_origin": "reused",
+  "core_provenance": {
+    "artifact_name": "linux-publication-x86_64-evidence",
+    "build_id": "github-39178721826-1",
+    "build_inputs": {
+      "base_image": "ubuntu:22.04",
+      "base_image_digest": "sha256:0a9887931b0e38af2e3487ed39e29436b0535c4f3f52e57745baaf79d1898956",
+      "packages_sha256": "e5b948714779db8f9f3763fc5ef06d7c11f0438d94a7b890a58446d8522e54be"
+    },
+    "head_sha": "04cda9dcc0ef7a59bf75a24cbeacd982832cb42a",
+    "provider": "github-actions",
+    "run_attempt": 1,
+    "run_id": "39178721826",
+    "source_revision": "04cda9dcc0ef7a59bf75a24cbeacd982832cb42a"
+  },
+  "core_resolution": {
+    "architecture": "x86_64",
+    "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+    "origin": "reused",
+    "postgresql_version": "18.6",
+    "provenance": {
+      "artifact_name": "linux-publication-x86_64-evidence",
+      "build_id": "github-39178721826-1",
+      "build_inputs": {
+        "base_image": "ubuntu:22.04",
+        "base_image_digest": "sha256:0a9887931b0e38af2e3487ed39e29436b0535c4f3f52e57745baaf79d1898956",
+        "packages_sha256": "e5b948714779db8f9f3763fc5ef06d7c11f0438d94a7b890a58446d8522e54be"
+      },
+      "head_sha": "04cda9dcc0ef7a59bf75a24cbeacd982832cb42a",
+      "provider": "github-actions",
+      "run_attempt": 1,
+      "run_id": "39178721826",
+      "source_revision": "04cda9dcc0ef7a59bf75a24cbeacd982832cb42a"
+    },
+    "schema_version": 1,
+    "sha256": "d8ad6a2feb1b77ebf28332a4b8f8b67cb3f2c4e01411722610e5b827588a1082"
+  },
+  "core_run_id": "39178721826",
+  "pg_jsonschema_version": "0.3.4",
+  "postgresql_version": "18.6",
+  "profile_id": "pg-jsonschema-publication-linux-x86_64-18.6",
+  "redistribution_status": "seahash-4.1.0-notice-unresolved",
+  "release_eligible": false,
+  "reports": {
+    "build_evidence": "3b69cebf932e85c80ebcf65094f7a018057c2f0f816c04e4b469ebf43bd7d972",
+    "cargo_license_inventory": "42a6c31255c6849d0078edf157dfde0c43389319a1634c9d3d2cc1ccc3991ccc",
+    "elf_closure": "6e7b7bacbb7005d4866691cfb8d47bf2d4970af3d45efef61ed143620164d3d7",
+    "probe_output": "c8c48457a134bee946f303660a03a2dabbdc7dcdf04c7623686e1afdc22d87b2"
+  },
+  "run_id": "39203560632",
+  "schema_version": 1,
+  "source_revision": "614b9a59625dfe35aeb26af7c1e73c9c6e8ab225",
+  "steps": {
+    "archive-suite": "success",
+    "elf-closure": "success"
+  },
+  "workflow_steps": {
+    "build": "success",
+    "verify": "success"
+  }
+}

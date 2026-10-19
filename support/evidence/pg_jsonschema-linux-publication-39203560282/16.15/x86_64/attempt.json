@@ -1,0 +1,73 @@
+{
+  "architecture": "x86_64",
+  "archives": {
+    "pg_jsonschema-0.3.4-postgresql-16.15-linux-x86_64.tar.gz": "b0edf4eb5d3a7201c8bacf20962a91f0a1deafdf5a55c406b7624bd3e931ba7c",
+    "postgresql-16.15-linux-x86_64.tar.gz": "ef68f12bb303027c127bbf25a1c2b580317f6c93610630d7fd4cbd7b254b98fd"
+  },
+  "archives_present": {
+    "pg_jsonschema-0.3.4-postgresql-16.15-linux-x86_64.tar.gz": true,
+    "postgresql-16.15-linux-x86_64.tar.gz": true
+  },
+  "core_origin": "built",
+  "core_provenance": {
+    "build_id": "github-39203560282-1",
+    "build_inputs": {
+      "base_image": "ubuntu:22.04",
+      "base_image_digest": "sha256:0a9887931b0e38af2e3487ed39e29436b0535c4f3f52e57745baaf79d1898956",
+      "packages_sha256": "e5b948714779db8f9f3763fc5ef06d7c11f0438d94a7b890a58446d8522e54be"
+    },
+    "provider": "github-actions",
+    "repository": "BernieSumption/pg_binaries",
+    "run_attempt": 1,
+    "run_id": "39203560282",
+    "run_sha": "614b9a59625dfe35aeb26af7c1e73c9c6e8ab225",
+    "source_revision": "614b9a59625dfe35aeb26af7c1e73c9c6e8ab225",
+    "workflow_ref": "BernieSumption/pg_binaries/.github/workflows/selected-extension-publication.yml@refs/heads/spike"
+  },
+  "core_resolution": {
+    "architecture": "x86_64",
+    "archive": "postgresql-16.15-linux-x86_64.tar.gz",
+    "origin": "built",
+    "postgresql_version": "16.15",
+    "provenance": {
+      "build_id": "github-39203560282-1",
+      "build_inputs": {
+        "base_image": "ubuntu:22.04",
+        "base_image_digest": "sha256:0a9887931b0e38af2e3487ed39e29436b0535c4f3f52e57745baaf79d1898956",
+        "packages_sha256": "e5b948714779db8f9f3763fc5ef06d7c11f0438d94a7b890a58446d8522e54be"
+      },
+      "provider": "github-actions",
+      "repository": "BernieSumption/pg_binaries",
+      "run_attempt": 1,
+      "run_id": "39203560282",
+      "run_sha": "614b9a59625dfe35aeb26af7c1e73c9c6e8ab225",
+      "source_revision": "614b9a59625dfe35aeb26af7c1e73c9c6e8ab225",
+      "workflow_ref": "BernieSumption/pg_binaries/.github/workflows/selected-extension-publication.yml@refs/heads/spike"
+    },
+    "schema_version": 1,
+    "sha256": "ef68f12bb303027c127bbf25a1c2b580317f6c93610630d7fd4cbd7b254b98fd"
+  },
+  "core_run_id": "39203560282",
+  "pg_jsonschema_version": "0.3.4",
+  "postgresql_version": "16.15",
+  "profile_id": "pg-jsonschema-publication-linux-x86_64-16.15",
+  "redistribution_status": "seahash-4.1.0-notice-unresolved",
+  "release_eligible": false,
+  "reports": {
+    "build_evidence": "23f864da7ec3f579c0805ac72013bfb96474b2fd39e3c425955624b08468c73d",
+    "cargo_license_inventory": "42a6c31255c6849d0078edf157dfde0c43389319a1634c9d3d2cc1ccc3991ccc",
+    "elf_closure": "9a7b52726acc69917b73f8bf9382d50890c2f2b0e5d141d36cd8fbfe8c604a76",
+    "probe_output": "904aa7bc1fa313a9a3a04d6f2f05d72367b05c89559bfffc2464725ec14a2b27"
+  },
+  "run_id": "39203560282",
+  "schema_version": 1,
+  "source_revision": "614b9a59625dfe35aeb26af7c1e73c9c6e8ab225",
+  "steps": {
+    "archive-suite": "success",
+    "elf-closure": "success"
+  },
+  "workflow_steps": {
+    "build": "success",
+    "verify": "success"
+  }
+}
