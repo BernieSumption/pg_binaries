@@ -9,6 +9,7 @@ import unittest
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
 import windows_core_target_config as config
+import windows_core_target
 from windows_core_pin import load_identity
 
 
@@ -56,6 +57,33 @@ class WindowsCoreTargetConfigTests(unittest.TestCase):
         self.assertEqual(result["sha256"], hashlib.sha256(self.archive.read_bytes()).hexdigest())
         self.assertEqual(result["artifact_name"], f"hypopg-windows-{self.version}-build-{self.run_id}")
         self.assertEqual(load_identity(output, pg_version=self.version), result)
+
+    def test_static_target_contains_no_producer_identity_and_builds_dynamic_identity(self):
+        static_path = self.root / "target.json"
+        static = windows_core_target.write_target(self.version, static_path)
+        self.assertEqual(set(static), windows_core_target.TARGET_FIELDS)
+        for key in ("artifact_name", "run_id", "build_id", "source_revision", "sha256"):
+            self.assertNotIn(key, static)
+        self.assertEqual(windows_core_target.load_target(static_path), static)
+
+        self.make_archive()
+        output = self.root / "generated-identity.json"
+        result = config.create_target(static_path, self.archive, self.run_id, output, self.attempt,
+                                      f"hypopg-windows-{self.version}-build-{self.run_id}")
+        self.assertEqual(result["run_id"], self.run_id)
+        self.assertEqual(result["build_id"], f"github-{self.run_id}-{self.attempt}")
+        self.assertEqual(result["sha256"], hashlib.sha256(self.archive.read_bytes()).hexdigest())
+        self.assertEqual(load_identity(output, pg_version=self.version), result)
+
+    def test_static_target_rejects_unselected_version_and_archive_mismatch(self):
+        with self.assertRaisesRegex(ValueError, "not selected"):
+            windows_core_target.target_for("14.0")
+        wrong_version_target = self.root / "wrong-version.json"
+        windows_core_target.write_target("18.6", wrong_version_target)
+        self.make_archive()
+        with self.assertRaisesRegex(ValueError, "version does not match|archive name"):
+            config.create_target(wrong_version_target, self.archive, self.run_id,
+                                 self.root / "rejected.json", self.attempt)
 
     def test_rejects_forged_sidecar_manifest_and_mismatched_attempt(self):
         self.make_archive()

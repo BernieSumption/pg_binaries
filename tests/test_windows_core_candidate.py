@@ -13,6 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
 import source_archive
 import windows_core_candidate as candidate
+import windows_core_target
 
 
 class WindowsCoreCandidateTests(unittest.TestCase):
@@ -134,6 +135,22 @@ class WindowsCoreCandidateTests(unittest.TestCase):
         target = json.loads(Path(result["target"]).read_text())
         self.assertEqual(target["build_id"], f"github-{self.run_id}-{self.attempt}")
         self.assertEqual(json.loads((self.output / "out/result.json").read_text())["status"], "checked")
+
+    def test_accepts_static_target_and_returns_provenance_bound_identity(self):
+        base_target = self.output / "windows-core-target.json"
+        target = windows_core_target.write_target(self.version, base_target)
+        self.assertNotIn("run_id", target)
+        with patch.object(candidate.discovery, "discover", side_effect=self.discovery_result(None, [self.row])), \
+             patch.object(candidate, "_relevant_inputs_match", return_value=True):
+            result = candidate.resolve(base_target=base_target, output_directory=self.output / "static-out",
+                repository="owner/repo", branch="spike", current_run_id="999")
+        self.assertEqual(result["status"], "checked")
+        identity = json.loads(Path(result["target"]).read_text())
+        self.assertEqual(identity["postgresql_version"], self.version)
+        self.assertEqual(identity["run_id"], self.run_id)
+        self.assertEqual(identity["build_id"], f"github-{self.run_id}-{self.attempt}")
+        self.assertEqual(identity["sha256"], hashlib.sha256(self.archive.read_bytes()).hexdigest())
+        self.assertEqual(identity["source_revision"], self.revision)
 
     def test_rejects_wrong_head_and_changed_recipe(self):
         self.row["source"]["head_sha"] = "b" * 40

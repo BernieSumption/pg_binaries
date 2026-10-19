@@ -11,6 +11,7 @@ import sys
 import actions_candidate_discovery as discovery
 import postgresql_git_source
 import source_archive
+import windows_core_target
 import windows_core_target_config
 
 
@@ -42,15 +43,18 @@ def _relevant_inputs_match(revision, root=ROOT, selected=False):
     return True
 
 
-def resolve(*, base_pin, output_directory, repository, branch, current_run_id, root=ROOT,
+def resolve(*, base_pin=None, base_target=None, output_directory, repository, branch, current_run_id, root=ROOT,
             selected_core=False):
     output_directory = Path(output_directory)
     output_directory.mkdir(parents=True, exist_ok=True)
-    base_pin = Path(base_pin)
-    pin = json.loads(base_pin.read_text(encoding="utf-8"))
-    version = pin.get("postgresql_version") if isinstance(pin, dict) else None
+    if (base_pin is None) == (base_target is None):
+        raise ValueError("provide exactly one of base_target or legacy base_pin")
+    base_target_path = Path(base_target if base_target is not None else base_pin)
+    base = windows_core_target.load_target(
+        base_target_path, root=root, allow_identity_template=True)
+    version = base.get("postgresql_version")
     if not isinstance(version, str):
-        raise ValueError("base Windows core pin has no PostgreSQL version")
+        raise ValueError("base Windows core target has no PostgreSQL version")
     archive_name = f"postgresql-{version}-windows-x86_64.tar.gz"
     manifest_path = output_directory / "discovery.json"
     reasons = []
@@ -81,8 +85,8 @@ def resolve(*, base_pin, output_directory, repository, branch, current_run_id, r
                 raise ValueError("producer artifact name does not match candidate workflow and run")
             target_path = output_directory / "candidate-target.json"
             target = windows_core_target_config.create_target(
-                base_pin, archive, str(provenance["run_id"]), target_path,
-                str(provenance["run_attempt"]), provenance["artifact_name"],
+                base_target_path, archive, str(provenance["run_id"]), target_path,
+                str(provenance["run_attempt"]), provenance["artifact_name"], root=root,
             )
             if provenance.get("head_sha") != target["source_revision"]:
                 raise ValueError("producer head SHA differs from core manifest source revision")
@@ -135,7 +139,9 @@ def _selected_build_configuration(manifest, version):
 
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--base-pin", type=Path, required=True)
+    base = parser.add_mutually_exclusive_group(required=True)
+    base.add_argument("--base-target", type=Path)
+    base.add_argument("--base-pin", type=Path, help="legacy full identity template")
     parser.add_argument("--output-directory", type=Path, required=True)
     parser.add_argument("--repository", default=os.environ.get("GITHUB_REPOSITORY"))
     parser.add_argument("--branch", default=os.environ.get("GITHUB_REF_NAME"))
@@ -146,7 +152,8 @@ def main(argv=None):
     if not all((args.repository, args.branch, args.current_run_id)):
         parser.error("repository, branch and current run ID are required (or set their GitHub environment variables)")
     try:
-        result = resolve(base_pin=args.base_pin, output_directory=args.output_directory,
+        result = resolve(base_pin=args.base_pin, base_target=args.base_target,
+                         output_directory=args.output_directory,
                          repository=args.repository, branch=args.branch,
                          current_run_id=args.current_run_id, selected_core=args.selected_core)
     except (discovery.DiscoveryError, RuntimeError, OSError, ValueError, TypeError) as exc:

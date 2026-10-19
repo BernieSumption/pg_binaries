@@ -11,7 +11,7 @@ import sys
 import tarfile
 import tempfile
 
-from windows_core_pin import PG_VERSIONS, REQUIRED
+import windows_core_target
 
 MAX_MANIFEST_SIZE = 1024 * 1024
 MAX_MEMBERS = 100_000
@@ -24,13 +24,6 @@ def _unique_object(pairs):
             raise ValueError(f"duplicate JSON key: {key}")
         result[key] = value
     return result
-
-
-def _json_file(path, label):
-    try:
-        return json.loads(Path(path).read_text(encoding="utf-8"), object_pairs_hook=_unique_object)
-    except (OSError, UnicodeError, json.JSONDecodeError, ValueError) as exc:
-        raise ValueError(f"cannot read {label}: {exc}") from exc
 
 
 def _sha256(path):
@@ -74,7 +67,7 @@ def _manifest(archive_path):
 
 
 def create_target(base_path, archive_path, source_run_id, output_path, source_run_attempt="1",
-                  source_artifact_name=None):
+                  source_artifact_name=None, root=windows_core_target.ROOT):
     base_path, archive_path, output_path = map(Path, (base_path, archive_path, output_path))
     if not isinstance(source_run_id, str) or not re.fullmatch(r"[1-9][0-9]*", source_run_id):
         raise ValueError("source run ID must be a positive decimal integer")
@@ -84,13 +77,11 @@ def create_target(base_path, archive_path, source_run_id, output_path, source_ru
             (not isinstance(source_artifact_name, str) or
              not re.fullmatch(r"[A-Za-z0-9_.-]+", source_artifact_name))):
         raise ValueError("source artifact name must be a safe filename")
-    target = _json_file(base_path, "base Windows core pin")
-    if not isinstance(target, dict) or set(target) != REQUIRED:
-        raise ValueError("base Windows core pin has missing or unexpected fields")
+    target = windows_core_target.load_target(base_path, root=root, allow_identity_template=True)
     version = target.get("postgresql_version")
-    if (version not in PG_VERSIONS or target.get("platform") != "windows-x86_64"
+    if (target.get("platform") != "windows-x86_64"
             or target.get("architecture") != "x86_64"):
-        raise ValueError("base Windows core pin has an unsupported target")
+        raise ValueError("base Windows core target has an unsupported target")
     expected_name = f"postgresql-{version}-windows-x86_64.tar.gz"
     if target.get("archive_name") != expected_name or archive_path.name != expected_name:
         raise ValueError("core archive name does not match target")
@@ -138,7 +129,9 @@ def create_target(base_path, archive_path, source_run_id, output_path, source_ru
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--base-pin", type=Path, required=True)
+    base = parser.add_mutually_exclusive_group(required=True)
+    base.add_argument("--base-target", type=Path)
+    base.add_argument("--base-pin", type=Path, help="legacy full identity template")
     parser.add_argument("--core-archive", type=Path, required=True)
     parser.add_argument("--source-run-id", required=True)
     parser.add_argument("--source-run-attempt", default="1")
@@ -146,7 +139,7 @@ def main():
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     try:
-        create_target(args.base_pin, args.core_archive, args.source_run_id, args.output,
+        create_target(args.base_target or args.base_pin, args.core_archive, args.source_run_id, args.output,
                       args.source_run_attempt, args.source_artifact_name)
         print(f"Wrote temporary Windows core identity: {args.output}")
         return 0
