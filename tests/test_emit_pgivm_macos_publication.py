@@ -8,7 +8,6 @@ import sys
 import tarfile
 import tempfile
 import unittest
-from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
 import emit_pgivm_macos_publication as emitter
@@ -23,7 +22,18 @@ class pg_ivmMacOSFixture:
         self.output = self.base / "output"
         for directory in (self.root, self.core, self.output):
             directory.mkdir()
-        registry = json.loads(Path("support/verification-profiles.json").read_text())
+        self.core_name = "postgresql-18.6-macos-arm64.tar.gz"
+        self.core_archive = self.core / self.core_name
+        self.core_archive.write_bytes(b"fixture core bytes")
+        self.core_digest = self.digest(self.core_archive)
+        self.target = self.base / "target.json"
+        self.target.write_text(json.dumps({
+            "postgresql_version": "18.6", "platform": "macos-arm64", "architecture": "arm64",
+            "core_archive": {"basename": self.core_name, "sha256": self.core_digest},
+        }))
+        emitter.configure_target(self.target)
+        registry_path = Path("support/verification-profiles.json")
+        registry = json.loads(registry_path.read_text())
         profile = registry["profiles"][emitter.PROFILE_ID]
         for relative in profile["sources"]:
             source = Path(relative)
@@ -32,15 +42,10 @@ class pg_ivmMacOSFixture:
             shutil.copyfile(source, destination)
         shutil.copyfile("support.json", self.root / "support.json")
         shutil.copyfile("support/postgresql-releases.json", self.root / "support/postgresql-releases.json")
-        shutil.copyfile("support/verification-profiles.json", self.root / "support/verification-profiles.json")
-        self.core_name = f"postgresql-{emitter.PG_VERSION}-{emitter.PLATFORM}.tar.gz"
+        registry_destination = self.root / "support/verification-profiles.json"
+        registry_destination.write_text(json.dumps(registry))
         self.extension_name = (f"pg_ivm-{emitter.PGIVM_VERSION}-postgresql-"
                                f"{emitter.PG_VERSION}-{emitter.PLATFORM}.tar.gz")
-        self.core_archive = self.core / self.core_name
-        self.core_archive.write_bytes(b"fixture core bytes")
-        self.core_digest = self.digest(self.core_archive)
-        self.core_patch = patch.object(emitter, "CORE_SHA256", self.core_digest)
-        self.core_patch.start()
         self.extension = self.output / self.extension_name
         self._archive_extension()
         self.environ = {"GITHUB_SHA": "a" * 40, "GITHUB_RUN_ID": "12345678901",
@@ -96,6 +101,7 @@ class pg_ivmMacOSFixture:
             "DO\nINSERT 0 1\nDO\nUPDATE 1\nDO\n")
 
     def emit(self, cases=None):
+        emitter.configure_target(self.target)
         return emitter.emit(
             self.root, self.core, self.output, self.output,
             cases or {"archive-suite": "success", "static-analysis": "success"},
@@ -103,7 +109,6 @@ class pg_ivmMacOSFixture:
         )
 
     def close(self):
-        self.core_patch.stop()
         self.temp.cleanup()
 
 

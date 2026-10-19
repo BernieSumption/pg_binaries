@@ -14,12 +14,12 @@ import macos_publication_evidence as evidence
 from check_macos_extension_license_inventory import check_archive
 
 
-PROFILE_ID = "pgivm-publication-macos-arm64-18.6"
-PG_VERSION = "18.6"
+PROFILE_ID = None
+PG_VERSION = None
 PGIVM_VERSION = "1.16"
-ARCHITECTURE = "arm64"
-PLATFORM = "macos-arm64"
-CORE_SHA256 = "ec3f624ecfbea6dad20672106ec11bfafadde42e0454bc90bef992caa4be0033"
+ARCHITECTURE = None
+PLATFORM = None
+CORE_SHA256 = None
 SOURCE_URL = "https://github.com/sraoss/pg_ivm/archive/refs/tags/v1.16.tar.gz"
 SOURCE_SHA256 = "87807d6af1974fce591715d55f75d939dffea33ea6908b413e62d3dd79b9c583"
 CASES = {"archive-suite", "static-analysis"}
@@ -109,6 +109,8 @@ def _validate_probe_output(probe):
 
 def emit(root, core_dir, archives, output, step_results, os_version, image_id, environ=None):
     root, core_dir, archives, output = map(Path, (root, core_dir, archives, output))
+    if any(value is None for value in (PROFILE_ID, PG_VERSION, ARCHITECTURE, PLATFORM, CORE_SHA256)):
+        _fail("a resolver-produced target must be configured before emission")
     environ = os.environ if environ is None else environ
     if not isinstance(step_results, dict) or set(step_results) != CASES:
         _fail("step_results must identify archive-suite and static-analysis")
@@ -228,7 +230,7 @@ def emit(root, core_dir, archives, output, step_results, os_version, image_id, e
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[1])
-    parser.add_argument("--target", type=Path)
+    parser.add_argument("--target", type=Path, required=True)
     parser.add_argument("--core-archives", type=Path, required=True)
     parser.add_argument("--archives", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
@@ -238,8 +240,7 @@ def main():
     parser.add_argument("--static-analysis-result", required=True)
     args = parser.parse_args()
     try:
-        if args.target is not None:
-            configure_target(args.target)
+        configure_target(args.target)
         for path in emit(args.root, args.core_archives, args.archives, args.output,
                          {"archive-suite": args.archive_suite_result,
                           "static-analysis": args.static_analysis_result},

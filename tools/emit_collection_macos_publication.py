@@ -11,19 +11,15 @@ import sys
 import tarfile
 
 import coverage
-import collection_macos_identity
-from collection_macos_target import load_target, Target, VERSIONS
+from collection_macos_target import load_target, VERSIONS
 CASES = {"archive-suite", "static-analysis"}
 ALLOWED_STEPS = {"success", "failure", "skipped", "cancelled", "timed_out"}
 
 
 def selected_target(target_config):
-    if target_config is not None:
-        return load_target(target_config, require_resolved=True)
-    pg, architecture, identity = collection_macos_identity.selected_identity()
-    return Target(pg, architecture, f"postgresql-{pg}-macos-{architecture}.tar.gz",
-                  identity["sha256"], identity.get("run_id"), identity["build_id"],
-                  identity["source_revision"])
+    if target_config is None:
+        _fail("a resolved selected collection target configuration is required")
+    return load_target(target_config, require_resolved=True)
 
 
 def _fail(message):
@@ -209,7 +205,7 @@ def emit(root, core_dir, archives, output, step_results, os_version, image_id,
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[1])
-    parser.add_argument("--target-config", type=Path)
+    parser.add_argument("--target-config", type=Path, required=True)
     parser.add_argument("--core-archives", type=Path, required=True)
     parser.add_argument("--archives", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)

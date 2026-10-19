@@ -22,10 +22,9 @@ def _retain(source, destination, copies):
     evidence.retain(source, destination, copies)
 
 
-def import_run(root, core_artifact, pgivm_artifact, run_id, target=None):
+def import_run(root, core_artifact, pgivm_artifact, run_id, target):
     root, core_artifact, pgivm_artifact = map(Path, (root, core_artifact, pgivm_artifact))
-    if target is not None:
-        publication.configure_target(target)
+    publication.configure_target(target)
     run_id = str(run_id)
     if not run_id.isdigit():
         raise coverage.CoverageError("run_id must be numeric")
@@ -184,7 +183,7 @@ def _copy(copies):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[1])
-    parser.add_argument("--target", type=Path)
+    parser.add_argument("--target", type=Path, required=True)
     parser.add_argument("--core-artifact", type=Path, required=True)
     parser.add_argument("--pgivm-artifact", type=Path, required=True)
     parser.add_argument("--run-id", required=True)

@@ -213,7 +213,7 @@ def import_run(root, core_artifact, collection_artifact, run_id, target_config=N
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--root", type=Path, default=Path(__file__).resolve().parents[1])
-    parser.add_argument("--target-config", type=Path)
+    parser.add_argument("--target-config", type=Path, required=True)
     parser.add_argument("--core-artifact", type=Path, required=True)
     parser.add_argument("--collection-artifact", type=Path, required=True)
     parser.add_argument("--run-id", required=True)

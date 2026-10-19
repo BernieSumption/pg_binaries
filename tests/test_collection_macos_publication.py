@@ -130,16 +130,11 @@ class CollectionMacosPublicationTests(unittest.TestCase):
         attempt = json.loads((self.publication / "attempt.json").read_text())
         self.assertEqual(attempt["source_revision"], self.revision)
 
-    def test_existing_workflows_keep_their_pinned_target_until_retired(self):
-        identity = {"sha256": self.core_hash, "run_id": "123456",
-                    "build_id": "github-123456-1", "source_revision": "b" * 40}
-        with patch.object(emitter.collection_macos_identity, "selected_identity",
-                          return_value=(self.pg_version, self.architecture, identity)):
-            emitter.emit(self.root, self.core_dir, self.output, self.output,
-                         {"archive-suite": "success", "static-analysis": "success"},
-                         "15.0", self.image_id, environ=self.environ)
-            retained = importer.import_run(self.root, self.core_dir, self.output, self.run_id)
-        self.assertEqual(len([path for path in retained if path.startswith("support/verification/")]), 2)
+    def test_emitter_and_importer_require_selected_target_configuration(self):
+        with self.assertRaisesRegex(coverage.CoverageError, "resolved selected collection target"):
+            emitter.selected_target(None)
+        with self.assertRaisesRegex(coverage.CoverageError, "resolved selected collection target"):
+            importer.import_run(self.root, self.core_dir, self.output, self.run_id)
 
     def test_emitter_and_importer_reject_target_archive_identity_mismatch(self):
         changed = json.loads(self.target_config.read_text())
