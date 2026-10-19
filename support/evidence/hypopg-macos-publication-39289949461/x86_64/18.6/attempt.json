@@ -1,0 +1,21 @@
+{
+  "architecture": "x86_64",
+  "archives": {
+    "hypopg-1.4.3-postgresql-18.6-macos-x86_64.tar.gz": "7ab1b40a89a512cb8054de869cfa35c65b9c2c9783c9be39f1b7de5afb57fe81",
+    "postgresql-18.6-macos-x86_64.tar.gz": "e3df58edda00221a874c6b23796be6487d7a24152b523f82c7db8deff9204eb9"
+  },
+  "archives_present": {
+    "hypopg-1.4.3-postgresql-18.6-macos-x86_64.tar.gz": true,
+    "postgresql-18.6-macos-x86_64.tar.gz": true
+  },
+  "hypopg_version": "1.4.3",
+  "postgresql_version": "18.6",
+  "profile_id": "hypopg-publication-macos-x86_64-18.6",
+  "run_id": "39289949461",
+  "schema_version": 1,
+  "source_revision": "4d5481a8d141b97e545ad8ade119542fc4acd09c",
+  "steps": {
+    "archive-suite": "success",
+    "static-analysis": "success"
+  }
+}
