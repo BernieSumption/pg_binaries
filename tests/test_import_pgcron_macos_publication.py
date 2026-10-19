@@ -1,9 +1,9 @@
-"""Tests for importing pg_cron macOS arm64 publication evidence."""
+"""Tests for importing pg_cron macOS publication evidence."""
 
+import json
 from pathlib import Path
 import sys
 import unittest
-from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -16,47 +16,74 @@ class ImportPgCronMacOSPublicationTests(unittest.TestCase):
         self.fixture = PgCronMacOSFixture()
         self.addCleanup(self.fixture.close)
 
+    def import_fixture(self, fixture):
+        return importer.import_run(
+            fixture.root, fixture.core, fixture.output, "12345678901",
+            target_config=fixture.target_config,
+        )
+
     def test_import_retains_receipt_record_and_reports(self):
         self.fixture.emit()
-        retained = importer.import_run(self.fixture.root, self.fixture.core,
-                                       self.fixture.output, "12345678901")
+        retained = self.import_fixture(self.fixture)
         self.assertTrue(any(path.endswith("current-receipt.json") for path in retained))
         self.assertTrue(any(path.startswith("support/verification/") for path in retained))
         evidence = (self.fixture.root / "support/evidence/pgcron-macos-publication-"
-                    f"12345678901/{importer.publication.ARCHITECTURE}")
+                    f"12345678901/{self.fixture.architecture}")
         self.assertTrue((evidence / "attempt.json").is_file())
         self.assertTrue((evidence / "static-analysis.json").is_file())
         self.assertTrue((evidence / "pg-cron-macho-inspection.json").is_file())
         self.assertTrue((evidence / "probe-output.txt").is_file())
 
-    def test_import_uses_resolved_target_identity(self):
-        self.fixture.emit(target_config=self.fixture.target_config)
-        with patch.object(importer.publication, "CORE_SHA256", "0" * 64):
-            retained = importer.import_run(
-                self.fixture.root, self.fixture.core, self.fixture.output, "12345678901",
-                target_config=self.fixture.target_config)
-        self.assertTrue(any(path.startswith("support/verification/") for path in retained))
+    def test_imports_both_macos_architectures(self):
+        for architecture in ("arm64", "x86_64"):
+            with self.subTest(architecture=architecture):
+                fixture = PgCronMacOSFixture(architecture)
+                try:
+                    fixture.emit()
+                    retained = self.import_fixture(fixture)
+                    self.assertTrue(any(path.startswith("support/verification/")
+                                        for path in retained))
+                    self.assertTrue((fixture.root / "support/evidence/pgcron-macos-publication-"
+                                     f"12345678901/{architecture}/attempt.json").is_file())
+                finally:
+                    fixture.close()
+
+    def test_requires_target_config(self):
+        with self.assertRaises(TypeError):
+            importer.import_run(self.fixture.root, self.fixture.core,
+                                self.fixture.output, "12345678901")
+
+    def test_import_rejects_unresolved_target(self):
+        value = json.loads(self.fixture.target_config.read_text())
+        value["core_archive"] = {"basename": self.fixture.core_name}
+        self.fixture.target_config.write_text(json.dumps(value))
+        with self.assertRaisesRegex(ValueError, "not been resolved"):
+            self.import_fixture(self.fixture)
 
     def test_import_rejects_changed_final_extension_bytes(self):
         self.fixture.emit()
         self.fixture.extension.write_bytes(self.fixture.extension.read_bytes() + b"tamper")
         with self.assertRaisesRegex(Exception, "checksum sidecar"):
-            importer.import_run(self.fixture.root, self.fixture.core,
-                                self.fixture.output, "12345678901")
+            self.import_fixture(self.fixture)
+
+    def test_import_rejects_core_bytes_outside_resolved_identity(self):
+        self.fixture.emit()
+        self.fixture.core_archive.write_bytes(b"tampered core")
+        self.fixture._sidecar(self.fixture.core_archive)
+        with self.assertRaisesRegex(Exception, "checksum differs from the resolved target"):
+            self.import_fixture(self.fixture)
 
     def test_import_rejects_oversized_raw_attempt(self):
         self.fixture.emit()
         attempt = self.fixture.output / "publication/attempt.json"
         attempt.write_bytes(b" " * (importer.MAX_EVIDENCE_BYTES + 1))
         with self.assertRaisesRegex(Exception, "regular file of at most"):
-            importer.import_run(self.fixture.root, self.fixture.core,
-                                self.fixture.output, "12345678901")
+            self.import_fixture(self.fixture)
 
     def test_import_retains_incomplete_raw_attempt(self):
         self.fixture.extension.unlink()
         self.fixture.emit({"archive-suite": "failure", "static-analysis": "skipped"})
-        retained = importer.import_run(self.fixture.root, self.fixture.core,
-                                       self.fixture.output, "12345678901")
+        retained = self.import_fixture(self.fixture)
         self.assertTrue(any(path.endswith("attempt.json") for path in retained))
         self.assertFalse((self.fixture.root / "support/verification").exists())
 
@@ -66,18 +93,16 @@ class ImportPgCronMacOSPublicationTests(unittest.TestCase):
         probe.write_text(probe.read_text().replace("scheduled_job_rows=1",
                                                    "scheduled_job_rows=0"))
         with self.assertRaisesRegex(Exception, "receipt digest differs"):
-            importer.import_run(self.fixture.root, self.fixture.core,
-                                self.fixture.output, "12345678901")
+            self.import_fixture(self.fixture)
 
     def test_import_does_not_replace_prior_evidence_with_different_bytes(self):
         self.fixture.emit()
         evidence = (self.fixture.root / "support/evidence/pgcron-macos-publication-"
-                    f"12345678901/{importer.publication.ARCHITECTURE}/attempt.json")
+                    f"12345678901/{self.fixture.architecture}/attempt.json")
         evidence.parent.mkdir(parents=True, exist_ok=True)
         evidence.write_text("different evidence\n")
         with self.assertRaisesRegex(Exception, "refusing to replace retained evidence"):
-            importer.import_run(self.fixture.root, self.fixture.core,
-                                self.fixture.output, "12345678901")
+            self.import_fixture(self.fixture)
 
 
 if __name__ == "__main__":

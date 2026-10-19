@@ -21,15 +21,20 @@ on:
     inputs:
       architecture:
         description: Native macOS architecture
-        required: false
+        required: true
         type: choice
         options: [arm64, x86_64]
         default: arm64
-  push:
-    branches: [spike]
-    paths:
-      - '.github/workflows/pgcron-macos-selected-publication.yml'
-      - 'experiments/pgcron-macos-target-trial/target.json'
+      postgresql_version:
+        description: Exact selected PostgreSQL release
+        required: true
+        type: string
+        default: '18.6'
+      extension_version:
+        description: Exact selected pg_cron release
+        required: true
+        type: string
+        default: '1.6.8'
 
 permissions:
   actions: read
@@ -55,21 +60,10 @@ jobs:
           EXTENSION_VERSION: ${{ inputs.extension_version }}
         run: |
           set -euo pipefail
-          if [[ -z "$ARCHITECTURE" || -z "$POSTGRESQL_VERSION" || -z "$EXTENSION_VERSION" ]]; then
-            read -r request_architecture request_pg_version request_extension_version < <(python3 - <<'PY'
-          import json
-          from pathlib import Path
-          request = json.loads(Path('experiments/pgcron-macos-target-trial/target.json').read_text())
-          if (set(request) != {'project', 'version', 'postgresql_version', 'platform', 'retry'}
-                  or request['project'] != 'pg_cron' or request['platform'] not in {'macos-arm64', 'macos-x86_64'}):
-              raise SystemExit('trial request must identify one exact pg_cron macOS target')
-          print(request['platform'].rsplit('-', 1)[1], request['postgresql_version'], request['version'])
-          PY
-            )
-            ARCHITECTURE=${ARCHITECTURE:-$request_architecture}
-            POSTGRESQL_VERSION=${POSTGRESQL_VERSION:-$request_pg_version}
-            EXTENSION_VERSION=${EXTENSION_VERSION:-$request_extension_version}
-          fi
+          [[ "$ARCHITECTURE" == arm64 || "$ARCHITECTURE" == x86_64 ]] || {
+            echo "Unsupported macOS architecture: $ARCHITECTURE" >&2
+            exit 1
+          }
           [[ "$POSTGRESQL_VERSION" == 18.6 && "$EXTENSION_VERSION" == 1.6.8 ]] || {
             echo 'This selected pg_cron macOS workflow supports PostgreSQL 18.6 and pg_cron 1.6.8.' >&2
             exit 1

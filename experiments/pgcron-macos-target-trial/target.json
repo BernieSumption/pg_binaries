@@ -1,7 +1,0 @@
-{
-  "project": "pg_cron",
-  "version": "1.6.8",
-  "postgresql_version": "18.6",
-  "platform": "macos-arm64",
-  "retry": false
-}

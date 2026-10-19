@@ -8,14 +8,16 @@ import sys
 import tarfile
 import tempfile
 import unittest
-from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
+from scripts.pg_cron.macos_target import SOURCE_SHA256, SOURCE_URL
 import emit_pgcron_macos_publication as emitter
+
+_DEFAULT_TARGET = object()
 
 
 class PgCronMacOSFixture:
-    def __init__(self):
+    def __init__(self, architecture="arm64"):
         self.temp = tempfile.TemporaryDirectory()
         self.base = Path(self.temp.name)
         self.root = self.base / "repo"
@@ -23,9 +25,17 @@ class PgCronMacOSFixture:
         self.output = self.base / "output"
         for directory in (self.root, self.core, self.output):
             directory.mkdir()
+        self.pg_version = "18.6"
+        self.version = "1.6.8"
+        self.architecture = architecture
+        self.platform = f"macos-{architecture}"
+        self.profile_id = f"pgcron-publication-macos-{architecture}-18.6"
+        self.core_name = f"postgresql-{self.pg_version}-{self.platform}.tar.gz"
+        self.extension_name = (f"pg_cron-{self.version}-postgresql-"
+                               f"{self.pg_version}-{self.platform}.tar.gz")
         registry_path = Path("support/verification-profiles.json")
         registry = json.loads(registry_path.read_text())
-        profile = registry["profiles"][emitter.PROFILE_ID]
+        profile = registry["profiles"][self.profile_id]
         for relative in profile["sources"]:
             source = Path(relative)
             destination = self.root / source
@@ -35,31 +45,11 @@ class PgCronMacOSFixture:
         shutil.copyfile("support/postgresql-releases.json",
                         self.root / "support/postgresql-releases.json")
         shutil.copyfile(registry_path, self.root / "support/verification-profiles.json")
-        self.core_name = f"postgresql-{emitter.PG_VERSION}-{emitter.PLATFORM}.tar.gz"
-        self.extension_name = (f"pg_cron-{emitter.VERSION}-postgresql-"
-                               f"{emitter.PG_VERSION}-{emitter.PLATFORM}.tar.gz")
         self.core_archive = self.core / self.core_name
         self.core_archive.write_bytes(b"fixture core bytes")
         self.core_digest = self.digest(self.core_archive)
         self.target_config = self.base / "target.json"
-        self.target_config.write_text(json.dumps({
-            "schema_version": 1,
-            "profile_id": emitter.PROFILE_ID,
-            "postgresql_version": emitter.PG_VERSION,
-            "pg_cron_version": emitter.VERSION,
-            "architecture": emitter.ARCHITECTURE,
-            "platform": emitter.PLATFORM,
-            "source": {"url": emitter.SOURCE_URL, "sha256": emitter.SOURCE_SHA256},
-            "core_archive": {
-                "basename": self.core_name,
-                "run_id": "12345678901",
-                "sha256": self.core_digest,
-                "build_id": "github-12345678901-1",
-                "source_revision": "a" * 40,
-            },
-        }), encoding="utf-8")
-        self.core_patch = patch.object(emitter, "CORE_SHA256", self.core_digest)
-        self.core_patch.start()
+        self._write_resolved_target(self.core_digest)
         self.extension = self.output / self.extension_name
         self._archive_extension()
         self.environ = {"GITHUB_SHA": "a" * 40, "GITHUB_RUN_ID": "12345678901",
@@ -70,29 +60,48 @@ class PgCronMacOSFixture:
     def digest(path):
         return hashlib.sha256(path.read_bytes()).hexdigest()
 
+    def _write_resolved_target(self, digest):
+        target = {
+            "schema_version": 1,
+            "profile_id": self.profile_id,
+            "postgresql_version": self.pg_version,
+            "pg_cron_version": self.version,
+            "architecture": self.architecture,
+            "platform": self.platform,
+            "source": {"url": SOURCE_URL, "sha256": SOURCE_SHA256},
+            "core_archive": {
+                "basename": self.core_name,
+                "run_id": "12345678901",
+                "sha256": digest,
+                "build_id": "github-12345678901-1",
+                "source_revision": "b" * 40,
+            },
+        }
+        self.target_config.write_text(json.dumps(target), encoding="utf-8")
+
     def _sidecar(self, path):
         path.with_name(path.name + ".sha256").write_text(
             f"{self.digest(path)}  {path.name}\n")
 
     def _archive_extension(self):
         metadata = {
-            "project": "pg_cron", "version": emitter.VERSION, "sql_names": ["pg_cron"],
+            "project": "pg_cron", "version": self.version, "sql_names": ["pg_cron"],
             "requires": [],
             "configuration_prerequisites": [
                 {"type": "postgresql_setting", "name": "shared_preload_libraries", "value": "pg_cron"},
                 {"type": "postgresql_setting", "name": "cron.use_background_workers", "value": "on"},
             ],
-            "runtime_prerequisites": [], "postgresql_version": emitter.PG_VERSION,
-            "platform": "macos", "architecture": emitter.ARCHITECTURE,
-            "source": {"url": emitter.SOURCE_URL, "sha256": emitter.SOURCE_SHA256},
+            "runtime_prerequisites": [], "postgresql_version": self.pg_version,
+            "platform": "macos", "architecture": self.architecture,
+            "source": {"url": SOURCE_URL, "sha256": SOURCE_SHA256},
             "core_archive": {"basename": self.core_name, "sha256": self.core_digest},
         }
         inventory = {"schema_version": 1, "components": [{
-            "component": "pg_cron", "version": emitter.VERSION,
+            "component": "pg_cron", "version": self.version,
             "payload_paths": ["lib/pg_cron.dylib", "share/extension"],
             "license_file": "pg_cron.txt",
             "license_source": "https://github.com/citusdata/pg_cron/blob/v1.6.8/LICENSE",
-            "source_url": emitter.SOURCE_URL, "source_sha256": emitter.SOURCE_SHA256,
+            "source_url": SOURCE_URL, "source_sha256": SOURCE_SHA256,
             "redistribution_review": {
                 "status": "resolved", "basis": "Fixture licence review.",
                 "source_obligation": "none",
@@ -118,13 +127,13 @@ class PgCronMacOSFixture:
         digests = {self.core_name: self.core_digest,
                    self.extension_name: self.digest(self.extension)}
         (self.output / "static-analysis.json").write_text(json.dumps({
-            "passed": True, "architecture": emitter.ARCHITECTURE, "findings": [],
+            "passed": True, "architecture": self.architecture, "findings": [],
             "inspected_files": ["bin/postgres"],
             "archives": [{"basename": name, "sha256": digest}
                          for name, digest in digests.items()],
         }))
         (self.output / "pg-cron-macho-inspection.json").write_text(json.dumps({
-            "passed": True, "architecture": emitter.ARCHITECTURE, "file": "lib/pg_cron.dylib",
+            "passed": True, "architecture": self.architecture, "file": "lib/pg_cron.dylib",
             "minimum_os": "11.0", "findings": [],
             "dependencies": {"@rpath/libpq.5.dylib": "lib/libpq.5.dylib"},
             "module_rpaths": ["@loader_path"], "archives": digests,
@@ -134,16 +143,16 @@ class PgCronMacOSFixture:
             "CREATE EXTENSION\nscheduled_job_status=succeeded\nscheduled_job_rows=1\n"
             " unschedule \n------------\n t\n(1 row)\n")
 
-    def emit(self, cases=None, target_config=None):
+    def emit(self, cases=None, target_config=_DEFAULT_TARGET):
+        if target_config is _DEFAULT_TARGET:
+            target_config = self.target_config
         return emitter.emit(
             self.root, self.core, self.output, self.output,
             cases or {"archive-suite": "success", "static-analysis": "success"},
-            "15.7.9", "macos15/20261018.1", self.environ,
-            target_config=target_config,
+            "15.7.9", "macos15/20261018.1", target_config, environ=self.environ,
         )
 
     def close(self):
-        self.core_patch.stop()
         self.temp.cleanup()
 
 
@@ -163,18 +172,34 @@ class PgCronMacOSPublicationTests(unittest.TestCase):
                          {"archive-suite": "passed", "static-analysis": "passed"})
         self.assertEqual(record["assembled_core"]["sha256"], self.fixture.core_digest)
 
-    def test_resolved_target_supplies_checked_core_identity(self):
-        with patch.object(emitter, "CORE_SHA256", "0" * 64):
-            paths = self.fixture.emit(target_config=self.fixture.target_config)
-        record = json.loads(paths[-1].read_text())
-        self.assertEqual(record["assembled_core"]["sha256"], self.fixture.core_digest)
+    def test_emits_for_both_macos_architectures(self):
+        for architecture in ("arm64", "x86_64"):
+            with self.subTest(architecture=architecture):
+                fixture = PgCronMacOSFixture(architecture)
+                try:
+                    paths = fixture.emit()
+                    record = json.loads(paths[-1].read_text())
+                    self.assertEqual(record["platform"], f"macos-{architecture}")
+                    self.assertEqual(record["assembled_core"]["sha256"], fixture.core_digest)
+                finally:
+                    fixture.close()
+
+    def test_requires_target_config(self):
+        with self.assertRaisesRegex(Exception, "resolved pg_cron target config is required"):
+            self.fixture.emit(target_config=None)
+
+    def test_uses_resolved_target_core_digest(self):
+        changed = "c" * 64
+        self.fixture._write_resolved_target(changed)
+        with self.assertRaisesRegex(Exception, "checksum differs from the resolved target"):
+            self.fixture.emit()
 
     def test_rejects_unresolved_target(self):
         value = json.loads(self.fixture.target_config.read_text())
         value["core_archive"] = {"basename": self.fixture.core_name}
         self.fixture.target_config.write_text(json.dumps(value))
         with self.assertRaisesRegex(ValueError, "not been resolved"):
-            self.fixture.emit(target_config=self.fixture.target_config)
+            self.fixture.emit()
 
     def test_incomplete_archives_retain_attempt_only(self):
         self.fixture.extension.unlink()
@@ -211,7 +236,7 @@ class PgCronMacOSPublicationTests(unittest.TestCase):
             (package / "lib/pg_cron.dylib").write_bytes(b"native fixture")
             (package / "LICENSES/pg_cron.txt").write_text("license\n")
             inventory = {"schema_version": 1, "components": [{
-                "component": "pg_cron", "version": emitter.VERSION,
+                "component": "pg_cron", "version": self.fixture.version,
                 "payload_paths": ["share/extension"], "license_file": "pg_cron.txt",
                 "redistribution_review": {"status": "resolved", "basis": "Fixture.",
                                            "source_obligation": "none"},

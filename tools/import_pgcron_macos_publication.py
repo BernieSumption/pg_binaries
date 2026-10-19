@@ -26,12 +26,12 @@ def _copy(copies):
     evidence.copy_retained(copies, MAX_EVIDENCE_BYTES)
 
 
-def import_run(root, core_artifact, extension_artifact, run_id, target_config=None):
+def import_run(root, core_artifact, extension_artifact, run_id, target_config):
     root, core_artifact, extension_artifact = map(Path, (root, core_artifact, extension_artifact))
     target = publication.target_info(target_config)
     PG_VERSION, VERSION = target["pg_version"], target["version"]
     ARCHITECTURE, PLATFORM = target["architecture"], target["platform"]
-    PROFILE_ID, CORE_SHA256 = target["profile_id"], target["core_sha256"]
+    PROFILE_ID, expected_core_digest = target["profile_id"], target["core_sha256"]
     run_id = str(run_id)
     if not run_id.isdigit():
         raise coverage.CoverageError("run_id must be numeric")
@@ -84,8 +84,8 @@ def import_run(root, core_artifact, extension_artifact, run_id, target_config=No
                extension_name: publication.sha256_file(extension_archive)}
     for archive in (core_archive, extension_archive):
         publication._sidecar(archive, digests[archive.name])
-    if digests[core_name] != CORE_SHA256:
-        raise coverage.CoverageError("core archive does not match pinned PostgreSQL 18.6 artifact")
+    if digests[core_name] != expected_core_digest:
+        raise coverage.CoverageError("core archive checksum differs from the resolved target")
     publication._metadata(extension_archive, target)
     try:
         components, native_files = publication.check_archive(extension_archive)
@@ -185,7 +185,7 @@ def main():
     parser.add_argument("--core-artifact", type=Path, required=True)
     parser.add_argument("--extension-artifact", type=Path, required=True)
     parser.add_argument("--run-id", required=True)
-    parser.add_argument("--target-config", type=Path)
+    parser.add_argument("--target-config", type=Path, required=True)
     args = parser.parse_args()
     try:
         print("\n".join(import_run(args.root, args.core_artifact,

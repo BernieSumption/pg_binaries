@@ -17,40 +17,24 @@ from check_macos_extension_license_inventory import check_archive
 from scripts.pg_cron.macos_target import load_target
 
 
-PG_VERSION = "18.6"
-VERSION = "1.6.8"
-ARCHITECTURE = os.environ.get("PGCRON_MACOS_ARCHITECTURE", "arm64")
-if ARCHITECTURE not in {"arm64", "x86_64"}:
-    raise ValueError("PGCRON_MACOS_ARCHITECTURE must be arm64 or x86_64")
-PROFILE_ID = f"pgcron-publication-macos-{ARCHITECTURE}-18.6"
-PLATFORM = f"macos-{ARCHITECTURE}"
-CORE_SHA256 = {
-    "arm64": "bc543b0d54a8a33b3b737eab74d7f185035f01e5c2db4eb48be049996eee4440",
-    "x86_64": "5ec45e48bad1439860f0143fd6f2cbc04a86cfa456beef8c5ca9040960ea3f40",
-}[ARCHITECTURE]
-SOURCE_URL = "https://github.com/citusdata/pg_cron/archive/refs/tags/v1.6.8.tar.gz"
-SOURCE_SHA256 = "c19ab9bb35406c60fb51ecda993737c083850abe424acb6c1030439d00a1f8e4"
 CASES = {"archive-suite", "static-analysis"}
 REPORTS = {"static_analysis": "static-analysis.json",
            "macho_inspection": "pg-cron-macho-inspection.json",
            "probe_output": "probe-output.txt"}
 
 
-def target_info(target_config=None):
+def _fail(message):
+    raise coverage.CoverageError(message)
+
+
+def target_info(target_config):
     if target_config is None:
-        return {"pg_version": PG_VERSION, "version": VERSION,
-                "architecture": ARCHITECTURE, "platform": PLATFORM,
-                "profile_id": PROFILE_ID, "core_sha256": CORE_SHA256,
-                "source_url": SOURCE_URL, "source_sha256": SOURCE_SHA256}
+        _fail("a resolved pg_cron target config is required")
     value = load_target(target_config, require_resolved=True)
     return {"pg_version": value["postgresql_version"], "version": value["pg_cron_version"],
             "architecture": value["architecture"], "platform": value["platform"],
             "profile_id": value["profile_id"], "core_sha256": value["core_sha256"],
             "source_url": value["source_url"], "source_sha256": value["source_sha256"]}
-
-
-def _fail(message):
-    raise coverage.CoverageError(message)
 
 
 def sha256_file(path):
@@ -92,7 +76,7 @@ def _metadata(path, target):
         "core_archive": {"basename": core_name, "sha256": target["core_sha256"]},
     }
     if not isinstance(value, dict) or value != expected:
-        _fail("pg_cron metadata does not match the pinned publication target")
+        _fail("pg_cron metadata does not match the resolved publication target")
     if not re.search(r"(?m)^default_version\s*=\s*'1\.6'\s*$", control_text):
         _fail("pg_cron.control does not declare the expected SQL extension version")
 
@@ -155,12 +139,12 @@ def _check_static(path, macho_path, digests, architecture):
 
 
 def emit(root, core_dir, archives, output, step_results, os_version, image_id,
-         environ=None, target_config=None):
+         target_config, environ=None):
     root, core_dir, archives, output = map(Path, (root, core_dir, archives, output))
     target = target_info(target_config)
     PG_VERSION, VERSION = target["pg_version"], target["version"]
     ARCHITECTURE, PLATFORM = target["architecture"], target["platform"]
-    PROFILE_ID, CORE_SHA256 = target["profile_id"], target["core_sha256"]
+    PROFILE_ID, expected_core_digest = target["profile_id"], target["core_sha256"]
     environ = os.environ if environ is None else environ
     if not isinstance(step_results, dict) or set(step_results) != CASES:
         _fail("step_results must identify archive-suite and static-analysis")
@@ -200,8 +184,8 @@ def emit(root, core_dir, archives, output, step_results, os_version, image_id,
     digests = {core_name: sha256_file(core_archive), extension_name: sha256_file(extension_archive)}
     _sidecar(core_archive, digests[core_name])
     _sidecar(extension_archive, digests[extension_name])
-    if digests[core_name] != CORE_SHA256:
-        _fail("PostgreSQL core archive does not match the pinned pilot run")
+    if digests[core_name] != expected_core_digest:
+        _fail("PostgreSQL core archive checksum differs from the resolved target")
     _metadata(extension_archive, target)
     try:
         components, native_files = check_archive(extension_archive)
@@ -271,7 +255,7 @@ def main():
     parser.add_argument("--image-id", required=True)
     parser.add_argument("--archive-suite-result", required=True)
     parser.add_argument("--static-analysis-result", required=True)
-    parser.add_argument("--target-config", type=Path)
+    parser.add_argument("--target-config", type=Path, required=True)
     args = parser.parse_args()
     try:
         for path in emit(args.root, args.core_archives, args.archives, args.output,
