@@ -1,5 +1,6 @@
 import unittest
 from pathlib import Path
+import stat
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -35,6 +36,14 @@ class SelectedExtensionWorkflowTests(unittest.TestCase):
         self.assertLess(HYPOPG.index('selected-extension-publication.yml "hypopg-linux-core-'),
                         HYPOPG.index('hypopg-linux-selected-publication.yml "hypopg-linux-core-'))
         self.assertNotIn("planner-dispatch-trial.yml", HYPOPG)
+
+    def test_selected_linux_workflows_can_invoke_non_executable_recipes(self):
+        for project in ("pgaudit", "postgis"):
+            workflow = (ROOT / f".github/workflows/{project}-linux-selected-publication.yml").read_text()
+            for phase in ("build", "verify"):
+                script = ROOT / f"scripts/{project}/{phase}.sh"
+                self.assertFalse(script.stat().st_mode & stat.S_IXUSR)
+                self.assertIn(f"bash scripts/{project}/{phase}.sh", workflow)
 
 
 if __name__ == "__main__":

@@ -100,11 +100,14 @@ jobs:
           if [[ "$CALLER_WORKFLOW_REF" == */.github/workflows/selected-extension-publication.yml@* ]]; then
             sources+=(
               selected-extension-publication.yml "pgaudit-linux-core-$PG_VERSION-$PG_ARCHITECTURE-{run_id}"
+              selected-extension-publication.yml "pgtap-linux-core-$PG_VERSION-$PG_ARCHITECTURE-{run_id}"
             )
           fi
           sources+=(
             linux-changed-profiles.yml "pgaudit-linux-core-$PG_VERSION-$PG_ARCHITECTURE-{run_id}"
+            linux-changed-profiles.yml "pgtap-linux-core-$PG_VERSION-$PG_ARCHITECTURE-{run_id}"
             pgaudit-linux-selected-publication.yml "pgaudit-linux-core-$PG_VERSION-$PG_ARCHITECTURE-{run_id}"
+            pgtap-linux-selected-publication.yml "pgtap-linux-core-$PG_VERSION-$PG_ARCHITECTURE-{run_id}"
             linux-publication.yml "linux-publication-$PG_ARCHITECTURE-evidence"
           )
           scripts/linux/resolve-core.sh "$PG_VERSION" "$PG_ARCHITECTURE" "$RUNNER_TEMP/core/pilot" "${sources[@]}"
@@ -112,7 +115,7 @@ jobs:
         id: extension_build
         if: always() && steps.core_resolution.outcome == 'success'
         continue-on-error: true
-        run: PG_VERSION="$PG_VERSION" PG_ARCHITECTURE="$PG_ARCHITECTURE" scripts/pgaudit/build.sh "$RUNNER_TEMP/core/pilot" "$RUNNER_TEMP/pgaudit"
+        run: PG_VERSION="$PG_VERSION" PG_ARCHITECTURE="$PG_ARCHITECTURE" bash scripts/pgaudit/build.sh "$RUNNER_TEMP/core/pilot" "$RUNNER_TEMP/pgaudit"
       - name: Upload selected extension archive and build reports
         if: always()
         uses: actions/upload-artifact@v4
@@ -182,7 +185,7 @@ jobs:
         run: |
           set -o pipefail
           PG_VERSION="$PG_VERSION" PG_ARCHITECTURE="$PG_ARCHITECTURE" \
-            scripts/pgaudit/verify.sh "$RUNNER_TEMP/core/pilot" "$RUNNER_TEMP/pgaudit" \
+            bash scripts/pgaudit/verify.sh "$RUNNER_TEMP/core/pilot" "$RUNNER_TEMP/pgaudit" \
             2>&1 | tee "$RUNNER_TEMP/pgaudit/probe-output.txt"
       - name: Record build and verification outcomes
         if: always()
