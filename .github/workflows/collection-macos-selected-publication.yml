@@ -198,6 +198,7 @@ jobs:
             --archive-suite-result "${ARCHIVE_SUITE_OUTCOME:-failure}" \
             --static-analysis-result "${STATIC_ANALYSIS_OUTCOME:-failure}"
       - name: Import retained collection evidence when an attempt was emitted
+        id: import
         if: always()
         continue-on-error: true
         run: |

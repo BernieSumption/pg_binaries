@@ -133,19 +133,19 @@ jobs:
       - name: Prepare fresh-runner verification inputs
         if: always()
         run: |
-          mkdir -p "$RUNNER_TEMP/pgivm/core" "$RUNNER_TEMP/pgivm/archive" "$RUNNER_TEMP/pgivm/verification"
+          mkdir -p "$RUNNER_TEMP/pgivm/core" "$RUNNER_TEMP/pgivm/verification"
           if [[ -d "$RUNNER_TEMP/pgivm-bundle/core" ]]; then cp -a "$RUNNER_TEMP/pgivm-bundle/core/." "$RUNNER_TEMP/pgivm/core/"; fi
-          if [[ -d "$RUNNER_TEMP/pgivm-bundle/build" ]]; then cp -a "$RUNNER_TEMP/pgivm-bundle/build/." "$RUNNER_TEMP/pgivm/archive/"; fi
+          if [[ -d "$RUNNER_TEMP/pgivm-bundle/build" ]]; then cp -a "$RUNNER_TEMP/pgivm-bundle/build/." "$RUNNER_TEMP/pgivm/verification/"; fi
       - name: Inspect the final archives on the fresh runner
         id: static_analysis
         if: always() && steps.download.outcome == 'success'
         continue-on-error: true
-        run: bash scripts/pg_ivm/macos-verify-publication.sh "$RUNNER_TEMP/pgivm/core/target.json" "$RUNNER_TEMP/pgivm/core" "$RUNNER_TEMP/pgivm/archive" "$RUNNER_TEMP/pgivm/verification" static-analysis
+        run: bash scripts/pg_ivm/macos-verify-publication.sh "$RUNNER_TEMP/pgivm/core/target.json" "$RUNNER_TEMP/pgivm/core" "$RUNNER_TEMP/pgivm/verification" "$RUNNER_TEMP/pgivm/verification" static-analysis
       - name: Assemble and exercise the final archives on the fresh runner
         id: archive_suite
         if: always() && steps.download.outcome == 'success'
         continue-on-error: true
-        run: bash scripts/pg_ivm/macos-verify-publication.sh "$RUNNER_TEMP/pgivm/core/target.json" "$RUNNER_TEMP/pgivm/core" "$RUNNER_TEMP/pgivm/archive" "$RUNNER_TEMP/pgivm/verification" archive-suite
+        run: bash scripts/pg_ivm/macos-verify-publication.sh "$RUNNER_TEMP/pgivm/core/target.json" "$RUNNER_TEMP/pgivm/core" "$RUNNER_TEMP/pgivm/verification" "$RUNNER_TEMP/pgivm/verification" archive-suite
       - name: Emit archive-bound publication evidence
         id: evidence
         if: always()
@@ -157,7 +157,7 @@ jobs:
         run: |
           python3 tools/emit_pgivm_macos_publication.py \
             --target "$RUNNER_TEMP/pgivm/core/target.json" \
-            --core-archives "$RUNNER_TEMP/pgivm/core" --archives "$RUNNER_TEMP/pgivm/archive" \
+            --core-archives "$RUNNER_TEMP/pgivm/core" --archives "$RUNNER_TEMP/pgivm/verification" \
             --output "$RUNNER_TEMP/pgivm/verification" \
             --os-version "$(sw_vers -productVersion)" --image-id "${ImageOS:-unknown}/${ImageVersion:-unknown}" \
             --archive-suite-result "${ARCHIVE_SUITE_OUTCOME:-failure}" \

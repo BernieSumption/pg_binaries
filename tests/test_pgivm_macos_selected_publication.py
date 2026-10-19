@@ -94,6 +94,8 @@ class PgIvmSelectedMacosPublicationTests(unittest.TestCase):
         self.assertIn("macos-15-intel", workflow)
         self.assertIn("macos-15", workflow)
         self.assertIn("scripts/macos/resolve-core.sh", workflow)
+        self.assertIn('--archives "$RUNNER_TEMP/pgivm/verification"', workflow)
+        self.assertIn('--pgivm-artifact "$RUNNER_TEMP/pgivm/verification"', workflow)
 
 
 if __name__ == "__main__":

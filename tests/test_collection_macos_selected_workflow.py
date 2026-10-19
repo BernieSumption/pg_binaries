@@ -34,6 +34,7 @@ class CollectionMacosSelectedWorkflowTests(unittest.TestCase):
         self.assertIn("support/verification/collection-*", workflow)
         self.assertIn("steps.evidence.outcome", workflow)
         self.assertIn("steps.import.outcome", workflow)
+        self.assertIn("id: import", workflow)
         self.assertNotIn("push:", workflow)
 
 
