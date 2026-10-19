@@ -1,0 +1,184 @@
+name: pg_jsonschema selected Linux target trial
+
+on:
+  workflow_call:
+    inputs:
+      postgresql_version:
+        description: Exact selected PostgreSQL release
+        required: true
+        type: string
+      architecture:
+        description: Exact selected Linux architecture
+        required: true
+        type: string
+      extension_version:
+        description: Exact selected pg_jsonschema release
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      postgresql_version:
+        description: Selected PostgreSQL release (defaults to the trial target)
+        required: false
+        type: string
+        default: ''
+      architecture:
+        description: Selected Linux architecture (defaults to the trial target)
+        required: false
+        type: string
+        default: ''
+      extension_version:
+        description: Optional selected pg_jsonschema release
+        required: false
+        type: string
+        default: ''
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  select:
+    runs-on: ubuntu-latest
+    outputs:
+      postgresql_version: ${{ steps.plan.outputs.postgresql_version }}
+      extension_version: ${{ steps.plan.outputs.selected_version }}
+      architecture: ${{ steps.plan.outputs.architecture }}
+      core_run_id: ${{ steps.plan.outputs.core_run_id }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Plan the exact selected target
+        id: plan
+        env:
+          POSTGRESQL_VERSION: ${{ inputs.postgresql_version }}
+          EXTENSION_VERSION: ${{ inputs.extension_version }}
+          REQUESTED_ARCHITECTURE: ${{ inputs.architecture }}
+        run: |
+          set -euo pipefail
+          target=experiments/pg-jsonschema-linux-selected-trial/target.json
+          if [[ -z "$POSTGRESQL_VERSION" ]]; then
+            POSTGRESQL_VERSION=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["postgresql_version"])' "$target")
+          fi
+          if [[ -z "$REQUESTED_ARCHITECTURE" ]]; then
+            REQUESTED_ARCHITECTURE=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["architecture"])' "$target")
+          fi
+          case "$REQUESTED_ARCHITECTURE" in x86_64|arm64) ;; *) echo "Unsupported Linux architecture: $REQUESTED_ARCHITECTURE" >&2; exit 2 ;; esac
+          args=(--project pg_jsonschema --platform "linux-$REQUESTED_ARCHITECTURE" --postgresql-version "$POSTGRESQL_VERSION")
+          if [[ -n "$EXTENSION_VERSION" ]]; then args+=(--extension-version "$EXTENSION_VERSION"); fi
+          python3 tools/extension_archive_plan.py "${args[@]}" --github-output "$GITHUB_OUTPUT" > "$RUNNER_TEMP/selection.json"
+          selected_version=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["selected_version"])' "$RUNNER_TEMP/selection.json")
+          if [[ "$selected_version" != '0.3.4' ]]; then
+            echo "The selected pg_jsonschema release is $selected_version; the current Linux recipe supports only 0.3.4." >&2
+            exit 1
+          fi
+          core_run_id=$(python3 -c 'import sys; sys.path.insert(0,"tools"); import emit_pg_jsonschema_linux_publication as p; print(p.CORE_RUNS[sys.argv[1]])' "$POSTGRESQL_VERSION")
+          echo "architecture=$REQUESTED_ARCHITECTURE" >> "$GITHUB_OUTPUT"
+          echo "core_run_id=$core_run_id" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: select
+    runs-on: ${{ needs.select.outputs.architecture == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-24.04' }}
+    timeout-minutes: 90
+    outputs:
+      extension_build: ${{ steps.build.outcome }}
+    env:
+      PG_VERSION: ${{ needs.select.outputs.postgresql_version }}
+      PG_ARCHITECTURE: ${{ needs.select.outputs.architecture }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate publication tooling
+        run: python -B -m unittest tests/test_pg_jsonschema_linux_publication.py tests/test_pg_jsonschema_linux_selected_workflow.py
+      - name: Download pinned PostgreSQL core prerequisite
+        uses: actions/download-artifact@v4
+        with:
+          name: linux-publication-${{ needs.select.outputs.architecture }}-evidence
+          run-id: ${{ needs.select.outputs.core_run_id }}
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/core
+      - name: Build selected pg_jsonschema final archive
+        id: build
+        continue-on-error: true
+        run: PG_VERSION="$PG_VERSION" PG_ARCHITECTURE="$PG_ARCHITECTURE" scripts/pg_jsonschema/linux-build.sh "$RUNNER_TEMP/core/pilot" "$RUNNER_TEMP/pg_jsonschema"
+      - name: Upload final extension archive and build reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pg-jsonschema-linux-built-${{ needs.select.outputs.postgresql_version }}-${{ needs.select.outputs.architecture }}-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/pg_jsonschema/*.tar.gz
+            ${{ runner.temp }}/pg_jsonschema/*.sha256
+            ${{ runner.temp }}/pg_jsonschema/*.txt
+            ${{ runner.temp }}/pg_jsonschema/*.json
+          if-no-files-found: warn
+          retention-days: 7
+  verify:
+    needs: [select, build]
+    if: always() && needs.select.result == 'success' && needs.build.result == 'success'
+    runs-on: ${{ needs.select.outputs.architecture == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-24.04' }}
+    timeout-minutes: 60
+    env:
+      PG_VERSION: ${{ needs.select.outputs.postgresql_version }}
+      PG_ARCHITECTURE: ${{ needs.select.outputs.architecture }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate publication evidence tooling
+        run: python -B -m unittest tests/test_pg_jsonschema_linux_publication.py tests/test_pg_jsonschema_linux_selected_workflow.py
+      - name: Download final extension archive from the build job
+        uses: actions/download-artifact@v4
+        with:
+          name: pg-jsonschema-linux-built-${{ needs.select.outputs.postgresql_version }}-${{ needs.select.outputs.architecture }}-${{ github.run_id }}
+          path: ${{ runner.temp }}/pg_jsonschema
+      - name: Download independent pinned PostgreSQL core archive
+        uses: actions/download-artifact@v4
+        with:
+          name: linux-publication-${{ needs.select.outputs.architecture }}-evidence
+          run-id: ${{ needs.select.outputs.core_run_id }}
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/core
+      - name: Verify final archives on this fresh runner
+        id: verify
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          PG_VERSION="$PG_VERSION" PG_ARCHITECTURE="$PG_ARCHITECTURE" scripts/pg_jsonschema/linux-verify.sh "$RUNNER_TEMP/pg_jsonschema" "$RUNNER_TEMP/core/pilot" 2>&1 | tee "$RUNNER_TEMP/pg_jsonschema/probe-output.txt"
+      - name: Emit target-bound attempt and verification record
+        if: always()
+        env:
+          BUILD_RESULT: ${{ needs.build.outputs.extension_build }}
+          VERIFY_RESULT: ${{ steps.verify.outcome }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/pg_jsonschema/publication"
+          python tools/emit_pg_jsonschema_linux_publication.py \
+            --archives "$RUNNER_TEMP/pg_jsonschema" --core-archives "$RUNNER_TEMP/core/pilot" \
+            --output "$RUNNER_TEMP/pg_jsonschema/publication" --architecture "$PG_ARCHITECTURE" --postgresql-version "$PG_VERSION" \
+            --build-result "${BUILD_RESULT:-skipped}" --verify-result "${VERIFY_RESULT:-skipped}" \
+            --image-id "$(docker image inspect pg-binaries-pg-jsonschema-alpine-probe --format '{{.Id}}' 2>/dev/null || echo unavailable)" \
+            --kernel-release "$(uname -r)"
+      - name: Validate and retain exact publication evidence
+        if: always()
+        run: python tools/import_pg_jsonschema_linux_publication.py --core-archives "$RUNNER_TEMP/core/pilot" --archives "$RUNNER_TEMP/pg_jsonschema" --run-id "$GITHUB_RUN_ID"
+      - name: Upload selected candidate and verification evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pg-jsonschema-linux-selected-${{ needs.select.outputs.postgresql_version }}-${{ needs.select.outputs.architecture }}-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/pg_jsonschema/*.tar.gz
+            ${{ runner.temp }}/pg_jsonschema/*.sha256
+            ${{ runner.temp }}/pg_jsonschema/*.txt
+            ${{ runner.temp }}/pg_jsonschema/*.json
+            ${{ runner.temp }}/pg_jsonschema/static-analysis/**
+            ${{ runner.temp }}/pg_jsonschema/publication/**
+            support/evidence/pg_jsonschema-linux-publication-${{ github.run_id }}/**
+            support/verification/pg_jsonschema-0.3.4-postgresql-${{ needs.select.outputs.postgresql_version }}-linux-${{ needs.select.outputs.architecture }}-current-${{ github.run_id }}.json
+          if-no-files-found: warn
+          retention-days: 7
+      - name: Require selected target verification to pass
+        if: always()
+        run: test '${{ steps.verify.outcome }}' = success
