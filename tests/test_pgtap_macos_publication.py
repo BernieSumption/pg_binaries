@@ -46,12 +46,11 @@ class PublicationFixture:
             source = ROOT / relative
             destination = self.root / relative
             destination.parent.mkdir(parents=True, exist_ok=True)
-            if relative == str(config_rel):
-                value = json.loads(source.read_text())
-                value["core_archive"]["sha256"] = self.core_sha256
-                destination.write_text(json.dumps(value, indent=2) + "\n")
-            else:
-                shutil.copyfile(source, destination)
+            shutil.copyfile(source, destination)
+        self.config.parent.mkdir(parents=True, exist_ok=True)
+        value = json.loads(original_config.read_text())
+        value["core_archive"]["sha256"] = self.core_sha256
+        self.config.write_text(json.dumps(value, indent=2) + "\n")
         for relative in ("support.json", "support/postgresql-releases.json", "support/verification-profiles.json"):
             destination = self.root / relative
             destination.parent.mkdir(parents=True, exist_ok=True)
@@ -120,6 +119,14 @@ class PgtapMacOSPublicationTests(unittest.TestCase):
                 self.assertEqual(target["platform"], f"macos-{architecture}")
                 self.assertEqual(target["core_archive"], {
                     "basename": f"postgresql-19.1-macos-{architecture}.tar.gz"})
+
+    def test_selected_profiles_do_not_include_historical_pin_fixtures(self):
+        registry = json.loads((ROOT / "support/verification-profiles.json").read_text())
+        for config in TARGET_CONFIGS:
+            target = load_target_config(config)
+            sources = registry["profiles"][target.profile_id]["sources"]
+            with self.subTest(profile=target.profile_id):
+                self.assertFalse(any("pgtap_macos_pins" in source for source in sources))
 
     def test_target_pins_match_passed_current_core_records(self):
         self.assertEqual(len(TARGET_CONFIGS), 8)
