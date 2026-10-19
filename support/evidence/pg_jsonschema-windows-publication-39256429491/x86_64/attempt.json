@@ -1,0 +1,23 @@
+{
+  "architecture": "x86_64",
+  "archives": {
+    "pg_jsonschema-0.3.4-postgresql-16.15-windows-x86_64.tar.gz": "1573d3c6d2371e88f968446f8bdeee35171a9921072923c0ddb14d1a7be48ad2",
+    "postgresql-16.15-windows-x86_64.tar.gz": "9c6e251d2e5a0f8420f473677fa37875d8ea866b1b8ffeb0551a968151086aa3"
+  },
+  "archives_present": {
+    "pg_jsonschema-0.3.4-postgresql-16.15-windows-x86_64.tar.gz": true,
+    "postgresql-16.15-windows-x86_64.tar.gz": true
+  },
+  "core_status": "current-profile-core-redistribution-pending",
+  "pg_jsonschema_version": "0.3.4",
+  "postgresql_version": "16.15",
+  "profile_id": "pg-jsonschema-publication-windows-x86_64-16.15",
+  "release_eligible": false,
+  "run_id": "39256429491",
+  "schema_version": 1,
+  "source_revision": "80c56805fb7466253d950f9185f2f68c55d8cb51",
+  "steps": {
+    "archive-suite": "success",
+    "static-analysis": "success"
+  }
+}

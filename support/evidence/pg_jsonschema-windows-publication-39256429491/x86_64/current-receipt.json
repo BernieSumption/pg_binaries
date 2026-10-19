@@ -1,0 +1,46 @@
+{
+  "architecture": "x86_64",
+  "archives": {
+    "pg_jsonschema-0.3.4-postgresql-16.15-windows-x86_64.tar.gz": "1573d3c6d2371e88f968446f8bdeee35171a9921072923c0ddb14d1a7be48ad2",
+    "postgresql-16.15-windows-x86_64.tar.gz": "9c6e251d2e5a0f8420f473677fa37875d8ea866b1b8ffeb0551a968151086aa3"
+  },
+  "case_results": {
+    "archive-suite": "passed",
+    "static-analysis": "passed"
+  },
+  "ci": {
+    "build_revision": "80c56805fb7466253d950f9185f2f68c55d8cb51",
+    "provider": "github-actions",
+    "run_id": "39256429491",
+    "run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/39256429491",
+    "source_revision": "80c56805fb7466253d950f9185f2f68c55d8cb51",
+    "test_revision": "80c56805fb7466253d950f9185f2f68c55d8cb51"
+  },
+  "clean_system": true,
+  "core_status": "current-profile-core-redistribution-pending",
+  "dependency_check_profile": "windows-sql-archive-relocation-v1",
+  "dependency_checks_passed": true,
+  "endpoint": "current",
+  "environment": {
+    "architecture": "x86_64",
+    "image_id": "win22/20261012.333.1",
+    "os": "windows",
+    "os_version": "10.0.20348"
+  },
+  "extension_archive": "pg_jsonschema-0.3.4-postgresql-16.15-windows-x86_64.tar.gz",
+  "platform": "windows-x86_64",
+  "postgresql_version": "16.15",
+  "profile_id": "pg-jsonschema-publication-windows-x86_64-16.15",
+  "profile_revision": "38c49a6b52e0905882f9371e5474ccc79cc78f32e63a32b38b4f90a38d1973e3",
+  "project": "pg_jsonschema",
+  "release_eligible": false,
+  "reports": {
+    "first_run_probe_output": "3a9588b74fd6cc485f6a0c6f250d9a562050e97cd721f697769ada01dee45f90",
+    "pe_dependency_analysis": "78eca1868073a033c66e77fcc1d949f4844366b7ed438f6b946bbfefcae7a077",
+    "probe_output": "3a9588b74fd6cc485f6a0c6f250d9a562050e97cd721f697769ada01dee45f90",
+    "static_analysis": "217722064eba7877e3d79669e344eb1d5d4f5cc8736ffece9ddb681e6e492cff"
+  },
+  "schema_version": 1,
+  "test_revision": "80c56805fb7466253d950f9185f2f68c55d8cb51",
+  "version": "0.3.4"
+}

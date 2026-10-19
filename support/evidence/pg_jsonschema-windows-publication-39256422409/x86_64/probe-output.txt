@@ -1,0 +1,7 @@
+15.19
+CREATE EXTENSION
+CREATE TABLE
+INSERT 0 1
+DO
+pg_jsonschema|0.3.4
+payload_matches_schema|CHECK (jsonb_matches_schema('{"type":"object","properties":{"name":{"type":"string","maxLength":8}},"required":["name"]}'::json, payload))
