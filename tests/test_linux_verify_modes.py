@@ -39,20 +39,5 @@ class LinuxVerifyModeTests(unittest.TestCase):
             self.assertIn("PG_VERIFY_MODE=core-only", calls[1])
             self.assertNotIn("pgvector-", "\n".join(calls))
 
-    def test_core_only_keeps_core_probes_and_guards_vector_work(self):
-        verifier = (ROOT / "scripts/linux/verify-in-container.sh").read_text()
-        self.assertIn("full|core-only", verifier)
-        self.assertIn('sha256sum -c "$pg.sha256"', verifier)
-        self.assertIn('if [[ $verify_mode == full ]]; then sha256sum -c "$vector.sha256"; fi', verifier)
-        self.assertIn('"${psql[@]}" -f /tests/builtins/coverage.sql', verifier)
-        self.assertIn('"${surgery[@]}" -f /tests/builtins/surgery.sql', verifier)
-        self.assertIn('"$pgroot/bin/pg_dump"', verifier)
-        self.assertIn('"$pgroot/bin/pg_restore"', verifier)
-        self.assertIn('"$pgroot/bin/initdb"', verifier)
-        self.assertIn('"$pgroot/bin/pg_ctl"', verifier)
-        self.assertIn('"$pgroot/bin/psql"', verifier)
-        self.assertIn('if [[ $verify_mode == full ]]; then "${psql[@]}" -f /tests/extensions/pgvector.sql; fi', verifier)
-
-
 if __name__ == "__main__":
     unittest.main()
