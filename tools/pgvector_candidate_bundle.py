@@ -8,18 +8,15 @@ from pathlib import Path, PurePosixPath
 import re
 import sys
 import tempfile
-from urllib.parse import quote
 import zipfile
 
 import actions_candidate_bundle as bundle
 import actions_candidate_discovery as discovery
+import actions_candidate_retrieval as retrieval
 
 
 DIRECT_WORKFLOW = "pgvector-linux-selected-publication.yml"
 DISPATCHER_WORKFLOW = "selected-extension-publication.yml"
-MAX_RUNS = 100
-MAX_RUN_PAGES = 10
-MAX_ARTIFACTS = 100
 MAX_CANDIDATE_ATTEMPTS = 3
 SYMBOL_INDEX = "_temp/bundle/pilot/debug-symbols/index.json"
 SYMBOL_ROOT = "_temp/bundle/pilot/debug-symbols/"
@@ -44,49 +41,21 @@ def _safe_identity(repository, branch, current_run_id, version, postgresql_versi
 
 
 def _run_candidates(repository, branch, current_run_id, pg_version):
-    expected = {
-        DIRECT_WORKFLOW,
-        DISPATCHER_WORKFLOW,
-    }
-    encoded_branch = quote(branch, safe="")
-    for page in range(1, MAX_RUN_PAGES + 1):
-        payload = discovery._gh([
-            f"repos/{repository}/actions/runs?branch={encoded_branch}&status=success&sort=created&direction=desc&per_page={MAX_RUNS}&page={page}"
-        ])
-        runs = payload.get("workflow_runs", []) if isinstance(payload, dict) else []
-        if not isinstance(runs, list) or not runs:
-            return
-        eligible = []
-        for run in runs[:MAX_RUNS]:
-            if not isinstance(run, dict):
-                continue
-            workflow = str(run.get("path", "")).rsplit("/", 1)[-1]
-            if (workflow in expected and re.fullmatch(r"[1-9][0-9]*", str(run.get("id", "")))
-                    and discovery._run_matches(
-                    run, repository, workflow, branch, current_run_id)):
-                eligible.append((workflow, run))
-        eligible.sort(key=lambda item: int(item[1]["id"]), reverse=True)
-        for workflow, run in eligible:
-            run_id = str(run["id"])
-            artifacts_payload = discovery._gh([
-                f"repos/{repository}/actions/runs/{run_id}/artifacts?per_page={MAX_ARTIFACTS}"
-            ])
-            artifact_rows = artifacts_payload.get("artifacts", []) if isinstance(artifacts_payload, dict) else []
-            if not isinstance(artifact_rows, list):
-                continue
-            expected_artifact = f"pgvector-linux-selected-{pg_version}-{run_id}"
-            found = [artifact for artifact in artifact_rows[:MAX_ARTIFACTS]
-                     if isinstance(artifact, dict) and artifact.get("name") == expected_artifact]
-            if len(found) > 1:
-                raise CandidateBundleError(f"run {run_id} has duplicate exact candidate artifacts")
-            if not found:
-                continue
-            artifact = found[0]
-            source = artifact.get("workflow_run")
-            if isinstance(source, dict) and (
-                    str(source.get("id")) != run_id or source.get("head_sha") != run["head_sha"]):
-                continue
-            yield workflow, run, artifact, expected_artifact
+    runs = retrieval.enumerate_successful_runs_global(
+        repository, branch, current_run_id,
+        (DIRECT_WORKFLOW, DISPATCHER_WORKFLOW), max_runs=100, max_pages=10)
+    for workflow, run in runs:
+        run_id = str(run["id"])
+        expected_artifact = f"pgvector-linux-selected-{pg_version}-{run_id}"
+        try:
+            found = retrieval.exact_run_artifacts(
+                repository, run, "pgvector-linux-selected-" + pg_version + "-{run_id}",
+                max_artifacts=100, max_pages=1, require_run_claim=False,
+                require_attempt_match=False, ignore_malformed_claim=True)
+        except retrieval.RetrievalError as exc:
+            raise CandidateBundleError(str(exc)) from exc
+        if found:
+            yield workflow, run, found[0], expected_artifact
 
 
 def _symbol_paths(archive, core_name, vector_name, core_member, vector_member):

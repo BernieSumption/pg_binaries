@@ -48,9 +48,44 @@ def enumerate_successful_runs(repository, branch, current_run_id, workflow_filen
     yield from sorted(candidates.values(), key=lambda pair: int(pair[1]["id"]), reverse=True)
 
 
+def enumerate_successful_runs_global(repository, branch, current_run_id, workflow_filenames,
+                                    *, max_runs=MAX_ARTIFACTS, max_pages=10):
+    """Enumerate allowed runs from the repository-wide branch search budget."""
+    _identity(repository, branch, current_run_id)
+    allowed = frozenset(workflow_filenames)
+    if not allowed or any(not isinstance(name, str) or not re.fullmatch(r"[A-Za-z0-9_.-]+", name)
+                          for name in allowed):
+        raise RetrievalError("workflow filenames must be simple filenames")
+    if not _positive_int(max_runs) or not _positive_int(max_pages):
+        raise RetrievalError("run pagination limits must be positive integers")
+    encoded_branch = quote(branch, safe="")
+    seen = set()
+    for page in range(1, max_pages + 1):
+        payload = discovery._gh([
+            f"repos/{repository}/actions/runs?branch={encoded_branch}&status=success&sort=created&direction=desc&per_page={max_runs}&page={page}"
+        ])
+        rows = payload.get("workflow_runs", []) if isinstance(payload, dict) else []
+        if not isinstance(rows, list) or not rows:
+            break
+        candidates = []
+        for run in rows[:max_runs]:
+            if not isinstance(run, dict) or not _valid_run_id(run.get("id")):
+                continue
+            workflow = str(run.get("path", "")).rsplit("/", 1)[-1]
+            if workflow in allowed and discovery._run_matches(
+                    run, repository, workflow, branch, current_run_id):
+                run_id = str(run["id"])
+                if run_id not in seen:
+                    seen.add(run_id)
+                    candidates.append((workflow, run))
+        candidates.sort(key=lambda pair: int(pair[1]["id"]), reverse=True)
+        yield from candidates
+
+
 def exact_run_artifacts(repository, run, artifact_name_template,
                         *, max_artifacts=MAX_ARTIFACTS,
-                        max_pages=MAX_ARTIFACT_PAGES):
+                        max_pages=MAX_ARTIFACT_PAGES, require_run_claim=True,
+                        require_attempt_match=True, ignore_malformed_claim=False):
     """Return exact-name artifacts attached to a run, reading bounded API pages."""
     run_id = str(run.get("id", "")) if isinstance(run, dict) else ""
     if not _valid_run_id(run_id):
@@ -76,21 +111,26 @@ def exact_run_artifacts(repository, run, artifact_name_template,
             break
     if len(found) > 1:
         raise RetrievalError(f"run {run_id} has duplicate exact candidate artifacts")
-    if found and not artifact_belongs_to_run(found[0], run, require_claim=True):
+    if found and not artifact_belongs_to_run(
+            found[0], run, require_claim=require_run_claim,
+            require_attempt_match=require_attempt_match,
+            ignore_malformed_claim=ignore_malformed_claim):
         return []
     return found
 
 
-def artifact_belongs_to_run(artifact, run, *, require_claim=True):
+def artifact_belongs_to_run(artifact, run, *, require_claim=True,
+                            require_attempt_match=True, ignore_malformed_claim=False):
     """Check the artifact's workflow_run identity against the selected run."""
     claim = artifact.get("workflow_run") if isinstance(artifact, dict) else None
     if claim is None:
         return not require_claim
     if not isinstance(claim, dict):
-        return False
+        return ignore_malformed_claim
     return (str(claim.get("id", "")) == str(run.get("id", ""))
             and claim.get("head_sha") == run.get("head_sha")
-            and ("run_attempt" not in claim or claim.get("run_attempt") == run.get("run_attempt")))
+            and (not require_attempt_match or "run_attempt" not in claim
+                 or claim.get("run_attempt") == run.get("run_attempt")))
 
 
 def validate_artifact_metadata(artifact, run, *, max_bytes=MAX_ARTIFACT_BYTES,

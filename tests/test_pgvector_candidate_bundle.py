@@ -142,7 +142,7 @@ class PgvectorCandidateBundleTests(unittest.TestCase):
              patch.object(candidate.bundle.subprocess, "run", side_effect=self.fake_download):
             self.invoke()
         artifact_queries = [call for call in self.calls if "/actions/runs/" in call and "/artifacts" in call]
-        self.assertEqual(artifact_queries, ["repos/example/project/actions/runs/123/artifacts?per_page=100"])
+        self.assertEqual(artifact_queries, ["repos/example/project/actions/runs/123/artifacts?per_page=100&page=1"])
         run_queries = [call for call in self.calls if "/actions/runs?" in call]
         self.assertEqual(len(run_queries), 1)
         self.assertIn("page=1", run_queries[0])

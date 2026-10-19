@@ -40,6 +40,28 @@ class ActionsCandidateRetrievalTests(unittest.TestCase):
         self.assertEqual([run[1]["id"] for run in runs], [124, 121])
         self.assertIn("page=2", calls[1])
 
+    def test_global_run_search_keeps_one_ten_page_budget(self):
+        target = dict(self.run, id=321)
+        calls = []
+
+        def gh(args):
+            endpoint = args[0]
+            calls.append(endpoint)
+            page = int(endpoint.rsplit("page=", 1)[1])
+            rows = [dict(self.run, id=1000 - page * 100 - index,
+                         path=".github/workflows/unrelated.yml") for index in range(100)]
+            if page == 10:
+                rows[-1] = target
+            return {"workflow_runs": rows}
+
+        with patch.object(discovery, "_gh", side_effect=gh):
+            runs = list(retrieval.enumerate_successful_runs_global(
+                self.repo, self.branch, self.current, ["producer.yml"],
+                max_runs=100, max_pages=10))
+        self.assertEqual([(workflow, run["id"]) for workflow, run in runs], [("producer.yml", 321)])
+        self.assertEqual(len(calls), 10)
+        self.assertIn("per_page=100&page=10", calls[-1])
+
     def test_finds_exact_artifact_beyond_first_artifact_page(self):
         self.run["id"] = 123
         unrelated = [{"name": f"other-{index}"} for index in range(2)]
