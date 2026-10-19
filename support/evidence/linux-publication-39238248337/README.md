@@ -1,0 +1,3 @@
+# Linux pgvector selected-matrix verification evidence
+
+Run [39238248337](https://github.com/BernieSumption/pg_binaries/actions/runs/39238248337) succeeded at producer commit `95da4d02ce17431f9ed2a36cf5593094c288b858` for pgvector 0.8.7 against PostgreSQL 15.19, 16.15, 17.11 and 18.6 on Linux arm64 and x86_64. All eight separate builds and fresh-runner verifiers passed after the combined Linux publication path was removed. In a detached checkout of the producer commit, all eight artifact ZIPs matched GitHub's recorded SHA-256 values, and an independent import matched all 96 retained evidence and verification files to their CI artifact bytes. The archives remain in short-lived Actions artifacts.
