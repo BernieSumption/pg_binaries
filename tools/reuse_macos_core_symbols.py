@@ -24,10 +24,12 @@ import source_archive
 WORKFLOW = "postgresql-macos-selected-publication.yml"
 MAX_ZIP_BYTES = 1024 * 1024 * 1024
 CORE_INPUTS = (
-    "scripts/macos", "tools/create_macos_symbols.py", "tools/discover_builtins.py",
+    "scripts/macos/build-source-dependencies.sh", "scripts/macos/build.sh",
+    "scripts/macos/bundle.py", "scripts/macos/licenses.py",
+    "tools/create_macos_symbols.py", "tools/discover_builtins.py",
     "tools/source_archive.py", "tools/check_source_identity.py",
-    ".github/workflows/postgresql-macos-selected-publication.yml",
 )
+CORE_WORKFLOW = ".github/workflows/postgresql-macos-selected-publication.yml"
 
 
 def gh_json(endpoint: str):
@@ -108,7 +110,61 @@ def relevant_inputs_match(revision: str, root: Path) -> bool:
         return False
     if result.returncode:
         raise RuntimeError("git diff could not verify macOS core recipe inputs")
-    return True
+    historical = subprocess.run(["git", "show", f"{revision}:{CORE_WORKFLOW}"], cwd=root,
+                                check=False, capture_output=True)
+    if historical.returncode:
+        raise RuntimeError("cannot retrieve candidate macOS core build workflow")
+    try:
+        old_build = _workflow_build_job(historical.stdout.decode("utf-8"))
+        new_build = _workflow_build_job((root / CORE_WORKFLOW).read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, ValueError) as exc:
+        raise RuntimeError("cannot verify macOS core build workflow inputs") from exc
+    return old_build == new_build
+
+
+def _workflow_build_job(workflow: str) -> str:
+    lines = workflow.splitlines(keepends=True)
+    try:
+        start = next(index for index, line in enumerate(lines) if line.rstrip("\r\n") == "  build:")
+    except StopIteration as exc:
+        raise ValueError("workflow lacks a build job") from exc
+    end = next((index for index in range(start + 1, len(lines))
+                if re.fullmatch(r"  [A-Za-z_][A-Za-z0-9_-]*:\s*\r?\n?", lines[index])), len(lines))
+    return "".join(lines[start:end])
+
+
+def validate_passing_record(record: dict, *, profile_id: str, version: str,
+                            architecture: str, run_id: str, revision: str,
+                            archive_sha256: str) -> tuple[str, ...]:
+    cases = record.get("test_cases")
+    case_results = record.get("case_results")
+    profile_revision = record.get("profile_revision")
+    if (record.get("schema_version") != 2 or record.get("scope") != "publication"
+            or record.get("component") != "postgresql" or record.get("outcome") != "passed"
+            or record.get("profile_id") != profile_id
+            or not isinstance(profile_revision, str)
+            or not re.fullmatch(r"[0-9a-f]{64}", profile_revision)
+            or not isinstance(cases, list) or not cases
+            or any(not isinstance(case, str) or not case for case in cases)
+            or cases != sorted(set(cases))
+            or not isinstance(case_results, dict) or set(case_results) != set(cases)
+            or any(value != "passed" for value in case_results.values())
+            or record.get("postgresql_version") != version
+            or record.get("platform") != f"macos-{architecture}"
+            or record.get("sha256") != archive_sha256
+            or record.get("test_revision") != revision):
+        raise RuntimeError("publication record is not a passed record bound to this archive")
+    ci = record.get("ci") if isinstance(record.get("ci"), dict) else {}
+    environment = record.get("environment") if isinstance(record.get("environment"), dict) else {}
+    if (any(ci.get(key) != revision for key in ("source_revision", "build_revision", "test_revision"))
+            or str(ci.get("run_id")) != run_id
+            or environment.get("os") != "macos"
+            or environment.get("architecture") != architecture
+            or environment.get("endpoint") != "current"
+            or environment.get("clean_system") is not True
+            or environment.get("dependency_checks_passed") is not True):
+        raise RuntimeError("publication record provenance does not bind this archive")
+    return tuple(cases)
 
 
 def _artifact_file(root: Path, filename: str, *, required: bool = True) -> bytes | None:
@@ -200,7 +256,7 @@ def reuse(repo: str, revision: str, version: str, architecture: str, current_run
                         key=lambda run: run.get("run_number", 0), reverse=True)
     archive_name = f"postgresql-{version}-macos-{architecture}.tar.gz"
     profile = f"postgresql-publication-macos-{architecture}-{version}"
-    current_profile = coverage.verification_profile(Path(__file__).resolve().parents[1], profile)
+    coverage.verification_profile(Path(__file__).resolve().parents[1], profile)
     reasons = []
     for run in candidates:
         run_id = str(run["id"])
@@ -234,34 +290,16 @@ def reuse(repo: str, revision: str, version: str, architecture: str, current_run
                     raise RuntimeError("macOS core recipe or source identity changed since candidate")
                 validate_core_manifest(archive, version, architecture, run_id, run_attempt,
                                        candidate_revision, Path(__file__).resolve().parents[1])
-                ci = record.get("ci") if isinstance(record.get("ci"), dict) else {}
-                environment = record.get("environment") if isinstance(record.get("environment"), dict) else {}
-                if (record.get("schema_version") != 2 or record.get("scope") != "publication"
-                        or record.get("component") != "postgresql"
-                        or record.get("outcome") != "passed" or record.get("profile_id") != profile
-                        or record.get("profile_revision") not in current_profile["compatible_profile_revisions"]
-                        or record.get("test_cases") != current_profile["case_ids"]
-                        or record.get("postgresql_version") != version
-                        or record.get("platform") != f"macos-{architecture}"
-                        or not isinstance(record.get("case_results"), dict)
-                        or set(record["case_results"]) != set(current_profile["case_ids"])
-                        or any(value != "passed" for value in record["case_results"].values())
-                        or record.get("sha256") != digest
-                        or record.get("test_revision") != candidate_revision
-                        or any(ci.get(key) != candidate_revision for key in ("source_revision", "build_revision", "test_revision"))
-                        or str(ci.get("run_id")) != run_id
-                        or environment.get("os") != "macos"
-                        or environment.get("architecture") != architecture
-                        or environment.get("endpoint") != "current"
-                        or environment.get("clean_system") is not True
-                        or environment.get("dependency_checks_passed") is not True
-                        or not sidecar.is_file()):
-                    raise RuntimeError("publication record is stale or does not bind this archive")
+                record_cases = validate_passing_record(
+                    record, profile_id=profile, version=version, architecture=architecture,
+                    run_id=run_id, revision=candidate_revision, archive_sha256=digest)
+                if not sidecar.is_file():
+                    raise RuntimeError("candidate archive checksum sidecar is missing")
                 attempt_data = _artifact_file(verify_root, "publication-attempt.json")
                 attempt = json.loads(attempt_data.decode("utf-8"))
                 step_data = _artifact_file(verify_root, "step-results.json")
                 step_results = json.loads(step_data.decode("utf-8"))
-                expected_steps = {case: "success" for case in current_profile["case_ids"]}
+                expected_steps = {case: "success" for case in record_cases}
                 if (str(attempt.get("run_id")) != run_id
                         or attempt.get("source_revision") != candidate_revision
                         or attempt.get("profile_id") != profile

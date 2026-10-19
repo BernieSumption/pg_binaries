@@ -14,14 +14,29 @@ import reuse_macos_core_symbols as reuse
 
 
 class ReuseMacOSCoreSymbolsTests(unittest.TestCase):
+    def _init_git(self, root, files):
+        for name, content in files.items():
+            path = root / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(content)
+        subprocess.run(["git", "init", "-q"], cwd=root, check=True)
+        subprocess.run(["git", "add", "."], cwd=root, check=True)
+        subprocess.run(["git", "-c", "user.name=Test", "-c", "user.email=test@example.invalid",
+                        "commit", "-qm", "base"], cwd=root, check=True)
+        return subprocess.run(["git", "rev-parse", "HEAD"], cwd=root, check=True,
+                              capture_output=True, text=True).stdout.strip()
+
     def test_unrelated_release_snapshot_change_preserves_reuse(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)
             (root / "support").mkdir()
             snapshot = root / "support/postgresql-releases.json"
             snapshot.write_text('{"18.6": "old"}\n')
+            workflow = root / reuse.CORE_WORKFLOW
+            workflow.parent.mkdir(parents=True)
+            workflow.write_text("jobs:\n  build:\n    steps: [build]\n  verify:\n    steps: [verify v1]\n")
             subprocess.run(["git", "init", "-q"], cwd=root, check=True)
-            subprocess.run(["git", "add", "support/postgresql-releases.json"], cwd=root, check=True)
+            subprocess.run(["git", "add", "."], cwd=root, check=True)
             subprocess.run(["git", "-c", "user.name=Test", "-c", "user.email=test@example.invalid",
                             "commit", "-qm", "base"], cwd=root, check=True)
             revision = subprocess.run(["git", "rev-parse", "HEAD"], cwd=root, check=True,
@@ -43,6 +58,66 @@ class ReuseMacOSCoreSymbolsTests(unittest.TestCase):
                                       capture_output=True, text=True).stdout.strip()
             recipe.write_text("recipe v2\n")
             self.assertFalse(reuse.relevant_inputs_match(revision, root))
+
+    def test_verifier_workflow_changes_preserve_reuse_but_build_changes_reject_it(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            workflow = "jobs:\n  build:\n    steps: [build v1]\n  verify:\n    steps: [verify v1]\n"
+            revision = self._init_git(root, {reuse.CORE_WORKFLOW: workflow})
+            path = root / reuse.CORE_WORKFLOW
+            path.write_text(workflow.replace("verify v1", "verify v2"))
+            self.assertTrue(reuse.relevant_inputs_match(revision, root))
+            path.write_text(workflow.replace("build v1", "build v2").replace("verify v1", "verify v2"))
+            self.assertFalse(reuse.relevant_inputs_match(revision, root))
+
+    def test_historical_passed_profile_record_can_be_reused(self):
+        revision = "a" * 40
+        archive_sha256 = "b" * 64
+        record = {
+            "schema_version": 2, "scope": "publication", "component": "postgresql",
+            "outcome": "passed", "profile_id": "postgresql-publication-macos-arm64-18.6",
+            "profile_revision": "c" * 64, "test_cases": ["old-archive-suite", "old-symbols"],
+            "case_results": {"old-archive-suite": "passed", "old-symbols": "passed"},
+            "postgresql_version": "18.6", "platform": "macos-arm64",
+            "sha256": archive_sha256, "test_revision": revision,
+            "ci": {"source_revision": revision, "build_revision": revision,
+                   "test_revision": revision, "run_id": "123"},
+            "environment": {"os": "macos", "architecture": "arm64", "endpoint": "current",
+                            "clean_system": True, "dependency_checks_passed": True},
+        }
+        cases = reuse.validate_passing_record(
+            record, profile_id=record["profile_id"], version="18.6", architecture="arm64",
+            run_id="123", revision=revision, archive_sha256=archive_sha256)
+        self.assertEqual(cases, ("old-archive-suite", "old-symbols"))
+
+    def test_failed_or_wrong_identity_record_is_rejected(self):
+        revision = "a" * 40
+        record = {
+            "schema_version": 2, "scope": "publication", "component": "postgresql",
+            "outcome": "passed", "profile_id": "profile", "profile_revision": "c" * 64,
+            "test_cases": ["archive-suite"], "case_results": {"archive-suite": "passed"},
+            "postgresql_version": "18.6", "platform": "macos-arm64", "sha256": "b" * 64,
+            "test_revision": revision,
+            "ci": {"source_revision": revision, "build_revision": revision,
+                   "test_revision": revision, "run_id": "123"},
+            "environment": {"os": "macos", "architecture": "arm64", "endpoint": "current",
+                            "clean_system": True, "dependency_checks_passed": True},
+        }
+        args = dict(profile_id="profile", version="18.6", architecture="arm64", run_id="123",
+                    revision=revision, archive_sha256="b" * 64)
+        record["outcome"] = "failed"
+        record["case_results"]["archive-suite"] = "failed"
+        with self.assertRaisesRegex(RuntimeError, "passed record"):
+            reuse.validate_passing_record(record, **args)
+        record["outcome"] = "passed"
+        record["case_results"]["archive-suite"] = "passed"
+        record["sha256"] = "d" * 64
+        with self.assertRaisesRegex(RuntimeError, "passed record"):
+            reuse.validate_passing_record(record, **args)
+        record["sha256"] = "b" * 64
+        record["ci"]["run_id"] = "456"
+        with self.assertRaisesRegex(RuntimeError, "provenance"):
+            reuse.validate_passing_record(record, **args)
 
     def test_candidate_requires_successful_other_run_on_same_branch_and_workflow(self):
         run = {"id": 12, "status": "completed", "conclusion": "success",
