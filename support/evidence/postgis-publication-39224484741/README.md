@@ -1,0 +1,5 @@
+# PostGIS selected Linux publication, run 39224484741
+
+All eight selected PostGIS targets passed their build, fresh-runner Alpine verification, receipt, record and independent evidence import steps at producer revision `b7798e14fcf12d2670e8abf7711f73fda5bb36e4`. They cover PostgreSQL 15.19, 16.15, 17.11 and 18.6 on x86_64 and arm64. Each target emits separate records for `postgis`, `postgis_raster`, `postgis_sfcgal` and `postgis_topology`, for 32 records total. All eight builds reused checked PostgreSQL cores from the prior pgTAP selected run 39210758552.
+
+The aggregate [workflow run](https://github.com/BernieSumption/pg_binaries/actions/runs/39224484741) failed because the concurrent pgAudit evidence importer did not handle its downloaded archive directory. PostGIS target jobs passed. The retained PostGIS records describe those successful target jobs and are historical after the subsequent PostGIS profile-source change; they do not imply a successful aggregate run at the current profile revision.

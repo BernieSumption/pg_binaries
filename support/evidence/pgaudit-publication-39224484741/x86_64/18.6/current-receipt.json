@@ -1,0 +1,34 @@
+{
+  "architecture": "x86_64",
+  "archives": {
+    "pgaudit-18.0-postgresql-18.6-linux-x86_64.tar.gz": "f3943e04a8b1da62b37b190b0d65203f7ba3e1cd26fd9642cad5f12fc7821274",
+    "postgresql-18.6-linux-x86_64.tar.gz": "e817abe99aea45047d198528934cc3c3ce1d714bc5304ada937deeeacd4c099f"
+  },
+  "case_results": {
+    "pgaudit-archive-suite": "passed"
+  },
+  "ci": {
+    "build_revision": "b7798e14fcf12d2670e8abf7711f73fda5bb36e4",
+    "provider": "github-actions",
+    "run_id": "39224484741",
+    "run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/39224484741",
+    "source_revision": "b7798e14fcf12d2670e8abf7711f73fda5bb36e4",
+    "test_revision": "b7798e14fcf12d2670e8abf7711f73fda5bb36e4"
+  },
+  "clean_system": true,
+  "dependency_check_profile": "pgaudit-runtime-v1",
+  "dependency_checks_passed": true,
+  "distribution": "Alpine Linux",
+  "distribution_version": "3.22.6",
+  "endpoint": "current",
+  "extension_archive": "pgaudit-18.0-postgresql-18.6-linux-x86_64.tar.gz",
+  "image_id": "sha256:166c9fc8bf0fb4fffcc261debaa01a235061c869e6e4945cb4c706765f7174b8",
+  "kernel_release": "6.17.0-1022-azure",
+  "postgresql_version": "18.6",
+  "prerequisite_archives": [],
+  "profile_id": "pgaudit-publication-linux-x86_64-18.6",
+  "profile_revision": "77acaca0326c005291e19e2fc65e9adf88f886f892e0c4073365256a84ce4c25",
+  "project": "pgaudit",
+  "test_revision": "b7798e14fcf12d2670e8abf7711f73fda5bb36e4",
+  "version": "18.0"
+}
