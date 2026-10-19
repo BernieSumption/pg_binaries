@@ -209,6 +209,45 @@ class DispatchPlanTests(unittest.TestCase):
         self.assertTrue(any(item["status"] == "needed" for item in absent["work_items"]))
         temp.cleanup()
 
+    def test_hypopg_checked_overlay_reuses_repository_core_record_by_sha256(self):
+        temp, root = self.fixture_root()
+        manifest, _expected, request = self.candidate_fixture(root)
+        verification = root / "support/verification"
+        records = list(verification.glob("record-*.json"))
+        core_record = next(path for path in records
+                           if json.loads(path.read_text())["component"] == "postgresql")
+        extension_record_path = next(path for path in records if path != core_record)
+        extension_record = json.loads(extension_record_path.read_text())
+        extension_record_path.unlink()
+
+        rows = json.loads(manifest.read_text())["archives"]
+        candidates = [{key: row[key] for key in
+                       ("component", "project", "version", "platform", "postgresql_version", "sha256")
+                       if key in row} for row in rows]
+        overlay = {"schema_version": 1, "candidate_archives": candidates,
+                   "verification_records": [{**extension_record,
+                                              "_record_file": "checked-extension-record",
+                                              "_profile_current": True}]}
+
+        result = tool.resolve(root, request, checked_overlay=overlay)
+        self.assertFalse(result["should_dispatch"])
+        self.assertEqual(next(item for item in result["work_items"]
+                              if item["kind"] == "verify-core")["status"], "complete")
+        self.assertEqual(next(item for item in result["work_items"]
+                              if item["kind"] == "verify-extension")["status"], "complete")
+
+        current_core = json.loads(core_record.read_text())
+        current_core["sha256"] = "0" * 64
+        core_record.write_text(json.dumps(current_core))
+        result = tool.resolve(root, request, checked_overlay=overlay)
+        core_verification = next(item for item in result["work_items"]
+                                 if item["kind"] == "verify-core")
+        self.assertEqual(core_verification["status"], "needed")
+        self.assertEqual(next(item for item in result["work_items"]
+                              if item["kind"] == "verify-extension")["status"], "complete")
+        self.assertTrue(result["should_dispatch"])
+        temp.cleanup()
+
     def test_cli_loads_candidate_manifest_and_expected_build_inputs(self):
         temp, root = self.fixture_root()
         manifest, expected, request = self.candidate_fixture(root)
