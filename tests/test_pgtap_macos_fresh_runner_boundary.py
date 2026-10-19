@@ -38,9 +38,9 @@ class PgtapMacosFreshRunnerBoundaryTests(unittest.TestCase):
         self.assertIn('scripts/pgtap/probe.sql', verifier)
 
     def test_selected_publication_verifies_uploaded_build_on_another_job(self):
-        for architecture, runner, versions in (
-            ("arm64", "macos-15", ("18.6",)),
-            ("x86_64", "macos-15-intel", ("15.19", "16.15", "17.11", "18.6")),
+        for architecture, runner in (
+            ("arm64", "macos-15"),
+            ("x86_64", "macos-15-intel"),
         ):
             with self.subTest(architecture=architecture):
                 path = ROOT / f".github/workflows/pgtap-macos-{architecture}-selected-publication.yml"
@@ -67,13 +67,7 @@ class PgtapMacosFreshRunnerBoundaryTests(unittest.TestCase):
                 self.assertNotIn("run-id:", workflow)
 
                 self.assertIn(f"--platform macos-{architecture}", select)
-                if architecture == "x86_64":
-                    self.assertIn(f'${{POSTGRESQL_VERSION}}-{architecture}.json', select)
-                else:
-                    self.assertNotIn("pin_path", select)
-                if architecture == "x86_64":
-                    for version in versions:
-                        self.assertTrue((ROOT / f"tools/pgtap_macos_pins/{version}-{architecture}.json").is_file())
+                self.assertNotIn("pin_path", select)
                 self.assertIn(f"support/evidence/pgtap-macos-publication-${{{{ github.run_id }}}}/{architecture}/**", verify)
                 self.assertIn(f"-macos-{architecture}-current-", verify)
 

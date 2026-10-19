@@ -14,7 +14,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
 import emit_pgtap_macos_publication as emitter
 import import_pgtap_macos_publication as importer
-from pgtap_macos_target import load_target_config
+from pgtap_macos_target import base_target, load_target_config
 
 
 TARGET_CONFIGS = sorted((ROOT / "tools/pgtap_macos_pins").glob("*.json"))
@@ -112,6 +112,15 @@ class PublicationFixture:
 
 
 class PgtapMacOSPublicationTests(unittest.TestCase):
+    def test_base_target_identifies_selected_core_without_a_run_pin(self):
+        for architecture in ("arm64", "x86_64"):
+            with self.subTest(architecture=architecture):
+                target = base_target("19.1", architecture)
+                self.assertEqual(target["postgresql_version"], "19.1")
+                self.assertEqual(target["platform"], f"macos-{architecture}")
+                self.assertEqual(target["core_archive"], {
+                    "basename": f"postgresql-19.1-macos-{architecture}.tar.gz"})
+
     def test_target_pins_match_passed_current_core_records(self):
         self.assertEqual(len(TARGET_CONFIGS), 8)
         for config in TARGET_CONFIGS:

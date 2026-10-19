@@ -1,5 +1,6 @@
-"""Load the immutable target identity used by pgTAP macOS publication tools."""
+"""Create and load target identities used by pgTAP macOS publication tools."""
 
+import argparse
 from dataclasses import dataclass
 import json
 from pathlib import Path
@@ -13,6 +14,24 @@ EXPECTED_KEYS = {
     "architecture", "platform", "core_archive", "source",
 }
 CORE_KEYS = {"basename", "run_id", "sha256", "build_id", "source_revision"}
+
+
+def base_target(postgresql_version, architecture):
+    if (not isinstance(postgresql_version, str)
+            or re.fullmatch(r"[1-9][0-9]*\.[0-9]+", postgresql_version) is None
+            or architecture not in {"arm64", "x86_64"}):
+        raise ValueError("invalid pgTAP macOS target")
+    platform = f"macos-{architecture}"
+    return {
+        "schema_version": 1,
+        "profile_id": f"pgtap-publication-{platform}-{postgresql_version}",
+        "postgresql_version": postgresql_version,
+        "pgtap_version": "1.3.4",
+        "architecture": architecture,
+        "platform": platform,
+        "core_archive": {"basename": f"postgresql-{postgresql_version}-{platform}.tar.gz"},
+        "source": {"url": SOURCE_URL, "sha256": SOURCE_SHA256},
+    }
 
 
 @dataclass(frozen=True)
@@ -98,3 +117,18 @@ def load_target_config(path):
         profile_id, pg_version, version, architecture, platform, core_basename,
         run_id, digest, build_id, source_revision, source["url"], source["sha256"],
     )
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--postgresql-version", required=True)
+    parser.add_argument("--architecture", choices=("arm64", "x86_64"), required=True)
+    parser.add_argument("--output", required=True, type=Path)
+    args = parser.parse_args()
+    target = base_target(args.postgresql_version, args.architecture)
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    args.output.write_text(json.dumps(target, indent=2) + "\n", encoding="utf-8")
+
+
+if __name__ == "__main__":
+    main()

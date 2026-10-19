@@ -38,11 +38,10 @@ jobs:
     outputs:
       postgresql_version: ${{ steps.plan.outputs.postgresql_version }}
       extension_version: ${{ steps.plan.outputs.selected_version }}
-      pin_path: ${{ steps.plan.outputs.pin_path }}
       work_group_id: ${{ steps.work.outputs.group_id }}
     steps:
       - uses: actions/checkout@v4
-      - name: Validate the selected target and load its pinned core archive
+      - name: Validate the selected target
         id: plan
         env:
           POSTGRESQL_VERSION: ${{ inputs.postgresql_version }}
@@ -52,10 +51,6 @@ jobs:
           if [[ -z "$POSTGRESQL_VERSION" ]]; then
             POSTGRESQL_VERSION=$(python3 -c 'import json; print(json.load(open("experiments/pgtap-macos-x86_64-target-trial/target.json"))["postgresql_version"])')
           fi
-          case "$POSTGRESQL_VERSION" in
-            15.19|16.15|17.11|18.6) ;;
-            *) echo "Unsupported PostgreSQL x86_64 target: $POSTGRESQL_VERSION" >&2; exit 1 ;;
-          esac
           args=(--project pgtap --platform macos-x86_64 --postgresql-version "$POSTGRESQL_VERSION")
           if [[ -n "$EXTENSION_VERSION" ]]; then args+=(--extension-version "$EXTENSION_VERSION"); fi
           python3 tools/extension_archive_plan.py "${args[@]}" --github-output "$GITHUB_OUTPUT" > "$RUNNER_TEMP/selection.json"
@@ -64,21 +59,6 @@ jobs:
             echo "The selected pgTAP release is $selected_version; the macOS recipe and publication tools support only 1.3.4." >&2
             exit 1
           fi
-          pin_path="tools/pgtap_macos_pins/${POSTGRESQL_VERSION}-x86_64.json"
-          if [[ ! -f "$pin_path" ]]; then
-            echo "No pinned macOS x86_64 PostgreSQL core archive is configured for $POSTGRESQL_VERSION." >&2
-            exit 1
-          fi
-          python3 - "$pin_path" "$POSTGRESQL_VERSION" <<'PY'
-          import sys
-          from pathlib import Path
-          sys.path.insert(0, "tools")
-          from pgtap_macos_target import load_target_config
-          target = load_target_config(Path(sys.argv[1]))
-          if target.postgresql_version != sys.argv[2] or target.architecture != "x86_64":
-              raise SystemExit("pinned core target does not match the selected request")
-          PY
-          echo "pin_path=$pin_path" >> "$GITHUB_OUTPUT"
       - name: Resolve selected build work and prerequisites
         id: work
         env:
@@ -88,8 +68,18 @@ jobs:
           set -euo pipefail
           python3 tools/select_extension_work.py \
             --project pgtap --version "$EXTENSION_VERSION" \
-            --platform macos-x86_64 --postgresql-major "${POSTGRESQL_VERSION%%.*}" \
+            --platform macos-x86_64 --postgresql-version "$POSTGRESQL_VERSION" \
             --github-output "$GITHUB_OUTPUT" > "$RUNNER_TEMP/selected-work.json"
+          python3 - "$RUNNER_TEMP/selected-work.json" "$POSTGRESQL_VERSION" "$EXTENSION_VERSION" <<'PY'
+          import json, sys
+          work=json.load(open(sys.argv[1],encoding='utf-8'))
+          pg,version=sys.argv[2:4]
+          if (work.get('project') != 'pgtap' or work.get('version') != version
+                  or work.get('postgresql_version') != pg
+                  or work.get('platform') != 'macos-x86_64'
+                  or work.get('architecture') != 'x86_64'):
+              raise SystemExit('selected work does not match the exact requested target')
+          PY
 
   build:
     needs: select
@@ -98,10 +88,16 @@ jobs:
     timeout-minutes: 100
     steps:
       - uses: actions/checkout@v4
+      - name: Create the selected PostgreSQL core base target
+        env:
+          POSTGRESQL_VERSION: ${{ needs.select.outputs.postgresql_version }}
+        run: |
+          python3 tools/pgtap_macos_target.py --postgresql-version "$POSTGRESQL_VERSION" \
+            --architecture x86_64 --output "$RUNNER_TEMP/pgtap-base-target.json"
       - name: Retrieve a checked core archive or build the selected PostgreSQL release
         env:
           GH_TOKEN: ${{ github.token }}
-        run: bash scripts/macos/resolve-core.sh "${{ needs.select.outputs.pin_path }}" "$RUNNER_TEMP/core-archives"
+        run: bash scripts/macos/resolve-core.sh "$RUNNER_TEMP/pgtap-base-target.json" "$RUNNER_TEMP/core-archives"
       - name: Build and package pgTAP against the selected core archive
         id: package
         continue-on-error: true
