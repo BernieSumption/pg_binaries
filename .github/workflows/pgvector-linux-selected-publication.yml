@@ -291,7 +291,7 @@ jobs:
           path: |
             ${{ runner.temp }}/bundle/**
             support/evidence/linux-publication-${{ github.run_id }}/**
-            support/verification/postgresql-${{ needs.select.outputs.postgresql_version }}-linux-${{ needs.select.outputs.architecture }}-current-${{ github.run_id }}.json
+            support/verification/postgresql-${{ needs.select.outputs.postgresql_version }}-linux-${{ needs.select.outputs.architecture }}-current-paired-${{ github.run_id }}.json
             support/verification/pgvector-${{ needs.select.outputs.extension_version }}-postgresql-${{ needs.select.outputs.postgresql_version }}-linux-${{ needs.select.outputs.architecture }}-current-${{ github.run_id }}.json
           if-no-files-found: warn
           retention-days: 7

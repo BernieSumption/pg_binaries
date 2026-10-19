@@ -1,0 +1,214 @@
+{
+  "architecture": "arm64",
+  "archive_urls": null,
+  "archives": {
+    "pgvector-0.8.7-postgresql-15.19-linux-arm64.tar.gz": "4b5ff4d38ff86c65012ecad98d87a19a314f463902178bb42028bbdd269a5591",
+    "postgresql-15.19-linux-arm64.tar.gz": "f2a750900557e25e5a0bfd8568ffcdbe69cdeadc942d50ff90d7817e75eff0bd"
+  },
+  "ci_run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/39265870934",
+  "command": "/tmp/pg-binaries-diagnostics.67h0Ne/postgresql/bin/postgres --version",
+  "cwd": "/tmp/pg-binaries-diagnostics.67h0Ne/postgresql",
+  "executable_paths": {
+    "postgres": "/tmp/pg-binaries-diagnostics.67h0Ne/postgresql/bin/postgres",
+    "postgres_payload": "/tmp/pg-binaries-diagnostics.67h0Ne/postgresql/libexec/postgres",
+    "removed_loader": "/tmp/pg-binaries-diagnostics.67h0Ne/postgresql/lib/glibc/ld-linux-aarch64.so.1"
+  },
+  "exit_code": 127,
+  "failure": "missing-bundled-loader",
+  "finished_at_utc": "2026-10-19T14:10:13Z",
+  "gnu_build_ids_and_index_entries": [
+    {
+      "archive": "postgresql-15.19-linux-arm64.tar.gz",
+      "archive_sha256": "f2a750900557e25e5a0bfd8568ffcdbe69cdeadc942d50ff90d7817e75eff0bd",
+      "debug_file_path": "postgresql-15.19-linux-arm64/postgresql/bin/.pg-launcher.debug",
+      "debug_file_sha256": "eed8b8026a003690352b7a9e4a5179bb4a362f12914133df3feae56d1a2ec6e0",
+      "gnu_build_id": "10b16fff5eb317ac1fcc268c78f5ada065c4bd65",
+      "module_path": "postgresql/bin/.pg-launcher",
+      "module_sha256": "ec1bf67377fd639f60871336460227bf1af51bbc5926511d20f941b4d1628c12"
+    },
+    {
+      "archive": "pgvector-0.8.7-postgresql-15.19-linux-arm64.tar.gz",
+      "archive_sha256": "4b5ff4d38ff86c65012ecad98d87a19a314f463902178bb42028bbdd269a5591",
+      "debug_file_path": "pgvector-0.8.7-postgresql-15.19-linux-arm64/pgvector/lib/vector.so.debug",
+      "debug_file_sha256": "fa0a21c81f1cd072125c3ea8c5196a2602d864b6a6782830147b627e7b007eff",
+      "gnu_build_id": "d6885c81458a4a43fc9a88e7d8c73015d23bc4bb",
+      "module_path": "pgvector/lib/vector.so",
+      "module_sha256": "a4df3ff94dbd468e8f65281aa1af006af99a1ace290c4438fdc121d008615763"
+    }
+  ],
+  "inspection_tool_versions": {
+    "ldd": "ldd (Ubuntu GLIBC 2.39-0ubuntu8.9) 2.39",
+    "readelf": "GNU readelf (GNU Binutils for Ubuntu) 2.42"
+  },
+  "inventory_revision": null,
+  "kernel_release": "6.17.0-1022-azure",
+  "ldd_libexec_postgres": "\tlinux-vdso.so.1 (0x0000ff631e54d000)\n\tlibzstd.so.1 => /tmp/pg-binaries-diagnostics.67h0Ne/postgresql/libexec/../lib/runtime/libzstd.so.1 (0x0000ff631bc90000)\n\tliblz4.so.1 => /tmp/pg-binaries-diagnostics.67h0Ne/postgresql/libexec/../lib/runtime/liblz4.so.1 (0x0000ff631bc50000)\n\tlibxml2.so.2 => /tmp/pg-binaries-diagnostics.67h0Ne/postgresql/libexec/../lib/runtime/libxml2.so.2 (0x0000ff631ba50000)\n\tlibssl.so.3 => /tmp/pg-binaries-diagnostics.67h0Ne/postgresql/libexec/../lib/runtime/libssl.so.3 (0x0000ff631b990000)\n\tlibcrypto.so.3 => /tmp/pg-binaries-diagnostics.67h0Ne/postgresql/libexec/../lib/runtime/libcrypto.so.3 (0x0000ff631b550000)\n\tlibz.so.1 => /tmp/pg-binaries-diagnostics.67h0Ne/postgresql/libexec/../lib/runtime/libz.so.1 (0x0000ff631b510000)\n\tlibm.so.6 => /lib/aarch64-linux-gnu/libm.so.6 (0x0000ff631b460000)\n\tlibicui18n.so.70 => /tmp/pg-binaries-diagnostics.67h0Ne/postgresql/libexec/../lib/runtime/libicui18n.so.70 (0x0000ff631b0b0000)\n\tlibicuuc.so.70 => /tmp/pg-binaries-diagnostics.67h0Ne/postgresql/libexec/../lib/runtime/libicuuc.so.70 (0x0000ff631ae70000)\n\tlibc.so.6 => /lib/aarch64-linux-gnu/libc.so.6 (0x0000ff631acb0000)\n\t/lib/ld-linux-aarch64.so.1 (0x0000ff631e500000)\n\tliblzma.so.5 => /tmp/pg-binaries-diagnostics.67h0Ne/postgresql/libexec/../lib/runtime/liblzma.so.5 (0x0000ff631ac60000)\n\tlibstdc++.so.6 => /tmp/pg-binaries-diagnostics.67h0Ne/postgresql/libexec/../lib/runtime/libstdc++.so.6 (0x0000ff631a9d0000)\n\tlibgcc_s.so.1 => /tmp/pg-binaries-diagnostics.67h0Ne/postgresql/libexec/../lib/runtime/libgcc_s.so.1 (0x0000ff631a990000)\n\tlibicudata.so.70 => /tmp/pg-binaries-diagnostics.67h0Ne/postgresql/libexec/../lib/runtime/libicudata.so.70 (0x0000ff6318d50000)",
+  "lookup_environment": {
+    "LD_LIBRARY_PATH": null,
+    "LD_PRELOAD": null,
+    "PATH": "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+    "PGDATA": null,
+    "PGHOST": null,
+    "PGPORT": null,
+    "PG_CONFIG": null
+  },
+  "machine": "aarch64",
+  "os_release": "PRETTY_NAME=\"Ubuntu 24.04.5 LTS\"\nNAME=\"Ubuntu\"\nVERSION_ID=\"24.04\"\nVERSION=\"24.04.5 LTS (Noble Numbat)\"\nVERSION_CODENAME=noble\nID=ubuntu\nID_LIKE=debian\nHOME_URL=\"https://www.ubuntu.com/\"\nSUPPORT_URL=\"https://help.ubuntu.com/\"\nBUG_REPORT_URL=\"https://bugs.launchpad.net/ubuntu/\"\nPRIVACY_POLICY_URL=\"https://www.ubuntu.com/legal/terms-and-policies/privacy-policy\"\nUBUNTU_CODENAME=noble\nLOGO=ubuntu-logo\n",
+  "output_file": "system-failure/output.txt",
+  "package_metadata": {
+    "pgvector": {
+      "architecture": "arm64",
+      "build_configuration": "pgvector-0.8.7;postgresql-core=15.19;builder=ubuntu-22.04;optflags=empty",
+      "build_id": "local-ee4d7fd1-88f3-49b2-b736-06ddd5fd3e39",
+      "build_inputs": {
+        "build_configuration": {
+          "architecture": "arm64",
+          "builder_image": "ubuntu:22.04",
+          "optflags": ""
+        },
+        "component": "pgvector",
+        "dependencies": {
+          "builder_base": {
+            "image": "ubuntu:22.04",
+            "platform": "linux/arm64",
+            "sha256": "0a9887931b0e38af2e3487ed39e29436b0535c4f3f52e57745baaf79d1898956"
+          },
+          "builder_packages": {
+            "sha256": "ef32321c31d5f27077868bf76b6104dc82f16bde36441ad0c45ecf83f9219f35"
+          },
+          "postgresql": {
+            "major": 15,
+            "sha256": "f2a750900557e25e5a0bfd8568ffcdbe69cdeadc942d50ff90d7817e75eff0bd"
+          }
+        },
+        "recipes": {
+          "scripts/pgvector/archive_input.py": "939dc51872bfc9b6db36e6b7a107d4071e155d46f1055fc2262b60f2090ae2b5",
+          "scripts/pgvector/build_inputs.py": "548cde2308256be0546ab6f3436e09e15c1d59acd4c68ea03097cdf979871c70",
+          "scripts/pgvector/builder-packages.sh": "678ad6807e7b58d50bdf8551c047239701f8d66e24d315cc5c5c57abbd442492",
+          "scripts/pgvector/linux-build-in-container.sh": "7252e9a190c79476580f94c4c39a18f92fe73d904595135f185692f84c4bfb86",
+          "scripts/pgvector/linux-build.Dockerfile": "ffeab7e1f23df4d0645d086a083758800d5933986ce72977ffe206c66d90ffad",
+          "scripts/pgvector/linux-build.sh": "b3c4b9193119c0c8e96db3c431c498f151cce68d49ad26aded7e3015ca45cc1b",
+          "tools/build_input_identity.py": "1d32f88ac1fe1779ce588319d40b15d65dad9598e93f6b0013bbc3876d5619e3",
+          "tools/selected_build_inputs.py": "4bbf6663663012069cc07bf2964be506764cac6079ac5cebdc0a5c112d47068d",
+          "tools/source_archive.py": "74cefc8618a4bf4f118813fa165333ae2f1af066d34f502d5c84e58619a32db6"
+        },
+        "schema_version": 1,
+        "sha256": "a6f6dd7f5cd789d7f20225b004c35ea1ba805fe6e9c0c02c8b41674f6eadc936",
+        "target": {
+          "platform": "linux-arm64",
+          "postgresql_major": 15,
+          "project": "pgvector",
+          "version": "0.8.7"
+        },
+        "upstream_sources": {
+          "pgvector": {
+            "sha256": "cac0b10c360f05b2d521200105ba3697e773d4cd3731f5a915a7e37ebe0bea85",
+            "url": "https://github.com/pgvector/pgvector/archive/refs/tags/v0.8.7.tar.gz"
+          }
+        }
+      },
+      "builder_image_id": "sha256:14ed8bc8021c3c0bc019553695714bfae9c8dfafd88ca590433179689f491d38",
+      "builder_packages_sha256": "ef32321c31d5f27077868bf76b6104dc82f16bde36441ad0c45ecf83f9219f35",
+      "configuration_prerequisites": [],
+      "core_archive": {
+        "basename": "postgresql-15.19-linux-arm64.tar.gz",
+        "sha256": "f2a750900557e25e5a0bfd8568ffcdbe69cdeadc942d50ff90d7817e75eff0bd"
+      },
+      "platform": "linux",
+      "project": "pgvector",
+      "requires": [],
+      "runtime_prerequisites": [],
+      "source_archive": {
+        "sha256": "cac0b10c360f05b2d521200105ba3697e773d4cd3731f5a915a7e37ebe0bea85",
+        "url": "https://github.com/pgvector/pgvector/archive/refs/tags/v0.8.7.tar.gz"
+      },
+      "source_revision": "1357133aeb412c3168964b469ab8fefd34bff536",
+      "sql_names": [
+        "vector"
+      ],
+      "version": "0.8.7"
+    },
+    "postgresql": {
+      "architecture": "arm64",
+      "build_configuration": "postgresql-15.19;builder=ubuntu-22.04;configure=icu,lz4,zstd,openssl,libxml,libxslt,zlib,uuid-e2fs,no-readline,no-rpath;cflags=-O2,-g;runtime=bundled-glibc-static-musl-launcher",
+      "build_id": "github-39265870934-1",
+      "builder_image_id": "sha256:c19ded07592324220582ac010f7f3f7dba5f50dceba4e2ff604d74834b4d5b5a",
+      "builder_inputs": {
+        "base_image": "ubuntu:22.04",
+        "base_image_digest": "sha256:0a9887931b0e38af2e3487ed39e29436b0535c4f3f52e57745baaf79d1898956",
+        "packages_sha256": "410a8ca758b0320b948ed25b65af9f495f660d49ab8fdca3417964a12b2454d0"
+      },
+      "bundled_glibc_version": "2.35-0ubuntu3.15",
+      "capabilities": {
+        "icu": true,
+        "libc_collations": true,
+        "lz4": true,
+        "zstd": true
+      },
+      "component": "postgresql",
+      "included_extensions": [
+        "adminpack",
+        "amcheck",
+        "autoinc",
+        "bloom",
+        "btree_gin",
+        "btree_gist",
+        "citext",
+        "cube",
+        "dblink",
+        "dict_int",
+        "dict_xsyn",
+        "earthdistance",
+        "file_fdw",
+        "fuzzystrmatch",
+        "hstore",
+        "insert_username",
+        "intagg",
+        "intarray",
+        "isn",
+        "lo",
+        "ltree",
+        "moddatetime",
+        "old_snapshot",
+        "pageinspect",
+        "pg_buffercache",
+        "pg_freespacemap",
+        "pg_prewarm",
+        "pg_stat_statements",
+        "pg_surgery",
+        "pg_trgm",
+        "pg_visibility",
+        "pg_walinspect",
+        "pgcrypto",
+        "pgrowlocks",
+        "pgstattuple",
+        "plpgsql",
+        "postgres_fdw",
+        "refint",
+        "seg",
+        "sslinfo",
+        "tablefunc",
+        "tcn",
+        "tsm_system_rows",
+        "tsm_system_time",
+        "unaccent",
+        "uuid-ossp",
+        "xml2"
+      ],
+      "platform": "linux",
+      "postgresql_version": "15.19",
+      "schema_version": 1,
+      "source_archive": {
+        "sha256": "e1a64a87a46b825b88c082e4518161a47aab53c45694964f8ba1df28f7859f89",
+        "url": "https://ftp.postgresql.org/pub/source/v15.19/postgresql-15.19.tar.bz2"
+      },
+      "source_revision": "1357133aeb412c3168964b469ab8fefd34bff536",
+      "version": "15.19"
+    }
+  },
+  "postgresql_version": "15.19",
+  "run_as_user": "diagnostic-postgres",
+  "schema_version": 1,
+  "source_revision": "1357133aeb412c3168964b469ab8fefd34bff536",
+  "started_at_utc": "2026-10-19T14:10:13Z"
+}

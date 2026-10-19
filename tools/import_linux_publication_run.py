@@ -537,7 +537,10 @@ def import_run(root, core_artifact, postgis_artifact, run_id, architecture,
                 _retain(receipt_path, target / receipt_path.name)
                 retained.append(target / receipt_path.name)
             for source, record in records[project_name].get(endpoint, []):
-                destination = root / "support/verification" / source.name
+                name = source.name
+                if project_name == "core" and record.get("component") == "postgresql":
+                    name = name.removesuffix(f"-{run_id}.json") + f"-paired-{run_id}.json"
+                destination = root / "support/verification" / name
                 _retain(source, destination)
                 retained.append(destination)
         report = analysis[project_name]

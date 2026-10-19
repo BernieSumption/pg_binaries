@@ -359,6 +359,25 @@ class LinuxPublicationRunImportTests(unittest.TestCase):
         self.assertTrue((self.root / "support/evidence" /
                          f"linux-publication-{self.run_id}/x86_64").exists() is False)
 
+    def test_same_run_retains_distinct_core_only_and_paired_postgresql_records(self):
+        core_only = self._core_publication_artifact()
+        importer.import_run(self.root, core_only, None, self.run_id,
+                            self.architecture, "18.6", "core-only")
+        importer.import_run(self.root, self.core_artifact, None, self.run_id,
+                            self.architecture, "18.6")
+        directory = self.root / "support/verification"
+        prefix = f"postgresql-18.6-{self.platform}-current"
+        core_record = directory / f"{prefix}-{self.run_id}.json"
+        paired_record = directory / f"{prefix}-paired-{self.run_id}.json"
+        self.assertEqual(core_record.read_bytes(), (core_only / "pilot/publication/records" /
+                         core_record.name).read_bytes())
+        self.assertEqual(paired_record.read_bytes(), (self.core_records /
+                         core_record.name).read_bytes())
+        self.assertEqual(json.loads(core_record.read_text())["profile_id"],
+                         f"postgresql-publication-linux-{self.architecture}-18.6")
+        self.assertEqual(json.loads(paired_record.read_text())["profile_id"],
+                         f"linux-publication-current-{self.architecture}")
+
     def test_core_only_import_rejects_mode_confusion_and_conflicting_evidence(self):
         artifact = self._core_publication_artifact()
         receipt = artifact / "pilot/publication/current-receipt.json"
