@@ -1,0 +1,73 @@
+{
+  "architecture": "arm64",
+  "archives": {
+    "pg_jsonschema-0.3.4-postgresql-17.11-linux-arm64.tar.gz": "56b51143cd779e87bba67c930ce00a0e13a12041c915f335d2087b9fea07ecad",
+    "postgresql-17.11-linux-arm64.tar.gz": "d4c9e0f233ae07cbdabe27e92f8961137b1b65f9f8cc3d5d19ad241fcf16298d"
+  },
+  "archives_present": {
+    "pg_jsonschema-0.3.4-postgresql-17.11-linux-arm64.tar.gz": true,
+    "postgresql-17.11-linux-arm64.tar.gz": true
+  },
+  "core_origin": "built",
+  "core_provenance": {
+    "build_id": "github-39210758552-1",
+    "build_inputs": {
+      "base_image": "ubuntu:22.04",
+      "base_image_digest": "sha256:0a9887931b0e38af2e3487ed39e29436b0535c4f3f52e57745baaf79d1898956",
+      "packages_sha256": "410a8ca758b0320b948ed25b65af9f495f660d49ab8fdca3417964a12b2454d0"
+    },
+    "provider": "github-actions",
+    "repository": "BernieSumption/pg_binaries",
+    "run_attempt": 1,
+    "run_id": "39210758552",
+    "run_sha": "80c23e1ba5087bb79f90ffdab64ec46c2cedaa5d",
+    "source_revision": "80c23e1ba5087bb79f90ffdab64ec46c2cedaa5d",
+    "workflow_ref": "BernieSumption/pg_binaries/.github/workflows/linux-changed-profiles.yml@refs/heads/spike"
+  },
+  "core_resolution": {
+    "architecture": "arm64",
+    "archive": "postgresql-17.11-linux-arm64.tar.gz",
+    "origin": "built",
+    "postgresql_version": "17.11",
+    "provenance": {
+      "build_id": "github-39210758552-1",
+      "build_inputs": {
+        "base_image": "ubuntu:22.04",
+        "base_image_digest": "sha256:0a9887931b0e38af2e3487ed39e29436b0535c4f3f52e57745baaf79d1898956",
+        "packages_sha256": "410a8ca758b0320b948ed25b65af9f495f660d49ab8fdca3417964a12b2454d0"
+      },
+      "provider": "github-actions",
+      "repository": "BernieSumption/pg_binaries",
+      "run_attempt": 1,
+      "run_id": "39210758552",
+      "run_sha": "80c23e1ba5087bb79f90ffdab64ec46c2cedaa5d",
+      "source_revision": "80c23e1ba5087bb79f90ffdab64ec46c2cedaa5d",
+      "workflow_ref": "BernieSumption/pg_binaries/.github/workflows/linux-changed-profiles.yml@refs/heads/spike"
+    },
+    "schema_version": 1,
+    "sha256": "d4c9e0f233ae07cbdabe27e92f8961137b1b65f9f8cc3d5d19ad241fcf16298d"
+  },
+  "core_run_id": "39210758552",
+  "pg_jsonschema_version": "0.3.4",
+  "postgresql_version": "17.11",
+  "profile_id": "pg-jsonschema-publication-linux-arm64-17.11",
+  "redistribution_status": "seahash-4.1.0-notice-unresolved",
+  "release_eligible": false,
+  "reports": {
+    "build_evidence": "2b01e32f6d90383c678a2bf791b573526f82eade353de20f70937fad469b1de2",
+    "cargo_license_inventory": "42a6c31255c6849d0078edf157dfde0c43389319a1634c9d3d2cc1ccc3991ccc",
+    "elf_closure": "0e3452b902a32529075d5f029c2bb91bb9c7efe1f01d1cdb351abbff988db382",
+    "probe_output": "3ce50d04db735ce6eb9722b10111143f33f075a84ccc4bc04847360a3f94b30b"
+  },
+  "run_id": "39210758552",
+  "schema_version": 1,
+  "source_revision": "80c23e1ba5087bb79f90ffdab64ec46c2cedaa5d",
+  "steps": {
+    "archive-suite": "success",
+    "elf-closure": "success"
+  },
+  "workflow_steps": {
+    "build": "success",
+    "verify": "success"
+  }
+}

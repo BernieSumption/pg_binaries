@@ -1,0 +1,5380 @@
+{
+  "schema_version": 1,
+  "architecture": "arm64",
+  "readelf_version": "GNU readelf (GNU Binutils) 2.44",
+  "inspected_files": [
+    "bin/.pg-launcher",
+    "bin/clusterdb",
+    "bin/createdb",
+    "bin/createuser",
+    "bin/dropdb",
+    "bin/dropuser",
+    "bin/ecpg",
+    "bin/initdb",
+    "bin/oid2name",
+    "bin/pg_amcheck",
+    "bin/pg_archivecleanup",
+    "bin/pg_basebackup",
+    "bin/pg_checksums",
+    "bin/pg_combinebackup",
+    "bin/pg_config",
+    "bin/pg_controldata",
+    "bin/pg_createsubscriber",
+    "bin/pg_ctl",
+    "bin/pg_dump",
+    "bin/pg_dumpall",
+    "bin/pg_isready",
+    "bin/pg_receivewal",
+    "bin/pg_recvlogical",
+    "bin/pg_resetwal",
+    "bin/pg_restore",
+    "bin/pg_rewind",
+    "bin/pg_test_fsync",
+    "bin/pg_test_timing",
+    "bin/pg_upgrade",
+    "bin/pg_verifybackup",
+    "bin/pg_waldump",
+    "bin/pg_walsummary",
+    "bin/pgbench",
+    "bin/postgres",
+    "bin/psql",
+    "bin/reindexdb",
+    "bin/vacuumdb",
+    "bin/vacuumlo",
+    "lib/_int.so",
+    "lib/amcheck.so",
+    "lib/auth_delay.so",
+    "lib/auto_explain.so",
+    "lib/autoinc.so",
+    "lib/basebackup_to_shell.so",
+    "lib/basic_archive.so",
+    "lib/bloom.so",
+    "lib/btree_gin.so",
+    "lib/btree_gist.so",
+    "lib/citext.so",
+    "lib/cube.so",
+    "lib/cyrillic_and_mic.so",
+    "lib/dblink.so",
+    "lib/dict_int.so",
+    "lib/dict_snowball.so",
+    "lib/dict_xsyn.so",
+    "lib/earthdistance.so",
+    "lib/euc2004_sjis2004.so",
+    "lib/euc_cn_and_mic.so",
+    "lib/euc_jp_and_sjis.so",
+    "lib/euc_kr_and_mic.so",
+    "lib/euc_tw_and_big5.so",
+    "lib/file_fdw.so",
+    "lib/fuzzystrmatch.so",
+    "lib/glibc/ld-linux-aarch64.so.1",
+    "lib/glibc/libc.so.6",
+    "lib/glibc/libdl.so.2",
+    "lib/glibc/libm.so.6",
+    "lib/glibc/libnss_dns.so.2",
+    "lib/glibc/libnss_files.so.2",
+    "lib/glibc/libpthread.so.0",
+    "lib/glibc/libresolv.so.2",
+    "lib/glibc/librt.so.1",
+    "lib/hstore.so",
+    "lib/hypopg.so",
+    "lib/insert_username.so",
+    "lib/isn.so",
+    "lib/latin2_and_win1250.so",
+    "lib/latin_and_mic.so",
+    "lib/libecpg.so.6.17",
+    "lib/libecpg_compat.so.3.17",
+    "lib/libpgtypes.so.3.17",
+    "lib/libpq.so.5.17",
+    "lib/libpqwalreceiver.so",
+    "lib/lo.so",
+    "lib/ltree.so",
+    "lib/moddatetime.so",
+    "lib/pageinspect.so",
+    "lib/passwordcheck.so",
+    "lib/pg_buffercache.so",
+    "lib/pg_freespacemap.so",
+    "lib/pg_prewarm.so",
+    "lib/pg_stat_statements.so",
+    "lib/pg_surgery.so",
+    "lib/pg_trgm.so",
+    "lib/pg_visibility.so",
+    "lib/pg_walinspect.so",
+    "lib/pgcrypto.so",
+    "lib/pgoutput.so",
+    "lib/pgrowlocks.so",
+    "lib/pgstattuple.so",
+    "lib/pgxml.so",
+    "lib/pgxs/src/test/isolation/isolationtester",
+    "lib/pgxs/src/test/isolation/pg_isolation_regress",
+    "lib/pgxs/src/test/regress/pg_regress",
+    "lib/plpgsql.so",
+    "lib/postgres_fdw.so",
+    "lib/refint.so",
+    "lib/runtime/libcrypto.so.3",
+    "lib/runtime/libgcc_s.so.1",
+    "lib/runtime/libicudata.so.70",
+    "lib/runtime/libicui18n.so.70",
+    "lib/runtime/libicuuc.so.70",
+    "lib/runtime/liblz4.so.1",
+    "lib/runtime/liblzma.so.5",
+    "lib/runtime/libssl.so.3",
+    "lib/runtime/libstdc++.so.6",
+    "lib/runtime/libuuid.so.1",
+    "lib/runtime/libxml2.so.2",
+    "lib/runtime/libxslt.so.1",
+    "lib/runtime/libz.so.1",
+    "lib/runtime/libzstd.so.1",
+    "lib/seg.so",
+    "lib/sslinfo.so",
+    "lib/tablefunc.so",
+    "lib/tcn.so",
+    "lib/test_decoding.so",
+    "lib/tsm_system_rows.so",
+    "lib/tsm_system_time.so",
+    "lib/unaccent.so",
+    "lib/utf8_and_big5.so",
+    "lib/utf8_and_cyrillic.so",
+    "lib/utf8_and_euc2004.so",
+    "lib/utf8_and_euc_cn.so",
+    "lib/utf8_and_euc_jp.so",
+    "lib/utf8_and_euc_kr.so",
+    "lib/utf8_and_euc_tw.so",
+    "lib/utf8_and_gb18030.so",
+    "lib/utf8_and_gbk.so",
+    "lib/utf8_and_iso8859.so",
+    "lib/utf8_and_iso8859_1.so",
+    "lib/utf8_and_johab.so",
+    "lib/utf8_and_sjis.so",
+    "lib/utf8_and_sjis2004.so",
+    "lib/utf8_and_uhc.so",
+    "lib/utf8_and_win.so",
+    "lib/uuid-ossp.so",
+    "libexec/clusterdb",
+    "libexec/createdb",
+    "libexec/createuser",
+    "libexec/dropdb",
+    "libexec/dropuser",
+    "libexec/ecpg",
+    "libexec/initdb",
+    "libexec/oid2name",
+    "libexec/pg_amcheck",
+    "libexec/pg_archivecleanup",
+    "libexec/pg_basebackup",
+    "libexec/pg_checksums",
+    "libexec/pg_combinebackup",
+    "libexec/pg_config",
+    "libexec/pg_controldata",
+    "libexec/pg_createsubscriber",
+    "libexec/pg_ctl",
+    "libexec/pg_dump",
+    "libexec/pg_dumpall",
+    "libexec/pg_isready",
+    "libexec/pg_receivewal",
+    "libexec/pg_recvlogical",
+    "libexec/pg_resetwal",
+    "libexec/pg_restore",
+    "libexec/pg_rewind",
+    "libexec/pg_test_fsync",
+    "libexec/pg_test_timing",
+    "libexec/pg_upgrade",
+    "libexec/pg_verifybackup",
+    "libexec/pg_waldump",
+    "libexec/pg_walsummary",
+    "libexec/pgbench",
+    "libexec/postgres",
+    "libexec/psql",
+    "libexec/reindexdb",
+    "libexec/vacuumdb",
+    "libexec/vacuumlo"
+  ],
+  "files": [
+    {
+      "path": "bin/.pg-launcher",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [],
+      "symbol_version_requirements": []
+    },
+    {
+      "path": "bin/clusterdb",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [],
+      "symbol_version_requirements": []
+    },
+    {
+      "path": "bin/createdb",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [],
+      "symbol_version_requirements": []
+    },
+    {
+      "path": "bin/createuser",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [],
+      "symbol_version_requirements": []
+    },
+    {
+      "path": "bin/dropdb",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [],
+      "symbol_version_requirements": []
+    },
+    {
+      "path": "bin/dropuser",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [],
+      "symbol_version_requirements": []
+    },
+    {
+      "path": "bin/ecpg",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [],
+      "symbol_version_requirements": []
+    },
+    {
+      "path": "bin/initdb",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [],
+      "symbol_version_requirements": []
+    },
+    {
+      "path": "bin/oid2name",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [],
+      "symbol_version_requirements": []
+    },
+    {
+      "path": "bin/pg_amcheck",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [],
+      "symbol_version_requirements": []
+    },
+    {
+      "path": "bin/pg_archivecleanup",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [],
+      "symbol_version_requirements": []
+    },
+    {
+      "path": "bin/pg_basebackup",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [],
+      "symbol_version_requirements": []
+    },
+    {
+      "path": "bin/pg_checksums",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [],
+      "symbol_version_requirements": []
+    },
+    {
+      "path": "bin/pg_combinebackup",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [],
+      "symbol_version_requirements": []
+    },
+    {
+      "path": "bin/pg_config",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [],
+      "symbol_version_requirements": []
+    },
+    {
+      "path": "bin/pg_controldata",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [],
+      "symbol_version_requirements": []
+    },
+    {
+      "path": "bin/pg_createsubscriber",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [],
+      "symbol_version_requirements": []
+    },
+    {
+      "path": "bin/pg_ctl",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [],
+      "symbol_version_requirements": []
+    },
+    {
+      "path": "bin/pg_dump",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [],
+      "symbol_version_requirements": []
+    },
+    {
+      "path": "bin/pg_dumpall",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [],
+      "symbol_version_requirements": []
+    },
+    {
+      "path": "bin/pg_isready",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [],
+      "symbol_version_requirements": []
+    },
+    {
+      "path": "bin/pg_receivewal",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [],
+      "symbol_version_requirements": []
+    },
+    {
+      "path": "bin/pg_recvlogical",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [],
+      "symbol_version_requirements": []
+    },
+    {
+      "path": "bin/pg_resetwal",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [],
+      "symbol_version_requirements": []
+    },
+    {
+      "path": "bin/pg_restore",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [],
+      "symbol_version_requirements": []
+    },
+    {
+      "path": "bin/pg_rewind",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [],
+      "symbol_version_requirements": []
+    },
+    {
+      "path": "bin/pg_test_fsync",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [],
+      "symbol_version_requirements": []
+    },
+    {
+      "path": "bin/pg_test_timing",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [],
+      "symbol_version_requirements": []
+    },
+    {
+      "path": "bin/pg_upgrade",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [],
+      "symbol_version_requirements": []
+    },
+    {
+      "path": "bin/pg_verifybackup",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [],
+      "symbol_version_requirements": []
+    },
+    {
+      "path": "bin/pg_waldump",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [],
+      "symbol_version_requirements": []
+    },
+    {
+      "path": "bin/pg_walsummary",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [],
+      "symbol_version_requirements": []
+    },
+    {
+      "path": "bin/pgbench",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [],
+      "symbol_version_requirements": []
+    },
+    {
+      "path": "bin/postgres",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [],
+      "symbol_version_requirements": []
+    },
+    {
+      "path": "bin/psql",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [],
+      "symbol_version_requirements": []
+    },
+    {
+      "path": "bin/reindexdb",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [],
+      "symbol_version_requirements": []
+    },
+    {
+      "path": "bin/vacuumdb",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [],
+      "symbol_version_requirements": []
+    },
+    {
+      "path": "bin/vacuumlo",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [],
+      "symbol_version_requirements": []
+    },
+    {
+      "path": "lib/_int.so",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN/.",
+        "$ORIGIN/./runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 3
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lib/amcheck.so",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN/.",
+        "$ORIGIN/./runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 3
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lib/auth_delay.so",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN/.",
+        "$ORIGIN/./runtime"
+      ],
+      "symbol_version_requirements": []
+    },
+    {
+      "path": "lib/auto_explain.so",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN/.",
+        "$ORIGIN/./runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 3
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lib/autoinc.so",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN/.",
+        "$ORIGIN/./runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 3
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lib/basebackup_to_shell.so",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN/.",
+        "$ORIGIN/./runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lib/basic_archive.so",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN/.",
+        "$ORIGIN/./runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 4
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.33",
+              "flags": "none",
+              "index": 3
+            },
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lib/bloom.so",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN/.",
+        "$ORIGIN/./runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 3
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lib/btree_gin.so",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN/.",
+        "$ORIGIN/./runtime"
+      ],
+      "symbol_version_requirements": []
+    },
+    {
+      "path": "lib/btree_gist.so",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN/.",
+        "$ORIGIN/./runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 3
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lib/citext.so",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN/.",
+        "$ORIGIN/./runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lib/cube.so",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN/.",
+        "$ORIGIN/./runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 4
+            }
+          ]
+        },
+        {
+          "library": "libm.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 3
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lib/cyrillic_and_mic.so",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN/.",
+        "$ORIGIN/./runtime"
+      ],
+      "symbol_version_requirements": []
+    },
+    {
+      "path": "lib/dblink.so",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN/.",
+        "$ORIGIN/./runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 3
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lib/dict_int.so",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN/.",
+        "$ORIGIN/./runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lib/dict_snowball.so",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN/.",
+        "$ORIGIN/./runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 3
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lib/dict_xsyn.so",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN/.",
+        "$ORIGIN/./runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 3
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lib/earthdistance.so",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN/.",
+        "$ORIGIN/./runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "libm.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lib/euc2004_sjis2004.so",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN/.",
+        "$ORIGIN/./runtime"
+      ],
+      "symbol_version_requirements": []
+    },
+    {
+      "path": "lib/euc_cn_and_mic.so",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN/.",
+        "$ORIGIN/./runtime"
+      ],
+      "symbol_version_requirements": []
+    },
+    {
+      "path": "lib/euc_jp_and_sjis.so",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN/.",
+        "$ORIGIN/./runtime"
+      ],
+      "symbol_version_requirements": []
+    },
+    {
+      "path": "lib/euc_kr_and_mic.so",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN/.",
+        "$ORIGIN/./runtime"
+      ],
+      "symbol_version_requirements": []
+    },
+    {
+      "path": "lib/euc_tw_and_big5.so",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN/.",
+        "$ORIGIN/./runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 3
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lib/file_fdw.so",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN/.",
+        "$ORIGIN/./runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 4
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.33",
+              "flags": "none",
+              "index": 3
+            },
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lib/fuzzystrmatch.so",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN/.",
+        "$ORIGIN/./runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 3
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lib/glibc/ld-linux-aarch64.so.1",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [],
+      "symbol_version_requirements": []
+    },
+    {
+      "path": "lib/glibc/libc.so.6",
+      "architecture": "arm64",
+      "interpreter": "/lib/ld-linux-aarch64.so.1",
+      "runtime_search_paths": [],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_PRIVATE",
+              "flags": "none",
+              "index": 20
+            },
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 19
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lib/glibc/libdl.so.2",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [],
+      "symbol_version_requirements": [
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lib/glibc/libm.so.6",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 15
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_PRIVATE",
+              "flags": "none",
+              "index": 14
+            },
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 13
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lib/glibc/libnss_dns.so.2",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [],
+      "symbol_version_requirements": [
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lib/glibc/libnss_files.so.2",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [],
+      "symbol_version_requirements": [
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lib/glibc/libpthread.so.0",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [],
+      "symbol_version_requirements": [
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lib/glibc/libresolv.so.2",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 7
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.34",
+              "flags": "none",
+              "index": 6
+            },
+            {
+              "name": "GLIBC_PRIVATE",
+              "flags": "none",
+              "index": 5
+            },
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 4
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lib/glibc/librt.so.1",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_PRIVATE",
+              "flags": "none",
+              "index": 5
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 4
+            },
+            {
+              "name": "GLIBC_PRIVATE",
+              "flags": "none",
+              "index": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lib/hstore.so",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN/.",
+        "$ORIGIN/./runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 3
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lib/hypopg.so",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 3
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lib/insert_username.so",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN/.",
+        "$ORIGIN/./runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 3
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lib/isn.so",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN/.",
+        "$ORIGIN/./runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 3
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lib/latin2_and_win1250.so",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN/.",
+        "$ORIGIN/./runtime"
+      ],
+      "symbol_version_requirements": []
+    },
+    {
+      "path": "lib/latin_and_mic.so",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN/.",
+        "$ORIGIN/./runtime"
+      ],
+      "symbol_version_requirements": []
+    },
+    {
+      "path": "lib/libecpg.so.6.17",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN/.",
+        "$ORIGIN/./runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 4
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.34",
+              "flags": "none",
+              "index": 3
+            },
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lib/libecpg_compat.so.3.17",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN/.",
+        "$ORIGIN/./runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 3
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lib/libpgtypes.so.3.17",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN/.",
+        "$ORIGIN/./runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 3
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lib/libpq.so.5.17",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN/.",
+        "$ORIGIN/./runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "libm.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.29",
+              "flags": "none",
+              "index": 9
+            },
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 8
+            }
+          ]
+        },
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 7
+            }
+          ]
+        },
+        {
+          "library": "libcrypto.so.3",
+          "versions": [
+            {
+              "name": "OPENSSL_3.0.0",
+              "flags": "none",
+              "index": 4
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.33",
+              "flags": "none",
+              "index": 10
+            },
+            {
+              "name": "GLIBC_2.25",
+              "flags": "none",
+              "index": 6
+            },
+            {
+              "name": "GLIBC_2.32",
+              "flags": "none",
+              "index": 5
+            },
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 3
+            }
+          ]
+        },
+        {
+          "library": "libssl.so.3",
+          "versions": [
+            {
+              "name": "OPENSSL_3.0.0",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lib/libpqwalreceiver.so",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN/.",
+        "$ORIGIN/./runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 3
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lib/lo.so",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN/.",
+        "$ORIGIN/./runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lib/ltree.so",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN/.",
+        "$ORIGIN/./runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 3
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lib/moddatetime.so",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN/.",
+        "$ORIGIN/./runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 3
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lib/pageinspect.so",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN/.",
+        "$ORIGIN/./runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 3
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lib/passwordcheck.so",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN/.",
+        "$ORIGIN/./runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 3
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lib/pg_buffercache.so",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN/.",
+        "$ORIGIN/./runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 3
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lib/pg_freespacemap.so",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN/.",
+        "$ORIGIN/./runtime"
+      ],
+      "symbol_version_requirements": []
+    },
+    {
+      "path": "lib/pg_prewarm.so",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN/.",
+        "$ORIGIN/./runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 3
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lib/pg_stat_statements.so",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN/.",
+        "$ORIGIN/./runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 4
+            }
+          ]
+        },
+        {
+          "library": "libm.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 3
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.33",
+              "flags": "none",
+              "index": 5
+            },
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lib/pg_surgery.so",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN/.",
+        "$ORIGIN/./runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 3
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lib/pg_trgm.so",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN/.",
+        "$ORIGIN/./runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 3
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lib/pg_visibility.so",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN/.",
+        "$ORIGIN/./runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 3
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lib/pg_walinspect.so",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN/.",
+        "$ORIGIN/./runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 3
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lib/pgcrypto.so",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN/.",
+        "$ORIGIN/./runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 4
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 3
+            }
+          ]
+        },
+        {
+          "library": "libcrypto.so.3",
+          "versions": [
+            {
+              "name": "OPENSSL_3.0.0",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lib/pgoutput.so",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN/.",
+        "$ORIGIN/./runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 3
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lib/pgrowlocks.so",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN/.",
+        "$ORIGIN/./runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 3
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lib/pgstattuple.so",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN/.",
+        "$ORIGIN/./runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 3
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lib/pgxml.so",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN/.",
+        "$ORIGIN/./runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 6
+            }
+          ]
+        },
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 5
+            }
+          ]
+        },
+        {
+          "library": "libxslt.so.1",
+          "versions": [
+            {
+              "name": "LIBXML2_1.0.18",
+              "flags": "none",
+              "index": 7
+            },
+            {
+              "name": "LIBXML2_1.0.22",
+              "flags": "none",
+              "index": 4
+            },
+            {
+              "name": "LIBXML2_1.0.11",
+              "flags": "none",
+              "index": 3
+            }
+          ]
+        },
+        {
+          "library": "libxml2.so.2",
+          "versions": [
+            {
+              "name": "LIBXML2_2.6.5",
+              "flags": "none",
+              "index": 9
+            },
+            {
+              "name": "LIBXML2_2.6.0",
+              "flags": "none",
+              "index": 8
+            },
+            {
+              "name": "LIBXML2_2.4.30",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lib/pgxs/src/test/isolation/isolationtester",
+      "architecture": "arm64",
+      "interpreter": "/lib/ld-linux-aarch64.so.1",
+      "runtime_search_paths": [
+        "$ORIGIN/../../../..",
+        "$ORIGIN/../../../../runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 3
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.34",
+              "flags": "none",
+              "index": 4
+            },
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lib/pgxs/src/test/isolation/pg_isolation_regress",
+      "architecture": "arm64",
+      "interpreter": "/lib/ld-linux-aarch64.so.1",
+      "runtime_search_paths": [
+        "$ORIGIN/../../../..",
+        "$ORIGIN/../../../../runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 3
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.33",
+              "flags": "none",
+              "index": 5
+            },
+            {
+              "name": "GLIBC_2.34",
+              "flags": "none",
+              "index": 4
+            },
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lib/pgxs/src/test/regress/pg_regress",
+      "architecture": "arm64",
+      "interpreter": "/lib/ld-linux-aarch64.so.1",
+      "runtime_search_paths": [
+        "$ORIGIN/../../../..",
+        "$ORIGIN/../../../../runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 3
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.33",
+              "flags": "none",
+              "index": 5
+            },
+            {
+              "name": "GLIBC_2.34",
+              "flags": "none",
+              "index": 4
+            },
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lib/plpgsql.so",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN/.",
+        "$ORIGIN/./runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 3
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lib/postgres_fdw.so",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN/.",
+        "$ORIGIN/./runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 3
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lib/refint.so",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN/.",
+        "$ORIGIN/./runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 3
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lib/runtime/libcrypto.so.3",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 7
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.25",
+              "flags": "none",
+              "index": 8
+            },
+            {
+              "name": "GLIBC_2.33",
+              "flags": "none",
+              "index": 6
+            },
+            {
+              "name": "GLIBC_2.34",
+              "flags": "none",
+              "index": 5
+            },
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 4
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lib/runtime/libgcc_s.so.1",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.35",
+              "flags": "none",
+              "index": 18
+            },
+            {
+              "name": "GLIBC_2.34",
+              "flags": "none",
+              "index": 17
+            },
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 16
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lib/runtime/libicudata.so.70",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN"
+      ],
+      "symbol_version_requirements": []
+    },
+    {
+      "path": "lib/runtime/libicui18n.so.70",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "libstdc++.so.6",
+          "versions": [
+            {
+              "name": "CXXABI_1.3.8",
+              "flags": "none",
+              "index": 9
+            },
+            {
+              "name": "GLIBCXX_3.4",
+              "flags": "none",
+              "index": 8
+            },
+            {
+              "name": "CXXABI_1.3",
+              "flags": "none",
+              "index": 6
+            }
+          ]
+        },
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 5
+            }
+          ]
+        },
+        {
+          "library": "libgcc_s.so.1",
+          "versions": [
+            {
+              "name": "GCC_3.0",
+              "flags": "none",
+              "index": 10
+            },
+            {
+              "name": "GCC_3.3.1",
+              "flags": "none",
+              "index": 4
+            }
+          ]
+        },
+        {
+          "library": "libm.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.29",
+              "flags": "none",
+              "index": 7
+            },
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 3
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lib/runtime/libicuuc.so.70",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "libstdc++.so.6",
+          "versions": [
+            {
+              "name": "CXXABI_1.3.8",
+              "flags": "none",
+              "index": 12
+            },
+            {
+              "name": "GLIBCXX_3.4",
+              "flags": "none",
+              "index": 11
+            },
+            {
+              "name": "CXXABI_1.3",
+              "flags": "none",
+              "index": 7
+            },
+            {
+              "name": "GLIBCXX_3.4.11",
+              "flags": "none",
+              "index": 6
+            }
+          ]
+        },
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 5
+            }
+          ]
+        },
+        {
+          "library": "libgcc_s.so.1",
+          "versions": [
+            {
+              "name": "GCC_3.0",
+              "flags": "none",
+              "index": 14
+            },
+            {
+              "name": "GCC_3.3.1",
+              "flags": "none",
+              "index": 4
+            }
+          ]
+        },
+        {
+          "library": "libm.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.27",
+              "flags": "none",
+              "index": 13
+            },
+            {
+              "name": "GLIBC_2.29",
+              "flags": "none",
+              "index": 8
+            },
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 3
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.33",
+              "flags": "none",
+              "index": 10
+            },
+            {
+              "name": "GLIBC_2.34",
+              "flags": "none",
+              "index": 9
+            },
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lib/runtime/liblz4.so.1",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 3
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lib/runtime/liblzma.so.5",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 6
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.32",
+              "flags": "none",
+              "index": 7
+            },
+            {
+              "name": "GLIBC_2.34",
+              "flags": "none",
+              "index": 5
+            },
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 4
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lib/runtime/libssl.so.3",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 5
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 4
+            }
+          ]
+        },
+        {
+          "library": "libcrypto.so.3",
+          "versions": [
+            {
+              "name": "OPENSSL_3.0.3",
+              "flags": "none",
+              "index": 6
+            },
+            {
+              "name": "OPENSSL_3.0.0",
+              "flags": "none",
+              "index": 3
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lib/runtime/libstdc++.so.6",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 53
+            }
+          ]
+        },
+        {
+          "library": "libm.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 52
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.33",
+              "flags": "none",
+              "index": 58
+            },
+            {
+              "name": "GLIBC_2.25",
+              "flags": "none",
+              "index": 57
+            },
+            {
+              "name": "GLIBC_2.18",
+              "flags": "none",
+              "index": 56
+            },
+            {
+              "name": "GLIBC_2.32",
+              "flags": "none",
+              "index": 54
+            },
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 50
+            },
+            {
+              "name": "GLIBC_2.34",
+              "flags": "none",
+              "index": 49
+            }
+          ]
+        },
+        {
+          "library": "libgcc_s.so.1",
+          "versions": [
+            {
+              "name": "GCC_4.2.0",
+              "flags": "none",
+              "index": 59
+            },
+            {
+              "name": "GCC_3.3",
+              "flags": "none",
+              "index": 55
+            },
+            {
+              "name": "GCC_3.0",
+              "flags": "none",
+              "index": 51
+            },
+            {
+              "name": "GCC_4.5.0",
+              "flags": "none",
+              "index": 48
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lib/runtime/libuuid.so.1",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 8
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.25",
+              "flags": "none",
+              "index": 9
+            },
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 7
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lib/runtime/libxml2.so.2",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "libz.so.1",
+          "versions": [
+            {
+              "name": "ZLIB_1.2.3.3",
+              "flags": "none",
+              "index": 52
+            },
+            {
+              "name": "ZLIB_1.2.2.3",
+              "flags": "none",
+              "index": 51
+            }
+          ]
+        },
+        {
+          "library": "libm.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.29",
+              "flags": "none",
+              "index": 54
+            },
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 50
+            }
+          ]
+        },
+        {
+          "library": "liblzma.so.5",
+          "versions": [
+            {
+              "name": "XZ_5.0",
+              "flags": "none",
+              "index": 48
+            }
+          ]
+        },
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 47
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.28",
+              "flags": "none",
+              "index": 53
+            },
+            {
+              "name": "GLIBC_2.33",
+              "flags": "none",
+              "index": 49
+            },
+            {
+              "name": "GLIBC_2.34",
+              "flags": "none",
+              "index": 46
+            },
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 45
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lib/runtime/libxslt.so.1",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "libm.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.29",
+              "flags": "none",
+              "index": 43
+            },
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 36
+            }
+          ]
+        },
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 34
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.33",
+              "flags": "none",
+              "index": 42
+            },
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 31
+            }
+          ]
+        },
+        {
+          "library": "libxml2.so.2",
+          "versions": [
+            {
+              "name": "LIBXML2_2.6.25",
+              "flags": "none",
+              "index": 44
+            },
+            {
+              "name": "LIBXML2_2.6.15",
+              "flags": "none",
+              "index": 41
+            },
+            {
+              "name": "LIBXML2_2.6.27",
+              "flags": "none",
+              "index": 40
+            },
+            {
+              "name": "LIBXML2_2.5.6",
+              "flags": "none",
+              "index": 39
+            },
+            {
+              "name": "LIBXML2_2.6.3",
+              "flags": "none",
+              "index": 38
+            },
+            {
+              "name": "LIBXML2_2.9.0",
+              "flags": "none",
+              "index": 37
+            },
+            {
+              "name": "LIBXML2_2.6.17",
+              "flags": "none",
+              "index": 35
+            },
+            {
+              "name": "LIBXML2_2.5.4",
+              "flags": "none",
+              "index": 33
+            },
+            {
+              "name": "LIBXML2_2.6.5",
+              "flags": "none",
+              "index": 32
+            },
+            {
+              "name": "LIBXML2_2.6.0",
+              "flags": "none",
+              "index": 30
+            },
+            {
+              "name": "LIBXML2_2.4.30",
+              "flags": "none",
+              "index": 29
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lib/runtime/libz.so.1",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 16
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 15
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lib/runtime/libzstd.so.1",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 3
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lib/seg.so",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN/.",
+        "$ORIGIN/./runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 3
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lib/sslinfo.so",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN/.",
+        "$ORIGIN/./runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 4
+            }
+          ]
+        },
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 3
+            }
+          ]
+        },
+        {
+          "library": "libcrypto.so.3",
+          "versions": [
+            {
+              "name": "OPENSSL_3.0.0",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lib/tablefunc.so",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN/.",
+        "$ORIGIN/./runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 5
+            }
+          ]
+        },
+        {
+          "library": "libm.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.29",
+              "flags": "none",
+              "index": 4
+            },
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 3
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lib/tcn.so",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN/.",
+        "$ORIGIN/./runtime"
+      ],
+      "symbol_version_requirements": []
+    },
+    {
+      "path": "lib/test_decoding.so",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN/.",
+        "$ORIGIN/./runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 3
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lib/tsm_system_rows.so",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN/.",
+        "$ORIGIN/./runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 3
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lib/tsm_system_time.so",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN/.",
+        "$ORIGIN/./runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 3
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lib/unaccent.so",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN/.",
+        "$ORIGIN/./runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 3
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "lib/utf8_and_big5.so",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN/.",
+        "$ORIGIN/./runtime"
+      ],
+      "symbol_version_requirements": []
+    },
+    {
+      "path": "lib/utf8_and_cyrillic.so",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN/.",
+        "$ORIGIN/./runtime"
+      ],
+      "symbol_version_requirements": []
+    },
+    {
+      "path": "lib/utf8_and_euc2004.so",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN/.",
+        "$ORIGIN/./runtime"
+      ],
+      "symbol_version_requirements": []
+    },
+    {
+      "path": "lib/utf8_and_euc_cn.so",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN/.",
+        "$ORIGIN/./runtime"
+      ],
+      "symbol_version_requirements": []
+    },
+    {
+      "path": "lib/utf8_and_euc_jp.so",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN/.",
+        "$ORIGIN/./runtime"
+      ],
+      "symbol_version_requirements": []
+    },
+    {
+      "path": "lib/utf8_and_euc_kr.so",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN/.",
+        "$ORIGIN/./runtime"
+      ],
+      "symbol_version_requirements": []
+    },
+    {
+      "path": "lib/utf8_and_euc_tw.so",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN/.",
+        "$ORIGIN/./runtime"
+      ],
+      "symbol_version_requirements": []
+    },
+    {
+      "path": "lib/utf8_and_gb18030.so",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN/.",
+        "$ORIGIN/./runtime"
+      ],
+      "symbol_version_requirements": []
+    },
+    {
+      "path": "lib/utf8_and_gbk.so",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN/.",
+        "$ORIGIN/./runtime"
+      ],
+      "symbol_version_requirements": []
+    },
+    {
+      "path": "lib/utf8_and_iso8859.so",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN/.",
+        "$ORIGIN/./runtime"
+      ],
+      "symbol_version_requirements": []
+    },
+    {
+      "path": "lib/utf8_and_iso8859_1.so",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN/.",
+        "$ORIGIN/./runtime"
+      ],
+      "symbol_version_requirements": []
+    },
+    {
+      "path": "lib/utf8_and_johab.so",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN/.",
+        "$ORIGIN/./runtime"
+      ],
+      "symbol_version_requirements": []
+    },
+    {
+      "path": "lib/utf8_and_sjis.so",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN/.",
+        "$ORIGIN/./runtime"
+      ],
+      "symbol_version_requirements": []
+    },
+    {
+      "path": "lib/utf8_and_sjis2004.so",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN/.",
+        "$ORIGIN/./runtime"
+      ],
+      "symbol_version_requirements": []
+    },
+    {
+      "path": "lib/utf8_and_uhc.so",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN/.",
+        "$ORIGIN/./runtime"
+      ],
+      "symbol_version_requirements": []
+    },
+    {
+      "path": "lib/utf8_and_win.so",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN/.",
+        "$ORIGIN/./runtime"
+      ],
+      "symbol_version_requirements": []
+    },
+    {
+      "path": "lib/uuid-ossp.so",
+      "architecture": "arm64",
+      "interpreter": null,
+      "runtime_search_paths": [
+        "$ORIGIN/.",
+        "$ORIGIN/./runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 4
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 3
+            }
+          ]
+        },
+        {
+          "library": "libuuid.so.1",
+          "versions": [
+            {
+              "name": "UUID_1.0",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "libexec/clusterdb",
+      "architecture": "arm64",
+      "interpreter": "/lib/ld-linux-aarch64.so.1",
+      "runtime_search_paths": [
+        "$ORIGIN/../lib",
+        "$ORIGIN/../lib/runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 3
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.33",
+              "flags": "none",
+              "index": 5
+            },
+            {
+              "name": "GLIBC_2.34",
+              "flags": "none",
+              "index": 4
+            },
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "libexec/createdb",
+      "architecture": "arm64",
+      "interpreter": "/lib/ld-linux-aarch64.so.1",
+      "runtime_search_paths": [
+        "$ORIGIN/../lib",
+        "$ORIGIN/../lib/runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 3
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.33",
+              "flags": "none",
+              "index": 5
+            },
+            {
+              "name": "GLIBC_2.34",
+              "flags": "none",
+              "index": 4
+            },
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "libexec/createuser",
+      "architecture": "arm64",
+      "interpreter": "/lib/ld-linux-aarch64.so.1",
+      "runtime_search_paths": [
+        "$ORIGIN/../lib",
+        "$ORIGIN/../lib/runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 3
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.33",
+              "flags": "none",
+              "index": 5
+            },
+            {
+              "name": "GLIBC_2.34",
+              "flags": "none",
+              "index": 4
+            },
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "libexec/dropdb",
+      "architecture": "arm64",
+      "interpreter": "/lib/ld-linux-aarch64.so.1",
+      "runtime_search_paths": [
+        "$ORIGIN/../lib",
+        "$ORIGIN/../lib/runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 3
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.33",
+              "flags": "none",
+              "index": 5
+            },
+            {
+              "name": "GLIBC_2.34",
+              "flags": "none",
+              "index": 4
+            },
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "libexec/dropuser",
+      "architecture": "arm64",
+      "interpreter": "/lib/ld-linux-aarch64.so.1",
+      "runtime_search_paths": [
+        "$ORIGIN/../lib",
+        "$ORIGIN/../lib/runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 3
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.33",
+              "flags": "none",
+              "index": 5
+            },
+            {
+              "name": "GLIBC_2.34",
+              "flags": "none",
+              "index": 4
+            },
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "libexec/ecpg",
+      "architecture": "arm64",
+      "interpreter": "/lib/ld-linux-aarch64.so.1",
+      "runtime_search_paths": [
+        "$ORIGIN/../lib",
+        "$ORIGIN/../lib/runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 5
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.33",
+              "flags": "none",
+              "index": 4
+            },
+            {
+              "name": "GLIBC_2.34",
+              "flags": "none",
+              "index": 3
+            },
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "libexec/initdb",
+      "architecture": "arm64",
+      "interpreter": "/lib/ld-linux-aarch64.so.1",
+      "runtime_search_paths": [
+        "$ORIGIN/../lib",
+        "$ORIGIN/../lib/runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 7
+            }
+          ]
+        },
+        {
+          "library": "libm.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 6
+            },
+            {
+              "name": "GLIBC_2.29",
+              "flags": "none",
+              "index": 4
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.34",
+              "flags": "none",
+              "index": 5
+            },
+            {
+              "name": "GLIBC_2.33",
+              "flags": "none",
+              "index": 3
+            },
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "libexec/oid2name",
+      "architecture": "arm64",
+      "interpreter": "/lib/ld-linux-aarch64.so.1",
+      "runtime_search_paths": [
+        "$ORIGIN/../lib",
+        "$ORIGIN/../lib/runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 3
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.34",
+              "flags": "none",
+              "index": 4
+            },
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "libexec/pg_amcheck",
+      "architecture": "arm64",
+      "interpreter": "/lib/ld-linux-aarch64.so.1",
+      "runtime_search_paths": [
+        "$ORIGIN/../lib",
+        "$ORIGIN/../lib/runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 3
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.33",
+              "flags": "none",
+              "index": 5
+            },
+            {
+              "name": "GLIBC_2.34",
+              "flags": "none",
+              "index": 4
+            },
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "libexec/pg_archivecleanup",
+      "architecture": "arm64",
+      "interpreter": "/lib/ld-linux-aarch64.so.1",
+      "runtime_search_paths": [
+        "$ORIGIN/../lib",
+        "$ORIGIN/../lib/runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 5
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.33",
+              "flags": "none",
+              "index": 4
+            },
+            {
+              "name": "GLIBC_2.34",
+              "flags": "none",
+              "index": 3
+            },
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "libexec/pg_basebackup",
+      "architecture": "arm64",
+      "interpreter": "/lib/ld-linux-aarch64.so.1",
+      "runtime_search_paths": [
+        "$ORIGIN/../lib",
+        "$ORIGIN/../lib/runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 3
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.33",
+              "flags": "none",
+              "index": 5
+            },
+            {
+              "name": "GLIBC_2.34",
+              "flags": "none",
+              "index": 4
+            },
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "libexec/pg_checksums",
+      "architecture": "arm64",
+      "interpreter": "/lib/ld-linux-aarch64.so.1",
+      "runtime_search_paths": [
+        "$ORIGIN/../lib",
+        "$ORIGIN/../lib/runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 5
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.33",
+              "flags": "none",
+              "index": 4
+            },
+            {
+              "name": "GLIBC_2.34",
+              "flags": "none",
+              "index": 3
+            },
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "libexec/pg_combinebackup",
+      "architecture": "arm64",
+      "interpreter": "/lib/ld-linux-aarch64.so.1",
+      "runtime_search_paths": [
+        "$ORIGIN/../lib",
+        "$ORIGIN/../lib/runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 5
+            }
+          ]
+        },
+        {
+          "library": "libcrypto.so.3",
+          "versions": [
+            {
+              "name": "OPENSSL_3.0.0",
+              "flags": "none",
+              "index": 3
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.34",
+              "flags": "none",
+              "index": 8
+            },
+            {
+              "name": "GLIBC_2.25",
+              "flags": "none",
+              "index": 7
+            },
+            {
+              "name": "GLIBC_2.27",
+              "flags": "none",
+              "index": 6
+            },
+            {
+              "name": "GLIBC_2.33",
+              "flags": "none",
+              "index": 4
+            },
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "libexec/pg_config",
+      "architecture": "arm64",
+      "interpreter": "/lib/ld-linux-aarch64.so.1",
+      "runtime_search_paths": [
+        "$ORIGIN/../lib",
+        "$ORIGIN/../lib/runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 5
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.33",
+              "flags": "none",
+              "index": 4
+            },
+            {
+              "name": "GLIBC_2.34",
+              "flags": "none",
+              "index": 3
+            },
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "libexec/pg_controldata",
+      "architecture": "arm64",
+      "interpreter": "/lib/ld-linux-aarch64.so.1",
+      "runtime_search_paths": [
+        "$ORIGIN/../lib",
+        "$ORIGIN/../lib/runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 5
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.33",
+              "flags": "none",
+              "index": 4
+            },
+            {
+              "name": "GLIBC_2.34",
+              "flags": "none",
+              "index": 3
+            },
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "libexec/pg_createsubscriber",
+      "architecture": "arm64",
+      "interpreter": "/lib/ld-linux-aarch64.so.1",
+      "runtime_search_paths": [
+        "$ORIGIN/../lib",
+        "$ORIGIN/../lib/runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "libm.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.29",
+              "flags": "none",
+              "index": 6
+            },
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 4
+            }
+          ]
+        },
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 3
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.33",
+              "flags": "none",
+              "index": 7
+            },
+            {
+              "name": "GLIBC_2.34",
+              "flags": "none",
+              "index": 5
+            },
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "libexec/pg_ctl",
+      "architecture": "arm64",
+      "interpreter": "/lib/ld-linux-aarch64.so.1",
+      "runtime_search_paths": [
+        "$ORIGIN/../lib",
+        "$ORIGIN/../lib/runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 5
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.33",
+              "flags": "none",
+              "index": 4
+            },
+            {
+              "name": "GLIBC_2.34",
+              "flags": "none",
+              "index": 3
+            },
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "libexec/pg_dump",
+      "architecture": "arm64",
+      "interpreter": "/lib/ld-linux-aarch64.so.1",
+      "runtime_search_paths": [
+        "$ORIGIN/../lib",
+        "$ORIGIN/../lib/runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "libcrypto.so.3",
+          "versions": [
+            {
+              "name": "OPENSSL_3.0.0",
+              "flags": "none",
+              "index": 6
+            }
+          ]
+        },
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 3
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.33",
+              "flags": "none",
+              "index": 5
+            },
+            {
+              "name": "GLIBC_2.34",
+              "flags": "none",
+              "index": 4
+            },
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "libexec/pg_dumpall",
+      "architecture": "arm64",
+      "interpreter": "/lib/ld-linux-aarch64.so.1",
+      "runtime_search_paths": [
+        "$ORIGIN/../lib",
+        "$ORIGIN/../lib/runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "libcrypto.so.3",
+          "versions": [
+            {
+              "name": "OPENSSL_3.0.0",
+              "flags": "none",
+              "index": 6
+            }
+          ]
+        },
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 3
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.33",
+              "flags": "none",
+              "index": 5
+            },
+            {
+              "name": "GLIBC_2.34",
+              "flags": "none",
+              "index": 4
+            },
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "libexec/pg_isready",
+      "architecture": "arm64",
+      "interpreter": "/lib/ld-linux-aarch64.so.1",
+      "runtime_search_paths": [
+        "$ORIGIN/../lib",
+        "$ORIGIN/../lib/runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 3
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.33",
+              "flags": "none",
+              "index": 5
+            },
+            {
+              "name": "GLIBC_2.34",
+              "flags": "none",
+              "index": 4
+            },
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "libexec/pg_receivewal",
+      "architecture": "arm64",
+      "interpreter": "/lib/ld-linux-aarch64.so.1",
+      "runtime_search_paths": [
+        "$ORIGIN/../lib",
+        "$ORIGIN/../lib/runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 3
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.33",
+              "flags": "none",
+              "index": 5
+            },
+            {
+              "name": "GLIBC_2.34",
+              "flags": "none",
+              "index": 4
+            },
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "libexec/pg_recvlogical",
+      "architecture": "arm64",
+      "interpreter": "/lib/ld-linux-aarch64.so.1",
+      "runtime_search_paths": [
+        "$ORIGIN/../lib",
+        "$ORIGIN/../lib/runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 3
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.33",
+              "flags": "none",
+              "index": 5
+            },
+            {
+              "name": "GLIBC_2.34",
+              "flags": "none",
+              "index": 4
+            },
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "libexec/pg_resetwal",
+      "architecture": "arm64",
+      "interpreter": "/lib/ld-linux-aarch64.so.1",
+      "runtime_search_paths": [
+        "$ORIGIN/../lib",
+        "$ORIGIN/../lib/runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 5
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.33",
+              "flags": "none",
+              "index": 4
+            },
+            {
+              "name": "GLIBC_2.34",
+              "flags": "none",
+              "index": 3
+            },
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "libexec/pg_restore",
+      "architecture": "arm64",
+      "interpreter": "/lib/ld-linux-aarch64.so.1",
+      "runtime_search_paths": [
+        "$ORIGIN/../lib",
+        "$ORIGIN/../lib/runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "libcrypto.so.3",
+          "versions": [
+            {
+              "name": "OPENSSL_3.0.0",
+              "flags": "none",
+              "index": 6
+            }
+          ]
+        },
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 3
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.33",
+              "flags": "none",
+              "index": 5
+            },
+            {
+              "name": "GLIBC_2.34",
+              "flags": "none",
+              "index": 4
+            },
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "libexec/pg_rewind",
+      "architecture": "arm64",
+      "interpreter": "/lib/ld-linux-aarch64.so.1",
+      "runtime_search_paths": [
+        "$ORIGIN/../lib",
+        "$ORIGIN/../lib/runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 3
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.33",
+              "flags": "none",
+              "index": 5
+            },
+            {
+              "name": "GLIBC_2.34",
+              "flags": "none",
+              "index": 4
+            },
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "libexec/pg_test_fsync",
+      "architecture": "arm64",
+      "interpreter": "/lib/ld-linux-aarch64.so.1",
+      "runtime_search_paths": [
+        "$ORIGIN/../lib",
+        "$ORIGIN/../lib/runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 7
+            }
+          ]
+        },
+        {
+          "library": "libm.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.29",
+              "flags": "none",
+              "index": 5
+            },
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 4
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.33",
+              "flags": "none",
+              "index": 6
+            },
+            {
+              "name": "GLIBC_2.34",
+              "flags": "none",
+              "index": 3
+            },
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "libexec/pg_test_timing",
+      "architecture": "arm64",
+      "interpreter": "/lib/ld-linux-aarch64.so.1",
+      "runtime_search_paths": [
+        "$ORIGIN/../lib",
+        "$ORIGIN/../lib/runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 5
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.33",
+              "flags": "none",
+              "index": 4
+            },
+            {
+              "name": "GLIBC_2.34",
+              "flags": "none",
+              "index": 3
+            },
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "libexec/pg_upgrade",
+      "architecture": "arm64",
+      "interpreter": "/lib/ld-linux-aarch64.so.1",
+      "runtime_search_paths": [
+        "$ORIGIN/../lib",
+        "$ORIGIN/../lib/runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 3
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.27",
+              "flags": "none",
+              "index": 6
+            },
+            {
+              "name": "GLIBC_2.33",
+              "flags": "none",
+              "index": 5
+            },
+            {
+              "name": "GLIBC_2.34",
+              "flags": "none",
+              "index": 4
+            },
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "libexec/pg_verifybackup",
+      "architecture": "arm64",
+      "interpreter": "/lib/ld-linux-aarch64.so.1",
+      "runtime_search_paths": [
+        "$ORIGIN/../lib",
+        "$ORIGIN/../lib/runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 5
+            }
+          ]
+        },
+        {
+          "library": "libcrypto.so.3",
+          "versions": [
+            {
+              "name": "OPENSSL_3.0.0",
+              "flags": "none",
+              "index": 3
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.34",
+              "flags": "none",
+              "index": 7
+            },
+            {
+              "name": "GLIBC_2.25",
+              "flags": "none",
+              "index": 6
+            },
+            {
+              "name": "GLIBC_2.33",
+              "flags": "none",
+              "index": 4
+            },
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "libexec/pg_waldump",
+      "architecture": "arm64",
+      "interpreter": "/lib/ld-linux-aarch64.so.1",
+      "runtime_search_paths": [
+        "$ORIGIN/../lib",
+        "$ORIGIN/../lib/runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 5
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.33",
+              "flags": "none",
+              "index": 4
+            },
+            {
+              "name": "GLIBC_2.34",
+              "flags": "none",
+              "index": 3
+            },
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "libexec/pg_walsummary",
+      "architecture": "arm64",
+      "interpreter": "/lib/ld-linux-aarch64.so.1",
+      "runtime_search_paths": [
+        "$ORIGIN/../lib",
+        "$ORIGIN/../lib/runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 5
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.33",
+              "flags": "none",
+              "index": 4
+            },
+            {
+              "name": "GLIBC_2.34",
+              "flags": "none",
+              "index": 3
+            },
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "libexec/pgbench",
+      "architecture": "arm64",
+      "interpreter": "/lib/ld-linux-aarch64.so.1",
+      "runtime_search_paths": [
+        "$ORIGIN/../lib",
+        "$ORIGIN/../lib/runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "libcrypto.so.3",
+          "versions": [
+            {
+              "name": "OPENSSL_3.0.0",
+              "flags": "none",
+              "index": 7
+            }
+          ]
+        },
+        {
+          "library": "libm.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.29",
+              "flags": "none",
+              "index": 6
+            },
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 4
+            }
+          ]
+        },
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 3
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.34",
+              "flags": "none",
+              "index": 5
+            },
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "libexec/postgres",
+      "architecture": "arm64",
+      "interpreter": "/lib/ld-linux-aarch64.so.1",
+      "runtime_search_paths": [
+        "$ORIGIN/../lib",
+        "$ORIGIN/../lib/runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 14
+            }
+          ]
+        },
+        {
+          "library": "libm.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 10
+            },
+            {
+              "name": "GLIBC_2.29",
+              "flags": "none",
+              "index": 8
+            }
+          ]
+        },
+        {
+          "library": "libcrypto.so.3",
+          "versions": [
+            {
+              "name": "OPENSSL_3.0.0",
+              "flags": "none",
+              "index": 5
+            }
+          ]
+        },
+        {
+          "library": "libxml2.so.2",
+          "versions": [
+            {
+              "name": "LIBXML2_2.6.5",
+              "flags": "none",
+              "index": 13
+            },
+            {
+              "name": "LIBXML2_2.6.23",
+              "flags": "none",
+              "index": 12
+            },
+            {
+              "name": "LIBXML2_2.6.8",
+              "flags": "none",
+              "index": 11
+            },
+            {
+              "name": "LIBXML2_2.4.30",
+              "flags": "none",
+              "index": 6
+            },
+            {
+              "name": "LIBXML2_2.6.0",
+              "flags": "none",
+              "index": 4
+            }
+          ]
+        },
+        {
+          "library": "libssl.so.3",
+          "versions": [
+            {
+              "name": "OPENSSL_3.0.0",
+              "flags": "none",
+              "index": 3
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.25",
+              "flags": "none",
+              "index": 15
+            },
+            {
+              "name": "GLIBC_2.34",
+              "flags": "none",
+              "index": 9
+            },
+            {
+              "name": "GLIBC_2.33",
+              "flags": "none",
+              "index": 7
+            },
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "libexec/psql",
+      "architecture": "arm64",
+      "interpreter": "/lib/ld-linux-aarch64.so.1",
+      "runtime_search_paths": [
+        "$ORIGIN/../lib",
+        "$ORIGIN/../lib/runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "libm.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 5
+            }
+          ]
+        },
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 3
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.33",
+              "flags": "none",
+              "index": 6
+            },
+            {
+              "name": "GLIBC_2.34",
+              "flags": "none",
+              "index": 4
+            },
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "libexec/reindexdb",
+      "architecture": "arm64",
+      "interpreter": "/lib/ld-linux-aarch64.so.1",
+      "runtime_search_paths": [
+        "$ORIGIN/../lib",
+        "$ORIGIN/../lib/runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 3
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.33",
+              "flags": "none",
+              "index": 5
+            },
+            {
+              "name": "GLIBC_2.34",
+              "flags": "none",
+              "index": 4
+            },
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "libexec/vacuumdb",
+      "architecture": "arm64",
+      "interpreter": "/lib/ld-linux-aarch64.so.1",
+      "runtime_search_paths": [
+        "$ORIGIN/../lib",
+        "$ORIGIN/../lib/runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 3
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.33",
+              "flags": "none",
+              "index": 5
+            },
+            {
+              "name": "GLIBC_2.34",
+              "flags": "none",
+              "index": 4
+            },
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "path": "libexec/vacuumlo",
+      "architecture": "arm64",
+      "interpreter": "/lib/ld-linux-aarch64.so.1",
+      "runtime_search_paths": [
+        "$ORIGIN/../lib",
+        "$ORIGIN/../lib/runtime"
+      ],
+      "symbol_version_requirements": [
+        {
+          "library": "ld-linux-aarch64.so.1",
+          "versions": [
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 3
+            }
+          ]
+        },
+        {
+          "library": "libc.so.6",
+          "versions": [
+            {
+              "name": "GLIBC_2.34",
+              "flags": "none",
+              "index": 4
+            },
+            {
+              "name": "GLIBC_2.17",
+              "flags": "none",
+              "index": 2
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "archives": [
+    {
+      "basename": "postgresql-17.11-linux-arm64.tar.gz",
+      "sha256": "7a37b9a01173f7211d9cef28b713ee49bb7154135e12cb7400353cc47618e775"
+    },
+    {
+      "basename": "hypopg-1.4.3-postgresql-17.11-linux-arm64.tar.gz",
+      "sha256": "f414ab12ca7d5fed378dae10b99462ca6d860e1f644e3046dc423652d1a4e3e3"
+    }
+  ],
+  "outcome": "passed",
+  "findings": [
+    "Inspected architecture and runtime paths for 183 ELF files."
+  ],
+  "limits": [
+    "Static ELF inspection does not find libraries loaded dynamically by application code.",
+    "It does not inspect data-file access or absolute paths in non-runtime metadata.",
+    "Dependency closure reflects the bundled loader --list result for the inspected files.",
+    "Symbol versions are recorded as evidence; bundled runtime versions do not define a host glibc floor."
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "architecture": "arm64",
+  "archive": "postgresql-15.19-linux-arm64.tar.gz",
+  "origin": "built",
+  "postgresql_version": "15.19",
+  "provenance": {
+    "build_id": "github-39210758552-1",
+    "build_inputs": {
+      "base_image": "ubuntu:22.04",
+      "base_image_digest": "sha256:0a9887931b0e38af2e3487ed39e29436b0535c4f3f52e57745baaf79d1898956",
+      "packages_sha256": "410a8ca758b0320b948ed25b65af9f495f660d49ab8fdca3417964a12b2454d0"
+    },
+    "provider": "github-actions",
+    "repository": "BernieSumption/pg_binaries",
+    "run_attempt": 1,
+    "run_id": "39210758552",
+    "run_sha": "80c23e1ba5087bb79f90ffdab64ec46c2cedaa5d",
+    "source_revision": "80c23e1ba5087bb79f90ffdab64ec46c2cedaa5d",
+    "workflow_ref": "BernieSumption/pg_binaries/.github/workflows/linux-changed-profiles.yml@refs/heads/spike"
+  },
+  "schema_version": 1,
+  "sha256": "8dac878f2e3b1d2775eab04b6f8a123f6b96290e0927b3c5ca328c8a4c620dc1"
+}

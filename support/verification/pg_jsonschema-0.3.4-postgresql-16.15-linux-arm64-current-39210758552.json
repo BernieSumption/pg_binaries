@@ -1,0 +1,88 @@
+{
+  "assembled_core": {
+    "archive": "postgresql-16.15-linux-arm64.tar.gz",
+    "sha256": "d1f75d6dc558832e2531776e3785036cc6b97260f56568fbc2e6bd62fe0ca51d",
+    "version": "16.15"
+  },
+  "case_results": {
+    "archive-suite": "passed",
+    "elf-closure": "passed"
+  },
+  "ci": {
+    "build_revision": "80c23e1ba5087bb79f90ffdab64ec46c2cedaa5d",
+    "provider": "github-actions",
+    "run_id": "39210758552",
+    "run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/39210758552",
+    "source_revision": "80c23e1ba5087bb79f90ffdab64ec46c2cedaa5d",
+    "test_revision": "80c23e1ba5087bb79f90ffdab64ec46c2cedaa5d"
+  },
+  "component": "pg_jsonschema",
+  "core_origin": "built",
+  "core_provenance": {
+    "build_id": "github-39210758552-1",
+    "build_inputs": {
+      "base_image": "ubuntu:22.04",
+      "base_image_digest": "sha256:0a9887931b0e38af2e3487ed39e29436b0535c4f3f52e57745baaf79d1898956",
+      "packages_sha256": "410a8ca758b0320b948ed25b65af9f495f660d49ab8fdca3417964a12b2454d0"
+    },
+    "provider": "github-actions",
+    "repository": "BernieSumption/pg_binaries",
+    "run_attempt": 1,
+    "run_id": "39210758552",
+    "run_sha": "80c23e1ba5087bb79f90ffdab64ec46c2cedaa5d",
+    "source_revision": "80c23e1ba5087bb79f90ffdab64ec46c2cedaa5d",
+    "workflow_ref": "BernieSumption/pg_binaries/.github/workflows/linux-changed-profiles.yml@refs/heads/spike"
+  },
+  "core_resolution": {
+    "architecture": "arm64",
+    "archive": "postgresql-16.15-linux-arm64.tar.gz",
+    "origin": "built",
+    "postgresql_version": "16.15",
+    "provenance": {
+      "build_id": "github-39210758552-1",
+      "build_inputs": {
+        "base_image": "ubuntu:22.04",
+        "base_image_digest": "sha256:0a9887931b0e38af2e3487ed39e29436b0535c4f3f52e57745baaf79d1898956",
+        "packages_sha256": "410a8ca758b0320b948ed25b65af9f495f660d49ab8fdca3417964a12b2454d0"
+      },
+      "provider": "github-actions",
+      "repository": "BernieSumption/pg_binaries",
+      "run_attempt": 1,
+      "run_id": "39210758552",
+      "run_sha": "80c23e1ba5087bb79f90ffdab64ec46c2cedaa5d",
+      "source_revision": "80c23e1ba5087bb79f90ffdab64ec46c2cedaa5d",
+      "workflow_ref": "BernieSumption/pg_binaries/.github/workflows/linux-changed-profiles.yml@refs/heads/spike"
+    },
+    "schema_version": 1,
+    "sha256": "d1f75d6dc558832e2531776e3785036cc6b97260f56568fbc2e6bd62fe0ca51d"
+  },
+  "environment": {
+    "architecture": "arm64",
+    "clean_system": true,
+    "dependency_check_profile": "linux-elf-alpine-relocation-v1",
+    "dependency_checks_passed": true,
+    "distribution": "Alpine Linux 3.22",
+    "endpoint": "current",
+    "image_id": "sha256:6e08b0eac6a8653074f76d09f2c57576622c773b7f9747e2073afbdce8c7643e",
+    "os": "linux",
+    "os_version": "6.17.0"
+  },
+  "outcome": "passed",
+  "platform": "linux-arm64",
+  "postgresql_version": "16.15",
+  "prerequisite_archives": [],
+  "profile_id": "pg-jsonschema-publication-linux-arm64-16.15",
+  "profile_revision": "3d8e67eff67419902a5e8e087c84752f4d205c69b166f00df034acedaa68903d",
+  "project": "pg_jsonschema",
+  "redistribution_status": "seahash-4.1.0-notice-unresolved",
+  "release_eligible": false,
+  "schema_version": 2,
+  "scope": "publication",
+  "sha256": "93f06a9b95e90392a84a8a842abaa411176e69034e54739c36915c0e1cc8657b",
+  "test_cases": [
+    "archive-suite",
+    "elf-closure"
+  ],
+  "test_revision": "80c23e1ba5087bb79f90ffdab64ec46c2cedaa5d",
+  "version": "0.3.4"
+}

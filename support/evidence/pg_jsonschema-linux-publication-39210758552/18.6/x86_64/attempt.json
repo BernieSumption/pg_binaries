@@ -1,0 +1,73 @@
+{
+  "architecture": "x86_64",
+  "archives": {
+    "pg_jsonschema-0.3.4-postgresql-18.6-linux-x86_64.tar.gz": "b8ae3410ac80d90ba65f144a68619c61ee97c2d518ca73897c580fd7df5cb8fb",
+    "postgresql-18.6-linux-x86_64.tar.gz": "9372155864bd863b325b732cad45c4599a897433913a6f6196fd582914601846"
+  },
+  "archives_present": {
+    "pg_jsonschema-0.3.4-postgresql-18.6-linux-x86_64.tar.gz": true,
+    "postgresql-18.6-linux-x86_64.tar.gz": true
+  },
+  "core_origin": "built",
+  "core_provenance": {
+    "build_id": "github-39210758552-1",
+    "build_inputs": {
+      "base_image": "ubuntu:22.04",
+      "base_image_digest": "sha256:0a9887931b0e38af2e3487ed39e29436b0535c4f3f52e57745baaf79d1898956",
+      "packages_sha256": "e5b948714779db8f9f3763fc5ef06d7c11f0438d94a7b890a58446d8522e54be"
+    },
+    "provider": "github-actions",
+    "repository": "BernieSumption/pg_binaries",
+    "run_attempt": 1,
+    "run_id": "39210758552",
+    "run_sha": "80c23e1ba5087bb79f90ffdab64ec46c2cedaa5d",
+    "source_revision": "80c23e1ba5087bb79f90ffdab64ec46c2cedaa5d",
+    "workflow_ref": "BernieSumption/pg_binaries/.github/workflows/linux-changed-profiles.yml@refs/heads/spike"
+  },
+  "core_resolution": {
+    "architecture": "x86_64",
+    "archive": "postgresql-18.6-linux-x86_64.tar.gz",
+    "origin": "built",
+    "postgresql_version": "18.6",
+    "provenance": {
+      "build_id": "github-39210758552-1",
+      "build_inputs": {
+        "base_image": "ubuntu:22.04",
+        "base_image_digest": "sha256:0a9887931b0e38af2e3487ed39e29436b0535c4f3f52e57745baaf79d1898956",
+        "packages_sha256": "e5b948714779db8f9f3763fc5ef06d7c11f0438d94a7b890a58446d8522e54be"
+      },
+      "provider": "github-actions",
+      "repository": "BernieSumption/pg_binaries",
+      "run_attempt": 1,
+      "run_id": "39210758552",
+      "run_sha": "80c23e1ba5087bb79f90ffdab64ec46c2cedaa5d",
+      "source_revision": "80c23e1ba5087bb79f90ffdab64ec46c2cedaa5d",
+      "workflow_ref": "BernieSumption/pg_binaries/.github/workflows/linux-changed-profiles.yml@refs/heads/spike"
+    },
+    "schema_version": 1,
+    "sha256": "9372155864bd863b325b732cad45c4599a897433913a6f6196fd582914601846"
+  },
+  "core_run_id": "39210758552",
+  "pg_jsonschema_version": "0.3.4",
+  "postgresql_version": "18.6",
+  "profile_id": "pg-jsonschema-publication-linux-x86_64-18.6",
+  "redistribution_status": "seahash-4.1.0-notice-unresolved",
+  "release_eligible": false,
+  "reports": {
+    "build_evidence": "3b69cebf932e85c80ebcf65094f7a018057c2f0f816c04e4b469ebf43bd7d972",
+    "cargo_license_inventory": "42a6c31255c6849d0078edf157dfde0c43389319a1634c9d3d2cc1ccc3991ccc",
+    "elf_closure": "64c79fd9b03245787578a0ea03134768d72b0bfa16c48793b38c069dcc231c26",
+    "probe_output": "3cba2d21626ca74bab574f6a1990e4c8a9a2241365558c11e57840af77186190"
+  },
+  "run_id": "39210758552",
+  "schema_version": 1,
+  "source_revision": "80c23e1ba5087bb79f90ffdab64ec46c2cedaa5d",
+  "steps": {
+    "archive-suite": "success",
+    "elf-closure": "success"
+  },
+  "workflow_steps": {
+    "build": "success",
+    "verify": "success"
+  }
+}
