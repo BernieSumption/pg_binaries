@@ -5,3 +5,5 @@
 The final artifacts were downloaded and imported with the exact `1a10660` source snapshot. All 88 retained files, including eight current-profile verification records, matched the CI copies byte-for-byte. The receipt and record for each target live under its PostgreSQL version and architecture so one scheduler run cannot overwrite another target's evidence. The passing jobs used about 44.3 elapsed runner-minutes in total: 38.9 build, 3.6 verify and about 1.8 planning/selection. The matrix was bounded to four targets at a time.
 
 This run verifies the consolidated Linux pg_jsonschema path after removing its three older publication workflows, feasibility workflow, temporary trial files and permanent core pins. The candidates remain release-ineligible pending the separately tracked redistribution work.
+
+An evidence-only push then produced [scheduler run 39206331146](https://github.com/BernieSumption/pg_binaries/actions/runs/39206331146). Its select job passed and its publication matrix was skipped, confirming that retaining these records does not rebuild unchanged targets.
