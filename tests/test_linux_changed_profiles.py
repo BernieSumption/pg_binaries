@@ -18,7 +18,7 @@ class LinuxChangedProfilesTests(unittest.TestCase):
         plan = module.extension_archive_plan.plan(support, releases)
         self.expected = []
         for target in plan["candidate_archives"]:
-            if target["project"] in {"HypoPG", "pg_jsonschema", "pgtap", "pg_ivm", "pg_cron", "pgaudit", "PostGIS", "PostGIS TIGER Geocoder", "collection"} and target["platform"].startswith("linux-"):
+            if target["project"] in {"HypoPG", "pg_jsonschema", "pgtap", "pg_ivm", "pg_cron", "pgaudit", "PostGIS", "PostGIS TIGER Geocoder", "collection", "pgvector"} and target["platform"].startswith("linux-"):
                 self.expected.append({
                     "project": target["project"],
                     "extension_version": target["selected_version"],
@@ -29,7 +29,8 @@ class LinuxChangedProfilesTests(unittest.TestCase):
         self.profile_ids = [module._profile_id({"HypoPG": "hypopg", "pg_jsonschema": "pg-jsonschema",
                                                "pgtap": "pgtap", "pg_ivm": "pgivm",
                                                "pg_cron": "pgcron", "pgaudit": "pgaudit", "PostGIS": "postgis",
-                                               "collection": "collection", "PostGIS TIGER Geocoder": "tiger"}[item["project"]],
+                                               "collection": "collection", "PostGIS TIGER Geocoder": "tiger",
+                                               "pgvector": "pgvector"}[item["project"]],
                                                item["platform"].split("-")[1],
                                                item["postgresql_version"], item["extension_version"])
                             for item in self.expected]
@@ -47,7 +48,7 @@ class LinuxChangedProfilesTests(unittest.TestCase):
     def test_initial_or_missing_base_selects_all_support_derived_targets(self):
         self.assertEqual(len(self.expected), len(self.profile_ids))
         self.assertEqual({target["project"] for target in self.expected},
-                         {"HypoPG", "pg_jsonschema", "pgtap", "pg_ivm", "pg_cron", "pgaudit", "PostGIS", "PostGIS TIGER Geocoder", "collection"})
+                         {"HypoPG", "pg_jsonschema", "pgtap", "pg_ivm", "pg_cron", "pgaudit", "PostGIS", "PostGIS TIGER Geocoder", "collection", "pgvector"})
         self.assertEqual({target["platform"] for target in self.expected},
                          {"linux-x86_64", "linux-arm64"})
         self.assertEqual(module.changed_targets(ROOT / "no-such-base", ROOT), self.expected)

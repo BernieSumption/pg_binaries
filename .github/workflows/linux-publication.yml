@@ -32,7 +32,6 @@ on:
       - 'tools/emit_linux_publication_records.py'
       - 'tools/read_combined_verification_phases.py'
       - 'scripts/postgis/**'
-      - 'scripts/tiger/**'
       - 'scripts/collection/**'
       - 'tools/import_linux_collection_publication.py'
       - 'tests/test_import_linux_collection_publication.py'
@@ -78,7 +77,6 @@ jobs:
           profile_ids=(
             linux-publication-current-x86_64 linux-publication-current-arm64
             postgis-publication-current-x86_64 postgis-publication-current-arm64
-            tiger-publication-current-x86_64 tiger-publication-current-arm64
             collection-publication-current-x86_64 collection-publication-current-arm64
             pgaudit-publication-current-x86_64 pgaudit-publication-current-arm64
           )
@@ -131,10 +129,6 @@ jobs:
         if: ${{ always() && steps.build.outcome == 'success' }}
         id: postgis_build
         run: bash scripts/postgis/build.sh "$RUNNER_TEMP/pilot" "$RUNNER_TEMP/postgis"
-      - name: Build TIGER Geocoder 2025.2 against the publication PostgreSQL archive
-        if: ${{ always() && steps.postgis_build.outcome == 'success' && (startsWith(env.PG_VERSION, '16.') || startsWith(env.PG_VERSION, '17.') || startsWith(env.PG_VERSION, '18.')) }}
-        id: tiger_build
-        run: bash scripts/tiger/build.sh "$RUNNER_TEMP/pilot" "$RUNNER_TEMP/tiger"
       # profile-section: archive-builds end
       # profile-section: collection-build begin
       - name: Build collection 1.1.1 and 2.1.3 against the selected PostgreSQL archive
@@ -158,7 +152,7 @@ jobs:
       - name: Verify assembled archives in one Alpine 3.22 container
         if: ${{ always() && steps.build.outcome == 'success' }}
         id: combined_verify
-        run: bash scripts/linux/verify-combined.sh "$RUNNER_TEMP/pilot" "$RUNNER_TEMP/postgis" "$RUNNER_TEMP/tiger" "$RUNNER_TEMP/combined-verification"
+        run: bash scripts/linux/verify-combined.sh "$RUNNER_TEMP/pilot" "$RUNNER_TEMP/postgis" "$RUNNER_TEMP/combined-verification"
       - name: Map combined verification phases to case outcomes
         if: ${{ always() }}
         id: phase_outcomes
@@ -290,78 +284,6 @@ jobs:
             --archives "$RUNNER_TEMP/postgis" --core-archives "$RUNNER_TEMP/pilot" \
             --receipt "$publication/current-receipt.json" --output "$publication/records"
       # profile-section: postgis-report end
-      # profile-section: tiger-report begin
-      - name: Record TIGER publication step outcome
-        if: ${{ always() && (startsWith(env.PG_VERSION, '16.') || startsWith(env.PG_VERSION, '17.') || startsWith(env.PG_VERSION, '18.')) }}
-        env:
-          VERIFY_OUTCOME: ${{ fromJSON(steps.phase_outcomes.outputs.outcomes).tiger }}
-        run: |
-          set -euo pipefail
-          mkdir -p "$RUNNER_TEMP/tiger-publication"
-          printf '{"archive-suite":"%s"}\n' "$VERIFY_OUTCOME" \
-            > "$RUNNER_TEMP/tiger-publication/current-steps.json"
-      - name: Emit TIGER publication records
-        if: ${{ always() && (startsWith(env.PG_VERSION, '16.') || startsWith(env.PG_VERSION, '17.') || startsWith(env.PG_VERSION, '18.')) }}
-        run: |
-          set -euo pipefail
-          core="$RUNNER_TEMP/pilot/postgresql-$PG_VERSION-linux-$PG_ARCHITECTURE.tar.gz"
-          postgis="$RUNNER_TEMP/postgis/postgis-3.6.4-postgresql-$PG_VERSION-linux-$PG_ARCHITECTURE.tar.gz"
-          tiger="$RUNNER_TEMP/tiger/postgis_tiger_geocoder-2025.2-postgresql-$PG_VERSION-linux-$PG_ARCHITECTURE.tar.gz"
-          if [[ ! -f "$core" || ! -f "$core.sha256" || ! -f "$postgis" || ! -f "$postgis.sha256" || ! -f "$tiger" || ! -f "$tiger.sha256" ]]; then
-            echo 'No TIGER publication record: assembled archive bytes or sidecars are unavailable'
-            exit 0
-          fi
-          python3 - "$core" "$postgis" "$RUNNER_TEMP/postgis-publication/records" "$PG_VERSION" "$PG_ARCHITECTURE" "$GITHUB_RUN_ID" "$GITHUB_SHA" <<'PYCODE'
-          import hashlib
-          import sys
-          from pathlib import Path
-          sys.path.insert(0, 'tools')
-          import coverage
-          core, postgis, records, pg_version, architecture, run_id, revision = sys.argv[1:]
-          support = coverage.load_json(Path('support.json'))
-          core_sha = hashlib.sha256(Path(core).read_bytes()).hexdigest()
-          postgis_sha = hashlib.sha256(Path(postgis).read_bytes()).hexdigest()
-          name = f'postgis-3.6.4-postgresql-{pg_version}-linux-{architecture}-current-{run_id}.json'
-          record = coverage.load_json(Path(records) / name)
-          coverage.validate_verification_record(record, support, Path('.'))
-          if (record['sha256'] != postgis_sha
-                  or record['assembled_core']['sha256'] != core_sha
-                  or record['ci']['run_id'] != run_id
-                  or record['test_revision'] != revision):
-              raise SystemExit('TIGER prerequisite differs from PostGIS publication record')
-          PYCODE
-          publication="$RUNNER_TEMP/tiger-publication"
-          image=$(docker image inspect --format '{{.Id}}' pg-binaries-linux-verifier 2>/dev/null || true)
-          if [[ ! "$image" =~ ^sha256:[0-9a-f]{64}$ ]]; then
-            echo 'No TIGER publication record: verifier image identity is unavailable'
-            exit 0
-          fi
-          clean=false
-          dependencies=failure
-          if [[ "$(python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); print(all(v == "success" for v in d.values()))' "$publication/current-steps.json")" = True ]]; then
-            clean=true
-            dependencies=success
-          fi
-          distribution=$(docker run --rm --platform "${{ matrix.docker_platform }}" \
-            --entrypoint sh pg-binaries-linux-verifier -c '. /etc/os-release; printf "%s" "$NAME"')
-          distribution_version=$(docker run --rm --platform "${{ matrix.docker_platform }}" \
-            --entrypoint sh pg-binaries-linux-verifier -c '. /etc/os-release; printf "%s" "$VERSION_ID"')
-          python3 tools/create_extension_publication_receipt.py \
-            --archives "$RUNNER_TEMP/tiger" --core-archives "$RUNNER_TEMP/pilot" \
-            --prerequisite-archive "PostGIS=$postgis" \
-            --receipt "$publication/current-receipt.json" \
-            --profile-id "tiger-publication-current-$PG_ARCHITECTURE" \
-            --project 'PostGIS TIGER Geocoder' --version 2025.2 --postgresql-version "$PG_VERSION" \
-            --architecture "$PG_ARCHITECTURE" --endpoint current \
-            --kernel-release "$(uname -r)" --distribution "$distribution" \
-            --distribution-version "$distribution_version" --image-id "$image" \
-            --dependency-check-result "$dependencies" --clean-system "$clean" \
-            --step-results "$publication/current-steps.json"
-          python3 tools/emit_extension_publication_records.py \
-            --archives "$RUNNER_TEMP/tiger" --core-archives "$RUNNER_TEMP/pilot" \
-            --prerequisite-archive "PostGIS=$postgis" \
-            --receipt "$publication/current-receipt.json" --output "$publication/records"
-      # profile-section: tiger-report end
       # profile-section: collection-report begin
       - name: Record collection publication outcomes and emit archive-bound evidence
         if: ${{ always() }}
@@ -544,16 +466,5 @@ jobs:
             ${{ runner.temp }}/postgis/debug-symbols/**
             ${{ runner.temp }}/postgis/static-analysis/**
             ${{ runner.temp }}/postgis-publication/**
-          if-no-files-found: ignore
-          retention-days: 3
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: tiger-publication-${{ matrix.architecture }}-evidence
-          path: |
-            ${{ runner.temp }}/tiger/*.tar.gz
-            ${{ runner.temp }}/tiger/*.sha256
-            ${{ runner.temp }}/tiger/static-analysis/**
-            ${{ runner.temp }}/tiger-publication/**
           if-no-files-found: ignore
           retention-days: 3

@@ -23,12 +23,14 @@ extension_archive_plan = _load_tool("linux_changed_profiles_plan", "extension_ar
 LINUX_ROUTES = {"hypopg": "HypoPG", "pg-jsonschema": "pg_jsonschema",
                 "pgtap": "pgtap", "pgivm": "pg_ivm", "pgcron": "pg_cron",
                 "pgaudit": "pgaudit", "postgis": "PostGIS",
-                "tiger": "PostGIS TIGER Geocoder",
+                "tiger": "PostGIS TIGER Geocoder", "pgvector": "pgvector",
                 "collection": "collection"}
 MAX_TARGETS = 128
 
 
 def _profile_id(route_name, architecture, postgresql_version, extension_version=None):
+    if route_name == "pgvector":
+        return f"linux-publication-current-{architecture}"
     profile_id = f"{route_name}-publication-linux-{architecture}-{postgresql_version}"
     if route_name == "collection":
         if not extension_version:
@@ -59,7 +61,7 @@ def changed_targets(before_root, current_root, *, project=None, postgresql_versi
             target_architecture = target["platform"].removeprefix("linux-")
             profile_id = _profile_id(route_name, target_architecture, target["postgresql_version"],
                                      target["selected_version"])
-            if profile_id in seen_profiles:
+            if profile_id in seen_profiles and route_name != "pgvector":
                 raise ValueError(f"multiple selected releases require distinct profiles for {profile_id!r}")
             seen_profiles.add(profile_id)
             current = coverage.verification_profile(current_root, profile_id)
@@ -76,7 +78,8 @@ def changed_targets(before_root, current_root, *, project=None, postgresql_versi
 
     registered = {name for name, profile in profiles.items()
                   if profile.get("scope") == "publication"
-                  and any(name.startswith(f"{route}-publication-linux-") for route in LINUX_ROUTES)}
+                  and (name.startswith("linux-publication-current-")
+                       or any(name.startswith(f"{route}-publication-linux-") for route in LINUX_ROUTES))}
     declared = {target["profile_id"] for target in candidates}
     if registered != declared:
         raise ValueError("routed Linux publication profiles and support-derived targets differ")

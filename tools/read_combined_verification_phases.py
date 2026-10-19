@@ -8,8 +8,8 @@ import re
 import sys
 
 
-PHASES = ("core", "diagnostics", "postgis", "tiger")
-_ROW = re.compile(r"^(core|diagnostics|postgis|tiger)\t(running|passed|skipped|failed\([0-9]+\))$")
+PHASES = ("core", "diagnostics", "postgis")
+_ROW = re.compile(r"^(core|diagnostics|postgis)\t(running|passed|skipped|failed\([0-9]+\))$")
 
 
 def read_outcomes(status_path, verification_skipped=False):
