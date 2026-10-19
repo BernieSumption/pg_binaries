@@ -1,0 +1,22 @@
+{
+  "architecture": "x86_64",
+  "archive": "postgresql-17.11-linux-x86_64.tar.gz",
+  "origin": "reused",
+  "postgresql_version": "17.11",
+  "provenance": {
+    "artifact_name": "pg-jsonschema-linux-core-17.11-x86_64-39202734922",
+    "build_id": "github-39201845076-1",
+    "build_inputs": {
+      "base_image": "ubuntu:22.04",
+      "base_image_digest": "sha256:0a9887931b0e38af2e3487ed39e29436b0535c4f3f52e57745baaf79d1898956",
+      "packages_sha256": "e5b948714779db8f9f3763fc5ef06d7c11f0438d94a7b890a58446d8522e54be"
+    },
+    "head_sha": "5e6406728ccc0479ea607bf467be6a99106bf95f",
+    "provider": "github-actions",
+    "run_attempt": 1,
+    "run_id": "39202734922",
+    "source_revision": "4f268bf4afb31759d79609d783e6e4b9a88a8144"
+  },
+  "schema_version": 1,
+  "sha256": "a498ce4f2da409c14dc8e3615a81f14d9acd0522282b39d312871dbf33a0c750"
+}
