@@ -100,15 +100,20 @@ def main(argv=None):
                         help="current build-input identities for exact candidate targets")
     parser.add_argument("--pgvector-candidate-bundle", type=Path,
                         help="retrieved exact pgvector selected bundle manifest")
+    parser.add_argument("--hypopg-candidate-bundle", type=Path,
+                        help="retrieved exact HypoPG selected bundle manifest")
     parser.add_argument("--core-base-image-digest")
     parser.add_argument("--core-builder-packages-sha256")
     parser.add_argument("--pgvector-builder-packages-sha256")
+    parser.add_argument("--hypopg-builder-packages-sha256")
     args = parser.parse_args(argv)
     try:
         request = json.loads(args.request.read_text(encoding="utf-8"))
         expected_inputs = (extension_work_queue.load_expected_build_inputs(args.expected_build_inputs)
                            if args.expected_build_inputs else None)
         overlay = None
+        if args.pgvector_candidate_bundle and args.hypopg_candidate_bundle:
+            raise ValueError("select at most one checked extension candidate bundle")
         if args.pgvector_candidate_bundle:
             if not all((args.core_base_image_digest, args.core_builder_packages_sha256,
                         args.pgvector_builder_packages_sha256)):
@@ -120,6 +125,18 @@ def main(argv=None):
                 core_base_image_digest=args.core_base_image_digest,
                 core_builder_packages_sha256=args.core_builder_packages_sha256,
                 pgvector_builder_packages_sha256=args.pgvector_builder_packages_sha256)
+            overlay = checked["planner_overlay"]
+        if args.hypopg_candidate_bundle:
+            if not all((args.core_base_image_digest, args.core_builder_packages_sha256,
+                        args.hypopg_builder_packages_sha256)):
+                raise ValueError("HypoPG candidate bundle requires all three current builder identities")
+            sys.path.insert(0, str(Path(__file__).resolve().parent))
+            import hypopg_planner_adapter
+            checked = hypopg_planner_adapter.checked_candidate_inputs(
+                args.hypopg_candidate_bundle, args.root,
+                core_base_image_digest=args.core_base_image_digest,
+                core_builder_packages_sha256=args.core_builder_packages_sha256,
+                hypopg_builder_packages_sha256=args.hypopg_builder_packages_sha256)
             overlay = checked["planner_overlay"]
         print(json.dumps(resolve(args.root, request, args.candidate_manifest, expected_inputs,
                                  overlay),
