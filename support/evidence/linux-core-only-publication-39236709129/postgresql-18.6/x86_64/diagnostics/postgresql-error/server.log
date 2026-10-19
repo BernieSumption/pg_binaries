@@ -1,0 +1,13 @@
+2026-10-19 10:26:44.093 UTC [71] LOG:  starting PostgreSQL 18.6 on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 11.4.0-1ubuntu1~22.04.3) 11.4.0, 64-bit
+2026-10-19 10:26:44.094 UTC [71] LOG:  listening on Unix socket "/tmp/pg-binaries-diagnostics.yqD2J7/socket/.s.PGSQL.55439"
+2026-10-19 10:26:44.097 UTC [77] LOG:  database system was shut down at 2026-10-19 10:26:43 UTC
+2026-10-19 10:26:44.100 UTC [71] LOG:  database system is ready to accept connections
+2026-10-19 10:26:44.189 UTC [85] ERROR:  division by zero
+2026-10-19 10:26:44.189 UTC [85] STATEMENT:  SELECT 1 / 0;
+2026-10-19 10:26:44.196 UTC [71] LOG:  received fast shutdown request
+2026-10-19 10:26:44.196 UTC [71] LOG:  aborting any active transactions
+2026-10-19 10:26:44.198 UTC [71] LOG:  background worker "logical replication launcher" (PID 80) exited with exit code 1
+2026-10-19 10:26:44.200 UTC [75] LOG:  shutting down
+2026-10-19 10:26:44.200 UTC [75] LOG:  checkpoint starting: shutdown immediate
+2026-10-19 10:26:44.202 UTC [75] LOG:  checkpoint complete: wrote 0 buffers (0.0%), wrote 3 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=0.001 s, sync=0.001 s, total=0.003 s; sync files=2, longest=0.001 s, average=0.001 s; distance=0 kB, estimate=0 kB; lsn=0/1756600, redo lsn=0/1756600
+2026-10-19 10:26:44.210 UTC [71] LOG:  database system is shut down
