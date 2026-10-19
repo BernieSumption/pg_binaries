@@ -123,6 +123,7 @@ jobs:
               ("collection", "linux-arm64"): "collection-linux",
               ("pg_jsonschema", "macos-arm64"): "pg-jsonschema-macos",
               ("pg_jsonschema", "macos-x86_64"): "pg-jsonschema-macos",
+              ("pg_jsonschema", "windows-x86_64"): "pg-jsonschema-windows",
               ("pgtap", "macos-x86_64"): "pgtap-macos-x86_64",
               ("pg_cron", "macos-arm64"): "pgcron-macos",
               ("pg_cron", "macos-x86_64"): "pgcron-macos",
@@ -195,6 +196,14 @@ jobs:
       postgresql_version: ${{ needs.plan.outputs.postgresql_version }}
       extension_version: ${{ needs.plan.outputs.extension_version }}
       architecture: ${{ needs.plan.outputs.architecture }}
+
+  pg_jsonschema_windows:
+    needs: plan
+    if: needs.plan.outputs.should_dispatch == 'true' && needs.plan.outputs.route == 'pg-jsonschema-windows'
+    uses: ./.github/workflows/pg-jsonschema-windows-selected-publication.yml
+    with:
+      postgresql_version: ${{ needs.plan.outputs.postgresql_version }}
+      extension_version: ${{ needs.plan.outputs.extension_version }}
 
   pgtap_linux:
     needs: plan

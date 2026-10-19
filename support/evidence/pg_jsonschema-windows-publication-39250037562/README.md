@@ -1,0 +1,7 @@
+# Windows pg_jsonschema selected-target trial 39250037562
+
+[Run 39250037562](https://github.com/BernieSumption/pg_binaries/actions/runs/39250037562) at source revision `3bde86d34a6157489ea7d26c4df8629feea39c48` selected PostgreSQL 18.6 and pg_jsonschema 0.3.4 on Windows x86-64. The selector, build and fresh-runner verification jobs passed. The build reused the checked PostgreSQL core from run 39242094311, built pg_jsonschema and passed its local relocation probe and PE inspection. On the fresh runner, the archive suite passed before and after relocation, and static analysis inspected the downloaded archives and their PE dependencies. Evidence emission, import, upload and the final verification gate all passed.
+
+The PostgreSQL archive SHA-256 is `044f621e6dad2d7e8096883206d1f5d40b5c92ea7bc6f583d271856063308eac`; the pg_jsonschema archive SHA-256 is `74f980c7988af59a8baf16d7220931629b0fe8b8d6f102fb879b2f375d7c4daa`. The build recorded upstream source commit `cbe74b570d38aa0c4d42914e7a118bcb3adaee7a` and Cargo lockfile SHA-256 `ab865dc25d9eea4bf7dbfaf8fae13283e5c0bce4bca460fe10464c6716e67028`.
+
+The nine independently imported files under `x86_64/` and `support/verification/` match the CI verification artifact byte-for-byte. The record is passing for this run and profile revision; `release_eligible` remains false because the core redistribution status is pending. This trial establishes only the selected PostgreSQL 18.6 Windows target.
