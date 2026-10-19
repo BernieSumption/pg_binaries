@@ -150,6 +150,21 @@ class PgJsonschemaMacOSPublicationTests(unittest.TestCase):
         self.assertTrue(any(path.endswith(".sha256") for path in paths))
         self.assertTrue(list((self.fixture.root / "support/verification").glob("*.json")))
 
+    def test_same_run_imports_two_postgresql_versions_without_evidence_collision(self):
+        first = PublicationFixture("15.19-arm64")
+        second = PublicationFixture("16.15-arm64")
+        self.addCleanup(first.close)
+        self.addCleanup(second.close)
+        with patch.object(importer.coverage, "validate_verification_record"):
+            for fixture in (first, second):
+                fixture.emit()
+                with patch.object(importer.coverage, "verification_profile", return_value=fixture.profile):
+                    importer.import_run(first.root, fixture.core, fixture.output, "12345678901",
+                                        fixture.target_config)
+        evidence = first.root / "support/evidence/pg-jsonschema-macos-publication-12345678901/arm64"
+        self.assertTrue((evidence / "15.19/current-receipt.json").is_file())
+        self.assertTrue((evidence / "16.15/current-receipt.json").is_file())
+
     def test_failed_sql_probe_retains_raw_attempt_without_build_evidence(self):
         self.fixture.output.joinpath("build-evidence.txt").unlink()
         self.fixture.output.joinpath("probe-output.txt").write_text("partial SQL output\n")

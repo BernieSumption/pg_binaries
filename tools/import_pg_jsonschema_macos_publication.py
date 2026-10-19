@@ -77,7 +77,8 @@ def import_run(root, core_archives, archives, run_id, target_config=None):
     expected_presence = {core_name: core.is_file(), extension_name: extension.is_file()}
     if attempt.get("archives_present") != expected_presence:
         raise coverage.CoverageError("attempt archive presence differs from downloaded artifacts")
-    evidence = root / "support/evidence" / f"pg-jsonschema-macos-publication-{run_id}" / publication.ARCHITECTURE
+    evidence = (root / "support/evidence" / f"pg-jsonschema-macos-publication-{run_id}"
+                / publication.ARCHITECTURE / publication.PG_VERSION)
     copies = []
     _retain(attempt_path, evidence / "attempt.json", copies)
     for name, source in (("static-analysis.json", archives / "static-analysis.json"),
