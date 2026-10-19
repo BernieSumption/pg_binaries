@@ -27,6 +27,10 @@ class LinuxCoreCandidateTests(unittest.TestCase):
             target = self.root / name
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(source, target)
+        workflow = ROOT / candidate.LEGACY_CORE_WORKFLOW
+        workflow_target = self.root / candidate.LEGACY_CORE_WORKFLOW
+        workflow_target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copyfile(workflow, workflow_target)
         for name in ("support.json", "support/postgresql-releases.json"):
             target = self.root / name
             target.parent.mkdir(parents=True, exist_ok=True)
@@ -78,6 +82,42 @@ class LinuxCoreCandidateTests(unittest.TestCase):
         recipe = self.root / "scripts/linux/build-in-container.sh"
         recipe.write_text(recipe.read_text() + "\nchanged\n")
         with self.assertRaisesRegex(ValueError, "build inputs changed"):
+            candidate.validate_candidate(
+                self.manifest_path, self.archive_path, "17.11", self.BASE_IMAGE_DIGEST,
+                self.BUILDER_PACKAGES_SHA256, self.root)
+
+    def test_accepts_candidate_after_unrelated_extension_workflow_change(self):
+        workflow = self.root / candidate.LEGACY_CORE_WORKFLOW
+        workflow.write_text(workflow.read_text().replace(
+            "Build PostGIS 3.6.4 against the publication PostgreSQL archive",
+            "Build PostGIS 3.6.4 with an updated extension workflow label"))
+        result = candidate.validate_candidate(
+            self.manifest_path, self.archive_path, "17.11", self.BASE_IMAGE_DIGEST,
+            self.BUILDER_PACKAGES_SHA256, self.root)
+        self.assertEqual(result["run_id"], "1234")
+
+    def test_rejects_candidate_after_legacy_core_build_invocation_change(self):
+        workflow = self.root / candidate.LEGACY_CORE_WORKFLOW
+        workflow.write_text(workflow.read_text().replace(
+            'run: scripts/linux/build.sh "$RUNNER_TEMP/pilot"',
+            'run: scripts/linux/build.sh "$RUNNER_TEMP/pilot" --core-only'))
+        with self.assertRaisesRegex(ValueError, "build inputs changed"):
+            candidate.validate_candidate(
+                self.manifest_path, self.archive_path, "17.11", self.BASE_IMAGE_DIGEST,
+                self.BUILDER_PACKAGES_SHA256, self.root)
+
+    def test_rejects_candidate_after_legacy_core_runner_setup_change(self):
+        workflow = self.root / candidate.LEGACY_CORE_WORKFLOW
+        workflow.write_text(workflow.read_text().replace(
+            "runner: ubuntu-24.04\n", "runner: ubuntu-22.04\n", 1))
+        with self.assertRaisesRegex(ValueError, "build inputs changed"):
+            candidate.validate_candidate(
+                self.manifest_path, self.archive_path, "17.11", self.BASE_IMAGE_DIGEST,
+                self.BUILDER_PACKAGES_SHA256, self.root)
+
+    def test_fails_closed_when_legacy_core_workflow_is_missing(self):
+        (self.root / candidate.LEGACY_CORE_WORKFLOW).unlink()
+        with self.assertRaisesRegex(ValueError, "legacy Linux core workflow is unavailable"):
             candidate.validate_candidate(
                 self.manifest_path, self.archive_path, "17.11", self.BASE_IMAGE_DIGEST,
                 self.BUILDER_PACKAGES_SHA256, self.root)

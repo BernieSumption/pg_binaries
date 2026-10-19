@@ -1,0 +1,47 @@
+{
+  "assembled_core": {
+    "archive": "postgresql-17.11-linux-arm64.tar.gz",
+    "sha256": "d84fa2a38323751888afe19fa85869b8ea2e28bb981e92ff915ea8b510641a80",
+    "version": "17.11"
+  },
+  "case_results": {
+    "pgivm-archive-suite": "passed"
+  },
+  "ci": {
+    "build_revision": "be5982c3f937f2de45de88efa9d4b5cb98d33171",
+    "provider": "github-actions",
+    "run_id": "39220109372",
+    "run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/39220109372",
+    "source_revision": "be5982c3f937f2de45de88efa9d4b5cb98d33171",
+    "test_revision": "be5982c3f937f2de45de88efa9d4b5cb98d33171"
+  },
+  "component": "pg_ivm",
+  "environment": {
+    "architecture": "arm64",
+    "clean_system": true,
+    "dependency_check_profile": "pg_ivm-runtime-v1",
+    "dependency_checks_passed": true,
+    "distribution": "Alpine Linux",
+    "distribution_version": "3.22.6",
+    "endpoint": "current",
+    "image_id": "sha256:7bf3b34c1e429947822f39e847ea556f79cb8f0999ed99659c99b87609399515",
+    "kernel_release": "6.17.0-1022-azure",
+    "os": "linux",
+    "os_version": "6.17.0"
+  },
+  "outcome": "passed",
+  "platform": "linux-arm64",
+  "postgresql_version": "17.11",
+  "prerequisite_archives": [],
+  "profile_id": "pgivm-publication-linux-arm64-17.11",
+  "profile_revision": "f4a57443335b0cf19b4cfde7f8b44dc30a29aba11e9e0899f30bc8972bca8941",
+  "project": "pg_ivm",
+  "schema_version": 2,
+  "scope": "publication",
+  "sha256": "ea6281e66cd42b69888bce589cf225f68610ae0caa4479913dfbac97a393bca5",
+  "test_cases": [
+    "pgivm-archive-suite"
+  ],
+  "test_revision": "be5982c3f937f2de45de88efa9d4b5cb98d33171",
+  "version": "1.16"
+}

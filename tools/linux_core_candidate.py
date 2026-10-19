@@ -14,8 +14,8 @@ import source_archive
 
 ROOT = Path(__file__).resolve().parents[1]
 CORE_INPUTS = (
-    ".github/workflows/linux-publication.yml",
     "scripts/linux/build.sh",
+    "scripts/linux/resolve-core.sh",
     "scripts/linux/Dockerfile",
     "scripts/linux/build-in-container.sh",
     "scripts/linux/bundle-glibc-in-container.sh",
@@ -31,11 +31,58 @@ CORE_INPUTS = (
     "tools/source_archive.py",
     "tools/write_linux_license_inventory.py",
 )
+LEGACY_CORE_WORKFLOW = ".github/workflows/linux-publication.yml"
 SHA = re.compile(r"[0-9a-f]{40}|[0-9a-f]{64}")
 
 
+def _section(text, name):
+    begin = f"# profile-section: {name} begin"
+    end = f"# profile-section: {name} end"
+    if text.count(begin) != 1 or text.count(end) != 1:
+        raise ValueError(f"legacy Linux core workflow lacks a unique {name} section")
+    start = text.index(begin)
+    finish = text.index(end, start) + len(end)
+    if finish <= start:
+        raise ValueError(f"legacy Linux core workflow has an invalid {name} section")
+    return text[start:finish]
+
+
+def _legacy_core_workflow_inputs(text):
+    """Return only runner setup and the named PostgreSQL archive build step."""
+    setup = _section(text, "job-setup")
+    builds = _section(text, "archive-builds")
+    lines = builds.splitlines(keepends=True)
+    ids = [i for i, line in enumerate(lines) if re.fullmatch(r"\s*id:\s*build\s*\n?", line)]
+    if len(ids) != 1:
+        raise ValueError("legacy Linux core workflow lacks a unique build step")
+    step_id = ids[0]
+    header = next((i for i in range(step_id - 1, -1, -1)
+                   if re.match(r"^\s{6}-\s+name:", lines[i])), None)
+    if header is None:
+        raise ValueError("legacy Linux core workflow build step has no named action")
+    indent = len(lines[header]) - len(lines[header].lstrip())
+    finish = next((i for i in range(step_id + 1, len(lines))
+                   if re.match(rf"^\s{{{indent}}}-\s+", lines[i])), len(lines))
+    invocation = "".join(lines[header:finish])
+    if "Build exact PostgreSQL and pgvector archives" not in invocation:
+        raise ValueError("legacy Linux core workflow has an unexpected named build step")
+    return setup + "\n" + invocation
+
+
+def _legacy_core_workflow_inputs_match(revision, root):
+    """Fail closed unless legacy runner setup and core invocation match the producer."""
+    try:
+        producer = subprocess.run(
+            ["git", "show", f"{revision}:{LEGACY_CORE_WORKFLOW}"], cwd=root,
+            check=True, capture_output=True, text=True).stdout
+        current = (Path(root) / LEGACY_CORE_WORKFLOW).read_text(encoding="utf-8")
+    except (OSError, subprocess.CalledProcessError) as exc:
+        raise ValueError("legacy Linux core workflow is unavailable for input comparison") from exc
+    return _legacy_core_workflow_inputs(producer) == _legacy_core_workflow_inputs(current)
+
+
 def relevant_inputs_match(revision, root=ROOT):
-    """Return false when any tracked core build input changed after revision."""
+    """Return false when a tracked core input changed after revision."""
     root = Path(root)
     if not SHA.fullmatch(str(revision)):
         raise ValueError("candidate source revision must be a full Git object ID")
@@ -50,7 +97,8 @@ def relevant_inputs_match(revision, root=ROOT):
                              cwd=root, check=False, capture_output=True, text=True)
     if changed.returncode:
         raise ValueError("Git could not compare candidate and current core build inputs")
-    return not changed.stdout.strip()
+    return (not changed.stdout.strip()
+            and _legacy_core_workflow_inputs_match(revision, root))
 
 
 def validate_candidate(manifest_path, archive_path, version, base_image_digest,
