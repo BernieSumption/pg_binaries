@@ -191,6 +191,26 @@ class StageExtensionArchiveTests(unittest.TestCase):
         self.assertEqual((prefix / "share/control.control").read_text(encoding="utf-8"), "old")
         self.assertFalse((prefix / "share/a-new.control").exists())
 
+    def test_checked_extraction_accepts_internal_library_link_and_rejects_escape(self):
+        archive_path = self.root / "core.tar.gz"
+        destination = self.root / "checked-core"
+        with tarfile.open(archive_path, "w:gz") as archive:
+            self.add_file(archive, "postgresql/lib/libpq.5.dylib", b"library")
+            link = tarfile.TarInfo("postgresql/lib/libpq.dylib")
+            link.type = tarfile.SYMTYPE
+            link.linkname = "libpq.5.dylib"
+            archive.addfile(link)
+        staging._extract_checked(archive_path, destination)
+        self.assertEqual((destination / "postgresql/lib/libpq.dylib").read_bytes(), b"library")
+
+        with tarfile.open(archive_path, "w:gz") as archive:
+            link = tarfile.TarInfo("postgresql/lib/libpq.dylib")
+            link.type = tarfile.SYMTYPE
+            link.linkname = "../../../outside"
+            archive.addfile(link)
+        with self.assertRaisesRegex(staging.StagingError, "archive link escapes"):
+            staging._extract_checked(archive_path, self.root / "rejected-core")
+
 
 if __name__ == "__main__":
     unittest.main()

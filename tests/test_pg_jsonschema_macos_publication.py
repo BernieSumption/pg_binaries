@@ -14,13 +14,13 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
 import emit_pg_jsonschema_macos_publication as emitter
 import import_pg_jsonschema_macos_publication as importer
+import macos_core_target_config
 from pg_jsonschema_macos_target import load_target
 
 
 class PublicationFixture:
     def __init__(self, target_name="18.6-arm64"):
         self.target_config = Path(__file__).resolve().parents[1] / "tools/pg_jsonschema_macos_targets" / f"{target_name}.json"
-        target_value = json.loads(self.target_config.read_text())
         emitter.configure_target(self.target_config)
         self.temp = tempfile.TemporaryDirectory()
         self.base = Path(self.temp.name)
@@ -43,11 +43,24 @@ class PublicationFixture:
         self.extension_name = (f"pg_jsonschema-{emitter.EXTENSION_VERSION}-postgresql-"
                                f"{emitter.PG_VERSION}-{emitter.PLATFORM}.tar.gz")
         self.core_archive = self.core / self.core_name
-        self.core_archive.write_bytes(b"pinned core fixture")
+        source_revision = "b" * 40
+        manifest = {
+            "component": "postgresql", "version": emitter.PG_VERSION,
+            "postgresql_version": emitter.PG_VERSION, "platform": "macos",
+            "architecture": emitter.ARCHITECTURE,
+            "build_id": "github-12345678901-2", "source_revision": source_revision,
+        }
+        with tarfile.open(self.core_archive, "w:gz") as archive:
+            raw_manifest = json.dumps(manifest).encode()
+            info = tarfile.TarInfo("postgresql/manifest.json")
+            info.size = len(raw_manifest)
+            archive.addfile(info, io.BytesIO(raw_manifest))
         self.core_hash = self.digest(self.core_archive)
-        target_value["core_archive"]["sha256"] = self.core_hash
+        self.sidecar(self.core_archive)
         self.target_config = self.base / "target.json"
-        self.target_config.write_text(json.dumps(target_value))
+        base_target = Path(__file__).resolve().parents[1] / "tools/pg_jsonschema_macos_targets" / f"{target_name}.json"
+        macos_core_target_config.create_target(base_target, self.core_archive, "12345678901",
+                                               self.target_config, "2")
         self.target = emitter.configure_target(self.target_config)
         self.extension = self.output / self.extension_name
         self._archive()
@@ -176,7 +189,7 @@ class PgJsonschemaMacOSPublicationTests(unittest.TestCase):
         with self.assertRaises(emitter.coverage.CoverageError):
             emitter._metadata(malformed)
 
-    def test_target_configs_bind_all_eight_exact_core_identities(self):
+    def test_target_configs_keep_declared_core_identities_stable_or_pinned(self):
         root = Path(__file__).resolve().parents[1]
         expected = {
             "15.19-arm64": ("39093804765", "856956cd7615bc56222de954c83f156fe5bc73d75512d230c6b91d386229f432"),
@@ -191,18 +204,24 @@ class PgJsonschemaMacOSPublicationTests(unittest.TestCase):
         for name, (run_id, digest) in expected.items():
             with self.subTest(target=name):
                 target = load_target(root / "tools/pg_jsonschema_macos_targets" / f"{name}.json")
-                self.assertEqual((target.core_run_id, target.core_sha256), (run_id, digest))
-                self.assertEqual(target.core_build_id, f"github-{run_id}-1")
-                self.assertEqual(target.core_source_revision, "42082a506adfca1628c509f2c7b17037b9a12123")
+                self.assertEqual(target.core_sha256, digest)
+                if name == "18.6-arm64":
+                    self.assertIsNone(target.core_run_id)
+                    self.assertIsNone(target.core_build_id)
+                    self.assertIsNone(target.core_source_revision)
+                else:
+                    self.assertEqual(target.core_run_id, run_id)
+                    self.assertEqual(target.core_build_id, f"github-{run_id}-1")
+                    self.assertEqual(target.core_source_revision, "42082a506adfca1628c509f2c7b17037b9a12123")
                 self.assertEqual(target.module_filename, "pg_jsonschema.so" if name.startswith("15.")
                                  else "pg_jsonschema.dylib")
 
     def test_target_loader_accepts_stable_core_pin_without_inventing_provenance(self):
-        value = json.loads(self.fixture.target_config.read_text())
-        value["core_archive"] = {key: value["core_archive"][key] for key in ("basename", "sha256")}
-        self.fixture.target_config.write_text(json.dumps(value))
-        target = load_target(self.fixture.target_config)
-        self.assertEqual(target.core_sha256, self.fixture.core_hash)
+        path = Path(__file__).resolve().parents[1] / "tools/pg_jsonschema_macos_targets/18.6-arm64.json"
+        value = json.loads(path.read_text())
+        target = load_target(path)
+        self.assertEqual(set(value["core_archive"]), {"basename", "sha256"})
+        self.assertEqual(target.core_sha256, value["core_archive"]["sha256"])
         self.assertIsNone(target.core_run_id)
         self.assertIsNone(target.core_build_id)
         self.assertIsNone(target.core_source_revision)
@@ -212,6 +231,10 @@ class PgJsonschemaMacOSPublicationTests(unittest.TestCase):
     def test_target_loader_accepts_positive_runtime_attempt_and_rejects_invalid_attempt(self):
         value = json.loads(self.fixture.target_config.read_text())
         run_id = value["core_archive"]["run_id"]
+        self.assertEqual(self.fixture.target.core_sha256, self.fixture.core_hash)
+        self.assertEqual(self.fixture.target.core_run_id, run_id)
+        self.assertEqual(self.fixture.target.core_build_id, "github-12345678901-2")
+        self.assertEqual(self.fixture.target.core_source_revision, "b" * 40)
         value["core_archive"]["build_id"] = f"github-{run_id}-3"
         self.fixture.target_config.write_text(json.dumps(value))
         self.assertEqual(load_target(self.fixture.target_config).core_build_id, f"github-{run_id}-3")

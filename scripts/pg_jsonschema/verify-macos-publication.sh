@@ -78,27 +78,21 @@ tar -xzf "$core_archives/$core_name" -C "$work/compiled-prefix"
 prefix_target="$work/compiled-prefix/postgresql"
 payload="$work/extension/pg_jsonschema"
 test -d "$payload"
-python3 - "$payload" "$testroot" "$module_filename" <<'PY'
+python3 - "$repo/tools" "$payload" "$testroot" "$module_filename" <<'PY'
 import pathlib
 import sys
 
-payload, target = map(pathlib.Path, sys.argv[1:3])
-module = sys.argv[3]
+sys.path.insert(0, sys.argv[1])
+from stage_extension_archive import merge_payload
+
+payload, target = map(pathlib.Path, sys.argv[2:4])
+module = sys.argv[4]
 files = {path.relative_to(payload).as_posix() for path in payload.rglob("*") if path.is_file()}
 required = {f"lib/{module}", "share/extension/pg_jsonschema.control",
             "LICENSES/pg_jsonschema.txt", "LICENSES/pg_jsonschema-cargo-license-inventory.json"}
 if not required <= files or sum(path.startswith("lib/") for path in files) != 1:
     raise SystemExit("pg_jsonschema archive payload is incomplete or has extra native code")
-for source in payload.rglob("*"):
-    destination = target / source.relative_to(payload)
-    if destination.exists() or destination.is_symlink():
-        raise SystemExit(f"pg_jsonschema archive collides with PostgreSQL core: {source.relative_to(payload)}")
-for source in payload.rglob("*"):
-    destination = target / source.relative_to(payload)
-    if source.is_dir(): destination.mkdir(parents=True, exist_ok=True)
-    else:
-        destination.parent.mkdir(parents=True, exist_ok=True)
-        destination.write_bytes(source.read_bytes())
+merge_payload(payload, target)
 PY
 cp "$payload/LICENSES/pg_jsonschema-cargo-license-inventory.json" "$output/cargo-license-inventory.json"
 
