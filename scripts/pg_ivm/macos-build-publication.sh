@@ -72,7 +72,7 @@ test "$(tar -tzf pg_ivm.tar.gz | cut -d/ -f1 | sort -u)" = pg_ivm-1.16
 tar -xzf pg_ivm.tar.gz
 cd pg_ivm-1.16
 test "$(sed -n "s/^default_version = '\\([^']*\\)'/\\1/p" pg_ivm.control)" = "$extension_version"
-test "$(sed -n 's/^schema = \\([^ ]*\\)/\\1/p' pg_ivm.control)" = pg_catalog
+test "$(sed -n 's/^schema = \([^ ]*\)/\1/p' pg_ivm.control)" = pg_catalog
 make PG_CONFIG="$pg_config" -j "$(sysctl -n hw.ncpu)"
 make PG_CONFIG="$pg_config" install DESTDIR="$work/stage"
 staged_root="$work/stage$(cd "$pgroot" && pwd -P)"

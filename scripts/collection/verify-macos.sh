@@ -12,17 +12,13 @@ target_json=$(cd "$(dirname "$target_json")" && pwd)/$(basename "$target_json")
 mkdir -p "$output"
 output=$(cd "$output" && pwd)
 
-eval "$(PYTHONPATH="$repo/tools" python3 - "$target_json" <<'PY'
-import shlex, sys
+IFS=$'\t' read -r pg_version architecture core_name core_sha256 core_build_id core_source_revision source_1_1_1 source_2_1_3 <<< "$(PYTHONPATH="$repo/tools" python3 - "$target_json" <<'PY'
+import sys
 from collection_macos_target import load_target, VERSIONS
 target = load_target(sys.argv[1], require_resolved=True)
-for key, value in {"pg_version":target.postgresql_version, "architecture":target.architecture,
-                   "core_name":target.core_basename, "core_sha256":target.core_sha256,
-                   "core_build_id":target.core_build_id,
-                   "core_source_revision":target.core_source_revision}.items():
-    print(f"{key}={shlex.quote(value)}")
-for version, digest in VERSIONS.items():
-    print(f"source_{version.replace('.', '_')}={shlex.quote(digest)}")
+print("\t".join((target.postgresql_version, target.architecture,
+                 target.core_basename, target.core_sha256, target.core_build_id,
+                 target.core_source_revision, VERSIONS["1.1.1"], VERSIONS["2.1.3"])))
 PY
 )"
 if [[ $(uname -s) != Darwin || $(uname -m) != "$architecture" ]]; then
