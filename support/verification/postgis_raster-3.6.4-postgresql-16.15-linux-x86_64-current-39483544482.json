@@ -1,0 +1,47 @@
+{
+  "assembled_core": {
+    "archive": "postgresql-16.15-linux-x86_64.tar.gz",
+    "sha256": "b2322d5b5400265468dda5c05e92d83ebc5538a893fe61d448e94e3ba4ed4e32",
+    "version": "16.15"
+  },
+  "case_results": {
+    "archive-suite": "passed"
+  },
+  "ci": {
+    "build_revision": "db2e5ed6f2bcdd532d9e71e2ebe7ca83cdb3f4e5",
+    "provider": "github-actions",
+    "run_id": "39483544482",
+    "run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/39483544482",
+    "source_revision": "db2e5ed6f2bcdd532d9e71e2ebe7ca83cdb3f4e5",
+    "test_revision": "db2e5ed6f2bcdd532d9e71e2ebe7ca83cdb3f4e5"
+  },
+  "component": "postgis_raster",
+  "environment": {
+    "architecture": "x86_64",
+    "clean_system": true,
+    "dependency_check_profile": "postgis-runtime-v1",
+    "dependency_checks_passed": true,
+    "distribution": "Alpine Linux",
+    "distribution_version": "3.22.6",
+    "endpoint": "current",
+    "image_id": "sha256:319540e3b7eace4a52d2d0ca961422b221a205e5d0033be78537b7dee98e1693",
+    "kernel_release": "6.17.0-1022-azure",
+    "os": "linux",
+    "os_version": "6.17.0"
+  },
+  "outcome": "passed",
+  "platform": "linux-x86_64",
+  "postgresql_version": "16.15",
+  "prerequisite_archives": [],
+  "profile_id": "postgis-publication-linux-x86_64-16.15",
+  "profile_revision": "0f693f17cc451f557da90d7e4a4172e7797f06131754dea9b0f4b66dd212eaf2",
+  "project": "PostGIS",
+  "schema_version": 2,
+  "scope": "publication",
+  "sha256": "25d5775a7cbf1da13d12ff3a59c3e441a6283b87434ca1984fa5ad6af97e1993",
+  "test_cases": [
+    "archive-suite"
+  ],
+  "test_revision": "db2e5ed6f2bcdd532d9e71e2ebe7ca83cdb3f4e5",
+  "version": "3.6.4"
+}
