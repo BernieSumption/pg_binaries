@@ -1,0 +1,48 @@
+{
+  "assembled_core": {
+    "archive": "postgresql-17.11-macos-arm64.tar.gz",
+    "sha256": "0db9ca0f4d0cf72fa32120aaf9a3f8e47c9dd2d97421ab2b53583af83be681b6",
+    "version": "17.11"
+  },
+  "case_results": {
+    "archive-suite": "passed",
+    "macho-closure": "passed"
+  },
+  "ci": {
+    "build_revision": "39777319a3fe535f3377a50e358c12a6d3dd43a9",
+    "provider": "github-actions",
+    "run_id": "39454331623",
+    "run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/39454331623",
+    "source_revision": "39777319a3fe535f3377a50e358c12a6d3dd43a9",
+    "test_revision": "39777319a3fe535f3377a50e358c12a6d3dd43a9"
+  },
+  "component": "address_standardizer",
+  "environment": {
+    "architecture": "arm64",
+    "clean_system": true,
+    "dependency_check_profile": "macho-system-dependencies-v1",
+    "dependency_checks_passed": true,
+    "endpoint": "current",
+    "image_id": "macos15/20260907.0337.1",
+    "os": "macos",
+    "os_version": "15.7.9"
+  },
+  "outcome": "passed",
+  "platform": "macos-arm64",
+  "postgresql_version": "17.11",
+  "prerequisite_archives": [],
+  "profile_id": "address-standardizer-publication-macos-arm64-17.11",
+  "profile_revision": "27257431f94a88c70b54227a085f912aad1c689b12a6be3d6923ec4d72e37625",
+  "project": "Address Standardizer",
+  "redistribution_status": "pending-dependency-provenance-and-redistribution-review",
+  "release_eligible": false,
+  "schema_version": 2,
+  "scope": "publication",
+  "sha256": "ed61c53fb3d97601acc0559c91bea0f885e09f4edee9a797674682cc137121e5",
+  "test_cases": [
+    "archive-suite",
+    "macho-closure"
+  ],
+  "test_revision": "39777319a3fe535f3377a50e358c12a6d3dd43a9",
+  "version": "3.7.0"
+}
