@@ -205,6 +205,7 @@ PY
 cp "$work/source/postgis-3.6.4/COPYING" "$output/package/postgis/LICENSES/PostGIS.txt"
 cp "$work/source/gdal-3.13.3/LICENSE.TXT" "$output/package/postgis/LICENSES/GDAL.txt"
 python3 "$repo/scripts/postgis/macos-license-inventory.py" "$output/package/postgis" "$pgroot" "$brew_prefix" "$work/source/postgis.tar.gz" "$work/source/gdal.tar.gz"
+mv "$output/package/postgis/bundled-dependencies.json" "$output/package/postgis/LICENSES/postgis-bundled-dependencies.json"
 python3 - "$output/package/metadata.json" "$core_name" "$core_sha" <<'PY'
 import json,pathlib,sys
 p=pathlib.Path(sys.argv[1]); core,sha=sys.argv[2:]
