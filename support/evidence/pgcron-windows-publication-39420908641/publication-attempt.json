@@ -1,0 +1,19 @@
+{
+  "archives": {
+    "pg_cron-1.6.8-postgresql-18.6-windows-x86_64.tar.gz": "f966cd2513a0656f7aa45d5ecfb750598190f9736e673345c0d46ebc993fd574",
+    "postgresql-18.6-windows-x86_64.tar.gz": "6c98dc1177ff11006009ee5a4f732c9d48db24f6da40551f63cdee0dfe9951d2"
+  },
+  "archives_present": {
+    "pg_cron-1.6.8-postgresql-18.6-windows-x86_64.tar.gz": true,
+    "postgresql-18.6-windows-x86_64.tar.gz": true
+  },
+  "profile_id": "pgcron-publication-windows-x86_64-18.6",
+  "run_id": "39420908641",
+  "schema_version": 1,
+  "source_revision": "a84f5f702d17d3c76e20f92739a33c8fef8ef92f",
+  "steps": {
+    "archive-suite": "passed",
+    "static-analysis": "passed",
+    "symbols": "passed"
+  }
+}
