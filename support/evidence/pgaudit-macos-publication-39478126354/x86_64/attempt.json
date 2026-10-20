@@ -1,0 +1,22 @@
+{
+  "architecture": "x86_64",
+  "archives": {
+    "pgaudit-1.7.1-postgresql-15.19-macos-x86_64.tar.gz": "fb37337df545550582b9940f1f18ddb00bb14b7c55289db88c46aadf085e6541",
+    "postgresql-15.19-macos-x86_64.tar.gz": "b49e4e2fc32e047ee8e02f3a14d46afdcee5dd1071fc7a7140575e3b03e078a8"
+  },
+  "archives_present": {
+    "pgaudit-1.7.1-postgresql-15.19-macos-x86_64.tar.gz": true,
+    "postgresql-15.19-macos-x86_64.tar.gz": true
+  },
+  "pgaudit_version": "1.7.1",
+  "postgresql_version": "15.19",
+  "profile_id": "pgaudit-publication-macos-x86_64-15.19",
+  "run_id": "39478126354",
+  "schema_version": 1,
+  "source_revision": "a6f1480126e8193a8eab4fcfb60b86da7d41285f",
+  "steps": {
+    "archive-suite": "success",
+    "diagnostics": "success",
+    "symbols": "success"
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "architecture": "arm64",
+  "archives": {
+    "pgaudit-1.7.1-postgresql-15.19-macos-arm64.tar.gz": "8ead27a9a2a1f47a1e808e00e20f733c92bd8e38cb993f4550d4d5220fa03364",
+    "postgresql-15.19-macos-arm64.tar.gz": "bd866dec8967e6320f88eb8ffe3a2f57fad36920b3d05556dae026c53226cf85"
+  },
+  "case_results": {
+    "archive-suite": "passed",
+    "diagnostics": "passed",
+    "symbols": "passed"
+  },
+  "ci": {
+    "build_revision": "a6f1480126e8193a8eab4fcfb60b86da7d41285f",
+    "provider": "github-actions",
+    "run_id": "39478124829",
+    "run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/39478124829",
+    "source_revision": "a6f1480126e8193a8eab4fcfb60b86da7d41285f",
+    "test_revision": "a6f1480126e8193a8eab4fcfb60b86da7d41285f"
+  },
+  "clean_system": true,
+  "dependency_check_profile": "macho-system-dependencies-v1",
+  "dependency_checks_passed": true,
+  "endpoint": "current",
+  "environment": {
+    "architecture": "arm64",
+    "image_id": "macos15/20260907.0337.1",
+    "os": "macos",
+    "os_version": "15.7.9"
+  },
+  "extension_archive": "pgaudit-1.7.1-postgresql-15.19-macos-arm64.tar.gz",
+  "platform": "macos-arm64",
+  "postgresql_version": "15.19",
+  "profile_id": "pgaudit-publication-macos-arm64-15.19",
+  "profile_revision": "a05dce2f16990d3630e8f8e1978b70786129d04063090ec4e71bebb6ba2e417a",
+  "project": "pgaudit",
+  "reports": {
+    "diagnostics": "41ff944254f970c3a4c623d451125ca9afe84f403af827d165801808c9a24931",
+    "static_analysis": "27481dcfce1002c34d0139a7706b1174ecbe97351bfbbeae8921f4624a26bffe",
+    "symbols": "c465fb4e91cfa4038efcf5176103906b1853223ee6fbc53d042a0ce328cf63aa"
+  },
+  "schema_version": 1,
+  "test_revision": "a6f1480126e8193a8eab4fcfb60b86da7d41285f",
+  "version": "1.7.1"
+}

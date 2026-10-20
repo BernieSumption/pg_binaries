@@ -1,0 +1,44 @@
+{
+  "architecture": "x86_64",
+  "archives": {
+    "pgaudit-16.1-postgresql-16.15-macos-x86_64.tar.gz": "8da9c2f5021eaf6c6c60c6ee9e5d0a02be79179e9053c2222e9f46dcaf9b0bf3",
+    "postgresql-16.15-macos-x86_64.tar.gz": "2f002022c9e5aaba8cbd1583faa2913040b1e066d49cd9012214029b055e3a67"
+  },
+  "case_results": {
+    "archive-suite": "passed",
+    "diagnostics": "passed",
+    "symbols": "passed"
+  },
+  "ci": {
+    "build_revision": "23428b5455203b3350040cec29a0a05cadd80a9c",
+    "provider": "github-actions",
+    "run_id": "39479334656",
+    "run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/39479334656",
+    "source_revision": "23428b5455203b3350040cec29a0a05cadd80a9c",
+    "test_revision": "23428b5455203b3350040cec29a0a05cadd80a9c"
+  },
+  "clean_system": true,
+  "dependency_check_profile": "macho-system-dependencies-v1",
+  "dependency_checks_passed": true,
+  "endpoint": "current",
+  "environment": {
+    "architecture": "x86_64",
+    "image_id": "macos15/20260824.0482.1",
+    "os": "macos",
+    "os_version": "15.7.9"
+  },
+  "extension_archive": "pgaudit-16.1-postgresql-16.15-macos-x86_64.tar.gz",
+  "platform": "macos-x86_64",
+  "postgresql_version": "16.15",
+  "profile_id": "pgaudit-publication-macos-x86_64-16.15",
+  "profile_revision": "c277f6f7d8c95d9ad7821180292ae711a71d7d5e9d0c8cdfec6de09ea7bf6f65",
+  "project": "pgaudit",
+  "reports": {
+    "diagnostics": "0689df95bab3fb25b4eb81007d85c532093da7e638ea82b993274d363d018ef3",
+    "static_analysis": "9b8b56debc0f0bc60ce5baec629a91870f0dc4dcaf2e50529ce14b13e4c25cbb",
+    "symbols": "1dfc44ad0f3e0208870584a8175e0ac7a3f92a231f651bb7a199fda3ed63c694"
+  },
+  "schema_version": 1,
+  "test_revision": "23428b5455203b3350040cec29a0a05cadd80a9c",
+  "version": "16.1"
+}
