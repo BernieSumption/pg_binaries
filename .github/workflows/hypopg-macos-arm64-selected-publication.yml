@@ -23,16 +23,6 @@ on:
         required: false
         type: string
         default: ''
-  push:
-    branches: [spike]
-    paths:
-      - 'experiments/hypopg-macos-target-trial/target.json'
-      - 'scripts/hypopg/macos-feasibility.sh'
-      - 'scripts/macos/core-prefix.sh'
-      - 'scripts/macos/resolve-core.sh'
-      - 'tools/macos_core_target_config.py'
-      - 'tools/hypopg_macos_target.py'
-      - 'tools/actions_candidate_discovery.py'
 
 permissions:
   actions: read

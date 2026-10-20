@@ -1,15 +1,6 @@
 name: pgvector selected macOS publication
 
 on:
-  push:
-    branches: [spike]
-    paths:
-      - .github/workflows/pgvector-macos-selected-publication.yml
-      - scripts/pgvector/macos-build.sh
-      - scripts/macos/diagnostic_metadata.py
-      - scripts/macos/diagnostics.sh
-      - tools/emit_macos_publication_records.py
-      - tools/import_macos_publication.py
   workflow_call:
     inputs:
       postgresql_version:

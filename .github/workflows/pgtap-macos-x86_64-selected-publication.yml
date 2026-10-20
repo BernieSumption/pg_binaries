@@ -22,11 +22,6 @@ on:
         required: false
         type: string
         default: ''
-  push:
-    branches: [spike]
-    paths:
-      - '.github/workflows/pgtap-macos-x86_64-selected-publication.yml'
-      - 'experiments/pgtap-macos-x86_64-target-trial/target.json'
 
 permissions:
   actions: read

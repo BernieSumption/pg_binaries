@@ -21,19 +21,6 @@ on:
         required: false
         type: string
         default: ''
-  push:
-    branches: [spike]
-    paths:
-      - '.github/workflows/pgtap-macos-arm64-selected-publication.yml'
-      - 'experiments/pgtap-macos-arm64-target-trial/target.json'
-      - 'scripts/pgtap/macos-feasibility.sh'
-      - 'scripts/macos/core-prefix.sh'
-      - 'scripts/macos/resolve-core.sh'
-      - 'tools/macos_core_target_config.py'
-      - 'tools/actions_candidate_discovery.py'
-      - 'tools/macos_publication_evidence.py'
-      - 'tools/emit_pgtap_macos_publication.py'
-      - 'tools/import_pgtap_macos_publication.py'
 
 permissions:
   actions: read

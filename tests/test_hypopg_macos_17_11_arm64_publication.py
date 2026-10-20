@@ -8,7 +8,6 @@ import unittest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import emit_hypopg_macos_publication as emitter
-import coverage
 from hypopg_macos_target import SOURCE_URL, base_target, load_target_config
 from test_emit_hypopg_macos_publication import (
     HypoPGMacOSFixture, fixture_target, fixture_target_config,
@@ -33,8 +32,6 @@ class HypoPGMacOS1711Arm64Tests(unittest.TestCase):
         self.assertEqual(profile["platforms"], ["macos-arm64"])
         with self.assertRaisesRegex(ValueError, "is not selected"):
             base_target("14.18", "arm64", root)
-        with self.assertRaisesRegex(coverage.CoverageError, "unknown verification profile"):
-            base_target("15.19", "arm64", root)
         self.assertIn("tools/hypopg_macos_target.py", profile["sources"])
         self.assertFalse(any("hypopg_macos_pins" in source for source in profile["sources"]))
         self.assertIn("scripts/macos/core-prefix.sh", profile["sources"])

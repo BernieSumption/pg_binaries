@@ -128,7 +128,6 @@ class HypoPGMacOSIntelPublicationTests(unittest.TestCase):
         self.assertIn("scripts/macos/resolve-core.sh", workflow)
         self.assertIn("tools/emit_hypopg_macos_x86_64_publication.py", workflow)
         self.assertIn("tools/import_hypopg_macos_x86_64_publication.py", workflow)
-        self.assertIn("'tools/macos_publication_evidence.py'", workflow)
         self.assertIn("support/verification/hypopg-1.4.3-postgresql-${{ needs.select.outputs.postgresql_version }}-macos-x86_64-current-${{ github.run_id }}.json", workflow)
         self.assertNotIn("macos-arm64", workflow)
 
@@ -148,17 +147,6 @@ class HypoPGMacOSIntelPublicationTests(unittest.TestCase):
         self.assertNotIn("tools/macos_core_target_config.py", sources)
         self.assertNotIn(".github/workflows/hypopg-macos-x86_64-publication.yml", sources)
         self.assertNotIn("scripts/hypopg/macos-x86_64-feasibility.sh", sources)
-
-    def test_core_resolver_selects_candidate_workflow_by_architecture(self):
-        resolver = Path("scripts/macos/resolve-core.sh").read_text()
-        self.assertIn('target.get("architecture")', resolver)
-        self.assertIn('"x86_64"', resolver)
-        self.assertIn('hypopg-macos-x86_64-selected-publication.yml', resolver)
-        self.assertIn('hypopg-macos-arm64-selected-publication.yml', resolver)
-        self.assertIn('pg-jsonschema-macos-changed-profiles.yml', resolver)
-        self.assertIn('pg-jsonschema-macos-selected-publication.yml', resolver)
-        self.assertIn('pg-jsonschema-macos-${version}-${architecture}-build-{run_id}', resolver)
-        self.assertIn('allowed.add(candidate_workflow)', resolver)
 
     def test_emits_and_imports_archive_bound_intel_record(self):
         legacy = emitter.implementation

@@ -23,22 +23,6 @@ on:
         required: false
         type: string
         default: ''
-  push:
-    branches: [spike]
-    paths:
-      - '.github/workflows/hypopg-macos-x86_64-selected-publication.yml'
-      - 'scripts/hypopg/macos-feasibility.sh'
-      - 'scripts/macos/core-prefix.sh'
-      - 'scripts/macos/resolve-core.sh'
-      - 'tools/macos_core_target_config.py'
-      - 'tools/hypopg_macos_target.py'
-      - 'tools/actions_candidate_discovery.py'
-      - 'tools/emit_hypopg_macos_publication.py'
-      - 'tools/emit_hypopg_macos_x86_64_publication.py'
-      - 'tools/import_hypopg_macos_publication.py'
-      - 'tools/import_hypopg_macos_x86_64_publication.py'
-      - 'tools/macos_publication_evidence.py'
-      - 'experiments/hypopg-macos-intel-target/target.json'
 
 permissions:
   actions: read

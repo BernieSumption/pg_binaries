@@ -30,10 +30,7 @@ on:
         required: true
         type: choice
         options: [arm64, x86_64]
-  push:
-    branches: [spike]
-    paths:
-      - 'experiments/pg-jsonschema-macos-selected-trial/target.json'
+
 permissions:
   actions: read
   contents: read
