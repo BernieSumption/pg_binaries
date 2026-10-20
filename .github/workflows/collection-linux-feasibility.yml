@@ -1,0 +1,29 @@
+name: Collection selected Linux publication
+
+on:
+  workflow_dispatch:
+    inputs:
+      postgresql_version:
+        description: Exact selected PostgreSQL release
+        required: true
+        type: string
+      architecture:
+        description: Exact selected Linux architecture
+        required: true
+        type: string
+      extension_version:
+        description: Exact selected Collection release
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  selected_publication:
+    uses: ./.github/workflows/collection-linux-selected-publication.yml
+    with:
+      postgresql_version: ${{ inputs.postgresql_version }}
+      architecture: ${{ inputs.architecture }}
+      extension_version: ${{ inputs.extension_version }}
