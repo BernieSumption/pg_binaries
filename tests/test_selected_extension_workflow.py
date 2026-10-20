@@ -44,14 +44,10 @@ class SelectedExtensionWorkflowTests(unittest.TestCase):
         self.assertIn("uses: ./.github/workflows/collection-macos-selected-publication.yml", DISPATCHER)
         self.assertIn("uses: ./.github/workflows/pgivm-macos-selected-publication.yml", DISPATCHER)
 
-    def test_hypopg_checks_selected_dispatcher_candidates_first(self):
-        self.assertIn("CALLER_WORKFLOW_REF: ${{ github.workflow_ref }}", HYPOPG)
-        self.assertIn("*/.github/workflows/selected-extension-publication.yml@*", HYPOPG)
-        self.assertIn('"hypopg-linux-$PG_VERSION-$PG_ARCHITECTURE-trial-{run_id}"', HYPOPG)
-        self.assertIn('linux-changed-profiles.yml "hypopg-linux-core-', HYPOPG)
-        self.assertIn('linux-changed-profiles.yml "postgresql-linux-selected-core-', HYPOPG)
-        self.assertLess(HYPOPG.index('selected-extension-publication.yml "hypopg-linux-core-'),
-                        HYPOPG.index('hypopg-linux-selected-publication.yml "hypopg-linux-core-'))
+    def test_hypopg_uses_exact_pin_resolver_without_historical_search(self):
+        self.assertIn('scripts/linux/resolve-core.sh "$PG_VERSION" "$PG_ARCHITECTURE"', HYPOPG)
+        self.assertNotIn('linux-changed-profiles.yml "hypopg-linux-core-', HYPOPG)
+        self.assertNotIn('postgresql-linux-selected-core-', HYPOPG)
         self.assertNotIn("planner-dispatch-trial.yml", HYPOPG)
 
     def test_selected_linux_workflows_can_invoke_non_executable_recipes(self):

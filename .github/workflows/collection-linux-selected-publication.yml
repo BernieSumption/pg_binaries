@@ -86,36 +86,9 @@ jobs:
         continue-on-error: true
         env:
           GH_TOKEN: ${{ github.token }}
-          CALLER_WORKFLOW_REF: ${{ github.workflow_ref }}
         run: |
           set -euo pipefail
-          sources=()
-          if [[ "$CALLER_WORKFLOW_REF" == */.github/workflows/selected-extension-publication.yml@* ]]; then
-            sources+=(
-              selected-extension-publication.yml "pgcron-linux-core-$PG_VERSION-$PG_ARCHITECTURE-{run_id}"
-              selected-extension-publication.yml "pgivm-linux-core-$PG_VERSION-$PG_ARCHITECTURE-{run_id}"
-              selected-extension-publication.yml "pgaudit-linux-core-$PG_VERSION-$PG_ARCHITECTURE-{run_id}"
-              selected-extension-publication.yml "pgtap-linux-core-$PG_VERSION-$PG_ARCHITECTURE-{run_id}"
-              selected-extension-publication.yml "pg-jsonschema-linux-core-$PG_VERSION-$PG_ARCHITECTURE-{run_id}"
-              selected-extension-publication.yml "postgis-linux-core-$PG_VERSION-$PG_ARCHITECTURE-{run_id}"
-            )
-          fi
-          sources+=(
-            linux-changed-profiles.yml "pgcron-linux-core-$PG_VERSION-$PG_ARCHITECTURE-{run_id}"
-            linux-changed-profiles.yml "pgivm-linux-core-$PG_VERSION-$PG_ARCHITECTURE-{run_id}"
-            linux-changed-profiles.yml "pgaudit-linux-core-$PG_VERSION-$PG_ARCHITECTURE-{run_id}"
-            linux-changed-profiles.yml "pgtap-linux-core-$PG_VERSION-$PG_ARCHITECTURE-{run_id}"
-            linux-changed-profiles.yml "pg-jsonschema-linux-core-$PG_VERSION-$PG_ARCHITECTURE-{run_id}"
-            linux-changed-profiles.yml "postgis-linux-core-$PG_VERSION-$PG_ARCHITECTURE-{run_id}"
-            pgcron-linux-selected-publication.yml "pgcron-linux-core-$PG_VERSION-$PG_ARCHITECTURE-{run_id}"
-            pgivm-linux-selected-publication.yml "pgivm-linux-core-$PG_VERSION-$PG_ARCHITECTURE-{run_id}"
-            pgaudit-linux-selected-publication.yml "pgaudit-linux-core-$PG_VERSION-$PG_ARCHITECTURE-{run_id}"
-            pgtap-linux-selected-publication.yml "pgtap-linux-core-$PG_VERSION-$PG_ARCHITECTURE-{run_id}"
-            pg-jsonschema-linux-selected-publication.yml "pg-jsonschema-linux-core-$PG_VERSION-$PG_ARCHITECTURE-{run_id}"
-            postgis-linux-selected-publication.yml "postgis-linux-core-$PG_VERSION-$PG_ARCHITECTURE-{run_id}"
-            collection-linux-selected-publication.yml "collection-linux-core-$PG_VERSION-$PG_ARCHITECTURE-{run_id}"
-          )
-          scripts/linux/resolve-core.sh "$PG_VERSION" "$PG_ARCHITECTURE" "$RUNNER_TEMP/core/pilot" "${sources[@]}"
+          scripts/linux/resolve-core.sh "$PG_VERSION" "$PG_ARCHITECTURE" "$RUNNER_TEMP/core/pilot"
       - name: Build the selected checksum-pinned Collection archive against that core
         id: extension_build
         if: always() && steps.core_resolution.outcome == 'success'

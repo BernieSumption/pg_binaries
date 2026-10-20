@@ -70,8 +70,8 @@ class AddressStandardizerLinuxPublication(unittest.TestCase):
         core_sources = {
             "scripts/linux/Dockerfile", "scripts/linux/build-in-container.sh",
             "scripts/linux/build.sh", "scripts/linux/resolve-core.sh",
-            "tools/actions_candidate_discovery.py", "tools/extension_archive_plan.py",
-            "tools/linux_core_candidate.py", "tools/linux_core_resolution.py",
+            "tools/linux_core_pin.py", "tools/extension_archive_plan.py",
+            "tools/linux_core_resolution.py",
             "tools/plan_work.py", "tools/source_archive.py",
         }
         legacy_workflows = {

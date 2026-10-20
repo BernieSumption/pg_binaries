@@ -86,23 +86,9 @@ jobs:
         continue-on-error: true
         env:
           GH_TOKEN: ${{ github.token }}
-          CALLER_WORKFLOW_REF: ${{ github.workflow_ref }}
         run: |
           set -euo pipefail
-          sources=()
-          if [[ "$CALLER_WORKFLOW_REF" == */.github/workflows/selected-extension-publication.yml@* ]]; then
-            sources+=(
-              selected-extension-publication.yml "postgis-linux-core-$PG_VERSION-$PG_ARCHITECTURE-{run_id}"
-              selected-extension-publication.yml "pgtap-linux-core-$PG_VERSION-$PG_ARCHITECTURE-{run_id}"
-            )
-          fi
-          sources+=(
-            linux-changed-profiles.yml "postgis-linux-core-$PG_VERSION-$PG_ARCHITECTURE-{run_id}"
-            linux-changed-profiles.yml "pgtap-linux-core-$PG_VERSION-$PG_ARCHITECTURE-{run_id}"
-            postgis-linux-selected-publication.yml "postgis-linux-core-$PG_VERSION-$PG_ARCHITECTURE-{run_id}"
-            pgtap-linux-selected-publication.yml "pgtap-linux-core-$PG_VERSION-$PG_ARCHITECTURE-{run_id}"
-          )
-          scripts/linux/resolve-core.sh "$PG_VERSION" "$PG_ARCHITECTURE" "$RUNNER_TEMP/core/pilot" "${sources[@]}"
+          scripts/linux/resolve-core.sh "$PG_VERSION" "$PG_ARCHITECTURE" "$RUNNER_TEMP/core/pilot"
       - name: Build selected PostGIS archive against that core
         id: extension_build
         if: always() && steps.core_resolution.outcome == 'success'

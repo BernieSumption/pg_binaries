@@ -31,23 +31,25 @@ class PgTapWindowsArchiveTests(unittest.TestCase):
         self._make_core()
         self._make_extension()
 
-    def test_workflow_discovers_core_candidate_and_rebuilds_when_needed(self):
+    def test_workflow_uses_exact_optional_core_pin_and_rebuilds_when_needed(self):
         script = Path("scripts/pgtap/windows-feasibility.ps1").read_text()
         workflow = Path(".github/workflows/pgtap-windows-selected-publication.yml").read_text()
         self.assertIn("windows_core_pin", script)
         self.assertIn("windows_core_target.py --postgresql-version", workflow)
         self.assertIn("windows_core_candidate.py --selected-core --base-target", workflow)
+        self.assertIn("--artifact-pin \"support/windows-core-artifact-pins/$($env:PG_VERSION)-x86_64.json\"", workflow)
         self.assertIn("steps.core_candidate.outputs.status == 'missing'", workflow)
         self.assertIn("steps.core_candidate.outputs.status == 'stale'", workflow)
         self.assertIn("windows_core_target_config.py --base-target", workflow)
         self.assertNotIn("--base-pin", workflow)
         self.assertNotIn("support/windows-core-pins", workflow)
-        self.assertNotIn("windows_core_pin.py", workflow)
+        self.assertNotIn("actions/artifacts?name=", workflow)
         self.assertNotIn("run-id:", workflow)
         self.assertIn("CoreIdentityPath", workflow)
         self.assertIn("if (-not (Test-Path $candidate -PathType Leaf))", workflow)
         self.assertIn("Inspect and exercise downloaded archives after relocation", workflow)
         self.assertIn("Require fresh-runner verification to pass", workflow)
+        self.assertNotIn("push:", workflow)
 
     def test_selected_targets_are_generated_from_current_postgresql_selection(self):
         for version in publication.SUPPORTED_PG_VERSIONS:

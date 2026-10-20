@@ -13,12 +13,6 @@ on:
         required: false
         type: string
         default: ''
-  push:
-    branches: [spike]
-    paths:
-      - '.github/workflows/pgtap-windows-selected-publication.yml'
-      - 'experiments/pgtap-windows-target-trial/target.json'
-
 permissions:
   actions: read
   contents: read
@@ -86,7 +80,7 @@ jobs:
           $baseTarget = Join-Path $coreDir 'base-target.json'
           python tools/windows_core_target.py --postgresql-version $env:PG_VERSION --output $baseTarget
           if ($LASTEXITCODE -ne 0) { throw 'Selected PostgreSQL core target generation failed.' }
-          python tools/windows_core_candidate.py --selected-core --base-target $baseTarget --output-directory $coreDir
+          python tools/windows_core_candidate.py --selected-core --base-target $baseTarget --artifact-pin "support/windows-core-artifact-pins/$($env:PG_VERSION)-x86_64.json" --output-directory $coreDir
           if ($LASTEXITCODE -ne 0) { throw 'PostgreSQL core candidate resolution failed.' }
           $result = Get-Content (Join-Path $coreDir 'result.json') -Raw | ConvertFrom-Json
           if ($result.status -notin @('checked', 'missing', 'stale')) { throw "Unexpected core candidate status: $($result.status)" }

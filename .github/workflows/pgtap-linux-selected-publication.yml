@@ -88,14 +88,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          scripts/linux/resolve-core.sh "$PG_VERSION" "$PG_ARCHITECTURE" "$RUNNER_TEMP/core/pilot" \
-            linux-changed-profiles.yml "pgtap-linux-core-$PG_VERSION-$PG_ARCHITECTURE-{run_id}" \
-            linux-changed-profiles.yml "hypopg-linux-core-$PG_VERSION-$PG_ARCHITECTURE-{run_id}" \
-            linux-changed-profiles.yml "pg-jsonschema-linux-core-$PG_VERSION-$PG_ARCHITECTURE-{run_id}" \
-            selected-extension-publication.yml "pgtap-linux-core-$PG_VERSION-$PG_ARCHITECTURE-{run_id}" \
-            selected-extension-publication.yml "hypopg-linux-core-$PG_VERSION-$PG_ARCHITECTURE-{run_id}" \
-            selected-extension-publication.yml "pg-jsonschema-linux-core-$PG_VERSION-$PG_ARCHITECTURE-{run_id}" \
-            pgtap-linux-selected-publication.yml "pgtap-linux-core-$PG_VERSION-$PG_ARCHITECTURE-{run_id}"
+          scripts/linux/resolve-core.sh "$PG_VERSION" "$PG_ARCHITECTURE" "$RUNNER_TEMP/core/pilot"
       - name: Build selected pgTAP archive against that core
         id: extension_build
         if: always() && steps.core_resolution.outcome == 'success'

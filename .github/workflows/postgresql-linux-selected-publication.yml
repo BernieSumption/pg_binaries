@@ -70,10 +70,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          scripts/linux/resolve-core.sh "$PG_VERSION" "$PG_ARCHITECTURE" "$RUNNER_TEMP/core" \
-            postgresql-linux-selected-publication.yml "postgresql-linux-selected-core-$PG_VERSION-$PG_ARCHITECTURE-{run_id}" \
-            postgresql-linux-selected-publication.yml "postgresql-linux-selected-$PG_VERSION-{run_id}" \
-            pgvector-linux-selected-publication.yml "pgvector-linux-core-$PG_VERSION-$PG_ARCHITECTURE-{run_id}"
+          scripts/linux/resolve-core.sh "$PG_VERSION" "$PG_ARCHITECTURE" "$RUNNER_TEMP/core/pilot"
       - name: Upload exact resolved core and provenance
         if: always()
         uses: actions/upload-artifact@v4

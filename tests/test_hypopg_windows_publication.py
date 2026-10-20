@@ -33,8 +33,10 @@ class HypopgWindowsArchiveTests(unittest.TestCase):
         workflow = Path(".github/workflows/hypopg-windows-selected-publication.yml").read_text()
         self.assertIn("windows_core_pin.py", script)
         self.assertIn("tools/windows_core_candidate.py", workflow)
+        self.assertIn("--artifact-pin \"support/windows-core-artifact-pins/$($env:PG_VERSION)-x86_64.json\"", workflow)
         self.assertIn("tools/windows_core_target_config.py", workflow)
         self.assertIn("-CoreIdentityPath", workflow)
+        self.assertNotIn("push:", workflow)
         self.assertNotIn("steps.core_pin.outputs.run_id", workflow)
 
     def test_selected_target_verifies_uploaded_archives_on_a_separate_runner(self):

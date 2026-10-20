@@ -88,9 +88,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          scripts/linux/resolve-core.sh "$PG_VERSION" "$PG_ARCHITECTURE" "$RUNNER_TEMP/core" \
-            pgvector-linux-selected-publication.yml "pgvector-linux-selected-$PG_VERSION-{run_id}" \
-            pgvector-linux-selected-publication.yml "pgvector-linux-core-$PG_VERSION-$PG_ARCHITECTURE-{run_id}"
+          scripts/linux/resolve-core.sh "$PG_VERSION" "$PG_ARCHITECTURE" "$RUNNER_TEMP/core/pilot"
       - name: Fetch and build selected pgvector against the resolved core
         id: extension_build
         if: always() && steps.core_resolution.outcome == 'success'

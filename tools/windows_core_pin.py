@@ -14,6 +14,42 @@ REQUIRED = {
     "schema_version", "postgresql_version", "platform", "architecture", "artifact_name",
     "archive_name", "run_id", "build_id", "source_revision", "sha256", "profile_id", "status",
 }
+ARTIFACT_PIN_DIR = Path(__file__).resolve().parents[1] / "support/windows-core-artifact-pins"
+ARTIFACT_PIN_FIELDS = {"schema_version", "workflow", "run_id", "artifact_name", "archive_name", "sha256"}
+
+
+class MissingArtifactPin(FileNotFoundError):
+    pass
+
+
+def load_artifact_pin(pg_version, path=None):
+    if pg_version not in PG_VERSIONS:
+        raise ValueError("unsupported Windows PostgreSQL target")
+    path = ARTIFACT_PIN_DIR / f"{pg_version}-x86_64.json" if path is None else Path(path)
+    try:
+        pin = json.loads(path.read_text(encoding="utf-8"))
+    except FileNotFoundError as exc:
+        raise MissingArtifactPin(f"no Windows core artifact pin for {pg_version} x86_64") from exc
+    except (OSError, json.JSONDecodeError) as exc:
+        raise ValueError(f"invalid Windows core artifact pin: {path}") from exc
+    workflows = {"windows-pilot.yml", "postgresql-windows-selected-publication.yml"}
+    archive_name = f"postgresql-{pg_version}-windows-x86_64.tar.gz"
+    if (not isinstance(pin, dict) or set(pin) != ARTIFACT_PIN_FIELDS
+            or type(pin.get("schema_version")) is not int or pin["schema_version"] != 1
+            or pin.get("workflow") not in workflows
+            or type(pin.get("run_id")) is not int or pin["run_id"] <= 0
+            or not isinstance(pin.get("artifact_name"), str)
+            or not re.fullmatch(r"[A-Za-z0-9_.-]+", pin["artifact_name"])
+            or pin.get("archive_name") != archive_name
+            or not isinstance(pin.get("sha256"), str)
+            or not re.fullmatch(r"[0-9a-f]{64}", pin["sha256"])):
+        raise ValueError("Windows core artifact pin does not match the requested target or field formats")
+    expected_name = (f"windows-core-selected-{pg_version}-build-{pin['run_id']}"
+                     if pin["workflow"] == "postgresql-windows-selected-publication.yml"
+                     else f"windows-postgresql-{pg_version}-pilot")
+    if pin["artifact_name"] != expected_name:
+        raise ValueError("Windows core artifact pin workflow and artifact name differ")
+    return pin
 
 
 def load_identity(path=None, pg_version="18.6"):
