@@ -107,7 +107,7 @@ BEGIN
   SELECT count(*) INTO driver_count FROM ST_GDALDrivers()
   WHERE short_name IN ('GTiff', 'PNG', 'JPEG');
   IF driver_count <> 3 THEN RAISE EXCEPTION 'expected GTiff, PNG and JPEG drivers, found %', driver_count; END IF;
-  raster_value := ST_AddBand(ST_MakeEmptyRaster(2, 2, 0, 2, 1, -1, 0, 0, 4326), '8BUI', 128, 0);
+  raster_value := ST_AddBand(ST_MakeEmptyRaster(2, 2, 0, 2, 1, -1, 0, 0, 4326), '8BUI'::text, 128::double precision, 0::double precision);
   tiff_size := octet_length(ST_AsTIFF(raster_value));
   png_size := octet_length(ST_AsPNG(raster_value));
   jpeg_size := octet_length(ST_AsJPEG(raster_value));
