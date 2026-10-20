@@ -22,9 +22,9 @@ TARGETS = {
     },
     "17.11": {
         "pgaudit_version": "17.1",
-        "core_sha256": "d9ac809946cd87bbb585135d0ff329d33d5563047b9caaa312aea9116a8d9eaa",
-        "core_build_id": "github-39093804725-1",
-        "core_source_revision": "42082a506adfca1628c509f2c7b17037b9a12123",
+        "core_sha256": "7c8522779eb2ab4e93c863bccc72865c59b60a21ef1cd507323e300413d5d568",
+        "core_build_id": "github-39420673533-1",
+        "core_source_revision": "bf0284b528dc8188c7b01bacf2f13d21fce7ee88",
         "source_url": "https://api.github.com/repos/pgaudit/pgaudit/tarball/538f89a93d8fd0d8913f3d740cacaea7b7eb66d9",
         "source_sha256": "20e980bd0c22b4ae33305ec2b774bd846bf343642adad108b6c28b422a648312",
     },
