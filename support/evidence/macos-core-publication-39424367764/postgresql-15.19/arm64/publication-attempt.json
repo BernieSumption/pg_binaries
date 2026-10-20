@@ -1,0 +1,17 @@
+{
+  "architecture": "arm64",
+  "archive_present": true,
+  "archives": {
+    "postgresql-15.19-macos-arm64.tar.gz": "bd866dec8967e6320f88eb8ffe3a2f57fad36920b3d05556dae026c53226cf85"
+  },
+  "postgresql_version": "15.19",
+  "profile_id": "postgresql-publication-macos-arm64-15.19",
+  "run_id": "39424367764",
+  "schema_version": 1,
+  "source_revision": "817362a98376ab8b0a5af6239ae5dbc92962fedf",
+  "steps": {
+    "archive-suite": "success",
+    "diagnostics": "success",
+    "symbols": "success"
+  }
+}

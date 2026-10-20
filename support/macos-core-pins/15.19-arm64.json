@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "workflow": "postgresql-macos-selected-publication.yml",
+  "run_id": 39424367764,
+  "artifact_name": "postgresql-macos-selected-15.19-arm64-build-39424367764",
+  "archive_name": "postgresql-15.19-macos-arm64.tar.gz",
+  "sha256": "bd866dec8967e6320f88eb8ffe3a2f57fad36920b3d05556dae026c53226cf85"
+}

@@ -6,9 +6,9 @@ import json
 TARGETS = {
     "15.19": {
         "pgaudit_version": "1.7.1",
-        "core_sha256": "856956cd7615bc56222de954c83f156fe5bc73d75512d230c6b91d386229f432",
-        "core_build_id": "github-39093804765-1",
-        "core_source_revision": "42082a506adfca1628c509f2c7b17037b9a12123",
+        "core_sha256": "bd866dec8967e6320f88eb8ffe3a2f57fad36920b3d05556dae026c53226cf85",
+        "core_build_id": "github-39424367764-1",
+        "core_source_revision": "817362a98376ab8b0a5af6239ae5dbc92962fedf",
         "source_url": "https://api.github.com/repos/pgaudit/pgaudit/tarball/72da89c3fa02f3f2b9f3933214d91ad9c3428467",
         "source_sha256": "1e52448238908a09e0e78b3375dcefbfca51509fdbb3a4d92eb710e380ed3567",
     },
