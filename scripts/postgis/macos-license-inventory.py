@@ -27,6 +27,16 @@ expected_formulae = {
     "xz": ("5.8.3", "0BSD AND GPL-2.0-or-later"),
     "zstd": ("1.5.7_1", "(BSD-3-Clause OR GPL-2.0-only) AND BSD-2-Clause AND MIT"),
 }
+proj_license_urls = {
+    "CC-BY-3.0": "https://raw.githubusercontent.com/spdx/license-list-data/v3.25/text/CC-BY-3.0.txt",
+    "CC-BY-4.0": "https://raw.githubusercontent.com/spdx/license-list-data/v3.25/text/CC-BY-4.0.txt",
+    "CC-BY-SA-3.0": "https://raw.githubusercontent.com/spdx/license-list-data/v3.25/text/CC-BY-SA-3.0.txt",
+    "CC-BY-SA-4.0": "https://raw.githubusercontent.com/spdx/license-list-data/v3.25/text/CC-BY-SA-4.0.txt",
+    "CC0-1.0": "https://raw.githubusercontent.com/spdx/license-list-data/v3.25/text/CC0-1.0.txt",
+    "BSD-2-Clause": "https://raw.githubusercontent.com/spdx/license-list-data/v3.25/text/BSD-2-Clause.txt",
+    "OGL-Canada-2.0": "https://open.canada.ca/en/open-government-licence-canada",
+    "Data licence Germany - attribution - version 2.0": "https://www.govdata.de/dl-de/by-2-0",
+}
 
 
 def command(*args):
@@ -88,6 +98,23 @@ def proj_data_inventory(data_dir):
     return rows_by_name, data_files, core_files
 
 
+def proj_data_license_sources(rows_by_name):
+    sources = {}
+    supported = {"Public domain", "Free redistribution is allowed and welcome", *proj_license_urls}
+    for row in rows_by_name.values():
+        if len(row) < 3:
+            raise SystemExit("malformed PROJ copyright and licence row")
+        expression = row[2].strip()
+        if expression in supported:
+            if expression in proj_license_urls:
+                sources[expression] = proj_license_urls[expression]
+        elif expression.startswith("Open License France - "):
+            sources[expression] = expression.removeprefix("Open License France - ").strip()
+        else:
+            raise SystemExit(f"unreviewed PROJ-data licence: {expression}")
+    return sources
+
+
 if sys.argv[1:] == ["--preflight"]:
     info = json.loads(command("brew", "info", "--json=v2", *sorted(expected_formulae)))
     formula_data = {item["name"]: item for item in info.get("formulae", [])}
@@ -123,10 +150,19 @@ if sys.argv[1:] == ["--preflight"]:
             for filename in ("README.DATA", "copyright_and_licenses.csv", "proj.db"):
                 if not (data_dir / filename).is_file():
                     raise SystemExit(f"installed PROJ data is missing {filename}")
-            _, data_files, core_files = proj_data_inventory(data_dir)
+            rows_by_name, data_files, core_files = proj_data_inventory(data_dir)
             if not core_files:
                 raise SystemExit("PROJ core data inventory is empty")
+            license_sources = proj_data_license_sources(rows_by_name)
+            for expression, url in sorted(license_sources.items()):
+                try:
+                    with urlopen(url, timeout=15) as response:
+                        if not response.read(1):
+                            raise RuntimeError("empty response")
+                except Exception as error:
+                    raise SystemExit(f"PROJ-data licence {expression} source unavailable: {url}: {error}") from error
             print(f"PROJ data inventory: {len(data_files)} licensed grid files, {len(core_files)} PROJ core files")
+            print(f"PROJ-data licence sources: {len(license_sources)} checked")
             print(f"PROJ datum grids: checksum-pinned source metadata found ({data_sha})")
     def check_formula_url(item):
         name, url = item
@@ -316,31 +352,13 @@ for name in ("README.DATA", "copyright_and_licenses.csv"):
     (root / "LICENSES" / f"PROJ-data-{name}").write_bytes(source.read_bytes())
 rows_by_name, data_files, core_files = proj_data_inventory(proj_data_dir)
 (root / "LICENSES/PROJ-data.txt").write_bytes(proj_license.read_bytes())
-license_urls = {
-    "CC-BY-3.0": "https://raw.githubusercontent.com/spdx/license-list-data/v3.25/text/CC-BY-3.0.txt",
-    "CC-BY-4.0": "https://raw.githubusercontent.com/spdx/license-list-data/v3.25/text/CC-BY-4.0.txt",
-    "CC-BY-SA-3.0": "https://raw.githubusercontent.com/spdx/license-list-data/v3.25/text/CC-BY-SA-3.0.txt",
-    "CC-BY-SA-4.0": "https://raw.githubusercontent.com/spdx/license-list-data/v3.25/text/CC-BY-SA-4.0.txt",
-    "CC0-1.0": "https://raw.githubusercontent.com/spdx/license-list-data/v3.25/text/CC0-1.0.txt",
-    "BSD-2-Clause": "https://raw.githubusercontent.com/spdx/license-list-data/v3.25/text/BSD-2-Clause.txt",
-    "OGL-Canada-2.0": "https://open.canada.ca/en/open-government-licence-canada",
-    "Data licence Germany - attribution - version 2.0": "https://www.govdata.de/dl-de/by-2-0",
-}
-license_sources = {}
-for row in rows_by_name.values():
-    if len(row) < 3: raise SystemExit("malformed PROJ copyright and licence row")
-    expression = row[2].strip()
-    if expression in {"Public domain", "Free redistribution is allowed and welcome", "BSD-2-Clause", "CC-BY-3.0", "CC-BY-4.0", "CC-BY-SA-3.0", "CC-BY-SA-4.0", "CC0-1.0", "OGL-Canada-2.0", "Data licence Germany - attribution - version 2.0"}:
-        if expression == "BSD-2-Clause" or expression.startswith("CC-") or expression == "OGL-Canada-2.0" or expression.startswith("Data licence Germany"):
-            license_sources[expression] = license_urls[expression]
-        continue
-    if expression.startswith("Open License France - "):
-        license_sources[expression] = expression.removeprefix("Open License France - ").strip()
-        continue
-    raise SystemExit(f"unreviewed PROJ-data licence: {expression}")
+license_sources = proj_data_license_sources(rows_by_name)
 license_records=[]
 for index,(expression,url) in enumerate(sorted(license_sources.items()),1):
-    with urlopen(url,timeout=30) as response: text=response.read()
+    try:
+        with urlopen(url,timeout=30) as response: text=response.read()
+    except Exception as error:
+        raise SystemExit(f"PROJ-data licence {expression} source unavailable: {url}: {error}") from error
     if not text: raise SystemExit(f"empty PROJ data licence text for {expression}")
     filename=f"PROJ-data-license-{index}.txt"
     (root/"LICENSES"/filename).write_bytes(text)
