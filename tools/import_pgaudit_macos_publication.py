@@ -197,7 +197,7 @@ def main():
     parser.add_argument("--core-artifact", type=Path, required=True)
     parser.add_argument("--pgaudit-artifact", type=Path, required=True)
     parser.add_argument("--run-id", required=True)
-    parser.add_argument("--postgresql-version", choices=("17.11", "18.6"), default="18.6")
+    parser.add_argument("--postgresql-version", choices=("15.19", "16.15", "17.11", "18.6"), default="18.6")
     args = parser.parse_args()
     try:
         for path in import_run(args.root, args.core_artifact, args.pgaudit_artifact, args.run_id,

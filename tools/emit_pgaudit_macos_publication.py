@@ -244,7 +244,7 @@ def main():
     parser.add_argument("--archive-suite-result", required=True)
     parser.add_argument("--symbols-result", required=True)
     parser.add_argument("--diagnostics-result", required=True)
-    parser.add_argument("--postgresql-version", choices=("17.11", "18.6"), default="18.6")
+    parser.add_argument("--postgresql-version", choices=("15.19", "16.15", "17.11", "18.6"), default="18.6")
     args = parser.parse_args()
     try:
         paths = emit(args.root, args.core_archives, args.archives, args.output,
