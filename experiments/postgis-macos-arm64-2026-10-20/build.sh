@@ -41,18 +41,6 @@ macos_restore_core_prefix "$prefix" "$pgroot"
 prefix_link_created=true
 pg_config="$prefix/bin/pg_config"
 test "$("$pg_config" --version)" = "PostgreSQL $pg_version"
-pg_config_wrapper="$work/pg_config"
-cat > "$pg_config_wrapper" <<'EOF'
-#!/usr/bin/env bash
-if [[ ${1:-} == --bindir ]]; then
-  printf '%s\n' "$PG_BINDIR"
-else
-  exec "$PG_CONFIG_REAL" "$@"
-fi
-EOF
-chmod +x "$pg_config_wrapper"
-export PG_CONFIG_REAL="$pg_config" PG_BINDIR="$pgroot/bin"
-test "$("$pg_config_wrapper" --bindir)" = "$pgroot/bin"
 
 export MACOSX_DEPLOYMENT_TARGET=11.0
 brew_prefix=$(brew --prefix)
@@ -63,7 +51,7 @@ printf '%s  %s\n' ed8dc6679f1e06f7b113592b04cde2a7e00f1b1e681294c8ca2204058990ce
 tar -xzf postgis.tar.gz
 cd postgis-3.6.4
 export PKG_CONFIG_PATH="$brew_prefix/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
-./configure --with-pgconfig="$pg_config_wrapper" --with-gdalconfig="$(command -v gdal-config)" \
+./configure --prefix="$pgroot" --with-pgconfig="$pg_config" --with-gdalconfig="$(command -v gdal-config)" \
   --with-geosconfig="$(command -v geos-config)" --with-projdir="$(brew --prefix proj)" \
   --with-jsondir="$(brew --prefix json-c)" --with-xml2config="$(brew --prefix libxml2)/bin/xml2-config" \
   --with-sfcgal="$(command -v sfcgal-config)" 2>&1 | tee "$output/configure.log"
