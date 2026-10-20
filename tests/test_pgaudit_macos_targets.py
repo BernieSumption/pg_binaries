@@ -40,10 +40,10 @@ class PgauditMacosTargetTests(unittest.TestCase):
         selected = target("17.11")
         self.assertEqual(selected["pgaudit_version"], "17.1")
         self.assertEqual(selected["core_sha256"],
-                         "7c8522779eb2ab4e93c863bccc72865c59b60a21ef1cd507323e300413d5d568")
-        self.assertEqual(selected["core_build_id"], "github-39420673533-1")
+                         "0db9ca0f4d0cf72fa32120aaf9a3f8e47c9dd2d97421ab2b53583af83be681b6")
+        self.assertEqual(selected["core_build_id"], "github-39425313739-1")
         self.assertEqual(selected["core_source_revision"],
-                         "bf0284b528dc8188c7b01bacf2f13d21fce7ee88")
+                         "408cb35e340df85bd8664771188b20e82ab6bc64")
 
     def test_unregistered_target_is_rejected(self):
         with self.assertRaises(ValueError):
