@@ -1,0 +1,41 @@
+{
+  "case_results": {
+    "archive-suite": "passed",
+    "diagnostics": "passed",
+    "symbols": "passed"
+  },
+  "ci": {
+    "build_revision": "817362a98376ab8b0a5af6239ae5dbc92962fedf",
+    "provider": "github-actions",
+    "run_id": "39424382435",
+    "run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/39424382435",
+    "source_revision": "817362a98376ab8b0a5af6239ae5dbc92962fedf",
+    "test_revision": "817362a98376ab8b0a5af6239ae5dbc92962fedf"
+  },
+  "component": "postgresql",
+  "environment": {
+    "architecture": "arm64",
+    "clean_system": true,
+    "dependency_check_profile": "macho-system-dependencies-v1",
+    "dependency_checks_passed": true,
+    "endpoint": "current",
+    "image_id": "macos15/20260907.0337.1",
+    "os": "macos",
+    "os_version": "15.7.9"
+  },
+  "outcome": "passed",
+  "platform": "macos-arm64",
+  "postgresql_version": "16.15",
+  "profile_id": "postgresql-publication-macos-arm64-16.15",
+  "profile_revision": "b3851837b99ab012fbc862960daf59c118249fe0b1135f3319921ab8d98fc428",
+  "schema_version": 2,
+  "scope": "publication",
+  "sha256": "aae8b4e67a88cb3edc074070527dda23ea5bac09b7574403fdaa18eb1e31ab8c",
+  "test_cases": [
+    "archive-suite",
+    "diagnostics",
+    "symbols"
+  ],
+  "test_revision": "817362a98376ab8b0a5af6239ae5dbc92962fedf",
+  "version": "16.15"
+}

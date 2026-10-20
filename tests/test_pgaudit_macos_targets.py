@@ -27,8 +27,10 @@ class PgauditMacosTargetTests(unittest.TestCase):
         selected = target("16.15")
         self.assertEqual(selected["pgaudit_version"], "16.1")
         self.assertEqual(selected["core_sha256"],
-                         "716083752061eebab60923ae2e8cb269bc2e4bdb7401d951465cd726a50e6cbf")
-        self.assertEqual(selected["core_build_id"], "github-39093805055-1")
+                         "aae8b4e67a88cb3edc074070527dda23ea5bac09b7574403fdaa18eb1e31ab8c")
+        self.assertEqual(selected["core_build_id"], "github-39424382435-1")
+        self.assertEqual(selected["core_source_revision"],
+                         "817362a98376ab8b0a5af6239ae5dbc92962fedf")
         self.assertEqual(selected["source_sha256"],
                          "b0648fcebe5a67340c406126e6dddc703fd03821a9ace80390e128a0d1c91c73")
 

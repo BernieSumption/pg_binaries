@@ -14,9 +14,9 @@ TARGETS = {
     },
     "16.15": {
         "pgaudit_version": "16.1",
-        "core_sha256": "716083752061eebab60923ae2e8cb269bc2e4bdb7401d951465cd726a50e6cbf",
-        "core_build_id": "github-39093805055-1",
-        "core_source_revision": "42082a506adfca1628c509f2c7b17037b9a12123",
+        "core_sha256": "aae8b4e67a88cb3edc074070527dda23ea5bac09b7574403fdaa18eb1e31ab8c",
+        "core_build_id": "github-39424382435-1",
+        "core_source_revision": "817362a98376ab8b0a5af6239ae5dbc92962fedf",
         "source_url": "https://api.github.com/repos/pgaudit/pgaudit/tarball/a81792e8a4ea8f7aaf75bd610fcc4c2f96650bdc",
         "source_sha256": "b0648fcebe5a67340c406126e6dddc703fd03821a9ace80390e128a0d1c91c73",
     },
