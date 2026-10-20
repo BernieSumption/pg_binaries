@@ -7,39 +7,6 @@ on:
         description: A missing supported PostgreSQL version; leave blank to select the next one
         required: false
         type: string
-  push:
-    branches: [spike]
-    paths:
-      - scripts/macos/build.sh
-      - scripts/macos/build-source-dependencies.sh
-      - scripts/macos/bundle.py
-      - scripts/macos/licenses.py
-      - scripts/macos/verify.sh
-      - scripts/macos/static_analysis.py
-      - scripts/macos/diagnostics.sh
-      - support.json
-      - support/postgresql-releases.json
-      - inventory.json
-      - support/verification-profiles.json
-      - tools/plan_work.py
-      - tools/source_archive.py
-      - tools/check_source_identity.py
-      - tools/coverage.py
-      - tools/discover_builtins.py
-      - tools/create_macos_symbols.py
-      - tools/check_macos_license_inventory.py
-      - tools/emit_macos_pilot_records.py
-      - tests/schema.sql
-      - tests/builtins/**
-      - tests/extensions/**
-      - tests/test_emit_macos_pilot_records.py
-      - tests/test_macos_static_analysis.py
-      - tests/test_create_macos_symbols.py
-      - tests/test_macos_license_inventory.py
-      - tests/test_profile_change_gate.py
-      - tools/profile_change_gate.py
-      - .github/workflows/macos-pilot.yml
-
 permissions:
   contents: read
 

@@ -1,9 +1,7 @@
 name: HypoPG Windows changed-profile scheduler
 
 on:
-  push:
-    branches: [spike]
-
+  workflow_dispatch:
 permissions:
   actions: read
   contents: read

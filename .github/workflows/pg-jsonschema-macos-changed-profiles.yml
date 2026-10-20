@@ -2,9 +2,6 @@ name: pg_jsonschema macOS changed-profile scheduler
 
 on:
   workflow_dispatch:
-  push:
-    branches: [spike]
-
 permissions:
   actions: read
   contents: read

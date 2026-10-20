@@ -15,9 +15,6 @@ on:
         description: Optional Linux architecture
         required: false
         type: string
-  push:
-    branches: [spike]
-
 permissions:
   actions: read
   contents: read

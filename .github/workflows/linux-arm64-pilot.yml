@@ -7,42 +7,6 @@ on:
         required: false
         default: ''
         type: string
-  push:
-    branches: [spike]
-    paths:
-      - 'scripts/linux/Dockerfile'
-      - 'scripts/linux/build.sh'
-      - 'scripts/linux/build-in-container.sh'
-      - 'scripts/linux/bundle-glibc-in-container.sh'
-      - 'scripts/linux/launcher.c'
-      - 'scripts/linux/verify.sh'
-      - 'scripts/linux/verify.Dockerfile'
-      - 'scripts/linux/verify-in-container.sh'
-      - 'scripts/linux/verify-glibc-portability.sh'
-      - 'scripts/linux/verify-no-host-userspace.sh'
-      - 'scripts/linux/diagnostics-in-container.sh'
-      - 'scripts/linux/diagnostics.Dockerfile'
-      - 'scripts/linux/qemu-kernel-515-guest-full.sh'
-      - 'scripts/qemu/arm64-515*'
-      - 'tools/create_linux_symbols.py'
-      - 'tools/check_elf_dependencies.py'
-      - 'tools/stage_extension_archive.py'
-      - 'tools/discover_builtins.py'
-      - 'tools/write_linux_license_inventory.py'
-      - 'tools/plan_work.py'
-      - 'tools/source_archive.py'
-      - 'tools/check_source_identity.py'
-      - 'support.json'
-      - 'support/postgresql-releases.json'
-      - 'tools/emit_linux_pilot_records.py'
-      - 'tools/emit_linux_minimum_pilot_records.py'
-      - 'tests/schema.sql'
-      - 'tests/builtins/**'
-      - 'tests/extensions/**'
-      - 'tests/test_plan_work.py'
-      - 'tests/test_emit_linux_minimum_pilot_records.py'
-      - 'tests/test_create_linux_symbols.py'
-      - '.github/workflows/linux-arm64-pilot.yml'
 jobs:
   linux-arm64:
     runs-on: ubuntu-24.04-arm
