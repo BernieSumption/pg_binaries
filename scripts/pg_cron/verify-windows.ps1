@@ -1,7 +1,8 @@
 param(
   [Parameter(Mandatory = $true)][string]$CoreArchive,
   [Parameter(Mandatory = $true)][string]$ExtensionArchive,
-  [string]$ReportPath
+  [string]$ReportPath,
+  [string]$ProbePath
 )
 $ErrorActionPreference = 'Stop'
 $PSNativeCommandUseErrorActionPreference = $true
@@ -137,6 +138,7 @@ try {
   $output = Join-Path $work 'probe-output.txt'
   & $psql -X -A -t -v ON_ERROR_STOP=1 -c 'CREATE EXTENSION pg_cron; CREATE TABLE public.pg_cron_probe (ran_at timestamptz NOT NULL); SELECT cron.schedule(''windows-probe'', ''* * * * *'', ''INSERT INTO public.pg_cron_probe VALUES (clock_timestamp())'');' 2>&1 | Tee-Object -FilePath $output
   if ($LASTEXITCODE -ne 0) { throw 'Could not install pg_cron or schedule the background-worker probe.' }
+  'installation_relocated=true' | Add-Content $output
   $jobId = (& $psql -X -A -t -v ON_ERROR_STOP=1 -d postgres -c "SELECT jobid FROM cron.job WHERE jobname = 'windows-probe'" 2>&1 | Out-String).Trim()
   if ($LASTEXITCODE -ne 0) { throw "Could not query the pg_cron probe job: $jobId" }
   if ($jobId -notmatch '^\d+$') { throw 'pg_cron did not register the scheduled probe.' }
@@ -155,6 +157,11 @@ try {
   "job_status=$status`njob_rows=$rows" | Add-Content $output
   & $psql -X -v ON_ERROR_STOP=1 -c "SELECT cron.unschedule($jobId)" | Out-Null
   if ($LASTEXITCODE -ne 0) { throw 'Could not remove the pg_cron probe job.' }
+  if ($ProbePath) {
+    $probeParent = Split-Path $ProbePath -Parent
+    if ($probeParent) { New-Item -ItemType Directory -Force $probeParent | Out-Null }
+    Copy-Item $output $ProbePath -Force
+  }
   & $pgCtl -D $data -m fast -w stop
   if ($LASTEXITCODE -ne 0) { throw 'PostgreSQL did not stop cleanly.' }
   $serverStarted = $false

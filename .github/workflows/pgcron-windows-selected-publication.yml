@@ -1,0 +1,144 @@
+name: pg_cron selected Windows publication
+
+on:
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-2022
+    timeout-minutes: 40
+    defaults:
+      run:
+        shell: pwsh
+    env:
+      BUILD_ID: github-${{ github.run_id }}-${{ github.run_attempt }}
+      SOURCE_REVISION: ${{ github.sha }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Resolve checked PostgreSQL 18.6 core
+        id: core
+        run: |
+          $identity = python tools/windows_core_pin.py --postgresql-version 18.6 --github-output
+          if ($LASTEXITCODE -ne 0) { throw 'Checked PostgreSQL core pin is invalid.' }
+          $identity | Add-Content $env:GITHUB_OUTPUT
+      - name: Download core archive and matching symbols
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $producer = Join-Path $env:RUNNER_TEMP 'core-producer'
+          New-Item -ItemType Directory -Force $producer,dist/windows | Out-Null
+          gh run download '${{ steps.core.outputs.run_id }}' --repo $env:GITHUB_REPOSITORY --name '${{ steps.core.outputs.artifact_name }}' --dir $producer
+          if ($LASTEXITCODE -ne 0) { throw 'Could not download the checked core artifact.' }
+          $name = '${{ steps.core.outputs.archive_name }}'
+          Copy-Item (Join-Path $producer $name) (Join-Path 'dist/windows' $name)
+          Copy-Item (Join-Path $producer "$name.sha256") (Join-Path 'dist/windows' "$name.sha256")
+          python tools/stage_windows_core_symbols.py $producer (Join-Path $env:RUNNER_TEMP 'core-symbols') $name
+          if ($LASTEXITCODE -ne 0) { throw 'Could not stage matching core symbols.' }
+      - name: Build unmodified pg_cron 1.6.8 against checked core
+        run: |
+          $source = Join-Path $env:RUNNER_TEMP 'pg_cron-1.6.8.tar.gz'
+          Invoke-WebRequest -Uri 'https://github.com/citusdata/pg_cron/archive/refs/tags/v1.6.8.tar.gz' -OutFile $source
+          ./scripts/pg_cron/windows-build.ps1 `
+            -CoreArchive 'dist/windows/postgresql-18.6-windows-x86_64.tar.gz' `
+            -CoreSha256 '${{ steps.core.outputs.sha256 }}' `
+            -CoreSymbolsDirectory (Join-Path $env:RUNNER_TEMP 'core-symbols') `
+            -SourceArchive $source -OutputDirectory dist/windows
+          if ($LASTEXITCODE -ne 0) { throw 'Windows pg_cron source build failed.' }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pgcron-windows-built-${{ github.run_id }}
+          path: |
+            dist/windows/postgresql-18.6-windows-x86_64.tar.gz
+            dist/windows/postgresql-18.6-windows-x86_64.tar.gz.sha256
+            dist/windows/pg_cron-1.6.8-postgresql-18.6-windows-x86_64.tar.gz
+            dist/windows/pg_cron-1.6.8-postgresql-18.6-windows-x86_64.tar.gz.sha256
+            dist/windows/debug-symbols/**
+          if-no-files-found: error
+          retention-days: 7
+
+  verify:
+    needs: build
+    if: always()
+    runs-on: windows-2022
+    timeout-minutes: 20
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        id: download
+        continue-on-error: true
+        with:
+          name: pgcron-windows-built-${{ github.run_id }}
+          path: dist/windows
+      - name: Verify transferred PDBs against final archive bytes
+        id: symbols
+        if: always() && steps.download.outcome == 'success'
+        continue-on-error: true
+        run: python tools/create_windows_symbols.py 'dist/windows/postgresql-18.6-windows-x86_64.tar.gz' 'dist/windows/pg_cron-1.6.8-postgresql-18.6-windows-x86_64.tar.gz' --output-dir dist/windows/debug-symbols --verify-only
+      - name: Relocate archives and run scheduled background-worker probe
+        id: archive_suite
+        if: always() && steps.download.outcome == 'success'
+        continue-on-error: true
+        run: |
+          ./scripts/pg_cron/verify-windows.ps1 `
+            -CoreArchive 'dist/windows/postgresql-18.6-windows-x86_64.tar.gz' `
+            -ExtensionArchive 'dist/windows/pg_cron-1.6.8-postgresql-18.6-windows-x86_64.tar.gz' `
+            -ReportPath (Join-Path $env:RUNNER_TEMP 'pgcron-windows-verification/static-analysis.json') `
+            -ProbePath (Join-Path $env:RUNNER_TEMP 'pgcron-windows-verification/probe-output.txt')
+      - name: Emit and import archive-bound evidence
+        id: evidence
+        if: always()
+        continue-on-error: true
+        env:
+          SYMBOLS_OUTCOME: ${{ steps.symbols.outcome }}
+          ARCHIVE_OUTCOME: ${{ steps.archive_suite.outcome }}
+        run: |
+          $recordDir = Join-Path $env:RUNNER_TEMP 'pgcron-windows-verification'
+          New-Item -ItemType Directory -Force $recordDir | Out-Null
+          $result = [ordered]@{
+            'archive-suite' = $(if ($env:ARCHIVE_OUTCOME -eq 'success') { 'passed' } elseif ($env:ARCHIVE_OUTCOME -eq 'failure') { 'failed' } else { 'skipped' })
+            'static-analysis' = $(if ($env:ARCHIVE_OUTCOME -eq 'success') { 'passed' } elseif ($env:ARCHIVE_OUTCOME -eq 'failure') { 'failed' } else { 'skipped' })
+            symbols = $(if ($env:SYMBOLS_OUTCOME -eq 'success') { 'passed' } elseif ($env:SYMBOLS_OUTCOME -eq 'failure') { 'failed' } else { 'skipped' })
+          }
+          $steps = Join-Path $recordDir 'publication-steps.json'
+          $result | ConvertTo-Json -Depth 3 | Set-Content -Encoding utf8 $steps
+          if (Test-Path 'dist/windows/debug-symbols/index.json') {
+            New-Item -ItemType Directory -Force (Join-Path $recordDir 'debug-symbols') | Out-Null
+            Copy-Item 'dist/windows/debug-symbols/index.json' (Join-Path $recordDir 'debug-symbols/index.json')
+            Copy-Item 'dist/windows/debug-symbols/index.json' (Join-Path $recordDir 'debug-symbols-index.json')
+          }
+          python tools/emit_pgcron_windows_publication.py --archives dist/windows --output $recordDir --reports $recordDir --revision $env:GITHUB_SHA --os-version ([System.Environment]::OSVersion.Version.ToString()) --image-id "$env:ImageOS/$env:ImageVersion" --step-results $steps
+          if ($LASTEXITCODE -ne 0) { throw 'Windows pg_cron evidence emission failed.' }
+          python tools/import_pgcron_windows_publication.py --archives dist/windows --evidence $recordDir --run-id $env:GITHUB_RUN_ID
+          if ($LASTEXITCODE -ne 0) { throw 'Windows pg_cron evidence import failed.' }
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pgcron-windows-verification-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/pgcron-windows-verification/*.json
+            ${{ runner.temp }}/pgcron-windows-verification/*.txt
+            support/evidence/pgcron-windows-publication-${{ github.run_id }}/**
+            support/verification/pg_cron-*-current-${{ github.run_id }}.json
+          if-no-files-found: warn
+          retention-days: 7
+      - name: Require the selected Windows pg_cron publication checks
+        if: always()
+        run: |
+          if ('${{ needs.build.result }}' -ne 'success' -or '${{ steps.download.outcome }}' -ne 'success' -or
+              '${{ steps.symbols.outcome }}' -ne 'success' -or '${{ steps.archive_suite.outcome }}' -ne 'success' -or
+              '${{ steps.evidence.outcome }}' -ne 'success') {
+            throw 'Selected Windows pg_cron verification and retained archive-bound evidence must pass.'
+          }
