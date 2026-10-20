@@ -169,7 +169,7 @@ package.mkdir(parents=True, exist_ok=True)
 dependencies = json.loads((root / 'bundled-dependencies.json').read_text())
 (output / 'postgis-bundled-dependencies.json').write_text(json.dumps(dependencies, indent=2, sort_keys=True) + '\n')
 PY
-python3 - "$pgroot" "$output" <<'PY'
+python3 - "$bundle_root" "$output" <<'PY'
 import json, pathlib, shutil, sys
 root, output=map(pathlib.Path,sys.argv[1:])
 package=output/'package/postgis'
