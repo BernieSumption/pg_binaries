@@ -101,7 +101,7 @@ for path in (root/'lib').iterdir():
     if path.suffix in {'.dylib','.so'} and not any(stem in {m,m+'.dylib',m+'.so'} for m in modules): path.unlink()
 for path in share.iterdir():
     if str(path) in original: continue
-    if not any(path.name==name or path.name.startswith(name+'--') for name in names):
+    if not any(path.name in {name, name+'.control'} or path.name.startswith(name+'--') for name in names):
         if path.is_file() or path.is_symlink(): path.unlink()
 for path in (root/'bin').iterdir():
     if str(path) not in original and (path.is_file() or path.is_symlink()): path.unlink()
