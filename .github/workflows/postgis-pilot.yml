@@ -20,7 +20,7 @@ on:
         type: boolean
 jobs:
   plan:
-    if: ${{ inputs.address_standardizer_probe != true && inputs.postgis_macos_arm64_probe != true && inputs.postgis_windows_abi_probe != true }}
+    if: ${{ inputs.address_standardizer_probe != true && inputs.postgis_macos_arm64_probe != true && inputs.postgis_windows_abi_probe != true && inputs.postgis_windows_selected_core_probe != true }}
     runs-on: ubuntu-24.04
     outputs:
       project: ${{ steps.select.outputs.project }}
