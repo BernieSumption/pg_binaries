@@ -202,9 +202,9 @@ Against inclusion: Adoption evidence is limited beyond AWS RDS. The extension is
 
 Version policy: Select 2.1.3 and 1.1.1 for each compatible PostgreSQL build under the shared rule. PGXN dates major 1 to 2025-04-03 and major 2 to 2026-03-20; both fall within the two-year window as of 2026-10-17. Refresh those selections when the inventory is next prepared.
 
-Target support: PostgreSQL 15 and later stable releases, currently 15–18. Build and test each supported project platform and architecture before claiming verified coverage; upstream does not specify OS or architecture guarantees. Reassess compatibility when a new PostgreSQL major becomes stable.
+Target support: PostgreSQL 15 and later stable releases, currently 15–18, on Linux and macOS for x86-64 and arm64. On 2026-10-20, inspection of the [1.1.1 Makefile](https://github.com/aws/pgcollection/blob/v1.1.1/Makefile), [2.1.3 Makefile](https://github.com/aws/pgcollection/blob/v2.1.3/Makefile) and tagged CI workflows found the GNU Make/PGXS build path and no Windows or MSVC build instructions or CI target. Upstream's [installation instructions](https://github.com/aws/pgcollection#installation) use `make` and `make install`; because it provides no Windows support evidence, Windows is unsupported for both selected releases. Reassess compatibility when a new PostgreSQL major becomes stable.
 
-Sources: [upstream source, PostgreSQL requirement and license](https://github.com/aws/pgcollection), [release history](https://github.com/aws/pgcollection/releases), [PGXN 1.0.0 and 2.0.0 release dates](https://pgxn.org/dist/pgcollection/1.0.0/), [AWS RDS extension catalogue](https://docs.aws.amazon.com/AmazonRDS/latest/PostgreSQLReleaseNotes/postgresql-extensions.html).
+Sources: [upstream source](https://github.com/aws/pgcollection), [release history](https://github.com/aws/pgcollection/releases), [PGXN 1.0.0 and 2.0.0 release dates](https://pgxn.org/dist/pgcollection/1.0.0/), [AWS RDS extension catalogue](https://docs.aws.amazon.com/AmazonRDS/latest/PostgreSQLReleaseNotes/postgresql-extensions.html).
 
 ## pg_background — exclude
 

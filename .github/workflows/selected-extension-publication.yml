@@ -148,6 +148,9 @@ jobs:
               ("Address Standardizer", "linux-arm64"): "address-standardizer-linux",
               ("pgvector", "linux-x86_64"): "pgvector-linux",
               ("pgvector", "linux-arm64"): "pgvector-linux",
+              ("pgvector", "macos-arm64"): "pgvector-macos",
+              ("pgvector", "macos-x86_64"): "pgvector-macos",
+              ("pgvector", "windows-x86_64"): "pgvector-windows",
               ("collection", "linux-x86_64"): "collection-linux",
               ("collection", "linux-arm64"): "collection-linux",
               ("pg_jsonschema", "macos-arm64"): "pg-jsonschema-macos",
@@ -326,6 +329,23 @@ jobs:
       postgresql_version: ${{ needs.plan.outputs.postgresql_version }}
       extension_version: ${{ needs.plan.outputs.extension_version }}
       architecture: ${{ needs.plan.outputs.architecture }}
+
+  pgvector_macos:
+    needs: plan
+    if: needs.plan.outputs.should_dispatch == 'true' && needs.plan.outputs.route == 'pgvector-macos'
+    uses: ./.github/workflows/pgvector-macos-selected-publication.yml
+    with:
+      postgresql_version: ${{ needs.plan.outputs.postgresql_version }}
+      extension_version: ${{ needs.plan.outputs.extension_version }}
+      architecture: ${{ needs.plan.outputs.architecture }}
+
+  pgvector_windows:
+    needs: plan
+    if: needs.plan.outputs.should_dispatch == 'true' && needs.plan.outputs.route == 'pgvector-windows'
+    uses: ./.github/workflows/pgvector-windows-selected-publication.yml
+    with:
+      postgresql_version: ${{ needs.plan.outputs.postgresql_version }}
+      extension_version: ${{ needs.plan.outputs.extension_version }}
 
   pgtap_macos_x86_64:
     needs: plan

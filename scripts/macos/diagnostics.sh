@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+script_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 
 core_only=false
 if [[ ${1:-} == --core-only ]]; then
@@ -123,9 +124,10 @@ PG_DIAG_CLIENT_OUTPUT="$client_output" PG_DIAG_CLIENT_STATUS="$client_status" \
 PG_DIAG_SERVER_STARTED="$server_failure_started" PG_DIAG_SERVER_FINISHED="$server_failure_finished" \
 PG_DIAG_SERVER_LOG="$log" PG_DIAG_ROOT="$root" PG_DIAG_PG_VERSION="$pg_version" \
 PG_DIAG_VECTOR_VERSION="$vector_version" PG_DIAG_ARCH="$architecture" \
-PG_DIAG_REPORT_PATH="$report" python3 - <<'PY'
+PG_DIAG_REPORT_PATH="$report" PG_DIAG_METADATA_VALIDATOR="$script_dir/diagnostic_metadata.py" python3 - <<'PY'
 import hashlib, json, os, platform, shutil, subprocess
 from pathlib import Path
+import importlib.util
 
 def command_version(*args):
     result = subprocess.run(args, text=True, stdout=subprocess.PIPE,
@@ -144,10 +146,15 @@ metadata = json.loads((Path(os.environ["PG_DIAG_ROOT"]) / "manifest.json").read_
 vector_metadata = None
 if os.environ["PG_DIAG_CORE_ONLY"] != "true":
     vector_metadata = json.loads((Path(os.environ["PG_DIAG_ROOT"]).parent / "metadata.json").read_text())
-    if metadata.get("build_id") != vector_metadata.get("build_id") or not metadata.get("build_id"):
-        raise SystemExit("archive metadata has missing or inconsistent build identifiers")
-elif not metadata.get("build_id"):
-    raise SystemExit("archive metadata has missing build identifier")
+spec = importlib.util.spec_from_file_location("diagnostic_metadata", os.environ["PG_DIAG_METADATA_VALIDATOR"])
+validator = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(validator)
+try:
+    build_ids = validator.validate_build_ids(
+        metadata, vector_metadata, os.environ["PG_DIAG_PG_NAME"],
+        hashes[os.environ["PG_DIAG_PG_NAME"]])
+except ValueError as error:
+    raise SystemExit(str(error))
 env_names = ("DYLD_LIBRARY_PATH", "DYLD_FALLBACK_LIBRARY_PATH", "DYLD_FRAMEWORK_PATH",
              "DYLD_FALLBACK_FRAMEWORK_PATH", "PGDATA", "PGSYSCONFDIR")
 record = {
@@ -158,6 +165,7 @@ record = {
     "kernel": platform.release(),
     "postgresql_version": os.environ["PG_DIAG_PG_VERSION"],
     "build_id": metadata["build_id"],
+    "build_ids": build_ids,
     "source_revision": metadata.get("source_revision"),
     "inventory_revision": None,
     "archive_urls": None,

@@ -62,8 +62,8 @@
       "sql_names": ["collection"],
       "requires": [],
       "versions": {
-        "1.1.1": { "postgresql_minimum_major": 15 },
-        "2.1.3": { "postgresql_minimum_major": 15 }
+        "1.1.1": { "postgresql_minimum_major": 15, "operating_systems": ["linux", "macos"] },
+        "2.1.3": { "postgresql_minimum_major": 15, "operating_systems": ["linux", "macos"] }
       },
       "major_first_releases": {
         "1": { "date": "2025-04-03", "source": "https://pgxn.org/dist/pgcollection/1.0.0/" },
