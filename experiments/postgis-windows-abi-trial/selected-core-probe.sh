@@ -41,9 +41,22 @@ EOF
 chmod +x "$output_root/pg_config-gcc"
 export PG_CONFIG="$output_root/pg_config-gcc"
 ./configure --with-pgconfig="$PG_CONFIG" --without-raster --without-tiger --without-topology --without-sfcgal --without-protobuf
-make -C deps/ryu CC=gcc
-make CC=gcc CFLAGS=-O2
-make CC=gcc CFLAGS=-O2 install
+cat > "$output_root/gcc-pgxs" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+args=()
+for arg in "$@"; do
+  case "$arg" in
+    /wd[0-9]*) ;;
+    /D*) args+=("-D${arg#/D}") ;;
+    *) args+=("$arg") ;;
+  esac
+done
+exec gcc "${args[@]}"
+EOF
+chmod +x "$output_root/gcc-pgxs"
+make CC="$output_root/gcc-pgxs"
+make CC="$output_root/gcc-pgxs" install
 
 work="$output_root/cluster"
 mkdir -p "$work"
