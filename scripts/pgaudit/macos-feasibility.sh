@@ -1,17 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-core_archives=${1:?usage: macos-feasibility.sh CORE_ARCHIVE_DIRECTORY OUTPUT_DIRECTORY}
-output=${2:?usage: macos-feasibility.sh CORE_ARCHIVE_DIRECTORY OUTPUT_DIRECTORY}
+core_archives=${1:?usage: macos-feasibility.sh CORE_ARCHIVE_DIRECTORY OUTPUT_DIRECTORY [17.11|18.6]}
+output=${2:?usage: macos-feasibility.sh CORE_ARCHIVE_DIRECTORY OUTPUT_DIRECTORY [17.11|18.6]}
+pg_version=${3:-18.6}
 architecture=arm64
-pg_version=18.6
-pgaudit_version=18.0
-source_url='https://github.com/pgaudit/pgaudit/archive/refs/tags/18.0.tar.gz'
-source_sha256=988e8afeda320ebe0a3e632ef6b6bce5d3a08346c2e100a173a585c9521d1fa5
 openssl_url='https://github.com/openssl/openssl/releases/download/openssl-3.5.8/openssl-3.5.8.tar.gz'
 openssl_sha256=a8f84a39918ec6415ce765d9b429d313ba97b8143169c172e734b9514464f5b2
-core_sha256=853e0eafb3570378225d2ea16247c9de31770f85df5230509885df2ca5e89d67
 repo=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
+IFS=$'\t' read -r pgaudit_version core_sha256 core_build_id core_source_revision source_url source_sha256 \
+  < <(python3 "$repo/tools/pgaudit_macos_targets.py" "$pg_version" --shell)
 core_archives=$(cd "$core_archives" && pwd)
 mkdir -p "$output"
 output=$(cd "$output" && pwd)
@@ -53,8 +51,10 @@ pgroot="$work/first/postgresql"
 test -s "$pgroot/include/server/pg_config.h"
 test -s "$pgroot/lib/pgxs/src/makefiles/pgxs.mk"
 
+PG_VERSION="$pg_version" CORE_BUILD_ID="$core_build_id" CORE_SOURCE_REVISION="$core_source_revision" \
 python3 - "$pgroot" > "$work/prefix" <<'PY'
 import json
+import os
 import pathlib
 import re
 import sys
@@ -63,12 +63,12 @@ root = pathlib.Path(sys.argv[1])
 manifest = json.loads((root / "manifest.json").read_text())
 expected = {
     "component": "postgresql",
-    "version": "18.6",
-    "postgresql_version": "18.6",
+    "version": os.environ["PG_VERSION"],
+    "postgresql_version": os.environ["PG_VERSION"],
     "platform": "macos",
     "architecture": "arm64",
-    "build_id": "github-39075939632-1",
-    "source_revision": "457919a19e43687a9615697a751454e3c055c593",
+    "build_id": os.environ["CORE_BUILD_ID"],
+    "source_revision": os.environ["CORE_SOURCE_REVISION"],
 }
 for key, value in expected.items():
     if manifest.get(key) != value:
@@ -127,9 +127,11 @@ cp -R include/openssl "$dependencies_root/include/"
 cd "$work/source"
 curl -fL --retry 3 -o pgaudit.tar.gz "$source_url"
 printf '%s  %s\n' "$source_sha256" pgaudit.tar.gz | shasum -a 256 -c -
-test "$(tar -tzf pgaudit.tar.gz | cut -d/ -f1 | sort -u)" = pgaudit-18.0
+source_directory=$(tar -tzf pgaudit.tar.gz | sed -n '1{s,/.*,,;p;}')
+test -n "$source_directory"
+test "$(tar -tzf pgaudit.tar.gz | cut -d/ -f1 | sort -u | wc -l | tr -d ' ')" = 1
 tar -xzf pgaudit.tar.gz
-cd "$work/source/pgaudit-18.0"
+cd "$work/source/$source_directory"
 test "$(sed -n "s/^default_version = '\([^']*\)'/\1/p" pgaudit.control)" = "$pgaudit_version"
 make USE_PGXS=1 PG_CONFIG="$pg_config" -j "$(sysctl -n hw.ncpu)"
 stage="$work/stage"

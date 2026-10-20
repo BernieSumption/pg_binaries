@@ -36,6 +36,28 @@ class EmitPgauditMacosPublicationTests(unittest.TestCase):
             })
             self.assertFalse((output / "publication/current-receipt.json").exists())
 
+    def test_pg17_target_is_selected_without_mutating_emitter_defaults(self):
+        root = Path(__file__).parents[1]
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary) / "output"
+            paths = emitter.emit(
+                root, Path(temporary) / "core", Path(temporary) / "extension", output,
+                {"archive-suite": "failure", "symbols": "skipped", "diagnostics": "skipped"},
+                "15.0", "macos-15/20261017", {
+                    "GITHUB_SHA": "a" * 40,
+                    "GITHUB_RUN_ID": "123456",
+                    "GITHUB_REPOSITORY": "owner/repository",
+                    "GITHUB_SERVER_URL": "https://github.com",
+                }, pg_version="17.11",
+            )
+            attempt = json.loads(paths[0].read_text())
+            self.assertEqual(attempt["profile_id"], "pgaudit-publication-macos-arm64-17.11")
+            self.assertEqual(attempt["postgresql_version"], "17.11")
+            self.assertEqual(attempt["pgaudit_version"], "17.1")
+            self.assertIn("pgaudit-17.1-postgresql-17.11-macos-arm64.tar.gz",
+                          attempt["archives_present"])
+            self.assertFalse((output / "publication/current-receipt.json").exists())
+
     def test_archive_report_accepts_static_analysis_archive_list(self):
         emitter._archive_report({"archives": [
             {"basename": "postgresql-18.6-macos-arm64.tar.gz", "sha256": "a" * 64},

@@ -4,10 +4,10 @@ set -euo pipefail
 core_archive=${1:?usage: macos-diagnostics.sh CORE_ARCHIVE PGAUDIT_ARCHIVE REPORT.json}
 extension_archive=${2:?usage: macos-diagnostics.sh CORE_ARCHIVE PGAUDIT_ARCHIVE REPORT.json}
 report=${3:?usage: macos-diagnostics.sh CORE_ARCHIVE PGAUDIT_ARCHIVE REPORT.json}
+pg_version=${4:-18.6}
 architecture=arm64
-pg_version=18.6
-pgaudit_version=18.0
 repo=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
+pgaudit_version=$(python3 "$repo/tools/pgaudit_macos_targets.py" "$pg_version" --field pgaudit_version)
 for archive in "$core_archive" "$extension_archive"; do
   test -s "$archive" && test -s "$archive.sha256"
   (cd "$(dirname "$archive")" && shasum -a 256 -c "$(basename "$archive").sha256")
