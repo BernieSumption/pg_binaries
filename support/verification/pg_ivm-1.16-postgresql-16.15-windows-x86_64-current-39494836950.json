@@ -1,0 +1,46 @@
+{
+  "assembled_core": {
+    "archive": "postgresql-16.15-windows-x86_64.tar.gz",
+    "sha256": "efd9ff15882a355ac9f431eb0c085abbf571bed8a3821a542370f02c83c0715c",
+    "version": "16.15"
+  },
+  "case_results": {
+    "archive-suite": "passed",
+    "static-analysis": "passed"
+  },
+  "ci": {
+    "build_revision": "d6f3e4ac2b21f8afb7ac5c676683348f5a9fb220",
+    "provider": "github-actions",
+    "run_id": "39494836950",
+    "run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/39494836950",
+    "source_revision": "d6f3e4ac2b21f8afb7ac5c676683348f5a9fb220",
+    "test_revision": "d6f3e4ac2b21f8afb7ac5c676683348f5a9fb220"
+  },
+  "component": "pg_ivm",
+  "environment": {
+    "architecture": "x86_64",
+    "clean_system": true,
+    "dependency_check_profile": "windows-pe-runtime-v1",
+    "dependency_checks_passed": true,
+    "endpoint": "current",
+    "image_id": "win22/20261012.333.1",
+    "os": "windows",
+    "os_version": "10.0.20348.0"
+  },
+  "outcome": "passed",
+  "platform": "windows-x86_64",
+  "postgresql_version": "16.15",
+  "prerequisite_archives": [],
+  "profile_id": "pgivm-publication-windows-x86_64-16.15",
+  "profile_revision": "2cdcacd4082350910ceee13ffd989514e5afd798f8809a5ca7d03e57828c7a77",
+  "project": "pg_ivm",
+  "schema_version": 2,
+  "scope": "publication",
+  "sha256": "7be024e9dedabb83e5035e1d952714280d9448ad67ccbe964e1051423f76f7b2",
+  "test_cases": [
+    "archive-suite",
+    "static-analysis"
+  ],
+  "test_revision": "d6f3e4ac2b21f8afb7ac5c676683348f5a9fb220",
+  "version": "1.16"
+}

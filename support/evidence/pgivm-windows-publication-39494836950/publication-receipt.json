@@ -1,0 +1,17 @@
+{
+  "archives": {
+    "pg_ivm-1.16-postgresql-16.15-windows-x86_64.tar.gz": "7be024e9dedabb83e5035e1d952714280d9448ad67ccbe964e1051423f76f7b2",
+    "postgresql-16.15-windows-x86_64.tar.gz": "efd9ff15882a355ac9f431eb0c085abbf571bed8a3821a542370f02c83c0715c"
+  },
+  "case_results": {
+    "archive-suite": "passed",
+    "static-analysis": "passed"
+  },
+  "checked_core_sha256": "efd9ff15882a355ac9f431eb0c085abbf571bed8a3821a542370f02c83c0715c",
+  "profile_id": "pgivm-publication-windows-x86_64-16.15",
+  "profile_revision": "2cdcacd4082350910ceee13ffd989514e5afd798f8809a5ca7d03e57828c7a77",
+  "reports": {
+    "static-analysis": "31f00c42508df9d080cdacbc92aed17ed6822f433d01ba5e809423783833ce1d"
+  },
+  "schema_version": 1
+}
