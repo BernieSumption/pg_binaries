@@ -1,0 +1,7 @@
+# PostGIS macOS arm64 minimal-GDAL feasibility
+
+On 2026-10-20, [run 39474535469](https://github.com/BernieSumption/pg_binaries/actions/runs/39474535469) passed on the standard `macos-15` arm64 runner at source revision `f070f793ff5e275c5a8f3a12e26c8aba14880dd8`. It built unmodified GDAL 3.13.3 and PostGIS 3.6.4 from pinned upstream archives against the checked PostgreSQL 18.6 core. GDAL's documented CMake options disabled optional drivers except PNG and JPEG; its mandatory GTiff driver remained enabled.
+
+The trial started PostgreSQL from the selected core archive, created `postgis`, `postgis_raster`, `postgis_sfcgal` and `postgis_topology`, confirmed that GTiff, PNG and JPEG were registered, and serialized a small raster in all three formats. Its recursive Mach-O inventory found 118 dependency edges and 15 Homebrew formulae, down from 1,792 edges and 89 formulae with the standard Homebrew GDAL build in [run 39458216105](../postgis-macos-feasibility-39458216105/README.md). The 118 edges comprise 49 system references and 69 potential bundled references; no unresolved edge was reported.
+
+This establishes a plausible upstream build configuration for one target. It does not establish a relocatable archive, final-byte verification, licence inventory for GDAL's bundled third-party source or the other macOS and PostgreSQL targets. The trial artifact retains the full inventory and logs for its three-day lifetime. Move the useful recipe into the selected PostGIS path, then remove the exploratory script under `experiments/`.
