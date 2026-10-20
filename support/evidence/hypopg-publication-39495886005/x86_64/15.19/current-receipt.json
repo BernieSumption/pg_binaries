@@ -1,0 +1,34 @@
+{
+  "architecture": "x86_64",
+  "archives": {
+    "hypopg-1.4.3-postgresql-15.19-linux-x86_64.tar.gz": "eb79ce28149de9ac9db15c21bccb2406495aba0f30b753d70880a09ac646c615",
+    "postgresql-15.19-linux-x86_64.tar.gz": "8080dd25fc43816283e0148d23ad5af14c93ea1c549ccec5451d8d2463e7c70c"
+  },
+  "case_results": {
+    "archive-suite": "passed"
+  },
+  "ci": {
+    "build_revision": "6a187d7f892c4c3f7d4e2add2c89b035952c41a6",
+    "provider": "github-actions",
+    "run_id": "39495886005",
+    "run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/39495886005",
+    "source_revision": "6a187d7f892c4c3f7d4e2add2c89b035952c41a6",
+    "test_revision": "6a187d7f892c4c3f7d4e2add2c89b035952c41a6"
+  },
+  "clean_system": true,
+  "dependency_check_profile": "hypopg-runtime-v1",
+  "dependency_checks_passed": true,
+  "distribution": "Alpine Linux",
+  "distribution_version": "3.22.6",
+  "endpoint": "current",
+  "extension_archive": "hypopg-1.4.3-postgresql-15.19-linux-x86_64.tar.gz",
+  "image_id": "sha256:4011a67f16a259f2b5278a84552c5b01f41e2905789e2df11d9f43e6ba74a29f",
+  "kernel_release": "6.17.0-1022-azure",
+  "postgresql_version": "15.19",
+  "prerequisite_archives": [],
+  "profile_id": "hypopg-publication-linux-x86_64-15.19",
+  "profile_revision": "879cde2b636f89aa0b503459ea14d716c1af90678a946b8d464079ecc477958a",
+  "project": "HypoPG",
+  "test_revision": "6a187d7f892c4c3f7d4e2add2c89b035952c41a6",
+  "version": "1.4.3"
+}
