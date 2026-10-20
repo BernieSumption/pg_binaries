@@ -72,3 +72,5 @@ for name in names:
     print(f"{name}: {len(sql)} versioned SQL files")
 (output / "sql-outputs.txt").write_text("\n".join(names) + "\n")
 PY
+
+python3 "$repo/experiments/postgis-macos-arm64-2026-10-20/dependency-inventory.py" "$pgroot" "$output"
