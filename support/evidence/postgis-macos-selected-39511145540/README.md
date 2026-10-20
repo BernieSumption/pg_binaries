@@ -1,0 +1,5 @@
+# PostGIS 3.6.4 selected macOS arm64 archive attempt
+
+[Run 39511145540](https://github.com/BernieSumption/pg_binaries/actions/runs/39511145540) on 2026-10-20 built the PostgreSQL 18.6 macOS arm64 PostGIS archive and passed the core and extension checksum checks on a separate macOS 15 verifier runner. Moving the extension's dependency report under its project-named `LICENSES` directory resolved the previous archive-path collision. The static Mach-O check then inspected 159 files and found 36 violations, including bundled Homebrew libraries whose recorded minimum macOS version is 15.0 rather than the required 11.0, and absolute Homebrew `LC_RPATH` entries. SQL verification did not run and no current-profile publication record passed.
+
+The recipe sets `MACOSX_DEPLOYMENT_TARGET=11.0` for PostGIS and source-built GDAL, but that setting cannot change prebuilt Homebrew bottles. The dependency closure must be rebuilt for the required floor using upstream build options, and absolute Homebrew search paths must be removed from the packaged libraries. Do not weaken the static check or infer older-OS compatibility from this macOS 15 run.
