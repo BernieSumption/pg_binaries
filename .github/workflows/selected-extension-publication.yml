@@ -151,6 +151,8 @@ jobs:
               ("PostGIS TIGER Geocoder", "linux-arm64"): "tiger-linux",
               ("Address Standardizer", "linux-x86_64"): "address-standardizer-linux",
               ("Address Standardizer", "linux-arm64"): "address-standardizer-linux",
+              ("Address Standardizer", "macos-arm64"): "address-standardizer-macos",
+              ("Address Standardizer", "macos-x86_64"): "address-standardizer-macos",
               ("pgvector", "linux-x86_64"): "pgvector-linux",
               ("pgvector", "linux-arm64"): "pgvector-linux",
               ("pgvector", "macos-arm64"): "pgvector-macos",
@@ -270,6 +272,15 @@ jobs:
     needs: plan
     if: needs.plan.outputs.should_dispatch == 'true' && needs.plan.outputs.route == 'address-standardizer-linux'
     uses: ./.github/workflows/address-standardizer-linux-selected-publication.yml
+    with:
+      postgresql_version: ${{ needs.plan.outputs.postgresql_version }}
+      extension_version: ${{ needs.plan.outputs.extension_version }}
+      architecture: ${{ needs.plan.outputs.architecture }}
+
+  address_standardizer_macos:
+    needs: plan
+    if: needs.plan.outputs.should_dispatch == 'true' && needs.plan.outputs.route == 'address-standardizer-macos'
+    uses: ./.github/workflows/address-standardizer-macos-selected-publication.yml
     with:
       postgresql_version: ${{ needs.plan.outputs.postgresql_version }}
       extension_version: ${{ needs.plan.outputs.extension_version }}
