@@ -1,5 +1,6 @@
 import importlib.util
 import json
+import shutil
 import tempfile
 import tarfile
 import unittest
@@ -102,6 +103,19 @@ class CargoLicenseInventoryTests(unittest.TestCase):
             result = checker.inventory(root / "extension", metadata)
             supplements = MODULE_PATH.parents[1] / "support/evidence/pg-jsonschema-crate-licenses-2026-10-18"
             with self.assertRaisesRegex(ValueError, "seahash source identity mismatch"):
+                checker.package_notices(result, metadata, root / "payload", supplements)
+
+    def test_seahash_evidence_is_loaded_from_supplied_supplement_directory(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            metadata, result = self.packaging_fixture(root)
+            supplements = root / "supplements"
+            shutil.copytree(MODULE_PATH.parents[1] / "support/evidence/pg-jsonschema-crate-licenses-2026-10-18",
+                            supplements)
+            evidence = supplements / checker.SEAHASH_IDENTITY["evidence_file"]
+            evidence.write_text("changed declaration evidence\n")
+
+            with self.assertRaisesRegex(ValueError, "seahash declaration evidence changed"):
                 checker.package_notices(result, metadata, root / "payload", supplements)
 
     def test_records_sorted_packages_and_hashed_license_and_notice_files(self):

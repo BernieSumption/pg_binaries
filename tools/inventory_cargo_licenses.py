@@ -135,7 +135,6 @@ SEAHASH_IDENTITY = {
     "license": "MIT",
     "repository": "https://gitlab.redox-os.org/redox-os/seahash",
     "evidence_file": "seahash-4.1.0-license-declaration.txt",
-    "evidence_path": Path(__file__).parents[1] / "support/evidence/pg-jsonschema-crate-licenses-2026-10-18/seahash-4.1.0-license-declaration.txt",
 }
 SEAHASH_EVIDENCE = (
     b"Package: seahash 4.1.0\nDeclared license: MIT\n"
@@ -186,7 +185,7 @@ def package_notices(result, metadata, payload, supplements):
                     or package.get("license") != identity["license"]
                     or package.get("repository") != identity["repository"]):
                 raise ValueError("seahash source identity mismatch")
-            evidence = identity["evidence_path"]
+            evidence = supplements / identity["evidence_file"]
             if evidence.read_bytes() != SEAHASH_EVIDENCE:
                 raise ValueError("seahash declaration evidence changed")
             notices.append((evidence, target / identity["evidence_file"],
