@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "workflow": "selected-extension-publication.yml",
+  "run_id": 39431591871,
+  "artifact_name": "postgresql-linux-selected-core-17.11-arm64-39431591871",
+  "archive_name": "postgresql-17.11-linux-arm64.tar.gz",
+  "sha256": "789d82d1c911d7357697c2ef9ac439449dd8060cc2b92ea3ec38da3e1e8c2bd0"
+}
