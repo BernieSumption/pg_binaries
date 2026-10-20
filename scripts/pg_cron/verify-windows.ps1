@@ -137,17 +137,20 @@ try {
   $output = Join-Path $work 'probe-output.txt'
   & $psql -X -A -t -v ON_ERROR_STOP=1 -c 'CREATE EXTENSION pg_cron; CREATE TABLE public.pg_cron_probe (ran_at timestamptz NOT NULL); SELECT cron.schedule(''windows-probe'', ''* * * * *'', ''INSERT INTO public.pg_cron_probe VALUES (clock_timestamp())'');' 2>&1 | Tee-Object -FilePath $output
   if ($LASTEXITCODE -ne 0) { throw 'Could not install pg_cron or schedule the background-worker probe.' }
-  $jobId = (& $psql -X -A -t -c "SELECT jobid FROM cron.job WHERE jobname = 'windows-probe'").Trim()
+  $jobId = (& $psql -X -A -t -v ON_ERROR_STOP=1 -d postgres -c "SELECT jobid FROM cron.job WHERE jobname = 'windows-probe'" 2>&1 | Out-String).Trim()
+  if ($LASTEXITCODE -ne 0) { throw "Could not query the pg_cron probe job: $jobId" }
   if ($jobId -notmatch '^\d+$') { throw 'pg_cron did not register the scheduled probe.' }
   $deadline = [DateTime]::UtcNow.AddSeconds(150)
   $status = ''
   while ([DateTime]::UtcNow -lt $deadline) {
-    $status = (& $psql -X -A -t -c "SELECT status FROM cron.job_run_details WHERE jobid = $jobId ORDER BY runid DESC LIMIT 1").Trim()
+    $status = (& $psql -X -A -t -v ON_ERROR_STOP=1 -d postgres -c "SELECT status FROM cron.job_run_details WHERE jobid = $jobId ORDER BY runid DESC LIMIT 1" 2>&1 | Out-String).Trim()
+    if ($LASTEXITCODE -ne 0) { throw "Could not query the pg_cron run status: $status" }
     if ($status -eq 'succeeded') { break }
     Start-Sleep -Seconds 2
   }
   if ($status -cne 'succeeded') { Get-Content (Join-Path $work 'postgresql.log') | Write-Host; throw 'Scheduled pg_cron background-worker job did not succeed within 150 seconds.' }
-  $rows = (& $psql -X -A -t -c 'SELECT count(*) FROM public.pg_cron_probe').Trim()
+  $rows = (& $psql -X -A -t -v ON_ERROR_STOP=1 -d postgres -c 'SELECT count(*) FROM public.pg_cron_probe' 2>&1 | Out-String).Trim()
+  if ($LASTEXITCODE -ne 0) { throw "Could not query the pg_cron probe rows: $rows" }
   if ($rows -notmatch '^\d+$' -or [int]$rows -lt 1) { throw 'Scheduled background-worker job did not insert its probe row.' }
   "job_status=$status`njob_rows=$rows" | Add-Content $output
   & $psql -X -v ON_ERROR_STOP=1 -c "SELECT cron.unschedule($jobId)" | Out-Null
