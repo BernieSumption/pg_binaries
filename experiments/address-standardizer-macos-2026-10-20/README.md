@@ -21,9 +21,11 @@ The manual trial uses the registered `.github/workflows/address-standardizer-mac
 
 [Run 39448268625](https://github.com/BernieSumption/pg_binaries/actions/runs/39448268625) reached installation but showed that relocated `pg_config` reports paths under the extracted core, while its build-time configure prefix is only restored as a symlink. The staging check now uses the extracted core root that PGXS actually selected.
 
-[Run 39448850741](https://github.com/BernieSumption/pg_binaries/actions/runs/39448850741) built and installed the extension, then failed the staging path guard: `pg_config` returned install paths through the restored original-prefix symlink, so the lexical paths appeared outside the extracted core. The recipe now resolves those paths for package-relative names and reads staged files under the original prefix used by PGXS. Archive packaging and verification still need a fresh run.
+[Run 39448850741](https://github.com/BernieSumption/pg_binaries/actions/runs/39448850741) built and installed the extension, then failed the staging path guard: `pg_config` returned install paths through the restored original-prefix symlink, so the lexical paths appeared outside the extracted core. The recipe now resolves those paths for package-relative names. Archive packaging and verification still need a fresh run.
 
 [Run 39449470691](https://github.com/BernieSumption/pg_binaries/actions/runs/39449470691) built and installed upstream sources but failed a silent staged-file assertion. The next trial will print the expected and actual staged paths before changing the recipe further.
+
+[Run 39450722052](https://github.com/BernieSumption/pg_binaries/actions/runs/39450722052) showed the PGXS `DESTDIR` tree under the extracted core path, with both SQL extension files and the dylib present. The staging guard now reads that exact tree after resolving `pg_config` paths for package-relative names.
 
 ## Completion and cleanup
 

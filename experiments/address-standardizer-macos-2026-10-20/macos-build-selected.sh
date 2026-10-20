@@ -83,7 +83,7 @@ print(pkglib.relative_to(root), sharedir.relative_to(root), sep="\t")
 PY
 )
 read -r pkglib_rel sharedir_rel <<< "$pkglib_rel"
-stage_root="$work/stage$prefix"
+stage_root="$work/stage$pgroot"
 if [[ ! -s "$stage_root/$pkglib_rel/address_standardizer.dylib" || ! -s "$stage_root/$sharedir_rel/extension/address_standardizer.control" ]]; then
   printf 'Expected staged library: %s\n' "$stage_root/$pkglib_rel/address_standardizer.dylib" >&2
   printf 'Expected staged control: %s\n' "$stage_root/$sharedir_rel/extension/address_standardizer.control" >&2
