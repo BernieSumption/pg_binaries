@@ -45,7 +45,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       postgresql_version: ${{ steps.plan.outputs.postgresql_version }}
-      extension_version: ${{ steps.plan.outputs.extension_version }}
+      extension_version: ${{ steps.plan.outputs.selected_version }}
       architecture: ${{ steps.plan.outputs.architecture }}
       platform: ${{ steps.plan.outputs.platform }}
       runner: ${{ steps.plan.outputs.runner }}
