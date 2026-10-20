@@ -1,6 +1,10 @@
 name: pg_cron selected Windows publication
 
 on:
+  push:
+    branches: [spike]
+    paths:
+      - .github/workflows/pgcron-windows-selected-publication.yml
   workflow_dispatch:
 
 permissions:
