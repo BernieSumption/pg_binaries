@@ -60,7 +60,7 @@ def stage(artifact_dir: Path, destination: Path, core_archive: str) -> dict:
         raise RuntimeError(f"Unsupported or empty symbol index: {index_path}")
 
     selected = []
-    paths: set[str] = set()
+    paths: dict[str, dict] = {}
     for entry in index["files"]:
         if not isinstance(entry, dict) or not isinstance(entry.get("archive"), str):
             raise RuntimeError("Malformed symbol index entry")
@@ -71,9 +71,13 @@ def stage(artifact_dir: Path, destination: Path, core_archive: str) -> dict:
         relative, source = _safe_pdb(artifact_dir / "debug-symbols", artifact_dir, entry.get("pdb_path"))
         key = relative.as_posix()
         if key in paths:
-            raise RuntimeError(f"Duplicate indexed PDB path: {key}")
-        paths.add(key)
-        selected.append((entry, relative, source))
+            previous = paths[key]
+            identity = ("pdb_sha256", "rsds_guid", "rsds_age")
+            if any(entry.get(field) != previous.get(field) for field in identity):
+                raise RuntimeError(f"Conflicting indexed PDB identities for path: {key}")
+        else:
+            paths[key] = entry
+            selected.append((entry, relative, source))
     if not selected:
         raise RuntimeError(f"Symbol index has no entries for core archive {core_archive!r}")
 
@@ -82,7 +86,9 @@ def stage(artifact_dir: Path, destination: Path, core_archive: str) -> dict:
         target = destination.joinpath(*relative.parts)
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copyfile(source, target)
-    core_index = {"schema_version": 1, "files": [entry for entry, _relative, _source in selected]}
+    core_entries = [entry for entry in index["files"]
+                    if isinstance(entry, dict) and entry.get("archive") == core_archive]
+    core_index = {"schema_version": 1, "files": core_entries}
     (destination / "index.json").write_text(
         json.dumps(core_index, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     return core_index

@@ -56,14 +56,19 @@ class StageWindowsCoreSymbolsTests(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "Unexpected archive"):
             stage_symbols.stage(self.root / "artifact", self.root / "out", CORE)
 
-    def test_rejects_unsafe_and_duplicate_pdb_paths(self):
+    def test_rejects_unsafe_and_conflicting_pdb_paths(self):
         for bad_path in ("../outside.pdb", "/tmp/outside.pdb", "pdbs\\core.pdb", "pdbs/not-pdb.txt"):
             with self.subTest(path=bad_path):
                 self._index([dict(self.entry, pdb_path=bad_path)])
                 with self.assertRaises(RuntimeError):
                     stage_symbols.stage(self.root / "artifact", self.root / "out", CORE)
-        self._index([self.entry, dict(self.entry, module_path="postgresql/bin/another.exe")])
-        with self.assertRaisesRegex(RuntimeError, "Duplicate indexed PDB"):
+        duplicate = dict(self.entry, module_path="postgresql/bin/libpq.dll")
+        self._index([self.entry, duplicate])
+        result = stage_symbols.stage(self.root / "artifact", self.root / "out", CORE)
+        self.assertEqual(result["files"], [self.entry, duplicate])
+        conflicting = dict(duplicate, pdb_sha256="e" * 64)
+        self._index([self.entry, conflicting])
+        with self.assertRaisesRegex(RuntimeError, "Conflicting indexed PDB identities"):
             stage_symbols.stage(self.root / "artifact", self.root / "out", CORE)
 
     def test_rejects_missing_or_symlink_pdb(self):
