@@ -142,12 +142,19 @@ make USE_PGXS=1 PG_CONFIG="$pg_config" install DESTDIR="$stage"
 staged_root="$stage$(cd "$pgroot" && pwd -P)"
 package="$work/package"
 mkdir -p "$package/pgaudit/lib" "$package/pgaudit/share/extension" "$package/pgaudit/LICENSES"
-module="$staged_root/lib/pgaudit.dylib"
-test -s "$module"
-cp "$module" "$package/pgaudit/lib/"
+modules=()
+for suffix in dylib so; do
+  [[ ! -s "$staged_root/lib/pgaudit.$suffix" ]] || modules+=("$staged_root/lib/pgaudit.$suffix")
+done
+if [[ ${#modules[@]} -ne 1 ]]; then
+  echo "Expected one installed pgAudit module, found ${#modules[@]}" >&2
+  exit 1
+fi
+module_name=$(basename "${modules[0]}")
+cp "${modules[0]}" "$package/pgaudit/lib/$module_name"
 mkdir -p "$staged_dsyms/pgaudit/lib"
-dsymutil "$package/pgaudit/lib/pgaudit.dylib" \
-  -o "$staged_dsyms/pgaudit/lib/pgaudit.dylib.dSYM"
+dsymutil "$package/pgaudit/lib/$module_name" \
+  -o "$staged_dsyms/pgaudit/lib/$module_name.dSYM"
 cp "$staged_root/share/extension/"pgaudit* "$package/pgaudit/share/extension/"
 cat LICENSE "$pgroot/LICENSES/PostgreSQL.txt" > "$package/pgaudit/LICENSES/pgAudit.txt"
 grep -Fq 'This code is released under the PostgreSQL licence' "$package/pgaudit/LICENSES/pgAudit.txt"
@@ -157,7 +164,7 @@ cat > "$package/pgaudit/LICENSES/pgaudit-inventory.json" <<EOF
   "schema_version": 1,
   "components": [{
     "component": "pgaudit", "version": "$pgaudit_version",
-    "payload_paths": ["lib/pgaudit.dylib", "share/extension"],
+    "payload_paths": ["lib/$module_name", "share/extension"],
     "license_file": "pgAudit.txt",
     "license_source": "https://github.com/pgaudit/pgaudit/tree/$pgaudit_version/LICENSE",
     "source_url": "$source_url", "source_sha256": "$source_sha256",

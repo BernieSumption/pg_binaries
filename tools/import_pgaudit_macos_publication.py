@@ -140,10 +140,11 @@ def import_run(root, core_artifact, pgaudit_artifact, run_id, pg_version="18.6")
         symbols_path = report_paths["symbols"]
         if symbols_path.is_file() and results["symbols"] == "passed":
             entries = _read(symbols_path).get("files")
+            module_path = publication._pgaudit_module_path(extension_archive)
             if (not isinstance(entries, list)
                     or not any(item.get("archive") == extension_name
                                and item.get("archive_sha256") == digests[extension_name]
-                               and item.get("module_path") == "pgaudit/lib/pgaudit.dylib"
+                               and item.get("module_path") == module_path
                                for item in entries)):
                 raise coverage.CoverageError("passing symbol index does not bind the pgAudit module")
         diagnostic_path = report_paths["diagnostics"]

@@ -48,9 +48,16 @@ PY
 }
 assemble "$work/missing"
 root="$work/missing/postgresql"
-module="$root/lib/pgaudit.dylib"
-test -s "$module"
-mv "$module" "$work/pgaudit.dylib.hidden"
+modules=("$root"/lib/pgaudit.dylib "$root"/lib/pgaudit.so)
+found=()
+for module in "${modules[@]}"; do
+  [[ ! -s "$module" ]] || found+=("$module")
+done
+if [[ ${#found[@]} -ne 1 ]]; then
+  echo "Expected one installed pgAudit module, found ${#found[@]}" >&2
+  exit 1
+fi
+mv "${found[0]}" "$work/$(basename "${found[0]}").hidden"
 data_dir="$work/missing-data"
 log="$work/missing-server.log"
 "$root/bin/initdb" -D "$data_dir" --encoding=UTF8 --locale=C --no-instructions >/dev/null

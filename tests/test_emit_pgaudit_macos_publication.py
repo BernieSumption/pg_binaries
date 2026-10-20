@@ -67,6 +67,17 @@ class EmitPgauditMacosPublicationTests(unittest.TestCase):
             "pgaudit-18.0-postgresql-18.6-macos-arm64.tar.gz": "b" * 64,
         }, "static analysis")
 
+    def test_pgaudit_module_path_accepts_postgresql_so_suffix(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            archive_path = Path(temporary) / "extension.tar.gz"
+            import tarfile
+            with tarfile.open(archive_path, "w:gz") as archive:
+                import io
+                info = tarfile.TarInfo("pgaudit/lib/pgaudit.so")
+                info.size = 1
+                archive.addfile(info, io.BytesIO(b"x"))
+            self.assertEqual(emitter._pgaudit_module_path(archive_path), "pgaudit/lib/pgaudit.so")
+
 
 if __name__ == "__main__":
     unittest.main()

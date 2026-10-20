@@ -78,6 +78,18 @@ def _archive_metadata(path, selected):
     return value
 
 
+def _pgaudit_module_path(path):
+    try:
+        with tarfile.open(path, "r:gz") as archive:
+            candidates = [name for name in archive.getnames()
+                          if name in {"pgaudit/lib/pgaudit.dylib", "pgaudit/lib/pgaudit.so"}]
+    except (OSError, tarfile.TarError) as exc:
+        _fail(f"cannot inspect pgAudit archive module: {exc}")
+    if len(candidates) != 1:
+        _fail("pgAudit archive must contain exactly one supported module file")
+    return candidates[0]
+
+
 def _archive_report(report, digests, label):
     actual = report.get("archives")
     if isinstance(actual, list):
@@ -172,8 +184,9 @@ def emit(root, core_dir, archives, output, step_results, os_version, image_id, e
             name = entry.get("archive")
             if name not in digests or entry.get("archive_sha256") != digests[name]:
                 _fail("symbol index is not bound to the final archive bytes")
+        module_path = _pgaudit_module_path(extension_archive)
         if not any(entry.get("archive") == extension_name
-                   and entry.get("module_path") == "pgaudit/lib/pgaudit.dylib" for entry in entries):
+                   and entry.get("module_path") == module_path for entry in entries):
             _fail("symbol index does not include the pgAudit module")
     if results["diagnostics"] == "passed":
         diagnostics = _json(diagnostics_path, "diagnostic")
