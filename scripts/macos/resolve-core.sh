@@ -12,7 +12,7 @@ output=$(cd "$output" && pwd)
 : "${GITHUB_RUN_ID:?required for Actions core provenance}"
 : "${GITHUB_RUN_ATTEMPT:?required for Actions core provenance}"
 
-read -r version architecture core_name < <(python3 - "$base_target" <<'PY'
+selection=$(python3 - "$base_target" <<'PY'
 import json
 import sys
 
@@ -27,6 +27,7 @@ if target["core_archive"]["basename"] != basename:
 print(version, architecture, basename)
 PY
 )
+read -r version architecture core_name <<< "$selection"
 
 target="$output/target.json"
 check_source_archive() {
@@ -72,7 +73,7 @@ if pin_output=$(python3 "$repo/tools/macos_core_pin.py" "$version" "$architectur
       echo "pinned macOS core archive checksum differs" >&2
       exit 1
     }
-    read -r builder_attempt source_revision < <(python3 - "$output/$core_name" "$pin_run_id" <<'PY'
+    builder_provenance=$(python3 - "$output/$core_name" "$pin_run_id" <<'PY'
 import json
 import re
 import sys
@@ -94,6 +95,7 @@ if not match or not re.fullmatch(r"[0-9a-f]{40}", revision or ""):
 print(match.group(1), revision)
 PY
 )
+    read -r builder_attempt source_revision <<< "$builder_provenance"
     builder_json=$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$pin_run_id")
     python3 - "$builder_json" "$GITHUB_REPOSITORY" "$GITHUB_REF_NAME" \
       "$pin_run_id" "$builder_attempt" "$source_revision" "$architecture" "$pin_workflow" <<'PY'
