@@ -12,6 +12,7 @@ import sys
 import coverage
 import extension_archive_plan
 import linux_core_resolution
+import address_standardizer_license_inventory
 
 VERSION = "3.7.0"
 DEFAULT_PG_VERSION = "18.6"
@@ -19,6 +20,8 @@ SOURCE_COMMIT = "fa11ff53eb49b863d9ffff37f6afd5ff9299c581"
 PCRE2_SHA256 = "b6c68fdf6f3ac31388b50aa89ff0fc49c00c987c16e7b5146491d12003f2c8ed"
 CASES = ("archive-suite", "elf-closure")
 BLOCK = "pending-dependency-provenance-and-redistribution-review"
+ATTEMPT_STATUS = "not-assessed-final-archive-unavailable"
+REDISTRIBUTION_RESOLVED = "resolved"
 
 
 def profile_id(architecture, pg_version=DEFAULT_PG_VERSION):
@@ -143,7 +146,7 @@ def emit(root, archives, core_archives, output, architecture, build_result, veri
         "steps": {case: ("success" if result == "passed" else "failure" if result == "failed" else "skipped")
                   for case, result in results.items()},
         "workflow_steps": workflow_steps,
-        "release_eligible": False, "redistribution_status": BLOCK,
+        "release_eligible": False, "redistribution_status": ATTEMPT_STATUS,
         "archives_present": {core_name: core.is_file(), archive_name: archive.is_file()},
         "reports": {"elf_closure": digest(static_path)} if static_path.is_file() else {},
     }
@@ -158,6 +161,7 @@ def emit(root, archives, core_archives, output, architecture, build_result, veri
     checksums = {archive_name: digest(archive), core_name: digest(core)}
     for path in (archive, core):
         _sidecar(path, checksums[path.name])
+    address_standardizer_license_inventory.validate_archive(archive)
     attempt["archives"] = checksums
     attempt_path.write_text(json.dumps(attempt, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     if static_path.is_file():
@@ -205,7 +209,7 @@ def emit(root, archives, core_archives, output, architecture, build_result, veri
                "reports": {key: digest(path) for key, path in report_paths.items()},
                "clean_system": True, "dependency_check_profile": "linux-elf-alpine-relocation-v1",
                "dependency_checks_passed": results["elf-closure"] == "passed",
-               "release_eligible": False, "redistribution_status": BLOCK,
+               "release_eligible": False, "redistribution_status": REDISTRIBUTION_RESOLVED,
                "environment": environment, "ci": ci}
     receipt_path = output / "current-receipt.json"
     receipt_path.write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n", encoding="utf-8")
@@ -217,7 +221,7 @@ def emit(root, archives, core_archives, output, architecture, build_result, veri
               "platform": f"linux-{architecture}", "postgresql_version": pg_version,
               "assembled_core": {"archive": core_name, "sha256": checksums[core_name], "version": pg_version},
               "prerequisite_archives": [], "release_eligible": False,
-              "redistribution_status": BLOCK, "environment": environment}
+              "redistribution_status": REDISTRIBUTION_RESOLVED, "environment": environment}
     coverage.validate_verification_record(record, coverage.load_json(root / "support.json"), root)
     record_path = output / "verification-record.json"
     record_path.write_text(json.dumps(record, indent=2, sort_keys=True) + "\n", encoding="utf-8")

@@ -2,8 +2,10 @@
 
 from contextlib import ExitStack
 import hashlib
+import io
 import json
 import sys
+import tarfile
 import tempfile
 import unittest
 from pathlib import Path
@@ -21,6 +23,32 @@ class AddressStandardizerLinuxPublication(unittest.TestCase):
     def setUp(self):
         self.profile = {"profile_revision": "a" * 64,
                         "case_ids": ["archive-suite", "elf-closure"]}
+
+    @staticmethod
+    def write_extension_archive(path, *, include_sljit=True):
+        inventory = {"schema_version": 1, "components": [
+            {"component": "Address Standardizer", "version": "3.7.0",
+             "payload_paths": ["lib/address_standardizer.so", "share/extension"],
+             "license_file": "Address-Standardizer.txt",
+             "redistribution_review": {"status": "resolved", "basis": "Reviewed MIT terms.",
+                                        "source_obligation": "none"}},
+            {"component": "PCRE2", "version": "10.48", "payload_paths": ["lib"],
+             "license_file": "PCRE2.txt", "additional_license_files": ["SLJIT.txt"],
+             "redistribution_review": {"status": "resolved", "basis": "Reviewed BSD terms.",
+                                        "source_obligation": "none"}},
+        ]}
+        files = {
+            "address_standardizer/LICENSES/license-inventory.json": json.dumps(inventory).encode(),
+            "address_standardizer/LICENSES/Address-Standardizer.txt": b"Address Standardizer notice\n",
+            "address_standardizer/LICENSES/PCRE2.txt": b"PCRE2 notice\n",
+        }
+        if include_sljit:
+            files["address_standardizer/LICENSES/SLJIT.txt"] = b"SLJIT notice\n"
+        with tarfile.open(path, "w:gz") as archive:
+            for name, content in files.items():
+                member = tarfile.TarInfo(name)
+                member.size = len(content)
+                archive.addfile(member, io.BytesIO(content))
 
     def test_profiles_are_architecture_specific_and_version_bounded(self):
         self.assertEqual(publication.profile_id("x86_64"),
@@ -117,7 +145,7 @@ class AddressStandardizerLinuxPublication(unittest.TestCase):
                 archive_name = f"address-standardizer-{publication.VERSION}-postgresql-{pg_version}-linux-{architecture}.tar.gz"
                 core_name = f"postgresql-{pg_version}-linux-{architecture}.tar.gz"
                 archive, core = archives / archive_name, core_dir / core_name
-                archive.write_bytes(b"candidate archive containing both SQL extensions")
+                self.write_extension_archive(archive)
                 core.write_bytes(b"fixture core archive " + pg_version.encode())
                 core_hash = hashlib.sha256(core.read_bytes()).hexdigest()
                 archive_hash = hashlib.sha256(archive.read_bytes()).hexdigest()
@@ -167,11 +195,13 @@ class AddressStandardizerLinuxPublication(unittest.TestCase):
                 self.assertEqual(emitted, (output / "attempt.json", output / "current-receipt.json",
                                            output / "verification-record.json"))
                 self.assertEqual(attempt["archives"], {archive_name: archive_hash, core_name: core_hash})
+                self.assertEqual(attempt["redistribution_status"], publication.ATTEMPT_STATUS)
                 self.assertEqual(attempt["profile_id"], publication.profile_id(architecture, pg_version))
                 self.assertEqual(attempt["core_run_id"], "99887766")
                 self.assertEqual(receipt["extension_archive"], archive_name)
                 self.assertEqual(receipt["release_eligible"], False)
-                self.assertEqual(receipt["redistribution_status"], publication.BLOCK)
+                self.assertEqual(receipt["redistribution_status"], publication.REDISTRIBUTION_RESOLVED)
+                self.assertEqual(record["redistribution_status"], publication.REDISTRIBUTION_RESOLVED)
                 self.assertEqual(record["component"], "address_standardizer")
                 self.assertEqual(record["assembled_core"], {"archive": core_name, "sha256": core_hash,
                                                              "version": pg_version})
@@ -185,6 +215,38 @@ class AddressStandardizerLinuxPublication(unittest.TestCase):
                 self.assertTrue((evidence / "verification-record.json").is_file())
                 installed = root / "support/verification" / f"address-standardizer-3.7.0-postgresql-{pg_version}-linux-{architecture}-current-{run_id}.json"
                 self.assertTrue(installed.is_file())
+
+    def test_emitter_preserves_failed_attempt_when_final_archive_lacks_reviewed_notice(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary) / "root"
+            (root / "support").mkdir(parents=True)
+            (root / "support.json").write_bytes((ROOT / "support.json").read_bytes())
+            (root / "support/postgresql-releases.json").write_bytes(
+                (ROOT / "support/postgresql-releases.json").read_bytes())
+            archives, core_dir = Path(temporary) / "archives", Path(temporary) / "core"
+            archives.mkdir()
+            core_dir.mkdir()
+            archive = archives / "address-standardizer-3.7.0-postgresql-18.6-linux-x86_64.tar.gz"
+            core = core_dir / "postgresql-18.6-linux-x86_64.tar.gz"
+            self.write_extension_archive(archive, include_sljit=False)
+            core.write_bytes(b"core")
+            for path in (archive, core):
+                checksum = hashlib.sha256(path.read_bytes()).hexdigest()
+                Path(str(path) + ".sha256").write_text(f"{checksum}  {path.name}\n", encoding="utf-8")
+            resolution = core_dir / "core-resolution.json"
+            resolution.write_text("{}\n", encoding="utf-8")
+            output = archives / "publication"
+            args = (root, archives, core_dir, output, "x86_64", "success", "success",
+                    "c" * 40, "76545", "owner/repo", "https://github.com",
+                    "sha256:" + "d" * 64, "6.17.0-azure", "18.6", resolution, "success")
+            with patch.object(coverage, "verification_profile", return_value=self.profile), \
+                    patch.object(publication.linux_core_resolution, "validate_resolution",
+                                 return_value={"provenance": {"run_id": "99887766"}}):
+                with self.assertRaisesRegex(coverage.CoverageError, "SLJIT.txt"):
+                    publication.emit(*args)
+            attempt = json.loads((output / "attempt.json").read_text(encoding="utf-8"))
+            self.assertEqual(attempt["redistribution_status"], publication.ATTEMPT_STATUS)
+            self.assertFalse((output / "current-receipt.json").exists())
 
     def test_failed_core_resolution_retains_attempt_but_cannot_publish_complete_archives(self):
         with tempfile.TemporaryDirectory() as temporary:

@@ -10,6 +10,7 @@ import shutil
 import sys
 
 import coverage
+import address_standardizer_license_inventory
 import emit_address_standardizer_linux_publication as publication
 import linux_core_resolution
 
@@ -66,7 +67,7 @@ def import_run(root, core_archives, archives, run_id):
     if (attempt.get("schema_version") != 1 or str(attempt.get("run_id")) != run_id
             or attempt.get("profile_id") != selected or attempt.get("postgresql_version") != pg_version
             or attempt.get("release_eligible") is not False
-            or attempt.get("redistribution_status") != publication.BLOCK
+            or attempt.get("redistribution_status") not in {publication.BLOCK, publication.ATTEMPT_STATUS}
             or not coverage.REVISION.fullmatch(str(attempt.get("source_revision", "")))):
         raise coverage.CoverageError("raw attempt identity does not match this run and profile")
     workflow = attempt.get("workflow_steps")
@@ -171,12 +172,17 @@ def import_run(root, core_archives, archives, run_id):
         copy(copies, root)
         return [str(destination.relative_to(root)) for _, destination in copies]
     receipt, record = read_json(receipt_path), read_json(record_path)
+    redistribution_status = receipt.get("redistribution_status")
+    if redistribution_status == publication.REDISTRIBUTION_RESOLVED:
+        address_standardizer_license_inventory.validate_archive(archive)
+    elif redistribution_status != publication.BLOCK:
+        raise coverage.CoverageError("receipt redistribution status is unsupported")
     if (receipt.get("profile_id") != selected or receipt.get("profile_revision") != profile["profile_revision"]
             or receipt.get("project") != "Address Standardizer" or receipt.get("version") != publication.VERSION
             or receipt.get("architecture") != architecture or receipt.get("platform") != platform
             or receipt.get("postgresql_version") != pg_version or receipt.get("case_results") != results
             or receipt.get("archives") != checksums or receipt.get("extension_archive") != archive_name
-            or receipt.get("release_eligible") is not False or receipt.get("redistribution_status") != publication.BLOCK
+            or receipt.get("release_eligible") is not False
             or receipt.get("reports") != {key: value for key, value in reports.items() if key != "probe_output"}
             or receipt.get("environment") != record.get("environment")):
         raise coverage.CoverageError("receipt identity, archive or report hashes differ from raw evidence")
@@ -192,7 +198,8 @@ def import_run(root, core_archives, archives, run_id):
             or record.get("ci") != ci or record.get("test_revision") != attempt["source_revision"]
             or record.get("sha256") != checksums[archive_name]
             or record.get("assembled_core") != {"archive": core_name, "sha256": checksums[core_name], "version": pg_version}
-            or record.get("release_eligible") is not False or record.get("redistribution_status") != publication.BLOCK):
+            or record.get("release_eligible") is not False
+            or record.get("redistribution_status") != redistribution_status):
         raise coverage.CoverageError("verification record identity or checksums differ from receipt")
     retain(receipt_path, evidence / "current-receipt.json", copies)
     retain(record_path, evidence / "verification-record.json", copies)

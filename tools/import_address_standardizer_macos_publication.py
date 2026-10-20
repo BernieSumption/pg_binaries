@@ -8,10 +8,12 @@ import sys
 
 import coverage
 import extension_archive_plan
+import address_standardizer_license_inventory
 import macos_publication_evidence as evidence
 
 VERSION = "3.7.0"
 BLOCK = "pending-dependency-provenance-and-redistribution-review"
+ATTEMPT_STATUS = "not-assessed-final-archive-unavailable"
 CASES = {"archive-suite", "macho-closure"}
 OUTCOMES = {"success", "failure", "skipped", "cancelled", "timed_out"}
 REPORTS = {"static_analysis": "static-analysis.json", "probe_output": "probe-output.txt"}
@@ -63,7 +65,7 @@ def import_run(root, core_dir, archive_dir, run_id, target_path):
             or attempt.get("version") != VERSION
             or attempt.get("architecture") != architecture
             or attempt.get("release_eligible") is not False
-            or attempt.get("redistribution_status") != BLOCK):
+            or attempt.get("redistribution_status") not in {BLOCK, ATTEMPT_STATUS}):
         raise coverage.CoverageError("attempt identity does not match selected run and target")
     raw_steps = attempt.get("steps")
     if not isinstance(raw_steps, dict) or set(raw_steps) != CASES:
@@ -136,6 +138,11 @@ def import_run(root, core_dir, archive_dir, run_id, target_path):
     if not receipt_path.is_file() or not record_path.is_file():
         raise coverage.CoverageError("receipt and verification record must be retained together")
     receipt, record = _read(receipt_path), _read(record_path)
+    redistribution_status = receipt.get("redistribution_status")
+    if redistribution_status == "resolved":
+        address_standardizer_license_inventory.validate_archive(extension)
+    elif redistribution_status != BLOCK:
+        raise coverage.CoverageError("receipt redistribution status is unsupported")
     outcome = "failed" if "failed" in results.values() else "skipped" if "skipped" in results.values() else "passed"
     expected_receipt = {
         "schema_version": 1, "profile_id": profile_id,
@@ -144,7 +151,7 @@ def import_run(root, core_dir, archive_dir, run_id, target_path):
         "version": VERSION, "postgresql_version": pg, "architecture": architecture,
         "platform": platform, "endpoint": "current", "case_results": results,
         "archives": digests, "extension_archive": extension_name,
-        "release_eligible": False, "redistribution_status": BLOCK,
+        "release_eligible": False, "redistribution_status": redistribution_status,
     }
     if any(receipt.get(key) != value for key, value in expected_receipt.items()):
         raise coverage.CoverageError("receipt identity or archive hashes differ from attempt")
@@ -191,7 +198,7 @@ def import_run(root, core_dir, archive_dir, run_id, target_path):
         "component": "address_standardizer", "project": "Address Standardizer",
         "version": VERSION, "platform": platform, "postgresql_version": pg,
         "assembled_core": {"archive": core_name, "sha256": digests[core_name], "version": pg},
-        "prerequisite_archives": [], "release_eligible": False, "redistribution_status": BLOCK,
+        "prerequisite_archives": [], "release_eligible": False, "redistribution_status": redistribution_status,
         "environment": environment,
     }
     if any(record.get(key) != value for key, value in expected_record.items()):
