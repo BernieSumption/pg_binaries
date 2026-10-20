@@ -101,9 +101,41 @@ jobs:
           }) + '\n')
           PY
           bash scripts/macos/resolve-core.sh "$RUNNER_TEMP/target/base.json" "$RUNNER_TEMP/core"
+      - name: Stage dSYMs from the resolved core build
+        id: symbols_source
+        if: always() && steps.core.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          core="$RUNNER_TEMP/core/postgresql-$PG_VERSION-macos-$ARCHITECTURE.tar.gz"
+          candidate="$RUNNER_TEMP/core/candidate-manifest.json"
+          staged="$RUNNER_TEMP/core-symbols"
+          artifact="$RUNNER_TEMP/core"
+          if [[ ! -f "$artifact/debug-symbols/index.json" ]]; then
+            python3 - "$candidate" "$core" "$RUNNER_TEMP/core/source-artifact.json" <<'PY'
+          import hashlib, json, pathlib, sys
+          manifest = json.loads(pathlib.Path(sys.argv[1]).read_text())
+          digest = hashlib.sha256(pathlib.Path(sys.argv[2]).read_bytes()).hexdigest()
+          rows = manifest.get('archives', [])
+          if len(rows) != 1 or rows[0].get('sha256') != digest:
+              raise SystemExit('resolved core archive is not bound to one candidate artifact')
+          source = rows[0].get('source', {})
+          if not source.get('run_id') or not source.get('artifact_name'):
+              raise SystemExit('resolved core candidate lacks its source run and artifact')
+          pathlib.Path(sys.argv[3]).write_text(json.dumps(source))
+          PY
+            run_id=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["run_id"])' "$RUNNER_TEMP/core/source-artifact.json")
+            artifact_name=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["artifact_name"])' "$RUNNER_TEMP/core/source-artifact.json")
+            artifact="$RUNNER_TEMP/core/source-artifact"
+            gh run download "$run_id" --repo "$GITHUB_REPOSITORY" \
+              --name "$artifact_name" --dir "$artifact"
+          fi
+          python3 tools/stage_macos_core_symbols.py "$artifact" "$staged" "$(basename "$core")"
+          echo "directory=$staged" >> "$GITHUB_OUTPUT"
       - name: Build pgvector against the checked core
         id: package
-        if: always() && steps.core.outcome == 'success'
+        if: always() && steps.core.outcome == 'success' && steps.symbols_source.outcome == 'success'
         continue-on-error: true
         run: |
           set -o pipefail
@@ -112,7 +144,8 @@ jobs:
           bash scripts/pgvector/macos-build.sh \
             "$RUNNER_TEMP/core/postgresql-$PG_VERSION-macos-$ARCHITECTURE.tar.gz" \
             "$RUNNER_TEMP/pgvector.tar.gz" "$RUNNER_TEMP/archives" \
-            "$PG_VERSION" "$VECTOR_VERSION" "$ARCHITECTURE"
+            "$PG_VERSION" "$VECTOR_VERSION" "$ARCHITECTURE" \
+            "${{ steps.symbols_source.outputs.directory }}"
       - name: Collect build outputs
         if: always()
         run: |
@@ -129,7 +162,7 @@ jobs:
       - name: Require core resolution and archive build to pass
         if: always()
         run: |
-          if [[ '${{ steps.core.outcome }}' != success || '${{ steps.package.outcome }}' != success ]]; then
+          if [[ '${{ steps.core.outcome }}' != success || '${{ steps.symbols_source.outcome }}' != success || '${{ steps.package.outcome }}' != success ]]; then
             echo 'Selected macOS pgvector core resolution and archive build must pass.' >&2
             exit 1
           fi

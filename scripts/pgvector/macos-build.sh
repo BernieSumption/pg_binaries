@@ -8,12 +8,14 @@ output=${3:?usage: macos-build.sh CORE_ARCHIVE SOURCE_ARCHIVE OUTPUT_DIR PG_VERS
 pg_version=${4:?}
 vector_version=${5:?}
 architecture=${6:?}
+core_dsyms=${7:?usage: macos-build.sh CORE_ARCHIVE SOURCE_ARCHIVE OUTPUT_DIR PG_VERSION PGVECTOR_VERSION ARCHITECTURE CORE_DSYMS_DIR}
 [[ "$vector_version" == 0.8.7 ]] || { echo "Unsupported macOS pgvector release: $vector_version" >&2; exit 2; }
 case "$architecture" in arm64|x86_64) ;; *) echo "Unsupported macOS architecture: $architecture" >&2; exit 2 ;; esac
 [[ $(uname -s) == Darwin && $(uname -m) == "$architecture" ]] || { echo "Build requires native macOS $architecture" >&2; exit 1; }
 
 core_archive=$(cd "$(dirname "$core_archive")" && pwd)/$(basename "$core_archive")
 source_archive=$(cd "$(dirname "$source_archive")" && pwd)/$(basename "$source_archive")
+core_dsyms=$(cd "$core_dsyms" && pwd)
 mkdir -p "$output"
 output=$(cd "$output" && pwd)
 work=$(mktemp -d "${RUNNER_TEMP:-/tmp}/pgvector-macos.XXXXXX")
@@ -62,7 +64,7 @@ if not re.fullmatch(r'/Users/runner/work/_temp/pg-macos-pilot\.[A-Za-z0-9]+/inst
     raise SystemExit(f'unexpected original PostgreSQL prefix: {prefix}')
 print(build_id, revision, prefix, sep='\t')
 PY
-IFS=$'\t' read -r build_id revision prefix < "$work/core-provenance.tsv"
+IFS=$'\t' read -r core_build_id core_revision prefix < "$work/core-provenance.tsv"
 [[ ! -e "$prefix" && ! -L "$prefix" ]] || { echo "Original core prefix already exists: $prefix" >&2; exit 1; }
 mkdir -p "$(dirname "$prefix")"
 ln -s "$pgroot" "$prefix"
@@ -100,16 +102,29 @@ mv "$package/pgvector/LICENSES/inventory.json" "$package/pgvector/LICENSES/pgvec
 mv "$package/pgvector/bundled-dependencies.json" "$package/pgvector/LICENSES/pgvector-bundled-dependencies.json"
 
 configuration="postgresql-${pg_version};pgvector-${vector_version};builder=native-macos;deployment-target=11.0;pgvector-optflags=-O2,-g;runtime=bundled-dylibs"
-python3 - "$package/metadata.json" "$vector_version" "$build_id" "$revision" "$source_url" "$source_sha" "$configuration" "$architecture" <<'PY'
+[[ "${GITHUB_RUN_ID:-}" =~ ^[1-9][0-9]*$ && "${GITHUB_RUN_ATTEMPT:-}" =~ ^[1-9][0-9]*$ && "${GITHUB_SHA:-}" =~ ^[0-9a-fA-F]{40}$ ]] || { echo 'Current GitHub build provenance is invalid' >&2; exit 1; }
+build_id="github-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+revision="$GITHUB_SHA"
+core_sha=$(shasum -a 256 "$core_archive" | awk '{print $1}')
+core_name=$(basename "$core_archive")
+python3 - "$package/metadata.json" "$vector_version" "$build_id" "$revision" "$source_url" "$source_sha" "$configuration" "$architecture" "$core_name" "$core_sha" <<'PY'
 import json, pathlib, sys
-path, version, build_id, revision, url, sha, config, arch = sys.argv[1:]
+path, version, build_id, revision, url, sha, config, arch, core_name, core_sha = sys.argv[1:]
 pathlib.Path(path).write_text(json.dumps({
     'project':'pgvector','version':version,'sql_names':['vector'],'requires':[],
     'configuration_prerequisites':[],'runtime_prerequisites':[], 'build_id':build_id,
     'source_revision':revision,'source_archive':{'url':url,'sha256':sha},
+    'core_archive':{'basename':core_name,'sha256':core_sha},
     'build_configuration':config,'platform':'macos','architecture':arch,
 }, sort_keys=True) + '\n')
 PY
 archive="pgvector-${vector_version}-postgresql-${pg_version}-macos-${architecture}.tar.gz"
 tar -C "$package" -czf "$output/$archive" pgvector metadata.json
 (cd "$output" && shasum -a 256 "$archive" > "$archive.sha256")
+
+symbol_staging="$work/symbol-staging"
+mkdir -p "$symbol_staging" "$output/debug-symbols"
+ditto "$core_dsyms" "$symbol_staging/core"
+dsymutil "$package/pgvector/lib/$(basename "$library")" -o "$symbol_staging/pgvector/vector.dylib.dSYM"
+python3 "$repo/tools/create_macos_symbols.py" "$core_archive" "$output/$archive" \
+  --staged-dsyms "$symbol_staging" --output-dir "$output/debug-symbols"

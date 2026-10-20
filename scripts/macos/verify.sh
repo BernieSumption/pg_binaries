@@ -47,8 +47,8 @@ source_args=(--platform macos --postgresql-version "$pg_version" --core-manifest
 if ! $core_only; then source_args+=(--vector-metadata "$work/extension/metadata.json"); fi
 python3 "$repo/tools/check_source_identity.py" "${source_args[@]}"
 
-python3 - "$work/first/postgresql" "$architecture" "$pg_version" "$core_only" "$work/extension" <<'PY'
-import json, pathlib, re, sys
+python3 - "$work/first/postgresql" "$architecture" "$pg_version" "$core_only" "$work/extension" "$archives/$pg_name" <<'PY'
+import hashlib, json, pathlib, re, sys
 core = pathlib.Path(sys.argv[1])
 core_only = sys.argv[4] == 'true'
 pg = json.loads((core / 'manifest.json').read_text())
@@ -76,7 +76,24 @@ if not core_only:
                        'requires': [], 'configuration_prerequisites': [], 'runtime_prerequisites': []}
     if any(vector.get(key) != value for key, value in expected_vector.items()):
         raise SystemExit('pgvector metadata mismatch')
-    if any(vector.get(field) != value for field, value in provenance.items()):
+    if 'core_archive' in vector:
+        archive = pathlib.Path(sys.argv[6])
+        core_binding = vector['core_archive']
+        actual_hash = hashlib.sha256(archive.read_bytes()).hexdigest()
+        if (not isinstance(core_binding, dict) or set(core_binding) != {'basename', 'sha256'}
+                or core_binding['basename'] != archive.name
+                or core_binding['sha256'] != actual_hash):
+            raise SystemExit('pgvector metadata does not bind the downloaded PostgreSQL archive')
+        if (not isinstance(vector.get('build_id'), str)
+                or not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9._-]*', vector['build_id'])
+                or not isinstance(vector.get('source_revision'), str)
+                or not re.fullmatch(r'[0-9a-fA-F]{40}|[0-9a-fA-F]{64}', vector['source_revision'])
+                or not isinstance(vector.get('build_configuration'), str)
+                or not vector['build_configuration']
+                or vector.get('platform') != 'macos'
+                or vector.get('architecture') != sys.argv[2]):
+            raise SystemExit('separately built pgvector provenance is missing or invalid')
+    elif any(vector.get(field) != value for field, value in provenance.items()):
         raise SystemExit('pgvector build provenance differs from PostgreSQL')
     licence_inventory = extension / 'pgvector/LICENSES/pgvector-inventory.json'
     inventory = json.loads(licence_inventory.read_text())
