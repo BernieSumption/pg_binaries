@@ -2,6 +2,7 @@
 set -euo pipefail
 
 output_root=${1:?usage: build-and-probe.sh OUTPUT_ROOT}
+repo_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 mkdir -p "$output_root"
 output_root=$(cd "$output_root" && pwd)
 exec > >(tee "$output_root/build.log") 2>&1
@@ -32,7 +33,7 @@ tar -xzf postgis-3.6.4.tar.gz
 cd postgis-3.6.4
 export PATH="$pgroot/bin:$PATH"
 export PG_CONFIG="$pgroot/bin/pg_config.exe"
-./configure --with-pgconfig="$PG_CONFIG" --without-raster --without-tiger --without-topology --without-sfcgal --without-protobuf
+./configure --with-pgconfig="$PG_CONFIG" --with-sfcgal=/mingw64/bin/sfcgal-config --without-tiger --without-protobuf
 make
 make install
 
@@ -43,4 +44,4 @@ mkdir -p "$work"
 finish() { "$pgroot/bin/pg_ctl.exe" -D "$work/data" -m immediate stop || true; }
 trap finish EXIT
 "$pgroot/bin/createdb.exe" -p 55438 postgis_probe
-"$pgroot/bin/psql.exe" -X -v ON_ERROR_STOP=1 -p 55438 -d postgis_probe -c 'CREATE EXTENSION postgis' -c 'SELECT postgis_full_version()'
+"$pgroot/bin/psql.exe" -X -v ON_ERROR_STOP=1 -p 55438 -d postgis_probe -f "$repo_root/scripts/postgis/probe.sql"

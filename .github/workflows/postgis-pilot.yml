@@ -195,7 +195,8 @@ jobs:
           pacboy: >-
             toolchain:p
             pkgconf:p
-            protobuf-c:p
+            gmp:p
+            sfcgal:p
             geos:p
             proj:p
             gdal:p
