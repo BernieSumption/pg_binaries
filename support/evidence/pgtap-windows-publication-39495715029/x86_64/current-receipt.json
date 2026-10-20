@@ -1,0 +1,42 @@
+{
+  "architecture": "x86_64",
+  "archives": {
+    "pgtap-1.3.4-postgresql-15.19-windows-x86_64.tar.gz": "ed5db62ee0f8cfd89cdadd8b2bdb18ca40b61ab22c8529d6a2ab8e8ef9e46c0a",
+    "postgresql-15.19-windows-x86_64.tar.gz": "f462ef69453f81e1f9ff73bde2819eb36f632630a10ad1fd91189dc844de9403"
+  },
+  "case_results": {
+    "archive-suite": "passed",
+    "static-analysis": "passed"
+  },
+  "ci": {
+    "build_revision": "84d8908d3667e93d133e6d40bf79dbad2866568a",
+    "provider": "github-actions",
+    "run_id": "39495715029",
+    "run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/39495715029",
+    "source_revision": "84d8908d3667e93d133e6d40bf79dbad2866568a",
+    "test_revision": "84d8908d3667e93d133e6d40bf79dbad2866568a"
+  },
+  "clean_system": true,
+  "dependency_check_profile": "windows-sql-archive-relocation-v1",
+  "dependency_checks_passed": true,
+  "endpoint": "current",
+  "environment": {
+    "architecture": "x86_64",
+    "image_id": "win22/20261012.333.1",
+    "os": "windows",
+    "os_version": "10.0.20348"
+  },
+  "extension_archive": "pgtap-1.3.4-postgresql-15.19-windows-x86_64.tar.gz",
+  "platform": "windows-x86_64",
+  "postgresql_version": "15.19",
+  "profile_id": "pgtap-publication-windows-x86_64-15.19",
+  "profile_revision": "2580631890f3da5d11fd1fb9097537d641c3309af73875589e87fae319b30c85",
+  "project": "pgtap",
+  "reports": {
+    "probe_output": "a5ff76bc0fdf3a9dce9e3cd1be05c355c6b8ac0f85231f9b07c8eca30f2f3a8f",
+    "static_analysis": "79cf6a3ee9661daeddd4f2ddb033de31720e3c94a751874ece90f856e687cfb8"
+  },
+  "schema_version": 1,
+  "test_revision": "84d8908d3667e93d133e6d40bf79dbad2866568a",
+  "version": "1.3.4"
+}
