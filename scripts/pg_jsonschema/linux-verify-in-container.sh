@@ -34,7 +34,7 @@ with tarfile.open(archive, 'r:gz') as package:
         'postgresql_version': pg_version, 'platform': 'linux', 'architecture': architecture,
         'source': {'url': 'https://github.com/supabase/pg_jsonschema.git', 'commit': commit,
                    'cargo_lock_sha256': 'ab865dc25d9eea4bf7dbfaf8fae13283e5c0bce4bca460fe10464c6716e67028'},
-        'release_eligible': False, 'redistribution_status': 'seahash-4.1.0-notice-unresolved',
+        'release_eligible': False, 'redistribution_status': 'postgresql-core-redistribution-review-pending',
     }, metadata
     assert not any(member.issym() or member.islnk() for member in members)
 root = pathlib.Path('/tmp/extension/pg_jsonschema')

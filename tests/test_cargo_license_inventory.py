@@ -39,7 +39,9 @@ class CargoLicenseInventoryTests(unittest.TestCase):
                 (crate / "LICENSE").write_text("extension licence")
             packages.append({"id": name, "name": name, "version": version,
                              "manifest_path": str(manifest),
-                             "source": "registry+https://github.com/rust-lang/crates.io-index"})
+                             "source": "registry+https://github.com/rust-lang/crates.io-index",
+                             **({"license": "MIT", "repository": checker.SEAHASH_IDENTITY["repository"]}
+                                if name == "seahash" else {})})
         edges = {"extension": [{"pkg": p["id"], "dep_kinds": [{"kind": "build" if p["id"] == "builder" else None}]}
                                for p in packages[1:]]}
         metadata = self.metadata(packages, edges)
@@ -53,8 +55,11 @@ class CargoLicenseInventoryTests(unittest.TestCase):
             supplements = MODULE_PATH.parents[1] / "support/evidence/pg-jsonschema-crate-licenses-2026-10-18"
             checker.package_notices(result, metadata, payload, supplements)
             shipped = [p for p in result["packages"] if "shipped" in p["dependency_roles"]]
-            self.assertEqual(sum(bool(p["packaged_license_notice_files"]) for p in shipped), 6)
-            self.assertEqual(result["packaging"]["missing_notice_packages"][0]["name"], "seahash")
+            self.assertEqual(sum(bool(p["packaged_license_notice_files"]) for p in shipped), 7)
+            self.assertEqual(result["packaging"]["missing_notice_packages"], [])
+            evidence = payload / "LICENSES/cargo/seahash-4.1.0/seahash-4.1.0-license-declaration.txt"
+            self.assertIn("Declared license: MIT", evidence.read_text())
+            self.assertNotIn("Permission is hereby granted", evidence.read_text())
             self.assertFalse((payload / "LICENSES/cargo/builder-1").exists())
             inventory_path = payload / "LICENSES/pg_jsonschema-cargo-license-inventory.json"
             inventory_path.write_text(json.dumps(result))
@@ -86,6 +91,17 @@ class CargoLicenseInventoryTests(unittest.TestCase):
             (root / "extension/LICENSE").unlink()
             result = checker.inventory(root / "extension", metadata)
             with self.assertRaisesRegex(ValueError, "unexpected unresolved"):
+                checker.package_notices(result, metadata, root / "payload", supplements)
+
+    def test_seahash_declaration_requires_exact_source_identity(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            metadata, result = self.packaging_fixture(root)
+            seahash = next(package for package in metadata["packages"] if package["name"] == "seahash")
+            seahash["license"] = "MIT OR Apache-2.0"
+            result = checker.inventory(root / "extension", metadata)
+            supplements = MODULE_PATH.parents[1] / "support/evidence/pg-jsonschema-crate-licenses-2026-10-18"
+            with self.assertRaisesRegex(ValueError, "seahash source identity mismatch"):
                 checker.package_notices(result, metadata, root / "payload", supplements)
 
     def test_records_sorted_packages_and_hashed_license_and_notice_files(self):

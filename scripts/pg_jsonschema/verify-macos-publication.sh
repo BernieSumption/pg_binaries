@@ -66,8 +66,7 @@ expected = {"project": "pg_jsonschema", "version": "0.3.4", "sql_names": ["pg_js
             "architecture": architecture,
             "source": {"url": source_url, "commit": commit, "cargo_lock_sha256": lock_hash},
             "core_archive": {"basename": core, "sha256": digest}, "release_eligible": False,
-            "release_blockers": ["seahash-4.1.0-notice-unresolved",
-                                  "postgresql-core-redistribution-review-pending"]}
+            "release_blockers": ["postgresql-core-redistribution-review-pending"]}
 if metadata != expected: raise SystemExit("pg_jsonschema archive metadata differs from the selected target")
 PY
 pgroot="$work/core/postgresql"

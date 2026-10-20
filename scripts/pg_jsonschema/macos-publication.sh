@@ -147,8 +147,7 @@ metadata = {
                "cargo_lock_sha256": cargo_lock_sha256},
     "core_archive": {"basename": f"postgresql-{pg_version}-{platform}.tar.gz", "sha256": core_sha256},
     "release_eligible": False,
-    "release_blockers": ["seahash-4.1.0-notice-unresolved",
-                         "postgresql-core-redistribution-review-pending"],
+    "release_blockers": ["postgresql-core-redistribution-review-pending"],
 }
 (root / "metadata.json").write_text(json.dumps(metadata, indent=2, sort_keys=True) + "\n")
 PY

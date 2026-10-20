@@ -190,7 +190,7 @@ class LinuxPublicationHelpers(unittest.TestCase):
                 self.assertEqual(attempt["profile_id"], publication.profile_id(architecture, version))
                 self.assertEqual(attempt["core_run_id"], resolution["provenance"]["run_id"])
                 self.assertIs(attempt["release_eligible"], False)
-                self.assertEqual(attempt["redistribution_status"], "seahash-4.1.0-notice-unresolved")
+                self.assertEqual(attempt["redistribution_status"], "postgresql-core-redistribution-review-pending")
 
     def test_kernel_release_must_meet_linux_floor(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -232,7 +232,7 @@ class LinuxPublicationHelpers(unittest.TestCase):
                            "commit": publication.SOURCE_COMMIT,
                            "cargo_lock_sha256": publication.CARGO_LOCK_SHA256},
                 "release_eligible": False,
-                "redistribution_status": "seahash-4.1.0-notice-unresolved",
+                "redistribution_status": "postgresql-core-redistribution-review-pending",
             }
             with tarfile.open(archive, "w:gz") as package:
                 for name, contents in {

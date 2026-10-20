@@ -15,8 +15,7 @@ import macos_publication_evidence as evidence
 from pg_jsonschema_macos_target import load_target
 
 CORE_STATUS = "current-profile-core-redistribution-pending"
-RELEASE_BLOCKERS = ["seahash-4.1.0-notice-unresolved",
-                    "postgresql-core-redistribution-review-pending"]
+RELEASE_BLOCKERS = ["postgresql-core-redistribution-review-pending"]
 CASES = {"archive-suite", "static-analysis"}
 ALLOWED_STEPS = {"success", "failure", "skipped", "cancelled", "timed_out"}
 TARGET = None

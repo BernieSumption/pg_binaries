@@ -9,7 +9,7 @@ import re
 SOURCE_URL = "https://github.com/supabase/pg_jsonschema.git"
 SOURCE_COMMIT = "cbe74b570d38aa0c4d42914e7a118bcb3adaee7a"
 CARGO_LOCK_SHA256 = "ab865dc25d9eea4bf7dbfaf8fae13283e5c0bce4bca460fe10464c6716e67028"
-BLOCKERS = ["seahash-4.1.0-notice-unresolved", "postgresql-core-redistribution-review-pending"]
+BLOCKERS = ["postgresql-core-redistribution-review-pending"]
 EXPECTED_KEYS = {"schema_version", "profile_id", "postgresql_version", "pg_jsonschema_version",
                  "architecture", "platform", "core_archive", "source"}
 CORE_KEYS = {"basename", "sha256"}

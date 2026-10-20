@@ -65,7 +65,7 @@ metadata = {
     'postgresql_version': pg_version, 'platform': 'linux', 'architecture': architecture,
     'source': {'url': 'https://github.com/supabase/pg_jsonschema.git', 'commit': commit,
                'cargo_lock_sha256': lock_sha},
-    'release_eligible': False, 'redistribution_status': 'seahash-4.1.0-notice-unresolved',
+    'release_eligible': False, 'redistribution_status': 'postgresql-core-redistribution-review-pending',
 }
 pathlib.Path('/work/package/metadata.json').write_text(json.dumps(metadata, indent=2, sort_keys=True) + '\n')
 PY

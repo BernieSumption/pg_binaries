@@ -105,6 +105,7 @@ def inventory(source_root, metadata):
             "name": package["name"],
             "version": package["version"],
             "source": package.get("source"),
+            "repository": package.get("repository"),
             "license": declared,
             "license_file": Path(license_file).as_posix() if license_file else None,
             "license_metadata_missing": not declared and not license_file,
@@ -127,6 +128,23 @@ SUPPLEMENTS = {
 SUPPLEMENTS["pgrx-pg-sys"] = SUPPLEMENTS["pgrx"]
 SUPPLEMENTS["pgrx-sql-entity-graph"] = SUPPLEMENTS["pgrx"]
 SUPPLEMENTS["vsimd"] = SUPPLEMENTS["uuid-simd"]
+
+SEAHASH_IDENTITY = {
+    "version": "4.1.0",
+    "source": "registry+https://github.com/rust-lang/crates.io-index",
+    "license": "MIT",
+    "repository": "https://gitlab.redox-os.org/redox-os/seahash",
+    "evidence_file": "seahash-4.1.0-license-declaration.txt",
+    "evidence_path": Path(__file__).parents[1] / "support/evidence/pg-jsonschema-crate-licenses-2026-10-18/seahash-4.1.0-license-declaration.txt",
+}
+SEAHASH_EVIDENCE = (
+    b"Package: seahash 4.1.0\nDeclared license: MIT\n"
+    b"Cargo source: registry+https://github.com/rust-lang/crates.io-index\n"
+    b"Upstream repository: https://gitlab.redox-os.org/redox-os/seahash\n"
+    b"Upstream source commit: https://gitlab.redox-os.org/redox-os/seahash/-/tree/94b632aeac099031c373599313d5b5f0acbbaec0\n"
+    b"Evidence: https://docs.rs/crate/seahash/4.1.0/source/Cargo.toml.orig (published licence declaration)\n"
+)
+SEAHASH_EVIDENCE_SHA256 = hashlib.sha256(SEAHASH_EVIDENCE).hexdigest()
 
 
 def _safe_relative(value):
@@ -162,6 +180,20 @@ def package_notices(result, metadata, payload, supplements):
                 raise ValueError(f"supplement source identity mismatch: {name} {version}")
             notices.append((supplements / filename, target / "upstream-LICENSE", digest,
                             {"source_url": f"{repository}/blob/{commit}/LICENSE", "source_commit": commit}))
+        if name == "seahash":
+            identity = SEAHASH_IDENTITY
+            if (version != identity["version"] or package.get("source") != identity["source"]
+                    or package.get("license") != identity["license"]
+                    or package.get("repository") != identity["repository"]):
+                raise ValueError("seahash source identity mismatch")
+            evidence = identity["evidence_path"]
+            if evidence.read_bytes() != SEAHASH_EVIDENCE:
+                raise ValueError("seahash declaration evidence changed")
+            notices.append((evidence, target / identity["evidence_file"],
+                            SEAHASH_EVIDENCE_SHA256,
+                            {"source_url": "https://docs.rs/crate/seahash/4.1.0/source/Cargo.toml.orig",
+                             "upstream_repository": identity["repository"],
+                             "declared_license": identity["license"]}))
         package["packaged_license_notice_files"] = []
         for source, relative, digest, provenance in notices:
             content = source.read_bytes()
@@ -176,8 +208,7 @@ def package_notices(result, metadata, payload, supplements):
             missing.append({"name": name, "version": version, "source": package.get("source")})
     result["packaging"] = {"scope": "shipped normal dependency closure including root",
                            "missing_notice_packages": missing, "redistribution_review": "pending"}
-    if missing != [{"name": "seahash", "version": "4.1.0",
-                    "source": "registry+https://github.com/rust-lang/crates.io-index"}]:
+    if missing:
         raise ValueError(f"unexpected unresolved shipped-package notices: {missing}")
 
 
@@ -196,7 +227,7 @@ def check_packaged_notices(archive, inventory_name):
         if "shipped" not in package["dependency_roles"]:
             continue
         notices = package.get("packaged_license_notice_files", [])
-        if not notices and (package["name"], package["version"]) != ("seahash", "4.1.0"):
+        if not notices:
             raise ValueError(f"missing shipped-package notices: {package['name']}")
         prefix = f"cargo/{package['name']}-{package['version']}/"
         expected = {prefix + notice["path"]: notice["sha256"]
@@ -206,6 +237,20 @@ def check_packaged_notices(archive, inventory_name):
             if package["version"] != expected_version:
                 raise ValueError("supplement version mismatch")
             expected[prefix + "upstream-LICENSE"] = digest
+        if package["name"] == "seahash":
+            identity = SEAHASH_IDENTITY
+            if (package["version"] != identity["version"] or package.get("source") != identity["source"]
+                    or package.get("license") != identity["license"]):
+                raise ValueError("seahash source identity mismatch")
+            if package.get("repository") != identity["repository"]:
+                raise ValueError("seahash source identity mismatch")
+            expected[prefix + identity["evidence_file"]] = SEAHASH_EVIDENCE_SHA256
+            seahash_notice = next((notice for notice in notices
+                                   if notice.get("path") == prefix + identity["evidence_file"]), None)
+            if (seahash_notice is None or seahash_notice.get("source_url") != "https://docs.rs/crate/seahash/4.1.0/source/Cargo.toml.orig"
+                    or seahash_notice.get("upstream_repository") != identity["repository"]
+                    or seahash_notice.get("declared_license") != "MIT"):
+                raise ValueError("seahash declaration evidence mapping changed")
         if {notice["path"]: notice["sha256"] for notice in notices} != expected:
             raise ValueError(f"notice mapping differs from source inventory: {package['name']}")
         for notice in notices:

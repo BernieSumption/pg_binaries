@@ -79,7 +79,7 @@ def _validate_package(path, architecture, pg_version):
                    "commit": publication.SOURCE_COMMIT,
                    "cargo_lock_sha256": publication.CARGO_LOCK_SHA256},
         "release_eligible": False,
-        "redistribution_status": "seahash-4.1.0-notice-unresolved",
+        "redistribution_status": "postgresql-core-redistribution-review-pending",
     }
     try:
         with tarfile.open(path, "r:gz") as archive:
@@ -164,7 +164,7 @@ def import_run(root, core_archives, archives, run_id):
             or attempt.get("core_run_id") != resolution["provenance"].get("run_id")
             or attempt.get("pg_jsonschema_version") != publication.EXTENSION_VERSION
             or attempt.get("release_eligible") is not False
-            or attempt.get("redistribution_status") != "seahash-4.1.0-notice-unresolved"
+            or attempt.get("redistribution_status") != "postgresql-core-redistribution-review-pending"
             or not coverage.REVISION.fullmatch(str(attempt.get("source_revision", "")))):
         raise coverage.CoverageError("raw attempt identity does not match this run and profile")
     resolution_path = archives / "publication" / "core-resolution.json"
@@ -273,7 +273,7 @@ def import_run(root, core_archives, archives, run_id):
             or receipt.get("endpoint") != "current" or receipt.get("case_results") != results
             or receipt.get("archives") != digests or receipt.get("extension_archive") != archive_name
             or receipt.get("reports") != expected_reports or receipt.get("release_eligible") is not False
-            or receipt.get("redistribution_status") != "seahash-4.1.0-notice-unresolved"
+            or receipt.get("redistribution_status") != "postgresql-core-redistribution-review-pending"
             or receipt.get("clean_system") is not True
             or receipt.get("dependency_check_profile") != "linux-elf-alpine-relocation-v1"
             or receipt.get("dependency_checks_passed") != (results["elf-closure"] == "passed")):
@@ -295,7 +295,7 @@ def import_run(root, core_archives, archives, run_id):
             or record.get("sha256") != digests[archive_name]
             or record.get("assembled_core") != {"archive": core_name, "sha256": digests[core_name], "version": pg_version}
             or record.get("release_eligible") is not False
-            or record.get("redistribution_status") != "seahash-4.1.0-notice-unresolved"):
+            or record.get("redistribution_status") != "postgresql-core-redistribution-review-pending"):
         raise coverage.CoverageError("verification record identity or checksums differ from receipt")
     if (record.get("core_resolution") != resolution
             or record.get("core_origin") != (resolution.get("origin") if resolution else None)
