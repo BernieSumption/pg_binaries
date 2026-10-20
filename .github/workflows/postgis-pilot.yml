@@ -11,7 +11,7 @@ on:
         required: false
         type: boolean
       postgis_windows_abi_probe:
-        description: Build PostgreSQL 18.6 and unmodified PostGIS 3.6.4 in MSYS2 clang64, then test extension creation
+        description: Build PostgreSQL 18.6 and unmodified PostGIS 3.6.4 in MSYS2 MINGW64, then test extension creation
         required: false
         type: boolean
 jobs:
@@ -131,7 +131,7 @@ jobs:
           python-version: '3.12'
       - uses: msys2/setup-msys2@v2
         with:
-          msystem: CLANG64
+          msystem: MINGW64
           update: true
           install: >-
             base-devel
@@ -151,7 +151,7 @@ jobs:
             gdal:p
             json-c:p
             libxml2:p
-      - name: Build PostgreSQL 18.6 and upstream PostGIS in clang64, then create the extension
+      - name: Build PostgreSQL 18.6 and upstream PostGIS in MINGW64, then create the extension
         env:
           OUTPUT_ROOT: ${{ runner.temp }}/postgis-windows/output
         run: |
