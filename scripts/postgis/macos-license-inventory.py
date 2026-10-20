@@ -46,18 +46,28 @@ def formula_url(name, source):
     return f"https://github.com/Homebrew/homebrew-core/blob/{source['tap_git_head']}/{formula_path(name, source)}"
 
 
+def formula_package_version(formula):
+    stable = formula.get("versions", {}).get("stable")
+    revision = formula.get("revision", 0)
+    if not isinstance(stable, str) or not isinstance(revision, int):
+        return None
+    return stable if revision == 0 else f"{stable}_{revision}"
+
+
 if sys.argv[1:] == ["--preflight"]:
     info = json.loads(command("brew", "info", "--json=v2", *sorted(expected_formulae)))
     formula_data = {item["name"]: item for item in info.get("formulae", [])}
     urls = []
     for name, (version, license_expr) in sorted(expected_formulae.items()):
         formula = formula_data.get(name)
-        if not formula or (formula.get("versions", {}).get("stable"), formula.get("license")) != (version, license_expr):
-            raise SystemExit(f"unreviewed Homebrew formula {name}: {formula}")
+        if not formula or (formula_package_version(formula), formula.get("license")) != (version, license_expr):
+            raise SystemExit(f"unreviewed Homebrew formula {name}: expected {version} / {license_expr}")
         stable = formula.get("urls", {}).get("stable", {})
         if not stable.get("url") or not re.fullmatch(r"[0-9a-f]{64}", stable.get("checksum") or ""):
             raise SystemExit(f"incomplete Homebrew source identity for {name} {version}")
         prefix = Path(command("brew", "--prefix", name).strip()).resolve()
+        if prefix.name != version:
+            raise SystemExit(f"Homebrew keg version mismatch for {name}: expected {version}, found {prefix.name}")
         receipt_path = prefix / "INSTALL_RECEIPT.json"
         if not receipt_path.is_file(): raise SystemExit(f"missing Homebrew receipt for {name} {version}")
         receipt = json.loads(receipt_path.read_text()); source = receipt.get("source", {})
@@ -112,7 +122,7 @@ if set(name for name, _ in formula_libs) != set(expected_formulae):
 components = []
 for (name, version), libraries in sorted(formula_libs.items()):
     formula = formula_data.get(name)
-    if not formula or formula.get("versions", {}).get("stable") != version:
+    if not formula or formula_package_version(formula) != version:
         raise SystemExit(f"Homebrew metadata does not match bundled {name} {version}")
     prefix = Path(command("brew", "--prefix", name).strip())
     keg = prefix.resolve()
