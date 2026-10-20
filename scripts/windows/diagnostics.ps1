@@ -54,7 +54,16 @@ try {
   $vectorMetadata = $null
   if (-not $CoreOnly) {
     $vectorMetadata = Get-Content (Join-Path $systemTree 'metadata.json') -Raw | ConvertFrom-Json
-    if ($pgManifest.build_id -cne $vectorMetadata.build_id) { throw 'Archive metadata has inconsistent build identifiers' }
+    if ($null -ne $vectorMetadata.core_archive) {
+      $coreSha256 = (Get-FileHash $pgArchive -Algorithm SHA256).Hash.ToLowerInvariant()
+      if ($vectorMetadata.core_archive.basename -cne $pgName -or
+          $vectorMetadata.core_archive.sha256 -notmatch '^[0-9a-fA-F]{64}$' -or
+          $vectorMetadata.core_archive.sha256.ToLowerInvariant() -cne $coreSha256) {
+        throw 'pgvector metadata does not bind the checked PostgreSQL archive'
+      }
+    } elseif ($pgManifest.build_id -cne $vectorMetadata.build_id) {
+      throw 'Archive metadata has inconsistent build identifiers'
+    }
   }
   if (-not $pgManifest.build_id -or $pgManifest.platform -ne 'windows' -or
       $pgManifest.architecture -ne $architecture -or $pgManifest.version -ne $PostgreSQLVersion -or

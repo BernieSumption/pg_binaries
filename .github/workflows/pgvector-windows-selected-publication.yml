@@ -3,7 +3,9 @@ name: pgvector selected Windows publication
 on:
   push:
     branches: [spike]
-    paths: [.github/workflows/pgvector-windows-selected-publication.yml]
+    paths:
+      - .github/workflows/pgvector-windows-selected-publication.yml
+      - scripts/windows/diagnostics.ps1
   workflow_call:
     inputs:
       postgresql_version:
