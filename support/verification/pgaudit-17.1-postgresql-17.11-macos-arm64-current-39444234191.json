@@ -1,0 +1,48 @@
+{
+  "assembled_core": {
+    "archive": "postgresql-17.11-macos-arm64.tar.gz",
+    "sha256": "0db9ca0f4d0cf72fa32120aaf9a3f8e47c9dd2d97421ab2b53583af83be681b6",
+    "version": "17.11"
+  },
+  "case_results": {
+    "archive-suite": "passed",
+    "diagnostics": "passed",
+    "symbols": "passed"
+  },
+  "ci": {
+    "build_revision": "140917c6fd38252257c98569abb12441d4485f1b",
+    "provider": "github-actions",
+    "run_id": "39444234191",
+    "run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/39444234191",
+    "source_revision": "140917c6fd38252257c98569abb12441d4485f1b",
+    "test_revision": "140917c6fd38252257c98569abb12441d4485f1b"
+  },
+  "component": "pgaudit",
+  "environment": {
+    "architecture": "arm64",
+    "clean_system": true,
+    "dependency_check_profile": "macho-system-dependencies-v1",
+    "dependency_checks_passed": true,
+    "endpoint": "current",
+    "image_id": "macos15/20260907.0337.1",
+    "os": "macos",
+    "os_version": "15.7.9"
+  },
+  "outcome": "passed",
+  "platform": "macos-arm64",
+  "postgresql_version": "17.11",
+  "prerequisite_archives": [],
+  "profile_id": "pgaudit-publication-macos-arm64-17.11",
+  "profile_revision": "372609b6bc023fdaf559193c0d2c12b1c41c6076d98985cf4ff82b8d95d05a02",
+  "project": "pgaudit",
+  "schema_version": 2,
+  "scope": "publication",
+  "sha256": "3406d36b15845c206c997016d440cc2fea9e620c359772011d6b2aba62f0b049",
+  "test_cases": [
+    "archive-suite",
+    "diagnostics",
+    "symbols"
+  ],
+  "test_revision": "140917c6fd38252257c98569abb12441d4485f1b",
+  "version": "17.1"
+}

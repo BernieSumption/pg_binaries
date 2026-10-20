@@ -1,0 +1,26 @@
+{
+  "architecture": "arm64",
+  "archives": {
+    "pgaudit-17.1-postgresql-17.11-macos-arm64.tar.gz": "3406d36b15845c206c997016d440cc2fea9e620c359772011d6b2aba62f0b049",
+    "postgresql-17.11-macos-arm64.tar.gz": "0db9ca0f4d0cf72fa32120aaf9a3f8e47c9dd2d97421ab2b53583af83be681b6"
+  },
+  "extension_load_failure": {
+    "command_output": "waiting for server to start.... stopped waiting\npg_ctl: could not start server\nExamine the log output.",
+    "exit_code": 1,
+    "kind": "missing-preload-module",
+    "server_log": "2026-10-20 15:02:30.027 UTC [2141] FATAL:  could not access file \"pgaudit\": No such file or directory\n2026-10-20 15:02:30.027 UTC [2141] LOG:  database system is shut down\n"
+  },
+  "kernel": "24.6.0",
+  "os_version": "15.7.9",
+  "pgaudit_version": "17.1",
+  "platform": "macos",
+  "postgresql_failure": {
+    "client_output": "ERROR:  division by zero",
+    "command": "psql -X -v ON_ERROR_STOP=1 -c 'SELECT 1 / 0;'",
+    "exit_code": 1,
+    "kind": "server-error",
+    "server_log": "2026-10-20 15:02:31.292 UTC [2213] LOG:  pgaudit extension initialized\n2026-10-20 15:02:31.295 UTC [2213] LOG:  starting PostgreSQL 17.11 on aarch64-apple-darwin24.6.0, compiled by Apple clang version 17.0.0 (clang-1700.0.13.5), 64-bit\n2026-10-20 15:02:31.295 UTC [2213] LOG:  listening on Unix socket \"/tmp/pgaudit-macos-diagnostics.UxnXFB/valid-socket/.s.PGSQL.55438\"\n2026-10-20 15:02:31.300 UTC [2216] LOG:  database system was shut down at 2026-10-20 15:02:31 UTC\n2026-10-20 15:02:31.303 UTC [2213] LOG:  database system is ready to accept connections\n2026-10-20 15:02:31.439 UTC [2222] ERROR:  division by zero\n2026-10-20 15:02:31.439 UTC [2222] STATEMENT:  SELECT 1 / 0;\n2026-10-20 15:02:31.454 UTC [2213] LOG:  received fast shutdown request\n2026-10-20 15:02:31.454 UTC [2213] LOG:  aborting any active transactions\n2026-10-20 15:02:31.456 UTC [2213] LOG:  background worker \"logical replication launcher\" (PID 2219) exited with exit code 1\n2026-10-20 15:02:31.456 UTC [2214] LOG:  shutting down\n2026-10-20 15:02:31.457 UTC [2214] LOG:  checkpoint starting: shutdown immediate\n2026-10-20 15:02:31.458 UTC [2214] LOG:  checkpoint complete: wrote 3 buffers (0.0%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.001 s, sync=0.001 s, total=0.002 s; sync files=2, longest=0.001 s, average=0.001 s; distance=0 kB, estimate=0 kB; lsn=0/151A918, redo lsn=0/151A918\n2026-10-20 15:02:31.459 UTC [2213] LOG:  database system is shut down\n"
+  },
+  "postgresql_version": "17.11",
+  "schema_version": 1
+}
