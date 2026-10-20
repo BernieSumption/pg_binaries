@@ -1,0 +1,14 @@
+{
+  "architecture": "x86_64",
+  "pgaudit_version": "1.7.1",
+  "postgresql_version": "15.19",
+  "run_id": "39477009729",
+  "schema_version": 1,
+  "source_revision": "566e5aabee988d17286a863f925f152a30f6e14c",
+  "steps": {
+    "core_build": "success",
+    "pgaudit_build": "success",
+    "pgaudit_verify": "success"
+  },
+  "verifier_image_id": "sha256:60104c93fbb42944c9518cbc60b2d4e3a97f7ced813ec7036616caaf02f992cd"
+}
