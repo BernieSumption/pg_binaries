@@ -1,0 +1,23 @@
+{
+  "architecture": "arm64",
+  "archive": "postgresql-17.11-linux-arm64.tar.gz",
+  "origin": "built",
+  "postgresql_version": "17.11",
+  "provenance": {
+    "build_id": "github-39514791700-1",
+    "build_inputs": {
+      "base_image": "ubuntu:22.04",
+      "base_image_digest": "sha256:0a9887931b0e38af2e3487ed39e29436b0535c4f3f52e57745baaf79d1898956",
+      "packages_sha256": "85d39ad768203ba1adad6c4c21223625a93cbff837b41767e2394e1358b60c3e"
+    },
+    "provider": "github-actions",
+    "repository": "BernieSumption/pg_binaries",
+    "run_attempt": 1,
+    "run_id": "39514791700",
+    "run_sha": "3570b6f765e9e8855c4cab049662cec154f00281",
+    "source_revision": "3570b6f765e9e8855c4cab049662cec154f00281",
+    "workflow_ref": "BernieSumption/pg_binaries/.github/workflows/selected-extension-publication.yml@refs/heads/spike"
+  },
+  "schema_version": 1,
+  "sha256": "73a9abf976cea9c8bd91e2eafcfb8059afee5e447d5a9d74dbc0b628270fcc0e"
+}

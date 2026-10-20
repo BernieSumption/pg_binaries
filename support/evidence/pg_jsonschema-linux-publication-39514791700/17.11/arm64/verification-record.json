@@ -1,0 +1,88 @@
+{
+  "assembled_core": {
+    "archive": "postgresql-17.11-linux-arm64.tar.gz",
+    "sha256": "73a9abf976cea9c8bd91e2eafcfb8059afee5e447d5a9d74dbc0b628270fcc0e",
+    "version": "17.11"
+  },
+  "case_results": {
+    "archive-suite": "passed",
+    "elf-closure": "passed"
+  },
+  "ci": {
+    "build_revision": "3570b6f765e9e8855c4cab049662cec154f00281",
+    "provider": "github-actions",
+    "run_id": "39514791700",
+    "run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/39514791700",
+    "source_revision": "3570b6f765e9e8855c4cab049662cec154f00281",
+    "test_revision": "3570b6f765e9e8855c4cab049662cec154f00281"
+  },
+  "component": "pg_jsonschema",
+  "core_origin": "built",
+  "core_provenance": {
+    "build_id": "github-39514791700-1",
+    "build_inputs": {
+      "base_image": "ubuntu:22.04",
+      "base_image_digest": "sha256:0a9887931b0e38af2e3487ed39e29436b0535c4f3f52e57745baaf79d1898956",
+      "packages_sha256": "85d39ad768203ba1adad6c4c21223625a93cbff837b41767e2394e1358b60c3e"
+    },
+    "provider": "github-actions",
+    "repository": "BernieSumption/pg_binaries",
+    "run_attempt": 1,
+    "run_id": "39514791700",
+    "run_sha": "3570b6f765e9e8855c4cab049662cec154f00281",
+    "source_revision": "3570b6f765e9e8855c4cab049662cec154f00281",
+    "workflow_ref": "BernieSumption/pg_binaries/.github/workflows/selected-extension-publication.yml@refs/heads/spike"
+  },
+  "core_resolution": {
+    "architecture": "arm64",
+    "archive": "postgresql-17.11-linux-arm64.tar.gz",
+    "origin": "built",
+    "postgresql_version": "17.11",
+    "provenance": {
+      "build_id": "github-39514791700-1",
+      "build_inputs": {
+        "base_image": "ubuntu:22.04",
+        "base_image_digest": "sha256:0a9887931b0e38af2e3487ed39e29436b0535c4f3f52e57745baaf79d1898956",
+        "packages_sha256": "85d39ad768203ba1adad6c4c21223625a93cbff837b41767e2394e1358b60c3e"
+      },
+      "provider": "github-actions",
+      "repository": "BernieSumption/pg_binaries",
+      "run_attempt": 1,
+      "run_id": "39514791700",
+      "run_sha": "3570b6f765e9e8855c4cab049662cec154f00281",
+      "source_revision": "3570b6f765e9e8855c4cab049662cec154f00281",
+      "workflow_ref": "BernieSumption/pg_binaries/.github/workflows/selected-extension-publication.yml@refs/heads/spike"
+    },
+    "schema_version": 1,
+    "sha256": "73a9abf976cea9c8bd91e2eafcfb8059afee5e447d5a9d74dbc0b628270fcc0e"
+  },
+  "environment": {
+    "architecture": "arm64",
+    "clean_system": true,
+    "dependency_check_profile": "linux-elf-alpine-relocation-v1",
+    "dependency_checks_passed": true,
+    "distribution": "Alpine Linux 3.22",
+    "endpoint": "current",
+    "image_id": "sha256:e957699bc65ca0918b4a1967f17328f0504092e69b09f5cd326810d598e2ae73",
+    "os": "linux",
+    "os_version": "7.0.0"
+  },
+  "outcome": "passed",
+  "platform": "linux-arm64",
+  "postgresql_version": "17.11",
+  "prerequisite_archives": [],
+  "profile_id": "pg-jsonschema-publication-linux-arm64-17.11",
+  "profile_revision": "95748baecc1cb7afa8396d9e5ece4b068b525a3cc9b251a706a6de3d5bfc537d",
+  "project": "pg_jsonschema",
+  "redistribution_status": "postgresql-core-redistribution-review-pending",
+  "release_eligible": false,
+  "schema_version": 2,
+  "scope": "publication",
+  "sha256": "d53a82375c0bd7af41d3ccdd0948529f9752a5281b4206cece98ce3084a778ad",
+  "test_cases": [
+    "archive-suite",
+    "elf-closure"
+  ],
+  "test_revision": "3570b6f765e9e8855c4cab049662cec154f00281",
+  "version": "0.3.4"
+}
