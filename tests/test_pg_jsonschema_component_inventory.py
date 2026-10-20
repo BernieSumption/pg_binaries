@@ -1,4 +1,4 @@
-"""Tests for pg_jsonschema component inventories across Linux and macOS."""
+"""Tests for pg_jsonschema component inventories across supported platforms."""
 
 import io
 import json
@@ -65,6 +65,13 @@ class ComponentInventoryTests(unittest.TestCase):
     def test_accepts_macos_pg15_so(self):
         with tempfile.TemporaryDirectory() as directory:
             self.assertTrue(checker.validate(self._archive(directory, module="pg_jsonschema.so")))
+
+    def test_accepts_windows_dll_only_for_windows(self):
+        with tempfile.TemporaryDirectory() as directory:
+            self.assertTrue(checker.validate(self._archive(directory, module="pg_jsonschema.dll",
+                                                            platform="windows")))
+            with self.assertRaisesRegex(ValueError, "payload_paths"):
+                checker.validate(self._archive(directory, module="pg_jsonschema.dll", platform="macos"))
 
     def test_rejects_dylib_claimed_as_linux(self):
         with tempfile.TemporaryDirectory() as directory:

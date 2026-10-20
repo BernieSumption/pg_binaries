@@ -6,15 +6,10 @@ import json
 import tarfile
 from pathlib import Path, PurePosixPath
 
+from create_pg_jsonschema_component_inventory import REVIEWED_LICENSES
 
 INVENTORY = "pg_jsonschema/LICENSES/pg_jsonschema-inventory.json"
 CARGO_INVENTORY = "pg_jsonschema/LICENSES/cargo/cargo-license-inventory.json"
-REVIEWED_LICENSES = {
-    "(MIT OR Apache-2.0) AND Unicode-3.0", "Apache-2.0", "Apache-2.0 OR BSL-1.0",
-    "Apache-2.0 OR MIT", "Apache-2.0/MIT", "BSD-2-Clause OR Apache-2.0 OR MIT",
-    "MIT", "MIT OR Apache-2.0", "MIT-0", "MIT/Apache-2.0", "Unicode-3.0",
-    "Unlicense OR MIT", "Zlib",
-}
 
 
 def validate(archive_path, expected_inventory_path=None):
@@ -46,7 +41,7 @@ def validate(archive_path, expected_inventory_path=None):
         inventory = read_json(INVENTORY)
         metadata = read_json("metadata.json")
         platform = metadata.get("platform") if isinstance(metadata, dict) else None
-        if platform not in {"linux", "macos"}:
+        if platform not in {"linux", "macos", "windows"}:
             raise ValueError("pg_jsonschema archive has an unsupported platform")
         if expected_inventory_path is not None:
             expected = Path(expected_inventory_path).read_bytes()
@@ -63,10 +58,12 @@ def validate(archive_path, expected_inventory_path=None):
                 or component.get("version") != "0.3.4"):
             raise ValueError("component identity must be pg_jsonschema 0.3.4")
         payload_paths = component.get("payload_paths")
+        module_path = {"linux": "lib/pg_jsonschema.so",
+                       "macos": {"lib/pg_jsonschema.so", "lib/pg_jsonschema.dylib"},
+                       "windows": "lib/pg_jsonschema.dll"}[platform]
+        allowed_modules = module_path if isinstance(module_path, set) else {module_path}
         if (not isinstance(payload_paths, list) or len(payload_paths) != 2
-                or payload_paths[1] != "share/extension"
-                or payload_paths[0] not in ({"lib/pg_jsonschema.so"} if platform == "linux"
-                                            else {"lib/pg_jsonschema.so", "lib/pg_jsonschema.dylib"})):
+                or payload_paths[1] != "share/extension" or payload_paths[0] not in allowed_modules):
             raise ValueError("component payload_paths do not match a supported pg_jsonschema module")
         if not all(any(name == f"pg_jsonschema/{path}" or name.startswith(f"pg_jsonschema/{path}/")
                        for name in members) for path in payload_paths):

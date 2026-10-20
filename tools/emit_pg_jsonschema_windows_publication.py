@@ -11,6 +11,8 @@ import sys
 import tarfile
 
 import coverage
+import check_pg_jsonschema_component_inventory as component_inventory
+import inventory_cargo_licenses as cargo_licenses
 from windows_core_pin import load_identity, PG_VERSIONS
 import windows_core_target
 
@@ -172,6 +174,13 @@ def emit(root, core_dir, archives, output, step_results, os_version, image_id, e
     if digests[core_name] != core_identity["sha256"]:
         _fail("PostgreSQL core archive does not match the selected successful Windows build")
     _metadata(extension_archive, postgresql_version, core_identity)
+    try:
+        component_inventory.validate(extension_archive)
+        with tarfile.open(extension_archive, "r:gz") as archive:
+            cargo_licenses.check_packaged_notices(
+                archive, "pg_jsonschema/LICENSES/cargo/cargo-license-inventory.json")
+    except (OSError, tarfile.TarError, ValueError, KeyError, TypeError) as exc:
+        _fail(f"final redistribution inventories failed verification: {exc}")
     static_path, probe_path = output / "static-analysis.json", output / "probe-output.txt"
     reports = {name: sha256_file(path) for name, path in
                (("static_analysis", static_path), ("probe_output", probe_path),

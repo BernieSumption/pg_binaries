@@ -15,6 +15,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
 import check_pg_jsonschema_windows_archive as checker
 import emit_pg_jsonschema_windows_publication as publication
 import import_pg_jsonschema_windows_publication as importer
+import inventory_cargo_licenses as cargo_licenses
 import windows_core_target
 
 
@@ -77,17 +78,56 @@ class PgJsonschemaWindowsArchiveTests(unittest.TestCase):
             "core_status": publication.CORE_STATUS,
         }
         prefix = "../escape" if unsafe else "pg_jsonschema"
+        root_notice = b"MIT license\n"
+        seahash_evidence = cargo_licenses.SEAHASH_EVIDENCE
+        root_path = "cargo/pg_jsonschema-0.3.4/LICENSE"
+        seahash_path = "cargo/seahash-4.1.0/seahash-4.1.0-license-declaration.txt"
+        cargo_inventory = {
+            "schema_version": 1,
+            "packaging": {"redistribution_review": "pending"},
+            "packages": [{
+                "name": "pg_jsonschema", "version": "0.3.4", "license": None,
+                "dependency_roles": ["root", "shipped"],
+                "license_notice_files": [{"path": "LICENSE", "sha256": hashlib.sha256(root_notice).hexdigest()}],
+                "packaged_license_notice_files": [{"path": root_path,
+                    "sha256": hashlib.sha256(root_notice).hexdigest()}],
+            }, {
+                "name": "seahash", "version": "4.1.0", "license": "MIT",
+                "source": cargo_licenses.SEAHASH_IDENTITY["source"],
+                "repository": cargo_licenses.SEAHASH_IDENTITY["repository"],
+                "dependency_roles": ["shipped"], "license_notice_files": [],
+                "packaged_license_notice_files": [{"path": seahash_path,
+                    "sha256": cargo_licenses.SEAHASH_EVIDENCE_SHA256,
+                    "source_url": "https://docs.rs/crate/seahash/4.1.0/source/Cargo.toml.orig",
+                    "upstream_repository": cargo_licenses.SEAHASH_IDENTITY["repository"],
+                    "declared_license": "MIT"}],
+            }],
+        }
+        component_inventory = {"schema_version": 1, "components": [{
+            "component": "pg_jsonschema", "version": "0.3.4",
+            "payload_paths": ["lib/pg_jsonschema.dll", "share/extension"],
+            "license_file": "pg_jsonschema/LICENSE",
+            "additional_license_files": [root_path, seahash_path],
+            "redistribution_review": {"status": "resolved",
+                "basis": "Reviewed Apache-2.0 project terms and shipped Cargo notices.",
+                "source_obligation": "none"},
+        }]}
         entries = [
             ("metadata.json", json.dumps(metadata)),
             (f"{prefix}/lib/pg_jsonschema.dll", "MZ-test-binary"),
             ("pg_jsonschema/share/extension/pg_jsonschema.control", "default_version = '0.3.4'"),
             ("pg_jsonschema/share/extension/pg_jsonschema--0.3.4.sql", "SELECT 1;"),
             ("pg_jsonschema/LICENSES/", None),
-            ("pg_jsonschema/LICENSES/pg_jsonschema.txt", "MIT"),
+            ("pg_jsonschema/LICENSES/pg_jsonschema/LICENSE", "Apache-2.0"),
+            ("pg_jsonschema/LICENSES/cargo/pg_jsonschema-0.3.4/LICENSE", root_notice.decode()),
+            ("pg_jsonschema/LICENSES/cargo/seahash-4.1.0/seahash-4.1.0-license-declaration.txt",
+             seahash_evidence.decode()),
         ]
         if inventory:
-            entries.append(("pg_jsonschema/LICENSES/pg_jsonschema-cargo-license-inventory.json",
-                            '{"schema_version":1,"source_files":[],"packages":[{"name":"pg_jsonschema"}]}'))
+            entries.extend([
+                ("pg_jsonschema/LICENSES/cargo/cargo-license-inventory.json", json.dumps(cargo_inventory)),
+                ("pg_jsonschema/LICENSES/pg_jsonschema-inventory.json", json.dumps(component_inventory)),
+            ])
         self._tar(self.extension, entries)
         return core_hash
 
@@ -105,7 +145,8 @@ class PgJsonschemaWindowsArchiveTests(unittest.TestCase):
             report = checker.inspect(self.core, self.extension, self.root / "report.json", pe_report)
         self.assertTrue(report["passed"])
         self.assertEqual(report["native_extension_files"], ["pg_jsonschema/lib/pg_jsonschema.dll"])
-        self.assertIn("project-named-licence-inventory", report["checks"])
+        self.assertIn("resolved-component-redistribution-review", report["checks"])
+        self.assertIn("exact-shipped-cargo-notices", report["checks"])
         self.assertEqual(report["pe_dependency_analysis_sha256"], hashlib.sha256(pe_report.read_bytes()).hexdigest())
 
     def test_rejects_release_eligible_extension_metadata(self):
