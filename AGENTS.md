@@ -17,6 +17,8 @@ Use sub-agents, particularly cheap ones, for bounded research or execution tasks
 
 Use parallel subagents when work items are genuinely not interdependent. Use serial work when operating in parallel may cause some work to have to be re-done.
 
+For bounded extension onboarding, follow [the agent guide](docs/adding-an-extension.md).
+
 ## Prefer simple, pragmatic architecture
 
 At core we're trying to do something quite simple, the difficulty comes from the massive set of builds this project needs for all the PG versions, platforms, and extensions in the support matrix.
