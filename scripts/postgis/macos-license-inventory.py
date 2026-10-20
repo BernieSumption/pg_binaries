@@ -28,12 +28,12 @@ expected_formulae = {
     "zstd": ("1.5.7_1", "(BSD-3-Clause OR GPL-2.0-only) AND BSD-2-Clause AND MIT"),
 }
 proj_license_urls = {
-    "CC-BY-3.0": "https://raw.githubusercontent.com/spdx/license-list-data/v3.25/text/CC-BY-3.0.txt",
-    "CC-BY-4.0": "https://raw.githubusercontent.com/spdx/license-list-data/v3.25/text/CC-BY-4.0.txt",
-    "CC-BY-SA-3.0": "https://raw.githubusercontent.com/spdx/license-list-data/v3.25/text/CC-BY-SA-3.0.txt",
-    "CC-BY-SA-4.0": "https://raw.githubusercontent.com/spdx/license-list-data/v3.25/text/CC-BY-SA-4.0.txt",
-    "CC0-1.0": "https://raw.githubusercontent.com/spdx/license-list-data/v3.25/text/CC0-1.0.txt",
-    "BSD-2-Clause": "https://raw.githubusercontent.com/spdx/license-list-data/v3.25/text/BSD-2-Clause.txt",
+    "CC-BY-3.0": "https://raw.githubusercontent.com/spdx/license-list-data/v3.25.0/text/CC-BY-3.0.txt",
+    "CC-BY-4.0": "https://raw.githubusercontent.com/spdx/license-list-data/v3.25.0/text/CC-BY-4.0.txt",
+    "CC-BY-SA-3.0": "https://raw.githubusercontent.com/spdx/license-list-data/v3.25.0/text/CC-BY-SA-3.0.txt",
+    "CC-BY-SA-4.0": "https://raw.githubusercontent.com/spdx/license-list-data/v3.25.0/text/CC-BY-SA-4.0.txt",
+    "CC0-1.0": "https://raw.githubusercontent.com/spdx/license-list-data/v3.25.0/text/CC0-1.0.txt",
+    "BSD-2-Clause": "https://raw.githubusercontent.com/spdx/license-list-data/v3.25.0/text/BSD-2-Clause.txt",
     "OGL-Canada-2.0": "https://open.canada.ca/en/open-government-licence-canada",
     "Data licence Germany - attribution - version 2.0": "https://www.govdata.de/dl-de/by-2-0",
 }
