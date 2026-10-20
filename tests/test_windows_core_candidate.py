@@ -109,7 +109,7 @@ class WindowsCoreCandidateTests(unittest.TestCase):
             "head_repository": {"full_name": "owner/repo"},
             "head_branch": "spike", "event": "workflow_dispatch",
             "status": "completed", "conclusion": "success",
-            "path": ".github/workflows/postgresql-windows-selected-publication.yml",
+            "path": ".github/workflows/selected-extension-publication.yml",
             "head_sha": self.revision,
         }
         from types import SimpleNamespace
@@ -129,6 +129,23 @@ class WindowsCoreCandidateTests(unittest.TestCase):
         self.assertEqual(checked_run["head_sha"], self.revision)
         self.assertEqual(attempt, str(self.attempt))
         self.assertEqual(Path(archive).read_bytes(), self.archive.read_bytes())
+
+    def test_dispatcher_path_is_not_accepted_for_nonselected_pin(self):
+        run = {
+            "id": self.run_id, "run_attempt": self.attempt,
+            "repository": {"full_name": "owner/repo"},
+            "head_repository": {"full_name": "owner/repo"},
+            "head_branch": "spike", "event": "workflow_dispatch",
+            "status": "completed", "conclusion": "success",
+            "path": ".github/workflows/selected-extension-publication.yml",
+            "head_sha": self.revision,
+        }
+        pilot = dict(self.pin, workflow="windows-pilot.yml")
+        with patch.object(candidate, "_run_json", return_value=run), \
+             patch.object(candidate.subprocess, "run") as download:
+            with self.assertRaisesRegex(ValueError, "builder run"):
+                candidate._download_pin(pilot, self.output, "owner/repo", "spike", "999")
+        download.assert_not_called()
 
     def test_pinned_run_identity_mismatch_is_rejected(self):
         from types import SimpleNamespace

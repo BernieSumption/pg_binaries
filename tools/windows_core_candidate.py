@@ -61,6 +61,11 @@ def _download_pin(pin, output_directory, repository, branch, current_run_id):
     head_repository = run.get("head_repository") if isinstance(run, dict) else None
     source_repository = run.get("repository") if isinstance(run, dict) else None
     attempt = run.get("run_attempt") if isinstance(run, dict) else None
+    run_workflow = str(run.get("path", "")).split("@", 1)[0].rsplit("/", 1)[-1] \
+        if isinstance(run, dict) else ""
+    workflow_matches = (run_workflow == expected_workflow or
+                        (expected_workflow == "postgresql-windows-selected-publication.yml"
+                         and run_workflow == "selected-extension-publication.yml"))
     valid = (isinstance(run, dict) and isinstance(source_repository, dict)
              and isinstance(head_repository, dict)
              and str(source_repository.get("full_name", "")).casefold() == repository.casefold()
@@ -70,7 +75,7 @@ def _download_pin(pin, output_directory, repository, branch, current_run_id):
              and run.get("head_branch") == branch
              and run.get("event") in {"push", "workflow_dispatch"}
              and run.get("status") == "completed" and run.get("conclusion") == "success"
-             and str(run.get("path", "")).rsplit("/", 1)[-1] == expected_workflow
+             and workflow_matches
              and run.get("head_sha") and re.fullmatch(r"[0-9a-f]{40}", run["head_sha"]) is not None
              and str(pin["run_id"]) != str(current_run_id))
     if not valid:
