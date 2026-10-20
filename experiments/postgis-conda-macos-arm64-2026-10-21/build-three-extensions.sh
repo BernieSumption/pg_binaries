@@ -30,7 +30,7 @@ mkdir -p "$output"
 output=$(cd "$output" && pwd)
 [[ $(uname -s) == Darwin && $(uname -m) == arm64 ]] || { echo "Build requires native macOS arm64" >&2; exit 1; }
 for tool in curl make python3; do command -v "$tool" >/dev/null || { echo "Missing runner tool: $tool" >&2; exit 1; }; done
-for tool in geos-config gdal-config xml2-config protoc-c; do test -x "$conda_prefix/bin/$tool" || { echo "Missing conda tool: $tool" >&2; exit 1; }; done
+for tool in geos-config gdal-config xml2-config; do test -x "$conda_prefix/bin/$tool" || { echo "Missing conda tool: $tool" >&2; exit 1; }; done
 
 core_archive="$core_archives/$core_name"
 test -s "$core_archive" && (cd "$core_archives" && shasum -a 256 -c "$core_name.sha256")
@@ -66,7 +66,7 @@ cd postgis-3.6.4
   --with-gdalconfig="$conda_prefix/bin/gdal-config" \
   --with-geosconfig="$conda_prefix/bin/geos-config" \
   --with-projdir="$conda_prefix" --with-jsondir="$conda_prefix" \
-  --with-xml2config="$conda_prefix/bin/xml2-config" --without-sfcgal \
+  --with-xml2config="$conda_prefix/bin/xml2-config" --without-sfcgal --without-protobuf \
   2>&1 | tee "$output/configure.log"
 make -j"$(sysctl -n hw.ncpu)" 2>&1 | tee "$output/build.log"
 make install 2>&1 | tee "$output/install.log"

@@ -124,7 +124,7 @@ jobs:
       - name: Resolve conda-forge spatial and PostGIS build dependencies
         run: |
           micromamba create --yes --prefix "$RUNNER_TEMP/postgis-conda-arm64-env" --channel conda-forge \
-            geos proj gdal json-c libxml2 protobuf-c pcre2 pkg-config
+            geos proj gdal json-c libxml2 pcre2 pkg-config
       - name: Resolve selected PostgreSQL 18.6 macOS arm64 core
         env:
           GH_TOKEN: ${{ github.token }}
