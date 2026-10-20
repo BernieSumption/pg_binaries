@@ -1,6 +1,7 @@
 param(
   [Parameter(Mandatory = $true)][string]$CoreArchive,
   [Parameter(Mandatory = $true)][string]$ExtensionArchive,
+  [ValidateSet('15.19','16.15','17.11','18.6')][string]$PostgreSQLVersion = '18.6',
   [string]$ReportPath,
   [string]$ProbePath
 )
@@ -16,17 +17,17 @@ $python = (Get-Command python.exe -ErrorAction Stop).Source
 $CoreArchive = (Resolve-Path $CoreArchive).Path
 $ExtensionArchive = (Resolve-Path $ExtensionArchive).Path
 
-$pgVersion = '18.6'
+$pgVersion = $PostgreSQLVersion
 $version = '1.6.8'
 $architecture = 'x86_64'
 $coreIdentity = (& $python (Join-Path $repo 'tools/windows_core_pin.py') --postgresql-version $pgVersion | ConvertFrom-Json)
-if ($LASTEXITCODE -ne 0 -or -not $coreIdentity) { throw 'Cannot load the pinned PostgreSQL 18.6 Windows core identity.' }
+if ($LASTEXITCODE -ne 0 -or -not $coreIdentity) { throw "Cannot load the pinned PostgreSQL $pgVersion Windows core identity." }
 $coreName = $coreIdentity.archive_name
 $extensionName = "pg_cron-$version-postgresql-$pgVersion-windows-$architecture.tar.gz"
 $coreArchive = $CoreArchive
 $extensionArchive = $ExtensionArchive
 if ([IO.Path]::GetFileName($coreArchive) -cne $coreName -or [IO.Path]::GetFileName($extensionArchive) -cne $extensionName) {
-  throw 'Archive filenames do not match PostgreSQL 18.6 and pg_cron 1.6.8 Windows identities.'
+  throw "Archive filenames do not match PostgreSQL $pgVersion and pg_cron 1.6.8 Windows identities."
 }
 foreach ($archive in @($coreArchive, $extensionArchive)) {
   if (-not (Test-Path $archive -PathType Leaf) -or -not (Test-Path "$archive.sha256" -PathType Leaf)) {
@@ -39,7 +40,7 @@ foreach ($archive in @($coreArchive, $extensionArchive)) {
   if ($actual -cne $sidecar[0].ToLowerInvariant()) { throw "SHA-256 sidecar mismatch: $([IO.Path]::GetFileName($archive))" }
 }
 $coreHash = (Get-FileHash $coreArchive -Algorithm SHA256).Hash.ToLowerInvariant()
-if ($coreHash -cne $coreIdentity.sha256) { throw 'Core archive differs from the pinned PostgreSQL 18.6 artifact.' }
+if ($coreHash -cne $coreIdentity.sha256) { throw "Core archive differs from the pinned PostgreSQL $pgVersion artifact." }
 
 $work = Join-Path $env:RUNNER_TEMP ("pgcron-windows-verify-" + [guid]::NewGuid().ToString('N'))
 $first = Join-Path $work 'first'

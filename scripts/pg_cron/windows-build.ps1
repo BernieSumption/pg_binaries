@@ -4,6 +4,7 @@ param(
   [Parameter(Mandatory = $true)][string]$CoreSymbolsDirectory,
   [Parameter(Mandatory = $true)][string]$SourceArchive,
   [Parameter(Mandatory = $true)][string]$OutputDirectory,
+  [ValidateSet('15.19','16.15','17.11','18.6')][string]$PostgreSQLVersion = '18.6',
   [string]$BuildId = $env:BUILD_ID,
   [string]$SourceRevision = $env:SOURCE_REVISION
 )
@@ -27,7 +28,7 @@ if ($SourceRevision -notmatch '^([0-9a-fA-F]{40}|[0-9a-fA-F]{64})$') { throw 'So
 
 $python = (Get-Command python.exe -ErrorAction Stop).Source
 $tar = (Get-Command tar.exe -ErrorAction Stop).Source
-$pgVersion = '18.6'
+$pgVersion = $PostgreSQLVersion
 $cronVersion = '1.6.8'
 $sourceUrl = 'https://github.com/citusdata/pg_cron/archive/refs/tags/v1.6.8.tar.gz'
 $sourceShaExpected = 'c19ab9bb35406c60fb51ecda993737c083850abe424acb6c1030439d00a1f8e4'
@@ -38,9 +39,9 @@ $coreSidecar = (Get-Content "$coreArchive.sha256" -Raw).Trim() -split '\s+'
 if ($coreSidecar.Count -lt 2 -or $coreSidecar[-1] -cne $coreName) { throw 'Selected core archive SHA-256 sidecar is invalid.' }
 $coreSha = (Get-FileHash $coreArchive -Algorithm SHA256).Hash.ToLowerInvariant()
 if ($coreSidecar[0] -notmatch '^[0-9a-fA-F]{64}$' -or $coreSha -cne $coreSidecar[0].ToLowerInvariant()) { throw 'Selected core archive SHA-256 sidecar mismatch.' }
-$pinnedCoreSha = (& $python (Join-Path $repo 'tools/windows_core_pin.py') --field sha256).Trim()
+$pinnedCoreSha = (& $python (Join-Path $repo 'tools/windows_core_pin.py') --postgresql-version $pgVersion --field sha256).Trim()
 if ($LASTEXITCODE -ne 0 -or $pinnedCoreSha -cne $CoreSha256.ToLowerInvariant() -or $coreSha -cne $pinnedCoreSha) {
-  throw 'Core archive does not match the checked PostgreSQL 18.6 Windows core identity.'
+  throw "Core archive does not match the checked PostgreSQL $pgVersion Windows core identity."
 }
 $sourceSha = (Get-FileHash $sourceArchive -Algorithm SHA256).Hash.ToLowerInvariant()
 if ($sourceSha -cne $sourceShaExpected) { throw 'Source archive does not match the pg_cron 1.6.8 release identity.' }
@@ -120,7 +121,7 @@ try {
     postgresql_version = $pgVersion; platform = 'windows'; architecture = 'x86_64'
     source = [ordered]@{ url = $sourceUrl; sha256 = $sourceSha }
     core_archive = [ordered]@{ basename = $coreName; sha256 = $coreSha }
-    build_configuration = 'pg_cron-1.6.8;postgresql-core=18.6;builder=windows-runner;compiler=MSVC;debug-symbols=CodeView'
+    build_configuration = "pg_cron-1.6.8;postgresql-core=$pgVersion;builder=windows-runner;compiler=MSVC;debug-symbols=CodeView"
   }
   $packageRoot = Join-Path $work 'archive'
   New-Item -ItemType Directory -Force $packageRoot | Out-Null

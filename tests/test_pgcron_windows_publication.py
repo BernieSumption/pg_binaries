@@ -16,9 +16,10 @@ import import_pgcron_windows_publication as importer
 
 
 class Fixture:
-    def __init__(self):
+    def __init__(self, pg_version="18.6"):
         self.temp = tempfile.TemporaryDirectory()
         self.base = Path(self.temp.name)
+        self.pg_version = pg_version
         self.root = self.base / "repo"
         self.archives = self.base / "archives"
         self.output = self.base / "output"
@@ -33,22 +34,22 @@ class Fixture:
             "tools/emit_pgcron_windows_publication.py",
             "tools/import_pgcron_windows_publication.py", "tools/stage_windows_core_symbols.py",
             "tools/windows_core_pin.py",
-            "support/windows-core-pins/18.6-x86_64.json",
+            f"support/windows-core-pins/{pg_version}-x86_64.json",
         ]
         for relative in self.sources:
             source, destination = ROOT / relative, self.root / relative
             destination.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(source, destination)
         registry = json.loads((ROOT / "support/verification-profiles.json").read_text())
-        registry["profiles"][emitter.PROFILE_ID] = {
+        registry["profiles"][emitter.PROFILE_ID.format(pg_version)] = {
             "scope": "publication", "platforms": ["windows-x86_64"],
             "case_ids": emitter.CASES, "sources": sorted(self.sources),
         }
         (self.root / "support").mkdir(exist_ok=True)
         (self.root / "support/verification-profiles.json").write_text(json.dumps(registry))
         (self.root / "support/verification").mkdir()
-        self.core_name = "postgresql-18.6-windows-x86_64.tar.gz"
-        self.extension_name = "pg_cron-1.6.8-postgresql-18.6-windows-x86_64.tar.gz"
+        self.core_name = f"postgresql-{pg_version}-windows-x86_64.tar.gz"
+        self.extension_name = f"pg_cron-1.6.8-postgresql-{pg_version}-windows-x86_64.tar.gz"
         self.core = self.archives / self.core_name
         self.extension = self.archives / self.extension_name
         self._write_archives()
@@ -81,7 +82,7 @@ class Fixture:
         core = self.base / "core"
         (core / "postgresql").mkdir(parents=True)
         (core / "postgresql/manifest.json").write_text(json.dumps({
-            "component": "postgresql", "version": "18.6", "platform": "windows",
+            "component": "postgresql", "version": self.pg_version, "platform": "windows",
             "architecture": "x86_64", "build_id": "github-11111111111-1",
             "source_revision": "b" * 40,
         }))
@@ -89,7 +90,7 @@ class Fixture:
             archive.add(core / "postgresql/manifest.json", arcname="postgresql/manifest.json")
         metadata = self.base / "metadata.json"
         metadata.write_text(json.dumps({
-            "project": "pg_cron", "version": "1.6.8", "postgresql_version": "18.6",
+            "project": "pg_cron", "version": "1.6.8", "postgresql_version": self.pg_version,
             "platform": "windows", "architecture": "x86_64",
             "build_id": "github-22222222222-2", "source_revision": "c" * 40,
             "core_archive": {"basename": self.core_name, "sha256": self.digest(self.core)},
@@ -103,7 +104,7 @@ class Fixture:
                              "symbols": self.output / "debug-symbols/index.json",
                              "archive-suite": self.output / "probe-output.txt"},
                             step_results or self.results, "a" * 40, "10.0.20348.2402",
-                            "windows-2022-image", environ=self.environ)
+                            "windows-2022-image", environ=self.environ, pg_version=self.pg_version)
 
     def close(self):
         self.temp.cleanup()
@@ -140,6 +141,19 @@ class PgCronWindowsPublicationTests(unittest.TestCase):
                                        self.fixture.output, "12345678901")
         self.assertTrue(any(path.endswith("publication-attempt.json") for path in retained))
         self.assertEqual(list((self.fixture.root / "support/verification").glob("*.json")), [])
+
+    def test_all_checked_postgresql_versions_use_distinct_archive_identities(self):
+        for pg_version in emitter.PG_VERSIONS:
+            fixture = Fixture(pg_version)
+            try:
+                fixture.emit()
+                record = next(fixture.output.glob("pg_cron-*-current-*.json"))
+                value = json.loads(record.read_text())
+                self.assertEqual(value["postgresql_version"], pg_version)
+                self.assertEqual(value["assembled_core"]["archive"],
+                                 f"postgresql-{pg_version}-windows-x86_64.tar.gz")
+            finally:
+                fixture.close()
 
 
 if __name__ == "__main__":

@@ -14,9 +14,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import coverage
 
 
-PROFILE_ID = "pgcron-publication-windows-x86_64-18.6"
+PROFILE_ID = "pgcron-publication-windows-x86_64-{}"
 CASES = ["archive-suite", "static-analysis", "symbols"]
-PG_VERSION = "18.6"
+PG_VERSIONS = ("15.19", "16.15", "17.11", "18.6")
 VERSION = "1.6.8"
 
 
@@ -71,7 +71,7 @@ def _report(path, expected, label, passed_key="outcome"):
 
 
 def emit(root, archives, output, reports, step_results, revision, os_version, image_id,
-         environ=None):
+         environ=None, pg_version="18.6"):
     root, archives, output = map(Path, (root, archives, output))
     environ = os.environ if environ is None else environ
     if not re.fullmatch(r"[0-9a-fA-F]{40}|[0-9a-fA-F]{64}", revision):
@@ -82,20 +82,23 @@ def emit(root, archives, output, reports, step_results, revision, os_version, im
     repository, server = environ.get("GITHUB_REPOSITORY", ""), environ.get("GITHUB_SERVER_URL", "")
     if not run_id.isdigit() or not repository or not server:
         raise coverage.CoverageError("GitHub Actions run provenance is required")
-    profile = coverage.verification_profile(root, PROFILE_ID)
+    if pg_version not in PG_VERSIONS:
+        raise coverage.CoverageError("unsupported Windows pg_cron PostgreSQL target")
+    profile_id = PROFILE_ID.format(pg_version)
+    profile = coverage.verification_profile(root, profile_id)
     if (profile["scope"] != "publication" or profile["platforms"] != ["windows-x86_64"]
             or profile["case_ids"] != CASES or not profile["sources_available"]):
         raise coverage.CoverageError("registered profile does not match the Windows pg_cron suite")
     if set(step_results) != set(CASES) or any(v not in {"passed", "failed", "skipped"} for v in step_results.values()):
         raise coverage.CoverageError("step results must identify every profile case")
 
-    core_name = f"postgresql-{PG_VERSION}-windows-x86_64.tar.gz"
-    extension_name = f"pg_cron-{VERSION}-postgresql-{PG_VERSION}-windows-x86_64.tar.gz"
+    core_name = f"postgresql-{pg_version}-windows-x86_64.tar.gz"
+    extension_name = f"pg_cron-{VERSION}-postgresql-{pg_version}-windows-x86_64.tar.gz"
     names = [core_name, extension_name]
     paths = [archives / name for name in names]
     output.mkdir(parents=True, exist_ok=True)
     attempt = {"schema_version": 1, "run_id": run_id, "source_revision": revision,
-               "profile_id": PROFILE_ID, "steps": step_results,
+               "profile_id": profile_id, "postgresql_version": pg_version, "steps": step_results,
                "archives_present": {p.name: p.is_file() for p in paths}}
     attempt_path = output / "publication-attempt.json"
     attempt_path.write_text(json.dumps(attempt, indent=2, sort_keys=True) + "\n", encoding="utf-8")
@@ -106,10 +109,10 @@ def emit(root, archives, output, reports, step_results, revision, os_version, im
         _sidecar(path, digests[path.name])
     core = _archive_json(paths[0], "postgresql/manifest.json")
     extension = _archive_json(paths[1], "metadata.json")
-    if (core.get("component") != "postgresql" or core.get("version") != PG_VERSION
+    if (core.get("component") != "postgresql" or core.get("version") != pg_version
             or core.get("platform") != "windows" or core.get("architecture") != "x86_64"
             or extension.get("project") != "pg_cron" or extension.get("version") != VERSION
-            or extension.get("postgresql_version") != PG_VERSION
+            or extension.get("postgresql_version") != pg_version
             or extension.get("platform") != "windows" or extension.get("architecture") != "x86_64"
             or extension.get("core_archive") != {"basename": core_name, "sha256": digests[core_name]}):
         raise coverage.CoverageError("archive metadata does not match the selected pg_cron target")
@@ -141,13 +144,13 @@ def emit(root, archives, output, reports, step_results, revision, os_version, im
           "source_revision": build_revision, "build_revision": build_revision,
           "test_revision": revision, "build_run_id": build_identity.group(1),
           "build_run_attempt": build_identity.group(2)}
-    record = {"schema_version": 2, "scope": "publication", "profile_id": PROFILE_ID,
+    record = {"schema_version": 2, "scope": "publication", "profile_id": profile_id,
               "profile_revision": profile["profile_revision"], "test_cases": CASES,
               "case_results": step_results, "test_revision": revision, "ci": ci,
               "outcome": outcome, "sha256": digests[extension_name],
               "component": "pg_cron", "project": "pg_cron", "version": VERSION,
-              "platform": "windows-x86_64", "postgresql_version": PG_VERSION,
-              "assembled_core": {"archive": core_name, "sha256": digests[core_name], "version": PG_VERSION},
+              "platform": "windows-x86_64", "postgresql_version": pg_version,
+              "assembled_core": {"archive": core_name, "sha256": digests[core_name], "version": pg_version},
               "prerequisite_archives": [],
               "environment": {"os": "windows", "os_version": os_version,
                               "architecture": "x86_64", "clean_system": True,
@@ -157,7 +160,7 @@ def emit(root, archives, output, reports, step_results, revision, os_version, im
     coverage.validate_verification_record(record, coverage.load_json(root / "support.json"), root)
     record_path = output / f"{extension_name[:-7]}-current-{run_id}.json"
     record_path.write_text(json.dumps(record, indent=2, sort_keys=True) + "\n", encoding="utf-8")
-    receipt = {"schema_version": 1, "profile_id": PROFILE_ID,
+    receipt = {"schema_version": 1, "profile_id": profile_id,
                "profile_revision": profile["profile_revision"], "archives": digests,
                "case_results": step_results, "ci": ci,
                "reports": {key: sha256_file(value) for key, value in reports.items() if Path(value).is_file()}}
@@ -175,6 +178,7 @@ def main():
     parser.add_argument("--revision", required=True)
     parser.add_argument("--os-version", required=True)
     parser.add_argument("--image-id", required=True)
+    parser.add_argument("--postgresql-version", choices=PG_VERSIONS, default="18.6")
     parser.add_argument("--step-results", type=Path, required=True)
     args = parser.parse_args()
     try:
@@ -183,7 +187,8 @@ def main():
                    "symbols": args.reports / "debug-symbols/index.json",
                    "archive-suite": args.reports / "probe-output.txt"}
         for path in emit(args.root, args.archives, args.output, reports, results,
-                         args.revision, args.os_version, args.image_id):
+                         args.revision, args.os_version, args.image_id,
+                         pg_version=args.postgresql_version):
             print(path)
         return 0
     except (coverage.CoverageError, OSError, ValueError, TypeError, KeyError) as exc:

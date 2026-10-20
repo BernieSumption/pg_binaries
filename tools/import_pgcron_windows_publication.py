@@ -44,10 +44,14 @@ def import_run(root, archives, evidence, run_id):
     run_id = str(run_id)
     if not run_id.isdigit():
         raise coverage.CoverageError("run ID must be numeric")
-    profile = coverage.verification_profile(root, publication.PROFILE_ID)
     attempt_path = evidence / "publication-attempt.json"
     attempt = _json(attempt_path)
-    if (str(attempt.get("run_id")) != run_id or attempt.get("profile_id") != publication.PROFILE_ID
+    pg_version = str(attempt.get("postgresql_version", "18.6"))
+    if pg_version not in publication.PG_VERSIONS:
+        raise coverage.CoverageError("unsupported Windows pg_cron PostgreSQL target")
+    profile_id = publication.PROFILE_ID.format(pg_version)
+    profile = coverage.verification_profile(root, profile_id)
+    if (str(attempt.get("run_id")) != run_id or attempt.get("profile_id") != profile_id
             or not re.fullmatch(r"[0-9a-fA-F]{40}|[0-9a-fA-F]{64}", str(attempt.get("source_revision", "")))
             or not isinstance(attempt.get("steps"), dict)
             or set(attempt["steps"]) != set(publication.CASES)
@@ -55,8 +59,8 @@ def import_run(root, archives, evidence, run_id):
         raise coverage.CoverageError("attempt identity or test cases do not match this run")
     retained = root / "support/evidence" / f"pgcron-windows-publication-{run_id}"
     copies = [(attempt_path, retained / attempt_path.name)]
-    names = [f"postgresql-{publication.PG_VERSION}-windows-x86_64.tar.gz",
-             f"pg_cron-{publication.VERSION}-postgresql-{publication.PG_VERSION}-windows-x86_64.tar.gz"]
+    names = [f"postgresql-{pg_version}-windows-x86_64.tar.gz",
+             f"pg_cron-{publication.VERSION}-postgresql-{pg_version}-windows-x86_64.tar.gz"]
     paths = [archives / name for name in names]
     if not all(path.is_file() for path in paths):
         _retain(copies)
@@ -69,11 +73,12 @@ def import_run(root, archives, evidence, run_id):
     record_path = evidence / f"{names[1][:-7]}-current-{run_id}.json"
     receipt, record = _json(receipt_path), _json(record_path)
     if (attempt.get("archives") != digests or receipt.get("archives") != digests
-            or receipt.get("profile_id") != publication.PROFILE_ID
+            or receipt.get("profile_id") != profile_id
             or receipt.get("profile_revision") != profile["profile_revision"]
             or record.get("sha256") != digests[names[1]]
-            or record.get("assembled_core") != {"archive": names[0], "sha256": digests[names[0]], "version": publication.PG_VERSION}
-            or record.get("profile_id") != publication.PROFILE_ID
+            or record.get("assembled_core") != {"archive": names[0], "sha256": digests[names[0]], "version": pg_version}
+            or record.get("postgresql_version") != pg_version
+            or record.get("profile_id") != profile_id
             or record.get("profile_revision") != profile["profile_revision"]
             or record.get("test_revision") != attempt["source_revision"]
             or record.get("case_results") != attempt["steps"]):

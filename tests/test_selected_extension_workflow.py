@@ -87,6 +87,15 @@ class SelectedExtensionWorkflowTests(unittest.TestCase):
             self.assertIn(f'("Address Standardizer", "{platform}"): "address-standardizer-linux"', DISPATCHER)
         self.assertIn("uses: ./.github/workflows/address-standardizer-linux-selected-publication.yml", DISPATCHER)
 
+    def test_pgcron_windows_routes_selected_postgresql_version(self):
+        workflow = (ROOT / ".github/workflows/pgcron-windows-selected-publication.yml").read_text()
+        self.assertIn('("pg_cron", "windows-x86_64"): "pgcron-windows"', DISPATCHER)
+        self.assertIn("uses: ./.github/workflows/pgcron-windows-selected-publication.yml", DISPATCHER)
+        self.assertIn("postgresql_version: ${{ needs.plan.outputs.postgresql_version }}", DISPATCHER)
+        self.assertIn("extension_version: ${{ needs.plan.outputs.extension_version }}", DISPATCHER)
+        self.assertIn("workflow_call:", workflow)
+        self.assertIn("options: ['15.19', '16.15', '17.11', '18.6']", workflow)
+
 
 if __name__ == "__main__":
     unittest.main()
