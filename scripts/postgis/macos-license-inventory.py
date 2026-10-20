@@ -47,6 +47,25 @@ def formula_url(name, source, formula):
     return f"https://github.com/Homebrew/homebrew-core/blob/{source['tap_git_head']}/{formula_path(name, source, formula)}"
 
 
+def proj_data_source(formula, source):
+    for resource in formula.get("resources", []):
+        identity = (resource.get("name", "") + resource.get("url", "")).lower()
+        if "proj-data" in identity:
+            return resource.get("url"), resource.get("checksum")
+    path = formula_path("proj", source, formula)
+    url = f"https://raw.githubusercontent.com/Homebrew/homebrew-core/{source['tap_git_head']}/{path}"
+    with urlopen(url, timeout=30) as response:
+        content = response.read().decode("utf-8")
+    for match in re.finditer(r"^\s{2}resource\s+['\"](?P<name>[^'\"]+)['\"]\s+do(?P<body>.*?)(?=^\s{2}end\s*$)", content, re.M | re.S):
+        body = match.group("body")
+        source_url = re.search(r"^\s{4}url\s+['\"]([^'\"]+)['\"]", body, re.M)
+        source_sha = re.search(r"^\s{4}sha256\s+['\"]([0-9a-f]{64})['\"]", body, re.M)
+        if "proj-data" in (match.group("name") + (source_url.group(1) if source_url else "")).lower():
+            return (source_url.group(1) if source_url else None,
+                    source_sha.group(1) if source_sha else None)
+    return None, None
+
+
 def formula_package_version(formula):
     stable = formula.get("versions", {}).get("stable")
     revision = formula.get("revision", 0)
@@ -81,6 +100,16 @@ if sys.argv[1:] == ["--preflight"]:
                  or path.name.lower().startswith(("copying.", "license.")))
             and len(path.relative_to(prefix).parts) <= 6]
         print(f"{name} {version}: {'notice text found' if candidates else 'no notice text; declaration evidence required'}")
+        if name == "proj":
+            data_url, data_sha = proj_data_source(formula, source)
+            if not data_url or not re.fullmatch(r"[0-9a-f]{64}", data_sha or ""):
+                raise SystemExit("receipt-pinned PROJ formula does not identify a checksum-pinned PROJ-data source")
+            urls.append(("proj-data", data_url))
+            data_dir = prefix / "share/proj"
+            for filename in ("README.DATA", "copyright_and_licenses.csv", "proj.db"):
+                if not (data_dir / filename).is_file():
+                    raise SystemExit(f"installed PROJ data is missing {filename}")
+            print(f"PROJ datum grids: checksum-pinned source metadata found ({data_sha})")
     def check_formula_url(item):
         name, url = item
         request = Request(url, method="HEAD", headers={"User-Agent": "pg_binaries-licence-preflight"})
@@ -253,12 +282,8 @@ proj_license = next((Path(command("brew", "--prefix", "proj").strip()) / name
 if proj_license is None:
     raise SystemExit("PROJ licence text is missing")
 proj_formula = formula_data.get("proj", {})
-proj_resource = next((resource for resource in proj_formula.get("resources", [])
-                      if "proj-data" in (resource.get("name", "").lower()
-                                          + resource.get("url", "").lower())), None)
-if proj_resource is None:
-    raise SystemExit("Homebrew PROJ metadata does not identify its installed datum-grid source")
-resource_url, resource_sha = proj_resource.get("url"), proj_resource.get("checksum")
+proj_source_receipt = json.loads((Path(command("brew", "--prefix", "proj").strip()).resolve() / "INSTALL_RECEIPT.json").read_text()).get("source", {})
+resource_url, resource_sha = proj_data_source(proj_formula, proj_source_receipt)
 if not resource_url or not re.fullmatch(r"[0-9a-f]{64}", resource_sha or ""):
     raise SystemExit("PROJ-data source URL or checksum is missing")
 proj_data_dir = Path(command("brew", "--prefix", "proj").strip()) / "share/proj"
