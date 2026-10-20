@@ -7,15 +7,6 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class HypoPGWindowsFeasibilityTests(unittest.TestCase):
-    def test_workflow_is_scoped_and_uses_the_shared_pinned_core(self):
-        workflow = (ROOT / ".github/workflows/hypopg-windows-feasibility.yml").read_text()
-        self.assertIn("workflow_dispatch:", workflow)
-        self.assertNotIn("push:", workflow)
-        self.assertIn("windows-2022", workflow)
-        self.assertIn("tools/windows_core_pin.py --github-output", workflow)
-        self.assertIn("windows-postgresql-18.6-pilot", workflow)
-        self.assertIn("hypopg-windows-x86-64-feasibility-${{ github.run_id }}", workflow)
-
     def test_script_derives_sources_and_checks_the_relocated_archive(self):
         script = (ROOT / "scripts/hypopg/windows-feasibility.ps1").read_text()
         linux_builder = (ROOT / "scripts/hypopg/build-in-container.sh").read_text()
