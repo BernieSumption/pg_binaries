@@ -40,9 +40,15 @@ class MacOSCoreResolverTests(unittest.TestCase):
             text=True, capture_output=True,
         )
 
-    def test_accepts_workflow_run_path_with_ref_suffix(self):
+    def test_accepts_pinned_core_workflow_path_with_ref_suffix(self):
         result = self.run_check(
             ".github/workflows/postgresql-macos-selected-publication.yml@refs/heads/spike"
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_accepts_selected_extension_dispatcher_for_pinned_postgresql_core(self):
+        result = self.run_check(
+            ".github/workflows/selected-extension-publication.yml@refs/heads/spike"
         )
         self.assertEqual(result.returncode, 0, result.stderr)
 

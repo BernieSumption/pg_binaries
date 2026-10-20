@@ -118,6 +118,10 @@ if architecture == "arm64":
     allowed.add("pgtap-macos-arm64-selected-publication.yml")
 repo = run.get("repository") if isinstance(run, dict) else None
 head_repo = run.get("head_repository") if isinstance(run, dict) else None
+run_workflow = str(run.get("path", "")).split("@", 1)[0].rsplit("/", 1)[-1]
+workflow_matches = (run_workflow == workflow or
+                    (workflow == "postgresql-macos-selected-publication.yml" and
+                     run_workflow == "selected-extension-publication.yml"))
 valid = (workflow in allowed
          and isinstance(repo, dict) and str(repo.get("full_name", "")).casefold() == repository.casefold()
          and isinstance(head_repo, dict) and str(head_repo.get("full_name", "")).casefold() == repository.casefold()
@@ -126,7 +130,7 @@ valid = (workflow in allowed
          and run.get("run_attempt") == int(attempt)
          and run.get("head_branch") == branch and run.get("event") in {"push", "workflow_dispatch"}
          and run.get("status") == "completed" and run.get("conclusion") == "success"
-         and str(run.get("path", "")).split("@", 1)[0].rsplit("/", 1)[-1] == workflow
+         and workflow_matches
          and run.get("head_sha") == revision and re.fullmatch(r"[0-9a-f]{40}", revision) is not None)
 if not valid:
     raise SystemExit("pinned macOS core builder run does not match its archive")
