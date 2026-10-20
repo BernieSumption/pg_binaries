@@ -43,6 +43,20 @@ test "$("$pg_config" --version)" = 'PostgreSQL 18.6'
 export MACOSX_DEPLOYMENT_TARGET=11.0
 brew_prefix=$(brew --prefix)
 for formula in geos proj sfcgal json-c libxml2 protobuf-c pcre2; do brew --prefix "$formula" >/dev/null; done
+core_xml="$pgroot/lib/libxml2.16.dylib"
+[[ -f "$core_xml" ]] || { echo 'checked core lacks libxml2 2.15.4' >&2; exit 1; }
+[[ "$("$(brew --prefix libxml2)/bin/xml2-config" --version)" == 2.15.4 ]] || { echo 'Homebrew libxml2 headers do not match checked core 2.15.4' >&2; exit 1; }
+xml2_config="$work/xml2-config"
+cat > "$xml2_config" <<EOF
+#!/usr/bin/env bash
+case "\${1:-}" in
+  --cflags) exec "$(brew --prefix libxml2)/bin/xml2-config" --cflags ;;
+  --libs) printf '%s\\n' "$core_xml -lz -liconv" ;;
+  --version) printf '%s\\n' 2.15.4 ;;
+  *) exec "$(brew --prefix libxml2)/bin/xml2-config" "\$@" ;;
+esac
+EOF
+chmod +x "$xml2_config"
 for tool in cmake gmake; do command -v "$tool" >/dev/null; done
 
 cd "$work/source"
@@ -77,7 +91,7 @@ tar -xzf postgis.tar.gz
 cd postgis-3.6.4
 ./configure --prefix="$pgroot" --with-pgconfig="$pg_config" --with-gdalconfig="$gdal_prefix/bin/gdal-config" \
   --with-geosconfig="$(brew --prefix geos)/bin/geos-config" --with-projdir="$(brew --prefix proj)" \
-  --with-jsondir="$(brew --prefix json-c)" --with-xml2config="$(brew --prefix libxml2)/bin/xml2-config" \
+  --with-jsondir="$(brew --prefix json-c)" --with-xml2config="$work/xml2-config" \
   --with-sfcgal="$(brew --prefix sfcgal)/bin/sfcgal-config" 2>&1 | tee "$output/configure.log"
 gmake -j"$(sysctl -n hw.ncpu)" 2>&1 | tee "$output/build.log"
 gmake install 2>&1 | tee "$output/install.log"
@@ -118,7 +132,7 @@ names = ('postgis','postgis_raster','postgis_sfcgal','postgis_topology')
 (root/'lib').mkdir(parents=True,exist_ok=True)
 (root/'share/extension').mkdir(parents=True,exist_ok=True)
 for path in (source/'lib').glob('*.dylib'):
-    if path.name != 'libxml2.16.dylib': shutil.copy2(path,root/'lib'/path.name)
+    shutil.copy2(path,root/'lib'/path.name)
 for name in names:
     control=source/'share/extension'/f'{name}.control'
     sql=sorted((source/'share/extension').glob(f'{name}--*.sql'))
@@ -144,17 +158,6 @@ root, output = map(Path, sys.argv[1:])
 package = output / 'package/postgis'
 package.mkdir(parents=True, exist_ok=True)
 dependencies = json.loads((root / 'bundled-dependencies.json').read_text())
-name = 'libxml2.16.dylib'
-if name in dependencies:
-    source = root / 'lib' / name
-    private_name = 'libxml2.postgis.dylib'
-    if not source.is_file(): raise SystemExit('bundled libxml2 source is missing')
-    dependencies[private_name] = dependencies.pop(name)
-    target = package / 'lib' / private_name
-    target.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copy2(source, target)
-    subprocess.run(['install_name_tool', '-id', '@rpath/' + private_name, str(target)], check=True)
-    subprocess.run(['codesign', '--force', '--sign', '-', str(target)], check=True)
 (output / 'postgis-bundled-dependencies.json').write_text(json.dumps(dependencies, indent=2, sort_keys=True) + '\n')
 PY
 python3 - "$pgroot" "$output" <<'PY'
@@ -187,26 +190,6 @@ for name in dependency_map:
     if path.is_file(): shutil.copy2(path,package/'lib'/name)
 (package/'LICENSES').mkdir(exist_ok=True)
 (package/'bundled-dependencies.json').write_text(json.dumps(dependency_map,indent=2,sort_keys=True)+'\n')
-PY
-python3 - "$output/package/postgis/lib" <<'PY'
-from pathlib import Path
-import subprocess, sys
-libdir = Path(sys.argv[1])
-old_name, new_name = 'libxml2.16.dylib', 'libxml2.postgis.dylib'
-if (libdir / new_name).is_file():
-    for binary in libdir.iterdir():
-        if not binary.is_file() or subprocess.run(['lipo', '-archs', str(binary)], capture_output=True).returncode:
-            continue
-        result = subprocess.run(['otool', '-L', str(binary)], text=True, capture_output=True, check=True)
-        changed = False
-        for line in result.stdout.splitlines()[1:]:
-            dependency = line.strip().split(' ', 1)[0]
-            if Path(dependency).name == old_name:
-                subprocess.run(['install_name_tool', '-change', dependency,
-                                '@loader_path/' + new_name, str(binary)], check=True)
-                changed = True
-        if changed:
-            subprocess.run(['codesign', '--force', '--sign', '-', str(binary)], check=True)
 PY
 cp "$work/source/postgis-3.6.4/COPYING" "$output/package/postgis/LICENSES/PostGIS.txt"
 cp "$work/source/gdal-3.13.3/LICENSE.TXT" "$output/package/postgis/LICENSES/GDAL.txt"

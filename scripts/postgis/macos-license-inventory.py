@@ -44,7 +44,6 @@ expected_formulae = {
     "gmp": ("6.3.0", "LGPL-3.0-or-later OR GPL-2.0-or-later"),
     "jpeg-turbo": ("3.2.0", "IJG AND Zlib AND BSD-3-Clause"),
     "json-c": ("0.19", "MIT"),
-    "libxml2": ("2.15.4", "MIT"),
     "libtiff": ("4.7.2", "libtiff"),
     "mpfr": ("4.2.2", "LGPL-3.0-or-later"),
     "pcre2": ("10.48", "BSD-3-Clause"),
@@ -270,6 +269,8 @@ for core_file in sorted(needed_core):
         raise SystemExit(f"checked core has no resolved licence record for {library}")
     reused.append({"library":library,"sha256":sha(core_file),"core_component":owner["component"],
                    "core_version":owner["version"],"license_file":"LICENSES/"+owner["license_file"]})
+if not any(item["library"] == "libxml2.16.dylib" for item in reused):
+    raise SystemExit("PostGIS does not resolve libxml2 to the checked PostgreSQL core library")
 inventory={"schema_version":1,"reused_core_dependencies":reused,"components":components}
 (root/"LICENSES/postgis-inventory.json").write_text(json.dumps(inventory,indent=2,sort_keys=True)+"\n")
 print(f"Recorded {len(components)} PostGIS macOS redistribution components")
