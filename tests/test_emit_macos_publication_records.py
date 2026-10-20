@@ -1,10 +1,12 @@
 import hashlib
+import io
 import json
 import os
 from pathlib import Path
 import shutil
 import sys
 import tempfile
+import tarfile
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
@@ -42,7 +44,15 @@ class MacOSPublicationRecordTests(unittest.TestCase):
                       f"pgvector-0.8.7-postgresql-{self.pg}-macos-{self.arch}.tar.gz"]
         self.digests = {}
         for idx, name in enumerate(self.names):
-            data = f"archive bytes {idx}".encode()
+            component = {"source_revision": ("b" if idx == 0 else "a") * 40}
+            data = io.BytesIO()
+            with tarfile.open(fileobj=data, mode="w:gz") as archive:
+                member_name = "postgresql/manifest.json" if idx == 0 else "metadata.json"
+                payload = json.dumps(component).encode()
+                info = tarfile.TarInfo(member_name)
+                info.size = len(payload)
+                archive.addfile(info, io.BytesIO(payload))
+            data = data.getvalue()
             (self.archives / name).write_bytes(data)
             digest = hashlib.sha256(data).hexdigest()
             self.digests[name] = digest
@@ -91,6 +101,9 @@ class MacOSPublicationRecordTests(unittest.TestCase):
         self.assertEqual(records[1]["project"], "pgvector")
         self.assertEqual(records[1]["assembled_core"]["sha256"], self.digests[self.names[0]])
         self.assertEqual(records[1]["case_results"], {"archive-suite": "passed", "symbols": "passed", "diagnostics": "passed"})
+        self.assertEqual(records[0]["ci"]["build_revision"], "b" * 40)
+        self.assertEqual(records[1]["ci"]["source_revision"], "a" * 40)
+        self.assertEqual([r["test_revision"] for r in records], ["a" * 40, "a" * 40])
         for record in records:
             self.assertTrue(coverage.validate_verification_record(record, coverage.load_json(self.root / "support.json"), self.root))
 

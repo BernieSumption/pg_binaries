@@ -1,10 +1,12 @@
 import hashlib
+import io
 import json
 import os
 from pathlib import Path
 import shutil
 import sys
 import tempfile
+import tarfile
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
@@ -43,7 +45,15 @@ class MacOSPublicationImportTests(unittest.TestCase):
         self.digests = {}
         for index, name in enumerate(self.names):
             archive = self.archives / name
-            archive.write_bytes(f"downloaded archive {index}".encode())
+            data = io.BytesIO()
+            provenance = {"source_revision": ("b" if index == 0 else "a") * 40}
+            with tarfile.open(fileobj=data, mode="w:gz") as tar:
+                member_name = "postgresql/manifest.json" if index == 0 else "metadata.json"
+                payload = json.dumps(provenance).encode()
+                info = tarfile.TarInfo(member_name)
+                info.size = len(payload)
+                tar.addfile(info, io.BytesIO(payload))
+            archive.write_bytes(data.getvalue())
             digest = hashlib.sha256(archive.read_bytes()).hexdigest()
             self.digests[name] = digest
             Path(f"{archive}.sha256").write_text(f"{digest}  {name}\n")
@@ -91,6 +101,10 @@ class MacOSPublicationImportTests(unittest.TestCase):
         self.assertEqual({record["component"] for record in records}, {"postgresql", "vector"})
         vector = next(record for record in records if record["component"] == "vector")
         self.assertEqual(vector["assembled_core"]["sha256"], self.digests[self.names[0]])
+        core = next(record for record in records if record["component"] == "postgresql")
+        self.assertEqual(core["ci"]["build_revision"], "b" * 40)
+        self.assertEqual(vector["ci"]["source_revision"], "a" * 40)
+        self.assertEqual(core["ci"]["test_revision"], "a" * 40)
 
     def test_rejects_changed_sidecar_and_wrong_attempt_run(self):
         sidecar = self.archives / f"{self.names[0]}.sha256"

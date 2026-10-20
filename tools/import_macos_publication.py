@@ -10,6 +10,7 @@ import shutil
 import sys
 
 import coverage
+from emit_macos_publication_records import _archive_revision
 
 ARCHITECTURES = {"x86_64", "arm64"}
 MAX_EVIDENCE_BYTES = 1024 * 1024
@@ -111,9 +112,11 @@ def import_run(root, core_artifact, verification_artifact, run_id, architecture,
         name = archive.name
         digests[name] = _sha256(archive)
         _sidecar(archive, digests[name])
-    ci = {"provider": "github-actions", "run_id": run_id,
-          "run_url": f"https://github.com/{_repository_from_records(verification_artifact)}/actions/runs/{run_id}",
-          "source_revision": revision, "build_revision": revision, "test_revision": revision}
+    build_revisions = {
+        names[0]: _archive_revision(archive_paths[0], "postgresql/manifest.json", "PostgreSQL"),
+        names[1]: _archive_revision(archive_paths[1], "metadata.json", "pgvector"),
+    }
+    run_url = f"https://github.com/{_repository_from_records(verification_artifact)}/actions/runs/{run_id}"
     if len(records) != 2:
         raise coverage.CoverageError("expected PostgreSQL and pgvector publication records")
     expected_components = {"postgresql": names[0], "vector": names[1]}
@@ -143,6 +146,10 @@ def import_run(root, core_artifact, verification_artifact, run_id, architecture,
         component = record.get("component")
         archive_name = expected_components.get(component)
         expected_version = postgresql_version if component == "postgresql" else "0.8.7"
+        build_revision = build_revisions[archive_name] if archive_name else None
+        ci = {"provider": "github-actions", "run_id": run_id, "run_url": run_url,
+              "source_revision": build_revision, "build_revision": build_revision,
+              "test_revision": revision}
         expected = {"scope": "publication", "profile_id": profile_id,
                     "test_cases": profile["case_ids"],
                     "case_results": results, "outcome": outcome, "platform": platform,

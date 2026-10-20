@@ -8,6 +8,7 @@ import os
 from pathlib import Path
 import re
 import sys
+import tarfile
 
 import coverage
 
@@ -83,6 +84,21 @@ def _step_result(value, step):
     _fail(f"{step} step result must be success, failure, or skipped")
 
 
+def _archive_revision(path, member_name, label):
+    try:
+        with tarfile.open(path, "r:gz") as archive:
+            members = [member for member in archive.getmembers() if member.name == member_name]
+            if len(members) != 1 or not members[0].isfile() or members[0].size > 1024 * 1024:
+                _fail(f"{label} archive requires one bounded {member_name}")
+            value = json.loads(archive.extractfile(members[0]).read().decode("utf-8"))
+    except (OSError, tarfile.TarError, UnicodeError, json.JSONDecodeError) as exc:
+        _fail(f"cannot read {label} archive provenance: {exc}")
+    source_revision = value.get("source_revision") if isinstance(value, dict) else None
+    if not isinstance(source_revision, str) or not re.fullmatch(r"(?:[0-9a-fA-F]{40}|[0-9a-fA-F]{64})", source_revision):
+        _fail(f"{label} archive has an invalid source revision")
+    return source_revision
+
+
 def emit(root, archives, output, postgresql_version, revision, os_version, architecture,
          image_id, step_results, static_report, diagnostic_report):
     root, archives, output = Path(root), Path(archives), Path(output)
@@ -120,6 +136,10 @@ def emit(root, archives, output, postgresql_version, revision, os_version, archi
         digest = sha256_file(archive)
         _sidecar(archives / f"{name}.sha256", name, digest)
         digests[name] = digest
+    build_revisions = {
+        names[0]: _archive_revision(archives / names[0], "postgresql/manifest.json", "PostgreSQL"),
+        names[1]: _archive_revision(archives / names[1], "metadata.json", "pgvector"),
+    }
     if outcome == "passed":
         static = _read_report(static_report, "static analysis")
         diagnostic = _read_report(diagnostic_report, "diagnostic")
@@ -143,13 +163,15 @@ def emit(root, archives, output, postgresql_version, revision, os_version, archi
     server_url = os.environ.get("GITHUB_SERVER_URL", "")
     if not run_id.isdigit() or not repository or not server_url:
         _fail("GitHub Actions run provenance is required")
-    ci = {"provider": "github-actions", "run_id": run_id,
-          "run_url": f"{server_url}/{repository}/actions/runs/{run_id}",
-          "source_revision": revision, "build_revision": revision, "test_revision": revision}
     support = coverage.load_json(root / "support.json")
     records = []
     for name, component, version in ((names[0], "postgresql", postgresql_version),
                                      (names[1], "vector", vector_version)):
+        build_revision = build_revisions[name]
+        ci = {"provider": "github-actions", "run_id": run_id,
+              "run_url": f"{server_url}/{repository}/actions/runs/{run_id}",
+              "source_revision": build_revision, "build_revision": build_revision,
+              "test_revision": revision}
         record = {
             "schema_version": 2, "scope": "publication", "profile_id": profile_id,
             "profile_revision": profile["profile_revision"], "test_cases": profile["case_ids"],
