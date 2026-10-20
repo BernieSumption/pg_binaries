@@ -29,6 +29,8 @@ The manual trial uses the registered `.github/workflows/address-standardizer-mac
 
 [Run 39451113254](https://github.com/BernieSumption/pg_binaries/actions/runs/39451113254) showed that macOS resolves `/tmp` to `/private/tmp` during PGXS installation. The recipe now canonicalizes the extracted core path before matching the staged files.
 
+[Run 39451801078](https://github.com/BernieSumption/pg_binaries/actions/runs/39451801078) built the final extension archive. Fresh-runner verification stopped at an incorrect path assertion: this PostgreSQL core installs extension dylibs in `lib/`, while the trial verifier expected `lib/postgresql/`. The verifier now checks the observed archive layout; dependency and SQL checks still need a fresh run.
+
 ## Completion and cleanup
 
 The trial question is answered when the build produces the final extension archive and the fresh-runner job passes the archive suite and Mach-O closure inspection. If either fails, retain the logs and correct only concrete recipe errors before retrying.

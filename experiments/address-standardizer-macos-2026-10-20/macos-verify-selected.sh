@@ -34,7 +34,7 @@ for source in extension.rglob("*"):
     if destination.exists() or destination.is_symlink():
         if source.is_dir() and destination.is_dir() and not source.is_symlink() and not destination.is_symlink(): continue
         raise SystemExit(f"Address Standardizer payload collision: {source.relative_to(extension)}")
-for required in ("LICENSES/license-inventory.json", "LICENSES/Address-Standardizer.txt", "LICENSES/PCRE2.txt", "share/extension/address_standardizer.control", "share/extension/address_standardizer_data_us.control", "lib/postgresql/address_standardizer.dylib"):
+for required in ("LICENSES/license-inventory.json", "LICENSES/Address-Standardizer.txt", "LICENSES/PCRE2.txt", "share/extension/address_standardizer.control", "share/extension/address_standardizer_data_us.control", "lib/address_standardizer.dylib"):
     if not (extension/required).is_file(): raise SystemExit(f"archive is missing {required}")
 PY
 ditto "$work/extract/address_standardizer" "$work/assembled/postgresql"
