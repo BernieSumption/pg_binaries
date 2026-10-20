@@ -137,11 +137,11 @@ jobs:
             base-devel
             curl
             tar
+            autoconf
+            automake
+            libtool
           pacboy: >-
             toolchain:p
-            autoconf:p
-            automake:p
-            libtool:p
             pkgconf:p
             geos:p
             proj:p
