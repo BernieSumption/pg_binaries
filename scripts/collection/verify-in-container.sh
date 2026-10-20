@@ -15,6 +15,7 @@ esac
 core_archive="postgresql-${pg_version}-linux-${architecture}.tar.gz"
 cd /input
 sha256sum -c "$core_archive.sha256"
+core_sha256=$(sha256sum "$core_archive" | awk '{print $1}')
 cd /extension
 for version in "${SELECTED_COLLECTION_VERSIONS[@]}"; do
   archive="collection-${version}-postgresql-${pg_version}-linux-${architecture}.tar.gz"
@@ -30,12 +31,12 @@ for version in "${SELECTED_COLLECTION_VERSIONS[@]}"; do
   pgroot="$work/first/postgresql"
   extroot="$work/package/collection"
   test "$("$pgroot/bin/pg_config" --version)" = "PostgreSQL $pg_version"
-  python3 - "$work/package" "$version" "$architecture" "$pg_version" <<'PY'
+python3 - "$work/package" "$version" "$architecture" "$pg_version" "$core_archive" "$core_sha256" <<'PY'
 import json, sys
 import re
 from pathlib import Path
 root = Path(sys.argv[1])
-version, architecture, pg_version = sys.argv[2:]
+version, architecture, pg_version, core_name, core_sha256 = sys.argv[2:]
 pins = {
     "1.1.1": "ab99a969334442e4a3c77405bc9ffed0083595d18f3898d64a731353a32bec5e",
     "2.1.3": "a6b07864e5893d3b682bb3223fd6d33015709765c9d40d415c85112358f0e3e4",
@@ -49,6 +50,7 @@ expected = {
     "project": "collection", "version": version, "sql_names": ["collection"],
     "requires": [], "configuration_prerequisites": [], "runtime_prerequisites": [],
     "postgresql_version": pg_version, "platform": "linux", "architecture": architecture,
+    "core_archive": {"basename": core_name, "sha256": core_sha256},
 }
 for key, value in expected.items():
     if metadata.get(key) != value:

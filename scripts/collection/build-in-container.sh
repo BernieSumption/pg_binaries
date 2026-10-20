@@ -16,6 +16,7 @@ esac
 core_archive="postgresql-${pg_version}-linux-${architecture}.tar.gz"
 cd /input
 sha256sum -c "$core_archive.sha256"
+core_sha256=$(sha256sum "$core_archive" | awk '{print $1}')
 mkdir -p /work/core /work/source /work/stage /out
 tar -xzf "$core_archive" -C /work/core
 mv /work/core/postgresql /opt/postgresql
@@ -57,16 +58,17 @@ build_one() {
   cp "$source_root/LICENSE" "/out/pgcollection-${version}-LICENSE.txt"
   cp "$source_root/include/uthash/LICENSE" "/out/pgcollection-${version}-uthash-LICENSE.txt"
   uthash_sha=$(sha256sum "$source_root/include/uthash/LICENSE" | awk '{print $1}')
-  python3 - "$package_root" "$version" "$pg_version" "$architecture" "$source_url" "$sha256" "$uthash_sha" <<'PY'
+  python3 - "$package_root" "$version" "$pg_version" "$architecture" "$source_url" "$sha256" "$uthash_sha" "$core_archive" "$core_sha256" <<'PY'
 import json, sys
 from pathlib import Path
 root = Path(sys.argv[1])
-version, pg_version, architecture, url, sha256, uthash_sha = sys.argv[2:]
+version, pg_version, architecture, url, sha256, uthash_sha, core_name, core_sha256 = sys.argv[2:]
 metadata = {
     "project": "collection", "version": version, "sql_names": ["collection"],
     "requires": [], "configuration_prerequisites": [], "runtime_prerequisites": [],
     "postgresql_version": pg_version, "platform": "linux", "architecture": architecture,
     "source": {"url": url, "sha256": sha256},
+    "core_archive": {"basename": core_name, "sha256": core_sha256},
 }
 (root / "metadata.json").write_text(json.dumps(metadata, indent=2, sort_keys=True) + "\n")
 components = [{

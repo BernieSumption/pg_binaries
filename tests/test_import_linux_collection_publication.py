@@ -61,6 +61,8 @@ class CollectionPublicationImportTests(unittest.TestCase):
                 "project": "collection", "version": version, "sql_names": ["collection"],
                 "requires": [], "postgresql_version": "18.6", "platform": "linux",
                 "architecture": self.architecture,
+                "core_archive": {"basename": self.core_name,
+                                 "sha256": hashlib.sha256(b"core fixture").hexdigest()},
                 "source": {"url": f"https://github.com/aws/pgcollection/archive/refs/tags/v{version}.tar.gz",
                            "sha256": SOURCE_SHA256[version]},
             }
@@ -208,6 +210,16 @@ class CollectionPublicationImportTests(unittest.TestCase):
             member.size = len(data)
             archive.addfile(member, io.BytesIO(data))
         self.core_hash = self._sidecar(self.core_dir / self.core_name)
+        extension_path = self.collection_artifact / self.extension_names[version]
+        with tarfile.open(extension_path, "r:gz") as archive:
+            metadata = json.load(archive.extractfile("metadata.json"))
+        metadata["core_archive"] = {"basename": self.core_name, "sha256": self.core_hash}
+        with tarfile.open(extension_path, "w:gz") as archive:
+            data = json.dumps(metadata).encode()
+            member = tarfile.TarInfo("metadata.json")
+            member.size = len(data)
+            archive.addfile(member, io.BytesIO(data))
+        self.extension_hashes[version] = self._sidecar(extension_path)
         report_path = self.collection_artifact / "static-analysis" / f"collection-{version}.json"
         report = json.loads(report_path.read_text())
         report["archives"] = [

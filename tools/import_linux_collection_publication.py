@@ -25,7 +25,7 @@ STEP_NAMES = {"core_build", "collection_build", "collection_verify"}
 MAX_EVIDENCE_BYTES = 1024 * 1024
 
 
-def _metadata(path, version, architecture, postgresql_version):
+def _metadata(path, version, architecture, postgresql_version, core_name, core_sha256):
     try:
         with tarfile.open(path, "r:gz") as archive:
             member = next((item for item in archive.getmembers()
@@ -42,6 +42,7 @@ def _metadata(path, version, architecture, postgresql_version):
             or metadata.get("version") != version or metadata.get("sql_names") != ["collection"]
             or metadata.get("requires") != [] or metadata.get("postgresql_version") != postgresql_version
             or metadata.get("platform") != "linux" or metadata.get("architecture") != architecture
+            or metadata.get("core_archive") != {"basename": core_name, "sha256": core_sha256}
             or source != {"url": expected_url, "sha256": SOURCE_SHA256[version]}):
         raise coverage.CoverageError("collection archive metadata or pinned source identity is invalid")
 
@@ -122,8 +123,6 @@ def _import_selected_run(root, core_artifact, collection_artifact, run_id, archi
             _sidecar(path, digests[name])
     if bound and set(digests) != set(archives):
         raise coverage.CoverageError("receipt or record exists but a referenced archive is missing")
-    if extension_name in digests:
-        _metadata(extension_archive, selected_version, architecture, postgresql_version)
     resolution = core_dir / "core-resolution.json"
     if core_archive.is_file():
         try:
@@ -135,6 +134,9 @@ def _import_selected_run(root, core_artifact, collection_artifact, run_id, archi
                 and (checked["provenance"].get("run_id") != str(run_id)
                      or checked["provenance"].get("run_sha") != attempt["source_revision"])):
             raise coverage.CoverageError("built core provenance does not match this run and source revision")
+    if extension_name in digests:
+        _metadata(extension_archive, selected_version, architecture, postgresql_version,
+                  core_name, digests.get(core_name, ""))
 
     target = (root / "support/evidence" / f"collection-publication-{run_id}" / architecture
               / postgresql_version / selected_version)
@@ -274,7 +276,8 @@ def import_run(root, core_artifact, collection_artifact, run_id, architecture, p
         raise coverage.CoverageError("receipt or records exist but referenced archives are missing")
     for version, name in extension_names.items():
         if name in digests:
-            _metadata(archive_paths[name], version, architecture, postgresql_version)
+            _metadata(archive_paths[name], version, architecture, postgresql_version,
+                      core_name, digests.get(core_name, ""))
 
     target = root / "support/evidence" / f"collection-publication-{run_id}" / architecture
     copies = [(steps_path, target / steps_path.name), (attempt_path, target / attempt_path.name)]
