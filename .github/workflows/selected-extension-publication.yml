@@ -1,4 +1,4 @@
-name: Selected extension publication
+name: Selected archive publication
 
 on:
   workflow_call:
@@ -7,7 +7,7 @@ on:
         required: true
         type: string
       extension_version:
-        required: true
+        required: false
         type: string
       postgresql_version:
         required: true
@@ -18,12 +18,12 @@ on:
   workflow_dispatch:
     inputs:
       project:
-        description: Declared extension project
+        description: PostgreSQL or a declared extension project
         required: true
         type: string
       extension_version:
-        description: Exact selected extension release
-        required: true
+        description: Exact extension release; leave empty for PostgreSQL
+        required: false
         type: string
       postgresql_version:
         description: Exact selected PostgreSQL release
@@ -95,6 +95,27 @@ jobs:
           import sys
 
           request = json.load(open(sys.argv[1], encoding="utf-8"))
+          project, platform = request["project"], request["platform"]
+          if project == "PostgreSQL":
+              if request["version"]:
+                  raise SystemExit("PostgreSQL core requests have no extension version")
+              with open("support/postgresql-releases.json", encoding="utf-8") as source:
+                  releases = {item["version"] for item in json.load(source)["releases"]}
+              with open("support.json", encoding="utf-8") as source:
+                  architectures = json.load(source)["platform_architectures"]
+              os_name, architecture = platform.split("-", 1)
+              if (request["postgresql_version"] not in releases
+                      or architecture not in architectures.get(os_name, [])):
+                  raise SystemExit("PostgreSQL target is not declared")
+              with open(sys.argv[2], "a", encoding="utf-8") as output:
+                  for key, value in (
+                      ("should_dispatch", "true"),
+                      ("route", f"postgresql-{os_name}"),
+                      ("postgresql_version", request["postgresql_version"]),
+                      ("architecture", architecture),
+                  ):
+                      output.write(f"{key}={value}\n")
+              raise SystemExit(0)
           subprocess.run([
               sys.executable, "tools/extension_archive_plan.py",
               "--project", request["project"],
@@ -158,6 +179,29 @@ jobs:
               ):
                   output.write(f"{key}={value}\n")
           PY
+
+  postgresql_linux:
+    needs: plan
+    if: needs.plan.outputs.should_dispatch == 'true' && needs.plan.outputs.route == 'postgresql-linux'
+    uses: ./.github/workflows/postgresql-linux-selected-publication.yml
+    with:
+      postgresql_version: ${{ needs.plan.outputs.postgresql_version }}
+      architecture: ${{ needs.plan.outputs.architecture }}
+
+  postgresql_macos:
+    needs: plan
+    if: needs.plan.outputs.should_dispatch == 'true' && needs.plan.outputs.route == 'postgresql-macos'
+    uses: ./.github/workflows/postgresql-macos-selected-publication.yml
+    with:
+      postgresql_version: ${{ needs.plan.outputs.postgresql_version }}
+      architecture: ${{ needs.plan.outputs.architecture }}
+
+  postgresql_windows:
+    needs: plan
+    if: needs.plan.outputs.should_dispatch == 'true' && needs.plan.outputs.route == 'postgresql-windows'
+    uses: ./.github/workflows/postgresql-windows-selected-publication.yml
+    with:
+      postgresql_version: ${{ needs.plan.outputs.postgresql_version }}
 
   hypopg_linux:
     needs: plan
