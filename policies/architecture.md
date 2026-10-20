@@ -20,6 +20,12 @@ Verification assembles the final PostgreSQL, extension and prerequisite archives
 
 For each tested combination, retain a compact result with the exact archive hashes, required case outcomes, test revision and environment. Failed and skipped cases remain visible. Reuse a result only while its archives, checks and claimed compatibility remain applicable. Test changes invalidate affected results; unrelated edits need not trigger a rebuild or repeat expensive verification. [The testing policy](testing.md) defines the required cases and environments.
 
+## Developing a new recipe
+
+When a PostgreSQL or native extension recipe has no checked build, normally prototype one Linux/arm64 target in local Docker before using GitHub runners. Establish the source identity, build, package and SQL probe there, then run the selected GitHub build and final-archive verification before expanding the recipe to other platforms. This catches basic recipe errors without repeated native-runner setup. Skip the prototype when an existing checked build establishes the relevant behaviour or Docker cannot exercise the question; a macOS or Windows-specific problem still needs its native runner.
+
+When porting a component, use its checked recipe on another platform as the primary reference and a checked recipe for a comparable component on the target platform as the platform reference. Give both to a delegated agent when available. Verify the resulting archive on its own target; neither reference establishes cross-platform compatibility.
+
 ## Reusing completed work
 
 For an unpublished archive, use its temporary manifest when its bytes and relevant build inputs still match. If its temporary artifact is unavailable, rebuild it unless the same checked bytes are readily available elsewhere. Avoid a general search through historical Actions runs solely to save a build.
