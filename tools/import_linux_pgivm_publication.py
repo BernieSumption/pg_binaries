@@ -2,10 +2,12 @@
 """Validate and retain compact pg_ivm Linux publication evidence."""
 
 import argparse
+import json
 from pathlib import Path
 import re
 import shutil
 import sys
+import tarfile
 
 import coverage
 from import_linux_publication_run import (
@@ -100,6 +102,20 @@ def import_run(root, core_artifact, pgivm_artifact, run_id, architecture,
             if archive_bound or sidecar.exists():
                 _sidecar(path, digest)
             digests[path.name] = digest
+
+    if all(path.is_file() for path in archives):
+        try:
+            with tarfile.open(archives[1], "r:gz") as archive:
+                member = archive.getmember("metadata.json")
+                if not member.isfile() or member.size > 1024 * 1024:
+                    raise coverage.CoverageError("pg_ivm metadata is missing or too large")
+                stream = archive.extractfile(member)
+                metadata = json.loads(stream.read().decode("utf-8"))
+        except (tarfile.TarError, KeyError, OSError) as exc:
+            raise coverage.CoverageError(f"cannot read pg_ivm archive metadata: {exc}") from exc
+        if metadata.get("core_archive") != {
+                "basename": core_name, "sha256": digests[core_name]}:
+            raise coverage.CoverageError("pg_ivm metadata does not identify the selected core archive bytes")
 
     copies = [(steps_path, target / steps_path.name), (attempt_path, target / attempt_path.name)]
     if receipt is not None:

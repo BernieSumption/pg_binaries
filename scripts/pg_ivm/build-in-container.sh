@@ -13,6 +13,7 @@ pg_archive="postgresql-${pg_version}-linux-${architecture}.tar.gz"
 archive="pg_ivm-${version}-postgresql-${pg_version}-linux-${architecture}.tar.gz"
 cd /input
 sha256sum -c "$pg_archive.sha256"
+core_sha256=$(sha256sum "$pg_archive" | awk '{print $1}')
 mkdir -p /work/prefix /work/source /work/stage /out
 tar -xzf "$pg_archive" -C /work/prefix
 mv /work/prefix/postgresql /opt/postgresql
@@ -38,7 +39,7 @@ cat > /work/package/pg_ivm/LICENSES/pg_ivm-inventory.json <<EOL
 {"schema_version":1,"components":[{"component":"pg_ivm","version":"${version}","payload_paths":["lib/pg_ivm.so","share/extension","bin/pg_ivm_dump_metadata"],"license_file":"pg_ivm.txt","license_source":"https://github.com/sraoss/pg_ivm/blob/v1.16/LICENSE","source_url":"${source_url}","source_sha256":"${source_sha256}","redistribution_review":{"status":"resolved","basis":"The unmodified pg_ivm 1.16 source includes its full PostgreSQL-style licence notice, which permits binary redistribution when the notice, permission and disclaimer paragraphs are retained.","source_obligation":"none"}}]}
 EOL
 cat > /work/package/metadata.json <<EOL
-{"project":"pg_ivm","version":"${version}","sql_names":["pg_ivm"],"requires":[],"configuration_prerequisites":[{"type":"postgresql_setting","name":"shared_preload_libraries","value":"pg_ivm"}],"runtime_prerequisites":[],"postgresql_version":"${pg_version}","platform":"linux","architecture":"${architecture}","source":{"url":"${source_url}","sha256":"${source_sha256}"}}
+{"project":"pg_ivm","version":"${version}","sql_names":["pg_ivm"],"requires":[],"configuration_prerequisites":[{"type":"postgresql_setting","name":"shared_preload_libraries","value":"pg_ivm"}],"runtime_prerequisites":[],"postgresql_version":"${pg_version}","platform":"linux","architecture":"${architecture}","source":{"url":"${source_url}","sha256":"${source_sha256}"},"core_archive":{"basename":"${pg_archive}","sha256":"${core_sha256}"}}
 EOL
 cp /work/package/pg_ivm/lib/pg_ivm.so "$pgroot/lib/"
 cp /work/package/pg_ivm/share/extension/* "$pgroot/share/extension/"

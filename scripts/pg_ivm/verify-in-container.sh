@@ -20,8 +20,9 @@ tar -xzf "/input/$pg_archive" -C /tmp/first
 tar -xzf "/extension/$extension_archive" -C /tmp/extension
 pgroot=/tmp/first/postgresql
 extroot=/tmp/extension/pg_ivm
+core_sha256=$(sha256sum "/input/$pg_archive" | awk '{print $1}')
 test "$("$pgroot/bin/pg_config" --version)" = "PostgreSQL $pg_version"
-python3 - "$extroot" "$source_url" "$architecture" "$source_sha256" "$pg_version" <<'PY'
+python3 - "$extroot" "$source_url" "$architecture" "$source_sha256" "$pg_version" "$pg_archive" "$core_sha256" <<'PY'
 import json, os, sys
 from pathlib import Path
 root=Path(sys.argv[1]).parent
@@ -29,7 +30,8 @@ metadata=json.loads((root/'metadata.json').read_text())
 if metadata != {'project':'pg_ivm','version':'1.16','sql_names':['pg_ivm'],'requires':[],
  'configuration_prerequisites':[{'type':'postgresql_setting','name':'shared_preload_libraries','value':'pg_ivm'}],
  'runtime_prerequisites':[],'postgresql_version':sys.argv[5],'platform':'linux','architecture':sys.argv[3],
- 'source':{'url':sys.argv[2],'sha256':sys.argv[4]}}:
+ 'source':{'url':sys.argv[2],'sha256':sys.argv[4]},
+ 'core_archive':{'basename':sys.argv[6],'sha256':sys.argv[7]}}:
  raise SystemExit('pg_ivm package metadata mismatch')
 digest=metadata['source']['sha256']
 if len(digest)!=64 or any(c not in '0123456789abcdef' for c in digest): raise SystemExit('invalid source SHA-256')

@@ -80,6 +80,8 @@ class LinuxPgivmPublicationImportTests(unittest.TestCase):
             "project": "pg_ivm", "version": "1.16", "postgresql_version": self.postgresql_version,
             "platform": "linux", "architecture": self.architecture,
             "sql_names": ["pg_ivm"], "requires": [],
+            "core_archive": {"basename": self.core_name,
+                             "sha256": self._sha(self.core_dir / self.core_name)},
         })
         report = self.pgivm_dir / "static-analysis/pg_ivm.json"
         report.parent.mkdir(parents=True, exist_ok=True)
@@ -219,6 +221,19 @@ class LinuxPgivmPublicationImportTests(unittest.TestCase):
         receipt["profile_revision"] = "0" * 64
         receipt_path.write_text(json.dumps(receipt))
         with self.assertRaisesRegex(coverage.CoverageError, "receipt identity"):
+            self._import()
+        self.assertFalse((self.root / "support/evidence").exists())
+
+    def test_rejects_extension_metadata_bound_to_different_core_bytes(self):
+        path = self.pgivm_dir / self.pgivm_name
+        path.unlink()
+        self._archive(path, {
+            "project": "pg_ivm", "version": "1.16", "postgresql_version": self.postgresql_version,
+            "platform": "linux", "architecture": self.architecture,
+            "sql_names": ["pg_ivm"], "requires": [],
+            "core_archive": {"basename": self.core_name, "sha256": "0" * 64},
+        })
+        with self.assertRaisesRegex(coverage.CoverageError, "selected core archive bytes"):
             self._import()
         self.assertFalse((self.root / "support/evidence").exists())
 
