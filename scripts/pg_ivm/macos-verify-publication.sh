@@ -57,7 +57,12 @@ if any(value.get(k)!=v for k,v in expected.items()): raise SystemExit("extension
 PY
 tar -xzf "$archive_dir/$extension" -C "$work/extracted"
 extroot="$work/extracted/pg_ivm"
-test -s "$extroot/lib/pg_ivm.dylib" && test -s "$extroot/LICENSES/pg_ivm.txt"
+native_modules=("$extroot"/lib/pg_ivm.dylib "$extroot"/lib/pg_ivm.so)
+native_count=0
+for native_module in "${native_modules[@]}"; do
+  if [[ -f $native_module ]]; then test -s "$native_module"; native_count=$((native_count + 1)); fi
+done
+test "$native_count" = 1 && test -s "$extroot/LICENSES/pg_ivm.txt"
 while IFS= read -r -d '' source; do
   relative=${source#"$extroot/"}; destination="$pgroot/$relative"
   if [[ -e "$destination" || -L "$destination" ]]; then

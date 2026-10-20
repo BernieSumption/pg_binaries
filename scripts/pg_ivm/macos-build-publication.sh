@@ -76,12 +76,15 @@ test "$(sed -n 's/^schema = \([^ ]*\)/\1/p' pg_ivm.control)" = pg_catalog
 make PG_CONFIG="$pg_config" -j "$(sysctl -n hw.ncpu)"
 make PG_CONFIG="$pg_config" install DESTDIR="$work/stage"
 staged_root="$work/stage$(cd "$pgroot" && pwd -P)"
-cp "$staged_root/lib/pg_ivm.dylib" "$work/package/pg_ivm/lib/"
+native_module=$(find "$staged_root/lib" -maxdepth 1 -type f \( -name pg_ivm.dylib -o -name pg_ivm.so \) -print)
+test "$(printf '%s\n' "$native_module" | wc -l | tr -d ' ')" = 1
+native_name=$(basename "$native_module")
+cp "$native_module" "$work/package/pg_ivm/lib/"
 cp "$staged_root/share/extension/"* "$work/package/pg_ivm/share/extension/"
 cp "$staged_root/bin/pg_ivm_dump_metadata" "$work/package/pg_ivm/bin/"
 cp LICENSE "$work/package/pg_ivm/LICENSES/pg_ivm.txt"
 cat > "$work/package/pg_ivm/LICENSES/pg_ivm-inventory.json" <<EOF
-{"schema_version":1,"components":[{"component":"pg_ivm","version":"$extension_version","payload_paths":["lib/pg_ivm.dylib","share/extension","bin/pg_ivm_dump_metadata"],"license_file":"pg_ivm.txt","license_source":"https://github.com/sraoss/pg_ivm/blob/v1.16/LICENSE","source_url":"$source_url","source_sha256":"$source_sha256","redistribution_review":{"status":"resolved","basis":"The unmodified pg_ivm 1.16 source includes its full PostgreSQL-style licence notice, which permits binary redistribution when the notice, permission and disclaimer paragraphs are retained.","source_obligation":"none"}}]}
+{"schema_version":1,"components":[{"component":"pg_ivm","version":"$extension_version","payload_paths":["lib/$native_name","share/extension","bin/pg_ivm_dump_metadata"],"license_file":"pg_ivm.txt","license_source":"https://github.com/sraoss/pg_ivm/blob/v1.16/LICENSE","source_url":"$source_url","source_sha256":"$source_sha256","redistribution_review":{"status":"resolved","basis":"The unmodified pg_ivm 1.16 source includes its full PostgreSQL-style licence notice, which permits binary redistribution when the notice, permission and disclaimer paragraphs are retained.","source_obligation":"none"}}]}
 EOF
 grep -Fq 'Permission to use, copy, modify, and distribute this software' LICENSE
 cat > "$work/package/metadata.json" <<EOF
