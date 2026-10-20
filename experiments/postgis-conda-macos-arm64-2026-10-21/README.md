@@ -10,7 +10,7 @@ Do conda-forge GEOS, PROJ and GDAL packages and their resolved runtime dependenc
 
 - A standard GitHub-hosted `macos-15` arm64 runner.
 - Current conda-forge packages for `geos`, `proj` and `gdal`, resolved together with their transitive dependencies by micromamba.
-- The manually dispatched `postgis-conda-macos-arm64-feasibility.yml` workflow. SFCGAL is excluded because conda-forge does not currently publish it for macOS arm64.
+- The `postgis_conda_macos_arm64_probe` option of the manually dispatched `postgis-pilot.yml` workflow. SFCGAL is excluded because [conda-forge does not currently publish it for macOS arm64](https://anaconda.org/conda-forge/sfcgal).
 
 The workflow records the explicit package URLs, package metadata, each loadable Mach-O file's deployment target and absolute `LC_RPATH` entries, and non-system absolute dylib dependencies. The temporary conda environment is kept outside the uploaded reports. It does not build PostGIS, alter package binaries, or produce a release archive.
 
