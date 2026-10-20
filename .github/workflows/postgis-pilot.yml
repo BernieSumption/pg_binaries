@@ -7,7 +7,7 @@ on:
         required: false
         type: boolean
       postgis_macos_arm64_probe:
-        description: Run the PostGIS 3.6.4 macOS arm64 build feasibility probe against PostgreSQL 18.6
+        description: Build minimal-driver GDAL and probe PostGIS 3.6.4 raster support on macOS arm64 against PostgreSQL 18.6
         required: false
         type: boolean
 jobs:
@@ -84,7 +84,7 @@ jobs:
           assert target['architecture'] == 'arm64'
           PY
       - name: Install upstream build dependencies
-        run: brew install make geos proj gdal sfcgal json-c libxml2 protobuf-c pkgconf
+        run: brew install make cmake geos proj sfcgal json-c libxml2 protobuf-c pkgconf
       - name: Resolve selected PostgreSQL 18.6 macOS arm64 core
         env:
           GH_TOKEN: ${{ github.token }}
@@ -96,7 +96,7 @@ jobs:
           mkdir -p "$RUNNER_TEMP/postgis-macos/core"
           cp experiments/postgis-macos-arm64-2026-10-20/base-target.json "$RUNNER_TEMP/postgis-macos/base-target.json"
           bash scripts/macos/resolve-core.sh "$RUNNER_TEMP/postgis-macos/base-target.json" "$RUNNER_TEMP/postgis-macos/core"
-      - name: Compile unmodified PostGIS 3.6.4 and inspect all declared SQL outputs
+      - name: Build minimal GDAL and unmodified PostGIS 3.6.4, run raster SQL probes, and measure dependency closure
         run: bash experiments/postgis-macos-arm64-2026-10-20/build.sh "$RUNNER_TEMP/postgis-macos/core" "$RUNNER_TEMP/postgis-macos/output" "$RUNNER_TEMP/postgis-macos/core/target.json"
       - uses: actions/upload-artifact@v4
         if: always()

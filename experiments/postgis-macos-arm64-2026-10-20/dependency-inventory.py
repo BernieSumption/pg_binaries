@@ -9,7 +9,8 @@ import subprocess
 import sys
 
 
-root, output = map(pathlib.Path, sys.argv[1:])
+root, output = map(pathlib.Path, sys.argv[1:3])
+gdal_prefix = pathlib.Path(sys.argv[3]) if len(sys.argv) > 3 else None
 output.mkdir(parents=True, exist_ok=True)
 brew = pathlib.Path(subprocess.check_output(["brew", "--prefix"], text=True).strip())
 cellar = pathlib.Path(subprocess.check_output(["brew", "--cellar"], text=True).strip())
@@ -71,6 +72,8 @@ def resolve(binary, dependency):
         for path in rpaths(binary):
             candidates.append(path / suffix)
         candidates.extend((brew / "lib" / suffix,))
+        if gdal_prefix:
+            candidates.extend((gdal_prefix / "lib" / suffix,))
         candidates.extend(cellar.glob(f"*/**/lib/{suffix}"))
     for candidate in candidates:
         if candidate.exists():
@@ -117,6 +120,8 @@ for path in seen.values():
         formula_names.add(relative.parts[0])
 formula_names.update(("geos", "proj", "gdal", "sfcgal", "json-c", "libxml2",
                       "protobuf-c", "pcre2"))
+if gdal_prefix:
+    formula_names.discard("gdal")
 
 formula_output = command("brew", "list", "--formula", "--versions")
 installed_versions = {}
@@ -155,13 +160,16 @@ def data_tree(label, path):
 
 
 proj_data = pathlib.Path(command("brew", "--prefix", "proj").strip()) / "share/proj"
-gdal_data = pathlib.Path(command("gdal-config", "--datadir").strip())
+gdal_data = (gdal_prefix / "share/gdal" if gdal_prefix
+             else pathlib.Path(command("gdal-config", "--datadir").strip()))
 record = {
     "schema_version": 1,
     "target": "PostGIS 3.6.4 / PostgreSQL 18.6 / macOS arm64",
     "modules": [str(path) for path in module_files()],
     "mach_o_dependency_edges": edges,
     "homebrew_formulae": formulae,
+    "source_built_gdal": ({"version": command(str(gdal_prefix / "bin/gdal-config"), "--version").strip(),
+                           "prefix": str(gdal_prefix)} if gdal_prefix else None),
     "runtime_data_candidates": [data_tree("PROJ", proj_data), data_tree("GDAL", gdal_data)],
 }
 (output / "dependency-inventory.json").write_text(json.dumps(record, indent=2, sort_keys=True) + "\n")
