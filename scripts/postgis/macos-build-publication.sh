@@ -148,8 +148,14 @@ for name in names:
         if len(found)!=1: raise SystemExit(f'expected one installed module for {module}: {found}')
         shutil.copy2(found[0],root/'lib'/found[0].name)
 for path in (gdal_prefix/'lib').glob('*.dylib'):
+    if path.name.startswith('libgdal'):
+        continue
     target=root/'lib'/path.name
     if not target.exists(): target.symlink_to(path.resolve())
+gdal_names=[path for path in (gdal_prefix/'lib').glob('libgdal.*.dylib')
+            if re.fullmatch(r'libgdal\.\d+\.dylib',path.name)]
+if len(gdal_names)!=1: raise SystemExit(f'expected one GDAL soname dylib, found {gdal_names}')
+shutil.copy2(gdal_names[0],root/'lib'/gdal_names[0].name)
 for relative in ('share/proj','share/gdal'):
     shutil.copytree(source/relative,root/relative,dirs_exist_ok=True)
 PY
@@ -191,6 +197,8 @@ dependency_map=json.loads((output/'postgis-bundled-dependencies.json').read_text
 for name in dependency_map:
     path=root/'lib'/name
     if path.is_file(): shutil.copy2(path,package/'lib'/name)
+for path in (root/'lib').glob('libgdal*.dylib'):
+    if path.is_file(): shutil.copy2(path,package/'lib'/path.name)
 (package/'LICENSES').mkdir(exist_ok=True)
 (package/'bundled-dependencies.json').write_text(json.dumps(dependency_map,indent=2,sort_keys=True)+'\n')
 PY
