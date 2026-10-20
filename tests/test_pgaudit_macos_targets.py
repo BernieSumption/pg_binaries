@@ -1,9 +1,19 @@
 import unittest
+from pathlib import Path
+
+from tools.coverage import verification_profile
 
 from tools.pgaudit_macos_targets import target
 
 
 class PgauditMacosTargetTests(unittest.TestCase):
+    def test_selected_targets_have_publication_profiles(self):
+        root = Path(__file__).resolve().parents[1]
+        for version in ("15.19", "16.15", "17.11", "18.6"):
+            with self.subTest(version=version):
+                profile = verification_profile(root, target(version)["profile_id"])
+                self.assertEqual(profile["scope"], "publication")
+
     def test_pg15_target_uses_supplied_source_and_core_pins(self):
         selected = target("15.19")
         self.assertEqual(selected["pgaudit_version"], "1.7.1")

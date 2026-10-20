@@ -317,6 +317,18 @@
       "case_ids": ["archive-suite", "diagnostics", "symbols"],
       "sources": [".github/workflows/pgaudit-macos-arm64-feasibility.yml", "scripts/macos/build-source-dependencies.sh", "scripts/macos/static_analysis.py", "scripts/pgaudit/macos-diagnostics.sh", "scripts/pgaudit/macos-feasibility.sh", "scripts/pgaudit/probe.sql", "support.json", "support/postgresql-releases.json", "tests/test_create_macos_symbols.py", "tests/test_emit_pgaudit_macos_publication.py", "tests/test_import_pgaudit_macos_publication.py", "tests/test_pgaudit_macos_targets.py", "tools/check_extension_redistribution.py", "tools/coverage.py", "tools/create_macos_symbols.py", "tools/emit_pgaudit_macos_publication.py", "tools/import_pgaudit_macos_publication.py", "tools/pgaudit_macos_targets.py", "tools/publication_preflight.py"]
     },
+    "pgaudit-publication-macos-arm64-16.15": {
+      "scope": "publication",
+      "platforms": ["macos-arm64"],
+      "case_ids": ["archive-suite", "diagnostics", "symbols"],
+      "sources": [".github/workflows/pgaudit-macos-arm64-feasibility.yml", "scripts/macos/build-source-dependencies.sh", "scripts/macos/static_analysis.py", "scripts/pgaudit/macos-diagnostics.sh", "scripts/pgaudit/macos-feasibility.sh", "scripts/pgaudit/probe.sql", "support.json", "support/postgresql-releases.json", "tests/test_create_macos_symbols.py", "tests/test_emit_pgaudit_macos_publication.py", "tests/test_import_pgaudit_macos_publication.py", "tests/test_pgaudit_macos_targets.py", "tools/check_extension_redistribution.py", "tools/coverage.py", "tools/create_macos_symbols.py", "tools/emit_pgaudit_macos_publication.py", "tools/import_pgaudit_macos_publication.py", "tools/pgaudit_macos_targets.py", "tools/publication_preflight.py"]
+    },
+    "pgaudit-publication-macos-arm64-15.19": {
+      "scope": "publication",
+      "platforms": ["macos-arm64"],
+      "case_ids": ["archive-suite", "diagnostics", "symbols"],
+      "sources": [".github/workflows/pgaudit-macos-arm64-feasibility.yml", "scripts/macos/build-source-dependencies.sh", "scripts/macos/static_analysis.py", "scripts/pgaudit/macos-diagnostics.sh", "scripts/pgaudit/macos-feasibility.sh", "scripts/pgaudit/probe.sql", "support.json", "support/postgresql-releases.json", "tests/test_create_macos_symbols.py", "tests/test_emit_pgaudit_macos_publication.py", "tests/test_import_pgaudit_macos_publication.py", "tests/test_pgaudit_macos_targets.py", "tools/check_extension_redistribution.py", "tools/coverage.py", "tools/create_macos_symbols.py", "tools/emit_pgaudit_macos_publication.py", "tools/import_pgaudit_macos_publication.py", "tools/pgaudit_macos_targets.py", "tools/publication_preflight.py"]
+    },
     "pgtap-publication-macos-arm64-15.19": {
       "scope": "publication",
       "platforms": ["macos-arm64"],
