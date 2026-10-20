@@ -3,7 +3,6 @@ EXPORTS
   CronBackgroundWorker
   PgCronLauncherMain
   Pg_magic_func
-  _PG_fini
   _PG_init
   cron_alter_job
   cron_job_cache_invalidate
