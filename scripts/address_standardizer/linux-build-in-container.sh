@@ -74,16 +74,18 @@ cp "$pkglibdir/address_standardizer.so" "$package/$pkglib_rel/"
 cp "$sharedir/extension/address_standardizer"* "$package/share/extension/"
 cp -a "$pgroot/lib"/libpcre2-8.so* "$package/lib/"
 cp "COPYING" "$package/LICENSES/Address-Standardizer.txt"
-cp "/work/source/pcre2-${pcre2_version}/COPYING" "$package/LICENSES/PCRE2.txt"
+cp "/work/source/pcre2-${pcre2_version}/LICENCE.md" "$package/LICENSES/PCRE2.txt"
+cp "/work/source/pcre2-${pcre2_version}/deps/sljit/LICENSE" "$package/LICENSES/SLJIT.txt"
 cp "COPYING" /out/Address-Standardizer-COPYING.txt
-cp "/work/source/pcre2-${pcre2_version}/COPYING" /out/PCRE2-COPYING.txt
+cp "/work/source/pcre2-${pcre2_version}/LICENCE.md" /out/PCRE2-LICENCE.md
+cp "/work/source/pcre2-${pcre2_version}/deps/sljit/LICENSE" /out/SLJIT-LICENSE.txt
 
 cat > "$package/LICENSES/license-inventory.json" <<EOF
 {
   "schema_version": 1,
   "components": [
     {"component": "Address Standardizer", "version": "${extension_version}", "payload_paths": ["${pkglib_rel}/address_standardizer.so", "share/extension"], "license_file": "Address-Standardizer.txt", "license_source": "https://github.com/postgis/address_standardizer/blob/v3.7.0/COPYING", "source_url": "https://github.com/postgis/address_standardizer/tree/v3.7.0", "source_commit": "${extension_commit}", "redistribution_review": {"status": "pending", "basis": "The upstream COPYING file is included. Repository-level review of source and load-path policy remains open.", "source_obligation": "none identified"}},
-    {"component": "PCRE2", "version": "${pcre2_version}", "payload_paths": ["lib/libpcre2-8.so"], "license_file": "PCRE2.txt", "license_source": "https://github.com/PCRE2Project/pcre2/tree/pcre2-${pcre2_version}", "source_url": "https://github.com/PCRE2Project/pcre2/releases/download/pcre2-${pcre2_version}/pcre2-${pcre2_version}.tar.bz2", "source_sha256": "${pcre2_sha256}", "redistribution_review": {"status": "pending", "basis": "The upstream COPYING file is included; no separate redistribution conclusion is claimed.", "source_obligation": "none identified"}}
+    {"component": "PCRE2", "version": "${pcre2_version}", "payload_paths": ["lib/libpcre2-8.so"], "license_file": "PCRE2.txt", "additional_license_files": ["SLJIT.txt"], "license_source": "https://github.com/PCRE2Project/pcre2/blob/pcre2-${pcre2_version}/LICENCE.md", "additional_license_sources": ["https://github.com/PCRE2Project/pcre2/blob/pcre2-${pcre2_version}/deps/sljit/LICENSE"], "source_url": "https://github.com/PCRE2Project/pcre2/releases/download/pcre2-${pcre2_version}/pcre2-${pcre2_version}.tar.bz2", "source_sha256": "${pcre2_sha256}", "redistribution_review": {"status": "pending", "basis": "The upstream PCRE2 and bundled SLJIT licence texts are included; redistribution review remains pending.", "source_obligation": "none identified"}}
   ]
 }
 EOF

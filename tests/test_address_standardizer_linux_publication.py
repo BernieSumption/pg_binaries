@@ -42,6 +42,11 @@ class AddressStandardizerLinuxPublication(unittest.TestCase):
         self.assertIn("--extension-version \"$ADDRESS_STANDARDIZER_VERSION\"", workflow)
         recipe = (ROOT / "scripts/address_standardizer/linux-build-in-container.sh").read_text()
         self.assertIn('Address Standardizer recipe supports 3.7.0; selected $extension_version', recipe)
+        self.assertIn('/LICENCE.md" "$package/LICENSES/PCRE2.txt"', recipe)
+        self.assertIn('/deps/sljit/LICENSE" "$package/LICENSES/SLJIT.txt"', recipe)
+        self.assertIn('additional_license_files": ["SLJIT.txt"]', recipe)
+        self.assertIn('/PCRE2-LICENCE.md', recipe)
+        self.assertIn('/SLJIT-LICENSE.txt', recipe)
         self.assertNotIn("15.19|16.15|17.11|18.6", recipe)
         self.assertNotIn("15.19|16.15|17.11|18.6",
                          (ROOT / "scripts/address_standardizer/linux-verify-in-container.sh").read_text())
@@ -131,7 +136,8 @@ class AddressStandardizerLinuxPublication(unittest.TestCase):
                     f"address_standardizer_source_commit={publication.SOURCE_COMMIT}\n"
                     f"pcre2_source_sha256={publication.PCRE2_SHA256}\n", encoding="utf-8")
                 (archives / "Address-Standardizer-COPYING.txt").write_text("upstream extension licence\n", encoding="utf-8")
-                (archives / "PCRE2-COPYING.txt").write_text("upstream PCRE2 licence\n", encoding="utf-8")
+                (archives / "PCRE2-LICENCE.md").write_text("upstream PCRE2 licence\n", encoding="utf-8")
+                (archives / "SLJIT-LICENSE.txt").write_text("upstream SLJIT licence\n", encoding="utf-8")
                 (archives / "probe-output.txt").write_text(
                     f"PASS: Address Standardizer 3.7.0 with PostgreSQL {pg_version} on relocated Alpine 3.22\n",
                     encoding="utf-8")

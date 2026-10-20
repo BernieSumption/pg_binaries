@@ -175,7 +175,8 @@ def emit(root, archives, core_archives, output, architecture, build_result, veri
 
     report_paths = {"elf_closure": static_path, "build_evidence": build_evidence,
                     "address_standardizer_license": archives / "Address-Standardizer-COPYING.txt",
-                    "pcre2_license": archives / "PCRE2-COPYING.txt"}
+                    "pcre2_license": archives / "PCRE2-LICENCE.md",
+                    "sljit_license": archives / "SLJIT-LICENSE.txt"}
     if resolution is not None:
         report_paths["core_resolution"] = resolution_path
     for key, path in report_paths.items():

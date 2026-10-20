@@ -49,6 +49,7 @@ inventory = json.loads((payload / 'LICENSES/license-inventory.json').read_text()
 assert inventory['schema_version'] == 1 and len(inventory['components']) == 2
 assert (payload / 'LICENSES/Address-Standardizer.txt').is_file()
 assert (payload / 'LICENSES/PCRE2.txt').is_file()
+assert (payload / 'LICENSES/SLJIT.txt').is_file()
 PY
 while IFS= read -r -d '' source; do
   relative=${source#"$extroot/"}
