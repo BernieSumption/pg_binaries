@@ -1,0 +1,237 @@
+name: pgvector selected macOS publication
+
+on:
+  workflow_call:
+    inputs:
+      postgresql_version:
+        description: Exact selected PostgreSQL release
+        required: true
+        type: string
+      architecture:
+        description: Native macOS architecture
+        required: true
+        type: string
+      extension_version:
+        description: Exact selected pgvector release
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      postgresql_version:
+        description: Exact selected PostgreSQL release
+        required: true
+        type: string
+        default: '18.6'
+      architecture:
+        description: Native macOS architecture
+        required: true
+        type: choice
+        options: [arm64, x86_64]
+      extension_version:
+        description: Exact selected pgvector release
+        required: true
+        type: string
+        default: '0.8.7'
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  select:
+    runs-on: ubuntu-latest
+    outputs:
+      postgresql_version: ${{ steps.plan.outputs.postgresql_version }}
+      extension_version: ${{ steps.plan.outputs.extension_version }}
+      architecture: ${{ steps.plan.outputs.architecture }}
+      platform: ${{ steps.plan.outputs.platform }}
+      runner: ${{ steps.plan.outputs.runner }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate the exact selected target
+        id: plan
+        env:
+          PG_VERSION: ${{ inputs.postgresql_version }}
+          VECTOR_VERSION: ${{ inputs.extension_version }}
+          ARCHITECTURE: ${{ inputs.architecture }}
+        run: |
+          set -euo pipefail
+          case "$ARCHITECTURE" in arm64|x86_64) ;; *) echo 'Unsupported macOS architecture.' >&2; exit 2 ;; esac
+          [[ "$VECTOR_VERSION" == 0.8.7 ]] || { echo 'Selected macOS publication supports pgvector 0.8.7.' >&2; exit 2; }
+          python3 tools/extension_archive_plan.py --project pgvector \
+            --platform "macos-$ARCHITECTURE" --postgresql-version "$PG_VERSION" \
+            --extension-version "$VECTOR_VERSION" --github-output "$GITHUB_OUTPUT" > "$RUNNER_TEMP/selection.json"
+          selected=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["selected_version"])' "$RUNNER_TEMP/selection.json")
+          [[ "$selected" == "$VECTOR_VERSION" ]] || { echo 'Planner selected a different pgvector release.' >&2; exit 1; }
+          printf 'architecture=%s\nplatform=macos-%s\n' "$ARCHITECTURE" "$ARCHITECTURE" >> "$GITHUB_OUTPUT"
+          if [[ "$ARCHITECTURE" == arm64 ]]; then echo 'runner=macos-15' >> "$GITHUB_OUTPUT"; else echo 'runner=macos-15-intel' >> "$GITHUB_OUTPUT"; fi
+
+  build:
+    needs: select
+    runs-on: ${{ needs.select.outputs.runner }}
+    timeout-minutes: 100
+    env:
+      PG_VERSION: ${{ needs.select.outputs.postgresql_version }}
+      VECTOR_VERSION: ${{ needs.select.outputs.extension_version }}
+      ARCHITECTURE: ${{ needs.select.outputs.architecture }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Resolve the checked PostgreSQL core
+        id: core
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/core" "$RUNNER_TEMP/target" "$RUNNER_TEMP/archives"
+          python3 - "$RUNNER_TEMP/target/base.json" "$PG_VERSION" "$ARCHITECTURE" <<'PY'
+          import json, pathlib, sys
+          path, version, architecture = sys.argv[1:]
+          platform = f'macos-{architecture}'
+          pathlib.Path(path).write_text(json.dumps({
+              'postgresql_version': version,
+              'architecture': architecture,
+              'platform': platform,
+              'core_archive': {'basename': f'postgresql-{version}-{platform}.tar.gz'},
+          }) + '\n')
+          PY
+          bash scripts/macos/resolve-core.sh "$RUNNER_TEMP/target/base.json" "$RUNNER_TEMP/core"
+      - name: Build pgvector against the checked core
+        id: package
+        if: always() && steps.core.outcome == 'success'
+        continue-on-error: true
+        run: |
+          set -o pipefail
+          source_url=$(python3 tools/source_archive.py pgvector "$VECTOR_VERSION" tar.gz --field url)
+          curl --fail --location --retry 3 "$source_url" --output "$RUNNER_TEMP/pgvector.tar.gz"
+          bash scripts/pgvector/macos-build.sh \
+            "$RUNNER_TEMP/core/postgresql-$PG_VERSION-macos-$ARCHITECTURE.tar.gz" \
+            "$RUNNER_TEMP/pgvector.tar.gz" "$RUNNER_TEMP/archives" \
+            "$PG_VERSION" "$VECTOR_VERSION" "$ARCHITECTURE"
+      - name: Collect build outputs
+        if: always()
+        run: |
+          mkdir -p "$RUNNER_TEMP/archives"
+          cp "$RUNNER_TEMP/core"/postgresql-*.tar.gz* "$RUNNER_TEMP/archives/" 2>/dev/null || true
+          cp "$RUNNER_TEMP/core/target.json" "$RUNNER_TEMP/archives/core-target.json" 2>/dev/null || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pgvector-macos-${{ needs.select.outputs.postgresql_version }}-${{ needs.select.outputs.architecture }}-build-${{ github.run_id }}
+          path: ${{ runner.temp }}/archives/**
+          if-no-files-found: warn
+          retention-days: 7
+      - name: Require core resolution and archive build to pass
+        if: always()
+        run: |
+          if [[ '${{ steps.core.outcome }}' != success || '${{ steps.package.outcome }}' != success ]]; then
+            echo 'Selected macOS pgvector core resolution and archive build must pass.' >&2
+            exit 1
+          fi
+
+  verify:
+    needs: [select, build]
+    if: always() && needs.select.result == 'success'
+    runs-on: ${{ needs.select.outputs.runner }}
+    timeout-minutes: 40
+    env:
+      PG_VERSION: ${{ needs.select.outputs.postgresql_version }}
+      VECTOR_VERSION: ${{ needs.select.outputs.extension_version }}
+      ARCHITECTURE: ${{ needs.select.outputs.architecture }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download build archives
+        id: download
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: pgvector-macos-${{ needs.select.outputs.postgresql_version }}-${{ needs.select.outputs.architecture }}-build-${{ github.run_id }}
+          path: ${{ runner.temp }}/archives
+      - name: Verify transferred core and pgvector archives
+        id: archive_suite
+        if: always() && steps.download.outcome == 'success'
+        continue-on-error: true
+        env:
+          MACOS_STATIC_ANALYSIS_REPORT: ${{ runner.temp }}/verification/static-analysis.json
+        run: bash scripts/macos/verify.sh "$RUNNER_TEMP/archives" "$ARCHITECTURE" "$PG_VERSION"
+      - name: Verify representative macOS loader diagnostics
+        id: diagnostics
+        if: always() && steps.download.outcome == 'success'
+        continue-on-error: true
+        run: bash scripts/macos/diagnostics.sh "$RUNNER_TEMP/archives" "$ARCHITECTURE" "$PG_VERSION" "$VECTOR_VERSION" "$RUNNER_TEMP/verification/diagnostics.json"
+      - name: Verify symbols against downloaded archive bytes
+        id: symbols
+        if: always() && steps.download.outcome == 'success'
+        continue-on-error: true
+        run: |
+          python3 tools/create_macos_symbols.py \
+            "$RUNNER_TEMP/archives/postgresql-$PG_VERSION-macos-$ARCHITECTURE.tar.gz" \
+            "$RUNNER_TEMP/archives/pgvector-$VECTOR_VERSION-postgresql-$PG_VERSION-macos-$ARCHITECTURE.tar.gz" \
+            --output-dir "$RUNNER_TEMP/archives/debug-symbols" --verify-only
+      - name: Emit and import archive-bound publication evidence
+        id: evidence
+        if: always()
+        env:
+          ARCHIVE_SUITE_OUTCOME: ${{ steps.archive_suite.outcome }}
+          SYMBOLS_OUTCOME: ${{ steps.symbols.outcome }}
+          DIAGNOSTICS_OUTCOME: ${{ steps.diagnostics.outcome }}
+          BUILD_OUTCOME: ${{ needs.build.result }}
+          GITHUB_SHA: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/verification/publication" "$RUNNER_TEMP/evidence-core"
+          cp "$RUNNER_TEMP/archives"/postgresql-*.tar.gz* "$RUNNER_TEMP/evidence-core/" 2>/dev/null || true
+          cp "$RUNNER_TEMP/archives"/pgvector-*.tar.gz* "$RUNNER_TEMP/evidence-core/" 2>/dev/null || true
+          python3 - "$RUNNER_TEMP/verification/publication-attempt.json" <<'PY'
+          import json, os, sys
+          from pathlib import Path
+          def result(value):
+              return {"success": "success", "failure": "failure", "skipped": "skipped",
+                      "cancelled": "skipped"}.get(value, "skipped")
+          Path(sys.argv[1]).write_text(json.dumps({
+              "run_id": os.environ["GITHUB_RUN_ID"],
+              "source_revision": os.environ["GITHUB_SHA"],
+              "steps": {
+                  "archive-suite": result(os.environ.get("ARCHIVE_SUITE_OUTCOME", "skipped")),
+                  "symbols": result(os.environ.get("SYMBOLS_OUTCOME", "skipped")),
+                  "diagnostics": result(os.environ.get("DIAGNOSTICS_OUTCOME", "skipped")),
+              },
+          }, indent=2, sort_keys=True) + "\n")
+          PY
+          image_id="${ImageOS:-unknown}/${ImageVersion:-unknown}"
+          if [[ -f "$RUNNER_TEMP/evidence-core/postgresql-$PG_VERSION-macos-$ARCHITECTURE.tar.gz" && \
+                -f "$RUNNER_TEMP/evidence-core/pgvector-$VECTOR_VERSION-postgresql-$PG_VERSION-macos-$ARCHITECTURE.tar.gz" ]]; then
+            archive_result="${ARCHIVE_SUITE_OUTCOME:-failure}"
+            [[ "$BUILD_OUTCOME" == success ]] || archive_result=failure
+            python3 tools/emit_macos_publication_records.py \
+              --archives "$RUNNER_TEMP/evidence-core" --output "$RUNNER_TEMP/verification/publication" \
+              --postgresql-version "$PG_VERSION" --os-version "$(sw_vers -productVersion)" \
+              --architecture "$ARCHITECTURE" --image-id "$image_id" \
+              --archive-suite-result "$archive_result" --symbols-result "${SYMBOLS_OUTCOME:-skipped}" \
+              --diagnostics-result "${DIAGNOSTICS_OUTCOME:-skipped}" \
+              --static-report "$RUNNER_TEMP/verification/static-analysis.json" \
+              --diagnostic-report "$RUNNER_TEMP/verification/diagnostics.json" || true
+          fi
+          python3 tools/import_macos_publication.py \
+            --core-artifact "$RUNNER_TEMP/evidence-core" \
+            --verification-artifact "$RUNNER_TEMP/verification" \
+            --run-id "$GITHUB_RUN_ID" --architecture "$ARCHITECTURE" \
+            --postgresql-version "$PG_VERSION"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pgvector-macos-${{ needs.select.outputs.postgresql_version }}-${{ needs.select.outputs.architecture }}-verification-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/verification/**
+            ${{ runner.temp }}/archives/**
+            support/evidence/macos-publication-${{ github.run_id }}/**
+            support/verification/*-current-${{ github.run_id }}.json
+          if-no-files-found: warn
+          retention-days: 7
+      - name: Require passing fresh-runner verification and retained evidence
+        if: always()
+        run: |
+          if [[ '${{ needs.build.result }}' != success || '${{ steps.download.outcome }}' != success || '${{ steps.archive_suite.outcome }}' != success || '${{ steps.symbols.outcome }}' != success || '${{ steps.diagnostics.outcome }}' != success || '${{ steps.evidence.outcome }}' != success ]]; then
+            echo 'Selected macOS pgvector archive verification and evidence retention must pass.' >&2
+            exit 1
+          fi
