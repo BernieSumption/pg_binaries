@@ -29,6 +29,8 @@ if not metadata.get('build_id','').startswith('github-') or len(metadata.get('so
 if hashlib.sha256(archive.read_bytes()).hexdigest()!=ext_sha: raise SystemExit('extension archive bytes changed')
 inventory=json.loads((ext/'LICENSES/postgis-inventory.json').read_text())
 if inventory.get('schema_version')!=1 or not inventory.get('components'): raise SystemExit('missing PostGIS licence inventory')
+identities=[item.get('component') for item in inventory['components']]
+if any(not identity for identity in identities) or len(set(identities))!=len(identities): raise SystemExit('PostGIS licence component identities are missing or duplicated')
 core_inventory=json.loads((core_root/'LICENSES/inventory.json').read_text())
 for item in inventory.get('reused_core_dependencies',[]):
     library=item.get('library'); path=core_root/'lib'/library
@@ -39,6 +41,12 @@ for item in inventory.get('reused_core_dependencies',[]):
 mapped=set()
 for component in inventory['components']:
     if component.get('redistribution_review',{}).get('status')!='resolved': raise SystemExit(f"unresolved redistribution record: {component.get('component')}")
+    review=component['redistribution_review']; obligation=review.get('source_obligation')
+    if obligation not in {'none','source-links','source-offer'}: raise SystemExit(f"invalid source obligation: {component.get('component')}")
+    if obligation=='source-links':
+        links=review.get('source_links',[])
+        if not links or any(not isinstance(link,str) or not link.startswith('https://') for link in links): raise SystemExit(f"missing public source links: {component.get('component')}")
+    if obligation=='source-offer' and not (ext/component.get('source_offer_file','')).is_file(): raise SystemExit(f"missing source offer: {component.get('component')}")
     license_file=ext/component.get('license_file','')
     if not license_file.is_file() or not license_file.stat().st_size: raise SystemExit(f'missing licence text: {license_file}')
     for relative in component.get('additional_license_files',[]):

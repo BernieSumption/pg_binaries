@@ -109,7 +109,32 @@ PY
 cp -a "$(brew --prefix proj)/share/proj" "$pgroot/share/"
 cp -a "$gdal_prefix/share/gdal" "$pgroot/share/"
 
+core_xml="$pgroot/lib/libxml2.16.dylib"
+brew_xml="$(brew --prefix libxml2)/lib/libxml2.16.dylib"
+if [[ -f "$core_xml" && -f "$brew_xml" ]] && ! cmp -s "$core_xml" "$brew_xml"; then
+  mv "$core_xml" "$work/core-libxml2.16.dylib"
+fi
 python3 "$repo/scripts/macos/bundle.py" "$pgroot" arm64 2>&1 | tee "$output/bundle.log"
+python3 - "$pgroot" "$output" <<'PY'
+from pathlib import Path
+import json, shutil, subprocess, sys
+root, output = map(Path, sys.argv[1:])
+package = output / 'package/postgis'
+package.mkdir(parents=True, exist_ok=True)
+dependencies = json.loads((root / 'bundled-dependencies.json').read_text())
+name = 'libxml2.16.dylib'
+if name in dependencies:
+    source = root / 'lib' / name
+    private_name = 'libxml2.postgis.dylib'
+    if not source.is_file(): raise SystemExit('bundled libxml2 source is missing')
+    dependencies[private_name] = dependencies.pop(name)
+    target = package / 'lib' / private_name
+    target.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(source, target)
+    subprocess.run(['install_name_tool', '-id', '@rpath/' + private_name, str(target)], check=True)
+    subprocess.run(['codesign', '--force', '--sign', '-', str(target)], check=True)
+(output / 'postgis-bundled-dependencies.json').write_text(json.dumps(dependencies, indent=2, sort_keys=True) + '\n')
+PY
 python3 - "$pgroot" "$output" <<'PY'
 import json, pathlib, shutil, sys
 root, output=map(pathlib.Path,sys.argv[1:])
@@ -134,12 +159,32 @@ for name in names:
         shutil.copy2(found[0],package/'lib'/found[0].name)
 for relative in ('share/proj','share/gdal'):
     shutil.copytree(root/relative,package/relative,dirs_exist_ok=True)
-dependency_map=json.loads((root/'bundled-dependencies.json').read_text())
+dependency_map=json.loads((output/'postgis-bundled-dependencies.json').read_text())
 for name in dependency_map:
     path=root/'lib'/name
     if path.is_file(): shutil.copy2(path,package/'lib'/name)
 (package/'LICENSES').mkdir(exist_ok=True)
 (package/'bundled-dependencies.json').write_text(json.dumps(dependency_map,indent=2,sort_keys=True)+'\n')
+PY
+python3 - "$output/package/postgis/lib" <<'PY'
+from pathlib import Path
+import subprocess, sys
+libdir = Path(sys.argv[1])
+old_name, new_name = 'libxml2.16.dylib', 'libxml2.postgis.dylib'
+if (libdir / new_name).is_file():
+    for binary in libdir.iterdir():
+        if not binary.is_file() or subprocess.run(['lipo', '-archs', str(binary)], capture_output=True).returncode:
+            continue
+        result = subprocess.run(['otool', '-L', str(binary)], text=True, capture_output=True, check=True)
+        changed = False
+        for line in result.stdout.splitlines()[1:]:
+            dependency = line.strip().split(' ', 1)[0]
+            if Path(dependency).name == old_name:
+                subprocess.run(['install_name_tool', '-change', dependency,
+                                '@loader_path/' + new_name, str(binary)], check=True)
+                changed = True
+        if changed:
+            subprocess.run(['codesign', '--force', '--sign', '-', str(binary)], check=True)
 PY
 cp "$work/source/postgis-3.6.4/COPYING" "$output/package/postgis/LICENSES/PostGIS.txt"
 cp "$work/source/gdal-3.13.3/LICENSE.TXT" "$output/package/postgis/LICENSES/GDAL.txt"

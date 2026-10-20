@@ -44,6 +44,7 @@ expected_formulae = {
     "gmp": ("6.3.0", "LGPL-3.0-or-later OR GPL-2.0-or-later"),
     "jpeg-turbo": ("3.2.0", "IJG AND Zlib AND BSD-3-Clause"),
     "json-c": ("0.19", "MIT"),
+    "libxml2": ("2.15.4", "MIT"),
     "libtiff": ("4.7.2", "libtiff"),
     "mpfr": ("4.2.2", "LGPL-3.0-or-later"),
     "pcre2": ("10.48", "BSD-3-Clause"),
@@ -62,7 +63,8 @@ for (name, version), libraries in sorted(formula_libs.items()):
         raise SystemExit(f"Homebrew metadata does not match bundled {name} {version}")
     prefix = Path(command("brew", "--prefix", name).strip())
     candidates = sorted(path for path in prefix.rglob("*") if path.is_file()
-        and path.name.lower() in {"license", "license.txt", "license.md", "license_1_0.txt", "copying", "copyright"}
+        and (path.name.lower() in {"license", "license.txt", "license.md", "license_1_0.txt", "copying", "copyright"}
+             or path.name.lower().startswith(("copying.", "license.")))
         and len(path.relative_to(prefix).parts) <= 6)
     if not candidates:
         raise SystemExit(f"no licence text found in Homebrew package {name} {version}")
@@ -81,20 +83,48 @@ for (name, version), libraries in sorted(formula_libs.items()):
         raise SystemExit(f"Homebrew licence expression missing for {name} {version}")
     if (version, license_expr) != expected_formulae[name]:
         raise SystemExit(f"unreviewed Homebrew version or licence for {name}: {version}, {license_expr}")
-    # Dynamic libraries under LGPL may be replaced by users; retain the exact
-    # source location and digest so users can obtain corresponding source.
-    copyleft = "LGPL" in license_expr or "GPL" in license_expr
+    primary = candidates[0]
+    # Homebrew describes the whole source package; narrow mixed package terms
+    # to the exact shared libraries included in this archive.
+    library_expression = license_expr
+    review_note = "The exact dynamically linked libraries are listed by payload path."
+    if name == "gmp":
+        library_expression = "LGPL-3.0-or-later"
+        review_note = "GMP's shared libraries use the LGPL-3.0-or-later alternative; GPL-2.0-or-later applies to other package uses."
+        primary = next((path for path in candidates if "lesser" in path.name.lower()), None)
+        if primary is None: raise SystemExit("GMP shared-library LGPL text is missing")
+    elif name == "xz" and all("liblzma" in library.lower() for library in libraries):
+        library_expression = "0BSD"
+        review_note = "Only liblzma is included; the package's GPL-2.0-or-later term applies to the xz utilities, which are excluded."
+        primary = next((path for path in candidates if "0bsd" in path.name.lower()), None)
+        if primary is None: raise SystemExit("xz liblzma 0BSD text is missing")
+    copyleft = "LGPL" in library_expression or "GPL" in library_expression
+    formula_revision = command("git", "-C", command("brew", "--repository", "homebrew/core").strip(),
+                               "rev-parse", "HEAD").strip()
+    if not formula_revision or not re.fullmatch(r"[0-9a-f]{40}", formula_revision):
+        raise SystemExit(f"Homebrew formula revision is missing for {name}")
+    formula_url = f"https://github.com/Homebrew/homebrew-core/blob/{formula_revision}/Formula/{name[0]}/{name}.rb"
+    source_links = [source_url, formula_url,
+                    f"https://github.com/BernieSumption/pg_binaries/blob/{__import__('os').environ['GITHUB_SHA']}/scripts/postgis/macos-build-publication.sh"]
+    review_basis = (f"Homebrew {name} {version} formula at {formula_url} identifies the source archive and package terms. {review_note} "
+                    "The archive includes the applicable notice texts. No source modifications are made.")
+    if copyleft:
+        review_basis += " The shared LGPL library is dynamically linked and can be replaced by users; corresponding source and build material are linked for the LGPL source and relinking requirements."
+    else:
+        review_basis += " The applied library terms require notices but no source delivery for this binary distribution."
     components.append({
-        "component": "homebrew-library", "package": name, "version": version,
-        "license_expression": license_expr, "payload_paths": paths,
-        "license_file": f"LICENSES/{license_names[0]}",
-        "additional_license_files": [f"LICENSES/{name}" for name in license_names[1:]],
-        "source_url": source_url, "source_sha256": source_sha,
-        "license_source": str(candidates[0]),
+        "component": f"homebrew-library-{name}", "package": name, "version": version,
+        "license_expression": library_expression, "package_license_expression": license_expr,
+        "payload_paths": paths,
+        "license_file": f"LICENSES/{license_names[candidates.index(primary)]}",
+        "additional_license_files": [f"LICENSES/{filename}" for filename in license_names[1:]],
+        "source_url": source_url, "source_sha256": source_sha, "source_revision": formula_revision,
+        "license_source": str(primary),
         "redistribution_review": {
             "status": "resolved",
-            "basis": f"The exact Homebrew {name} {version} source and licence expression are recorded; the complete packaged copyright/licence text accompanies its shared library payload.",
-            "source_obligation": "source-link" if copyleft else "none",
+            "basis": review_basis,
+            "source_obligation": "source-links" if copyleft else "none",
+            **({"source_links": source_links} if copyleft else {}),
         },
     })
 
@@ -109,7 +139,11 @@ components.insert(0, {
                             + ["share/extension"]),
     "license_file": "LICENSES/PostGIS.txt",
     "license_source": "https://download.osgeo.org/postgis/source/postgis-3.6.4.tar.gz",
-    "redistribution_review": {"status":"resolved", "basis":"The unmodified PostGIS 3.6.4 source archive provides the included COPYING terms.", "source_obligation":"none"},
+    "license_expression": "GPL-2.0-or-later",
+    "redistribution_review": {"status":"resolved", "basis":"PostGIS 3.6.4 COPYING declares GPL-2.0-or-later. This archive distributes unmodified upstream source-built binaries and includes the complete license text. The corresponding source is the exact checksum-pinned 3.6.4 source archive; GDAL's source and the public build recipe cover the combined build. No source modifications are made.", "source_obligation":"source-links",
+                               "source_links":["https://download.osgeo.org/postgis/source/postgis-3.6.4.tar.gz",
+                                               "https://download.osgeo.org/gdal/3.13.3/gdal-3.13.3.tar.gz",
+                                               f"https://github.com/BernieSumption/pg_binaries/blob/{__import__('os').environ['GITHUB_SHA']}/scripts/postgis/macos-build-publication.sh"]},
 })
 gdal_libs = sorted(p.name for p in (root / "lib").glob("libgdal*.dylib"))
 if len(gdal_libs) != 1:
@@ -188,7 +222,7 @@ components.append({
     "additional_license_files":["LICENSES/PROJ-data-README.DATA", "LICENSES/PROJ-data-copyright_and_licenses.csv", *[item["file"] for item in license_records]],
     "data_licence_texts":license_records,
     "license_source":"https://github.com/OSGeo/PROJ-data/blob/master/README.DATA",
-    "redistribution_review":{"status":"resolved", "basis":"The exact PROJ-data source archive is checksum-verified and its upstream README plus file-level copyright/licence mapping accompany the grids. Upstream states the distributed grids use permissive licences.", "source_obligation":"source-link"},
+    "redistribution_review":{"status":"resolved", "basis":"The exact PROJ-data source archive is checksum-verified. Its upstream README and per-file copyright/licence mapping accompany the grids, along with the applicable licence texts and attribution records. The included data terms require notices and attribution but no source delivery.", "source_obligation":"none"},
 })
 reused=[]
 core_inventory=json.loads((core_root/"LICENSES/inventory.json").read_text())

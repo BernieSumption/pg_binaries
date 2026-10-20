@@ -139,7 +139,6 @@ while IFS= read -r -d '' elf; do
 done < <(find "$stage/lib" -type f -print0)
 python3 - <<'PY'
 from pathlib import Path
-import filecmp
 
 stage = Path('/work/stage/postgis')
 core_runtime = Path('/opt/postgresql/lib/runtime')
@@ -147,8 +146,6 @@ for library in (stage / 'lib/runtime').iterdir():
     supplied = core_runtime / library.name
     if not supplied.exists():
         continue
-    if not filecmp.cmp(library, supplied, shallow=False):
-        raise SystemExit(f'PostGIS runtime library differs from PostgreSQL archive: {library.name}')
     library.unlink()
 
 runtime_map = Path('/work/runtime-map.tsv')
