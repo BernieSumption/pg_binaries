@@ -12,6 +12,7 @@ from pathlib import PurePosixPath
 import coverage
 import emit_pg_jsonschema_linux_publication as publication
 import linux_core_resolution
+import check_pg_jsonschema_component_inventory as component_inventory
 
 MAX_FILE_BYTES = 8 * 1024 * 1024
 
@@ -69,7 +70,7 @@ def _step_results(attempt):
     return results
 
 
-def _validate_package(path, architecture, pg_version):
+def _validate_package(path, architecture, pg_version, component_inventory_path=None):
     expected = {
         "project": "pg_jsonschema", "version": publication.EXTENSION_VERSION,
         "sql_names": ["pg_jsonschema"], "requires": [],
@@ -105,9 +106,11 @@ def _validate_package(path, architecture, pg_version):
                 raise coverage.CoverageError("extension package metadata does not match this candidate")
             required = {"pg_jsonschema/lib/pg_jsonschema.so",
                         "pg_jsonschema/share/extension/pg_jsonschema.control",
-                        "pg_jsonschema/LICENSES/cargo/cargo-license-inventory.json"}
+                        "pg_jsonschema/LICENSES/cargo/cargo-license-inventory.json",
+                        "pg_jsonschema/LICENSES/pg_jsonschema-inventory.json"}
             if not required <= names:
                 raise coverage.CoverageError("extension archive is missing a required payload or licence inventory")
+            component_inventory.validate(path, component_inventory_path)
             controls = {name.rsplit("/", 1)[-1][:-8] for name in names
                         if name.startswith("pg_jsonschema/share/extension/") and name.endswith(".control")}
             if controls != {"pg_jsonschema"}:
@@ -115,7 +118,7 @@ def _validate_package(path, architecture, pg_version):
             if not any(name.startswith("pg_jsonschema/share/extension/pg_jsonschema--") and name.endswith(".sql")
                        for name in names):
                 raise coverage.CoverageError("extension payload lacks its versioned SQL script")
-    except (OSError, tarfile.TarError, UnicodeError, json.JSONDecodeError) as exc:
+    except (OSError, tarfile.TarError, UnicodeError, json.JSONDecodeError, ValueError) as exc:
         raise coverage.CoverageError(f"cannot inspect pg_jsonschema extension archive: {exc}") from exc
 
 
@@ -128,6 +131,8 @@ def _retain_available(attempt_path, attempt, archives, evidence, copies):
         "probe_output": (archives / "probe-output.txt", "probe-output.txt"),
         "build_evidence": (archives / "build-evidence.txt", "build-evidence.txt"),
         "cargo_license_inventory": (archives / "cargo-license-inventory.json", "cargo-license-inventory.json"),
+        "component_license_inventory": (archives / "pg_jsonschema-component-inventory.json",
+                                         "pg_jsonschema-inventory.json"),
     }
     report_hashes = attempt.get("reports", {})
     for key, (source, name) in names.items():
@@ -214,7 +219,8 @@ def import_run(root, core_archives, archives, run_id):
             and (provenance.get("run_id") != run_id
                  or provenance.get("run_sha") != attempt.get("source_revision"))):
         raise coverage.CoverageError("built core provenance does not match this workflow run and source revision")
-    _validate_package(extension_archive, architecture, pg_version)
+    _validate_package(extension_archive, architecture, pg_version,
+                      archives / "pg_jsonschema-component-inventory.json")
     if attempt.get("archives") != digests:
         raise coverage.CoverageError("downloaded archive bytes differ from raw attempt hashes")
     _retain(Path(str(extension_archive) + ".sha256"), evidence / f"{archive_name}.sha256", copies)
@@ -257,9 +263,11 @@ def import_run(root, core_archives, archives, run_id):
         "elf_closure": archives / "static-analysis" / "pg_jsonschema.json",
         "build_evidence": archives / "build-evidence.txt",
         "cargo_license_inventory": archives / "cargo-license-inventory.json",
+        "component_license_inventory": archives / "pg_jsonschema-component-inventory.json",
         "probe_output": archives / "probe-output.txt",
     }.items() if path.is_file()}
-    if not {"elf_closure", "build_evidence", "cargo_license_inventory"} <= set(expected_reports):
+    if not {"elf_closure", "build_evidence", "cargo_license_inventory",
+            "component_license_inventory"} <= set(expected_reports):
         raise coverage.CoverageError("complete candidate evidence is missing a required report")
     if attempt.get("reports") != expected_reports:
         raise coverage.CoverageError("raw attempt report hashes differ from retained report bytes")

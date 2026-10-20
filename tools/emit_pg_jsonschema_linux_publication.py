@@ -126,7 +126,8 @@ def emit(root, archives, core_archives, output, architecture, build_result,
             or f"cargo_lock_sha256={CARGO_LOCK_SHA256}" not in build_text):
         raise coverage.CoverageError("build evidence does not identify the pinned source and Cargo.lock")
     attempt["reports"].update({"build_evidence": digest(archives / "build-evidence.txt"),
-                               "cargo_license_inventory": digest(archives / "cargo-license-inventory.json")})
+                               "cargo_license_inventory": digest(archives / "cargo-license-inventory.json"),
+                               "component_license_inventory": digest(archives / "pg_jsonschema-component-inventory.json")})
     probe_output = archives / "probe-output.txt"
     if probe_output.is_file():
         attempt["reports"]["probe_output"] = digest(probe_output)
@@ -138,7 +139,8 @@ def emit(root, archives, core_archives, output, architecture, build_result,
     outcome = "failed" if "failed" in results.values() else "skipped" if "skipped" in results.values() else "passed"
     reports = {"elf_closure": digest(static_path),
                "build_evidence": digest(archives / "build-evidence.txt"),
-               "cargo_license_inventory": digest(archives / "cargo-license-inventory.json")}
+               "cargo_license_inventory": digest(archives / "cargo-license-inventory.json"),
+               "component_license_inventory": digest(archives / "pg_jsonschema-component-inventory.json")}
     if probe_output.is_file():
         reports["probe_output"] = digest(probe_output)
     environment = {"os": "linux", "os_version": kernel_version, "distribution": "Alpine Linux 3.22",

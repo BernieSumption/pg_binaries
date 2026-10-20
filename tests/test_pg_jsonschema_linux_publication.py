@@ -234,12 +234,30 @@ class LinuxPublicationHelpers(unittest.TestCase):
                 "release_eligible": False,
                 "redistribution_status": "postgresql-core-redistribution-review-pending",
             }
+            cargo_inventory = {"packages": [{
+                "name": "synthetic", "version": "0.1", "license": "MIT",
+                "dependency_roles": ["shipped"],
+                "packaged_license_notice_files": [{"path": "LICENSE", "sha256": "0" * 64}],
+            }]}
+            component_inventory = {"schema_version": 1, "components": [{
+                "component": "pg_jsonschema", "version": "0.3.4",
+                "payload_paths": ["lib/pg_jsonschema.so", "share/extension"],
+                "license_file": "pg_jsonschema/LICENSE",
+                "additional_license_files": ["cargo/synthetic-0.1/LICENSE"],
+                "redistribution_review": {
+                    "status": "resolved", "basis": "Fixture review", "source_obligation": "none",
+                },
+            }]}
             with tarfile.open(archive, "w:gz") as package:
                 for name, contents in {
                     "pg_jsonschema/lib/pg_jsonschema.so": b"module",
                     "pg_jsonschema/share/extension/pg_jsonschema.control": b"default_version = '0.3.4'\n",
                     "pg_jsonschema/share/extension/pg_jsonschema--0.3.4.sql": b"SELECT 1;\n",
-                    "pg_jsonschema/LICENSES/cargo/cargo-license-inventory.json": b"{}\n",
+                    "pg_jsonschema/LICENSES/cargo/cargo-license-inventory.json": json.dumps(cargo_inventory).encode(),
+                    "pg_jsonschema/LICENSES/pg_jsonschema-inventory.json":
+                        (json.dumps(component_inventory) + "\n").encode(),
+                    "pg_jsonschema/LICENSES/pg_jsonschema/LICENSE": b"Apache License\n",
+                    "pg_jsonschema/LICENSES/cargo/synthetic-0.1/LICENSE": b"MIT License\n",
                     "metadata.json": (json.dumps(package_metadata) + "\n").encode(),
                 }.items():
                     member = tarfile.TarInfo(name)
@@ -265,6 +283,8 @@ class LinuxPublicationHelpers(unittest.TestCase):
                 f"cargo_lock_sha256={publication.CARGO_LOCK_SHA256}\n",
                 encoding="utf-8")
             (archives / "cargo-license-inventory.json").write_text("{}\n", encoding="utf-8")
+            (archives / "pg_jsonschema-component-inventory.json").write_text(
+                json.dumps(component_inventory) + "\n", encoding="utf-8")
             (archives / "probe-output.txt").write_text(
                 "PASS: pg_jsonschema 0.3.4 on relocated PostgreSQL 18.6 in Alpine 3.22\n", encoding="utf-8")
             profile = {"profile_revision": "b" * 64, "case_ids": list(publication.CASES)}
@@ -287,6 +307,8 @@ class LinuxPublicationHelpers(unittest.TestCase):
             receipt = json.loads((output / "current-receipt.json").read_text(encoding="utf-8"))
             self.assertEqual(receipt["archives"][archive_name], archive_hash)
             self.assertEqual(receipt["archives"][core_name], core_hash)
+            self.assertIs(receipt["release_eligible"], False)
+            self.assertEqual(receipt["redistribution_status"], "postgresql-core-redistribution-review-pending")
             temporary_root = Path(directory) / "root"
             (temporary_root / "support").mkdir(parents=True)
             (temporary_root / "support.json").write_bytes((ROOT / "support.json").read_bytes())
@@ -297,6 +319,11 @@ class LinuxPublicationHelpers(unittest.TestCase):
                 retained = importer.import_run(temporary_root, core_dir, archives, "12345")
             self.assertTrue(any(name.endswith("/attempt.json") for name in retained))
             self.assertTrue(any(name.endswith("/verification-record.json") for name in retained))
+            self.assertTrue(any(name.endswith("/pg_jsonschema-inventory.json") for name in retained))
+            retained_inventory = json.loads((temporary_root
+                / "support/evidence/pg_jsonschema-linux-publication-12345/18.6/x86_64"
+                / "pg_jsonschema-inventory.json").read_text(encoding="utf-8"))
+            self.assertEqual(retained_inventory["components"][0]["redistribution_review"]["status"], "resolved")
             self.assertTrue((temporary_root / "support/verification/pg_jsonschema-0.3.4-postgresql-18.6-linux-x86_64-current-12345.json").is_file())
             self.assertTrue(any(name.endswith("/pg_jsonschema-0.3.4-postgresql-18.6-linux-x86_64.tar.gz.sha256")
                                 for name in retained))

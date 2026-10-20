@@ -5,6 +5,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
  && rm -rf /var/lib/apt/lists/*
 COPY scripts/pg_jsonschema/linux-build-in-container.sh /usr/local/bin/build-pg-jsonschema
 COPY tools/inventory_cargo_licenses.py /usr/local/bin/inventory-cargo-licenses
+COPY tools/check_pg_jsonschema_component_inventory.py /usr/local/bin/check-pg-jsonschema-component-inventory
 COPY support/evidence/pg-jsonschema-crate-licenses-2026-10-18 /opt/cargo-license-supplements
 RUN chmod +x /usr/local/bin/build-pg-jsonschema
 ENTRYPOINT ["/usr/local/bin/build-pg-jsonschema"]

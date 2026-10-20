@@ -55,6 +55,51 @@ if [[ -f /work/source/LICENSE ]]; then install -m 644 /work/source/LICENSE "$pac
 python3 /usr/local/bin/inventory-cargo-licenses /work/source /work/cargo-metadata.json \
   /out/cargo-license-inventory.json --package-root "$package" --supplements /opt/cargo-license-supplements
 cp /out/cargo-license-inventory.json "$package/LICENSES/cargo/cargo-license-inventory.json"
+python3 - "$extension_version" "$package" /out/cargo-license-inventory.json <<'PY'
+import json, pathlib, sys
+
+version, package, cargo_inventory = sys.argv[1:]
+package = pathlib.Path(package)
+cargo = json.loads(pathlib.Path(cargo_inventory).read_text(encoding='utf-8'))
+reviewed = {
+    '(MIT OR Apache-2.0) AND Unicode-3.0', 'Apache-2.0', 'Apache-2.0 OR BSL-1.0',
+    'Apache-2.0 OR MIT', 'Apache-2.0/MIT', 'BSD-2-Clause OR Apache-2.0 OR MIT',
+    'MIT', 'MIT OR Apache-2.0', 'MIT-0', 'MIT/Apache-2.0', 'Unicode-3.0',
+    'Unlicense OR MIT', 'Zlib',
+}
+additional = []
+for crate in cargo['packages']:
+    if 'shipped' not in crate['dependency_roles']:
+        continue
+    if crate.get('license') not in reviewed and not (
+            crate['name'] == 'pg_jsonschema' and crate['version'] == version
+            and crate.get('license') is None):
+        raise SystemExit(f"shipped crate licence requires review: {crate['name']} {crate['version']} {crate.get('license')}")
+    prefix = f"cargo/{crate['name']}-{crate['version']}"
+    for notice in crate.get('packaged_license_notice_files', []):
+        path = notice['path']
+        additional.append(path if path.startswith(prefix + '/') else f"{prefix}/{path}")
+if not additional:
+    raise SystemExit('Cargo inventory has no packaged notices for shipped dependencies')
+component = {
+    'component': 'pg_jsonschema', 'version': version,
+    'payload_paths': ['lib/pg_jsonschema.so', 'share/extension'],
+    'license_file': 'pg_jsonschema/LICENSE',
+    'additional_license_files': sorted(set(additional)),
+    'redistribution_review': {
+        'status': 'resolved',
+        'basis': ('pg_jsonschema 0.3.4 is distributed under Apache-2.0. The target-filtered normal Cargo dependency closure '
+                  'declares permissive MIT, MIT-0, Apache-2.0, BSD-2-Clause, BSL-1.0, Unicode-3.0, Unlicense and Zlib terms, including '
+                  'dual-license alternatives. This archive retains the upstream project licence and every detected or '
+                  'source-verified notice for shipped crates; the seahash MIT declaration is included as exact-source evidence.'),
+        'source_obligation': 'none',
+    },
+}
+inventory = {'schema_version': 1, 'components': [component]}
+(package / 'LICENSES/pg_jsonschema-inventory.json').write_text(
+    json.dumps(inventory, indent=2, sort_keys=True) + '\n', encoding='utf-8')
+PY
+cp "$package/LICENSES/pg_jsonschema-inventory.json" /out/pg_jsonschema-component-inventory.json
 python3 - "$extension_version" "$pg_version" "$architecture" "$extension_commit" "$lock_sha256" <<'PY'
 import json, pathlib, sys
 
@@ -72,6 +117,7 @@ PY
 tar -C /work/package -czf "/out/$output_archive" pg_jsonschema metadata.json
 python3 /usr/local/bin/inventory-cargo-licenses --check-archive "/out/$output_archive" \
   --archive-inventory pg_jsonschema/LICENSES/cargo/cargo-license-inventory.json
+python3 /usr/local/bin/check-pg-jsonschema-component-inventory "/out/$output_archive"
 cd /out
 sha256sum "$output_archive" > "$output_archive.sha256"
 {

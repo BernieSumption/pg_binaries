@@ -41,9 +41,11 @@ root = pathlib.Path('/tmp/extension/pg_jsonschema')
 assert (root / 'lib/pg_jsonschema.so').is_file()
 assert (root / 'share/extension/pg_jsonschema.control').is_file()
 assert (root / 'LICENSES/cargo/cargo-license-inventory.json').is_file()
+assert (root / 'LICENSES/pg_jsonschema-inventory.json').is_file()
 (pathlib.Path('/analysis/source-identity.txt')).write_text(
     f'pg_jsonschema_commit={commit}\n')
 PY
+python3 /usr/local/bin/check-pg-jsonschema-component-inventory "/extension/$archive"
 extroot=/tmp/extension/pg_jsonschema
 while IFS= read -r -d '' source; do
   relative=${source#"$extroot/"}
