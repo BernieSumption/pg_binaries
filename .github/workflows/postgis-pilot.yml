@@ -162,6 +162,7 @@ jobs:
           name: postgis-windows-abi-trial-${{ github.run_id }}
           path: |
             ${{ runner.temp }}/postgis-windows/output/build.log
+            ${{ runner.temp }}/postgis-windows/output/source/postgresql-18.6/config.log
             ${{ runner.temp }}/postgis-windows/output/cluster/server.log
             ${{ runner.temp }}/postgis-windows/output/source/*.sha256
           if-no-files-found: warn
