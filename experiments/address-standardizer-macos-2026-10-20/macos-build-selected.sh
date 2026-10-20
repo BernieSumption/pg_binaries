@@ -37,7 +37,7 @@ cleanup() { macos_remove_core_prefix; rm -rf "$work"; }
 trap cleanup EXIT
 mkdir -p "$work/core" "$work/source" "$work/stage" "$work/package" "$work/pcre2"
 tar -xzf "$core_archive" -C "$work/core"
-pgroot="$work/core/postgresql"
+pgroot=$(cd "$work/core/postgresql" && pwd -P)
 prefix=$(macos_core_prefix_from_archive "$pgroot" "$pg_version" "$architecture" "$core_build_id" "$core_revision")
 macos_restore_core_prefix "$prefix" "$pgroot"
 prefix_link_created=true

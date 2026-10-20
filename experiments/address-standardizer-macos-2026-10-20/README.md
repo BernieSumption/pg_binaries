@@ -27,6 +27,8 @@ The manual trial uses the registered `.github/workflows/address-standardizer-mac
 
 [Run 39450722052](https://github.com/BernieSumption/pg_binaries/actions/runs/39450722052) showed the PGXS `DESTDIR` tree under the extracted core path, with both SQL extension files and the dylib present. The staging guard now reads that exact tree after resolving `pg_config` paths for package-relative names.
 
+[Run 39451113254](https://github.com/BernieSumption/pg_binaries/actions/runs/39451113254) showed that macOS resolves `/tmp` to `/private/tmp` during PGXS installation. The recipe now canonicalizes the extracted core path before matching the staged files.
+
 ## Completion and cleanup
 
 The trial question is answered when the build produces the final extension archive and the fresh-runner job passes the archive suite and Mach-O closure inspection. If either fails, retain the logs and correct only concrete recipe errors before retrying.
