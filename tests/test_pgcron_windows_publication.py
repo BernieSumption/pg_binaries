@@ -28,6 +28,7 @@ class Fixture:
         self.sources = [
             ".github/workflows/pgcron-windows-selected-publication.yml",
             "scripts/pg_cron/verify-windows.ps1", "scripts/pg_cron/windows-build.ps1",
+            "scripts/pg_cron/windows-exports.def",
             "support.json", "support/postgresql-releases.json",
             "tests/test_pgcron_windows_publication.py", "tools/coverage.py",
             "tools/check_pe_dependencies.py", "tools/create_windows_symbols.py",
@@ -154,6 +155,19 @@ class PgCronWindowsPublicationTests(unittest.TestCase):
                                  f"postgresql-{pg_version}-windows-x86_64.tar.gz")
             finally:
                 fixture.close()
+
+    def test_windows_linker_exports_sql_entry_points(self):
+        exports = (ROOT / "scripts/pg_cron/windows-exports.def").read_text().splitlines()
+        expected = {
+            "cron_alter_job", "cron_job_cache_invalidate", "cron_schedule",
+            "cron_schedule_named", "cron_unschedule", "cron_unschedule_named",
+            "pg_finfo_cron_alter_job", "pg_finfo_cron_job_cache_invalidate",
+            "pg_finfo_cron_schedule", "pg_finfo_cron_schedule_named",
+            "pg_finfo_cron_unschedule", "pg_finfo_cron_unschedule_named",
+        }
+        self.assertTrue(expected.issubset({line.strip() for line in exports}))
+        recipe = (ROOT / "scripts/pg_cron/windows-build.ps1").read_text()
+        self.assertIn("/DEF:", recipe)
 
 
 if __name__ == "__main__":

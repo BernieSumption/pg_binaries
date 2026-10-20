@@ -1,0 +1,19 @@
+LIBRARY pg_cron
+EXPORTS
+  CronBackgroundWorker
+  PgCronLauncherMain
+  Pg_magic_func
+  _PG_fini
+  _PG_init
+  cron_alter_job
+  cron_job_cache_invalidate
+  cron_schedule
+  cron_schedule_named
+  cron_unschedule
+  cron_unschedule_named
+  pg_finfo_cron_alter_job
+  pg_finfo_cron_job_cache_invalidate
+  pg_finfo_cron_schedule
+  pg_finfo_cron_schedule_named
+  pg_finfo_cron_unschedule
+  pg_finfo_cron_unschedule_named

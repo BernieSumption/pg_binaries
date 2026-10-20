@@ -88,7 +88,9 @@ try {
   $previousPgRoot = $env:PGROOT
   $previousLink = $env:LINK
   $env:PGROOT = $pgRoot
-  $env:LINK = if ($previousLink) { "$previousLink /DEBUG" } else { '/DEBUG' }
+  $exports = Join-Path $repo 'scripts/pg_cron/windows-exports.def'
+  $linkOptions = "/DEBUG /DEF:`"$exports`""
+  $env:LINK = if ($previousLink) { "$previousLink $linkOptions" } else { $linkOptions }
   Push-Location $cronRoot
   try {
     nmake.exe /F Makefile.win 'CFLAGS=/nologo /DWIN32_NO_STATUS /Dstrcasecmp=_stricmp /I"$(INCLUDEDIR_SERVER)\port\win32_msvc" /I"$(INCLUDEDIR_SERVER)\port\win32" /I"$(INCLUDEDIR_SERVER)" /I"$(INCLUDEDIR)" /Iinclude /Isrc /Z7 /O2' "LIBS=`"$pgRoot\lib\postgres.lib`" `"$pgRoot\lib\libpq.lib`" ws2_32.lib"
