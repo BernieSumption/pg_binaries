@@ -72,16 +72,18 @@ from pathlib import Path
 import sys
 import subprocess
 pg_config=sys.argv[1]
-root=Path(sys.argv[2])
+root=Path(sys.argv[2]).resolve()
 pkglib=Path(subprocess.check_output([pg_config, "--pkglibdir"], text=True).strip())
 sharedir=Path(subprocess.check_output([pg_config, "--sharedir"], text=True).strip())
+pkglib=pkglib.resolve()
+sharedir=sharedir.resolve()
 if not pkglib.is_relative_to(root) or not sharedir.is_relative_to(root):
     raise SystemExit("selected PostgreSQL install directories are outside the extracted core")
 print(pkglib.relative_to(root), sharedir.relative_to(root), sep="\t")
 PY
 )
 read -r pkglib_rel sharedir_rel <<< "$pkglib_rel"
-stage_root="$work/stage$pgroot"
+stage_root="$work/stage$prefix"
 test -s "$stage_root/$pkglib_rel/address_standardizer.dylib"
 test -s "$stage_root/$sharedir_rel/extension/address_standardizer.control"
 pkg="$work/package/address_standardizer"

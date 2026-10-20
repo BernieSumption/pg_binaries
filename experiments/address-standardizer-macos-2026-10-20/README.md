@@ -21,6 +21,8 @@ The manual trial uses the registered `.github/workflows/address-standardizer-mac
 
 [Run 39448268625](https://github.com/BernieSumption/pg_binaries/actions/runs/39448268625) reached installation but showed that relocated `pg_config` reports paths under the extracted core, while its build-time configure prefix is only restored as a symlink. The staging check now uses the extracted core root that PGXS actually selected.
 
+[Run 39448850741](https://github.com/BernieSumption/pg_binaries/actions/runs/39448850741) built and installed the extension, then failed the staging path guard: `pg_config` returned install paths through the restored original-prefix symlink, so the lexical paths appeared outside the extracted core. The recipe now resolves those paths for package-relative names and reads staged files under the original prefix used by PGXS. Archive packaging and verification still need a fresh run.
+
 ## Completion and cleanup
 
 The trial question is answered when the build produces the final extension archive and the fresh-runner job passes the archive suite and Mach-O closure inspection. If either fails, retain the logs and correct only concrete recipe errors before retrying.
