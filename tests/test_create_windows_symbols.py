@@ -59,6 +59,11 @@ def make_pdb():
 
 
 class CreateWindowsSymbolsTests(unittest.TestCase):
+    def test_indexes_native_extension_modules_by_package_layout(self):
+        self.assertTrue(symbols.module_member("pgvector/lib/vector.dll"))
+        self.assertTrue(symbols.module_member("pg_cron/lib/pg_cron.dll"))
+        self.assertFalse(symbols.module_member("pg_cron/share/extension/pg_cron.control"))
+
     def make_archive(self, directory, members):
         archive = directory / "pilot.tar.gz"
         with tarfile.open(archive, "w:gz") as bundle:

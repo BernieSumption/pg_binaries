@@ -152,7 +152,7 @@ def module_member(name: str, external_runtime_dlls: set[str] | None = None) -> b
     parts = PurePosixPath(name).parts
     if not parts:
         return False
-    if parts[0] == "pgvector":
+    if parts[0] != "postgresql":
         return len(parts) == 3 and parts[1] == "lib" and parts[2].lower().endswith(".dll")
     return (parts[0] == "postgresql" and len(parts) >= 3
             and parts[1] in {"bin", "lib", "libexec"}
