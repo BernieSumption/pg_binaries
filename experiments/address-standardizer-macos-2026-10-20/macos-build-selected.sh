@@ -67,12 +67,12 @@ for control in address_standardizer.control address_standardizer_data_us.control
 done
 make -s PG_CONFIG="$pg_config" PG_CPPFLAGS="-I$work/pcre2/include -DAS_VERSION=\\\"3.7\\\" -DPCRE_VERSION=2" PG_LDFLAGS="-L$work/pcre2/lib" -j"$(sysctl -n hw.ncpu)"
 make -s PG_CONFIG="$pg_config" PG_CPPFLAGS="-I$work/pcre2/include -DAS_VERSION=\\\"3.7\\\" -DPCRE_VERSION=2" PG_LDFLAGS="-L$work/pcre2/lib" install DESTDIR="$work/stage"
-pkglib_rel=$(python3 - "$pg_config" <<'PY'
+pkglib_rel=$(python3 - "$pg_config" "$prefix" <<'PY'
 from pathlib import Path
 import sys
 import subprocess
 pg_config=sys.argv[1]
-prefix=Path(subprocess.check_output([pg_config, "--prefix"], text=True).strip())
+prefix=Path(sys.argv[2])
 pkglib=Path(subprocess.check_output([pg_config, "--pkglibdir"], text=True).strip())
 sharedir=Path(subprocess.check_output([pg_config, "--sharedir"], text=True).strip())
 if not pkglib.is_relative_to(prefix) or not sharedir.is_relative_to(prefix):

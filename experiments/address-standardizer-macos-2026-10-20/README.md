@@ -17,6 +17,8 @@ Can unmodified Address Standardizer 3.7.0 and PCRE2 10.48 be packaged against th
 
 The manual trial uses the registered `.github/workflows/address-standardizer-macos-probe.yml` path on `spike`. [Run 39447215667](https://github.com/BernieSumption/pg_binaries/actions/runs/39447215667) failed before compilation because the runner's Bash rejected process substitution around a here-document while reading the selected target. The recipe now captures the Python output before reading its fields; the archive and SQL checks still need a fresh run.
 
+[Run 39447704128](https://github.com/BernieSumption/pg_binaries/actions/runs/39447704128) built PCRE2 and Address Standardizer, then failed while calculating staged paths because `pg_config` has no `--prefix` option. The trial now uses the core prefix already validated from the archive. Final packaging and verification remain untested.
+
 ## Completion and cleanup
 
 The trial question is answered when the build produces the final extension archive and the fresh-runner job passes the archive suite and Mach-O closure inspection. If either fails, retain the logs and correct only concrete recipe errors before retrying.
