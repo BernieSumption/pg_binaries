@@ -46,12 +46,12 @@ expected_formulae = {
     "json-c": ("0.19", "MIT"),
     "libtiff": ("4.7.2", "libtiff"),
     "mpfr": ("4.2.2", "LGPL-3.0-or-later"),
-    "pcre2": ("10.48", "BSD-3-Clause"),
     "proj": ("9.8.1", "MIT"),
     "protobuf-c": ("1.5.2_19", "BSD-2-Clause"),
     "sfcgal": ("2.3.0_1", "LGPL-2.0-or-later"),
     "webp": ("1.6.0", "BSD-3-Clause"),
     "xz": ("5.8.3", "0BSD AND GPL-2.0-or-later"),
+    "zstd": ("1.5.7_1", "(BSD-3-Clause OR GPL-2.0-only) AND BSD-2-Clause AND MIT"),
 }
 if set(name for name, _ in formula_libs) != set(expected_formulae):
     raise SystemExit(f"incremental Homebrew closure changed: {sorted(formula_libs)}")
@@ -114,6 +114,11 @@ for (name, version), libraries in sorted(formula_libs.items()):
         review_note = "Only liblzma is included; the package's GPL-2.0-or-later term applies to the xz utilities, which are excluded."
         primary = next((path for path in candidates if "0bsd" in path.name.lower()), None)
         if primary is None: raise SystemExit("xz liblzma 0BSD text is missing")
+    elif name == "zstd" and all("libzstd" in library.lower() for library in libraries):
+        library_expression = "BSD-3-Clause"
+        review_note = "Only libzstd is included. Zstandard offers BSD-3-Clause or GPL-2.0-only terms; this distribution uses the included BSD-3-Clause notice. The other formula terms cover excluded package files."
+        primary = next((path for path in candidates if path.name.lower() == "license"), None)
+        if primary is None: raise SystemExit("zstd BSD-3-Clause licence text is missing")
     copyleft = "LGPL" in library_expression or "GPL" in library_expression
     primary_index = candidates.index(primary)
     source_links = [source_url, formula_url,
