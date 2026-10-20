@@ -11,6 +11,7 @@ pg_archive="postgresql-${pg_version}-linux-${architecture}.tar.gz"
 archive="pg_cron-${version}-postgresql-${pg_version}-linux-${architecture}.tar.gz"
 cd /input
 sha256sum -c "$pg_archive.sha256"
+core_sha256=$(sha256sum "$pg_archive" | awk '{print $1}')
 mkdir -p /work/prefix /work/source /work/stage /out
 tar -xzf "$pg_archive" -C /work/prefix
 mv /work/prefix/postgresql /opt/postgresql
@@ -34,7 +35,7 @@ cat > /work/package/pg_cron/LICENSES/pg_cron-inventory.json <<EOL
 {"schema_version":1,"components":[{"component":"pg_cron","version":"${version}","payload_paths":["lib/pg_cron.so","share/extension"],"license_file":"pg_cron.txt","license_source":"https://github.com/citusdata/pg_cron/blob/v1.6.8/LICENSE","source_url":"${source_url}","source_sha256":"${source_sha256}","redistribution_review":{"status":"resolved","basis":"The unmodified pg_cron 1.6.8 source archive includes the PostgreSQL License for this project. It permits binary redistribution with its copyright notice, permission paragraph and disclaimer retained; this archive includes the complete upstream LICENSE text.","source_obligation":"none"}}]}
 EOL
 cat > /work/package/metadata.json <<EOL
-{"project":"pg_cron","version":"${version}","sql_names":["pg_cron"],"requires":[],"configuration_prerequisites":[{"type":"postgresql_setting","name":"shared_preload_libraries","value":"pg_cron"},{"type":"postgresql_setting","name":"cron.use_background_workers","value":"on"}],"runtime_prerequisites":[],"postgresql_version":"${pg_version}","platform":"linux","architecture":"${architecture}","source":{"url":"${source_url}","sha256":"${source_sha256}"}}
+{"project":"pg_cron","version":"${version}","sql_names":["pg_cron"],"requires":[],"configuration_prerequisites":[{"type":"postgresql_setting","name":"shared_preload_libraries","value":"pg_cron"},{"type":"postgresql_setting","name":"cron.use_background_workers","value":"on"}],"runtime_prerequisites":[],"postgresql_version":"${pg_version}","core_archive":{"basename":"${pg_archive}","sha256":"${core_sha256}"},"platform":"linux","architecture":"${architecture}","source":{"url":"${source_url}","sha256":"${source_sha256}"}}
 EOL
 cp /work/package/pg_cron/lib/pg_cron.so "$pgroot/lib/"
 cp /work/package/pg_cron/share/extension/* "$pgroot/share/extension/"

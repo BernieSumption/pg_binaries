@@ -10,6 +10,7 @@ pg_archive="postgresql-${pg_version}-linux-${architecture}.tar.gz"
 extension_archive="pg_cron-${version}-postgresql-${pg_version}-linux-${architecture}.tar.gz"
 cd /input
 sha256sum -c "$pg_archive.sha256"
+core_sha256=$(sha256sum "$pg_archive" | awk '{print $1}')
 cd /extension
 sha256sum -c "$extension_archive.sha256"
 mkdir -p /tmp/first /tmp/moved /tmp/extension /tmp/data /tmp/socket
@@ -18,7 +19,7 @@ tar -xzf "/extension/$extension_archive" -C /tmp/extension
 pgroot=/tmp/first/postgresql
 extroot=/tmp/extension/pg_cron
 test "$("$pgroot/bin/pg_config" --version)" = "PostgreSQL $pg_version"
-python3 - "$extroot" "$source_url" "$architecture" "$source_sha256" "$pg_version" <<'PY'
+python3 - "$extroot" "$source_url" "$architecture" "$source_sha256" "$pg_version" "$pg_archive" "$core_sha256" <<'PY'
 import json, sys
 from pathlib import Path
 root=Path(sys.argv[1]).parent
@@ -26,7 +27,9 @@ metadata=json.loads((root/'metadata.json').read_text())
 if metadata != {'project':'pg_cron','version':'1.6.8','sql_names':['pg_cron'],'requires':[],
  'configuration_prerequisites':[{'type':'postgresql_setting','name':'shared_preload_libraries','value':'pg_cron'},
                                 {'type':'postgresql_setting','name':'cron.use_background_workers','value':'on'}],
- 'runtime_prerequisites':[],'postgresql_version':sys.argv[5],'platform':'linux','architecture':sys.argv[3],
+ 'runtime_prerequisites':[],'postgresql_version':sys.argv[5],
+ 'core_archive':{'basename':sys.argv[6],'sha256':sys.argv[7]},
+ 'platform':'linux','architecture':sys.argv[3],
  'source':{'url':sys.argv[2],'sha256':sys.argv[4]}}:
  raise SystemExit('pg_cron package metadata mismatch')
 inv=json.loads((root/'pg_cron/LICENSES/pg_cron-inventory.json').read_text())
