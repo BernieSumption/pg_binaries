@@ -34,8 +34,10 @@ for source in extension.rglob("*"):
     if destination.exists() or destination.is_symlink():
         if source.is_dir() and destination.is_dir() and not source.is_symlink() and not destination.is_symlink(): continue
         raise SystemExit(f"Address Standardizer payload collision: {source.relative_to(extension)}")
-for required in ("LICENSES/license-inventory.json", "LICENSES/Address-Standardizer.txt", "LICENSES/PCRE2.txt", "LICENSES/SLJIT.txt", "share/extension/address_standardizer.control", "share/extension/address_standardizer_data_us.control", "lib/address_standardizer.dylib"):
+for required in ("LICENSES/license-inventory.json", "LICENSES/Address-Standardizer.txt", "LICENSES/PCRE2.txt", "LICENSES/SLJIT.txt", "share/extension/address_standardizer.control", "share/extension/address_standardizer_data_us.control"):
     if not (extension/required).is_file(): raise SystemExit(f"archive is missing {required}")
+modules = [path for path in extension.rglob("address_standardizer.*") if path.suffix in {".dylib", ".so"}]
+if len(modules) != 1: raise SystemExit("archive must contain exactly one Address Standardizer Mach-O module")
 PY
 ditto "$work/extract/address_standardizer" "$work/assembled/postgresql"
 python3 "$repo/scripts/macos/static_analysis.py" "$work/assembled/postgresql" "$architecture" \
