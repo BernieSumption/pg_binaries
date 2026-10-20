@@ -9,9 +9,10 @@ cd /input
 sha256sum -c "$pg_archive.sha256"
 cd /extension
 sha256sum -c "$hypopg_archive.sha256"
-mkdir -p /tmp/first /tmp/moved /tmp/extension /tmp/data /tmp/socket
+mkdir -p /tmp/first /tmp/moved /tmp/extension /tmp/data /tmp/socket /tmp/assembly-archives
 tar -xzf "/input/$pg_archive" -C /tmp/first
 tar -xzf "/extension/$hypopg_archive" -C /tmp/extension
+ln -s "/extension/$hypopg_archive" "/tmp/assembly-archives/$hypopg_archive"
 pgroot=/tmp/first/postgresql
 extroot=/tmp/extension/hypopg
 test "$(/tmp/first/postgresql/bin/pg_config --version)" = "PostgreSQL $pg_version"
@@ -96,20 +97,18 @@ if {p.name for p in root.iterdir()} != {'hypopg', 'metadata.json'}:
     raise SystemExit('HypoPG archive must contain payload and sibling metadata.json only')
 PY
 
-while IFS= read -r -d '' source; do
-  relative=${source#"$extroot/"}
-  destination="$pgroot/$relative"
-  if [[ -e "$destination" || -L "$destination" ]]; then
-    if [[ -d "$source" && ! -L "$source" && -d "$destination" && ! -L "$destination" ]]; then
-      continue
-    fi
-    echo "HypoPG payload collision: $relative" >&2
-    exit 1
-  fi
-done < <(find "$extroot" -mindepth 1 -print0)
-mv /tmp/first/postgresql /tmp/moved/postgresql
+python3 /usr/local/bin/linux-project-assembly-inventory \
+  --support /work/support.json --postgresql-version "$pg_version" \
+  --platform "linux-$architecture" \
+  --project-archive "HypoPG=/extension/$hypopg_archive" \
+  --project-version "HypoPG=1.4.3" --output /tmp/assembly-inventory.json
+python3 /usr/local/bin/stage-extension-archive \
+  --inventory /tmp/assembly-inventory.json --support /work/support.json \
+  --postgresql-version "$pg_version" --platform "linux-$architecture" \
+  --project-version "HypoPG=1.4.3" --archive-directory /tmp/assembly-archives \
+  --prefix "$pgroot" --staging-root /tmp/extension-staging
+mv "$pgroot" /tmp/moved/postgresql
 pgroot=/tmp/moved/postgresql
-cp -a "$extroot/." "$pgroot/"
 python3 /usr/local/bin/check-elf-dependencies "$pgroot" --architecture "$architecture" \
   --archive "/input/$pg_archive" --archive "/extension/$hypopg_archive" \
   --report "/analysis/hypopg.json"

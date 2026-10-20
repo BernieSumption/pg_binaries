@@ -17,6 +17,16 @@ Use sub-agents, particularly cheap ones, for bounded research or execution tasks
 
 Use parallel subagents when work items are genuinely not interdependent. Use serial work when operating in parallel may cause some work to have to be re-done.
 
+## Prefer simple, pragmatic architecture
+
+At core we're trying to do something quite simple, the difficulty comes from the massive set of builds this project needs for all the PG versions, platforms, and extensions in the support matrix.
+
+Having an architecture rather than a massive flat collection of build scripts is important for maintainability. Good architecture is simple, merely providing a structure and light framework for builds to reduce code duplication and make the system comprehensible. Complex and heavily engineered components should not be required.
+
+Over-engineering inflates cost. This can happen when a seemingly simple plan turns out to have more edge cases or implementation difficulty than anticipated, or if a prompt from a human was taken to be a request for something complex. The humans always want a simple solution, and if they have made a request that implies high complexity, either through a prompt or a spec, it is a mistake.
+
+Periodically review the task in progress, especially if it is continuing for multiple hours. Ask whether the implementation cost is justifying the benefit. Either self-correct to a simpler solution if that is within the scope of your goal, otherwise add a proposal to HUMAN_REVIEW_QUEUE.md and block progress on that part of the system until the decision is resolved.
+
 ### Policies
 
 Policies are AI-managed. Agents can edit them at will to implement the requirements in the specification.
