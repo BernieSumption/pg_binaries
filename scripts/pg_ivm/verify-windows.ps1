@@ -20,7 +20,7 @@ $extensionName = "pg_ivm-$version-postgresql-$pgVersion-windows-x86_64.tar.gz"
 foreach ($archive in @($CoreArchive,$ExtensionArchive)) {
   if ((Split-Path $archive -Leaf) -cnotin @($coreName,$extensionName)) { throw 'Archive filename does not match the selected target.' }
   $sidecar = (Get-Content "$archive.sha256" -Raw).Trim() -split '\s+'
-  if ($sidecar.Count -lt 2 -or $sidecar[-1] -cne (Split-Path $archive -Leaf) -or $sidecar[0] -notmatch '^[0-9a-fA-F]{64}$' -or (Get-FileHash $archive -Algorithm SHA256).Hash -cne $sidecar[0]) { throw "Invalid archive checksum: $(Split-Path $archive -Leaf)" }
+  if ($sidecar.Count -lt 2 -or $sidecar[-1] -cne (Split-Path $archive -Leaf) -or $sidecar[0] -notmatch '^[0-9a-fA-F]{64}$' -or (Get-FileHash $archive -Algorithm SHA256).Hash.ToLowerInvariant() -cne $sidecar[0].ToLowerInvariant()) { throw "Invalid archive checksum: $(Split-Path $archive -Leaf)" }
 }
 $identity = (& $python (Join-Path $repo 'tools/windows_core_pin.py') --postgresql-version $pgVersion | ConvertFrom-Json)
 if ($LASTEXITCODE -ne 0 -or (Get-FileHash $CoreArchive -Algorithm SHA256).Hash.ToLowerInvariant() -cne $identity.sha256) { throw 'Core archive does not match the pinned Windows PostgreSQL target.' }
@@ -76,6 +76,7 @@ try {
     }
   }
   if (-not $dumpbin) { throw 'dumpbin.exe is unavailable for Windows dependency inspection.' }
+  New-Item -ItemType Directory -Force (Split-Path $ReportPath -Parent) | Out-Null
   & $python (Join-Path $repo 'tools/check_pe_dependencies.py') $pgRoot --dumpbin $dumpbin.Source --archive $CoreArchive --archive $ExtensionArchive --report $ReportPath
   if ($LASTEXITCODE -ne 0) { throw 'Windows PE dependency analysis failed.' }
   $bin = Join-Path $pgRoot 'bin'
