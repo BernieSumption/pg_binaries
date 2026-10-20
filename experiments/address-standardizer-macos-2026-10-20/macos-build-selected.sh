@@ -67,21 +67,21 @@ for control in address_standardizer.control address_standardizer_data_us.control
 done
 make -s PG_CONFIG="$pg_config" PG_CPPFLAGS="-I$work/pcre2/include -DAS_VERSION=\\\"3.7\\\" -DPCRE_VERSION=2" PG_LDFLAGS="-L$work/pcre2/lib" -j"$(sysctl -n hw.ncpu)"
 make -s PG_CONFIG="$pg_config" PG_CPPFLAGS="-I$work/pcre2/include -DAS_VERSION=\\\"3.7\\\" -DPCRE_VERSION=2" PG_LDFLAGS="-L$work/pcre2/lib" install DESTDIR="$work/stage"
-pkglib_rel=$(python3 - "$pg_config" "$prefix" <<'PY'
+pkglib_rel=$(python3 - "$pg_config" "$pgroot" <<'PY'
 from pathlib import Path
 import sys
 import subprocess
 pg_config=sys.argv[1]
-prefix=Path(sys.argv[2])
+root=Path(sys.argv[2])
 pkglib=Path(subprocess.check_output([pg_config, "--pkglibdir"], text=True).strip())
 sharedir=Path(subprocess.check_output([pg_config, "--sharedir"], text=True).strip())
-if not pkglib.is_relative_to(prefix) or not sharedir.is_relative_to(prefix):
-    raise SystemExit("selected PostgreSQL install directories are outside its prefix")
-print(pkglib.relative_to(prefix), sharedir.relative_to(prefix), sep="\t")
+if not pkglib.is_relative_to(root) or not sharedir.is_relative_to(root):
+    raise SystemExit("selected PostgreSQL install directories are outside the extracted core")
+print(pkglib.relative_to(root), sharedir.relative_to(root), sep="\t")
 PY
 )
 read -r pkglib_rel sharedir_rel <<< "$pkglib_rel"
-stage_root="$work/stage$prefix"
+stage_root="$work/stage$pgroot"
 test -s "$stage_root/$pkglib_rel/address_standardizer.dylib"
 test -s "$stage_root/$sharedir_rel/extension/address_standardizer.control"
 pkg="$work/package/address_standardizer"
@@ -97,7 +97,7 @@ pcre_load=$(otool -L "$module" | awk '/libpcre2-8.*dylib/ {print $1; exit}')
 pcre_dylib=$(find "$pkg/lib" -maxdepth 1 -name 'libpcre2-8*.dylib' -print -quit)
 pcre_name=$(basename "$pcre_dylib")
 test -n "$pcre_load" && test -n "$pcre_name"
-install_name_tool -change "$pcre_load" "@loader_path/../$pcre_name" "$module"
+install_name_tool -change "$pcre_load" "@loader_path/$pcre_name" "$module"
 cp "$work/source/address_standardizer/COPYING" "$pkg/LICENSES/Address-Standardizer.txt"
 cp "$work/source/pcre2-$pcre_version/COPYING" "$pkg/LICENSES/PCRE2.txt"
 cat > "$pkg/LICENSES/license-inventory.json" <<EOF
