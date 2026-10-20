@@ -1,0 +1,144 @@
+name: PostGIS selected macOS publication
+
+on:
+  workflow_call:
+    inputs:
+      postgresql_version:
+        required: true
+        type: string
+      extension_version:
+        required: true
+        type: string
+      architecture:
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      postgresql_version:
+        description: Selected PostgreSQL release
+        required: true
+        type: choice
+        options: ['18.6']
+        default: '18.6'
+      extension_version:
+        description: PostGIS release
+        required: true
+        type: choice
+        options: ['3.6.4']
+        default: '3.6.4'
+      architecture:
+        description: Native macOS architecture
+        required: true
+        type: choice
+        options: [arm64]
+        default: arm64
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  select:
+    runs-on: ubuntu-latest
+    outputs:
+      target: ${{ steps.target.outputs.target }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: target
+        env:
+          PG_VERSION: ${{ inputs.postgresql_version }}
+          EXT_VERSION: ${{ inputs.extension_version }}
+          ARCHITECTURE: ${{ inputs.architecture }}
+        run: |
+          set -euo pipefail
+          [[ "$PG_VERSION" == 18.6 && "$EXT_VERSION" == 3.6.4 && "$ARCHITECTURE" == arm64 ]]
+          python3 tools/select_extension_work.py --project PostGIS --version "$EXT_VERSION" \
+            --platform macos-arm64 --postgresql-version "$PG_VERSION" > "$RUNNER_TEMP/selection.json"
+          echo 'target=tools/postgis_macos_targets/18.6-arm64.json' >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: select
+    runs-on: macos-15
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install native build dependencies
+        run: brew install make cmake geos proj sfcgal json-c libxml2 protobuf-c pcre2
+      - name: Resolve checked PostgreSQL 18.6 arm64 core
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_REF_NAME: ${{ github.ref_name }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+          GITHUB_RUN_ATTEMPT: ${{ github.run_attempt }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/postgis/core" "$RUNNER_TEMP/postgis/output"
+          cp '${{ needs.select.outputs.target }}' "$RUNNER_TEMP/postgis/base-target.json"
+          bash scripts/macos/resolve-core.sh "$RUNNER_TEMP/postgis/base-target.json" "$RUNNER_TEMP/postgis/core"
+      - name: Build and package PostGIS 3.6.4
+        run: bash scripts/postgis/macos-build-publication.sh "$RUNNER_TEMP/postgis/core" "$RUNNER_TEMP/postgis/core/target.json" "$RUNNER_TEMP/postgis/output"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: postgis-macos-arm64-18.6-build-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/postgis/core/**
+            ${{ runner.temp }}/postgis/output/**
+          if-no-files-found: warn
+          retention-days: 7
+
+  verify:
+    needs: [select, build]
+    if: always() && needs.select.result == 'success'
+    runs-on: macos-15
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download archives from the build runner
+        id: download
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: postgis-macos-arm64-18.6-build-${{ github.run_id }}
+          path: ${{ runner.temp }}/postgis-bundle
+      - name: Prepare fresh-runner verification directories
+        if: always()
+        run: |
+          mkdir -p "$RUNNER_TEMP/postgis-verification/core" "$RUNNER_TEMP/postgis-verification/extension"
+          if [[ -d "$RUNNER_TEMP/postgis-bundle/core" ]]; then cp -a "$RUNNER_TEMP/postgis-bundle/core/." "$RUNNER_TEMP/postgis-verification/core/"; fi
+          if [[ -d "$RUNNER_TEMP/postgis-bundle/output" ]]; then cp -a "$RUNNER_TEMP/postgis-bundle/output/." "$RUNNER_TEMP/postgis-verification/extension/"; fi
+      - name: Relocate, inspect and exercise the final PostGIS archive
+        id: verify_archive
+        if: always() && steps.download.outcome == 'success'
+        continue-on-error: true
+        run: |
+          bash scripts/postgis/macos-verify-publication.sh \
+            "$RUNNER_TEMP/postgis-verification/core/postgresql-18.6-macos-arm64.tar.gz" \
+            "$RUNNER_TEMP/postgis-verification/extension" "$RUNNER_TEMP/postgis-verification"
+      - name: Emit archive-bound attempt record
+        if: always()
+        env:
+          VERIFY_OUTCOME: ${{ steps.verify_archive.outcome }}
+          GITHUB_SHA: ${{ github.sha }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+        run: |
+          python3 - "$RUNNER_TEMP/postgis-verification" <<'PY'
+          import hashlib,json,os,pathlib,sys
+          root=pathlib.Path(sys.argv[1]); out=root/'publication'; out.mkdir(parents=True,exist_ok=True)
+          names=('postgresql-18.6-macos-arm64.tar.gz','postgis-3.6.4-postgresql-18.6-macos-arm64.tar.gz')
+          archives={}
+          for name in names:
+              path=next(root.rglob(name),None)
+              if path and path.is_file(): archives[name]=hashlib.sha256(path.read_bytes()).hexdigest()
+          (out/'attempt.json').write_text(json.dumps({'schema_version':1,'run_id':os.environ['GITHUB_RUN_ID'],'source_revision':os.environ['GITHUB_SHA'],'steps':{'archive-suite':os.environ.get('VERIFY_OUTCOME','failure'),'symbols':'skipped','diagnostics':'skipped'},'archives':archives},indent=2,sort_keys=True)+'\n')
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: postgis-macos-arm64-18.6-publication-${{ github.run_id }}
+          path: ${{ runner.temp }}/postgis-verification/**
+          if-no-files-found: warn
+          retention-days: 30
+      - name: Require final archive verification to pass
+        if: always()
+        run: test '${{ steps.verify_archive.outcome }}' = success

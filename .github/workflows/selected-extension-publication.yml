@@ -147,6 +147,7 @@ jobs:
               ("pgaudit", "macos-x86_64"): "pgaudit-macos",
               ("PostGIS", "linux-x86_64"): "postgis-linux",
               ("PostGIS", "linux-arm64"): "postgis-linux",
+              ("PostGIS", "macos-arm64"): "postgis-macos",
               ("PostGIS TIGER Geocoder", "linux-x86_64"): "tiger-linux",
               ("PostGIS TIGER Geocoder", "linux-arm64"): "tiger-linux",
               ("Address Standardizer", "linux-x86_64"): "address-standardizer-linux",
@@ -359,6 +360,15 @@ jobs:
     needs: plan
     if: needs.plan.outputs.should_dispatch == 'true' && needs.plan.outputs.route == 'postgis-linux'
     uses: ./.github/workflows/postgis-linux-selected-publication.yml
+    with:
+      postgresql_version: ${{ needs.plan.outputs.postgresql_version }}
+      extension_version: ${{ needs.plan.outputs.extension_version }}
+      architecture: ${{ needs.plan.outputs.architecture }}
+
+  postgis_macos:
+    needs: plan
+    if: needs.plan.outputs.should_dispatch == 'true' && needs.plan.outputs.route == 'postgis-macos'
+    uses: ./.github/workflows/postgis-macos-selected-publication.yml
     with:
       postgresql_version: ${{ needs.plan.outputs.postgresql_version }}
       extension_version: ${{ needs.plan.outputs.extension_version }}
