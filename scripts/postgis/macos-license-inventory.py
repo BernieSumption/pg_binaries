@@ -9,6 +9,7 @@ import re
 import subprocess
 import sys
 from concurrent.futures import ThreadPoolExecutor
+from urllib.error import HTTPError
 from urllib.request import Request, urlopen
 
 expected_formulae = {
@@ -32,8 +33,8 @@ def command(*args):
     return subprocess.check_output(args, text=True, stderr=subprocess.STDOUT)
 
 
-def formula_path(name, source):
-    value = source.get("path")
+def formula_path(name, source, formula):
+    value = formula.get("ruby_source_path") or source.get("path")
     if not isinstance(value, str) or not value.startswith("Formula/") or not value.endswith(".rb"):
         value = f"Formula/{name[0]}/{name}.rb"
     path = Path(value)
@@ -42,8 +43,8 @@ def formula_path(name, source):
     return path.as_posix()
 
 
-def formula_url(name, source):
-    return f"https://github.com/Homebrew/homebrew-core/blob/{source['tap_git_head']}/{formula_path(name, source)}"
+def formula_url(name, source, formula):
+    return f"https://github.com/Homebrew/homebrew-core/blob/{source['tap_git_head']}/{formula_path(name, source, formula)}"
 
 
 def formula_package_version(formula):
@@ -74,7 +75,7 @@ if sys.argv[1:] == ["--preflight"]:
         if (source.get("tap") != "homebrew/core" or source.get("tap_git_head") != formula.get("tap_git_head")
                 or not re.fullmatch(r"[0-9a-f]{40}", source.get("tap_git_head", ""))):
             raise SystemExit(f"Homebrew formula revision mismatch for {name} {version}")
-        urls.append((name, formula_url(name, source)))
+        urls.append((name, formula_url(name, source, formula)))
         candidates = [path for path in prefix.rglob("*") if path.is_file()
             and (path.name.lower() in {"license", "license.txt", "license.md", "license_1_0.txt", "copying", "copyright"}
                  or path.name.lower().startswith(("copying.", "license.")))
@@ -83,7 +84,11 @@ if sys.argv[1:] == ["--preflight"]:
     def check_formula_url(item):
         name, url = item
         request = Request(url, method="HEAD", headers={"User-Agent": "pg_binaries-licence-preflight"})
-        with urlopen(request, timeout=15) as response:
+        try:
+            response = urlopen(request, timeout=15)
+        except HTTPError as error:
+            raise RuntimeError(f"{name}: receipt-pinned formula URL returned {error.code}: {url}") from error
+        with response:
             if response.status != 200: raise RuntimeError(f"Homebrew formula source URL returned {response.status}: {url}")
         return name
     with ThreadPoolExecutor(max_workers=8) as executor:
@@ -136,7 +141,7 @@ for (name, version), libraries in sorted(formula_libs.items()):
         raise SystemExit(f"installed Homebrew formula revision is missing for {name} {version}")
     if formula.get("tap_git_head") != formula_revision:
         raise SystemExit(f"Homebrew API metadata does not match installed formula revision for {name} {version}")
-    formula_url = f"https://github.com/Homebrew/homebrew-core/blob/{formula_revision}/{formula_path(name, source_identity)}"
+    formula_url = f"https://github.com/Homebrew/homebrew-core/blob/{formula_revision}/{formula_path(name, source_identity, formula)}"
     stable = formula.get("urls", {}).get("stable", {})
     source_url, source_sha = stable.get("url"), stable.get("checksum")
     if not source_url or not re.fullmatch(r"[0-9a-f]{64}", source_sha or ""):
