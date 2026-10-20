@@ -37,6 +37,29 @@ export PG_CONFIG="$pgroot/bin/pg_config.exe"
 make
 make install
 
+{
+  shopt -s nocasematch
+  printf 'PATH=%s\n' "$PATH"
+  modules=("$pgroot"/lib/postgis_raster-3.dll /mingw64/bin/gdal*.dll)
+  for module in "${modules[@]}"; do
+    test -f "$module" || continue
+    printf '\n=== %s ===\n' "$module"
+    imports=$(objdump -p "$module" | sed -n 's/^[[:space:]]*DLL Name: //p')
+    printf '%s\n' "$imports"
+    while IFS= read -r dll; do
+      test -n "$dll" || continue
+      printf 'Candidates for %s:\n' "$dll"
+      for path_dir in "$pgroot/bin" /mingw64/bin; do
+        for candidate in "$path_dir"/*; do
+          if [[ -f "$candidate" && "${candidate##*/}" == "$dll" ]]; then
+            printf '  %s\n' "$candidate"
+          fi
+        done
+      done
+    done <<< "$imports"
+  done
+} 2>&1 | tee "$output_root/dll-diagnostic.log"
+
 work="$output_root/cluster"
 mkdir -p "$work"
 "$pgroot/bin/initdb.exe" -D "$work/data" --no-locale -E UTF8 -U postgres

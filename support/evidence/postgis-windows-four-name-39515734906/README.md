@@ -1,0 +1,5 @@
+# Windows PostGIS expanded build trial
+
+[Run 39515734906](https://github.com/BernieSumption/pg_binaries/actions/runs/39515734906) used revision `258c6c2fffba271cb0a97cb02248fa0e2f9a6237` to build unmodified PostgreSQL 18.6 and PostGIS 3.6.4 in MINGW64 before trying the four declared PostGIS SQL extensions against that core and the selected MSVC core. PostGIS configured with raster, topology and SFCGAL. `CREATE EXTENSION postgis` passed in the matching MinGW PostgreSQL installation, but `CREATE EXTENSION postgis_raster` failed while loading `postgis_raster-3.dll`: Windows reported “The specified procedure could not be found.” The run stopped before topology, SFCGAL or selected-core cross-install checks.
+
+The loader error does not identify the missing export or DLL. A new bounded diagnostic records the raster module's direct DLL imports and candidate DLL locations in the PostgreSQL and MSYS2 directories before rerunning this same trial. The previous base-module [cross-install result](../postgis-windows-cross-install-39509897265/README.md) remains valid only for `postgis`.
