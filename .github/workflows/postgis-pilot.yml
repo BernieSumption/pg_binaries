@@ -11,7 +11,7 @@ on:
         required: false
         type: boolean
       postgis_windows_abi_probe:
-        description: Test whether PostGIS 3.6.4 built with upstream MSYS2 clang64 can load into the checked MSVC PostgreSQL 18.6 core
+        description: Build PostgreSQL 18.6 and unmodified PostGIS 3.6.4 in MSYS2 clang64, then test extension creation
         required: false
         type: boolean
 jobs:
@@ -140,6 +140,9 @@ jobs:
             autoconf
             automake
             libtool
+            bison
+            flex
+            diffutils
           pacboy: >-
             toolchain:p
             pkgconf:p
@@ -148,35 +151,19 @@ jobs:
             gdal:p
             json-c:p
             libxml2:p
-      - name: Resolve and download the checked PostgreSQL 18.6 core
-        id: core
-        shell: pwsh
+      - name: Build PostgreSQL 18.6 and upstream PostGIS in clang64, then create the extension
         env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          $identity = python tools/windows_core_pin.py --postgresql-version 18.6 --github-output
-          if ($LASTEXITCODE -ne 0) { throw 'Checked PostgreSQL 18.6 core pin is invalid.' }
-          $identity | Add-Content $env:GITHUB_OUTPUT
-          $values = @{}
-          foreach ($line in $identity) { $parts = $line -split '=', 2; $values[$parts[0]] = $parts[1] }
-          $dir = Join-Path $env:RUNNER_TEMP 'postgis-windows/core-artifact'
-          New-Item -ItemType Directory -Force $dir | Out-Null
-          gh run download $values.run_id --repo $env:GITHUB_REPOSITORY --name $values.artifact_name --dir $dir
-          if ($LASTEXITCODE -ne 0) { throw 'Could not download the checked PostgreSQL core artifact.' }
-          $archive = Join-Path $dir $values.archive_name
-          if ((Get-FileHash $archive -Algorithm SHA256).Hash.ToLowerInvariant() -cne $values.sha256) { throw 'Checked PostgreSQL core archive hash mismatch.' }
-          "archive=$archive" | Add-Content $env:GITHUB_OUTPUT
-      - name: Build upstream PostGIS and create the extension in the checked core
-        env:
-          CORE_ARCHIVE: ${{ steps.core.outputs.archive }}
           OUTPUT_ROOT: ${{ runner.temp }}/postgis-windows/output
         run: |
-          bash experiments/postgis-windows-abi-trial/build-and-probe.sh "$(cygpath -u "$CORE_ARCHIVE")" "$(cygpath -u "$OUTPUT_ROOT")"
+          bash experiments/postgis-windows-abi-trial/build-and-probe.sh "$(cygpath -u "$OUTPUT_ROOT")"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: postgis-windows-abi-trial-${{ github.run_id }}
-          path: ${{ runner.temp }}/postgis-windows/output/**
+          path: |
+            ${{ runner.temp }}/postgis-windows/output/build.log
+            ${{ runner.temp }}/postgis-windows/output/cluster/server.log
+            ${{ runner.temp }}/postgis-windows/output/source/*.sha256
           if-no-files-found: warn
           retention-days: 3
 
