@@ -28,7 +28,7 @@ $work = Join-Path $env:RUNNER_TEMP ("pgivm-windows-verify-" + [guid]::NewGuid().
 $first = Join-Path $work 'first'
 $package = Join-Path $work 'package'
 $data = Join-Path $work 'data'
-New-Item -ItemType Directory -Force $first,$package,$data | Out-Null
+New-Item -ItemType Directory -Force $first,$package | Out-Null
 if (-not $ReportPath) { $ReportPath = Join-Path $work 'static-analysis.json' }
 $serverStarted = $false
 $oldPath = $env:PATH
