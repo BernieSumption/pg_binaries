@@ -74,6 +74,20 @@ def formula_package_version(formula):
     return stable if revision == 0 else f"{stable}_{revision}"
 
 
+def proj_data_inventory(data_dir):
+    with (data_dir / "copyright_and_licenses.csv").open(newline="", encoding="utf-8") as stream:
+        rows = list(csv.reader(stream))
+    rows_by_name = {row[0].strip(): row for row in rows
+                    if row and row[0].strip().lower() not in {"filename", "file"}}
+    support = {"README.DATA", "copyright_and_licenses.csv", "proj.db", "proj.ini"}
+    installed = {path.name for path in data_dir.iterdir() if path.is_file()}
+    data_files = installed & set(rows_by_name)
+    core_files = installed - support - data_files
+    if not data_files:
+        raise SystemExit("PROJ-data inventory has no installed files listed in copyright_and_licenses.csv")
+    return rows_by_name, data_files, core_files
+
+
 if sys.argv[1:] == ["--preflight"]:
     info = json.loads(command("brew", "info", "--json=v2", *sorted(expected_formulae)))
     formula_data = {item["name"]: item for item in info.get("formulae", [])}
@@ -109,6 +123,10 @@ if sys.argv[1:] == ["--preflight"]:
             for filename in ("README.DATA", "copyright_and_licenses.csv", "proj.db"):
                 if not (data_dir / filename).is_file():
                     raise SystemExit(f"installed PROJ data is missing {filename}")
+            _, data_files, core_files = proj_data_inventory(data_dir)
+            if not core_files:
+                raise SystemExit("PROJ core data inventory is empty")
+            print(f"PROJ data inventory: {len(data_files)} licensed grid files, {len(core_files)} PROJ core files")
             print(f"PROJ datum grids: checksum-pinned source metadata found ({data_sha})")
     def check_formula_url(item):
         name, url = item
@@ -249,6 +267,10 @@ for (name, version), libraries in sorted(formula_libs.items()):
             **({"source_links": source_links} if copyleft else {}),
         },
     })
+    if name == "proj":
+        data_dir = prefix / "share/proj"
+        _, _, core_files = proj_data_inventory(data_dir)
+        components[-1]["payload_paths"] = sorted(set(paths) | {f"share/proj/{filename}" for filename in core_files | {"proj.db", "proj.ini"} if (data_dir / filename).is_file()})
 
 postgis_sha = sha(postgis_archive)
 gdal_sha = sha(gdal_archive)
@@ -292,14 +314,7 @@ for name in ("README.DATA", "copyright_and_licenses.csv"):
     if not source.is_file() or not source.stat().st_size:
         raise SystemExit(f"installed PROJ data is missing {name}")
     (root / "LICENSES" / f"PROJ-data-{name}").write_bytes(source.read_bytes())
-with (proj_data_dir / "copyright_and_licenses.csv").open(newline="", encoding="utf-8") as stream:
-    rows = list(csv.reader(stream))
-rows_by_name = {row[0].strip(): row for row in rows if row and row[0].strip().lower() not in {"filename", "file"}}
-listed = set(rows_by_name)
-data_files = {path.name for path in proj_data_dir.iterdir() if path.is_file()
-              and path.name not in {"copyright_and_licenses.csv", "proj.db", "proj.ini"}}
-if not data_files or not data_files.issubset(listed):
-    raise SystemExit(f"PROJ copyright data does not cover installed files: {sorted(data_files-listed)[:10]}")
+rows_by_name, data_files, core_files = proj_data_inventory(proj_data_dir)
 (root / "LICENSES/PROJ-data.txt").write_bytes(proj_license.read_bytes())
 license_urls = {
     "CC-BY-3.0": "https://raw.githubusercontent.com/spdx/license-list-data/v3.25/text/CC-BY-3.0.txt",
@@ -332,7 +347,7 @@ for index,(expression,url) in enumerate(sorted(license_sources.items()),1):
     license_records.append({"expression":expression,"url":url,"file":f"LICENSES/{filename}","sha256":hashlib.sha256(text).hexdigest()})
 components.append({
     "component":"proj-data", "version":proj_formula.get("versions",{}).get("stable"),
-    "payload_paths":["share/proj"], "license_file":"LICENSES/PROJ-data.txt",
+    "payload_paths":sorted([f"share/proj/{filename}" for filename in data_files | {"README.DATA", "copyright_and_licenses.csv"}]), "license_file":"LICENSES/PROJ-data.txt",
     "source_url":resource_url, "source_sha256":resource_sha,
     "source_components":[{"component":"PROJ","version":proj_formula.get("versions",{}).get("stable"),
                            "source_url":proj_formula.get("urls",{}).get("stable",{}).get("url"),
