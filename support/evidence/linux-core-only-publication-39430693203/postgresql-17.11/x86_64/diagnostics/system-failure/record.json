@@ -1,0 +1,139 @@
+{
+  "architecture": "x86_64",
+  "archive_urls": null,
+  "archives": {
+    "postgresql-17.11-linux-x86_64.tar.gz": "e0cc5398ab09b3e422f9f1c827afb862ea3e01c7f60834b66a701157a2837eca"
+  },
+  "ci_run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/39430693203",
+  "command": "/tmp/pg-binaries-diagnostics.0Xy4IK/postgresql/bin/postgres --version",
+  "cwd": "/tmp/pg-binaries-diagnostics.0Xy4IK/postgresql",
+  "executable_paths": {
+    "postgres": "/tmp/pg-binaries-diagnostics.0Xy4IK/postgresql/bin/postgres",
+    "postgres_payload": "/tmp/pg-binaries-diagnostics.0Xy4IK/postgresql/libexec/postgres",
+    "removed_loader": "/tmp/pg-binaries-diagnostics.0Xy4IK/postgresql/lib/glibc/ld-linux-x86-64.so.2"
+  },
+  "exit_code": 127,
+  "failure": "missing-bundled-loader",
+  "finished_at_utc": "2026-10-20T13:30:24Z",
+  "gnu_build_ids_and_index_entries": [
+    {
+      "archive": "postgresql-17.11-linux-x86_64.tar.gz",
+      "archive_sha256": "e0cc5398ab09b3e422f9f1c827afb862ea3e01c7f60834b66a701157a2837eca",
+      "debug_file_path": "postgresql-17.11-linux-x86_64/postgresql/libexec/postgres.debug",
+      "debug_file_sha256": "af07384f9b1d7c1ab20ca7af917ee8ce946ab083d7434e30b99cdc8e16b76989",
+      "gnu_build_id": "34272efdd3324ad45032df76007cd83e6b78a4ad",
+      "module_path": "postgresql/libexec/postgres",
+      "module_sha256": "518e2296cf84cdc12dadd10057bf1502c4614a57ed54fd1c44b84a250407a391"
+    },
+    {
+      "archive": "postgresql-17.11-linux-x86_64.tar.gz",
+      "archive_sha256": "e0cc5398ab09b3e422f9f1c827afb862ea3e01c7f60834b66a701157a2837eca",
+      "debug_file_path": "postgresql-17.11-linux-x86_64/postgresql/bin/.pg-launcher.debug",
+      "debug_file_sha256": "7c5ba4db79250d11982cc73ba229f4dba232363816277efa6b5f2cbcdf9d4f6f",
+      "gnu_build_id": "6c686607727704fc8bd32c11e86867d42f1de48d",
+      "module_path": "postgresql/bin/.pg-launcher",
+      "module_sha256": "68b8488e2011c35c8781db15ecd2fa499036e1704ec5165a6ba93c53a59479c0"
+    }
+  ],
+  "inspection_tool_versions": {
+    "ldd": "ldd (Ubuntu GLIBC 2.39-0ubuntu8.9) 2.39",
+    "readelf": "GNU readelf (GNU Binutils for Ubuntu) 2.42"
+  },
+  "inventory_revision": null,
+  "kernel_release": "6.17.0-1022-azure",
+  "ldd_libexec_postgres": "\tlinux-vdso.so.1 (0x00007fd7efc84000)\n\tlibzstd.so.1 => /tmp/pg-binaries-diagnostics.0Xy4IK/postgresql/libexec/../lib/runtime/libzstd.so.1 (0x00007fd7eccae000)\n\tliblz4.so.1 => /tmp/pg-binaries-diagnostics.0Xy4IK/postgresql/libexec/../lib/runtime/liblz4.so.1 (0x00007fd7ecc8d000)\n\tlibxml2.so.2 => /tmp/pg-binaries-diagnostics.0Xy4IK/postgresql/libexec/../lib/runtime/libxml2.so.2 (0x00007fd7eca9e000)\n\tlibssl.so.3 => /tmp/pg-binaries-diagnostics.0Xy4IK/postgresql/libexec/../lib/runtime/libssl.so.3 (0x00007fd7ec9f2000)\n\tlibcrypto.so.3 => /tmp/pg-binaries-diagnostics.0Xy4IK/postgresql/libexec/../lib/runtime/libcrypto.so.3 (0x00007fd7ec588000)\n\tlibz.so.1 => /tmp/pg-binaries-diagnostics.0Xy4IK/postgresql/libexec/../lib/runtime/libz.so.1 (0x00007fd7ec569000)\n\tlibm.so.6 => /lib/x86_64-linux-gnu/libm.so.6 (0x00007fd7ec47e000)\n\tlibicui18n.so.70 => /tmp/pg-binaries-diagnostics.0Xy4IK/postgresql/libexec/../lib/runtime/libicui18n.so.70 (0x00007fd7ec0c9000)\n\tlibicuuc.so.70 => /tmp/pg-binaries-diagnostics.0Xy4IK/postgresql/libexec/../lib/runtime/libicuuc.so.70 (0x00007fd7ebea3000)\n\tlibc.so.6 => /lib/x86_64-linux-gnu/libc.so.6 (0x00007fd7ebc90000)\n\tliblzma.so.5 => /tmp/pg-binaries-diagnostics.0Xy4IK/postgresql/libexec/../lib/runtime/liblzma.so.5 (0x00007fd7ebc61000)\n\t/lib64/ld-linux-x86-64.so.2 (0x00007fd7efc86000)\n\tlibstdc++.so.6 => /tmp/pg-binaries-diagnostics.0Xy4IK/postgresql/libexec/../lib/runtime/libstdc++.so.6 (0x00007fd7eb9e2000)\n\tlibgcc_s.so.1 => /tmp/pg-binaries-diagnostics.0Xy4IK/postgresql/libexec/../lib/runtime/libgcc_s.so.1 (0x00007fd7eb9c0000)\n\tlibicudata.so.70 => /tmp/pg-binaries-diagnostics.0Xy4IK/postgresql/libexec/../lib/runtime/libicudata.so.70 (0x00007fd7e9da1000)",
+  "lookup_environment": {
+    "LD_LIBRARY_PATH": null,
+    "LD_PRELOAD": null,
+    "PATH": "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+    "PGDATA": null,
+    "PGHOST": null,
+    "PGPORT": null,
+    "PG_CONFIG": null
+  },
+  "machine": "x86_64",
+  "os_release": "PRETTY_NAME=\"Ubuntu 24.04.5 LTS\"\nNAME=\"Ubuntu\"\nVERSION_ID=\"24.04\"\nVERSION=\"24.04.5 LTS (Noble Numbat)\"\nVERSION_CODENAME=noble\nID=ubuntu\nID_LIKE=debian\nHOME_URL=\"https://www.ubuntu.com/\"\nSUPPORT_URL=\"https://help.ubuntu.com/\"\nBUG_REPORT_URL=\"https://bugs.launchpad.net/ubuntu/\"\nPRIVACY_POLICY_URL=\"https://www.ubuntu.com/legal/terms-and-policies/privacy-policy\"\nUBUNTU_CODENAME=noble\nLOGO=ubuntu-logo\n",
+  "output_file": "system-failure/output.txt",
+  "package_metadata": {
+    "postgresql": {
+      "architecture": "x86_64",
+      "build_configuration": "postgresql-17.11;builder=ubuntu-22.04;configure=icu,lz4,zstd,openssl,libxml,libxslt,zlib,uuid-e2fs,no-readline,no-rpath;cflags=-O2,-g;runtime=bundled-glibc-static-musl-launcher",
+      "build_id": "github-39428676075-1",
+      "builder_image_id": "sha256:cbda18d651e745656177b06a00e4e38ac2a389a1a1cfacbce53c6fc113e6fe98",
+      "builder_inputs": {
+        "base_image": "ubuntu:22.04",
+        "base_image_digest": "sha256:0a9887931b0e38af2e3487ed39e29436b0535c4f3f52e57745baaf79d1898956",
+        "packages_sha256": "e5b948714779db8f9f3763fc5ef06d7c11f0438d94a7b890a58446d8522e54be"
+      },
+      "bundled_glibc_version": "2.35-0ubuntu3.15",
+      "capabilities": {
+        "icu": true,
+        "libc_collations": true,
+        "lz4": true,
+        "zstd": true
+      },
+      "component": "postgresql",
+      "included_extensions": [
+        "amcheck",
+        "autoinc",
+        "bloom",
+        "btree_gin",
+        "btree_gist",
+        "citext",
+        "cube",
+        "dblink",
+        "dict_int",
+        "dict_xsyn",
+        "earthdistance",
+        "file_fdw",
+        "fuzzystrmatch",
+        "hstore",
+        "insert_username",
+        "intagg",
+        "intarray",
+        "isn",
+        "lo",
+        "ltree",
+        "moddatetime",
+        "pageinspect",
+        "pg_buffercache",
+        "pg_freespacemap",
+        "pg_prewarm",
+        "pg_stat_statements",
+        "pg_surgery",
+        "pg_trgm",
+        "pg_visibility",
+        "pg_walinspect",
+        "pgcrypto",
+        "pgrowlocks",
+        "pgstattuple",
+        "plpgsql",
+        "postgres_fdw",
+        "refint",
+        "seg",
+        "sslinfo",
+        "tablefunc",
+        "tcn",
+        "tsm_system_rows",
+        "tsm_system_time",
+        "unaccent",
+        "uuid-ossp",
+        "xml2"
+      ],
+      "platform": "linux",
+      "postgresql_version": "17.11",
+      "schema_version": 1,
+      "source_archive": {
+        "sha256": "dd27f2b3c59e73ed14aa3324901242bf69a032a6347805f274e6260322d42979",
+        "url": "https://ftp.postgresql.org/pub/source/v17.11/postgresql-17.11.tar.bz2"
+      },
+      "source_revision": "8aa6e07396b80bbd1fae05956138b5d12a52f23f",
+      "version": "17.11"
+    }
+  },
+  "postgresql_version": "17.11",
+  "run_as_user": "diagnostic-postgres",
+  "schema_version": 1,
+  "source_revision": "edf2a2602fb6e457b14e5b4ec5f0ffafdf5c3525",
+  "started_at_utc": "2026-10-20T13:30:24Z"
+}
