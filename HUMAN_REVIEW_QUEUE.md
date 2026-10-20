@@ -1,13 +1,5 @@
 # Human review queue
 
-## Pending decision
-
-### PostGIS macOS redistribution work
-
-The PostGIS 3.6.4 / PostgreSQL 18.6 arm64 [feasibility run](support/evidence/postgis-macos-feasibility-39474535469/README.md) builds unmodified upstream source and creates all four selected SQL extensions. A relocatable archive would include source-built GDAL 3.13.3, PROJ/GDAL data and libraries from 15 Homebrew formulae. The checked PostgreSQL core already inventories libxml2 and zstd, leaving up to 13 additional formulae to review; shared library bytes and versions still need comparison. The current macOS licence collector cannot describe a bundle that mixes source-built GDAL with Homebrew libraries. Meeting the [redistribution policy](policies/releases.md#redistribution-review-before-publication) requires exact component, notice and source-obligation evidence before advertising the archive.
-
-Should we invest in a bounded PostGIS-specific macOS packaging and redistribution review for this closure? If so, first prove one relocatable arm64 archive against PostgreSQL 18.6, then reuse the route for the remaining macOS targets. Until this decision, keep the successful run as feasibility evidence and continue work on other targets.
-
 ## Backlog ideas
 
 From Bernie: Adding this here so that we don't forget it. Don't start work on this yet. I'd like to discuss the viability of these and specify them properly before we go ahead. If indeed we decide to go ahead at all.
