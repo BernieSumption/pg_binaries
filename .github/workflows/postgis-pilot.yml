@@ -10,9 +10,13 @@ on:
         description: Build minimal-driver GDAL and probe PostGIS 3.6.4 raster support on macOS arm64 against PostgreSQL 18.6
         required: false
         type: boolean
+      postgis_windows_abi_probe:
+        description: Test whether PostGIS 3.6.4 built with upstream MSYS2 clang64 can load into the checked MSVC PostgreSQL 18.6 core
+        required: false
+        type: boolean
 jobs:
   plan:
-    if: ${{ inputs.address_standardizer_probe != true && inputs.postgis_macos_arm64_probe != true }}
+    if: ${{ inputs.address_standardizer_probe != true && inputs.postgis_macos_arm64_probe != true && inputs.postgis_windows_abi_probe != true }}
     runs-on: ubuntu-24.04
     outputs:
       project: ${{ steps.select.outputs.project }}
@@ -107,6 +111,72 @@ jobs:
             ${{ runner.temp }}/postgis-macos/core/*.tar.gz
             ${{ runner.temp }}/postgis-macos/core/*.sha256
             ${{ runner.temp }}/postgis-macos/output/**
+          if-no-files-found: warn
+          retention-days: 3
+
+  windows-postgis-abi:
+    if: ${{ inputs.postgis_windows_abi_probe == true }}
+    runs-on: windows-2022
+    timeout-minutes: 90
+    permissions:
+      actions: read
+      contents: read
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: CLANG64
+          update: true
+          install: >-
+            base-devel
+            curl
+            tar
+          pacboy: >-
+            toolchain:p
+            autoconf:p
+            automake:p
+            libtool:p
+            pkgconf:p
+            geos:p
+            proj:p
+            gdal:p
+            json-c:p
+            libxml2:p
+      - name: Resolve and download the checked PostgreSQL 18.6 core
+        id: core
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $identity = python tools/windows_core_pin.py --postgresql-version 18.6 --github-output
+          if ($LASTEXITCODE -ne 0) { throw 'Checked PostgreSQL 18.6 core pin is invalid.' }
+          $identity | Add-Content $env:GITHUB_OUTPUT
+          $values = @{}
+          foreach ($line in $identity) { $parts = $line -split '=', 2; $values[$parts[0]] = $parts[1] }
+          $dir = Join-Path $env:RUNNER_TEMP 'postgis-windows/core-artifact'
+          New-Item -ItemType Directory -Force $dir | Out-Null
+          gh run download $values.run_id --repo $env:GITHUB_REPOSITORY --name $values.artifact_name --dir $dir
+          if ($LASTEXITCODE -ne 0) { throw 'Could not download the checked PostgreSQL core artifact.' }
+          $archive = Join-Path $dir $values.archive_name
+          if ((Get-FileHash $archive -Algorithm SHA256).Hash.ToLowerInvariant() -cne $values.sha256) { throw 'Checked PostgreSQL core archive hash mismatch.' }
+          "archive=$archive" | Add-Content $env:GITHUB_OUTPUT
+      - name: Build upstream PostGIS and create the extension in the checked core
+        env:
+          CORE_ARCHIVE: ${{ steps.core.outputs.archive }}
+          OUTPUT_ROOT: ${{ runner.temp }}/postgis-windows/output
+        run: |
+          bash experiments/postgis-windows-abi-trial/build-and-probe.sh "$(cygpath -u "$CORE_ARCHIVE")" "$(cygpath -u "$OUTPUT_ROOT")"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: postgis-windows-abi-trial-${{ github.run_id }}
+          path: ${{ runner.temp }}/postgis-windows/output/**
           if-no-files-found: warn
           retention-days: 3
 
