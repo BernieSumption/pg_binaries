@@ -3,12 +3,13 @@
 
 import hashlib
 import csv
-from urllib.request import urlopen
 import json
 from pathlib import Path
 import re
 import subprocess
 import sys
+from concurrent.futures import ThreadPoolExecutor
+from urllib.request import Request, urlopen
 
 expected_formulae = {
     "boost": ("1.92.0", "BSL-1.0"),
@@ -31,9 +32,24 @@ def command(*args):
     return subprocess.check_output(args, text=True, stderr=subprocess.STDOUT)
 
 
+def formula_path(name, source):
+    value = source.get("path")
+    if not isinstance(value, str) or not value.startswith("Formula/") or not value.endswith(".rb"):
+        value = f"Formula/{name[0]}/{name}.rb"
+    path = Path(value)
+    if not path.is_relative_to("Formula") or path.suffix != ".rb":
+        raise SystemExit(f"invalid Homebrew formula path for {name}: {value}")
+    return path.as_posix()
+
+
+def formula_url(name, source):
+    return f"https://github.com/Homebrew/homebrew-core/blob/{source['tap_git_head']}/{formula_path(name, source)}"
+
+
 if sys.argv[1:] == ["--preflight"]:
     info = json.loads(command("brew", "info", "--json=v2", *sorted(expected_formulae)))
     formula_data = {item["name"]: item for item in info.get("formulae", [])}
+    urls = []
     for name, (version, license_expr) in sorted(expected_formulae.items()):
         formula = formula_data.get(name)
         if not formula or (formula.get("versions", {}).get("stable"), formula.get("license")) != (version, license_expr):
@@ -48,13 +64,21 @@ if sys.argv[1:] == ["--preflight"]:
         if (source.get("tap") != "homebrew/core" or source.get("tap_git_head") != formula.get("tap_git_head")
                 or not re.fullmatch(r"[0-9a-f]{40}", source.get("tap_git_head", ""))):
             raise SystemExit(f"Homebrew formula revision mismatch for {name} {version}")
-        if not isinstance(source.get("path"), str) or not source["path"].startswith("Formula/") or not source["path"].endswith(".rb"):
-            raise SystemExit(f"Homebrew formula path missing from receipt for {name} {version}")
+        urls.append((name, formula_url(name, source)))
         candidates = [path for path in prefix.rglob("*") if path.is_file()
             and (path.name.lower() in {"license", "license.txt", "license.md", "license_1_0.txt", "copying", "copyright"}
                  or path.name.lower().startswith(("copying.", "license.")))
             and len(path.relative_to(prefix).parts) <= 6]
         print(f"{name} {version}: {'notice text found' if candidates else 'no notice text; declaration evidence required'}")
+    def check_formula_url(item):
+        name, url = item
+        request = Request(url, method="HEAD", headers={"User-Agent": "pg_binaries-licence-preflight"})
+        with urlopen(request, timeout=15) as response:
+            if response.status != 200: raise RuntimeError(f"Homebrew formula source URL returned {response.status}: {url}")
+        return name
+    with ThreadPoolExecutor(max_workers=8) as executor:
+        for name in executor.map(check_formula_url, urls):
+            print(f"{name}: receipt-pinned formula URL verified")
     raise SystemExit(0)
 
 if len(sys.argv) != 6:
@@ -102,11 +126,7 @@ for (name, version), libraries in sorted(formula_libs.items()):
         raise SystemExit(f"installed Homebrew formula revision is missing for {name} {version}")
     if formula.get("tap_git_head") != formula_revision:
         raise SystemExit(f"Homebrew API metadata does not match installed formula revision for {name} {version}")
-    formula_path = Path(source_identity.get("path", ""))
-    if not formula_path.is_relative_to("Formula") or formula_path.suffix != ".rb":
-        raise SystemExit(f"Homebrew formula path is incomplete for {name} {version}")
-    formula_relative = formula_path.parts
-    formula_url = f"https://github.com/Homebrew/homebrew-core/blob/{formula_revision}/{'/'.join(formula_relative)}"
+    formula_url = f"https://github.com/Homebrew/homebrew-core/blob/{formula_revision}/{formula_path(name, source_identity)}"
     stable = formula.get("urls", {}).get("stable", {})
     source_url, source_sha = stable.get("url"), stable.get("checksum")
     if not source_url or not re.fullmatch(r"[0-9a-f]{64}", source_sha or ""):
