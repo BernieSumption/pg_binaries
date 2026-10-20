@@ -15,6 +15,8 @@ Can unmodified Address Standardizer 3.7.0 and PCRE2 10.48 be packaged against th
 
 `workflow.yml` is a local trial definition. It is not installed under `.github/workflows` and has no selected dispatcher route. It retains raw archive hashes and probe/static-analysis output; it does not produce a validated repository archive-bound verification record.
 
+The manual trial uses the registered `.github/workflows/address-standardizer-macos-probe.yml` path on `spike`. [Run 39447215667](https://github.com/BernieSumption/pg_binaries/actions/runs/39447215667) failed before compilation because the runner's Bash rejected process substitution around a here-document while reading the selected target. The recipe now captures the Python output before reading its fields; the archive and SQL checks still need a fresh run.
+
 ## Completion and cleanup
 
 The trial question is answered when the build produces the final extension archive and the fresh-runner job passes the archive suite and Mach-O closure inspection. If either fails, retain the logs and correct only concrete recipe errors before retrying.

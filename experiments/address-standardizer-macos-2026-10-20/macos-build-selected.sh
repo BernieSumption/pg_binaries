@@ -6,7 +6,7 @@ output=${2:?output directory required}
 target_config=${3:?resolved target config required}
 repo=$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)
 source "$repo/scripts/macos/core-prefix.sh"
-read -r pg_version architecture core_name core_sha core_build_id core_revision < <(python3 - "$target_config" <<'PY'
+selection=$(python3 - "$target_config" <<'PY'
 import json, sys
 target=json.load(open(sys.argv[1], encoding="utf-8"))
 core=target.get("core_archive", {})
@@ -21,6 +21,7 @@ for key in ("sha256", "build_id", "source_revision"):
 print("17.11", target["architecture"], core["basename"], core["sha256"], core["build_id"], core["source_revision"])
 PY
 )
+read -r pg_version architecture core_name core_sha core_build_id core_revision <<< "$selection"
 core_archives=$(cd "$core_archives" && pwd)
 mkdir -p "$output"
 output=$(cd "$output" && pwd)
