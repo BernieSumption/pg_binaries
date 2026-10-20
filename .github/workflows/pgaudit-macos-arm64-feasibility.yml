@@ -6,7 +6,7 @@ on:
       postgresql_version:
         description: PostgreSQL minor release
         type: choice
-        options: ['17.11', '18.6']
+        options: ['15.19', '16.15', '17.11', '18.6']
         default: '18.6'
 permissions:
   actions: read
@@ -31,7 +31,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: macos-arm64-pilot-archives
-          run-id: ${{ (inputs.postgresql_version || '18.6') == '17.11' && '39093804725' || '39075939632' }}
+          run-id: ${{ (inputs.postgresql_version || '18.6') == '15.19' && '39093804765' || (inputs.postgresql_version || '18.6') == '16.15' && '39093805055' || (inputs.postgresql_version || '18.6') == '17.11' && '39093804725' || '39075939632' }}
           github-token: ${{ github.token }}
           path: ${{ runner.temp }}/core-archives
       - name: Build and verify pgAudit against the archived core
