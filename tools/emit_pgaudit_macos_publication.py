@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Bind the pgAudit macOS arm64 archive, checks and CI attempt into records."""
+"""Bind a selected pgAudit macOS archive, checks and CI attempt into records."""
 
 import argparse
 import hashlib
@@ -14,8 +14,6 @@ import coverage
 from pgaudit_macos_targets import target
 
 
-ARCHITECTURE = "arm64"
-PLATFORM = "macos-arm64"
 CASES = {"archive-suite", "symbols", "diagnostics"}
 
 
@@ -66,10 +64,10 @@ def _archive_metadata(path, selected):
         _fail(f"cannot read pgAudit archive metadata: {exc}")
     expected = {
         "project": "pgaudit", "version": selected["pgaudit_version"], "sql_names": ["pgaudit"],
-        "postgresql_version": selected["postgresql_version"], "platform": "macos", "architecture": ARCHITECTURE,
+        "postgresql_version": selected["postgresql_version"], "platform": "macos", "architecture": selected["architecture"],
         "source": {"url": selected["source_url"], "sha256": selected["source_sha256"]},
         "core_archive": {
-            "basename": f"postgresql-{selected['postgresql_version']}-{PLATFORM}.tar.gz",
+            "basename": selected["core_basename"],
             "sha256": selected["core_sha256"],
         },
     }
@@ -109,10 +107,12 @@ def _step_result(value, name):
     return mapping[value]
 
 
-def emit(root, core_dir, archives, output, step_results, os_version, image_id, environ=None, pg_version="18.6"):
-    selected = target(pg_version)
+def emit(root, core_dir, archives, output, step_results, os_version, image_id, environ=None,
+         pg_version="18.6", architecture="arm64", target_config=None):
+    selected = target(pg_version, architecture, target_config, require_resolved=True)
     profile_id = selected["profile_id"]
     pgaudit_version = selected["pgaudit_version"]
+    architecture, platform = selected["architecture"], selected["platform"]
     root, core_dir, archives, output = map(Path, (root, core_dir, archives, output))
     environ = os.environ if environ is None else environ
     if not isinstance(step_results, dict) or set(step_results) != CASES:
@@ -131,16 +131,16 @@ def emit(root, core_dir, archives, output, step_results, os_version, image_id, e
         _fail("macOS runner version and image identifier are required")
 
     profile = coverage.verification_profile(root, profile_id)
-    if (profile["scope"] != "publication" or PLATFORM not in profile["platforms"]
+    if (profile["scope"] != "publication" or platform not in profile["platforms"]
             or profile["case_ids"] != sorted(CASES) or not profile["sources_available"]):
         _fail("registered profile does not match this pgAudit publication suite")
-    core_name = f"postgresql-{pg_version}-{PLATFORM}.tar.gz"
-    extension_name = f"pgaudit-{pgaudit_version}-postgresql-{pg_version}-{PLATFORM}.tar.gz"
+    core_name = selected["core_basename"]
+    extension_name = selected["extension_basename"]
     core_archive, extension_archive = core_dir / core_name, archives / extension_name
     attempt = {
         "schema_version": 1, "run_id": run_id, "source_revision": revision,
         "profile_id": profile_id, "postgresql_version": pg_version,
-        "pgaudit_version": pgaudit_version, "architecture": ARCHITECTURE,
+        "pgaudit_version": pgaudit_version, "architecture": architecture,
         "steps": {case: step_results[case] for case in sorted(CASES)},
         "archives_present": {core_name: core_archive.is_file(),
                              extension_name: extension_archive.is_file()},
@@ -158,7 +158,7 @@ def emit(root, core_dir, archives, output, step_results, os_version, image_id, e
     _sidecar(core_archive, digests[core_name])
     _sidecar(extension_archive, digests[extension_name])
     if digests[core_name] != selected["core_sha256"]:
-        _fail("PostgreSQL core archive does not match the selected successful build")
+        _fail("PostgreSQL core archive checksum differs from the resolved target")
     _archive_metadata(extension_archive, selected)
     attempt["archives"] = digests
     attempt_path.write_text(json.dumps(attempt, indent=2, sort_keys=True) + "\n", encoding="utf-8")
@@ -192,7 +192,7 @@ def emit(root, core_dir, archives, output, step_results, os_version, image_id, e
         diagnostics = _json(diagnostics_path, "diagnostic")
         _archive_report(diagnostics, digests, "diagnostic")
         if (diagnostics.get("platform") != "macos"
-                or diagnostics.get("architecture") != ARCHITECTURE
+                or diagnostics.get("architecture") != architecture
                 or diagnostics.get("postgresql_version") != pg_version
                 or diagnostics.get("pgaudit_version") != pgaudit_version
                 or not isinstance(diagnostics.get("extension_load_failure"), dict)
@@ -202,8 +202,8 @@ def emit(root, core_dir, archives, output, step_results, os_version, image_id, e
         "schema_version": 1, "profile_id": profile_id,
         "profile_revision": profile["profile_revision"], "test_revision": revision,
         "project": "pgaudit", "version": pgaudit_version,
-        "postgresql_version": pg_version, "architecture": ARCHITECTURE,
-        "platform": PLATFORM, "endpoint": "current", "case_results": results,
+        "postgresql_version": pg_version, "architecture": architecture,
+        "platform": platform, "endpoint": "current", "case_results": results,
         "archives": digests, "extension_archive": extension_name,
         "reports": report_digests,
         "clean_system": True,
@@ -211,7 +211,7 @@ def emit(root, core_dir, archives, output, step_results, os_version, image_id, e
         "dependency_checks_passed": (json.loads(static_path.read_text()).get("passed") is True
                                       if static_path.is_file() else False),
         "environment": {"os": "macos", "os_version": os_version,
-                        "architecture": ARCHITECTURE, "image_id": image_id},
+                        "architecture": architecture, "image_id": image_id},
         "ci": {"provider": "github-actions", "run_id": run_id,
                "run_url": f"{server_url.rstrip('/')}/{repository}/actions/runs/{run_id}",
                "source_revision": revision, "build_revision": revision,
@@ -225,12 +225,12 @@ def emit(root, core_dir, archives, output, step_results, os_version, image_id, e
         "case_results": results, "test_revision": revision, "ci": receipt["ci"],
         "outcome": outcome, "sha256": digests[extension_name],
         "component": "pgaudit", "project": "pgaudit", "version": pgaudit_version,
-        "platform": PLATFORM, "postgresql_version": pg_version,
+        "platform": platform, "postgresql_version": pg_version,
         "assembled_core": {"archive": core_name, "sha256": digests[core_name],
                            "version": pg_version},
         "prerequisite_archives": [],
         "environment": {"os": "macos", "os_version": os_version,
-                        "architecture": ARCHITECTURE, "clean_system": True,
+                        "architecture": architecture, "clean_system": True,
                         "endpoint": "current", "image_id": image_id,
                         "dependency_check_profile": receipt["dependency_check_profile"],
                         "dependency_checks_passed": receipt["dependency_checks_passed"]},
@@ -239,7 +239,7 @@ def emit(root, core_dir, archives, output, step_results, os_version, image_id, e
     coverage.validate_verification_record(record, support, root)
     records_dir = publication / "records"
     records_dir.mkdir(parents=True, exist_ok=True)
-    record_path = records_dir / f"pgaudit-{pgaudit_version}-postgresql-{pg_version}-{PLATFORM}-current-{run_id}.json"
+    record_path = records_dir / f"pgaudit-{pgaudit_version}-postgresql-{pg_version}-{platform}-current-{run_id}.json"
     record_path.write_text(json.dumps(record, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     print(receipt_path)
     print(record_path)
@@ -258,12 +258,15 @@ def main():
     parser.add_argument("--symbols-result", required=True)
     parser.add_argument("--diagnostics-result", required=True)
     parser.add_argument("--postgresql-version", choices=("15.19", "16.15", "17.11", "18.6"), default="18.6")
+    parser.add_argument("--architecture", choices=("arm64", "x86_64"), default="arm64")
+    parser.add_argument("--target-config", type=Path, required=True)
     args = parser.parse_args()
     try:
         paths = emit(args.root, args.core_archives, args.archives, args.output,
                      {"archive-suite": args.archive_suite_result, "symbols": args.symbols_result,
                       "diagnostics": args.diagnostics_result}, args.os_version, args.image_id,
-                     pg_version=args.postgresql_version)
+                      pg_version=args.postgresql_version, architecture=args.architecture,
+                      target_config=args.target_config)
         for path in paths:
             print(path)
         return 0

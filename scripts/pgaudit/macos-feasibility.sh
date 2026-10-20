@@ -1,15 +1,16 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-core_archives=${1:?usage: macos-feasibility.sh CORE_ARCHIVE_DIRECTORY OUTPUT_DIRECTORY [17.11|18.6]}
-output=${2:?usage: macos-feasibility.sh CORE_ARCHIVE_DIRECTORY OUTPUT_DIRECTORY [17.11|18.6]}
+core_archives=${1:?usage: macos-feasibility.sh CORE_ARCHIVE_DIRECTORY OUTPUT_DIRECTORY PG_VERSION ARCHITECTURE RESOLVED_TARGET}
+output=${2:?usage: macos-feasibility.sh CORE_ARCHIVE_DIRECTORY OUTPUT_DIRECTORY PG_VERSION ARCHITECTURE RESOLVED_TARGET}
 pg_version=${3:-18.6}
-architecture=arm64
+architecture=${4:-arm64}
+target_config=${5:?resolved target config is required}
 openssl_url='https://github.com/openssl/openssl/releases/download/openssl-3.5.8/openssl-3.5.8.tar.gz'
 openssl_sha256=a8f84a39918ec6415ce765d9b429d313ba97b8143169c172e734b9514464f5b2
 repo=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 IFS=$'\t' read -r pgaudit_version core_sha256 core_build_id core_source_revision source_url source_sha256 \
-  < <(python3 "$repo/tools/pgaudit_macos_targets.py" "$pg_version" --shell)
+  < <(python3 "$repo/tools/pgaudit_macos_targets.py" "$pg_version" --architecture "$architecture" --target-config "$target_config" --require-resolved --shell)
 core_archives=$(cd "$core_archives" && pwd)
 mkdir -p "$output"
 output=$(cd "$output" && pwd)
@@ -51,7 +52,7 @@ pgroot="$work/first/postgresql"
 test -s "$pgroot/include/server/pg_config.h"
 test -s "$pgroot/lib/pgxs/src/makefiles/pgxs.mk"
 
-PG_VERSION="$pg_version" CORE_BUILD_ID="$core_build_id" CORE_SOURCE_REVISION="$core_source_revision" \
+PG_VERSION="$pg_version" PG_ARCH="$architecture" CORE_BUILD_ID="$core_build_id" CORE_SOURCE_REVISION="$core_source_revision" \
 python3 - "$pgroot" > "$work/prefix" <<'PY'
 import json
 import os
@@ -66,7 +67,7 @@ expected = {
     "version": os.environ["PG_VERSION"],
     "postgresql_version": os.environ["PG_VERSION"],
     "platform": "macos",
-    "architecture": "arm64",
+    "architecture": os.environ["PG_ARCH"],
     "build_id": os.environ["CORE_BUILD_ID"],
     "source_revision": os.environ["CORE_SOURCE_REVISION"],
 }
@@ -105,7 +106,9 @@ tar -xzf openssl.tar.gz
 openssl_source="$work/source/openssl-3.5.8"
 openssl_prefix="$work/openssl-install"
 cd "$openssl_source"
-./Configure darwin64-arm64-cc no-tests \
+openssl_target=darwin64-arm64-cc
+[[ $architecture != x86_64 ]] || openssl_target=darwin64-x86_64-cc
+./Configure "$openssl_target" no-tests \
   --prefix="$openssl_prefix" --openssldir="$openssl_prefix/ssl" --libdir=lib
 make build_generated -j "$(sysctl -n hw.ncpu)"
 test -s include/openssl/opensslconf.h

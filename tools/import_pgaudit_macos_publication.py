@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate and retain one arm64 pgAudit macOS publication attempt."""
+"""Validate and retain one selected pgAudit macOS publication attempt."""
 
 import argparse
 import json
@@ -14,7 +14,6 @@ from pgaudit_macos_targets import target
 
 
 MAX_EVIDENCE_BYTES = 1024 * 1024
-PROFILE_ID = target("18.6")["profile_id"]
 CASES = publication.CASES
 
 
@@ -33,17 +32,19 @@ def _retain(root, source, destination, copies):
     copies.append((source, destination))
 
 
-def import_run(root, core_artifact, pgaudit_artifact, run_id, pg_version="18.6"):
-    selected = target(pg_version)
+def import_run(root, core_artifact, pgaudit_artifact, run_id, pg_version="18.6",
+               architecture="arm64", target_config=None):
+    selected = target(pg_version, architecture, target_config, require_resolved=True)
     profile_id = selected["profile_id"]
     pgaudit_version = selected["pgaudit_version"]
+    platform, architecture = selected["platform"], selected["architecture"]
     root, core_artifact, pgaudit_artifact = map(Path, (root, core_artifact, pgaudit_artifact))
     run_id = str(run_id)
     if not run_id.isdigit():
         raise coverage.CoverageError("run_id must be numeric")
     support = coverage.load_json(root / "support.json")
     profile = coverage.verification_profile(root, profile_id)
-    if (profile["scope"] != "publication" or profile["platforms"] != [publication.PLATFORM]
+    if (profile["scope"] != "publication" or profile["platforms"] != [platform]
             or profile["case_ids"] != sorted(CASES)):
         raise coverage.CoverageError("registered profile does not match the scoped pgAudit target")
     publication_dir = pgaudit_artifact / "publication"
@@ -51,7 +52,7 @@ def import_run(root, core_artifact, pgaudit_artifact, run_id, pg_version="18.6")
     attempt = _read(attempt_path)
     if (attempt.get("schema_version") != 1 or str(attempt.get("run_id")) != run_id
             or attempt.get("profile_id") != profile_id
-            or attempt.get("architecture") != publication.ARCHITECTURE
+            or attempt.get("architecture") != architecture
             or attempt.get("postgresql_version") != pg_version
             or attempt.get("pgaudit_version") != pgaudit_version
             or not coverage.REVISION.fullmatch(str(attempt.get("source_revision", "")))):
@@ -64,12 +65,12 @@ def import_run(root, core_artifact, pgaudit_artifact, run_id, pg_version="18.6")
     results = {case: publication._step_result(raw_steps[case], case) for case in sorted(CASES)}
     outcome = ("failed" if "failed" in results.values()
                else "skipped" if "skipped" in results.values() else "passed")
-    evidence_dir = root / "support/evidence" / f"pgaudit-macos-publication-{run_id}" / publication.ARCHITECTURE
+    evidence_dir = root / "support/evidence" / f"pgaudit-macos-publication-{run_id}" / architecture
     copies = []
     _retain(root, attempt_path, evidence_dir / "attempt.json", copies)
 
-    core_name = f"postgresql-{pg_version}-{publication.PLATFORM}.tar.gz"
-    extension_name = f"pgaudit-{pgaudit_version}-postgresql-{pg_version}-{publication.PLATFORM}.tar.gz"
+    core_name = selected["core_basename"]
+    extension_name = selected["extension_basename"]
     core_archive, extension_archive = core_artifact / core_name, pgaudit_artifact / extension_name
     receipt_path = publication_dir / "current-receipt.json"
     record_paths = sorted((publication_dir / "records").glob("*.json"))
@@ -88,7 +89,7 @@ def import_run(root, core_artifact, pgaudit_artifact, run_id, pg_version="18.6")
     for archive in (core_archive, extension_archive):
         publication._sidecar(archive, digests[archive.name])
     if digests[core_name] != selected["core_sha256"]:
-        raise coverage.CoverageError("core archive does not match the pinned PostgreSQL artifact")
+        raise coverage.CoverageError("core archive checksum differs from the resolved target")
     publication._archive_metadata(extension_archive, selected)
 
     if receipt_path.is_file():
@@ -100,7 +101,7 @@ def import_run(root, core_artifact, pgaudit_artifact, run_id, pg_version="18.6")
             "test_revision": attempt["source_revision"],
             "project": "pgaudit", "version": pgaudit_version,
             "postgresql_version": pg_version,
-            "architecture": publication.ARCHITECTURE, "platform": publication.PLATFORM,
+            "architecture": architecture, "platform": platform,
             "endpoint": "current", "case_results": results, "archives": digests,
             "extension_archive": extension_name,
         }
@@ -199,10 +200,12 @@ def main():
     parser.add_argument("--pgaudit-artifact", type=Path, required=True)
     parser.add_argument("--run-id", required=True)
     parser.add_argument("--postgresql-version", choices=("15.19", "16.15", "17.11", "18.6"), default="18.6")
+    parser.add_argument("--architecture", choices=("arm64", "x86_64"), default="arm64")
+    parser.add_argument("--target-config", type=Path, required=True)
     args = parser.parse_args()
     try:
         for path in import_run(args.root, args.core_artifact, args.pgaudit_artifact, args.run_id,
-                               args.postgresql_version):
+                               args.postgresql_version, args.architecture, args.target_config):
             print(path)
         return 0
     except (coverage.CoverageError, OSError, ValueError, TypeError) as exc:
