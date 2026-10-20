@@ -8,8 +8,6 @@ exec > >(tee "$output_root/build.log") 2>&1
 set -x
 
 test "${MSYSTEM:-}" = MINGW64
-export PATH="/c/Strawberry/perl/bin:$PATH"
-test "$(perl -e 'print $^O')" = MSWin32
 printf 'int main(void) { return 0; }\n' > "$output_root/compiler-test.c"
 gcc -v "$output_root/compiler-test.c" -o "$output_root/compiler-test.exe"
 "$output_root/compiler-test.exe"
