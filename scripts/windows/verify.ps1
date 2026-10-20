@@ -244,7 +244,10 @@ if (-not $CoreOnly -and ((Test-Path (Join-Path $pgRoot 'metadata.json')) -or -no
 }
 
 $env:PGHOST = '127.0.0.1'
-$env:PGPORT = '55432'
+$listener = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Loopback, 0)
+$listener.Start()
+$env:PGPORT = [string]$listener.LocalEndpoint.Port
+$listener.Stop()
 $env:PGUSER = 'postgres'
 $env:PGDATABASE = 'postgres'
 $env:PGSSLMODE = 'disable'
@@ -254,7 +257,12 @@ $env:PATH = "$initialBin;$env:SystemRoot\System32;$env:SystemRoot"
 & (Join-Path $initialBin 'initdb.exe') -D $initialData -U postgres -A trust --encoding=UTF8 --no-instructions
 $initialStarted = $false
 try {
-  & (Join-Path $initialBin 'pg_ctl.exe') -D $initialData -l (Join-Path $work 'postgres-before-move.log') -o "-h 127.0.0.1 -p $env:PGPORT" -w start
+  try {
+    & (Join-Path $initialBin 'pg_ctl.exe') -D $initialData -l (Join-Path $work 'postgres-before-move.log') -o "-h 127.0.0.1 -p $env:PGPORT" -w start
+  } catch {
+    Get-Content (Join-Path $work 'postgres-before-move.log') -ErrorAction SilentlyContinue | Write-Host
+    throw
+  }
   $initialStarted = $true
   $initialPsql = Join-Path $initialBin 'psql.exe'
   $initialVersion = (& $initialPsql -At -c 'SHOW server_version').Trim()
@@ -312,7 +320,12 @@ hostnossl all all 127.0.0.1/32 trust
 '@ | Set-Content -Encoding ascii (Join-Path $data 'pg_hba.conf')
 $started = $false
 try {
-  & $pgCtl -D $data -l (Join-Path $work 'postgres.log') -o "-h 127.0.0.1 -p $env:PGPORT" -w start
+  try {
+    & $pgCtl -D $data -l (Join-Path $work 'postgres.log') -o "-h 127.0.0.1 -p $env:PGPORT" -w start
+  } catch {
+    Get-Content (Join-Path $work 'postgres.log') -ErrorAction SilentlyContinue | Write-Host
+    throw
+  }
   $started = $true
   $reported = (& $psql -At -c 'SHOW server_version').Trim()
   if ($reported -ne $pgVersion) { throw "Server reports $reported, expected $pgVersion" }

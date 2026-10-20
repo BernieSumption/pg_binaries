@@ -6,6 +6,7 @@ on:
     paths:
       - .github/workflows/pgvector-windows-selected-publication.yml
       - scripts/windows/diagnostics.ps1
+      - scripts/windows/verify.ps1
   workflow_call:
     inputs:
       postgresql_version:

@@ -108,20 +108,26 @@ try {
   $log = Join-Path $serverTree 'server.log'
   $serverPath = "$bin;$env:SystemRoot\System32;$env:SystemRoot"
   $env:PATH = $serverPath
-  $env:PGHOST = '127.0.0.1'; $env:PGPORT = '55439'; $env:PGUSER = 'postgres'; $env:PGDATABASE = 'postgres'; $env:PGSSLMODE = 'disable'
+  $listener = [System.Net.Sockets.TcpListener]::new([System.Net.IPAddress]::Loopback, 0)
+  $listener.Start()
+  $env:PGHOST = '127.0.0.1'; $env:PGPORT = [string]$listener.LocalEndpoint.Port; $env:PGUSER = 'postgres'; $env:PGDATABASE = 'postgres'; $env:PGSSLMODE = 'disable'
+  $listener.Stop()
   & (Join-Path $bin 'initdb.exe') -D $data -U postgres -A trust --encoding=UTF8 --no-instructions *> (Join-Path $serverTree 'initdb.log')
   if ($LASTEXITCODE -ne 0) { throw 'initdb failed; diagnostic server-error probe cannot continue' }
   $pgCtl = Join-Path $bin 'pg_ctl.exe'
   $psql = Join-Path $bin 'psql.exe'
   & $pgCtl -D $data -l $log -o "-h 127.0.0.1 -p $env:PGPORT" -w start
-  if ($LASTEXITCODE -ne 0) { throw 'Could not start PostgreSQL for server-log probe' }
+  if ($LASTEXITCODE -ne 0) {
+    Get-Content $log -ErrorAction SilentlyContinue | Write-Host
+    throw 'Could not start PostgreSQL for server-log probe'
+  }
   $started = $true
-  $serverCommand = "& '$psql' -X -v ON_ERROR_STOP=1 -h 127.0.0.1 -p 55439 -d postgres -c 'SELECT 1 / 0;'"
+  $serverCommand = "& '$psql' -X -v ON_ERROR_STOP=1 -h 127.0.0.1 -p $env:PGPORT -d postgres -c 'SELECT 1 / 0;'"
   $serverCwd = $serverTree
   $serverStarted = [DateTime]::UtcNow.ToString('o')
   Push-Location $serverCwd
   try {
-    $clientText = (& $psql -X -v ON_ERROR_STOP=1 -h 127.0.0.1 -p 55439 -d postgres -c 'SELECT 1 / 0;' 2>&1 | Out-String).Trim()
+    $clientText = (& $psql -X -v ON_ERROR_STOP=1 -h 127.0.0.1 -p $env:PGPORT -d postgres -c 'SELECT 1 / 0;' 2>&1 | Out-String).Trim()
     $clientStatus = $LASTEXITCODE
   } finally { Pop-Location }
   $serverFinished = [DateTime]::UtcNow.ToString('o')
@@ -148,7 +154,7 @@ try {
       postgresql_failure = [ordered]@{ PATH = $serverPath; PGHOST = $env:PGHOST; PGPORT = $env:PGPORT; PGUSER = $env:PGUSER; PGDATABASE = $env:PGDATABASE; PGSSLMODE = $env:PGSSLMODE }
     }
     system_failure = [ordered]@{ kind = 'missing-bundled-runtime-dll'; executable = (Join-Path $root 'bin/postgres.exe'); missing_library = $missingDll; hidden_library_path = $hiddenDll; command = $systemCommand; cwd = $systemCwd; started_at_utc = $systemStarted; finished_at_utc = $systemFinished; exit_code = $systemStatus; ntstatus = $systemStatusHex; failure_text = $systemText }
-    postgresql_failure = [ordered]@{ kind = 'server-error'; executable = $psql; command = $serverCommand; cwd = $serverCwd; server_start_command = "& '$pgCtl' -D '$data' -l '$log' -o '-h 127.0.0.1 -p 55439' -w start"; started_at_utc = $serverStarted; finished_at_utc = $serverFinished; exit_code = $clientStatus; failure_text = $clientText; server_log = $serverLog }
+    postgresql_failure = [ordered]@{ kind = 'server-error'; executable = $psql; command = $serverCommand; cwd = $serverCwd; server_start_command = "& '$pgCtl' -D '$data' -l '$log' -o '-h 127.0.0.1 -p $env:PGPORT' -w start"; started_at_utc = $serverStarted; finished_at_utc = $serverFinished; exit_code = $clientStatus; failure_text = $clientText; server_log = $serverLog }
   }
   if (-not $CoreOnly) {
     $record.pgvector_version = $PgvectorVersion
