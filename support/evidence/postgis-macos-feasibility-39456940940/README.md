@@ -1,0 +1,7 @@
+# PostGIS 3.6.4 macOS arm64 source-build feasibility
+
+On 2026-10-20, [run 39456940940](https://github.com/BernieSumption/pg_binaries/actions/runs/39456940940) passed on the standard `macos-15` arm64 runner at source revision `c3f0a00289518d20a3ff2c1f15844dfece7df507`. It compiled unmodified PostGIS 3.6.4 from the OSGeo source archive pinned to SHA-256 `ed8dc6679f1e06f7b113592b04cde2a7e00f1b1e681294c8ca2204058990cec6`, using the checked PostgreSQL 18.6 macOS arm64 core archive with SHA-256 `33807e7b17519acf8643ed73429ba7c983cf9572be12048bdb7b6a872f682608`.
+
+The run installed PostGIS into the extracted core and found control files and versioned SQL for `postgis`, `postgis_raster`, `postgis_sfcgal` and `postgis_topology`. Configure selected GEOS 3.15.0, PROJ 9.8.1, GDAL 3.13.3 and SFCGAL 2.3.0 from the runner's build dependencies. The first two attempts failed at the macOS topology bundle-loader path; the passing recipe sets PostGIS's configure prefix to the extracted core so its generated makefile links against the checked `postgres` executable.
+
+This establishes source-build feasibility for this one target. It does not verify a relocatable extension archive, bundled dependency closure, SQL behavior on a fresh runner, redistribution, or any other selected target. The trial lives in `experiments/postgis-macos-arm64-2026-10-20/` and should be removed after its useful recipe is incorporated into the selected publication path.
