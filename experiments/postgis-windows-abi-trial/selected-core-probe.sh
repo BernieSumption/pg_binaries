@@ -28,10 +28,21 @@ tar -xzf postgis-3.6.4.tar.gz
 cd postgis-3.6.4
 
 export PATH="$(cygpath -u "$pgroot/bin"):$PATH"
-export PG_CONFIG="$(cygpath -u "$pgconfig")"
-CC=gcc ./configure --with-pgconfig="$PG_CONFIG" --without-raster --without-tiger --without-topology --without-sfcgal --without-protobuf
-make CC=gcc
-make CC=gcc install
+export REAL_PG_CONFIG="$(cygpath -u "$pgconfig")"
+cat > "$output_root/pg_config-gcc" <<'EOF'
+#!/usr/bin/env bash
+case "$1" in
+  --cc) printf '%s\n' gcc ;;
+  --cflags) printf '%s\n' -O2 ;;
+  --cppflags|--ldflags) printf '\n' ;;
+  *) exec "$REAL_PG_CONFIG" "$@" ;;
+esac
+EOF
+chmod +x "$output_root/pg_config-gcc"
+export PG_CONFIG="$output_root/pg_config-gcc"
+./configure --with-pgconfig="$PG_CONFIG" --without-raster --without-tiger --without-topology --without-sfcgal --without-protobuf
+make CC=gcc CFLAGS=-O2
+make CC=gcc CFLAGS=-O2 install
 
 work="$output_root/cluster"
 mkdir -p "$work"
