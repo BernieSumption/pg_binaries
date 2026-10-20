@@ -38,7 +38,7 @@ make install
 
 work="$output_root/cluster"
 mkdir -p "$work"
-"$pgroot/bin/initdb.exe" -D "$work/data" --no-locale -E UTF8
+"$pgroot/bin/initdb.exe" -D "$work/data" --no-locale -E UTF8 -U postgres
 "$pgroot/bin/pg_ctl.exe" -D "$work/data" -l "$work/server.log" -o "-p 55438" start
 finish() { "$pgroot/bin/pg_ctl.exe" -D "$work/data" -m immediate stop || true; }
 trap finish EXIT
