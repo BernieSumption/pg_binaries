@@ -29,6 +29,7 @@ function Assert-ArchiveHash([string]$archive) {
 
 Assert-ArchiveHash $pgArchive
 if (-not $CoreOnly) { Assert-ArchiveHash $vectorArchive }
+$pgArchiveSha256 = (Get-FileHash $pgArchive -Algorithm SHA256).Hash.ToLowerInvariant()
 New-Item -ItemType Directory -Force $pgExtract, (Split-Path $moved -Parent) | Out-Null
 if (-not $CoreOnly) { New-Item -ItemType Directory -Force $vectorExtract | Out-Null }
 tar.exe -xzf $pgArchive -C $pgExtract
@@ -71,6 +72,7 @@ if ($CoreOnly) {
   }
 } else {
   $vectorMetadata = Get-Content $metadataPath -Raw | ConvertFrom-Json
+  $separateVectorBuild = $vectorMetadata.PSObject.Properties.Name -contains 'core_archive'
   if ($pgVersion -eq '16.15') {
     & $python (Join-Path $repo 'tools/check_windows_git_source_identity.py') --postgresql-version $pgVersion --core-manifest (Join-Path $pgRoot 'manifest.json') --vector-metadata $metadataPath
     if ($LASTEXITCODE -ne 0) { throw 'Packaged source identity differs from the selected upstream Git tag or pgvector archive' }
@@ -117,9 +119,26 @@ if (-not (Test-Path (Join-Path $pgRoot "bin/$msvcNotice") -PathType Leaf) -or
     -not (Test-Path (Join-Path $pgRoot "LICENSES/$msvcNotice") -PathType Leaf)) {
   throw 'The Visual C++ runtime notice is missing'
 }
-if (-not $CoreOnly) { foreach ($field in @('build_id', 'source_revision', 'build_configuration', 'platform', 'architecture')) {
-  if ($vectorMetadata.$field -cne $pgManifest.$field) { throw "pgvector build provenance differs from PostgreSQL: $field" }
-} }
+if (-not $CoreOnly) {
+  if ($separateVectorBuild) {
+    if ($vectorMetadata.build_id -notmatch '^[A-Za-z0-9][A-Za-z0-9._-]*$' -or
+        $vectorMetadata.source_revision -notmatch '^([0-9a-fA-F]{40}|[0-9a-fA-F]{64})$' -or
+        -not $vectorMetadata.build_configuration -or
+        $vectorMetadata.platform -cne 'windows' -or $vectorMetadata.architecture -cne 'x86_64') {
+      throw 'Separately built pgvector provenance is missing or invalid'
+    }
+    if ($null -eq $vectorMetadata.core_archive -or
+        $vectorMetadata.core_archive.basename -cne (Split-Path $pgArchive -Leaf) -or
+        $vectorMetadata.core_archive.sha256 -notmatch '^[0-9a-fA-F]{64}$' -or
+        $vectorMetadata.core_archive.sha256.ToLowerInvariant() -cne $pgArchiveSha256) {
+      throw 'Separately built pgvector metadata does not bind the downloaded PostgreSQL archive'
+    }
+  } else {
+    foreach ($field in @('build_id', 'source_revision', 'build_configuration', 'platform', 'architecture')) {
+      if ($vectorMetadata.$field -cne $pgManifest.$field) { throw "pgvector build provenance differs from PostgreSQL: $field" }
+    }
+  }
+}
 if (-not (Test-Path (Join-Path $pgRoot 'manifest.json')) -or
     -not (Test-Path (Join-Path $pgRoot 'LICENSES/PostgreSQL.txt')) -or
     (-not $CoreOnly -and -not (Test-Path (Join-Path $vectorRoot 'LICENSES/pgvector.txt'))) -or

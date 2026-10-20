@@ -26,6 +26,7 @@ on:
         type: string
 
 permissions:
+  actions: read
   contents: read
 
 jobs:
@@ -65,16 +66,48 @@ jobs:
     env:
       PG_VERSION: ${{ needs.select.outputs.postgresql_version }}
       PGVECTOR_VERSION: ${{ needs.select.outputs.extension_version }}
+      BUILD_ID: github-${{ github.run_id }}-${{ github.run_attempt }}
+      SOURCE_REVISION: ${{ github.sha }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Set up PostgreSQL and pgvector build dependencies
-        run: ./scripts/windows/setup-core-dependencies.ps1 -PostgreSQLVersion $env:PG_VERSION
-      - name: Build selected PostgreSQL and pgvector archives
-        shell: cmd
-        run: scripts\windows\build.cmd
+      - name: Resolve the checked PostgreSQL core pin
+        id: core
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $identity = python tools/windows_core_pin.py --postgresql-version $env:PG_VERSION --github-output
+          if ($LASTEXITCODE -ne 0) { throw 'Checked PostgreSQL core pin is invalid.' }
+          $identity | Add-Content $env:GITHUB_OUTPUT
+      - name: Download the checked PostgreSQL core archive and symbols
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $coreDir = Join-Path $env:RUNNER_TEMP 'core'
+          New-Item -ItemType Directory -Force dist/windows | Out-Null
+          $producerDir = Join-Path $env:RUNNER_TEMP 'core-producer'
+          New-Item -ItemType Directory -Force $coreDir | Out-Null
+          gh run download ${{ steps.core.outputs.run_id }} --repo $env:GITHUB_REPOSITORY --name '${{ steps.core.outputs.artifact_name }}' --dir $producerDir
+          if ($LASTEXITCODE -ne 0) { throw 'Could not download the checked PostgreSQL core artifact.' }
+          $archiveName = '${{ steps.core.outputs.archive_name }}'
+          Copy-Item (Join-Path $producerDir $archiveName) (Join-Path 'dist/windows' $archiveName) -Force
+          Copy-Item (Join-Path $producerDir "$archiveName.sha256") (Join-Path 'dist/windows' "$archiveName.sha256") -Force
+          python tools/stage_windows_core_symbols.py $producerDir (Join-Path $env:RUNNER_TEMP 'core-symbols') $archiveName
+          if ($LASTEXITCODE -ne 0) { throw 'Could not stage symbols for the checked PostgreSQL core archive.' }
+      - name: Fetch and build pgvector against the checked PostgreSQL core
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $coreName = '${{ steps.core.outputs.archive_name }}'
+          $coreArchive = Join-Path 'dist/windows' $coreName
+          $sourceUrl = python tools/source_archive.py pgvector $env:PGVECTOR_VERSION tar.gz --field url
+          if ($LASTEXITCODE -ne 0) { throw 'Cannot resolve the selected pgvector source archive.' }
+          $sourceArchive = Join-Path $env:RUNNER_TEMP "pgvector-$env:PGVECTOR_VERSION.tar.gz"
+          Invoke-WebRequest -Uri $sourceUrl -OutFile $sourceArchive
+          ./scripts/pgvector/windows-build.ps1 -CoreArchive $coreArchive -CoreSha256 '${{ steps.core.outputs.sha256 }}' -CoreSymbolsDirectory (Join-Path $env:RUNNER_TEMP 'core-symbols') -SourceArchive $sourceArchive -PostgreSQLVersion $env:PG_VERSION -PgvectorVersion $env:PGVECTOR_VERSION -OutputDirectory dist/windows
+          if ($LASTEXITCODE -ne 0) { throw 'Selected pgvector Windows build failed.' }
       - uses: actions/upload-artifact@v4
         with:
           name: pgvector-windows-built-${{ needs.select.outputs.postgresql_version }}-${{ github.run_id }}

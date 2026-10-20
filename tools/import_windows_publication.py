@@ -146,15 +146,25 @@ def import_run(root, build_artifact, verification_artifact, run_id, postgresql_v
         raise coverage.CoverageError("records do not identify the requested GitHub Actions run")
     if (not str(ci.get("run_url", "")).startswith("https://github.com/")
             or not str(ci.get("run_url", "")).endswith(f"/actions/runs/{run_id}")
-            or any(ci.get(key) != revision for key in ("source_revision", "build_revision", "test_revision"))):
-        raise coverage.CoverageError("record CI revisions or run URL are inconsistent")
+            or ci.get("test_revision") != revision):
+        raise coverage.CoverageError("record CI test revision or run URL is inconsistent")
     if not isinstance(revision, str) or not re.fullmatch(r"[0-9a-f]{40}|[0-9a-f]{64}", revision):
         raise coverage.CoverageError("record test revision is invalid")
     by_component = {record.get("component"): record for record in records}
     if set(by_component) != set(expected_names):
         raise coverage.CoverageError("records must cover PostgreSQL and pgvector")
+    archive_by_component = {"postgresql": archives[0], "vector": archives[1]}
     for component, archive_name in expected_names.items():
         record = by_component[component]
+        archive_member = "postgresql/manifest.json" if component == "postgresql" else "metadata.json"
+        label = "PostgreSQL" if component == "postgresql" else "pgvector"
+        build_revision, _, build_run_id, build_run_attempt = publication._archive_provenance(
+            archive_by_component[component], archive_member, label)
+        record_ci = record.get("ci")
+        expected_ci = {**ci, "source_revision": build_revision, "build_revision": build_revision,
+                       "build_run_id": build_run_id, "build_run_attempt": build_run_attempt}
+        if (record_ci != expected_ci or record.get("test_revision") != revision):
+            raise coverage.CoverageError(f"{component} record CI provenance does not match its archive")
         coverage.validate_verification_record(record, support, root)
         if (record.get("profile_id") != PROFILE_ID or record.get("profile_revision") not in profile["compatible_profile_revisions"]
                 or record.get("platform") != "windows-x86_64" or record.get("postgresql_version") != postgresql_version

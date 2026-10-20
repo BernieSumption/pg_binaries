@@ -1,10 +1,12 @@
 import hashlib
+import io
 import json
 import os
 from pathlib import Path
 import shutil
 import sys
 import tempfile
+import tarfile
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
@@ -34,8 +36,18 @@ class WindowsPublicationRecordTests(unittest.TestCase):
         self.names = ["postgresql-18.6-windows-x86_64.tar.gz",
                       "pgvector-0.8.7-postgresql-18.6-windows-x86_64.tar.gz"]
         self.digests = {}
-        for name in self.names:
-            data = ("downloaded bytes: " + name).encode()
+        metadata = [
+            ("postgresql/manifest.json", {"source_revision": "b" * 40, "build_id": "github-1234567-2"}),
+            ("metadata.json", {"source_revision": "c" * 40, "build_id": "github-7654321-1"}),
+        ]
+        for name, (member_name, value) in zip(self.names, metadata):
+            data_buffer = io.BytesIO()
+            payload = json.dumps(value).encode()
+            with tarfile.open(fileobj=data_buffer, mode="w:gz") as archive:
+                member = tarfile.TarInfo(member_name)
+                member.size = len(payload)
+                archive.addfile(member, io.BytesIO(payload))
+            data = data_buffer.getvalue()
             (self.archives / name).write_bytes(data)
             digest = hashlib.sha256(data).hexdigest()
             self.digests[name] = digest
@@ -105,6 +117,10 @@ class WindowsPublicationRecordTests(unittest.TestCase):
         self.assertEqual(records[1]["sha256"], self.digests[self.names[1]])
         self.assertEqual(records[1]["assembled_core"], {
             "archive": self.names[0], "sha256": self.digests[self.names[0]], "version": "18.6"})
+        self.assertEqual((records[0]["ci"]["source_revision"], records[0]["ci"]["build_run_id"],
+                          records[0]["ci"]["build_run_attempt"]), ("b" * 40, "1234567", "2"))
+        self.assertEqual((records[1]["ci"]["source_revision"], records[1]["ci"]["build_run_id"],
+                          records[1]["ci"]["build_run_attempt"]), ("c" * 40, "7654321", "1"))
         for record in records:
             self.assertTrue(coverage.validate_verification_record(
                 record, coverage.load_json(self.root / "support.json"), self.root))

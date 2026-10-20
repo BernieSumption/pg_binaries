@@ -1,10 +1,12 @@
 import hashlib
+import io
 import json
 import os
 from pathlib import Path
 import shutil
 import sys
 import tempfile
+import tarfile
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
@@ -34,8 +36,18 @@ class WindowsPublicationImportTests(unittest.TestCase):
         self.names = ["postgresql-18.6-windows-x86_64.tar.gz",
                       "pgvector-0.8.7-postgresql-18.6-windows-x86_64.tar.gz"]
         self.digests = {}
-        for name in self.names:
-            data = ("exact final archive " + name).encode()
+        archive_metadata = [
+            ("postgresql/manifest.json", {"source_revision": "b" * 40, "build_id": "github-1234567-2"}),
+            ("metadata.json", {"source_revision": "c" * 40, "build_id": "github-7654321-1"}),
+        ]
+        for name, (member_name, value) in zip(self.names, archive_metadata):
+            buffer = io.BytesIO()
+            payload = json.dumps(value).encode()
+            with tarfile.open(fileobj=buffer, mode="w:gz") as archive:
+                member = tarfile.TarInfo(member_name)
+                member.size = len(payload)
+                archive.addfile(member, io.BytesIO(payload))
+            data = buffer.getvalue()
             (self.build / name).write_bytes(data)
             digest = hashlib.sha256(data).hexdigest()
             self.digests[name] = digest
@@ -116,6 +128,16 @@ class WindowsPublicationImportTests(unittest.TestCase):
         self.assertEqual(json.loads((evidence / "publication-attempt.json").read_text())["run_id"], self.run_id)
         self.assertTrue((evidence / "debug-symbols-index.json").is_file())
         self.assertEqual(len(list((self.root / "support/verification").glob(f"*-current-{self.run_id}.json"))), 2)
+
+    def test_import_rejects_ci_provenance_that_does_not_match_reused_core_archive(self):
+        core_path = next(path for path in self.record_paths if "postgresql-" in path.name)
+        record = json.loads(core_path.read_text())
+        record["ci"]["build_run_id"] = self.run_id
+        record["ci"]["source_revision"] = "a" * 40
+        record["ci"]["build_revision"] = "a" * 40
+        core_path.write_text(json.dumps(record))
+        with self.assertRaisesRegex(coverage.CoverageError, "CI provenance"):
+            self.import_evidence()
 
     def test_rejects_changed_checksum_sidecar_without_retaining_partial_evidence(self):
         (self.build / (self.names[0] + ".sha256")).write_text("0" * 64 + "  " + self.names[0] + "\n")

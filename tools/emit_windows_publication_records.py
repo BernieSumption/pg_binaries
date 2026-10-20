@@ -8,12 +8,14 @@ import os
 from pathlib import Path
 import re
 import sys
+import tarfile
 
 import coverage
 
 
 PROFILE_ID = "windows-publication-current-x86_64"
 DEPENDENCY_PROFILE = "windows-pe-runtime-v1"
+MAX_ARCHIVE_METADATA_BYTES = 1024 * 1024
 
 
 def _fail(message):
@@ -46,6 +48,30 @@ def _sidecar(path, name, digest):
     match = re.fullmatch(r"([0-9a-fA-F]{64})\s+\*?([^\s]+)", lines[0]) if len(lines) == 1 else None
     if not match or Path(match.group(2)).name != name or match.group(1).lower() != digest:
         _fail(f"checksum sidecar does not match {name}")
+
+
+def _archive_provenance(path, member_name, label):
+    try:
+        with tarfile.open(path, "r:gz") as archive:
+            members = [member for member in archive.getmembers() if member.name == member_name]
+            if len(members) != 1 or not members[0].isfile() or members[0].size > MAX_ARCHIVE_METADATA_BYTES:
+                _fail(f"{label} archive requires one bounded {member_name}")
+            stream = archive.extractfile(members[0])
+            if stream is None:
+                _fail(f"{label} archive metadata cannot be read")
+            value = json.loads(stream.read(MAX_ARCHIVE_METADATA_BYTES + 1).decode("utf-8"))
+    except (OSError, tarfile.TarError, UnicodeError, json.JSONDecodeError) as exc:
+        _fail(f"cannot read {label} archive provenance: {exc}")
+    if not isinstance(value, dict):
+        _fail(f"{label} archive provenance must be a JSON object")
+    source_revision = value.get("source_revision")
+    build_id = value.get("build_id")
+    match = re.fullmatch(r"github-([1-9][0-9]*)-([1-9][0-9]*)", str(build_id or ""))
+    if (not isinstance(source_revision, str)
+            or not re.fullmatch(r"(?:[0-9a-fA-F]{40}|[0-9a-fA-F]{64})", source_revision)
+            or match is None):
+        _fail(f"{label} archive has invalid source revision or build ID")
+    return source_revision, build_id, match.group(1), match.group(2)
 
 
 def _archive_report(path, archives, description):
@@ -159,6 +185,10 @@ def emit(root, archives, output, pg_version, revision, os_version, image_id,
         _sidecar(archives / f"{name}.sha256", name, digest)
         digests[name] = digest
         paths[name] = path
+    build_provenance = {
+        names[0][0]: _archive_provenance(paths[names[0][0]], "postgresql/manifest.json", "PostgreSQL"),
+        names[1][0]: _archive_provenance(paths[names[1][0]], "metadata.json", "pgvector"),
+    }
     if outcome == "passed":
         validate_static_report(static_report, list(paths.values()))
         validate_symbol_report(symbol_report, list(paths.values()))
@@ -177,6 +207,7 @@ def emit(root, archives, output, pg_version, revision, os_version, image_id,
           "source_revision": revision, "build_revision": revision, "test_revision": revision}
     records = []
     for name, component, version in names:
+        build_revision, build_id, build_run_id, build_run_attempt = build_provenance[name]
         record = {
             "schema_version": 2, "scope": "publication", "profile_id": PROFILE_ID,
             "profile_revision": profile["profile_revision"], "test_cases": profile["case_ids"],
@@ -189,6 +220,8 @@ def emit(root, archives, output, pg_version, revision, os_version, image_id,
                             "dependency_check_profile": DEPENDENCY_PROFILE,
                             "dependency_checks_passed": dependency_checks_passed},
         }
+        record["ci"] = {**ci, "source_revision": build_revision, "build_revision": build_revision,
+                        "build_run_id": build_run_id, "build_run_attempt": build_run_attempt}
         if component == "vector":
             record["project"] = "pgvector"
             record["assembled_core"] = {"archive": names[0][0], "sha256": digests[names[0][0]], "version": pg_version}
