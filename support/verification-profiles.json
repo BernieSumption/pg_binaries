@@ -920,25 +920,25 @@
       "scope": "publication",
       "platforms": ["windows-x86_64"],
       "case_ids": ["archive-suite", "static-analysis"],
-      "sources": [".github/workflows/pgivm-windows-selected-publication.yml", "scripts/pg_ivm/probe.sql", "scripts/pg_ivm/verify-windows.ps1", "scripts/pg_ivm/windows-build.ps1", "support.json", "support/postgresql-releases.json", "tools/check_pe_dependencies.py", "tools/coverage.py", "tools/emit_pg_ivm_windows_publication.py", "tools/import_pg_ivm_windows_publication.py", "tools/windows_core_pin.py"]
+      "sources": [".github/workflows/pgivm-windows-selected-publication.yml", "scripts/pg_ivm/probe.sql", "scripts/pg_ivm/verify-windows.ps1", "scripts/pg_ivm/windows-build.ps1", "scripts/pg_ivm/windows-exports.def", "support.json", "support/postgresql-releases.json", "tools/check_pe_dependencies.py", "tools/coverage.py", "tools/emit_pg_ivm_windows_publication.py", "tools/import_pg_ivm_windows_publication.py", "tools/windows_core_pin.py"]
     },
     "pgivm-publication-windows-x86_64-16.15": {
       "scope": "publication",
       "platforms": ["windows-x86_64"],
       "case_ids": ["archive-suite", "static-analysis"],
-      "sources": [".github/workflows/pgivm-windows-selected-publication.yml", "scripts/pg_ivm/probe.sql", "scripts/pg_ivm/verify-windows.ps1", "scripts/pg_ivm/windows-build.ps1", "support.json", "support/postgresql-releases.json", "tools/check_pe_dependencies.py", "tools/coverage.py", "tools/emit_pg_ivm_windows_publication.py", "tools/import_pg_ivm_windows_publication.py", "tools/windows_core_pin.py"]
+      "sources": [".github/workflows/pgivm-windows-selected-publication.yml", "scripts/pg_ivm/probe.sql", "scripts/pg_ivm/verify-windows.ps1", "scripts/pg_ivm/windows-build.ps1", "scripts/pg_ivm/windows-exports.def", "support.json", "support/postgresql-releases.json", "tools/check_pe_dependencies.py", "tools/coverage.py", "tools/emit_pg_ivm_windows_publication.py", "tools/import_pg_ivm_windows_publication.py", "tools/windows_core_pin.py"]
     },
     "pgivm-publication-windows-x86_64-17.11": {
       "scope": "publication",
       "platforms": ["windows-x86_64"],
       "case_ids": ["archive-suite", "static-analysis"],
-      "sources": [".github/workflows/pgivm-windows-selected-publication.yml", "scripts/pg_ivm/probe.sql", "scripts/pg_ivm/verify-windows.ps1", "scripts/pg_ivm/windows-build.ps1", "support.json", "support/postgresql-releases.json", "tools/check_pe_dependencies.py", "tools/coverage.py", "tools/emit_pg_ivm_windows_publication.py", "tools/import_pg_ivm_windows_publication.py", "tools/windows_core_pin.py"]
+      "sources": [".github/workflows/pgivm-windows-selected-publication.yml", "scripts/pg_ivm/probe.sql", "scripts/pg_ivm/verify-windows.ps1", "scripts/pg_ivm/windows-build.ps1", "scripts/pg_ivm/windows-exports.def", "support.json", "support/postgresql-releases.json", "tools/check_pe_dependencies.py", "tools/coverage.py", "tools/emit_pg_ivm_windows_publication.py", "tools/import_pg_ivm_windows_publication.py", "tools/windows_core_pin.py"]
     },
     "pgivm-publication-windows-x86_64-18.6": {
       "scope": "publication",
       "platforms": ["windows-x86_64"],
       "case_ids": ["archive-suite", "static-analysis"],
-      "sources": [".github/workflows/pgivm-windows-selected-publication.yml", "scripts/pg_ivm/probe.sql", "scripts/pg_ivm/verify-windows.ps1", "scripts/pg_ivm/windows-build.ps1", "support.json", "support/postgresql-releases.json", "tools/check_pe_dependencies.py", "tools/coverage.py", "tools/emit_pg_ivm_windows_publication.py", "tools/import_pg_ivm_windows_publication.py", "tools/windows_core_pin.py"]
+      "sources": [".github/workflows/pgivm-windows-selected-publication.yml", "scripts/pg_ivm/probe.sql", "scripts/pg_ivm/verify-windows.ps1", "scripts/pg_ivm/windows-build.ps1", "scripts/pg_ivm/windows-exports.def", "support.json", "support/postgresql-releases.json", "tools/check_pe_dependencies.py", "tools/coverage.py", "tools/emit_pg_ivm_windows_publication.py", "tools/import_pg_ivm_windows_publication.py", "tools/windows_core_pin.py"]
     },
     "postgresql-publication-linux-x86_64-18.6": {
       "scope": "publication",

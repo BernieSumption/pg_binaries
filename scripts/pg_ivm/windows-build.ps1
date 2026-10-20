@@ -66,9 +66,10 @@ try {
   python -m pip install --disable-pip-version-check meson ninja
   if ($LASTEXITCODE -ne 0) { throw 'Could not install Meson and Ninja on the disposable runner.' }
   $build = Join-Path $work 'build'
+  $moduleDefinition = Join-Path $repo 'scripts/pg_ivm/windows-exports.def'
   Push-Location $source
   try {
-    meson setup $build --prefix=$pgRoot --libdir=lib -Dbuildtype=release
+    meson setup $build --prefix=$pgRoot --libdir=lib -Dbuildtype=release "-Dc_link_args=/DEF:$moduleDefinition"
     if ($LASTEXITCODE -ne 0) { throw 'Upstream Meson configuration failed.' }
     meson compile -C $build
     if ($LASTEXITCODE -ne 0) { throw 'Upstream pg_ivm compilation failed.' }
