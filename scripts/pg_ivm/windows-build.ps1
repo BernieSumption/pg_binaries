@@ -49,6 +49,20 @@ try {
   $source = Join-Path $sourceRoot "pg_ivm-$version"
   if ((Get-Content (Join-Path $source 'pg_ivm.control') -Raw) -notmatch "(?m)^default_version\s*=\s*'1\.16'\s*$") { throw 'Source extension control version mismatch.' }
   if ((Get-Content (Join-Path $source 'pg_ivm.control') -Raw) -notmatch '(?m)^schema\s*=\s*pg_catalog\s*$') { throw 'Source extension schema mismatch.' }
+  $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio/Installer/vswhere.exe'
+  if (-not (Test-Path $vswhere -PathType Leaf)) { throw 'Visual Studio vswhere.exe is missing from the Windows runner.' }
+  $vsRoot = (& $vswhere -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath).Trim()
+  if ($LASTEXITCODE -ne 0 -or -not $vsRoot) { throw 'The Windows runner has no x64 MSVC toolchain installation.' }
+  $vcvars = Join-Path $vsRoot 'VC/Auxiliary/Build/vcvars64.bat'
+  if (-not (Test-Path $vcvars -PathType Leaf)) { throw 'The x64 MSVC vcvars64.bat script is missing.' }
+  $environmentScript = Join-Path $work 'load-msvc-environment.cmd'
+  @('@echo off', "call `"$vcvars`" >nul", 'if errorlevel 1 exit /b %errorlevel%', 'set') | Set-Content -Encoding ascii $environmentScript
+  $environmentOutput = & $env:ComSpec /d /c $environmentScript
+  if ($LASTEXITCODE -ne 0) { throw 'Could not load the x64 MSVC developer environment.' }
+  foreach ($line in $environmentOutput) { if ($line -match '^([^=]+)=(.*)$') { [Environment]::SetEnvironmentVariable($Matches[1], $Matches[2], 'Process') } }
+  foreach ($command in @('cl.exe','link.exe')) { if (-not (Get-Command $command -ErrorAction SilentlyContinue)) { throw "MSVC prerequisite is unavailable after vcvars64: $command" } }
+  $env:PATH = "$(Join-Path $pgRoot 'bin');$(Join-Path $pgRoot 'lib/pgxs/src/test/regress');$env:PATH"
+  $env:CC = 'cl'
   python -m pip install --disable-pip-version-check meson ninja
   if ($LASTEXITCODE -ne 0) { throw 'Could not install Meson and Ninja on the disposable runner.' }
   $build = Join-Path $work 'build'

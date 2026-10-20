@@ -64,7 +64,18 @@ try {
     New-Item -ItemType Directory -Force (Split-Path $destination -Parent) | Out-Null
     Copy-Item $file.FullName $destination
   }
-  $dumpbin = Get-Command dumpbin.exe -ErrorAction Stop
+  $dumpbin = Get-Command dumpbin.exe -ErrorAction SilentlyContinue
+  if (-not $dumpbin) {
+    $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio/Installer/vswhere.exe'
+    if (Test-Path $vswhere) {
+      $vsRoot = (& $vswhere -latest -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath).Trim()
+      if ($vsRoot) {
+        $dumpbinPath = Get-ChildItem (Join-Path $vsRoot 'VC/Tools/MSVC/*/bin/Hostx64/x64/dumpbin.exe') | Sort-Object FullName -Descending | Select-Object -First 1
+        if ($dumpbinPath) { $dumpbin = @{ Source = $dumpbinPath.FullName } }
+      }
+    }
+  }
+  if (-not $dumpbin) { throw 'dumpbin.exe is unavailable for Windows dependency inspection.' }
   & $python (Join-Path $repo 'tools/check_pe_dependencies.py') $pgRoot --dumpbin $dumpbin.Source --archive $CoreArchive --archive $ExtensionArchive --report $ReportPath
   if ($LASTEXITCODE -ne 0) { throw 'Windows PE dependency analysis failed.' }
   $bin = Join-Path $pgRoot 'bin'
