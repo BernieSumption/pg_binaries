@@ -4,6 +4,6 @@ COPY scripts/pg_jsonschema/linux-verify-in-container.sh /usr/local/bin/verify-pg
 COPY scripts/pg_jsonschema/probe.sql /work/probe.sql
 COPY tools/check_elf_dependencies.py /usr/local/bin/check-elf-dependencies
 COPY tools/check_pg_jsonschema_component_inventory.py /usr/local/bin/check-pg-jsonschema-component-inventory
-COPY tools/create_pg_jsonschema_component_inventory.py /usr/local/bin/create-pg-jsonschema-component-inventory
+COPY tools/create_pg_jsonschema_component_inventory.py /usr/local/bin/create_pg_jsonschema_component_inventory.py
 RUN chmod +x /usr/local/bin/verify-pg-jsonschema
 ENTRYPOINT ["/usr/local/bin/verify-pg-jsonschema"]

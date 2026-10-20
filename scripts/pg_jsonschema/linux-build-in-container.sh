@@ -55,7 +55,7 @@ if [[ -f /work/source/LICENSE ]]; then install -m 644 /work/source/LICENSE "$pac
 python3 /usr/local/bin/inventory-cargo-licenses /work/source /work/cargo-metadata.json \
   /out/cargo-license-inventory.json --package-root "$package" --supplements /opt/cargo-license-supplements
 cp /out/cargo-license-inventory.json "$package/LICENSES/cargo/cargo-license-inventory.json"
-python3 /usr/local/bin/create-pg-jsonschema-component-inventory \
+python3 /usr/local/bin/create_pg_jsonschema_component_inventory.py \
   "$package" "$extension_version" linux pg_jsonschema.so
 cp "$package/LICENSES/pg_jsonschema-inventory.json" /out/pg_jsonschema-component-inventory.json
 python3 - "$extension_version" "$pg_version" "$architecture" "$extension_commit" "$lock_sha256" <<'PY'
