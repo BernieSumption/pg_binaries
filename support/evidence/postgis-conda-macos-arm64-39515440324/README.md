@@ -1,0 +1,7 @@
+# Conda-forge spatial dependency floor, macOS arm64
+
+[Run 39515440324](https://github.com/BernieSumption/pg_binaries/actions/runs/39515440324) on 2026-10-20 used source revision `90a32e28d14961690544c621a8cbb5d0a4c31afc` and a standard macOS 15 arm64 runner. Micromamba resolved GEOS 3.14.1, PROJ 9.9.0, GDAL 3.13.3 and 70 other conda-forge packages. The [explicit package list](explicit-packages.txt) and [package metadata](packages.json) retain their exact download URLs and checksums.
+
+The [Mach-O report](macho-report.json) covers 386 loadable files in that environment. Every inspected file records a macOS 11.0 deployment target; none has an absolute `LC_RPATH`. Two ncurses dylibs reference another dylib through an absolute path inside the temporary conda prefix. [The findings report](inspection-findings.txt) records no deployment-target or inspection failure. This is a promising alternative to the Homebrew bottles that failed the macOS 11 static check.
+
+This trial did not include SFCGAL, build PostGIS, copy the dependency closure into our archive, or test relocation and SQL against the selected PostgreSQL core. Those are required before this package stack can replace the failing PostGIS recipe. The two prefix-absolute dependencies must be rewritten or excluded if they enter the final runtime closure. The [resolver log](resolve.log) and full reports are retained for that next experiment.
