@@ -84,8 +84,13 @@ PY
 )
 read -r pkglib_rel sharedir_rel <<< "$pkglib_rel"
 stage_root="$work/stage$prefix"
-test -s "$stage_root/$pkglib_rel/address_standardizer.dylib"
-test -s "$stage_root/$sharedir_rel/extension/address_standardizer.control"
+if [[ ! -s "$stage_root/$pkglib_rel/address_standardizer.dylib" || ! -s "$stage_root/$sharedir_rel/extension/address_standardizer.control" ]]; then
+  printf 'Expected staged library: %s\n' "$stage_root/$pkglib_rel/address_standardizer.dylib" >&2
+  printf 'Expected staged control: %s\n' "$stage_root/$sharedir_rel/extension/address_standardizer.control" >&2
+  printf 'Actual staged Address Standardizer files:\n' >&2
+  find "$work/stage" -type f -name '*address_standardizer*' -print | sort >&2
+  exit 1
+fi
 pkg="$work/package/address_standardizer"
 mkdir -p "$pkg/$pkglib_rel" "$pkg/share/extension" "$pkg/lib" "$pkg/LICENSES"
 cp "$stage_root/$pkglib_rel/address_standardizer.dylib" "$pkg/$pkglib_rel/"
