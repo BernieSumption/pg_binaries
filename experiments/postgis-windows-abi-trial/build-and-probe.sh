@@ -32,7 +32,7 @@ tar -xzf postgis-3.6.4.tar.gz
 cd postgis-3.6.4
 export PATH="$pgroot/bin:$PATH"
 export PG_CONFIG="$pgroot/bin/pg_config.exe"
-./configure --with-pgconfig="$PG_CONFIG" --without-raster --without-tiger --without-topology --without-sfcgal
+./configure --with-pgconfig="$PG_CONFIG" --without-raster --without-tiger --without-topology --without-sfcgal --without-protobuf
 make -j2
 make install
 
