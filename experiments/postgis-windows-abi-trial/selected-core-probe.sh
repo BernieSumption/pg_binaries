@@ -13,7 +13,12 @@ test "${MSYSTEM:-}" = MINGW64
 pgroot="$output_root/core/postgresql"
 pgconfig="$pgroot/bin/pg_config.exe"
 test -f "$pgroot/lib/postgres.lib"
+test -f "$pgroot/lib/libpq.lib"
 test "$("$pgconfig" --version)" = 'PostgreSQL 18.6'
+for import_library in "$pgroot"/lib/*.lib; do
+  test -f "$import_library" || continue
+  cp "$import_library" "${import_library%.lib}.a"
+done
 source_root="$output_root/source"
 mkdir -p "$source_root"
 cd "$source_root"
