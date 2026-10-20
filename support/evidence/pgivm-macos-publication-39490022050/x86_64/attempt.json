@@ -1,0 +1,21 @@
+{
+  "architecture": "x86_64",
+  "archives": {
+    "pg_ivm-1.16-postgresql-15.19-macos-x86_64.tar.gz": "8aa896b6b3a63699be6df0baeefb15ee2f02df0f9536de310e2356a4308f5e2c",
+    "postgresql-15.19-macos-x86_64.tar.gz": "b49e4e2fc32e047ee8e02f3a14d46afdcee5dd1071fc7a7140575e3b03e078a8"
+  },
+  "archives_present": {
+    "pg_ivm-1.16-postgresql-15.19-macos-x86_64.tar.gz": true,
+    "postgresql-15.19-macos-x86_64.tar.gz": true
+  },
+  "pg_ivm_version": "1.16",
+  "postgresql_version": "15.19",
+  "profile_id": "pgivm-publication-macos-x86_64-15.19",
+  "run_id": "39490022050",
+  "schema_version": 1,
+  "source_revision": "2713a3a601b8880631e2bbd21090cda13c2d8245",
+  "steps": {
+    "archive-suite": "success",
+    "static-analysis": "success"
+  }
+}

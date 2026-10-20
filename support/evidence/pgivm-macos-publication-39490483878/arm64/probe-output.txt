@@ -1,0 +1,18 @@
+ postgres_version 
+------------------
+ 16.15
+(1 row)
+
+CREATE EXTENSION
+CREATE TABLE
+INSERT 0 2
+ create_immv 
+-------------
+           1
+(1 row)
+
+DO
+INSERT 0 1
+DO
+UPDATE 1
+DO
