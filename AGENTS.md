@@ -5,7 +5,7 @@
 - `specs/functional.md` what this project must provide
 - `specs/testing.md` - how everything is tested and how testing guarantees that the functional requirements are met 
 
-Agents must NEVER modify spec documents, if a spec change is desired add something to HUMAN_REVIEW_QUEUE.md.
+Agents must NEVER modify spec documents or README.md (which is a public marketing page), if a spec or README change is desired add something to HUMAN_REVIEW_QUEUE.md.
 
 ## Specifications override goals
 
@@ -17,7 +17,7 @@ Use sub-agents, particularly cheap ones, for bounded research or execution tasks
 
 Use parallel subagents when work items are genuinely not interdependent. Use serial work when operating in parallel may cause some work to have to be re-done.
 
-For bounded extension onboarding, follow [the agent guide](docs/adding-an-extension.md).
+For bounded extension onboarding, follow [the agent guide](support/adding-an-extension.md).
 
 ## Prefer simple, pragmatic architecture
 
