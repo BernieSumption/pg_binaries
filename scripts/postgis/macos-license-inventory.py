@@ -62,6 +62,23 @@ for (name, version), libraries in sorted(formula_libs.items()):
     if not formula or formula.get("versions", {}).get("stable") != version:
         raise SystemExit(f"Homebrew metadata does not match bundled {name} {version}")
     prefix = Path(command("brew", "--prefix", name).strip())
+    keg = prefix.resolve()
+    receipt_path = keg / "INSTALL_RECEIPT.json"
+    if not receipt_path.is_file(): raise SystemExit(f"Homebrew install receipt is missing for {name} {version}")
+    receipt = json.loads(receipt_path.read_text())
+    source_identity = receipt.get("source", {})
+    formula_revision = source_identity.get("tap_git_head")
+    if (source_identity.get("tap") != "homebrew/core" or not formula_revision
+            or not re.fullmatch(r"[0-9a-f]{40}", formula_revision)):
+        raise SystemExit(f"installed Homebrew formula revision is missing for {name} {version}")
+    if formula.get("tap_git_head") != formula_revision:
+        raise SystemExit(f"Homebrew API metadata does not match installed formula revision for {name} {version}")
+    formula_path = Path(source_identity.get("path", ""))
+    try:
+        formula_relative = formula_path.parts[formula_path.parts.index("Formula"):]
+    except (ValueError, IndexError):
+        formula_relative = ("Formula", name[0], f"{name}.rb")
+    formula_url = f"https://github.com/Homebrew/homebrew-core/blob/{formula_revision}/{'/'.join(formula_relative)}"
     candidates = sorted(path for path in prefix.rglob("*") if path.is_file()
         and (path.name.lower() in {"license", "license.txt", "license.md", "license_1_0.txt", "copying", "copyright"}
              or path.name.lower().startswith(("copying.", "license.")))
@@ -99,11 +116,7 @@ for (name, version), libraries in sorted(formula_libs.items()):
         primary = next((path for path in candidates if "0bsd" in path.name.lower()), None)
         if primary is None: raise SystemExit("xz liblzma 0BSD text is missing")
     copyleft = "LGPL" in library_expression or "GPL" in library_expression
-    formula_revision = command("git", "-C", command("brew", "--repository", "homebrew/core").strip(),
-                               "rev-parse", "HEAD").strip()
-    if not formula_revision or not re.fullmatch(r"[0-9a-f]{40}", formula_revision):
-        raise SystemExit(f"Homebrew formula revision is missing for {name}")
-    formula_url = f"https://github.com/Homebrew/homebrew-core/blob/{formula_revision}/Formula/{name[0]}/{name}.rb"
+    primary_index = candidates.index(primary)
     source_links = [source_url, formula_url,
                     f"https://github.com/BernieSumption/pg_binaries/blob/{__import__('os').environ['GITHUB_SHA']}/scripts/postgis/macos-build-publication.sh"]
     review_basis = (f"Homebrew {name} {version} formula at {formula_url} identifies the source archive and package terms. {review_note} "
@@ -116,8 +129,9 @@ for (name, version), libraries in sorted(formula_libs.items()):
         "component": f"homebrew-library-{name}", "package": name, "version": version,
         "license_expression": library_expression, "package_license_expression": license_expr,
         "payload_paths": paths,
-        "license_file": f"LICENSES/{license_names[candidates.index(primary)]}",
-        "additional_license_files": [f"LICENSES/{filename}" for filename in license_names[1:]],
+        "license_file": f"LICENSES/{license_names[primary_index]}",
+        "additional_license_files": [f"LICENSES/{filename}" for index, filename in enumerate(license_names)
+                                      if index != primary_index],
         "source_url": source_url, "source_sha256": source_sha, "source_revision": formula_revision,
         "license_source": str(primary),
         "redistribution_review": {
