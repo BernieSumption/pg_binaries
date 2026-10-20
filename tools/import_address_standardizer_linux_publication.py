@@ -120,7 +120,9 @@ def import_run(root, core_archives, archives, run_id):
     if archive.is_symlink() or core.is_symlink():
         raise coverage.CoverageError("archives must not be symbolic links")
     if not archive.is_file() or not core.is_file():
-        if (archives / "publication/current-receipt.json").exists() or (archives / "publication/verification-record.json").exists():
+        if any((archives / "publication" / name).exists() for name in (
+                "current-receipt.json", "verification-record.json",
+                "verification-record-address_standardizer_data_us.json")):
             raise coverage.CoverageError("receipt or record exists without both archives")
         copy(copies, root)
         return [str(destination.relative_to(root)) for _, destination in copies]
@@ -166,12 +168,14 @@ def import_run(root, core_archives, archives, run_id):
 
     receipt_path = archives / "publication/current-receipt.json"
     record_path = archives / "publication/verification-record.json"
-    if receipt_path.exists() != record_path.exists():
+    data_record_path = archives / "publication/verification-record-address_standardizer_data_us.json"
+    if receipt_path.exists() != record_path.exists() or receipt_path.exists() != data_record_path.exists():
         raise coverage.CoverageError("receipt and verification record must be retained together")
     if not receipt_path.exists():
         copy(copies, root)
         return [str(destination.relative_to(root)) for _, destination in copies]
     receipt, record = read_json(receipt_path), read_json(record_path)
+    data_record = read_json(data_record_path)
     redistribution_status = receipt.get("redistribution_status")
     if redistribution_status == publication.REDISTRIBUTION_RESOLVED:
         address_standardizer_license_inventory.validate_archive(archive)
@@ -191,7 +195,9 @@ def import_run(root, core_archives, archives, run_id):
             or any(ci.get(key) != attempt["source_revision"] for key in ("source_revision", "build_revision", "test_revision"))
             or not str(ci.get("run_url", "")).endswith(f"/actions/runs/{run_id}")):
         raise coverage.CoverageError("receipt CI provenance differs from raw attempt")
-    coverage.validate_verification_record(record, coverage.load_json(root / "support.json"), root)
+    support = coverage.load_json(root / "support.json")
+    coverage.validate_verification_record(record, support, root)
+    coverage.validate_verification_record(data_record, support, root)
     expected_outcome = "failed" if "failed" in results.values() else "skipped" if "skipped" in results.values() else "passed"
     if (record.get("profile_revision") != profile["profile_revision"] or record.get("test_cases") != profile["case_ids"]
             or record.get("case_results") != results or record.get("outcome") != expected_outcome
@@ -201,10 +207,15 @@ def import_run(root, core_archives, archives, run_id):
             or record.get("release_eligible") is not False
             or record.get("redistribution_status") != redistribution_status):
         raise coverage.CoverageError("verification record identity or checksums differ from receipt")
+    if data_record != {**record, "component": "address_standardizer_data_us"}:
+        raise coverage.CoverageError("data extension verification record differs from tested archive evidence")
     retain(receipt_path, evidence / "current-receipt.json", copies)
     retain(record_path, evidence / "verification-record.json", copies)
+    retain(data_record_path, evidence / data_record_path.name, copies)
     retain(record_path, root / "support/verification" /
            f"address-standardizer-{publication.VERSION}-postgresql-{pg_version}-{platform}-current-{run_id}.json", copies)
+    retain(data_record_path, root / "support/verification" /
+           f"address_standardizer_data_us-{publication.VERSION}-postgresql-{pg_version}-{platform}-current-{run_id}.json", copies)
     copy(copies, root)
     return [str(destination.relative_to(root)) for _, destination in copies]
 

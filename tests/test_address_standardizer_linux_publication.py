@@ -190,6 +190,7 @@ class AddressStandardizerLinuxPublication(unittest.TestCase):
                     attempt = json.loads((output / "attempt.json").read_text(encoding="utf-8"))
                     receipt = json.loads((output / "current-receipt.json").read_text(encoding="utf-8"))
                     record = json.loads((output / "verification-record.json").read_text(encoding="utf-8"))
+                    data_record = json.loads((output / "verification-record-address_standardizer_data_us.json").read_text(encoding="utf-8"))
                     retained = importer.import_run(root, core_dir, archives, run_id)
 
                 self.assertEqual(emitted, (output / "attempt.json", output / "current-receipt.json",
@@ -203,6 +204,8 @@ class AddressStandardizerLinuxPublication(unittest.TestCase):
                 self.assertEqual(receipt["redistribution_status"], publication.REDISTRIBUTION_RESOLVED)
                 self.assertEqual(record["redistribution_status"], publication.REDISTRIBUTION_RESOLVED)
                 self.assertEqual(record["component"], "address_standardizer")
+                self.assertEqual(data_record["component"], "address_standardizer_data_us")
+                self.assertEqual({**record, "component": data_record["component"]}, data_record)
                 self.assertEqual(record["assembled_core"], {"archive": core_name, "sha256": core_hash,
                                                              "version": pg_version})
                 self.assertEqual(record["case_results"], {"archive-suite": "passed", "elf-closure": "passed"})
@@ -213,8 +216,11 @@ class AddressStandardizerLinuxPublication(unittest.TestCase):
                 evidence /= architecture
                 self.assertTrue((evidence / "attempt.json").is_file())
                 self.assertTrue((evidence / "verification-record.json").is_file())
+                self.assertTrue((evidence / "verification-record-address_standardizer_data_us.json").is_file())
                 installed = root / "support/verification" / f"address-standardizer-3.7.0-postgresql-{pg_version}-linux-{architecture}-current-{run_id}.json"
                 self.assertTrue(installed.is_file())
+                data_installed = root / "support/verification" / f"address_standardizer_data_us-3.7.0-postgresql-{pg_version}-linux-{architecture}-current-{run_id}.json"
+                self.assertTrue(data_installed.is_file())
 
     def test_emitter_preserves_failed_attempt_when_final_archive_lacks_reviewed_notice(self):
         with tempfile.TemporaryDirectory() as temporary:

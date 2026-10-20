@@ -222,9 +222,19 @@ def emit(root, archives, core_archives, output, architecture, build_result, veri
               "assembled_core": {"archive": core_name, "sha256": checksums[core_name], "version": pg_version},
               "prerequisite_archives": [], "release_eligible": False,
               "redistribution_status": REDISTRIBUTION_RESOLVED, "environment": environment}
-    coverage.validate_verification_record(record, coverage.load_json(root / "support.json"), root)
+    support = coverage.load_json(root / "support.json")
+    sql_names = support["extensions"]["Address Standardizer"]["sql_names"]
+    if sql_names != ["address_standardizer", "address_standardizer_data_us"]:
+        raise coverage.CoverageError("Address Standardizer SQL names differ from the tested probe")
+    records = []
+    for component in sql_names:
+        component_record = {**record, "component": component}
+        coverage.validate_verification_record(component_record, support, root)
+        records.append(component_record)
     record_path = output / "verification-record.json"
-    record_path.write_text(json.dumps(record, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    record_path.write_text(json.dumps(records[0], indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    (output / "verification-record-address_standardizer_data_us.json").write_text(
+        json.dumps(records[1], indent=2, sort_keys=True) + "\n", encoding="utf-8")
     return attempt_path, receipt_path, record_path
 
 

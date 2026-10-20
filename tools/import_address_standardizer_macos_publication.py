@@ -89,10 +89,11 @@ def import_run(root, core_dir, archive_dir, run_id, target_path):
 
     receipt_path = publication / "current-receipt.json"
     record_path = publication / "verification-record.json"
+    data_record_path = publication / "verification-record-address_standardizer_data_us.json"
     record_destination = root / "support/verification" / (
         f"address-standardizer-{VERSION}-postgresql-{pg}-{platform}-current-{run_id}.json")
     if not all(present.values()):
-        if receipt_path.exists() or record_path.exists():
+        if receipt_path.exists() or record_path.exists() or data_record_path.exists():
             raise coverage.CoverageError("archive-bound receipt or record exists without both archives")
         _copy(copies)
         return [str(destination.relative_to(root)) for _, destination in copies]
@@ -126,7 +127,7 @@ def import_run(root, core_dir, archive_dir, run_id, target_path):
     }
     if any(metadata.get(key) != value for key, value in expected_metadata.items()):
         raise coverage.CoverageError("extension metadata does not bind selected core and target")
-    if not receipt_path.is_file() and not record_path.is_file():
+    if not receipt_path.is_file() and not record_path.is_file() and not data_record_path.is_file():
         if attempt.get("archives") != digests:
             raise coverage.CoverageError("attempt archive hashes differ from final archive bytes")
         for archive in (core, extension):
@@ -135,9 +136,10 @@ def import_run(root, core_dir, archive_dir, run_id, target_path):
                 evidence.check_sidecar(archive, digests[archive.name], "checksum sidecar is invalid for {name}")
         _copy(copies)
         return [str(destination.relative_to(root)) for _, destination in copies]
-    if not receipt_path.is_file() or not record_path.is_file():
-        raise coverage.CoverageError("receipt and verification record must be retained together")
+    if not receipt_path.is_file() or not record_path.is_file() or not data_record_path.is_file():
+        raise coverage.CoverageError("receipt and both SQL-name verification records must be retained together")
     receipt, record = _read(receipt_path), _read(record_path)
+    data_record = _read(data_record_path)
     redistribution_status = receipt.get("redistribution_status")
     if redistribution_status == "resolved":
         address_standardizer_license_inventory.validate_archive(extension)
@@ -204,10 +206,17 @@ def import_run(root, core_dir, archive_dir, run_id, target_path):
     if any(record.get(key) != value for key, value in expected_record.items()):
         raise coverage.CoverageError("verification record differs from receipt or archive bytes")
     coverage.validate_verification_record(record, support, root)
+    expected_data_record = {**expected_record, "component": "address_standardizer_data_us"}
+    if any(data_record.get(key) != value for key, value in expected_data_record.items()):
+        raise coverage.CoverageError("data extension verification record differs from tested archive evidence")
+    coverage.validate_verification_record(data_record, support, root)
     evidence.retain(receipt_path, evidence_dir / receipt_path.name, copies)
     evidence.retain(record_path, evidence_dir / record_path.name, copies)
+    evidence.retain(data_record_path, evidence_dir / data_record_path.name, copies)
     if outcome == "passed":
         copies.append((record_path, record_destination))
+        copies.append((data_record_path, root / "support/verification" /
+                       f"address_standardizer_data_us-{VERSION}-postgresql-{pg}-{platform}-current-{run_id}.json"))
     _copy(copies)
     return [str(destination.relative_to(root)) for _, destination in copies]
 
