@@ -2,6 +2,7 @@ import os
 import hashlib
 import json
 from pathlib import Path
+import re
 import shutil
 import subprocess
 import tempfile
@@ -14,6 +15,19 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class LinuxCoreResolverTests(unittest.TestCase):
+    def test_selected_workflows_upload_the_resolver_output(self):
+        workflows = ROOT / ".github/workflows"
+        found = 0
+        for workflow in workflows.glob("*linux-selected-publication.yml"):
+            source = workflow.read_text(encoding="utf-8")
+            match = re.search(r'resolve-core\.sh[^\n]*"\$RUNNER_TEMP/([^"\s]+)"', source)
+            if match is None:
+                continue
+            found += 1
+            output = match.group(1)
+            self.assertIn(f"${{{{ runner.temp }}}}/{output}/*.tar.gz", source, workflow.name)
+        self.assertEqual(found, 12)
+
     def run_resolver(self, architecture="x86_64", pin_state=None):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
