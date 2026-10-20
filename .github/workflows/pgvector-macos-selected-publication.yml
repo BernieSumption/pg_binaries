@@ -1,6 +1,9 @@
 name: pgvector selected macOS publication
 
 on:
+  push:
+    branches: [spike]
+    paths: [.github/workflows/pgvector-macos-selected-publication.yml]
   workflow_call:
     inputs:
       postgresql_version:
@@ -51,9 +54,9 @@ jobs:
       - name: Validate the exact selected target
         id: plan
         env:
-          PG_VERSION: ${{ inputs.postgresql_version }}
-          VECTOR_VERSION: ${{ inputs.extension_version }}
-          ARCHITECTURE: ${{ inputs.architecture }}
+          PG_VERSION: ${{ inputs.postgresql_version || '18.6' }}
+          VECTOR_VERSION: ${{ inputs.extension_version || '0.8.7' }}
+          ARCHITECTURE: ${{ inputs.architecture || 'arm64' }}
         run: |
           set -euo pipefail
           case "$ARCHITECTURE" in arm64|x86_64) ;; *) echo 'Unsupported macOS architecture.' >&2; exit 2 ;; esac
