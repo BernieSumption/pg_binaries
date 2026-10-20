@@ -41,8 +41,9 @@ EOF
 chmod +x "$output_root/pg_config-gcc"
 export PG_CONFIG="$output_root/pg_config-gcc"
 ./configure --with-pgconfig="$PG_CONFIG" --without-raster --without-tiger --without-topology --without-sfcgal --without-protobuf
-make CC=gcc
-make CC=gcc install
+make -C deps/ryu CC=gcc
+make CC=gcc CFLAGS=-O2
+make CC=gcc CFLAGS=-O2 install
 
 work="$output_root/cluster"
 mkdir -p "$work"
