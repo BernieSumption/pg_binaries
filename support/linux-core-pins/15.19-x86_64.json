@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "workflow": "selected-extension-publication.yml",
+  "run_id": 39439296881,
+  "artifact_name": "postgresql-linux-selected-core-15.19-x86_64-39439296881",
+  "archive_name": "postgresql-15.19-linux-x86_64.tar.gz",
+  "sha256": "d4070da7ab37cff9e8960cded0eddd7f46e6c016edcb1417ea7a196c75d146a6"
+}
