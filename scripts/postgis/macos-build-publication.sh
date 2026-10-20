@@ -124,10 +124,10 @@ cp -a "$(brew --prefix proj)/share/proj" "$pgroot/share/"
 cp -a "$gdal_prefix/share/gdal" "$pgroot/share/"
 
 bundle_root="$work/postgis-bundle-root"
-python3 - "$pgroot" "$bundle_root" <<'PY'
+python3 - "$pgroot" "$bundle_root" "$gdal_prefix" <<'PY'
 from pathlib import Path
 import re, shutil, sys
-source, root = map(Path, sys.argv[1:])
+source, root, gdal_prefix = map(Path, sys.argv[1:])
 names = ('postgis','postgis_raster','postgis_sfcgal','postgis_topology')
 (root/'lib').mkdir(parents=True,exist_ok=True)
 (root/'share/extension').mkdir(parents=True,exist_ok=True)
@@ -147,6 +147,9 @@ for name in names:
         found=[path for path in choices if path.is_file()]
         if len(found)!=1: raise SystemExit(f'expected one installed module for {module}: {found}')
         shutil.copy2(found[0],root/'lib'/found[0].name)
+for path in (gdal_prefix/'lib').glob('*.dylib'):
+    target=root/'lib'/path.name
+    if not target.exists(): target.symlink_to(path.resolve())
 for relative in ('share/proj','share/gdal'):
     shutil.copytree(source/relative,root/relative,dirs_exist_ok=True)
 PY
