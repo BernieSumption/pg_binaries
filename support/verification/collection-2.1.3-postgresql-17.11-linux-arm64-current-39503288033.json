@@ -1,0 +1,47 @@
+{
+  "assembled_core": {
+    "archive": "postgresql-17.11-linux-arm64.tar.gz",
+    "sha256": "a56aac20a6c2b68faa9ca088191c5de38584807664eda62a98bcfa01e7f668f0",
+    "version": "17.11"
+  },
+  "case_results": {
+    "collection-archive-suite": "passed"
+  },
+  "ci": {
+    "build_revision": "8b2f6016f854e4ddaf5f60a369ee78152f8af3ff",
+    "provider": "github-actions",
+    "run_id": "39503288033",
+    "run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/39503288033",
+    "source_revision": "8b2f6016f854e4ddaf5f60a369ee78152f8af3ff",
+    "test_revision": "8b2f6016f854e4ddaf5f60a369ee78152f8af3ff"
+  },
+  "component": "collection",
+  "environment": {
+    "architecture": "arm64",
+    "clean_system": true,
+    "dependency_check_profile": "collection-runtime-v1",
+    "dependency_checks_passed": true,
+    "distribution": "Alpine Linux",
+    "distribution_version": "3.22.6",
+    "endpoint": "current",
+    "image_id": "sha256:95eb960862854af996a359c23066f0a741867b5518c924db3eeab011adf3e79d",
+    "kernel_release": "6.17.0-1022-azure",
+    "os": "linux",
+    "os_version": "6.17.0"
+  },
+  "outcome": "passed",
+  "platform": "linux-arm64",
+  "postgresql_version": "17.11",
+  "prerequisite_archives": [],
+  "profile_id": "collection-publication-linux-arm64-17.11-2.1.3",
+  "profile_revision": "df6c8eb07ba7603af10ac0428a5b00ce86575875322fb483d6722e3038ca42a6",
+  "project": "collection",
+  "schema_version": 2,
+  "scope": "publication",
+  "sha256": "d0e2b544c2c06cbb23b28882950a544187e92fc761efdd40863403380f78ef50",
+  "test_cases": [
+    "collection-archive-suite"
+  ],
+  "test_revision": "8b2f6016f854e4ddaf5f60a369ee78152f8af3ff",
+  "version": "2.1.3"
+}
