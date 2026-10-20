@@ -1,6 +1,7 @@
 import importlib.util
 import json
 import shutil
+import subprocess
 import tempfile
 import tarfile
 import unittest
@@ -14,6 +15,17 @@ spec.loader.exec_module(checker)
 
 
 class CargoLicenseInventoryTests(unittest.TestCase):
+    def test_seahash_evidence_keeps_exact_bytes_on_windows_checkouts(self):
+        repository = MODULE_PATH.parents[1]
+        evidence = "support/evidence/pg-jsonschema-crate-licenses-2026-10-18/seahash-4.1.0-license-declaration.txt"
+        attribute = subprocess.check_output(
+            ["git", "check-attr", "text", "--", evidence], cwd=repository, text=True
+        ).strip()
+        self.assertEqual(attribute, f"{evidence}: text: unset")
+        self.assertEqual(
+            (repository / evidence).read_bytes(), checker.SEAHASH_EVIDENCE
+        )
+
     def metadata(self, packages, edges):
         root = packages[0]["id"]
         return {

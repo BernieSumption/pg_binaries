@@ -1,0 +1,5 @@
+# PostGIS with conda-forge dependencies on macOS arm64
+
+[Run 39516965034](https://github.com/BernieSumption/pg_binaries/actions/runs/39516965034) passed on a standard macOS 15 arm64 runner at revision `fb806c2b63f187515de6c3e48fb23bd411a206e4`. It restored the exact selected PostgreSQL 18.6 core recorded in [target.json](target.json), built unmodified PostGIS 3.6.4 using conda-forge GEOS, PROJ and GDAL, and installed `postgis`, `postgis_raster` and `postgis_topology` in that core. The [SQL output](sql-probe.txt) records creation of all three extensions and successful geometry transformation, raster and topology operations. The [configure](configure.log), [build](build.log) and [install](install.log) logs are retained.
+
+This is a build-feasibility result. The trial disabled SFCGAL and protobuf, did not assemble an extension archive, and did not check relocation, dependency closure or the final archive bytes. Those steps and the fourth declared SQL name, `postgis_sfcgal`, remain before macOS PostGIS publication verification.
