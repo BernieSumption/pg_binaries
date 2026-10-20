@@ -1,0 +1,50 @@
+{
+  "assembled_core": {
+    "archive": "postgresql-18.6-windows-x86_64.tar.gz",
+    "sha256": "6c98dc1177ff11006009ee5a4f732c9d48db24f6da40551f63cdee0dfe9951d2",
+    "version": "18.6"
+  },
+  "case_results": {
+    "archive-suite": "passed",
+    "static-analysis": "passed",
+    "symbols": "passed"
+  },
+  "ci": {
+    "build_revision": "97aab1cf2bead9e37d66b01f5825eae57f644056",
+    "build_run_attempt": "1",
+    "build_run_id": "39421900392",
+    "provider": "github-actions",
+    "run_id": "39421900392",
+    "run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/39421900392",
+    "source_revision": "97aab1cf2bead9e37d66b01f5825eae57f644056",
+    "test_revision": "97aab1cf2bead9e37d66b01f5825eae57f644056"
+  },
+  "component": "pg_cron",
+  "environment": {
+    "architecture": "x86_64",
+    "clean_system": true,
+    "dependency_check_profile": "windows-pe-runtime-v1",
+    "dependency_checks_passed": true,
+    "endpoint": "current",
+    "image_id": "win22/20261012.333.1",
+    "os": "windows",
+    "os_version": "10.0.20348.0"
+  },
+  "outcome": "passed",
+  "platform": "windows-x86_64",
+  "postgresql_version": "18.6",
+  "prerequisite_archives": [],
+  "profile_id": "pgcron-publication-windows-x86_64-18.6",
+  "profile_revision": "631ad93d66f0cfdd1c02ccb6dd6ba8ca43765786a5375e6634386f0e62e6568d",
+  "project": "pg_cron",
+  "schema_version": 2,
+  "scope": "publication",
+  "sha256": "362acd39b456387fbb1be8847c4e8ed0c1c4c6d7e592647932c6c53fffbf1949",
+  "test_cases": [
+    "archive-suite",
+    "static-analysis",
+    "symbols"
+  ],
+  "test_revision": "97aab1cf2bead9e37d66b01f5825eae57f644056",
+  "version": "1.6.8"
+}
