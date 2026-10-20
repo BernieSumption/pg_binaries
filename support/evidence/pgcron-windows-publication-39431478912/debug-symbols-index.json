@@ -1,0 +1,1235 @@
+{
+  "files": [
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/lib/amcheck.dll",
+      "module_sha256": "3ce64cfee5436ef768dcc99ffff9bd5f8486d44996904b05cc1778d22771c0f1",
+      "pdb_path": "pdbs/66c26a6db6af42a8bdd83e63b083d2cb-1/amcheck.pdb",
+      "pdb_sha256": "87ccee2a64f5d8c97d7a0a4a612dc74df3f3c32b0cb3bcec3521ff597868e728",
+      "rsds_age": 1,
+      "rsds_guid": "66c26a6db6af42a8bdd83e63b083d2cb"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/lib/auth_delay.dll",
+      "module_sha256": "e4d2fa7784ef0ebc1047258f1a4867f7898acf6d7110744fd97bf799940e1f49",
+      "pdb_path": "pdbs/1db88ab84d44435581f2fd2f8cc755fa-1/auth_delay.pdb",
+      "pdb_sha256": "72d1ed38168903cd9b88ff9a8d8d1dd99116018427941109dc8a5281190b4e6d",
+      "rsds_age": 1,
+      "rsds_guid": "1db88ab84d44435581f2fd2f8cc755fa"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/lib/autoinc.dll",
+      "module_sha256": "ad890d9dc7d29735667e9b50310d9896c6a0e1873f03c35b7465296a3d0f5844",
+      "pdb_path": "pdbs/b14513849e144df1992ae69260c8e4b9-1/autoinc.pdb",
+      "pdb_sha256": "898870da4dd767f265f2a07707a81d28c56293878c734e382d616a3814348606",
+      "rsds_age": 1,
+      "rsds_guid": "b14513849e144df1992ae69260c8e4b9"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/lib/auto_explain.dll",
+      "module_sha256": "7d515d82e187b0921099a835474de509aa401665a75db4c20fa8d8c3df1579c1",
+      "pdb_path": "pdbs/b55917a12cf04861b8378bff908a1788-1/auto_explain.pdb",
+      "pdb_sha256": "0dfb3f2a55d210c5f5b02883de9e30dad362cf185649a864a24f35588bffb137",
+      "rsds_age": 1,
+      "rsds_guid": "b55917a12cf04861b8378bff908a1788"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/lib/basebackup_to_shell.dll",
+      "module_sha256": "1ab3a84d104d2d2b2a538a8f3c1db4889965952f90da6893013935eaa49dae10",
+      "pdb_path": "pdbs/2dec06e8e7764413a07f632f11206440-1/basebackup_to_shell.pdb",
+      "pdb_sha256": "f7c60d2d6af475e527980d4c5a8bacfc639002262084e1a55916fe5a503cba4e",
+      "rsds_age": 1,
+      "rsds_guid": "2dec06e8e7764413a07f632f11206440"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/lib/basic_archive.dll",
+      "module_sha256": "16976eff97ed362a2939061c7295c65017afd7aa7f03e3c1f6eb59c0e406f84f",
+      "pdb_path": "pdbs/8c3eef4f8745481e8deb71ad8d1bf078-1/basic_archive.pdb",
+      "pdb_sha256": "1c535326e6ff60aa5320d22e65e3303b11af7b2752b19555cc32263efdc27394",
+      "rsds_age": 1,
+      "rsds_guid": "8c3eef4f8745481e8deb71ad8d1bf078"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/lib/bloom.dll",
+      "module_sha256": "5e6e72cd27a07d2a6b72902dd17c2b689e941879fd27937ee9b8d89f19654e2b",
+      "pdb_path": "pdbs/d07dcf1b21f84565a348894458e8bc13-1/bloom.pdb",
+      "pdb_sha256": "d6fe37cde45c7875b644cef70d46cf93a96e57f8af51ef333eae67d4dfdcf536",
+      "rsds_age": 1,
+      "rsds_guid": "d07dcf1b21f84565a348894458e8bc13"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/lib/btree_gin.dll",
+      "module_sha256": "c37456dde2dc51d2d7033858206883c539594445c8feedd7f07768780d54b78b",
+      "pdb_path": "pdbs/ff3019cdc17d4525a173dbe26edd8137-1/btree_gin.pdb",
+      "pdb_sha256": "81c82a25ae37180e3e0fa16ccd2f15b0a4b0594bba6fa962d4a4942e06f13fbc",
+      "rsds_age": 1,
+      "rsds_guid": "ff3019cdc17d4525a173dbe26edd8137"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/lib/btree_gist.dll",
+      "module_sha256": "f751a81c58b873ef10985f78011d7fafaf885d500b38977f25fb1d3754c59e57",
+      "pdb_path": "pdbs/e003d3cede124271b1da37778fd5f5ad-1/btree_gist.pdb",
+      "pdb_sha256": "853c7db0bd3c0b2e80659a735a0277da8477b503f8bfd275b57dcc4eb014e492",
+      "rsds_age": 1,
+      "rsds_guid": "e003d3cede124271b1da37778fd5f5ad"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/lib/citext.dll",
+      "module_sha256": "e726c23bb60cbc17c6af7c17c5ec227cc1cca2ecd0ebd25bff81a4e45908d04f",
+      "pdb_path": "pdbs/aa0cfaab1e694cc1986130d463483dbd-1/citext.pdb",
+      "pdb_sha256": "ce3a6a9805e89213912a4e94cd3752ae7ade1fdac04c4498de05e8d3b8db942e",
+      "rsds_age": 1,
+      "rsds_guid": "aa0cfaab1e694cc1986130d463483dbd"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/lib/cube.dll",
+      "module_sha256": "005d8ed63eb17f5303b4634d69074bd119265deea6509777753eb0fea363677b",
+      "pdb_path": "pdbs/fc1a0137dda94689924fb2b71a63baab-1/cube.pdb",
+      "pdb_sha256": "6a16598d990a318087058b1b2cf3dc15049b3c1299bc691907cb7c67c2a170a4",
+      "rsds_age": 1,
+      "rsds_guid": "fc1a0137dda94689924fb2b71a63baab"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/lib/cyrillic_and_mic.dll",
+      "module_sha256": "cd200de50171c53dc2bb26c53ea8b19de93c51323ca248bd7c0530003852df55",
+      "pdb_path": "pdbs/cb8947b3cd40456abde530ebc2ca6b66-1/cyrillic_and_mic.pdb",
+      "pdb_sha256": "2c376e84a5b47699eb046c2d5eca8135e83dae9bc8b2585f1c9e7d5231014f22",
+      "rsds_age": 1,
+      "rsds_guid": "cb8947b3cd40456abde530ebc2ca6b66"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/lib/dblink.dll",
+      "module_sha256": "e5659e6def68a88f8b400c4ba7c896c60761595eda56a9a6c17b1e0256896051",
+      "pdb_path": "pdbs/a7034c2c75e443c59f6ad1cb3eab7024-1/dblink.pdb",
+      "pdb_sha256": "774e7ab6d37395ce4d9a3a79103932299d4eb7a3e0d11dd485445dfcdd97b3df",
+      "rsds_age": 1,
+      "rsds_guid": "a7034c2c75e443c59f6ad1cb3eab7024"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/lib/dict_int.dll",
+      "module_sha256": "043d025b8a70e1bd5dee310710ce013220d92ed05ab36821878d49c83ce4e527",
+      "pdb_path": "pdbs/ea0e7abf9d124cbdb9b3062036b55e49-1/dict_int.pdb",
+      "pdb_sha256": "94515a1e988a488c391c477d8768fbc1851906203b021b1f0da4be62fcdbf82c",
+      "rsds_age": 1,
+      "rsds_guid": "ea0e7abf9d124cbdb9b3062036b55e49"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/lib/dict_snowball.dll",
+      "module_sha256": "e0e1c7026b397f11ea01512c0af1654dadbdf45794b7973ee64a499120af4f54",
+      "pdb_path": "pdbs/7e26b5a726364bbaa23925fdee7b080d-1/dict_snowball.pdb",
+      "pdb_sha256": "f7ae70c22c9b96592ff3a3c335a5ad6da3d1fb44271eeedd85b9098cd46b2120",
+      "rsds_age": 1,
+      "rsds_guid": "7e26b5a726364bbaa23925fdee7b080d"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/lib/dict_xsyn.dll",
+      "module_sha256": "751953d5746ba00e928a57a6046c042c4d09473ac31f6ca24362a178cb5e4224",
+      "pdb_path": "pdbs/88f4c3a257c046b88a4e7d4781e44d32-1/dict_xsyn.pdb",
+      "pdb_sha256": "5a77e9b96ab66d360c5106ffd66f9774c63b7e07200978e45323e7c8de30b901",
+      "rsds_age": 1,
+      "rsds_guid": "88f4c3a257c046b88a4e7d4781e44d32"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/lib/earthdistance.dll",
+      "module_sha256": "8e8fae444b8854b0c84b26b08c7eda246441ffdc4a5f2d8b20ef9b521d2b06bf",
+      "pdb_path": "pdbs/a1433e50c347455290b81df5fde920c4-1/earthdistance.pdb",
+      "pdb_sha256": "c8c5addf0fa95c11de6e47adf4f7bf47ac73e254a2c57adc110cd71798bef31b",
+      "rsds_age": 1,
+      "rsds_guid": "a1433e50c347455290b81df5fde920c4"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/lib/euc2004_sjis2004.dll",
+      "module_sha256": "bff0c07a1733f4b001408807eb15c0ba49e2b01fbc493e0c29f67563deaeaeea",
+      "pdb_path": "pdbs/43ade5b892c5485ab157dc99b1a7ad8b-1/euc2004_sjis2004.pdb",
+      "pdb_sha256": "9d262a76e392177a8ece22450d263ff5a3186267a4668a3d2ab9a005ff54b137",
+      "rsds_age": 1,
+      "rsds_guid": "43ade5b892c5485ab157dc99b1a7ad8b"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/lib/euc_cn_and_mic.dll",
+      "module_sha256": "35990fdf8b4422ab14619cf8e418a50c8df9d0a67e574e9dc83927c895958751",
+      "pdb_path": "pdbs/294bdbffd9894707a09ca8587d9f7847-1/euc_cn_and_mic.pdb",
+      "pdb_sha256": "ce9d3419ed3fe340c90a22f7ad932406505ae1820a53c8322e9f079dec61701e",
+      "rsds_age": 1,
+      "rsds_guid": "294bdbffd9894707a09ca8587d9f7847"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/lib/euc_jp_and_sjis.dll",
+      "module_sha256": "2406d6ca8849a600bca143878fc743448651db764bf39dbc7b23eaba58143476",
+      "pdb_path": "pdbs/66b421f6e7ac4c63babf528dcc3e9b54-1/euc_jp_and_sjis.pdb",
+      "pdb_sha256": "f5d4df90786f3a6981c551499cb7e25c454fade8d4f6625f289eb19c6c93b699",
+      "rsds_age": 1,
+      "rsds_guid": "66b421f6e7ac4c63babf528dcc3e9b54"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/lib/euc_kr_and_mic.dll",
+      "module_sha256": "e8f2be832e0652b713e84d4da0c958c8d2929fecff8bfc325b9f8ff187fb4bf2",
+      "pdb_path": "pdbs/a24bb74dd50f4b4fbdb6a2bea4e0bbb0-1/euc_kr_and_mic.pdb",
+      "pdb_sha256": "cc8280cd77d4be90ec52a549f293ddc987b40b3caeda1ca72bdf615b2a7ca73e",
+      "rsds_age": 1,
+      "rsds_guid": "a24bb74dd50f4b4fbdb6a2bea4e0bbb0"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/lib/euc_tw_and_big5.dll",
+      "module_sha256": "65197a5c98ac7fba21338929cbd6e887d5eeb3c13654e41dc19193f4f89f4a86",
+      "pdb_path": "pdbs/7385d8a19ffb4adea04200f2b0d90e96-1/euc_tw_and_big5.pdb",
+      "pdb_sha256": "4d9c6db08ba1f022736d6bd89b57b95bb45fbe5a9220018b372a97ac643d4adf",
+      "rsds_age": 1,
+      "rsds_guid": "7385d8a19ffb4adea04200f2b0d90e96"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/lib/file_fdw.dll",
+      "module_sha256": "e9133466f36eb99011e19a26720f86b6ba5af39d2b9625d207c45f9ed7cdcc0a",
+      "pdb_path": "pdbs/2a768b790d674975a8d3b4f3b0b5a50d-1/file_fdw.pdb",
+      "pdb_sha256": "24c5408205a0fab38ac1f989d187d3b7dc459f052df3a12aa92201003d4dce47",
+      "rsds_age": 1,
+      "rsds_guid": "2a768b790d674975a8d3b4f3b0b5a50d"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/lib/fuzzystrmatch.dll",
+      "module_sha256": "824cb70a82e21d8d33670ec56e5380c3fc5579497f71a046932d3e6a73203cc8",
+      "pdb_path": "pdbs/bfc0b944c061423296372cf2bd6eb08f-1/fuzzystrmatch.pdb",
+      "pdb_sha256": "6fc500f2ff09826c7e042d6239e82aed5a364715054d17416b511235ff051097",
+      "rsds_age": 1,
+      "rsds_guid": "bfc0b944c061423296372cf2bd6eb08f"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/lib/hstore.dll",
+      "module_sha256": "74a3e00fd893393326c0efa8c1c84a3e3a9a0b967a36e5bce64d5ba2693f8d62",
+      "pdb_path": "pdbs/9edd045f1cf3436b8c6465ae5682435e-1/hstore.pdb",
+      "pdb_sha256": "d5d7ac3597355d26490a849b3ffd544c42238581a6148d1dd5ade99be453a65a",
+      "rsds_age": 1,
+      "rsds_guid": "9edd045f1cf3436b8c6465ae5682435e"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/lib/insert_username.dll",
+      "module_sha256": "81e216962c60c13c855bd4713dd9112073b79d52eb355b6e5b16540520efd516",
+      "pdb_path": "pdbs/278603fe1fac436089e39548b861bd33-1/insert_username.pdb",
+      "pdb_sha256": "bd3692c8ea579a9b3e62cc07fdd1fee9a87ee872151fcdc6d357f944c1c2ecd5",
+      "rsds_age": 1,
+      "rsds_guid": "278603fe1fac436089e39548b861bd33"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/lib/isn.dll",
+      "module_sha256": "ebc2891b38ec5e5c8978719272ec6a85ff1ed2ae3839ebe3f21b88e2119e1ff3",
+      "pdb_path": "pdbs/ba36aa6abace4a2bb6fc238ef1c4a583-1/isn.pdb",
+      "pdb_sha256": "f58ab00ef5a9319b06ae9de832a7eaa05732a1fd41905bd0a3c180156b66ba71",
+      "rsds_age": 1,
+      "rsds_guid": "ba36aa6abace4a2bb6fc238ef1c4a583"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/lib/latin2_and_win1250.dll",
+      "module_sha256": "2ffb551915659274728276fec6cafa3adc536aff0efa6f29e98c14f2c02d81a5",
+      "pdb_path": "pdbs/8ad29038fe844ebaac2e4b4a7b9722f0-1/latin2_and_win1250.pdb",
+      "pdb_sha256": "bbf56b7f2b4841b38d377069d2c448e0df9caaf33b03f79438496cf198c421d7",
+      "rsds_age": 1,
+      "rsds_guid": "8ad29038fe844ebaac2e4b4a7b9722f0"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/lib/latin_and_mic.dll",
+      "module_sha256": "0c3e06a1523819290107d24650e78be4a4894b152949681fddcef73e2981cc21",
+      "pdb_path": "pdbs/f372c219a8284b16805c3314d8eecf70-1/latin_and_mic.pdb",
+      "pdb_sha256": "a2b1dade58031179f8758a6c89db8ba9a4b686aa9de88a6ab86c1af55c3a930f",
+      "rsds_age": 1,
+      "rsds_guid": "f372c219a8284b16805c3314d8eecf70"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/lib/libpqwalreceiver.dll",
+      "module_sha256": "88ed2502cc448223da43e5a34a2489dd2508f75d7d9c16e7847b1951940b29c9",
+      "pdb_path": "pdbs/d661024782484fcbb53cf9f2ac3b457f-1/libpqwalreceiver.pdb",
+      "pdb_sha256": "3c53dd6937fa95de4e7bfbcd000e4482ec655b3cb6a6b811ff73b647d526ffe8",
+      "rsds_age": 1,
+      "rsds_guid": "d661024782484fcbb53cf9f2ac3b457f"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/lib/lo.dll",
+      "module_sha256": "69f9d3001e996ced7dfccbbbebad8af227fca6fb2f7d95b34297a98037f41fe0",
+      "pdb_path": "pdbs/efacd0107a06427984efb3ba12f29be2-1/lo.pdb",
+      "pdb_sha256": "8dca857a360f0675a2b7bf6c98cb69f5195c8eb527354a4e2f39ab1e978a1303",
+      "rsds_age": 1,
+      "rsds_guid": "efacd0107a06427984efb3ba12f29be2"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/lib/ltree.dll",
+      "module_sha256": "3dbc463bdfcb1d0e643199aa772c692cf3349623a25c7b84ed05eec9ef6e73e8",
+      "pdb_path": "pdbs/907997cd15c543b186d246dbe6f4c161-1/ltree.pdb",
+      "pdb_sha256": "909c01dbd3f19dc320741f0bb6074a907afa617f37410e9a73a4ccb794499bb9",
+      "rsds_age": 1,
+      "rsds_guid": "907997cd15c543b186d246dbe6f4c161"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/lib/moddatetime.dll",
+      "module_sha256": "3942f041883266b7526103af19bfcbd5eaf22b965bacff30d3d839cca36f894a",
+      "pdb_path": "pdbs/3553cdb4cd5f4300a94333efe3d9052a-1/moddatetime.pdb",
+      "pdb_sha256": "2db6355cd460e3e6d9094c14a3e1e19d4343a95a0a10d945854a49ad5c8a02f9",
+      "rsds_age": 1,
+      "rsds_guid": "3553cdb4cd5f4300a94333efe3d9052a"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/lib/pageinspect.dll",
+      "module_sha256": "d3acc528eb66e969fdeaaae5a7c6883ee44078255857e4640cee7f495bb87c21",
+      "pdb_path": "pdbs/274de0d92e804b9bb6518ee37938637a-1/pageinspect.pdb",
+      "pdb_sha256": "fa665505a37f8cc9797cba8ad25e5072c01f5f37289fa9220433463cccc330e2",
+      "rsds_age": 1,
+      "rsds_guid": "274de0d92e804b9bb6518ee37938637a"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/lib/passwordcheck.dll",
+      "module_sha256": "e10959f452f31134aea9f53391e638ebe2fa1f8618e5e961f2a56a1a9fcbe551",
+      "pdb_path": "pdbs/367b7169c2194333807c4b3e8a9e2d31-1/passwordcheck.pdb",
+      "pdb_sha256": "870ce37b74bbc2b4c1953bdf3ae4d3bbb1857745fcf322cf4a92a724131ec00b",
+      "rsds_age": 1,
+      "rsds_guid": "367b7169c2194333807c4b3e8a9e2d31"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/lib/pgcrypto.dll",
+      "module_sha256": "c896dd6828b53f9172444ac294ef0d8c45e93fbab0c595a76e8f4acd74fd5ec2",
+      "pdb_path": "pdbs/354811afabcc459cbcaa67f8c450f742-1/pgcrypto.pdb",
+      "pdb_sha256": "043487bad14586d34302529716c2fd6d1c4043d8ab27d680ffe29650480b6816",
+      "rsds_age": 1,
+      "rsds_guid": "354811afabcc459cbcaa67f8c450f742"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/lib/pgevent.dll",
+      "module_sha256": "97b7d2d4c00477b8696af5b3676586641036fef4c50ee3f15df92a36535045ac",
+      "pdb_path": "pdbs/ede2f916a04d404dbe02e1a9d15d628c-1/pgevent.pdb",
+      "pdb_sha256": "9016415318fc3ab16ae83d986ec5f3db2a309488c08169e309a580fa657a92b2",
+      "rsds_age": 1,
+      "rsds_guid": "ede2f916a04d404dbe02e1a9d15d628c"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/lib/pgoutput.dll",
+      "module_sha256": "2c32948e9faba96a7a6d807be2ec5ad3d867d048ccc72c6395c2057ef2775941",
+      "pdb_path": "pdbs/3fdd1a2e80f24b4cb61893b24eb0ebe8-1/pgoutput.pdb",
+      "pdb_sha256": "042191f2e7a2e18488bbeff96299657b7bb74d1690e0332b32db7be2c066910e",
+      "rsds_age": 1,
+      "rsds_guid": "3fdd1a2e80f24b4cb61893b24eb0ebe8"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/lib/pgrowlocks.dll",
+      "module_sha256": "ad3cef08798514b6f772de396110087a19a81dc92e286ea0e7b99f72096e7c93",
+      "pdb_path": "pdbs/eed2959f45e544788332b77196569e8d-1/pgrowlocks.pdb",
+      "pdb_sha256": "fdc9f5390106a7650928669145ed22d7efbd6dd6867f68709f477ff82143eb23",
+      "rsds_age": 1,
+      "rsds_guid": "eed2959f45e544788332b77196569e8d"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/lib/pgstattuple.dll",
+      "module_sha256": "820fd9eaec1c6cf819b2117823bae18c74c321048b788121e4a8cffc4ff461a5",
+      "pdb_path": "pdbs/50c05243abda4b11b94e2bae87d64796-1/pgstattuple.pdb",
+      "pdb_sha256": "1fcdb0bdea8fa0437aa7b6e537e66c3fdf4b1ae1d7c32e8f7e4ec516b2bd6ecd",
+      "rsds_age": 1,
+      "rsds_guid": "50c05243abda4b11b94e2bae87d64796"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/lib/pgxml.dll",
+      "module_sha256": "0c182bb4500d9f506f3b09c08d4dd9a876e4c280976ef78ffeea8d96b487d242",
+      "pdb_path": "pdbs/f2f2f69ceba24462bbf7cc34888fa193-1/pgxml.pdb",
+      "pdb_sha256": "115ae9b609419de0cef36019575017f6e1dd3077eed60aea2c52c8bde82f8f18",
+      "rsds_age": 1,
+      "rsds_guid": "f2f2f69ceba24462bbf7cc34888fa193"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/lib/pg_buffercache.dll",
+      "module_sha256": "768a35a0c058bdcee4a30052497a66aafdb151dd753b8af1acea473bde5ac734",
+      "pdb_path": "pdbs/f071a93fadb1416c806f0c759acf426b-1/pg_buffercache.pdb",
+      "pdb_sha256": "527a00b873dd905742c451d81a8d189c3df70da694b26ba6e2d151d3855d0efd",
+      "rsds_age": 1,
+      "rsds_guid": "f071a93fadb1416c806f0c759acf426b"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/lib/pg_freespacemap.dll",
+      "module_sha256": "2dd93435597afe6d45dc474ae94de23146dd95d13ad2384c9802df9729d07a46",
+      "pdb_path": "pdbs/edc85f949e624fb589a691e8f09179c6-1/pg_freespacemap.pdb",
+      "pdb_sha256": "de1735cad289ff52141ca78aceef4f8a64f0bb4c798e86da40e03af7ecda70d1",
+      "rsds_age": 1,
+      "rsds_guid": "edc85f949e624fb589a691e8f09179c6"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/lib/pg_prewarm.dll",
+      "module_sha256": "660b6fcca2fdc37ae1e8a1d7d2dc25d102504de5fccac558331346e5bfdb9062",
+      "pdb_path": "pdbs/04df0a14c06346bf8dbb3bf151e48976-1/pg_prewarm.pdb",
+      "pdb_sha256": "a2e9145a6f514ce94d5c7be3c0dd95d5a223672e4c63478e22a26465994f4992",
+      "rsds_age": 1,
+      "rsds_guid": "04df0a14c06346bf8dbb3bf151e48976"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/lib/pg_stat_statements.dll",
+      "module_sha256": "157aaf12a347426f2f6fb9075f4d7aa45f032f538004b26f653618aea278f27a",
+      "pdb_path": "pdbs/2717663da5704749a83cd68fecbb4926-1/pg_stat_statements.pdb",
+      "pdb_sha256": "31952a48e73952bc32aa674164d7629628bf1c9944235f99c255ed75643a6090",
+      "rsds_age": 1,
+      "rsds_guid": "2717663da5704749a83cd68fecbb4926"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/lib/pg_surgery.dll",
+      "module_sha256": "e6802f890d7c63c01b018c581dc2c557c6cede7b2381a4d0094d6088df521197",
+      "pdb_path": "pdbs/839e489037cf4835935d027258a3df5c-1/pg_surgery.pdb",
+      "pdb_sha256": "8fb711448399641eedc959526acc2e464cddb563c94436103d88c0a66f7ea03c",
+      "rsds_age": 1,
+      "rsds_guid": "839e489037cf4835935d027258a3df5c"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/lib/pg_trgm.dll",
+      "module_sha256": "c192c039c2c9b757cff65a3f68472820bf50f65a3e026e595679e52043a166e5",
+      "pdb_path": "pdbs/7865533a743f4c9686e3234d9749a011-1/pg_trgm.pdb",
+      "pdb_sha256": "f17fc63630626df8b30586c88ad33bdc5d85e0a09e5799aea19059a4bffbc664",
+      "rsds_age": 1,
+      "rsds_guid": "7865533a743f4c9686e3234d9749a011"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/lib/pg_visibility.dll",
+      "module_sha256": "e27ed1818a2b1d276f671fa39121eb7992a77fbdbd2a5359965d0004bdfb7ed4",
+      "pdb_path": "pdbs/8bd59de251b04d2b8c85baf54f915b32-1/pg_visibility.pdb",
+      "pdb_sha256": "1e981cfa2e933823f6d21762b763a7e016708cf75fae59f44aa9887ad1184374",
+      "rsds_age": 1,
+      "rsds_guid": "8bd59de251b04d2b8c85baf54f915b32"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/lib/pg_walinspect.dll",
+      "module_sha256": "db2bb2c1d3d4c489d161016fa65de8e30cb39a5176b9f6307573e650e1fd4ec6",
+      "pdb_path": "pdbs/59fcacc18ef84a4fb4e9781b8b40d016-1/pg_walinspect.pdb",
+      "pdb_sha256": "32659a233aaa066af0420fd6a92b2c5101209927ad110a78a870cca22f6a47aa",
+      "rsds_age": 1,
+      "rsds_guid": "59fcacc18ef84a4fb4e9781b8b40d016"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/lib/plpgsql.dll",
+      "module_sha256": "fee8f381648b03f077b072ebac4305cd0c0862f03366290b004b862d05c78036",
+      "pdb_path": "pdbs/4ea351d1c1cf448387322b370e1313ff-1/plpgsql.pdb",
+      "pdb_sha256": "b65ba54099069bce72d1c89847926e8b7e02f86704d16eb15206fee0f66fec9f",
+      "rsds_age": 1,
+      "rsds_guid": "4ea351d1c1cf448387322b370e1313ff"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/lib/postgres_fdw.dll",
+      "module_sha256": "c2140892059c2996695b3046b293f4d271ef7ade0d501576c44b0b6ffc5de749",
+      "pdb_path": "pdbs/7cf728fc44fc424598635c7040ef5064-1/postgres_fdw.pdb",
+      "pdb_sha256": "7acf69b7fa8101a07218934a04a55270518695326c59d1ce5ce7bb04ba705213",
+      "rsds_age": 1,
+      "rsds_guid": "7cf728fc44fc424598635c7040ef5064"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/lib/refint.dll",
+      "module_sha256": "3849db9f667df2895bddb5ef7bc31adb4d4dfe8127d69ba6fff90cc9a70f7fb5",
+      "pdb_path": "pdbs/849e323d097146de978a3d404eef1db5-1/refint.pdb",
+      "pdb_sha256": "27592e2dd51fac8d52a64e227f01da39320814ffb86dcf5d88e5a0d26807325b",
+      "rsds_age": 1,
+      "rsds_guid": "849e323d097146de978a3d404eef1db5"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/lib/seg.dll",
+      "module_sha256": "b06feff9ae4aa9183d1d73c0953b7ef7b4ef43582cd7b8490a86c81e1f60871f",
+      "pdb_path": "pdbs/2d7a906d8d414fe89a65fcb068f03a53-1/seg.pdb",
+      "pdb_sha256": "85523778fc48c0af5d2204261cdfc79c1b57bc64fdc5692743e8a4fc3b7e892c",
+      "rsds_age": 1,
+      "rsds_guid": "2d7a906d8d414fe89a65fcb068f03a53"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/lib/sslinfo.dll",
+      "module_sha256": "b153738595330054bb8b0e152bf31856abaaf101783d2fe599b5aeb3e159444c",
+      "pdb_path": "pdbs/f496549219cb4070ad47ad0b69f008d1-1/sslinfo.pdb",
+      "pdb_sha256": "340ab4b515faea950d77ec253fd2b10319363ebcc1e2083d0177d6e8735ce85b",
+      "rsds_age": 1,
+      "rsds_guid": "f496549219cb4070ad47ad0b69f008d1"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/lib/tablefunc.dll",
+      "module_sha256": "968d8a0e58b0eab97babf60861990248e718576b9c5e94e8f18f3a01b11a848e",
+      "pdb_path": "pdbs/55e797f4f18241b190d933e2359abe17-1/tablefunc.pdb",
+      "pdb_sha256": "e60ac79e9340b848d3cdc5cb6ee509eeed7aa596bc9671f79a168977f6af312e",
+      "rsds_age": 1,
+      "rsds_guid": "55e797f4f18241b190d933e2359abe17"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/lib/tcn.dll",
+      "module_sha256": "05d5e12c728403d7210f8398c0929448e3adadd766f144a5dcf1836acb2df836",
+      "pdb_path": "pdbs/e39d053889c9432a8092e2194507f8c3-1/tcn.pdb",
+      "pdb_sha256": "163f15472d0cee40992d818e6d4d792c5671124f0b949c04b46c107ec0af782b",
+      "rsds_age": 1,
+      "rsds_guid": "e39d053889c9432a8092e2194507f8c3"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/lib/test_decoding.dll",
+      "module_sha256": "126a295a97c057f10f8fc2d9d5a32846315037abe63f1302c5164825c2429c78",
+      "pdb_path": "pdbs/1ed5d05a8f3d494a8f57aa5962310d10-1/test_decoding.pdb",
+      "pdb_sha256": "69321ddc2552f8e3efb46d05b0ca77fdba4f0787cd93043b35232a939938cd89",
+      "rsds_age": 1,
+      "rsds_guid": "1ed5d05a8f3d494a8f57aa5962310d10"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/lib/tsm_system_rows.dll",
+      "module_sha256": "8c7911f19854a5736dc76655ac2da042c60e714b2ad2f7d6be78eb2c6a490cae",
+      "pdb_path": "pdbs/653eae35b0084f24b3fdcbf7c18b4355-1/tsm_system_rows.pdb",
+      "pdb_sha256": "c7f2833fe109e31f02c6ecdabbd19546b9767610e96e70d5e788ca33a7b7202e",
+      "rsds_age": 1,
+      "rsds_guid": "653eae35b0084f24b3fdcbf7c18b4355"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/lib/tsm_system_time.dll",
+      "module_sha256": "d57fbae7a42cb2e23103d105ffb3f9fd0b3611e92a77112bf4ee11eb0bc31f90",
+      "pdb_path": "pdbs/d00b76434f3a4986bba5b0ab64af2c04-1/tsm_system_time.pdb",
+      "pdb_sha256": "14e0a56f636afc075fff86ea3b77587b33e93933a59dac682d6f441c9e53169d",
+      "rsds_age": 1,
+      "rsds_guid": "d00b76434f3a4986bba5b0ab64af2c04"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/lib/unaccent.dll",
+      "module_sha256": "8e337c1fd5c8ebfcbf084813215469dfc418d6ea9c8b166d444453f2b72e1b97",
+      "pdb_path": "pdbs/6f9a2f1629f14c6aa99c8c9a396ef7a4-1/unaccent.pdb",
+      "pdb_sha256": "d217f5b02725913cbc236b2dd307806ed072dcc2c70395ee36f4b4caf45736b1",
+      "rsds_age": 1,
+      "rsds_guid": "6f9a2f1629f14c6aa99c8c9a396ef7a4"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/lib/utf8_and_big5.dll",
+      "module_sha256": "ea3c87ca6d6eeec698f2a8146b088df3fcc8d3a80bd836fae42e602cea62c6d3",
+      "pdb_path": "pdbs/01d6c156f05a4be2822c93516e89bf3d-1/utf8_and_big5.pdb",
+      "pdb_sha256": "6054ec04f9d981babec0caa2351a17777ce783c7c6102fc59241e278c1d49902",
+      "rsds_age": 1,
+      "rsds_guid": "01d6c156f05a4be2822c93516e89bf3d"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/lib/utf8_and_cyrillic.dll",
+      "module_sha256": "183a60d6f528863d416cac0c66422315a21ee38a66fc7d50a955d46c876a2af1",
+      "pdb_path": "pdbs/61e5ed1215c549ef810b400759d09949-1/utf8_and_cyrillic.pdb",
+      "pdb_sha256": "06044e1cbb9bec5aa56052ec548c67a12171adf15dae58ba9490dd3a5c0ed8e7",
+      "rsds_age": 1,
+      "rsds_guid": "61e5ed1215c549ef810b400759d09949"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/lib/utf8_and_euc2004.dll",
+      "module_sha256": "0406c4208cbf9ab2555af82dbe678c84c378c32d26ce662614af3d0d27cb57e9",
+      "pdb_path": "pdbs/16e0f7ff5064442eb94ae7632f3facd9-1/utf8_and_euc2004.pdb",
+      "pdb_sha256": "00e228c91752e0227a04b6a807cab2d873f0b601d1507c4745e934dbb27f3177",
+      "rsds_age": 1,
+      "rsds_guid": "16e0f7ff5064442eb94ae7632f3facd9"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/lib/utf8_and_euc_cn.dll",
+      "module_sha256": "96091f4b4bce7da97fe3fa4478442545eca1155b60312b44f5d096b3e7f892cc",
+      "pdb_path": "pdbs/b32a73366c7a4fd097e49cb4439ee029-1/utf8_and_euc_cn.pdb",
+      "pdb_sha256": "69328f0f646d1648e0d4ddcace1b1b857899c545c57fd41f2bfff152998c84e9",
+      "rsds_age": 1,
+      "rsds_guid": "b32a73366c7a4fd097e49cb4439ee029"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/lib/utf8_and_euc_jp.dll",
+      "module_sha256": "d45dbcd5ff6a6d584241bda9cb85720f8d809fcb9594374757ca9f8350ab7a6c",
+      "pdb_path": "pdbs/1c5ded67ad9246f384db07f7d55dabd2-1/utf8_and_euc_jp.pdb",
+      "pdb_sha256": "3e2d1861433c5cdbfe558c5aada9c5137d0ec197f994ba94ae0c8210dd7ba2f6",
+      "rsds_age": 1,
+      "rsds_guid": "1c5ded67ad9246f384db07f7d55dabd2"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/lib/utf8_and_euc_kr.dll",
+      "module_sha256": "8bdf8d4c2754c0aea14ca1514a6d397f52732babc0c6402587eb798bbde81e26",
+      "pdb_path": "pdbs/0081a95e69fe4020958e3894724804ca-1/utf8_and_euc_kr.pdb",
+      "pdb_sha256": "ceadce529172b119160ff12834be138441f9ca962b813ccf8886b584d40003b0",
+      "rsds_age": 1,
+      "rsds_guid": "0081a95e69fe4020958e3894724804ca"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/lib/utf8_and_euc_tw.dll",
+      "module_sha256": "93d3d0ee36cbb0f553cfd489ad10917f289c6993b0a72eb4fb22f3ce34f44148",
+      "pdb_path": "pdbs/8e42a59d7cb14cd983de8cdd53491a25-1/utf8_and_euc_tw.pdb",
+      "pdb_sha256": "a8248f8ef881d3860fa386f630befaf67694fa52fb8f12e942ce1ab75037df32",
+      "rsds_age": 1,
+      "rsds_guid": "8e42a59d7cb14cd983de8cdd53491a25"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/lib/utf8_and_gb18030.dll",
+      "module_sha256": "dcc5914a9c2dfd9e53f76ba0adce2e21cc9dc2fb6d666eaeafa57e9eea7b32db",
+      "pdb_path": "pdbs/8d02405300944f40843756eab6234c92-1/utf8_and_gb18030.pdb",
+      "pdb_sha256": "1e42d3355c4902841e96cb08485b6cfb2bf3dc66e61338cfe5a95b20e4341bc0",
+      "rsds_age": 1,
+      "rsds_guid": "8d02405300944f40843756eab6234c92"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/lib/utf8_and_gbk.dll",
+      "module_sha256": "875af06978966e73a5f231bfd87f9057cde49cb55b74a60b365fe206fc255426",
+      "pdb_path": "pdbs/b058bacb45ce457c844dbe587d431489-1/utf8_and_gbk.pdb",
+      "pdb_sha256": "cb995df52fad102c0f91b9a97e08d067569402ed5611f05ed86180e6c560e836",
+      "rsds_age": 1,
+      "rsds_guid": "b058bacb45ce457c844dbe587d431489"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/lib/utf8_and_iso8859.dll",
+      "module_sha256": "fb123956865b85aa72d1d123c5fade9a5fcbe4a27731645c420630fdec1133b2",
+      "pdb_path": "pdbs/c0fa1af6a1394ae4b373bc6fbb68e272-1/utf8_and_iso8859.pdb",
+      "pdb_sha256": "4e34118751cd4ef8652ac7ab6b50fbfeb96e1639bedae4cfed31ac5c17e74e53",
+      "rsds_age": 1,
+      "rsds_guid": "c0fa1af6a1394ae4b373bc6fbb68e272"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/lib/utf8_and_iso8859_1.dll",
+      "module_sha256": "e08af1e9f63d339f75ebd9038a543593c50675afdc92ddd2585553c169ff7fb3",
+      "pdb_path": "pdbs/d4cbd528a4044d28a238b640b1ed0d5c-1/utf8_and_iso8859_1.pdb",
+      "pdb_sha256": "d94eceaa7849f1378514f28a1b4cc52a88a885d9597d728b6110232e404228b1",
+      "rsds_age": 1,
+      "rsds_guid": "d4cbd528a4044d28a238b640b1ed0d5c"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/lib/utf8_and_johab.dll",
+      "module_sha256": "4fdb6a960f1985362e2cb3fae192b3f7e33fa38527863833b1f765e4cc95376d",
+      "pdb_path": "pdbs/ab45f2817ac54dd4bd651dcad20d920d-1/utf8_and_johab.pdb",
+      "pdb_sha256": "58dfb5ea159d76018da0c0ee44652bdcbb2385b760d76dfdffdf6cb0bdb9ee2f",
+      "rsds_age": 1,
+      "rsds_guid": "ab45f2817ac54dd4bd651dcad20d920d"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/lib/utf8_and_sjis.dll",
+      "module_sha256": "5f6754026f51cb61705d6e721a03d49b189dbb4b18d580c893690123e474a3f1",
+      "pdb_path": "pdbs/421d490be3334370a1e6685d64b745b6-1/utf8_and_sjis.pdb",
+      "pdb_sha256": "735fa7195ea9fd280a1e0b55a2546af9e308458e4a11decdf5259a56999b25a4",
+      "rsds_age": 1,
+      "rsds_guid": "421d490be3334370a1e6685d64b745b6"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/lib/utf8_and_sjis2004.dll",
+      "module_sha256": "a073a3617be0ead3cc782d7a60ccc2af957d1bf8490981af3461eaaa6faefd0e",
+      "pdb_path": "pdbs/8383527735804c35827a5b86154b7598-1/utf8_and_sjis2004.pdb",
+      "pdb_sha256": "5435be9eef8958e4303ceb686835700e3cd82aab15eedcd44974aed19e74ad3b",
+      "rsds_age": 1,
+      "rsds_guid": "8383527735804c35827a5b86154b7598"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/lib/utf8_and_uhc.dll",
+      "module_sha256": "1e7c1dd6bd6405724f1c041affd7c448a944adba25a51abf0c8f2f5627a0b520",
+      "pdb_path": "pdbs/832ad44f8c9f4a9a914b983cb529d624-1/utf8_and_uhc.pdb",
+      "pdb_sha256": "27d130611fc406dae8ee8894aa2349cbfb03a2d5d3c442823bde229966ee2ba8",
+      "rsds_age": 1,
+      "rsds_guid": "832ad44f8c9f4a9a914b983cb529d624"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/lib/utf8_and_win.dll",
+      "module_sha256": "2c4208271a5ebbb60569af1ff5fa6f93bb6e32dad3aa1516749a900dbf44e80d",
+      "pdb_path": "pdbs/6a57b011d340467b89e3f2aff370a658-1/utf8_and_win.pdb",
+      "pdb_sha256": "006f4f11cbf7dcf35e0df11a44ae19b1fd5deb295fd4e6e26b13a7c0fd19d710",
+      "rsds_age": 1,
+      "rsds_guid": "6a57b011d340467b89e3f2aff370a658"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/lib/_int.dll",
+      "module_sha256": "e25b78aa636ec25f88bb470a721ba0c353bfcc3f185f98cc7fd47da6656011c2",
+      "pdb_path": "pdbs/a29610f40b224b9aa8e127c3b62961af-1/_int.pdb",
+      "pdb_sha256": "0da6513a00887d19238a8e90572949d894975c0f06a35aa4f01d7c7da091a4b3",
+      "rsds_age": 1,
+      "rsds_guid": "a29610f40b224b9aa8e127c3b62961af"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/lib/pgxs/src/test/regress/pg_regress.exe",
+      "module_sha256": "90ca2cde429bc6a3398669b8999ac9c4d115cff9f619fa75086cc9e2ac236c8f",
+      "pdb_path": "pdbs/b36861212c6c41129ce5a8ba58e8ca1a-1/pg_regress.pdb",
+      "pdb_sha256": "bf4d120f966427371619c3d54ca43d944388053e4c78b4c08a808e541570751d",
+      "rsds_age": 1,
+      "rsds_guid": "b36861212c6c41129ce5a8ba58e8ca1a"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/lib/pgxs/src/test/isolation/isolationtester.exe",
+      "module_sha256": "34b41f569c9c0c9cf4aa8027636bec3c021e2fdadf7e6f012ab71309800cf680",
+      "pdb_path": "pdbs/055ca5d232de4f2cb8025860f5cc5b6b-1/isolationtester.pdb",
+      "pdb_sha256": "625aeb8b0f5955ee52bce45a4b669b87d38d880c53c1217ca113ffc8eda12943",
+      "rsds_age": 1,
+      "rsds_guid": "055ca5d232de4f2cb8025860f5cc5b6b"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/lib/pgxs/src/test/isolation/pg_isolation_regress.exe",
+      "module_sha256": "1c4887e39a2ef06a27b2520a22b4a2e78f61a9933b02ee48acdcad784aabf347",
+      "pdb_path": "pdbs/41b786f89bdc47378547b8e2ede3e2a2-1/pg_isolation_regress.pdb",
+      "pdb_sha256": "a167702892f3b8b53427204a026b8462909c23703a5a17dc8484167a635e1890",
+      "rsds_age": 1,
+      "rsds_guid": "41b786f89bdc47378547b8e2ede3e2a2"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/bin/clusterdb.exe",
+      "module_sha256": "d2e1cc75349c9e09fb217c1065e33723839f787b1c7faf07f6bee9ccce1cae47",
+      "pdb_path": "pdbs/91f519823dc7442dbfa2b36d6aece442-1/clusterdb.pdb",
+      "pdb_sha256": "f802ab8342ad5e5d92775b851746b878a73cdb8f8322d7f230a00bc9b6f8ee14",
+      "rsds_age": 1,
+      "rsds_guid": "91f519823dc7442dbfa2b36d6aece442"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/bin/createdb.exe",
+      "module_sha256": "2426aa6051d1bbd629e3a4cb5f80753df8b35c6141bc6ab6a3542f46672242c8",
+      "pdb_path": "pdbs/12949f4db2d04e4da2cf52e275ca2f37-1/createdb.pdb",
+      "pdb_sha256": "8480b2193169a94a5f4d834d62523b390e27f12fded7b0f8487c2d33080c899c",
+      "rsds_age": 1,
+      "rsds_guid": "12949f4db2d04e4da2cf52e275ca2f37"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/bin/createuser.exe",
+      "module_sha256": "38ad492cdd228a1a33f0b05b0df457cea49ebca947bf7a7678894808a019d42e",
+      "pdb_path": "pdbs/9080bf26db6f4840a0ff59342f272245-1/createuser.pdb",
+      "pdb_sha256": "0520977f097a94e93ba93ea4a1b3b614cdee3351bd7af0f7c2095017b0a24cdb",
+      "rsds_age": 1,
+      "rsds_guid": "9080bf26db6f4840a0ff59342f272245"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/bin/dropdb.exe",
+      "module_sha256": "9522654027fa5035730f7f7882a5db1a3ef0a8486fc162264684d267ad7104d5",
+      "pdb_path": "pdbs/596e402d9d474d668d78c624a8fb27b5-1/dropdb.pdb",
+      "pdb_sha256": "5a59efe9b911a3de878d17b5fee1286767656c4d8e6cf0eea8998396104ca353",
+      "rsds_age": 1,
+      "rsds_guid": "596e402d9d474d668d78c624a8fb27b5"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/bin/dropuser.exe",
+      "module_sha256": "3e6bd705eac5af69441f2c8a2afd37fa95b888d1478aebcb9aeeb7f79151a2f4",
+      "pdb_path": "pdbs/bd5ce44c18f542ee8ef0ae683ba85905-1/dropuser.pdb",
+      "pdb_sha256": "73d5b9dfa48b14884729339ef4068fd26857d1ebbe99a7dea1ea62e21a946086",
+      "rsds_age": 1,
+      "rsds_guid": "bd5ce44c18f542ee8ef0ae683ba85905"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/bin/ecpg.exe",
+      "module_sha256": "06629c091c99ae64e9fd89d203e952d5cd7ade4d698444aa8f1d462e6f0cf4cd",
+      "pdb_path": "pdbs/4d0fe3f2504a4c268811b31359016437-1/ecpg.pdb",
+      "pdb_sha256": "ba2d13bcd6b6d7c4d31dfd59869b2bf3ad368c9dd42b24b08e8f59b255c7305b",
+      "rsds_age": 1,
+      "rsds_guid": "4d0fe3f2504a4c268811b31359016437"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/bin/initdb.exe",
+      "module_sha256": "10d1726afbdcf248e32ac316b7c502bf273f8f9fe182a2ff72e54c2a6dcf235c",
+      "pdb_path": "pdbs/04c419f1edd042a8a3b329da30db4bbb-1/initdb.pdb",
+      "pdb_sha256": "82f38fed279f1ce8cca1e35af4008494de12e8996a700397824372352bd45fcd",
+      "rsds_age": 1,
+      "rsds_guid": "04c419f1edd042a8a3b329da30db4bbb"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/bin/libecpg.dll",
+      "module_sha256": "11eb9652af162f85e4a9340cf30f009664363cbdd15a0964657cefb30a120e4c",
+      "pdb_path": "pdbs/7ee8a9659fd1413eafd15bf847e06407-1/libecpg.pdb",
+      "pdb_sha256": "7d6570a3801805495ff6465a9b4b0bd131df0f1d70647d8f520ec3e31f6bc1bd",
+      "rsds_age": 1,
+      "rsds_guid": "7ee8a9659fd1413eafd15bf847e06407"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/bin/libecpg_compat.dll",
+      "module_sha256": "c52b27f05b4ea2119741d8cd732e6db05b692c8a6aab7c1ed0f337583c2ead07",
+      "pdb_path": "pdbs/f464b6b9557d4293b2af4f899454afb2-1/libecpg_compat.pdb",
+      "pdb_sha256": "be8cc8e306d2501814f9c8e4011ee894efa01dfddc1f0d82f9419f9a2510c072",
+      "rsds_age": 1,
+      "rsds_guid": "f464b6b9557d4293b2af4f899454afb2"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/bin/libpgtypes.dll",
+      "module_sha256": "1d6ca12ce4f5df6161d061deb8a3aadee58b3f99ad79aa7dc39e3e1719442584",
+      "pdb_path": "pdbs/cedb83e14cdb4851896393da838b2a5b-1/libpgtypes.pdb",
+      "pdb_sha256": "d035e6bb42027f1266b2e5048d38fb1eb304766b5bfd31b173fd6b80034c656b",
+      "rsds_age": 1,
+      "rsds_guid": "cedb83e14cdb4851896393da838b2a5b"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/bin/libpq.dll",
+      "module_sha256": "bc736739f6cfa7cd8732d400f478922a3e044e95e5deaef381099eaa76b38f27",
+      "pdb_path": "pdbs/8668d0ae39e24b6ba95f2dcef4f5071d-1/libpq.pdb",
+      "pdb_sha256": "b633536aa433ebf7a1873e5f54f8bc3c4a7a50e3b66a976e507ffe5c7260b82b",
+      "rsds_age": 1,
+      "rsds_guid": "8668d0ae39e24b6ba95f2dcef4f5071d"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/bin/oid2name.exe",
+      "module_sha256": "a906327ea44d17a782da8ef7d25329390cb45ff4262d2aa0ed638be8bfee63cb",
+      "pdb_path": "pdbs/02ae3b85f9f24e8899105863c7c9a21c-1/oid2name.pdb",
+      "pdb_sha256": "0b6172a08ed1df74bb7d57d1240d587289f9d6ae15ba8c35df7b82eaa597f941",
+      "rsds_age": 1,
+      "rsds_guid": "02ae3b85f9f24e8899105863c7c9a21c"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/bin/pgbench.exe",
+      "module_sha256": "1317b018ff464096897b1486df6de1a99987a8be09519c6bcea874933dfe373f",
+      "pdb_path": "pdbs/9ef723fc94a1430787042cd3415f1352-1/pgbench.pdb",
+      "pdb_sha256": "ce006c4ca2fd2243a976e57c308f6c26b98bff68160400e0c3b6f1965880d8c7",
+      "rsds_age": 1,
+      "rsds_guid": "9ef723fc94a1430787042cd3415f1352"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/bin/pg_amcheck.exe",
+      "module_sha256": "a9300dcd43f8888365519a8e6870da300e09cf82e43fca05c0beed5c8599f395",
+      "pdb_path": "pdbs/a05f549362ae44c4b40c2e3b3c47463a-1/pg_amcheck.pdb",
+      "pdb_sha256": "83b215439b78a3009cca1b50a0d0723c565efcc261a15bb8af235af585309e0d",
+      "rsds_age": 1,
+      "rsds_guid": "a05f549362ae44c4b40c2e3b3c47463a"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/bin/pg_archivecleanup.exe",
+      "module_sha256": "f843fc7abe5fc5b71b8202043ab6b36fee45967ea6b8b79bb664dba4473f834b",
+      "pdb_path": "pdbs/8189d538a8a34a16bcd87ca6991049d1-1/pg_archivecleanup.pdb",
+      "pdb_sha256": "cf8623db04c359e55bc57fe01622eb97e8bd7956aca9f5e60d4d2dc76041f94c",
+      "rsds_age": 1,
+      "rsds_guid": "8189d538a8a34a16bcd87ca6991049d1"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/bin/pg_basebackup.exe",
+      "module_sha256": "13ed2086aee27c9481af264e33f1f68bce8d09c43ace1cd2a16a52c37be0c143",
+      "pdb_path": "pdbs/3928fb4d2bc248f1a2c0b8d2849cfd79-1/pg_basebackup.pdb",
+      "pdb_sha256": "d1c0ebf0eb47aee47355f686dfc50a7cc86f6d1bcb5301b2bee192aff78457c7",
+      "rsds_age": 1,
+      "rsds_guid": "3928fb4d2bc248f1a2c0b8d2849cfd79"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/bin/pg_checksums.exe",
+      "module_sha256": "c3937bc057eda150e06b8eaeacd296783ad8abf65ed421e6bbf923b130e54d48",
+      "pdb_path": "pdbs/e7b6964e764843e1bfbbd74267359e01-1/pg_checksums.pdb",
+      "pdb_sha256": "4a213329d8e1eefa36ced348bb5213ee4bd763cc5cd3ffba9abb5ca92fadb7d0",
+      "rsds_age": 1,
+      "rsds_guid": "e7b6964e764843e1bfbbd74267359e01"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/bin/pg_combinebackup.exe",
+      "module_sha256": "50e0499a6257c579b2f02d859ca2a0fee0fbaa192e23ac3afdccc5bd86e02754",
+      "pdb_path": "pdbs/73d79f0c2e024285ae756c31bd7f4dc0-1/pg_combinebackup.pdb",
+      "pdb_sha256": "c84cfb8a7b0c813d0199aef63e3e93769ef4df1d2c6d90384002cd6f0f373927",
+      "rsds_age": 1,
+      "rsds_guid": "73d79f0c2e024285ae756c31bd7f4dc0"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/bin/pg_config.exe",
+      "module_sha256": "2d686ff5640ac79036d07d54abfa22301aca0ce67a620e25731e0d2360f8723c",
+      "pdb_path": "pdbs/a470517694ef4350868ea754a31a4f10-1/pg_config.pdb",
+      "pdb_sha256": "da3ce15bfc930d322fc95112918b18c76027365dd4f1bef0ab1f7614b4965ac5",
+      "rsds_age": 1,
+      "rsds_guid": "a470517694ef4350868ea754a31a4f10"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/bin/pg_controldata.exe",
+      "module_sha256": "d7f163e66ebca48a45018feacbc7512dab3121a81870b7196e4df24686c06343",
+      "pdb_path": "pdbs/b37da47e68c941c392b8ac4b1eccfe0c-1/pg_controldata.pdb",
+      "pdb_sha256": "5934a5a5c15e0487f80b090e53882be53d5161a2f14be1ceae37d64eafbebeb1",
+      "rsds_age": 1,
+      "rsds_guid": "b37da47e68c941c392b8ac4b1eccfe0c"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/bin/pg_createsubscriber.exe",
+      "module_sha256": "d12b745b7c7d1d5a83d334e5dff22a413812d1cb506b80cb2ecc5f1903a78b5c",
+      "pdb_path": "pdbs/148b7ca77dd243e581888ae29d07a523-1/pg_createsubscriber.pdb",
+      "pdb_sha256": "05a1e278b034996ae913e8da06612883b197e11d8e369892a4d2e7777be4eee4",
+      "rsds_age": 1,
+      "rsds_guid": "148b7ca77dd243e581888ae29d07a523"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/bin/pg_ctl.exe",
+      "module_sha256": "1741d1f59f896c0e0e6b38401ccdce84631e0579766cbb7cf80e494634339f5c",
+      "pdb_path": "pdbs/ade38af3fa9942698d04602baf7fb44c-1/pg_ctl.pdb",
+      "pdb_sha256": "b877e17c61c59a13ddf51fbcad3fb62fec113e0437ce163de9259d64ea5e09d9",
+      "rsds_age": 1,
+      "rsds_guid": "ade38af3fa9942698d04602baf7fb44c"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/bin/pg_dump.exe",
+      "module_sha256": "1fa87c9e2de3b90b6e4d27e4cdc62ee01ae96dd015e2a4258afa53de02c8cc80",
+      "pdb_path": "pdbs/a5f1a79a8c6d4ff9915950bfdc666c40-1/pg_dump.pdb",
+      "pdb_sha256": "e7e1b3be16e5b92cee15fc381f2d699cc1b80543144c01bb93f6e43f7aa89fc1",
+      "rsds_age": 1,
+      "rsds_guid": "a5f1a79a8c6d4ff9915950bfdc666c40"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/bin/pg_dumpall.exe",
+      "module_sha256": "c48b5b3b8e70dbded77aef66ad8020ed8126a540798ab382dedb60442e5cc9e4",
+      "pdb_path": "pdbs/f05fc87b518e43a0bbc5f7a8d01e98ba-1/pg_dumpall.pdb",
+      "pdb_sha256": "bc677fc61d0f9be5008d2c02391677cd8d3870969a6feab60549b10d240bbb20",
+      "rsds_age": 1,
+      "rsds_guid": "f05fc87b518e43a0bbc5f7a8d01e98ba"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/bin/pg_isready.exe",
+      "module_sha256": "e5befee454bfe67855e2315e1bc5002dd1c00793b00ef3bb189673c383c472bc",
+      "pdb_path": "pdbs/5f07d77d3675404fabf20cf6b04a63f7-1/pg_isready.pdb",
+      "pdb_sha256": "bc12604ee9f63a411738a71039b458af166e579bd6dda625132f0b2d66d942af",
+      "rsds_age": 1,
+      "rsds_guid": "5f07d77d3675404fabf20cf6b04a63f7"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/bin/pg_receivewal.exe",
+      "module_sha256": "0eb13fe025d82562decc3e130b3c59e5b4d9d3591690b3e877d02f71b10d0c5a",
+      "pdb_path": "pdbs/f2c662937a484396a3b04c2643591677-1/pg_receivewal.pdb",
+      "pdb_sha256": "5e2c745e16f4c9a01989ebecacf77f0fbdc1c28e34140c202db71a01f22ed841",
+      "rsds_age": 1,
+      "rsds_guid": "f2c662937a484396a3b04c2643591677"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/bin/pg_recvlogical.exe",
+      "module_sha256": "d715bdb1ce0cd91ad401b78cd4a747e82fbadca3c61dcb9b99bbde263317239a",
+      "pdb_path": "pdbs/acd5658658404b92bd9addfdf033e7a9-1/pg_recvlogical.pdb",
+      "pdb_sha256": "0ffda5568f962464b705ba1a128075421b76fad780014f2c6c99a788229a6643",
+      "rsds_age": 1,
+      "rsds_guid": "acd5658658404b92bd9addfdf033e7a9"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/bin/pg_resetwal.exe",
+      "module_sha256": "ca2e95d01273df359336f420b3a785d6bb4556d2937c768226007bb08a67a6d5",
+      "pdb_path": "pdbs/d84a2be6ffc8450bbec936bfa3a8c1f2-1/pg_resetwal.pdb",
+      "pdb_sha256": "da38eaef5ecb5d6b1b95742ca74e55febe950d4e131b0ead5244bab994280cbf",
+      "rsds_age": 1,
+      "rsds_guid": "d84a2be6ffc8450bbec936bfa3a8c1f2"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/bin/pg_restore.exe",
+      "module_sha256": "4b7d3d28c90cd5ebcfdfaaf33a440ab66777cc31ed084ac3472ae560fa48229c",
+      "pdb_path": "pdbs/f74e747bc89e4ded84e93d7060659601-1/pg_restore.pdb",
+      "pdb_sha256": "fd342a6f7aaf9c1cc22bf8a974b2684f0484f940f82c5f46aedc83b0e7ca74f1",
+      "rsds_age": 1,
+      "rsds_guid": "f74e747bc89e4ded84e93d7060659601"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/bin/pg_rewind.exe",
+      "module_sha256": "a514c087be33f15630d9ba848c4ee14bd66440925b765e57240d131a7309024e",
+      "pdb_path": "pdbs/b9d525a9e3f248b0abd13f9361bd9402-1/pg_rewind.pdb",
+      "pdb_sha256": "823038329ea30fde8e38a78a7cd5758d62f12112f5eb4340b6059a6fc8b0607f",
+      "rsds_age": 1,
+      "rsds_guid": "b9d525a9e3f248b0abd13f9361bd9402"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/bin/pg_test_fsync.exe",
+      "module_sha256": "b010ca880d32ded61ade1b68338de8e603b59758c3f3f2a8e035b7edb226c767",
+      "pdb_path": "pdbs/4e0b71d063a5425c89eb8af83bfd131c-1/pg_test_fsync.pdb",
+      "pdb_sha256": "ba71b81182b397f0dcf6b4c2be8c3751ea506908b6971ad384c914396dbb3550",
+      "rsds_age": 1,
+      "rsds_guid": "4e0b71d063a5425c89eb8af83bfd131c"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/bin/pg_test_timing.exe",
+      "module_sha256": "5f89f466ca79a597441575f14cb74dd59ce1d201090a0f430b8fb47dd70c39f3",
+      "pdb_path": "pdbs/e7067f765a8047bba9f5711c112a5aae-1/pg_test_timing.pdb",
+      "pdb_sha256": "2e049d3042f3f961c2d7436fc11a57abf123b6d19d2d5e4602bd78037e574186",
+      "rsds_age": 1,
+      "rsds_guid": "e7067f765a8047bba9f5711c112a5aae"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/bin/pg_upgrade.exe",
+      "module_sha256": "7eac77641bb054c86db773627ff254b32451dfb1aee7d8b9d2677095ff1a10c5",
+      "pdb_path": "pdbs/4b99a167b85a44ec92c7c24953c07f7b-1/pg_upgrade.pdb",
+      "pdb_sha256": "83f35426839a7416c938d8c549efd79507e1a3471263331eb7b2f5b525c9877e",
+      "rsds_age": 1,
+      "rsds_guid": "4b99a167b85a44ec92c7c24953c07f7b"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/bin/pg_verifybackup.exe",
+      "module_sha256": "38d0573520678da83465193fa4ec1382e7ed3eae3feea0aee2fea7d8a97a4eb8",
+      "pdb_path": "pdbs/0b989885298b41f39ff3ba62d5a28db5-1/pg_verifybackup.pdb",
+      "pdb_sha256": "e19d94e41e4a75735991f2e6d6d888c2301d1830650e5028b91d3ca26f75ad85",
+      "rsds_age": 1,
+      "rsds_guid": "0b989885298b41f39ff3ba62d5a28db5"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/bin/pg_waldump.exe",
+      "module_sha256": "5101eb06e49b07dfb543856e71449f550e748df3ff97173dd7d0ca4e00d85085",
+      "pdb_path": "pdbs/ffbf41c0ba544280b7d375c93754af8e-1/pg_waldump.pdb",
+      "pdb_sha256": "1a6066819e757fa344d7b4091e94ca612068a30add67e386399ba7512c3017d2",
+      "rsds_age": 1,
+      "rsds_guid": "ffbf41c0ba544280b7d375c93754af8e"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/bin/pg_walsummary.exe",
+      "module_sha256": "dba33916f1399cb7b4c2d9fcd3b243da295c2874fc1a2c8d72894980f3a9c1cd",
+      "pdb_path": "pdbs/37a213c0f2514ecca96995276892cd80-1/pg_walsummary.pdb",
+      "pdb_sha256": "10dfa1043b575c831e1349e0a3898ccd45fefd65fb9832bd71ce56b231965a0b",
+      "rsds_age": 1,
+      "rsds_guid": "37a213c0f2514ecca96995276892cd80"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/bin/postgres.exe",
+      "module_sha256": "6760c4891ddd41a573abd0860bff760c8d64c8385becb6d39f10b76c16fbc09f",
+      "pdb_path": "pdbs/0c8b252209e54806978f75da29ce82be-1/postgres.pdb",
+      "pdb_sha256": "8631151312c99ff0b64a3565341b18cb5ca046f4cace4be989b79185c881881d",
+      "rsds_age": 1,
+      "rsds_guid": "0c8b252209e54806978f75da29ce82be"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/bin/psql.exe",
+      "module_sha256": "88b15739630204f066dee21c7e7b27527407d109c1a153bef92b27bb613f86a8",
+      "pdb_path": "pdbs/7803027424444652a808f77700a016f0-1/psql.pdb",
+      "pdb_sha256": "4ff74e0841121a1c34e79face4d88025507940fff81bd31182667e29e3e62276",
+      "rsds_age": 1,
+      "rsds_guid": "7803027424444652a808f77700a016f0"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/bin/reindexdb.exe",
+      "module_sha256": "9f00dc9fd1fc1fea0614705eb8e5e2cec421b2923ad678bf5eb710b601b7a01d",
+      "pdb_path": "pdbs/d3eb708f658143fa9224ea07323bb12e-1/reindexdb.pdb",
+      "pdb_sha256": "e3544b0a54ff7a492e0d565597b1063d1210229ff7217f879d1978bbf7f4800b",
+      "rsds_age": 1,
+      "rsds_guid": "d3eb708f658143fa9224ea07323bb12e"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/bin/test_cloexec.exe",
+      "module_sha256": "4e8a1cae77a46bb12b208bceeffe9bc0b22e8bfb84a8c59289e1f5254fc5415c",
+      "pdb_path": "pdbs/26f9b4b2b6504baeaea2460ec344957c-1/test_cloexec.pdb",
+      "pdb_sha256": "e53e6eca27d083e55b2a533dfbe6f1b334eb74eea1236ee967424c840be1ce87",
+      "rsds_age": 1,
+      "rsds_guid": "26f9b4b2b6504baeaea2460ec344957c"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/bin/vacuumdb.exe",
+      "module_sha256": "7246248e509c6806fade389bffc2ee7afa80fa24e2c3d9c4f3fe865dbe73595e",
+      "pdb_path": "pdbs/853a4b51d75a4212b25582d79381bae4-1/vacuumdb.pdb",
+      "pdb_sha256": "89984d09087cf4b8cba9dd9d69a5249e5a6ef9998c90b96720c5bd7de9365b60",
+      "rsds_age": 1,
+      "rsds_guid": "853a4b51d75a4212b25582d79381bae4"
+    },
+    {
+      "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d",
+      "module_path": "postgresql/bin/vacuumlo.exe",
+      "module_sha256": "374966327a8f0f92583998f5eac455954934fac07d296da47c9c142b62a67656",
+      "pdb_path": "pdbs/69edff2105fd479b9ef3b1ecb5315700-1/vacuumlo.pdb",
+      "pdb_sha256": "8b3a775f0301d3578524044b9425d5facfab28168f9c5b23e7082070c604217c",
+      "rsds_age": 1,
+      "rsds_guid": "69edff2105fd479b9ef3b1ecb5315700"
+    },
+    {
+      "archive": "pg_cron-1.6.8-postgresql-17.11-windows-x86_64.tar.gz",
+      "archive_sha256": "4d39cdee8f661c91c95c32de0cfbcf27dcc856e33bfff83127d3c2a3fa685b51",
+      "module_path": "pg_cron/lib/pg_cron.dll",
+      "module_sha256": "3f665b007ff8e3896ae92ecb1bf75d7e85fe1a54e17653889db23d3e0ecde36f",
+      "pdb_path": "pdbs/1c7ad8bc337d4b32b1d697126267800a-1/pg_cron.pdb",
+      "pdb_sha256": "7739c8eff03493b29eff36f0bf8d7413a068981aab14f7ed7810e0e2795502cb",
+      "rsds_age": 1,
+      "rsds_guid": "1c7ad8bc337d4b32b1d697126267800a"
+    }
+  ],
+  "schema_version": 1
+}

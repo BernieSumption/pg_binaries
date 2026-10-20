@@ -1,0 +1,20 @@
+{
+  "archives": {
+    "pg_cron-1.6.8-postgresql-17.11-windows-x86_64.tar.gz": "4d39cdee8f661c91c95c32de0cfbcf27dcc856e33bfff83127d3c2a3fa685b51",
+    "postgresql-17.11-windows-x86_64.tar.gz": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d"
+  },
+  "archives_present": {
+    "pg_cron-1.6.8-postgresql-17.11-windows-x86_64.tar.gz": true,
+    "postgresql-17.11-windows-x86_64.tar.gz": true
+  },
+  "postgresql_version": "17.11",
+  "profile_id": "pgcron-publication-windows-x86_64-17.11",
+  "run_id": "39431478912",
+  "schema_version": 1,
+  "source_revision": "dcd4a9dbea0c489b571a2d5c6f839b808df5f4a8",
+  "steps": {
+    "archive-suite": "passed",
+    "static-analysis": "passed",
+    "symbols": "passed"
+  }
+}

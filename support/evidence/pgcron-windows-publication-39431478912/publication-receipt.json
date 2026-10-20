@@ -1,0 +1,29 @@
+{
+  "archives": {
+    "pg_cron-1.6.8-postgresql-17.11-windows-x86_64.tar.gz": "4d39cdee8f661c91c95c32de0cfbcf27dcc856e33bfff83127d3c2a3fa685b51",
+    "postgresql-17.11-windows-x86_64.tar.gz": "95863d1ef79c2d1e55f3a204570b1b1610285a3068ac74edd743d48a94c89a8d"
+  },
+  "case_results": {
+    "archive-suite": "passed",
+    "static-analysis": "passed",
+    "symbols": "passed"
+  },
+  "ci": {
+    "build_revision": "dcd4a9dbea0c489b571a2d5c6f839b808df5f4a8",
+    "build_run_attempt": "1",
+    "build_run_id": "39431478912",
+    "provider": "github-actions",
+    "run_id": "39431478912",
+    "run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/39431478912",
+    "source_revision": "dcd4a9dbea0c489b571a2d5c6f839b808df5f4a8",
+    "test_revision": "dcd4a9dbea0c489b571a2d5c6f839b808df5f4a8"
+  },
+  "profile_id": "pgcron-publication-windows-x86_64-17.11",
+  "profile_revision": "d3757ea1f72bb7312e83c57d58da02cb419e7eac2c6c68ddb59c1f4b01be7dcb",
+  "reports": {
+    "archive-suite": "c00d01bacc4391767e91ec3f8095b44e693de08e994ff45782fa9884f1982296",
+    "static-analysis": "349f3c9bbca675f4d0dbb19aa1ecd94c2fdfe3c20f6dbea72669f38418c9abc2",
+    "symbols": "b2933fdf32802d9720c57aed19baa86d5b5cd934554612a7da5e0b0e877f6c8c"
+  },
+  "schema_version": 1
+}
