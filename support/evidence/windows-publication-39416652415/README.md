@@ -1,0 +1,3 @@
+# Windows pgvector separate-build trial
+
+[Run 39416652415](https://github.com/BernieSumption/pg_binaries/actions/runs/39416652415) built pgvector 0.8.7 against the checked PostgreSQL 18.6 Windows x86-64 archive from run 39291561227. On a separate runner, archive relocation and SQL use, PE inspection, and PDB matching passed. The diagnostic probe failed because it still required PostgreSQL and pgvector to have the same build ID. Its failed attempt and static-analysis report are retained here. The diagnostic check now accepts separate builds bound to the exact core archive hash; this run does not establish passing publication evidence.

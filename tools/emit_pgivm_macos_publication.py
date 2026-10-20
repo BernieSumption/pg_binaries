@@ -24,6 +24,10 @@ SOURCE_URL = "https://github.com/sraoss/pg_ivm/archive/refs/tags/v1.16.tar.gz"
 SOURCE_SHA256 = "87807d6af1974fce591715d55f75d939dffea33ea6908b413e62d3dd79b9c583"
 CASES = {"archive-suite", "static-analysis"}
 TARGETS = {
+    ("15.19", "arm64"): "pgivm-publication-macos-arm64-15.19",
+    ("15.19", "x86_64"): "pgivm-publication-macos-x86_64-15.19",
+    ("16.15", "arm64"): "pgivm-publication-macos-arm64-16.15",
+    ("16.15", "x86_64"): "pgivm-publication-macos-x86_64-16.15",
     ("17.11", "arm64"): "pgivm-publication-macos-arm64-17.11",
     ("17.11", "x86_64"): "pgivm-publication-macos-x86_64-17.11",
     ("18.6", "arm64"): "pgivm-publication-macos-arm64-18.6",

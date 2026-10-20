@@ -21,7 +21,7 @@ class PgIvmSelectedMacosPublicationTests(unittest.TestCase):
                     publication.ARCHITECTURE, publication.PLATFORM,
                     publication.CORE_SHA256)
         try:
-            for version in ("17.11", "18.6"):
+            for version in ("15.19", "16.15", "17.11", "18.6"):
                 for architecture in ("arm64", "x86_64"):
                     with self.subTest(version=version, architecture=architecture), tempfile.TemporaryDirectory() as temp:
                         target = Path(temp) / "target.json"
@@ -51,9 +51,9 @@ class PgIvmSelectedMacosPublicationTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             target = Path(temp) / "target.json"
             target.write_text(json.dumps({
-                "postgresql_version": "16.15", "architecture": "arm64",
+                "postgresql_version": "14.11", "architecture": "arm64",
                 "platform": "macos-arm64", "core_archive": {
-                    "basename": "postgresql-16.15-macos-arm64.tar.gz", "sha256": "a" * 64,
+                    "basename": "postgresql-14.11-macos-arm64.tar.gz", "sha256": "a" * 64,
                 },
             }))
             with self.assertRaisesRegex(Exception, "resolver target"):

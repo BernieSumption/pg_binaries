@@ -14,7 +14,7 @@ import json, re, sys
 from pathlib import Path
 t = json.loads(Path(sys.argv[1]).read_text())
 version, arch = t.get("postgresql_version"), t.get("architecture")
-if version not in {"17.11", "18.6"} or arch not in {"arm64", "x86_64"} or t.get("platform") != f"macos-{arch}":
+if version not in {"15.19", "16.15", "17.11", "18.6"} or arch not in {"arm64", "x86_64"} or t.get("platform") != f"macos-{arch}":
     raise SystemExit("unsupported pg_ivm macOS target")
 core = t.get("core_archive")
 if not isinstance(core, dict) or core.get("basename") != f"postgresql-{version}-macos-{arch}.tar.gz":

@@ -17,7 +17,7 @@ read -r pg_version architecture core_name core_sha256 <<<"$(python3 - "$target_j
 import json, re, sys
 from pathlib import Path
 t=json.loads(Path(sys.argv[1]).read_text()); v=t.get("postgresql_version"); a=t.get("architecture"); c=t.get("core_archive",{})
-if v not in {"17.11","18.6"} or a not in {"arm64","x86_64"} or t.get("platform") != f"macos-{a}": raise SystemExit("unsupported pg_ivm target")
+if v not in {"15.19","16.15","17.11","18.6"} or a not in {"arm64","x86_64"} or t.get("platform") != f"macos-{a}": raise SystemExit("unsupported pg_ivm target")
 if c.get("basename") != f"postgresql-{v}-macos-{a}.tar.gz" or not re.fullmatch(r"[0-9a-f]{64}",str(c.get("sha256",""))): raise SystemExit("target does not bind the exact core archive")
 print(v,a,c["basename"],c["sha256"])
 PY
