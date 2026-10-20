@@ -1,0 +1,140 @@
+name: pg_ivm selected Windows publication
+
+on:
+  workflow_call:
+    inputs:
+      postgresql_version:
+        required: true
+        type: string
+      extension_version:
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      postgresql_version:
+        description: Selected PostgreSQL release
+        required: true
+        type: choice
+        options: ['15.19', '16.15', '17.11', '18.6']
+      extension_version:
+        description: Selected pg_ivm release
+        required: true
+        type: choice
+        options: ['1.16']
+
+permissions:
+  actions: read
+  contents: read
+
+env:
+  PG_VERSION: ${{ inputs.postgresql_version }}
+  IVM_VERSION: ${{ inputs.extension_version }}
+
+jobs:
+  select:
+    runs-on: ubuntu-latest
+    outputs:
+      postgresql_version: ${{ steps.plan.outputs.postgresql_version }}
+      extension_version: ${{ steps.plan.outputs.selected_version }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate the selected work item
+        id: plan
+        env:
+          POSTGRESQL_VERSION: ${{ inputs.postgresql_version }}
+          EXTENSION_VERSION: ${{ inputs.extension_version }}
+        run: |
+          set -euo pipefail
+          python3 tools/extension_archive_plan.py --project pg_ivm --platform windows-x86_64 \
+            --postgresql-version "$POSTGRESQL_VERSION" --extension-version "$EXTENSION_VERSION" \
+            --github-output "$GITHUB_OUTPUT" > "$RUNNER_TEMP/selection.json"
+          python3 tools/select_extension_work.py --project pg_ivm --version "$EXTENSION_VERSION" \
+            --platform windows-x86_64 --postgresql-version "$POSTGRESQL_VERSION" > "$RUNNER_TEMP/work.json"
+
+  build:
+    needs: select
+    runs-on: windows-2022
+    timeout-minutes: 35
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Resolve checked PostgreSQL core
+        id: core
+        run: |
+          $identity = python tools/windows_core_pin.py --postgresql-version $env:PG_VERSION --github-output
+          if ($LASTEXITCODE -ne 0) { throw 'Checked PostgreSQL core pin is invalid.' }
+          $identity | Add-Content $env:GITHUB_OUTPUT
+      - name: Download the selected core archive
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $producer = Join-Path $env:RUNNER_TEMP 'core-producer'
+          New-Item -ItemType Directory -Force $producer,dist/windows | Out-Null
+          gh run download '${{ steps.core.outputs.run_id }}' --repo $env:GITHUB_REPOSITORY --name '${{ steps.core.outputs.artifact_name }}' --dir $producer
+          if ($LASTEXITCODE -ne 0) { throw 'Could not download the checked PostgreSQL core artifact.' }
+          $name = '${{ steps.core.outputs.archive_name }}'
+          Copy-Item (Join-Path $producer $name) (Join-Path 'dist/windows' $name)
+          Copy-Item (Join-Path $producer "$name.sha256") (Join-Path 'dist/windows' "$name.sha256")
+      - name: Build from the unmodified upstream release
+        run: |
+          $source = Join-Path $env:RUNNER_TEMP "pg_ivm-$env:IVM_VERSION.tar.gz"
+          Invoke-WebRequest -Uri "https://github.com/sraoss/pg_ivm/archive/refs/tags/v$env:IVM_VERSION.tar.gz" -OutFile $source
+          ./scripts/pg_ivm/windows-build.ps1 -PostgreSQLVersion $env:PG_VERSION `
+            -CoreArchive "dist/windows/postgresql-$env:PG_VERSION-windows-x86_64.tar.gz" `
+            -CoreSha256 '${{ steps.core.outputs.sha256 }}' -SourceArchive $source -OutputDirectory dist/windows
+      - uses: actions/upload-artifact@v4
+        with:
+          name: pgivm-windows-built-${{ github.run_id }}
+          path: |
+            dist/windows/postgresql-${{ env.PG_VERSION }}-windows-x86_64.tar.gz
+            dist/windows/postgresql-${{ env.PG_VERSION }}-windows-x86_64.tar.gz.sha256
+            dist/windows/pg_ivm-${{ env.IVM_VERSION }}-postgresql-${{ env.PG_VERSION }}-windows-x86_64.tar.gz
+            dist/windows/pg_ivm-${{ env.IVM_VERSION }}-postgresql-${{ env.PG_VERSION }}-windows-x86_64.tar.gz.sha256
+          if-no-files-found: error
+          retention-days: 7
+
+  verify:
+    needs: [select, build]
+    if: always() && needs.select.result == 'success'
+    runs-on: windows-2022
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        id: download
+        continue-on-error: true
+        with:
+          name: pgivm-windows-built-${{ github.run_id }}
+          path: dist/windows
+      - name: Verify the relocated archives and pg_ivm behaviour
+        id: archive_suite
+        if: always() && steps.download.outcome == 'success'
+        continue-on-error: true
+        run: ./scripts/pg_ivm/verify-windows.ps1 -PostgreSQLVersion $env:PG_VERSION `
+          -CoreArchive "dist/windows/postgresql-$env:PG_VERSION-windows-x86_64.tar.gz" `
+          -ExtensionArchive "dist/windows/pg_ivm-$env:IVM_VERSION-postgresql-$env:PG_VERSION-windows-x86_64.tar.gz" `
+          -ReportPath (Join-Path $env:RUNNER_TEMP 'pgivm-windows-verification/static-analysis.json')
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pgivm-windows-verification-${{ github.run_id }}
+          path: ${{ runner.temp }}/pgivm-windows-verification/**
+          if-no-files-found: warn
+          retention-days: 7
+      - name: Require the selected Windows pg_ivm checks
+        if: always()
+        run: |
+          if ('${{ needs.build.result }}' -ne 'success' -or '${{ steps.download.outcome }}' -ne 'success' -or '${{ steps.archive_suite.outcome }}' -ne 'success') {
+            throw 'The selected Windows pg_ivm build and relocated archive verification must pass.'
+          }

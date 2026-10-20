@@ -137,6 +137,7 @@ jobs:
               ("pgtap", "windows-x86_64"): "pgtap-windows",
               ("pg_ivm", "linux-x86_64"): "pgivm-linux",
               ("pg_ivm", "linux-arm64"): "pgivm-linux",
+              ("pg_ivm", "windows-x86_64"): "pgivm-windows",
               ("pg_cron", "linux-x86_64"): "pgcron-linux",
               ("pg_cron", "linux-arm64"): "pgcron-linux",
               ("pg_cron", "windows-x86_64"): "pgcron-windows",
@@ -299,6 +300,14 @@ jobs:
       postgresql_version: ${{ needs.plan.outputs.postgresql_version }}
       extension_version: ${{ needs.plan.outputs.extension_version }}
       architecture: ${{ needs.plan.outputs.architecture }}
+
+  pgivm_windows:
+    needs: plan
+    if: needs.plan.outputs.should_dispatch == 'true' && needs.plan.outputs.route == 'pgivm-windows'
+    uses: ./.github/workflows/pgivm-windows-selected-publication.yml
+    with:
+      postgresql_version: ${{ needs.plan.outputs.postgresql_version }}
+      extension_version: ${{ needs.plan.outputs.extension_version }}
 
   pgcron_linux:
     needs: plan
