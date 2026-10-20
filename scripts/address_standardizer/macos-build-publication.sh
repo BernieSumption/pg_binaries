@@ -8,6 +8,7 @@ repo=$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --show-toplevel)
 source "$repo/scripts/macos/core-prefix.sh"
 selection=$(python3 - "$target_config" <<'PY'
 import json, sys
+from pathlib import Path
 target=json.load(open(sys.argv[1], encoding="utf-8"))
 core=target.get("core_archive", {})
 if target.get("extension_version") != "3.7.0" or target.get("platform") != f"macos-{target.get('architecture')}":
@@ -19,8 +20,8 @@ if core.get("basename") != f"postgresql-{target['postgresql_version']}-macos-{ta
 repo = __import__("subprocess").check_output(["git", "rev-parse", "--show-toplevel"], text=True).strip()
 sys.path.insert(0, repo + "/tools")
 import coverage, extension_archive_plan
-support = coverage.load_json(repo + "/support.json")
-releases = coverage.load_json(repo + "/support/postgresql-releases.json")
+support = coverage.load_json(Path(repo) / "support.json")
+releases = coverage.load_json(Path(repo) / "support/postgresql-releases.json")
 extension_archive_plan.select_target(extension_archive_plan.plan(support, releases), "Address Standardizer", target["platform"], target["postgresql_version"], "3.7.0")
 for key in ("sha256", "build_id", "source_revision"):
     if not core.get(key): raise SystemExit(f"resolved core lacks {key}")
@@ -112,9 +113,10 @@ pcre_name=$(basename "$pcre_dylib")
 test -n "$pcre_load" && test -n "$pcre_name"
 install_name_tool -change "$pcre_load" "@loader_path/$pcre_name" "$module"
 cp "$work/source/address_standardizer/COPYING" "$pkg/LICENSES/Address-Standardizer.txt"
-cp "$work/source/pcre2-$pcre_version/COPYING" "$pkg/LICENSES/PCRE2.txt"
+cp "$work/source/pcre2-$pcre_version/LICENCE.md" "$pkg/LICENSES/PCRE2.txt"
+cp "$work/source/pcre2-$pcre_version/deps/sljit/LICENSE" "$pkg/LICENSES/SLJIT.txt"
 cat > "$pkg/LICENSES/license-inventory.json" <<EOF
-{"schema_version":1,"components":[{"component":"Address Standardizer","version":"3.7.0","payload_paths":["$pkglib_rel/address_standardizer.dylib","share/extension"],"license_file":"Address-Standardizer.txt","license_source":"https://github.com/postgis/address_standardizer/blob/v3.7.0/COPYING","source_commit":"$expected_commit","redistribution_review":{"status":"pending","basis":"Upstream licence is retained; distribution review remains pending.","source_obligation":"none identified"}},{"component":"PCRE2","version":"$pcre_version","payload_paths":["lib"],"license_file":"PCRE2.txt","license_source":"https://github.com/PCRE2Project/pcre2/tree/pcre2-$pcre_version","source_sha256":"$pcre_sha","redistribution_review":{"status":"pending","basis":"Upstream licence is retained; distribution review remains pending.","source_obligation":"none identified"}}]}
+{"schema_version":1,"components":[{"component":"Address Standardizer","version":"3.7.0","payload_paths":["$pkglib_rel/address_standardizer.dylib","share/extension"],"license_file":"Address-Standardizer.txt","license_source":"https://github.com/postgis/address_standardizer/blob/v3.7.0/COPYING","source_commit":"$expected_commit","redistribution_review":{"status":"pending","basis":"Upstream licence is retained; distribution review remains pending.","source_obligation":"none identified"}},{"component":"PCRE2","version":"$pcre_version","payload_paths":["lib"],"license_file":"PCRE2.txt","additional_license_files":["SLJIT.txt"],"license_source":"https://github.com/PCRE2Project/pcre2/blob/pcre2-$pcre_version/LICENCE.md","additional_license_sources":["https://github.com/PCRE2Project/pcre2/blob/pcre2-$pcre_version/deps/sljit/LICENSE"],"source_sha256":"$pcre_sha","redistribution_review":{"status":"pending","basis":"The upstream PCRE2 and bundled SLJIT licence texts are included; redistribution review remains pending.","source_obligation":"none identified"}}]}
 EOF
 cat > "$work/package/metadata.json" <<EOF
 {"project":"Address Standardizer","version":"3.7.0","sql_names":["address_standardizer","address_standardizer_data_us"],"requires":[],"configuration_prerequisites":[],"runtime_prerequisites":[],"postgresql_version":"$pg_version","platform":"macos","architecture":"$architecture","source":{"url":"https://github.com/postgis/address_standardizer/tree/v3.7.0","commit":"$expected_commit"},"core_archive":{"basename":"$core_name","sha256":"$core_sha"},"dependencies":[{"name":"PCRE2","version":"$pcre_version","sha256":"$pcre_sha"}],"license_inventory":"address_standardizer/LICENSES/license-inventory.json"}
