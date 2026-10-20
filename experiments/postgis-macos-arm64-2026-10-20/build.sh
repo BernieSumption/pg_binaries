@@ -63,6 +63,7 @@ cmake --install gdal-build 2>&1 | tee "$output/gdal-install.log"
 export PATH="$gdal_prefix/bin:$PATH"
 export PKG_CONFIG_PATH="$gdal_prefix/lib/pkgconfig:$brew_prefix/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
 export GDAL_DATA="$gdal_prefix/share/gdal"
+export LDFLAGS="${LDFLAGS:-} -Wl,-rpath,$gdal_prefix/lib"
 test -x "$gdal_prefix/bin/gdal-config"
 cd "$work/source"
 curl -fL --retry 3 -o postgis.tar.gz https://download.osgeo.org/postgis/source/postgis-3.6.4.tar.gz
