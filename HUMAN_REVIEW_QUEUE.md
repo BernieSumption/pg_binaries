@@ -1,17 +1,5 @@
 # Human review queue
 
-## Windows PostGIS build toolchain
-
-PostGIS 3.6.4 is selected for Windows PostgreSQL 15–18. Our selected PostgreSQL Windows archives use MSVC, while [PostGIS's maintained Windows build paths](https://postgis.net/development/docs/environment/windows/) use MSYS2 or MinGW. [Run 39492045563](https://github.com/BernieSumption/pg_binaries/actions/runs/39492045563) built unmodified PostgreSQL 18.6 and PostGIS 3.6.4 together in MINGW64 and passed `CREATE EXTENSION postgis` with a reduced feature set. This establishes a working upstream build route, but it did not use the selected MSVC PostgreSQL archive.
-
-Attempts to build against that selected archive have reached configuration and shared-library compilation but have not reached a module load test. The selected core's `pg_config` and PGXS makefiles pass MSVC compiler and flags into PostGIS's GCC build. The disposable import-library, `pg_config` and compiler adapters in [the trial](experiments/postgis-windows-abi-trial/README.md) are growing without proving that a resulting module can load. No upstream source has been modified.
-
-PostgreSQL documents [both Microsoft Visual C++ (MSVC) and MinGW](https://www.postgresql.org/docs/18/installation-platform-notes.html) as Windows build options. MinGW is a Windows compiler toolchain available through MSYS2; it produces native Windows binaries. PostGIS's maintained Windows build path uses MSYS2. Our selected PostgreSQL archives use MSVC, so building PostGIS with its upstream toolchain against them has required increasingly complex adapters. Building PostgreSQL and PostGIS together with MinGW passed a limited extension-creation probe, but that probe disabled raster, SFCGAL, topology and TIGER and did not prove a releasable archive.
-
-Changing the core may create a different mismatch. The selected `pg_jsonschema` 0.3.4 uses pgrx 0.16.1, whose [Windows instructions](https://github.com/pgcentralfoundation/pgrx/blob/v0.16.1/README.md#windows) require MSVC prerequisites; [pg_cron also documents an MSVC/nmake Windows build](https://github.com/citusdata/pg_cron#windows). Neither statement proves that these extensions cannot work with a MinGW-built PostgreSQL, but their compatibility with that core is unverified. A replacement must prove these selected extensions early, before rebuilding the whole Windows matrix.
-
-Decision requested: May we replace the selected Windows PostgreSQL build with one using a compatible MSYS2 toolchain if it passes all declared PostgreSQL capabilities, selected extension builds, redistribution checks and publication tests? Selecting it would require rebuilding and re-verifying every Windows PostgreSQL and extension archive; the current MSVC results would become historical. The alternative is to retain the MSVC core and invest further in a PostGIS build against it. Neither route is release-ready, and the new pgrx finding makes an immediate toolchain switch premature. Until the choice is resolved, keep Windows PostGIS outside release-ready evidence and continue other selected targets.
-
 ## Backlog ideas
 
 From Bernie: Adding this here so that we don't forget it. Don't start work on this yet. I'd like to discuss the viability of these and specify them properly before we go ahead. If indeed we decide to go ahead at all.
