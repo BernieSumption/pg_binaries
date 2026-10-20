@@ -1,0 +1,17 @@
+{
+  "architecture": "x86_64",
+  "archive_present": true,
+  "archives": {
+    "postgresql-15.19-macos-x86_64.tar.gz": "b49e4e2fc32e047ee8e02f3a14d46afdcee5dd1071fc7a7140575e3b03e078a8"
+  },
+  "postgresql_version": "15.19",
+  "profile_id": "postgresql-publication-macos-x86_64-15.19",
+  "run_id": "39446457064",
+  "schema_version": 1,
+  "source_revision": "b6103237a3420712c33f2373b9af4ba2a1864644",
+  "steps": {
+    "archive-suite": "success",
+    "diagnostics": "success",
+    "symbols": "success"
+  }
+}
