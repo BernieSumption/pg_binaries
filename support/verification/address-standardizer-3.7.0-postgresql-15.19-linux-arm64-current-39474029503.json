@@ -1,0 +1,49 @@
+{
+  "assembled_core": {
+    "archive": "postgresql-15.19-linux-arm64.tar.gz",
+    "sha256": "8d98dd94174965c303b2bb94b018888689b6c3920f13c87ec6e6bfc08afb0c2a",
+    "version": "15.19"
+  },
+  "case_results": {
+    "archive-suite": "passed",
+    "elf-closure": "passed"
+  },
+  "ci": {
+    "build_revision": "70788f3262d7fb7ed6135b6237daaa55c17ece65",
+    "provider": "github-actions",
+    "run_id": "39474029503",
+    "run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/39474029503",
+    "source_revision": "70788f3262d7fb7ed6135b6237daaa55c17ece65",
+    "test_revision": "70788f3262d7fb7ed6135b6237daaa55c17ece65"
+  },
+  "component": "address_standardizer",
+  "environment": {
+    "architecture": "arm64",
+    "clean_system": true,
+    "dependency_check_profile": "linux-elf-alpine-relocation-v1",
+    "dependency_checks_passed": true,
+    "distribution": "Alpine Linux 3.22",
+    "endpoint": "current",
+    "image_id": "sha256:1681705a8b45117e1997d2f0ce869c357e4f3ef6c4eb2aeafc7b51d14ce42327",
+    "os": "linux",
+    "os_version": "7.0.0"
+  },
+  "outcome": "passed",
+  "platform": "linux-arm64",
+  "postgresql_version": "15.19",
+  "prerequisite_archives": [],
+  "profile_id": "address-standardizer-publication-linux-arm64-15.19",
+  "profile_revision": "86f300fb13baf54513a3374668a8b2bcbb57447739e389a94d1c5febd5d6f9c9",
+  "project": "Address Standardizer",
+  "redistribution_status": "resolved",
+  "release_eligible": false,
+  "schema_version": 2,
+  "scope": "publication",
+  "sha256": "4889d65aa74a4e70278bdec01fbe05854574657ce7842fc71c831f716ecde3a4",
+  "test_cases": [
+    "archive-suite",
+    "elf-closure"
+  ],
+  "test_revision": "70788f3262d7fb7ed6135b6237daaa55c17ece65",
+  "version": "3.7.0"
+}

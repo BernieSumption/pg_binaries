@@ -1,0 +1,14 @@
+ postgres_version 
+------------------
+ 16.15
+(1 row)
+
+CREATE EXTENSION
+CREATE EXTENSION
+DO
+           extname            | extversion 
+------------------------------+------------
+ address_standardizer         | 3.7
+ address_standardizer_data_us | 3.7
+(2 rows)
+
