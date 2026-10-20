@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "workflow": "postgresql-windows-selected-publication.yml",
+  "run_id": 39444631332,
+  "artifact_name": "windows-core-selected-18.6-build-39444631332",
+  "archive_name": "postgresql-18.6-windows-x86_64.tar.gz",
+  "sha256": "7dee5b25cde652310715b8e46d7af66279e0d532c7996e6db674efd090a21b83"
+}
