@@ -60,7 +60,7 @@ if not match: raise SystemExit('cannot read original PostgreSQL installation pre
 prefix = pathlib.Path(match.group(1))
 if not re.fullmatch(r'/Users/runner/work/_temp/pg-macos-pilot\.[A-Za-z0-9]+/install/postgresql', str(prefix)):
     raise SystemExit(f'unexpected original PostgreSQL prefix: {prefix}')
-print(build_id, revision, prefix)
+print(build_id, revision, prefix, sep='\t')
 PY
 IFS=$'\t' read -r build_id revision prefix < "$work/core-provenance.tsv"
 [[ ! -e "$prefix" && ! -L "$prefix" ]] || { echo "Original core prefix already exists: $prefix" >&2; exit 1; }

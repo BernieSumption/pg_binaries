@@ -3,7 +3,9 @@ name: pgvector selected macOS publication
 on:
   push:
     branches: [spike]
-    paths: [.github/workflows/pgvector-macos-selected-publication.yml]
+    paths:
+      - .github/workflows/pgvector-macos-selected-publication.yml
+      - scripts/pgvector/macos-build.sh
   workflow_call:
     inputs:
       postgresql_version:
