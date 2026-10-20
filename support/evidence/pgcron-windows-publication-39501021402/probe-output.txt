@@ -1,0 +1,6 @@
+CREATE EXTENSION
+CREATE TABLE
+1
+installation_relocated=true
+job_status=succeeded
+job_rows=1
