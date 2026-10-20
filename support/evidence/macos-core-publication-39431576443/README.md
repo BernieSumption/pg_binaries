@@ -1,0 +1,5 @@
+# PostgreSQL 17.11 macOS x86_64 core publication
+
+[Run 39431576443](https://github.com/BernieSumption/pg_binaries/actions/runs/39431576443) passed current-profile archive and fresh-runner verification. The final archive SHA-256 is `9585c991aacfed4aa5deeba98d52fe17013fb277164ef1f8279021ae8620fe9a`; the selected core pin is in `support/macos-core-pins/17.11-x86_64.json`. The importer-retained verification records are in this directory and `support/verification`.
+
+The archive's `postgresql/LICENSES/inventory.json` is retained as [license-inventory.json](license-inventory.json) (SHA-256 `00052096ef4be97760dc8ab59c7dc472d285c41bf6340f00bf1ceb30cd6444b4`). PostgreSQL 17.11, ICU 78.3, libxml2 2.15.4, libxslt 1.1.45, LZ4 1.10.0, OpenSSL 3.5.8 and zstd 1.5.7 each record `resolved` with source obligation `none`. The archive inventory checker passed for 134 native payloads across seven components; it checks inventory structure and archive coverage, not the accuracy of the recorded licence interpretations.
