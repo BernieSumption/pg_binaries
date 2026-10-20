@@ -240,9 +240,31 @@ components.append({
 })
 reused=[]
 core_inventory=json.loads((core_root/"LICENSES/inventory.json").read_text())
-for library in ("libxml2.16.dylib","libzstd.1.5.7.dylib"):
-    core_file=core_root/"lib"/library
-    if not core_file.is_file(): raise SystemExit(f"checked core lacks expected reusable {library}")
+pending=list((root/"lib").glob("*")); scanned=set(); needed_core=set()
+while pending:
+    binary=pending.pop()
+    if not binary.is_file() or binary in scanned: continue
+    scanned.add(binary)
+    inspected=subprocess.run(("lipo","-archs",str(binary)),capture_output=True)
+    if inspected.returncode: continue
+    lines=command("otool","-L",str(binary)).splitlines()[1:]
+    for line in lines:
+        dependency=line.strip().split(" ",1)[0]
+        if dependency.startswith(("/usr/lib/","/System/Library/","@executable_path/")): continue
+        if dependency.startswith("@loader_path/"):
+            candidate=(binary.parent/dependency.removeprefix("@loader_path/")).resolve()
+            if not candidate.is_file(): candidate=core_root/"lib"/Path(dependency.removeprefix("@loader_path/")).name
+        elif dependency.startswith("@rpath/"):
+            name=Path(dependency.removeprefix("@rpath/")).name
+            candidate=next((path for path in (root/"lib"/name,core_root/"lib"/name) if path.is_file()),Path())
+        elif dependency.startswith("/"):
+            candidate=Path(dependency)
+        else: continue
+        if candidate.is_file() and candidate.is_relative_to(core_root):
+            if candidate not in needed_core:
+                needed_core.add(candidate); pending.append(candidate)
+for core_file in sorted(needed_core):
+    library=core_file.name
     owner=next((item for item in core_inventory["components"] if library in item.get("libraries",[])),None)
     if owner is None or owner.get("redistribution_review",{}).get("status")!="resolved":
         raise SystemExit(f"checked core has no resolved licence record for {library}")

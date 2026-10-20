@@ -109,13 +109,35 @@ PY
 cp -a "$(brew --prefix proj)/share/proj" "$pgroot/share/"
 cp -a "$gdal_prefix/share/gdal" "$pgroot/share/"
 
-core_xml="$pgroot/lib/libxml2.16.dylib"
-brew_xml="$(brew --prefix libxml2)/lib/libxml2.16.dylib"
-if [[ -f "$core_xml" && -f "$brew_xml" ]] && ! cmp -s "$core_xml" "$brew_xml"; then
-  mv "$core_xml" "$work/core-libxml2.16.dylib"
-fi
-python3 "$repo/scripts/macos/bundle.py" "$pgroot" arm64 2>&1 | tee "$output/bundle.log"
-python3 - "$pgroot" "$output" <<'PY'
+bundle_root="$work/postgis-bundle-root"
+python3 - "$pgroot" "$bundle_root" <<'PY'
+from pathlib import Path
+import re, shutil, sys
+source, root = map(Path, sys.argv[1:])
+names = ('postgis','postgis_raster','postgis_sfcgal','postgis_topology')
+(root/'lib').mkdir(parents=True,exist_ok=True)
+(root/'share/extension').mkdir(parents=True,exist_ok=True)
+for path in (source/'lib').glob('*.dylib'):
+    if path.name != 'libxml2.16.dylib': shutil.copy2(path,root/'lib'/path.name)
+for name in names:
+    control=source/'share/extension'/f'{name}.control'
+    sql=sorted((source/'share/extension').glob(f'{name}--*.sql'))
+    if not control.is_file() or not sql: raise SystemExit(f'missing SQL files for {name}')
+    shutil.copy2(control,root/'share/extension'/control.name)
+    for path in sql: shutil.copy2(path,root/'share/extension'/path.name)
+    modules=set()
+    if match:=re.search(r"^\s*module_pathname\s*=\s*['\"]?\$libdir/([^'\"\s]+)",control.read_text(),re.M): modules.add(match.group(1))
+    for path in sql: modules.update(re.findall(r'\$libdir/([A-Za-z0-9_.-]+)',path.read_text()))
+    for module in modules:
+        choices=[source/'lib'/f'{module}{suffix}' for suffix in ('','.dylib','.so')]
+        found=[path for path in choices if path.is_file()]
+        if len(found)!=1: raise SystemExit(f'expected one installed module for {module}: {found}')
+        shutil.copy2(found[0],root/'lib'/found[0].name)
+for relative in ('share/proj','share/gdal'):
+    shutil.copytree(source/relative,root/relative,dirs_exist_ok=True)
+PY
+python3 "$repo/scripts/macos/bundle.py" "$bundle_root" arm64 2>&1 | tee "$output/bundle.log"
+python3 - "$bundle_root" "$output" <<'PY'
 from pathlib import Path
 import json, shutil, subprocess, sys
 root, output = map(Path, sys.argv[1:])
