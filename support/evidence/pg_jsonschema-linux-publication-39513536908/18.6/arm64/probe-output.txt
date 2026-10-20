@@ -1,0 +1,248 @@
+#0 building with "default" instance using docker driver
+
+#1 [internal] load build definition from linux-verify.Dockerfile
+#1 transferring dockerfile: 690B done
+#1 DONE 0.0s
+
+#2 [auth] library/alpine:pull token for registry-1.docker.io
+#2 DONE 0.0s
+
+#3 [internal] load metadata for docker.io/library/alpine:3.22
+#3 DONE 0.3s
+
+#4 [internal] load .dockerignore
+#4 transferring context: 2B done
+#4 DONE 0.0s
+
+#5 [internal] load build context
+#5 transferring context: 32.35kB done
+#5 DONE 0.0s
+
+#6 [1/8] FROM docker.io/library/alpine:3.22@sha256:5291449c3df73caf6ed85e649dec1b9e818b39a5d8c871e97afc13e9cd5e8fa8
+#6 resolve docker.io/library/alpine:3.22@sha256:5291449c3df73caf6ed85e649dec1b9e818b39a5d8c871e97afc13e9cd5e8fa8 done
+#6 extracting sha256:16fc4f52163f03cd2189c3d6a4b3f28a605cfb7919af64b3da4562cca69d2306
+#6 sha256:e09dd31eab4f4aeaade69891673134f31880ef51c6ee514b0cea072df06d7547 627B / 627B done
+#6 sha256:16fc4f52163f03cd2189c3d6a4b3f28a605cfb7919af64b3da4562cca69d2306 4.12MB / 4.12MB 0.0s done
+#6 sha256:5291449c3df73caf6ed85e649dec1b9e818b39a5d8c871e97afc13e9cd5e8fa8 9.22kB / 9.22kB done
+#6 sha256:2e1a7aa4cbc4e9e5222bb4c24a839aa1a6170ea5492d644777ce7b178824e44f 1.02kB / 1.02kB done
+#6 extracting sha256:16fc4f52163f03cd2189c3d6a4b3f28a605cfb7919af64b3da4562cca69d2306 0.1s done
+#6 DONE 0.1s
+
+#7 [2/8] RUN apk add --no-cache bash binutils coreutils grep python3 shadow util-linux
+#7 0.106 fetch https://dl-cdn.alpinelinux.org/alpine/v3.22/main/aarch64/APKINDEX.tar.gz
+#7 0.283 fetch https://dl-cdn.alpinelinux.org/alpine/v3.22/community/aarch64/APKINDEX.tar.gz
+#7 0.653 (1/66) Installing ncurses-terminfo-base (6.5_p20250503-r0)
+#7 0.658 (2/66) Installing libncursesw (6.5_p20250503-r0)
+#7 0.667 (3/66) Installing readline (8.2.13-r1)
+#7 0.672 (4/66) Installing bash (5.2.37-r0)
+#7 0.691 Executing bash-5.2.37-r0.post-install
+#7 0.694 (5/66) Installing libgcc (14.2.0-r6)
+#7 0.699 (6/66) Installing jansson (2.14.1-r0)
+#7 0.702 (7/66) Installing libstdc++ (14.2.0-r6)
+#7 0.715 (8/66) Installing zstd-libs (1.5.7-r0)
+#7 0.722 (9/66) Installing binutils (2.44-r3)
+#7 0.788 (10/66) Installing coreutils-env (9.7-r1)
+#7 0.793 (11/66) Installing coreutils-fmt (9.7-r1)
+#7 0.797 (12/66) Installing coreutils-sha512sum (9.7-r1)
+#7 0.801 (13/66) Installing acl-libs (2.3.2-r1)
+#7 0.804 (14/66) Installing libattr (2.5.2-r2)
+#7 0.807 (15/66) Installing skalibs-libs (2.14.4.0-r0)
+#7 0.820 (16/66) Installing utmps-libs (0.1.3.1-r0)
+#7 0.824 (17/66) Installing coreutils (9.7-r1)
+#7 0.839 (18/66) Installing pcre2 (10.46-r0)
+#7 0.866 (19/66) Installing grep (3.12-r0)
+#7 0.871 (20/66) Installing libexpat (2.9.0-r0)
+#7 0.876 (21/66) Installing libbz2 (1.0.8-r6)
+#7 0.879 (22/66) Installing libffi (3.4.8-r0)
+#7 0.881 (23/66) Installing gdbm (1.24-r0)
+#7 0.884 (24/66) Installing xz-libs (5.8.4-r0)
+#7 0.890 (25/66) Installing mpdecimal (4.0.1-r0)
+#7 0.895 (26/66) Installing libpanelw (6.5_p20250503-r0)
+#7 0.898 (27/66) Installing sqlite-libs (3.49.2-r1)
+#7 0.912 (28/66) Installing python3 (3.12.15-r0)
+#7 1.066 (29/66) Installing python3-pycache-pyc0 (3.12.15-r0)
+#7 1.143 (30/66) Installing pyc (3.12.15-r0)
+#7 1.143 (31/66) Installing python3-pyc (3.12.15-r0)
+#7 1.143 (32/66) Installing libmd (1.1.0-r0)
+#7 1.146 (33/66) Installing libbsd (0.12.2-r0)
+#7 1.150 (34/66) Installing linux-pam (1.7.0-r4)
+#7 1.167 (35/66) Installing shadow (4.17.3-r0)
+#7 1.179 (36/66) Installing util-linux (2.41.6-r1)
+#7 1.182 (37/66) Installing dmesg (2.41.6-r1)
+#7 1.188 (38/66) Installing setarch (2.41.6-r1)
+#7 1.192 (39/66) Installing libeconf (0.6.3-r0)
+#7 1.195 (40/66) Installing libblkid (2.41.6-r1)
+#7 1.200 (41/66) Installing libuuid (2.41.6-r1)
+#7 1.203 (42/66) Installing libfdisk (2.41.6-r1)
+#7 1.213 (43/66) Installing libmount (2.41.6-r1)
+#7 1.221 (44/66) Installing libsmartcols (2.41.6-r1)
+#7 1.225 (45/66) Installing util-linux-misc (2.41.6-r1)
+#7 1.252 (46/66) Installing runuser (2.41.6-r1)
+#7 1.257 (47/66) Installing mount (2.41.6-r1)
+#7 1.261 (48/66) Installing losetup (2.41.6-r1)
+#7 1.266 (49/66) Installing hexdump (2.41.6-r1)
+#7 1.274 (50/66) Installing uuidgen (2.41.6-r1)
+#7 1.282 (51/66) Installing blkid (2.41.6-r1)
+#7 1.286 (52/66) Installing sfdisk (2.41.6-r1)
+#7 1.290 (53/66) Installing mcookie (2.41.6-r1)
+#7 1.293 (54/66) Installing agetty (2.41.6-r1)
+#7 1.297 (55/66) Installing wipefs (2.41.6-r1)
+#7 1.300 (56/66) Installing cfdisk (2.41.6-r1)
+#7 1.304 (57/66) Installing umount (2.41.6-r1)
+#7 1.308 (58/66) Installing flock (2.41.6-r1)
+#7 1.312 (59/66) Installing lsblk (2.41.6-r1)
+#7 1.317 (60/66) Installing libcap-ng (0.8.5-r0)
+#7 1.321 (61/66) Installing setpriv (2.41.6-r1)
+#7 1.325 (62/66) Installing lscpu (2.41.6-r1)
+#7 1.356 (63/66) Installing logger (2.41.6-r1)
+#7 1.360 (64/66) Installing partx (2.41.6-r1)
+#7 1.365 (65/66) Installing fstrim (2.41.6-r1)
+#7 1.369 (66/66) Installing findmnt (2.41.6-r1)
+#7 1.373 Executing busybox-1.37.0-r20.trigger
+#7 1.378 OK: 84 MiB in 82 packages
+#7 DONE 5.1s
+
+#8 [3/8] COPY scripts/pg_jsonschema/linux-verify-in-container.sh /usr/local/bin/verify-pg-jsonschema
+#8 DONE 0.0s
+
+#9 [4/8] COPY scripts/pg_jsonschema/probe.sql /work/probe.sql
+#9 DONE 0.0s
+
+#10 [5/8] COPY tools/check_elf_dependencies.py /usr/local/bin/check-elf-dependencies
+#10 DONE 0.0s
+
+#11 [6/8] COPY tools/check_pg_jsonschema_component_inventory.py /usr/local/bin/check-pg-jsonschema-component-inventory
+#11 DONE 0.0s
+
+#12 [7/8] COPY tools/create_pg_jsonschema_component_inventory.py /usr/local/bin/create_pg_jsonschema_component_inventory.py
+#12 DONE 0.0s
+
+#13 [8/8] RUN chmod +x /usr/local/bin/verify-pg-jsonschema
+#13 DONE 0.1s
+
+#14 exporting to image
+#14 exporting layers
+#14 exporting layers 0.7s done
+#14 writing image sha256:e039a6145a1b70d81409f1dfe5e4aee978e072303f59b1948a9ee7add0eec3cc done
+#14 naming to docker.io/library/pg-binaries-pg-jsonschema-alpine-probe done
+#14 DONE 0.7s
+pg_jsonschema-0.3.4-postgresql-18.6-linux-arm64.tar.gz: OK
+postgresql-18.6-linux-arm64.tar.gz: OK
+The files belonging to this database system will be owned by user "postgres".
+This user must also own the server process.
+
+The database cluster will be initialized with locale "C".
+The default text search configuration will be set to "english".
+
+Data page checksums are enabled.
+
+fixing permissions on existing directory /tmp/data ... ok
+creating subdirectories ... ok
+selecting dynamic shared memory implementation ... posix
+selecting default "max_connections" ... 100
+selecting default "shared_buffers" ... 128MB
+selecting default time zone ... UTC
+creating configuration files ... ok
+running bootstrap script ... ok
+performing post-bootstrap initialization ... sh: locale: not found
+2026-10-20 23:20:58.944 UTC [29] WARNING:  no usable system locales were found
+ok
+syncing data to disk ... ok
+
+initdb: warning: enabling "trust" authentication for local connections
+initdb: hint: You can change this by editing pg_hba.conf or using the option -A, or --auth-local and --auth-host, the next time you run initdb.
+waiting for server to start....2026-10-20 23:20:59.474 UTC [34] LOG:  starting PostgreSQL 18.6 on aarch64-unknown-linux-gnu, compiled by gcc (Ubuntu 11.4.0-1ubuntu1~22.04.3) 11.4.0, 64-bit
+2026-10-20 23:20:59.475 UTC [34] LOG:  listening on Unix socket "/tmp/socket/.s.PGSQL.55432"
+2026-10-20 23:20:59.478 UTC [40] LOG:  database system was shut down at 2026-10-20 23:20:59 UTC
+2026-10-20 23:20:59.481 UTC [34] LOG:  database system is ready to accept connections
+ done
+server started
+ postgres_version 
+------------------
+ 18.6
+(1 row)
+
+CREATE EXTENSION
+CREATE TABLE
+INSERT 0 1
+DO
+    extname    | extversion 
+---------------+------------
+ pg_jsonschema | 0.3.4
+(1 row)
+
+             conname             |                                                                 definition                                                                 
+---------------------------------+--------------------------------------------------------------------------------------------------------------------------------------------
+ payload_matches_schema          | CHECK (jsonb_matches_schema('{"type":"object","properties":{"name":{"type":"string","maxLength":8}},"required":["name"]}'::json, payload))
+ schema_checked_payload_not_null | NOT NULL payload
+(2 rows)
+
+waiting for server to shut down....2026-10-20 23:20:59.584 UTC [34] LOG:  received fast shutdown request
+2026-10-20 23:20:59.584 UTC [34] LOG:  aborting any active transactions
+2026-10-20 23:20:59.587 UTC [34] LOG:  background worker "logical replication launcher" (PID 43) exited with exit code 1
+2026-10-20 23:20:59.587 UTC [38] LOG:  shutting down
+2026-10-20 23:20:59.587 UTC [38] LOG:  checkpoint starting: shutdown immediate
+2026-10-20 23:20:59.595 UTC [38] LOG:  checkpoint complete: wrote 53 buffers (0.3%), wrote 3 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=0.002 s, sync=0.006 s, total=0.009 s; sync files=47, longest=0.001 s, average=0.001 s; distance=295 kB, estimate=295 kB; lsn=0/17A0028, redo lsn=0/17A0028
+2026-10-20 23:20:59.601 UTC [34] LOG:  database system is shut down
+ done
+server stopped
+Checked architecture and dependencies of 185 ELF files
+The files belonging to this database system will be owned by user "postgres".
+This user must also own the server process.
+
+The database cluster will be initialized with locale "C".
+The default text search configuration will be set to "english".
+
+Data page checksums are enabled.
+
+fixing permissions on existing directory /tmp/moved-data ... ok
+creating subdirectories ... ok
+selecting dynamic shared memory implementation ... posix
+selecting default "max_connections" ... 100
+selecting default "shared_buffers" ... 128MB
+selecting default time zone ... UTC
+creating configuration files ... ok
+running bootstrap script ... ok
+performing post-bootstrap initialization ... sh: locale: not found
+2026-10-20 23:21:01.274 UTC [951] WARNING:  no usable system locales were found
+ok
+syncing data to disk ... initdb: warning: enabling "trust" authentication for local connections
+initdb: hint: You can change this by editing pg_hba.conf or using the option -A, or --auth-local and --auth-host, the next time you run initdb.
+ok
+
+waiting for server to start....2026-10-20 23:21:01.801 UTC [956] LOG:  starting PostgreSQL 18.6 on aarch64-unknown-linux-gnu, compiled by gcc (Ubuntu 11.4.0-1ubuntu1~22.04.3) 11.4.0, 64-bit
+2026-10-20 23:21:01.802 UTC [956] LOG:  listening on Unix socket "/tmp/moved-socket/.s.PGSQL.55433"
+2026-10-20 23:21:01.804 UTC [962] LOG:  database system was shut down at 2026-10-20 23:21:01 UTC
+2026-10-20 23:21:01.807 UTC [956] LOG:  database system is ready to accept connections
+ done
+server started
+ postgres_version 
+------------------
+ 18.6
+(1 row)
+
+CREATE EXTENSION
+CREATE TABLE
+INSERT 0 1
+DO
+    extname    | extversion 
+---------------+------------
+ pg_jsonschema | 0.3.4
+(1 row)
+
+             conname             |                                                                 definition                                                                 
+---------------------------------+--------------------------------------------------------------------------------------------------------------------------------------------
+ payload_matches_schema          | CHECK (jsonb_matches_schema('{"type":"object","properties":{"name":{"type":"string","maxLength":8}},"required":["name"]}'::json, payload))
+ schema_checked_payload_not_null | NOT NULL payload
+(2 rows)
+
+waiting for server to shut down....2026-10-20 23:21:01.911 UTC [956] LOG:  received fast shutdown request
+2026-10-20 23:21:01.912 UTC [956] LOG:  aborting any active transactions
+2026-10-20 23:21:01.913 UTC [956] LOG:  background worker "logical replication launcher" (PID 965) exited with exit code 1
+2026-10-20 23:21:01.913 UTC [960] LOG:  shutting down
+2026-10-20 23:21:01.914 UTC [960] LOG:  checkpoint starting: shutdown immediate
+2026-10-20 23:21:01.923 UTC [960] LOG:  checkpoint complete: wrote 53 buffers (0.3%), wrote 3 SLRU buffers; 0 WAL file(s) added, 0 removed, 0 recycled; write=0.002 s, sync=0.006 s, total=0.010 s; sync files=47, longest=0.001 s, average=0.001 s; distance=295 kB, estimate=295 kB; lsn=0/17A0028, redo lsn=0/17A0028
+2026-10-20 23:21:01.930 UTC [956] LOG:  database system is shut down
+ done
+server stopped
+PASS: pg_jsonschema 0.3.4 on relocated PostgreSQL 18.6 in Alpine 3.22
