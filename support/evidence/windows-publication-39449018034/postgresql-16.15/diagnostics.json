@@ -1,0 +1,167 @@
+{
+  "schema_version": 1,
+  "platform": "windows",
+  "architecture": "x86_64",
+  "os": {
+    "caption": "Microsoft Windows Server 2022 Datacenter",
+    "version": "10.0.20348",
+    "build_number": "20348",
+    "service_pack": 0
+  },
+  "powershell_version": "7.6.6",
+  "postgresql_version": "16.15",
+  "build_id": "github-39436620784-1",
+  "source_revision": "b007f04851b8c8d7e0d006a26359e0d3d263c06b",
+  "inventory_revision": null,
+  "archive_urls": null,
+  "archives": {
+    "postgresql-16.15-windows-x86_64.tar.gz": "efd9ff15882a355ac9f431eb0c085abbf571bed8a3821a542370f02c83c0715c"
+  },
+  "package_metadata": {
+    "postgresql": {
+      "schema_version": 1,
+      "component": "postgresql",
+      "version": "16.15",
+      "postgresql_version": "16.15",
+      "platform": "windows",
+      "architecture": "x86_64",
+      "build_id": "github-39436620784-1",
+      "source_revision": "b007f04851b8c8d7e0d006a26359e0d3d263c06b",
+      "build_configuration": "postgresql-16.15;builder=windows-runner;meson=debugoptimized;postgresql=icu,lz4,zstd,zlib,openssl,libxml,libxslt,no-uuid,no-readline;compiler=MSVC;vcpkg=9e593bb18ea69cc5095e012465dcd675a822ed0d;runtime=vcpkg-and-msvc-dlls",
+      "included_extensions": [
+        "adminpack",
+        "amcheck",
+        "autoinc",
+        "bloom",
+        "btree_gin",
+        "btree_gist",
+        "citext",
+        "cube",
+        "dblink",
+        "dict_int",
+        "dict_xsyn",
+        "earthdistance",
+        "file_fdw",
+        "fuzzystrmatch",
+        "hstore",
+        "insert_username",
+        "intagg",
+        "intarray",
+        "isn",
+        "lo",
+        "ltree",
+        "moddatetime",
+        "old_snapshot",
+        "pageinspect",
+        "pg_buffercache",
+        "pg_freespacemap",
+        "pg_prewarm",
+        "pg_stat_statements",
+        "pg_surgery",
+        "pg_trgm",
+        "pg_visibility",
+        "pg_walinspect",
+        "pgcrypto",
+        "pgrowlocks",
+        "pgstattuple",
+        "plpgsql",
+        "postgres_fdw",
+        "refint",
+        "seg",
+        "sslinfo",
+        "tablefunc",
+        "tcn",
+        "tsm_system_rows",
+        "tsm_system_time",
+        "unaccent",
+        "xml2"
+      ],
+      "runtime_dependencies": [
+        "ICU",
+        "LZ4",
+        "Zstandard",
+        "zlib",
+        "OpenSSL"
+      ],
+      "bundled_runtime_dlls": [
+        "charset-1.dll",
+        "iconv-2.dll",
+        "icudt78.dll",
+        "icuin78.dll",
+        "icuio78.dll",
+        "icutu78.dll",
+        "icuuc78.dll",
+        "legacy.dll",
+        "libcrypto-3-x64.dll",
+        "libexslt.dll",
+        "libssl-3-x64.dll",
+        "libxml2.dll",
+        "libxslt.dll",
+        "lz4.dll",
+        "z.dll",
+        "zstd.dll"
+      ],
+      "os_prerequisites": [],
+      "source_checkout": {
+        "repository": "https://github.com/postgres/postgres.git",
+        "ref": "refs/tags/REL_16_15",
+        "commit": "7d3e000c5961a544302072058a1184e9a588837b",
+        "tree": "e97d2bd54137833e68079ed70e1a4a6621453264"
+      },
+      "windows_import_library": {
+        "filename": "postgres.lib",
+        "alias_of": "postgres.exe.lib",
+        "sha256": "3d6ea5df898ca3081d22d967a6342304a5223f013ad2330869a45777415b4fda"
+      },
+      "bundled_msvc_runtime_dlls": [
+        "msvcp140.dll",
+        "vcruntime140_1.dll",
+        "vcruntime140.dll"
+      ]
+    }
+  },
+  "inspection_tools": {
+    "powershell": "7.6.6",
+    "tar": "bsdtar 3.8.4 - libarchive 3.8.4 zlib/1.2.5.f-ipp cng/2.0 libb2/bundled ",
+    "postgres": "postgres (PostgreSQL) 16.15"
+  },
+  "lookup_environment": {
+    "system_failure": {
+      "PATH": "C:\\Windows\\System32;C:\\Windows",
+      "SystemRoot": "C:\\Windows"
+    },
+    "postgresql_failure": {
+      "PATH": "C:\\Users\\runneradmin\\AppData\\Local\\Temp\\372574ae450640608356cfaf6c494ab6\\server\\postgresql\\bin;C:\\Windows\\System32;C:\\Windows",
+      "PGHOST": "127.0.0.1",
+      "PGPORT": "57866",
+      "PGUSER": "postgres",
+      "PGDATABASE": "postgres",
+      "PGSSLMODE": "disable"
+    }
+  },
+  "system_failure": {
+    "kind": "missing-bundled-runtime-dll",
+    "executable": "C:\\Users\\runneradmin\\AppData\\Local\\Temp\\372574ae450640608356cfaf6c494ab6\\system\\postgresql\\bin\\postgres.exe",
+    "missing_library": "libxml2.dll",
+    "hidden_library_path": "C:\\Users\\runneradmin\\AppData\\Local\\Temp\\372574ae450640608356cfaf6c494ab6\\system\\postgresql\\bin\\libxml2.dll.diagnostic-hidden",
+    "command": "& 'C:\\Users\\runneradmin\\AppData\\Local\\Temp\\372574ae450640608356cfaf6c494ab6\\system\\postgresql\\bin\\postgres.exe' --version",
+    "cwd": "C:\\Users\\runneradmin\\AppData\\Local\\Temp\\372574ae450640608356cfaf6c494ab6\\system\\postgresql",
+    "started_at_utc": "2026-10-20T15:32:11.8655016Z",
+    "finished_at_utc": "2026-10-20T15:32:12.2275468Z",
+    "exit_code": -1073741515,
+    "ntstatus": "0xC0000135",
+    "failure_text": ""
+  },
+  "postgresql_failure": {
+    "kind": "server-error",
+    "executable": "C:\\Users\\runneradmin\\AppData\\Local\\Temp\\372574ae450640608356cfaf6c494ab6\\server\\postgresql\\bin\\psql.exe",
+    "command": "& 'C:\\Users\\runneradmin\\AppData\\Local\\Temp\\372574ae450640608356cfaf6c494ab6\\server\\postgresql\\bin\\psql.exe' -X -v ON_ERROR_STOP=1 -h 127.0.0.1 -p 57866 -d postgres -c 'SELECT 1 / 0;'",
+    "cwd": "C:\\Users\\runneradmin\\AppData\\Local\\Temp\\372574ae450640608356cfaf6c494ab6\\server",
+    "server_start_command": "& 'C:\\Users\\runneradmin\\AppData\\Local\\Temp\\372574ae450640608356cfaf6c494ab6\\server\\postgresql\\bin\\pg_ctl.exe' -D 'C:\\Users\\runneradmin\\AppData\\Local\\Temp\\372574ae450640608356cfaf6c494ab6\\server\\data' -l 'C:\\Users\\runneradmin\\AppData\\Local\\Temp\\372574ae450640608356cfaf6c494ab6\\server\\server.log' -o '-h 127.0.0.1 -p 57866' -w start",
+    "started_at_utc": "2026-10-20T15:32:18.2785305Z",
+    "finished_at_utc": "2026-10-20T15:32:18.3872865Z",
+    "exit_code": 1,
+    "failure_text": "ERROR:  division by zero",
+    "server_log": "2026-10-20 15:32:18.205 UTC [2488] LOG:  starting PostgreSQL 16.15 on x86_64-windows, compiled by msvc-19.44.35229, 64-bit\r\n2026-10-20 15:32:18.206 UTC [2488] LOG:  listening on IPv4 address \"127.0.0.1\", port 57866\r\n2026-10-20 15:32:18.240 UTC [4532] LOG:  database system was shut down at 2026-10-20 15:32:14 UTC\n2026-10-20 15:32:18.253 UTC [2488] LOG:  database system is ready to accept connections\r\n2026-10-20 15:32:18.335 UTC [4396] ERROR:  division by zero\n2026-10-20 15:32:18.335 UTC [4396] STATEMENT:  SELECT 1 / 0;\n2026-10-20 15:32:18.397 UTC [2488] LOG:  received fast shutdown request\r\n2026-10-20 15:32:18.401 UTC [2488] LOG:  aborting any active transactions\r\n2026-10-20 15:32:18.407 UTC [2488] LOG:  background worker \"logical replication launcher\" (PID 6264) exited with exit code 1\r\n2026-10-20 15:32:18.408 UTC [2056] LOG:  shutting down\n2026-10-20 15:32:18.413 UTC [2056] LOG:  checkpoint starting: shutdown immediate\n2026-10-20 15:32:18.440 UTC [2056] LOG:  checkpoint complete: wrote 3 buffers (0.0%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.002 s, sync=0.009 s, total=0.032 s; sync files=2, longest=0.007 s, average=0.005 s; distance=0 kB, estimate=0 kB; lsn=0/157D6D0, redo lsn=0/157D6D0\n2026-10-20 15:32:18.447 UTC [2488] LOG:  database system is shut down\r\n"
+  }
+}

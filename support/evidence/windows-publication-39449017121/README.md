@@ -1,0 +1,5 @@
+# Windows PostgreSQL core run 39449017121
+
+[Run 39449017121](https://github.com/BernieSumption/pg_binaries/actions/runs/39449017121) passed selected-target verification for PostgreSQL 17.11 on Windows x86_64. The build and separate fresh-runner verification jobs succeeded, including archive relocation, PE dependency checks, matching PDB checks, and system and PostgreSQL diagnostics. The current-profile verification record and retained reports were imported and validated against the downloaded Actions artifacts.
+
+The archive SHA-256 is `8238a3ce5c85242091e486396a2db4d63b8581f22943b4c72efb75ed232e4d31`. Its embedded manifest identifies build `github-39431458238-1` from revision `dcd4a9dbea0c489b571a2d5c6f839b808df5f4a8`, so run 39449017121 reused bytes produced by run 39431458238. The original build artifact `windows-core-selected-17.11-build-39431458238` remains available through 2026-10-27; its archive and checksum sidecar match the imported archive. The identity and artifact pins retain that original producing run for selected extension workflows.
