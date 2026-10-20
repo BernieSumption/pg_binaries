@@ -1,37 +1,148 @@
-name: Address Standardizer macOS feasibility probe
+name: Address Standardizer macOS arm64 trial
 
 on:
   workflow_dispatch:
-  push:
-    branches: [spike]
-    paths:
-      - '.github/workflows/address-standardizer-macos-probe.yml'
-      - 'scripts/address_standardizer/macos-build-and-probe.sh'
-      - 'scripts/address_standardizer/probe.sql'
+    inputs:
+      postgresql_version:
+        description: Selected PostgreSQL release (trial supports 17.11)
+        required: true
+        type: choice
+        options: ['17.11']
+        default: '17.11'
 
 permissions:
+  actions: read
   contents: read
 
 jobs:
-  probe:
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - architecture: arm64
-            runner: macos-15
-          - architecture: x86_64
-            runner: macos-15-intel
-    runs-on: ${{ matrix.runner }}
-    timeout-minutes: 45
+  select:
+    runs-on: ubuntu-latest
+    outputs:
+      postgresql_version: ${{ steps.target.outputs.postgresql_version }}
+      architecture: arm64
     steps:
       - uses: actions/checkout@v4
-      - name: Build upstream sources and run SQL probe
-        run: bash scripts/address_standardizer/macos-build-and-probe.sh "${{ matrix.architecture }}" "$RUNNER_TEMP/results"
+      - name: Validate selected target
+        id: target
+        env:
+          POSTGRESQL_VERSION: ${{ inputs.postgresql_version }}
+          ARCHITECTURE: arm64
+        run: |
+          set -euo pipefail
+          python3 experiments/address-standardizer-macos-2026-10-20/address_standardizer_macos_target.py "$POSTGRESQL_VERSION" \
+            --architecture "$ARCHITECTURE" --output "$RUNNER_TEMP/base-target.json"
+          echo "postgresql_version=$POSTGRESQL_VERSION" >> "$GITHUB_OUTPUT"
+          echo "architecture=$ARCHITECTURE" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: select
+    runs-on: ${{ needs.select.outputs.architecture == 'arm64' && 'macos-15' || 'macos-15-intel' }}
+    timeout-minutes: 100
+    steps:
+      - uses: actions/checkout@v4
+      - name: Create selected PostgreSQL core target
+        env:
+          POSTGRESQL_VERSION: ${{ needs.select.outputs.postgresql_version }}
+          ARCHITECTURE: ${{ needs.select.outputs.architecture }}
+        run: python3 experiments/address-standardizer-macos-2026-10-20/address_standardizer_macos_target.py "$POSTGRESQL_VERSION" --architecture "$ARCHITECTURE" --output "$RUNNER_TEMP/base-target.json"
+      - name: Resolve checked PostgreSQL core archive or build the selected core
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash scripts/macos/resolve-core.sh "$RUNNER_TEMP/base-target.json" "$RUNNER_TEMP/core"
+      - name: Build selected Address Standardizer archive against the resolved core
+        run: bash experiments/address-standardizer-macos-2026-10-20/macos-build-selected.sh "$RUNNER_TEMP/core" "$RUNNER_TEMP/extension" "$RUNNER_TEMP/core/target.json"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: address-standardizer-macos-${{ needs.select.outputs.architecture }}-${{ needs.select.outputs.postgresql_version }}-build-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/core/**
+            ${{ runner.temp }}/extension/**
+          if-no-files-found: error
+          retention-days: 7
+
+  verify:
+    needs: [select, build]
+    if: always() && needs.select.result == 'success'
+    runs-on: ${{ needs.select.outputs.architecture == 'arm64' && 'macos-15' || 'macos-15-intel' }}
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        id: download
+        continue-on-error: true
+        with:
+          name: address-standardizer-macos-${{ needs.select.outputs.architecture }}-${{ needs.select.outputs.postgresql_version }}-build-${{ github.run_id }}
+          path: ${{ runner.temp }}/bundle
+      - name: Prepare final archive paths
+        if: always()
+        env:
+          ARCHITECTURE: ${{ needs.select.outputs.architecture }}
+          POSTGRESQL_VERSION: ${{ needs.select.outputs.postgresql_version }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/core" "$RUNNER_TEMP/extension"
+          cp -a "$RUNNER_TEMP/bundle/core/." "$RUNNER_TEMP/core/"
+          cp -a "$RUNNER_TEMP/bundle/extension/." "$RUNNER_TEMP/extension/"
+          test -s "$RUNNER_TEMP/core/target.json"
+          test -s "$RUNNER_TEMP/core/postgresql-${POSTGRESQL_VERSION}-macos-${ARCHITECTURE}.tar.gz"
+          test -s "$RUNNER_TEMP/extension/address-standardizer-3.7.0-postgresql-${POSTGRESQL_VERSION}-macos-${ARCHITECTURE}.tar.gz"
+      - name: Inspect final archive dependencies and run schema smoke test
+        id: verify
+        if: always() && steps.download.outcome == 'success'
+        continue-on-error: true
+        env:
+          ARCHITECTURE: ${{ needs.select.outputs.architecture }}
+          POSTGRESQL_VERSION: ${{ needs.select.outputs.postgresql_version }}
+        run: |
+          set -euo pipefail
+          core="$RUNNER_TEMP/core/postgresql-${POSTGRESQL_VERSION}-macos-${ARCHITECTURE}.tar.gz"
+          extension="$RUNNER_TEMP/extension/address-standardizer-3.7.0-postgresql-${POSTGRESQL_VERSION}-macos-${ARCHITECTURE}.tar.gz"
+          bash experiments/address-standardizer-macos-2026-10-20/macos-verify-selected.sh "$core" "$extension" "$POSTGRESQL_VERSION" "$ARCHITECTURE" "$RUNNER_TEMP/verification"
+      - name: Retain archive-bound attempt and verification details
+        if: always()
+        env:
+          VERIFY_RESULT: ${{ steps.verify.outcome }}
+          ARCHITECTURE: ${{ needs.select.outputs.architecture }}
+          POSTGRESQL_VERSION: ${{ needs.select.outputs.postgresql_version }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/verification"
+          python3 - "$RUNNER_TEMP" "$GITHUB_SHA" "$GITHUB_RUN_ID" "$VERIFY_RESULT" "$ARCHITECTURE" "$POSTGRESQL_VERSION" <<'PY'
+          import hashlib, json, pathlib, sys
+          root, revision, run, outcome, architecture, pg = sys.argv[1:]
+          root=pathlib.Path(root); core=root/'core'/f'postgresql-{pg}-macos-{architecture}.tar.gz'
+          extension=root/'extension'/f'address-standardizer-3.7.0-postgresql-{pg}-macos-{architecture}.tar.gz'
+          def digest(path):
+              if not path.is_file(): return None
+              h=hashlib.sha256()
+              with path.open('rb') as stream:
+                  for block in iter(lambda: stream.read(1024*1024), b''): h.update(block)
+              return h.hexdigest()
+          report=root/'verification'/'static-analysis.json'
+          record={'schema_version':1,'profile_id':f'address-standardizer-publication-macos-{architecture}-{pg}',
+                  'test_revision':revision,'run_id':run,'architecture':architecture,'postgresql_version':pg,
+                  'case_results':{'archive-suite':'passed' if outcome=='success' else 'failed',
+                                  'macho-closure':'passed' if outcome=='success' and report.is_file() and json.loads(report.read_text()).get('passed') else 'failed'},
+                  'archives':{core.name:digest(core),extension.name:digest(extension)},
+                  'static_analysis':json.loads(report.read_text()) if report.is_file() else None,
+                  'probe_output':(root/'verification'/'probe-output.txt').read_text(errors='replace') if (root/'verification'/'probe-output.txt').is_file() else None,
+                  'release_eligible':False,'redistribution_status':'pending'}
+          (root/'verification'/'attempt.json').write_text(json.dumps(record,indent=2,sort_keys=True)+'\n')
+          PY
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: address-standardizer-macos-${{ matrix.architecture }}-probe
-          path: ${{ runner.temp }}/results/**
+          name: address-standardizer-macos-${{ needs.select.outputs.architecture }}-${{ needs.select.outputs.postgresql_version }}-verification-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/core/target.json
+            ${{ runner.temp }}/core/*.tar.gz
+            ${{ runner.temp }}/core/*.sha256
+            ${{ runner.temp }}/extension/**
+            ${{ runner.temp }}/verification/**
           if-no-files-found: warn
-          retention-days: 3
+          retention-days: 7
+      - name: Require build, download and verification to pass
+        if: always()
+        run: |
+          test '${{ needs.build.result }}' = success
+          test '${{ steps.download.outcome }}' = success
+          test '${{ steps.verify.outcome }}' = success
