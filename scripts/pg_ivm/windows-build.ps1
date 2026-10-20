@@ -69,8 +69,10 @@ try {
   $moduleDefinition = Join-Path $repo 'scripts/pg_ivm/windows-exports.def'
   Push-Location $source
   try {
-    meson setup $build --prefix=$pgRoot --libdir=lib -Dbuildtype=release "-Dc_link_args=/DEF:$moduleDefinition"
+    meson setup $build --prefix=$pgRoot --libdir=lib -Dbuildtype=release
     if ($LASTEXITCODE -ne 0) { throw 'Upstream Meson configuration failed.' }
+    meson configure $build "-Dc_link_args=/DEF:$moduleDefinition"
+    if ($LASTEXITCODE -ne 0) { throw 'Could not configure the PostgreSQL module export list.' }
     meson compile -C $build
     if ($LASTEXITCODE -ne 0) { throw 'Upstream pg_ivm compilation failed.' }
     meson install -C $build
