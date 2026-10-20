@@ -15,10 +15,6 @@ on:
       platform:
         required: true
         type: string
-      retry:
-        required: false
-        type: boolean
-        default: false
   workflow_dispatch:
     inputs:
       project:
@@ -43,11 +39,6 @@ on:
           - macos-arm64
           - macos-x86_64
           - windows-x86_64
-      retry:
-        description: Run this target even when the retained work is complete
-        required: false
-        type: boolean
-        default: false
   push:
     branches: [spike]
     paths:
@@ -68,7 +59,7 @@ jobs:
       architecture: ${{ steps.select.outputs.architecture }}
     steps:
       - uses: actions/checkout@v4
-      - name: Resolve the declared target and its work prerequisites
+      - name: Resolve the exact declared target
         id: select
         env:
           EVENT_NAME: ${{ github.event_name }}
@@ -76,8 +67,6 @@ jobs:
           INPUT_VERSION: ${{ inputs.extension_version }}
           INPUT_POSTGRESQL_VERSION: ${{ inputs.postgresql_version }}
           INPUT_PLATFORM: ${{ inputs.platform }}
-          INPUT_RETRY: ${{ inputs.retry }}
-          GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           python3 - "$RUNNER_TEMP/request.json" <<'PY'
@@ -91,7 +80,6 @@ jobs:
                   "version": os.environ["INPUT_VERSION"],
                   "postgresql_version": os.environ["INPUT_POSTGRESQL_VERSION"],
                   "platform": os.environ["INPUT_PLATFORM"],
-                  "retry": os.environ["INPUT_RETRY"].lower() == "true",
               }
           elif os.environ["EVENT_NAME"] == "push":
               with open("experiments/selected-extension-target-trial/request.json", encoding="utf-8") as source:
@@ -101,29 +89,20 @@ jobs:
           with open(sys.argv[1], "w", encoding="utf-8") as output:
               json.dump(request, output)
           PY
-          REQUEST_PROJECT="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["project"])' "$RUNNER_TEMP/request.json")"
-          REQUEST_VERSION="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["version"])' "$RUNNER_TEMP/request.json")"
-          REQUEST_POSTGRESQL_VERSION="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["postgresql_version"])' "$RUNNER_TEMP/request.json")"
-          REQUEST_PLATFORM="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["platform"])' "$RUNNER_TEMP/request.json")"
-          REQUEST_RETRY="$(python3 -c 'import json,sys; print(str(json.load(open(sys.argv[1])).get("retry", False)).lower())' "$RUNNER_TEMP/request.json")"
-          if [[ "$REQUEST_PROJECT" == pgvector && "$REQUEST_PLATFORM" == linux-x86_64 && "$REQUEST_RETRY" != true ]]; then
-            bash tools/pgvector_checked_dispatch.sh "$RUNNER_TEMP/request.json" \
-              "$RUNNER_TEMP/dispatch-plan.json" "$REQUEST_VERSION" "$REQUEST_POSTGRESQL_VERSION" \
-              "$RUNNER_TEMP/pgvector-plan-evidence.json"
-          elif [[ "$REQUEST_PROJECT" == HypoPG && "$REQUEST_PLATFORM" == linux-* && "$REQUEST_RETRY" != true ]]; then
-            bash tools/hypopg_checked_dispatch.sh "$RUNNER_TEMP/request.json" \
-              "$RUNNER_TEMP/dispatch-plan.json" "$REQUEST_VERSION" "$REQUEST_POSTGRESQL_VERSION" \
-              "${REQUEST_PLATFORM#linux-}"
-          else
-            python3 tools/dispatch_plan.py --request "$RUNNER_TEMP/request.json" > "$RUNNER_TEMP/dispatch-plan.json"
-          fi
-          python3 - "$RUNNER_TEMP/dispatch-plan.json" "$GITHUB_OUTPUT" <<'PY'
+          python3 - "$RUNNER_TEMP/request.json" "$GITHUB_OUTPUT" <<'PY'
           import json
+          import subprocess
           import sys
 
-          plan = json.load(open(sys.argv[1], encoding="utf-8"))
-          target = plan["target"]
-          project, platform = target["project"], target["platform"]
+          request = json.load(open(sys.argv[1], encoding="utf-8"))
+          subprocess.run([
+              sys.executable, "tools/extension_archive_plan.py",
+              "--project", request["project"],
+              "--extension-version", request["version"],
+              "--postgresql-version", request["postgresql_version"],
+              "--platform", request["platform"],
+              "--github-output", sys.argv[2],
+          ], check=True)
           routes = {
               ("HypoPG", "linux-x86_64"): "hypopg-linux",
               ("HypoPG", "linux-arm64"): "hypopg-linux",
@@ -165,30 +144,19 @@ jobs:
               ("pg_ivm", "macos-arm64"): "pgivm-macos",
               ("pg_ivm", "macos-x86_64"): "pgivm-macos",
           }
+          project, platform = request["project"], request["platform"]
           route = routes.get((project, platform))
           if route is None:
               raise SystemExit(f"No selected publication workflow serves {project} on {platform}")
           with open(sys.argv[2], "a", encoding="utf-8") as output:
               for key, value in (
-                  ("project", project),
-                  ("platform", platform),
-                  ("should_dispatch", str(plan["should_dispatch"]).lower()),
+                  ("should_dispatch", "true"),
                   ("route", route),
-                  ("extension_version", target["version"]),
-                  ("postgresql_version", target["postgresql_version"]),
+                  ("extension_version", request["version"]),
                   ("architecture", platform.rsplit("-", 1)[1]),
               ):
                   output.write(f"{key}={value}\n")
           PY
-          printf 'retry=%s\n' "$REQUEST_RETRY" >> "$GITHUB_OUTPUT"
-      - name: Retain checked pgvector planning evidence
-        if: always() && steps.select.outputs.project == 'pgvector' && steps.select.outputs.platform == 'linux-x86_64' && steps.select.outputs.retry != 'true'
-        uses: actions/upload-artifact@v4
-        with:
-          name: pgvector-checked-plan-${{ github.run_id }}
-          path: ${{ runner.temp }}/pgvector-plan-evidence.json
-          if-no-files-found: warn
-          retention-days: 7
 
   hypopg_linux:
     needs: plan
