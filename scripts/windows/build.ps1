@@ -134,6 +134,11 @@ Copy-Item (Join-Path $pgSource 'COPYRIGHT') (Join-Path $pgLicenses 'PostgreSQL.t
 $vcpkgDllMap = Join-Path $pgLicenses 'vcpkg-dll-map.json'
 python (Join-Path $repo 'tools/map_vcpkg_dlls.py') --installed-root $vcpkg --dll-directory $bundledRuntimeSource --output $vcpkgDllMap
 if ($LASTEXITCODE -ne 0) { throw 'Cannot map copied vcpkg DLLs to installed package metadata' }
+$vcpkgDllOwnership = Get-Content $vcpkgDllMap -Raw | ConvertFrom-Json
+$zstdComponents = @($vcpkgDllOwnership.components | Where-Object { $_.port -eq 'zstd' })
+if ($zstdComponents.Count -eq 0 -or @($zstdComponents | Where-Object { $_.version -ne '1.5.7' }).Count -ne 0) {
+  throw 'The reviewed zstd divsufsort notice is pinned to zstd 1.5.7'
+}
 $dependencyLicenses = Join-Path $pgLicenses 'dependencies'
 New-Item -ItemType Directory -Force $dependencyLicenses | Out-Null
 Get-ChildItem (Join-Path $vcpkg 'share') -Directory | ForEach-Object {
@@ -142,6 +147,8 @@ Get-ChildItem (Join-Path $vcpkg 'share') -Directory | ForEach-Object {
     Copy-Item $copyright (Join-Path $dependencyLicenses "$($_.Name).txt")
   }
 }
+Copy-Item (Join-Path $repo 'support/licences/zstd-1.5.7-divsufsort-notice.txt') `
+  (Join-Path $dependencyLicenses 'zstd-1.5.7-divsufsort.txt')
 $dependencyNotices = @(Get-ChildItem $dependencyLicenses -File | Sort-Object Name)
 $dependencyNoticeBundle = Join-Path $dependencyLicenses 'NOTICE-BUNDLE.txt'
 if ($dependencyNotices.Count -eq 0) { throw 'No vcpkg dependency copyright notices were installed' }
