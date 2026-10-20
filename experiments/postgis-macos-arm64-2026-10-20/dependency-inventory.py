@@ -141,7 +141,7 @@ if formula_names:
             "declared_license": item.get("license"),
             "source_urls": [item.get("urls", {}).get("stable", {}).get("url")],
             "formula_prefix": str(prefix),
-            "formula_source": item.get("tap", "homebrew/core") + "/" + name,
+            "formula_source": (item.get("tap") or "homebrew/core") + "/" + name,
             "licence_text_locations": licence_files,
         }
 
