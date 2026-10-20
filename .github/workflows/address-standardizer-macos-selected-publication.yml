@@ -10,8 +10,7 @@ on:
       postgresql_version:
         description: Selected PostgreSQL release
         required: true
-        type: choice
-        options: ['15.19', '16.15', '17.11', '18.6']
+        type: string
       architecture:
         description: Native macOS architecture
         required: true
@@ -53,25 +52,34 @@ jobs:
     timeout-minutes: 100
     steps:
       - uses: actions/checkout@v4
-      - name: Resolve selected core and build archive
+      - name: Resolve selected core
+        id: core
+        continue-on-error: true
         env:
           PG: ${{ needs.select.outputs.postgresql_version }}
           ARCH: ${{ needs.select.outputs.architecture }}
           GH_TOKEN: ${{ github.token }}
         run: |
-          set -euo pipefail
           mkdir -p "$RUNNER_TEMP/core" "$RUNNER_TEMP/extension"
-          python3 tools/address_standardizer_macos_target.py "$PG" --architecture "$ARCH" --output "$RUNNER_TEMP/target.json"
-          bash scripts/macos/resolve-core.sh "$RUNNER_TEMP/target.json" "$RUNNER_TEMP/core"
-          bash scripts/address_standardizer/macos-build-publication.sh "$RUNNER_TEMP/core" "$RUNNER_TEMP/extension" "$RUNNER_TEMP/core/target.json"
+          python3 tools/address_standardizer_macos_target.py "$PG" --architecture "$ARCH" --output "$RUNNER_TEMP/base-target.json"
+          bash scripts/macos/resolve-core.sh "$RUNNER_TEMP/base-target.json" "$RUNNER_TEMP/core"
+      - name: Build selected archive
+        id: package
+        if: always() && steps.core.outcome == 'success'
+        continue-on-error: true
+        run: bash scripts/address_standardizer/macos-build-publication.sh "$RUNNER_TEMP/core" "$RUNNER_TEMP/extension" "$RUNNER_TEMP/core/target.json"
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: address-standardizer-macos-${{ needs.select.outputs.postgresql_version }}-${{ needs.select.outputs.architecture }}-${{ github.run_id }}
           path: |
             ${{ runner.temp }}/core/**
             ${{ runner.temp }}/extension/**
-          if-no-files-found: error
+          if-no-files-found: warn
           retention-days: 7
+      - name: Require core resolution and build
+        if: always()
+        run: test '${{ steps.core.outcome }}' = success && test '${{ steps.package.outcome }}' = success
   verify:
     needs: [select, build]
     if: always() && needs.select.result == 'success'
@@ -91,7 +99,8 @@ jobs:
           PG: ${{ needs.select.outputs.postgresql_version }}
           ARCH: ${{ needs.select.outputs.architecture }}
         run: |
-          mkdir -p "$RUNNER_TEMP/core" "$RUNNER_TEMP/extension" "$RUNNER_TEMP/verification"
+          mkdir -p "$RUNNER_TEMP/core" "$RUNNER_TEMP/extension"
+          python3 tools/address_standardizer_macos_target.py "$PG" --architecture "$ARCH" --output "$RUNNER_TEMP/selected-target.json"
           if [[ -d "$RUNNER_TEMP/bundle/core" ]]; then cp -a "$RUNNER_TEMP/bundle/core/." "$RUNNER_TEMP/core/"; fi
           if [[ -d "$RUNNER_TEMP/bundle/extension" ]]; then cp -a "$RUNNER_TEMP/bundle/extension/." "$RUNNER_TEMP/extension/"; fi
       - name: Run archive suite and Mach-O closure checks
@@ -110,12 +119,11 @@ jobs:
           ARCH: ${{ needs.select.outputs.architecture }}
         run: |
           set -euo pipefail
-          python3 tools/address_standardizer_macos_target.py "$PG" --architecture "$ARCH" --output "$RUNNER_TEMP/target.json"
-          python3 tools/emit_address_standardizer_macos_publication.py --target "$RUNNER_TEMP/core/target.json" --core-archives "$RUNNER_TEMP/core" --archives "$RUNNER_TEMP/extension" --output "$RUNNER_TEMP/extension" --archive-suite-result "${SUITE:-skipped}" --macho-closure-result "${SUITE:-skipped}" --os-version "$(sw_vers -productVersion)" --image-id "${ImageOS:-unknown}/${ImageVersion:-unknown}"
+          python3 tools/emit_address_standardizer_macos_publication.py --target "$RUNNER_TEMP/selected-target.json" --core-archives "$RUNNER_TEMP/core" --archives "$RUNNER_TEMP/extension" --output "$RUNNER_TEMP/extension" --archive-suite-result "${SUITE:-skipped}" --macho-closure-result "${SUITE:-skipped}" --os-version "$(sw_vers -productVersion)" --image-id "${ImageOS:-unknown}/${ImageVersion:-unknown}"
       - name: Validate and retain evidence
         id: import
         if: always()
-        run: python3 tools/import_address_standardizer_macos_publication.py --core-archives "$RUNNER_TEMP/core" --archives "$RUNNER_TEMP/extension" --run-id "$GITHUB_RUN_ID"
+        run: python3 tools/import_address_standardizer_macos_publication.py --core-archives "$RUNNER_TEMP/core" --archives "$RUNNER_TEMP/extension" --run-id "$GITHUB_RUN_ID" --target "$RUNNER_TEMP/selected-target.json"
       - uses: actions/upload-artifact@v4
         if: always()
         with:

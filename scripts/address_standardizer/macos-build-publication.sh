@@ -10,12 +10,18 @@ selection=$(python3 - "$target_config" <<'PY'
 import json, sys
 target=json.load(open(sys.argv[1], encoding="utf-8"))
 core=target.get("core_archive", {})
-if target.get("postgresql_version") not in {"15.19", "16.15", "17.11", "18.6"} or target.get("extension_version") != "3.7.0":
+if target.get("extension_version") != "3.7.0" or target.get("platform") != f"macos-{target.get('architecture')}":
     raise SystemExit("unsupported selected Address Standardizer macOS target")
 if target.get("architecture") not in {"arm64", "x86_64"}:
     raise SystemExit("unsupported macOS architecture")
 if core.get("basename") != f"postgresql-{target['postgresql_version']}-macos-{target['architecture']}.tar.gz":
     raise SystemExit("resolved core archive identity mismatch")
+repo = __import__("subprocess").check_output(["git", "rev-parse", "--show-toplevel"], text=True).strip()
+sys.path.insert(0, repo + "/tools")
+import coverage, extension_archive_plan
+support = coverage.load_json(repo + "/support.json")
+releases = coverage.load_json(repo + "/support/postgresql-releases.json")
+extension_archive_plan.select_target(extension_archive_plan.plan(support, releases), "Address Standardizer", target["platform"], target["postgresql_version"], "3.7.0")
 for key in ("sha256", "build_id", "source_revision"):
     if not core.get(key): raise SystemExit(f"resolved core lacks {key}")
 print(target["postgresql_version"], target["architecture"], core["basename"], core["sha256"], core["build_id"], core["source_revision"])
