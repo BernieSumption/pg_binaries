@@ -125,16 +125,39 @@ jobs:
           -CoreArchive "dist/windows/postgresql-$env:PG_VERSION-windows-x86_64.tar.gz" `
           -ExtensionArchive "dist/windows/pg_ivm-$env:IVM_VERSION-postgresql-$env:PG_VERSION-windows-x86_64.tar.gz" `
           -ReportPath (Join-Path $env:RUNNER_TEMP 'pgivm-windows-verification/static-analysis.json')
+      - name: Emit and import archive-bound evidence
+        id: evidence
+        if: always()
+        continue-on-error: true
+        env:
+          ARCHIVE_OUTCOME: ${{ steps.archive_suite.outcome }}
+        run: |
+          $recordDir = Join-Path $env:RUNNER_TEMP 'pgivm-windows-verification'
+          New-Item -ItemType Directory -Force $recordDir | Out-Null
+          $archive = if ($env:ARCHIVE_OUTCOME -eq 'success') { 'passed' } elseif ($env:ARCHIVE_OUTCOME -eq 'failure') { 'failed' } else { 'skipped' }
+          $static = 'skipped'
+          $reportPath = Join-Path $recordDir 'static-analysis.json'
+          if (Test-Path $reportPath) { try { $static = if ((Get-Content $reportPath -Raw | ConvertFrom-Json).outcome -eq 'passed') { 'passed' } else { 'failed' } } catch { $static = 'failed' } }
+          @{ 'archive-suite' = $archive; 'static-analysis' = $static } | ConvertTo-Json | Set-Content -Encoding utf8 (Join-Path $recordDir 'publication-steps.json')
+          $pin = python tools/windows_core_pin.py --postgresql-version $env:PG_VERSION | ConvertFrom-Json
+          if ($LASTEXITCODE -ne 0) { throw 'Could not resolve checked core pin for evidence.' }
+          python tools/emit_pg_ivm_windows_publication.py --archives dist/windows --output $recordDir --report (Join-Path $recordDir 'static-analysis.json') --results (Join-Path $recordDir 'publication-steps.json') --revision $env:GITHUB_SHA --core-sha256 $pin.sha256 --os-version ([System.Environment]::OSVersion.Version.ToString()) --image-id "$env:ImageOS/$env:ImageVersion" --postgresql-version $env:PG_VERSION
+          if ($LASTEXITCODE -ne 0) { throw 'Windows pg_ivm evidence emission failed.' }
+          python tools/import_pg_ivm_windows_publication.py --archives dist/windows --evidence $recordDir --run-id $env:GITHUB_RUN_ID
+          if ($LASTEXITCODE -ne 0) { throw 'Windows pg_ivm evidence import failed.' }
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: pgivm-windows-verification-${{ github.run_id }}
-          path: ${{ runner.temp }}/pgivm-windows-verification/**
+          path: |
+            ${{ runner.temp }}/pgivm-windows-verification/**
+            support/evidence/pgivm-windows-publication-${{ github.run_id }}/**
+            support/verification/pg_ivm-${{ env.IVM_VERSION }}-postgresql-${{ env.PG_VERSION }}-windows-x86_64-current-${{ github.run_id }}.json
           if-no-files-found: warn
           retention-days: 7
       - name: Require the selected Windows pg_ivm checks
         if: always()
         run: |
-          if ('${{ needs.build.result }}' -ne 'success' -or '${{ steps.download.outcome }}' -ne 'success' -or '${{ steps.archive_suite.outcome }}' -ne 'success') {
-            throw 'The selected Windows pg_ivm build and relocated archive verification must pass.'
+          if ('${{ needs.build.result }}' -ne 'success' -or '${{ steps.download.outcome }}' -ne 'success' -or '${{ steps.archive_suite.outcome }}' -ne 'success' -or '${{ steps.evidence.outcome }}' -ne 'success') {
+            throw 'The selected Windows pg_ivm build, relocated archive verification and evidence import must pass.'
           }
