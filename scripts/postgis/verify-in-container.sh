@@ -28,6 +28,7 @@ tar -xzf "/out/$postgis_archive" -C /tmp/extension
 ln -s "/out/$postgis_archive" "/tmp/assembly-archives/$postgis_archive"
 python3 - <<'PY'
 import json
+import hashlib
 import os
 import pathlib
 import re
@@ -38,11 +39,24 @@ archive_root = pathlib.Path('/tmp/extension')
 assert {path.name for path in archive_root.iterdir()} == {'postgis', 'metadata.json'}
 with (archive_root / 'metadata.json').open() as stream:
     metadata = json.load(stream)
+core_runtime = pathlib.Path('/tmp/first/postgresql/lib/runtime')
+dependencies = metadata['core_runtime_dependencies']
+assert dependencies == sorted(dependencies, key=lambda item: item['soname'])
+assert len({item['soname'] for item in dependencies}) == len(dependencies)
+for dependency in dependencies:
+    assert set(dependency) == {'soname', 'sha256'}
+    assert re.fullmatch(r'[A-Za-z0-9_.+-]+', dependency['soname'])
+    assert re.fullmatch(r'[0-9a-f]{64}', dependency['sha256'])
+    core_library = core_runtime / dependency['soname']
+    assert core_library.is_file(), f"Pinned core does not supply {dependency['soname']}"
+    assert hashlib.sha256(core_library.read_bytes()).hexdigest() == dependency['sha256'], (
+        f"Pinned core library hash mismatch for {dependency['soname']}")
 assert metadata == {
     'project': 'postgis',
     'version': '3.6.4',
     'sql_names': support['extensions']['PostGIS']['sql_names'],
     'requires': [],
+    'core_runtime_dependencies': dependencies,
     'configuration_prerequisites': [],
     'runtime_prerequisites': [
         {'type': 'environment_variable', 'name': name, 'value_relative_to_prefix': value}

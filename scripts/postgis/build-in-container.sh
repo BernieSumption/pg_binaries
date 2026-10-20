@@ -138,15 +138,26 @@ while IFS= read -r -d '' elf; do
   patchelf --set-rpath "$rpath" "$elf"
 done < <(find "$stage/lib" -type f -print0)
 python3 - <<'PY'
+import hashlib
+import json
 from pathlib import Path
 
 stage = Path('/work/stage/postgis')
 core_runtime = Path('/opt/postgresql/lib/runtime')
+dependencies = []
 for library in (stage / 'lib/runtime').iterdir():
     supplied = core_runtime / library.name
     if not supplied.exists():
         continue
+    dependencies.append({
+        'soname': library.name,
+        'sha256': hashlib.sha256(supplied.read_bytes()).hexdigest(),
+    })
     library.unlink()
+
+Path('/work/core-runtime-dependencies.json').write_text(
+    json.dumps(sorted(dependencies, key=lambda item: item['soname']), indent=2) + '\n'
+)
 
 runtime_map = Path('/work/runtime-map.tsv')
 runtime_map.write_text(''.join(
@@ -163,11 +174,13 @@ from pathlib import Path
 import sys
 
 sql_names = json.loads(Path('/work/support.json').read_text())['extensions']['PostGIS']['sql_names']
+core_runtime_dependencies = json.loads(Path('/work/core-runtime-dependencies.json').read_text())
 metadata = {
     'project': 'postgis',
     'version': '3.6.4',
     'sql_names': sql_names,
     'requires': [],
+    'core_runtime_dependencies': core_runtime_dependencies,
     'configuration_prerequisites': [],
     'runtime_prerequisites': [
         {'type': 'environment_variable', 'name': name, 'value_relative_to_prefix': value}
