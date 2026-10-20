@@ -91,8 +91,9 @@ def _metadata(path):
                             and member.name.startswith("pg_jsonschema/lib/"))
             required = {f"pg_jsonschema/{MODULE_PATH}",
                         "pg_jsonschema/share/extension/pg_jsonschema.control",
-                        "pg_jsonschema/LICENSES/pg_jsonschema.txt",
-                        "pg_jsonschema/LICENSES/pg_jsonschema-cargo-license-inventory.json"}
+                        "pg_jsonschema/LICENSES/pg_jsonschema/LICENSE",
+                        "pg_jsonschema/LICENSES/cargo/cargo-license-inventory.json",
+                        "pg_jsonschema/LICENSES/pg_jsonschema-inventory.json"}
             if not required <= set(names) or native != [f"pg_jsonschema/{MODULE_PATH}"]:
                 _fail("pg_jsonschema archive payload is incomplete or contains extra native code")
     except (OSError, tarfile.TarError, UnicodeError, json.JSONDecodeError) as exc:

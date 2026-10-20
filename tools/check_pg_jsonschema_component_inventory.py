@@ -44,6 +44,10 @@ def validate(archive_path, expected_inventory_path=None):
             return name.removeprefix("LICENSES/")
 
         inventory = read_json(INVENTORY)
+        metadata = read_json("metadata.json")
+        platform = metadata.get("platform") if isinstance(metadata, dict) else None
+        if platform not in {"linux", "macos"}:
+            raise ValueError("pg_jsonschema archive has an unsupported platform")
         if expected_inventory_path is not None:
             expected = Path(expected_inventory_path).read_bytes()
             embedded = archive.extractfile(members[INVENTORY]).read()
@@ -58,10 +62,14 @@ def validate(archive_path, expected_inventory_path=None):
         if (not isinstance(component, dict) or component.get("component") != "pg_jsonschema"
                 or component.get("version") != "0.3.4"):
             raise ValueError("component identity must be pg_jsonschema 0.3.4")
-        if component.get("payload_paths") != ["lib/pg_jsonschema.so", "share/extension"]:
-            raise ValueError("component payload_paths do not match the Linux extension payload")
+        payload_paths = component.get("payload_paths")
+        if (not isinstance(payload_paths, list) or len(payload_paths) != 2
+                or payload_paths[1] != "share/extension"
+                or payload_paths[0] not in ({"lib/pg_jsonschema.so"} if platform == "linux"
+                                            else {"lib/pg_jsonschema.so", "lib/pg_jsonschema.dylib"})):
+            raise ValueError("component payload_paths do not match a supported pg_jsonschema module")
         if not all(any(name == f"pg_jsonschema/{path}" or name.startswith(f"pg_jsonschema/{path}/")
-                       for name in members) for path in component["payload_paths"]):
+                       for name in members) for path in payload_paths):
             raise ValueError("component payload path is missing from the archive")
 
         primary = component.get("license_file")

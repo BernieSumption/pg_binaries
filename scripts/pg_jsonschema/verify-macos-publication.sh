@@ -32,6 +32,9 @@ test -s "$extension_archives/build-evidence.txt"
 (cd "$core_archives" && shasum -a 256 -c "$core_name.sha256")
 (cd "$extension_archives" && shasum -a 256 -c "$extension_name.sha256")
 printf '%s  %s\n' "$core_sha256" "$core_name" | (cd "$core_archives" && shasum -a 256 -c -)
+python3 "$repo/tools/inventory_cargo_licenses.py" --check-archive "$extension_archives/$extension_name" \
+  --archive-inventory pg_jsonschema/LICENSES/cargo/cargo-license-inventory.json
+python3 "$repo/tools/check_pg_jsonschema_component_inventory.py" "$extension_archives/$extension_name"
 
 work=$(mktemp -d "${RUNNER_TEMP:-${TMPDIR:-/tmp}}/pg-jsonschema-verify.XXXXXX")
 prefix_link_created=false
@@ -88,12 +91,13 @@ payload, target = map(pathlib.Path, sys.argv[2:4])
 module = sys.argv[4]
 files = {path.relative_to(payload).as_posix() for path in payload.rglob("*") if path.is_file()}
 required = {f"lib/{module}", "share/extension/pg_jsonschema.control",
-            "LICENSES/pg_jsonschema.txt", "LICENSES/pg_jsonschema-cargo-license-inventory.json"}
+            "LICENSES/pg_jsonschema/LICENSE", "LICENSES/cargo/cargo-license-inventory.json",
+            "LICENSES/pg_jsonschema-inventory.json"}
 if not required <= files or sum(path.startswith("lib/") for path in files) != 1:
     raise SystemExit("pg_jsonschema archive payload is incomplete or has extra native code")
 merge_payload(payload, target)
 PY
-cp "$payload/LICENSES/pg_jsonschema-cargo-license-inventory.json" "$output/cargo-license-inventory.json"
+cp "$payload/LICENSES/cargo/cargo-license-inventory.json" "$output/cargo-license-inventory.json"
 
 python3 - "$testroot" "$pg_version" "$architecture" "$core_build_id" "$core_revision" "$work/prefix.txt" <<'PY'
 import json, pathlib, re, sys

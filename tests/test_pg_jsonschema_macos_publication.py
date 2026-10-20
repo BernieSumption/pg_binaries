@@ -88,11 +88,13 @@ class PublicationFixture:
             payload = base / "pg_jsonschema"
             (payload / "lib").mkdir(parents=True)
             (payload / "share/extension").mkdir(parents=True)
-            (payload / "LICENSES").mkdir()
+            (payload / "LICENSES/pg_jsonschema").mkdir(parents=True)
+            (payload / "LICENSES/cargo").mkdir(parents=True)
             (payload / "lib" / emitter.MODULE_FILENAME).write_bytes(b"Mach-O fixture")
             (payload / "share/extension/pg_jsonschema.control").write_text("default_version = '0.3.4'\n")
-            (payload / "LICENSES/pg_jsonschema.txt").write_text("PostgreSQL License\n")
-            (payload / "LICENSES/pg_jsonschema-cargo-license-inventory.json").write_text("{}\n")
+            (payload / "LICENSES/pg_jsonschema/LICENSE").write_text("Apache License\n")
+            (payload / "LICENSES/cargo/cargo-license-inventory.json").write_text("{}\n")
+            (payload / "LICENSES/pg_jsonschema-inventory.json").write_text("{}\n")
             (base / "metadata.json").write_text(json.dumps(metadata))
             with tarfile.open(self.extension, "w:gz") as archive:
                 archive.add(payload, arcname="pg_jsonschema")
