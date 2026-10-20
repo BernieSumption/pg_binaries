@@ -10,6 +10,55 @@ import re
 import subprocess
 import sys
 
+expected_formulae = {
+    "boost": ("1.92.0", "BSL-1.0"),
+    "geos": ("3.15.0", "LGPL-2.1-or-later"),
+    "gmp": ("6.3.0", "LGPL-3.0-or-later OR GPL-2.0-or-later"),
+    "jpeg-turbo": ("3.2.0", "IJG AND Zlib AND BSD-3-Clause"),
+    "json-c": ("0.19", "MIT"),
+    "libtiff": ("4.7.2", "libtiff"),
+    "mpfr": ("4.2.2", "LGPL-3.0-or-later"),
+    "proj": ("9.8.1", "MIT"),
+    "protobuf-c": ("1.5.2_19", "BSD-2-Clause"),
+    "sfcgal": ("2.3.0_1", "LGPL-2.0-or-later"),
+    "webp": ("1.6.0", "BSD-3-Clause"),
+    "xz": ("5.8.3", "0BSD AND GPL-2.0-or-later"),
+    "zstd": ("1.5.7_1", "(BSD-3-Clause OR GPL-2.0-only) AND BSD-2-Clause AND MIT"),
+}
+
+
+def command(*args):
+    return subprocess.check_output(args, text=True, stderr=subprocess.STDOUT)
+
+
+if sys.argv[1:] == ["--preflight"]:
+    info = json.loads(command("brew", "info", "--json=v2", *sorted(expected_formulae)))
+    formula_data = {item["name"]: item for item in info.get("formulae", [])}
+    for name, (version, license_expr) in sorted(expected_formulae.items()):
+        formula = formula_data.get(name)
+        if not formula or (formula.get("versions", {}).get("stable"), formula.get("license")) != (version, license_expr):
+            raise SystemExit(f"unreviewed Homebrew formula {name}: {formula}")
+        stable = formula.get("urls", {}).get("stable", {})
+        if not stable.get("url") or not re.fullmatch(r"[0-9a-f]{64}", stable.get("checksum") or ""):
+            raise SystemExit(f"incomplete Homebrew source identity for {name} {version}")
+        prefix = Path(command("brew", "--prefix", name).strip()).resolve()
+        receipt_path = prefix / "INSTALL_RECEIPT.json"
+        if not receipt_path.is_file(): raise SystemExit(f"missing Homebrew receipt for {name} {version}")
+        receipt = json.loads(receipt_path.read_text()); source = receipt.get("source", {})
+        if (source.get("tap") != "homebrew/core" or source.get("tap_git_head") != formula.get("tap_git_head")
+                or not re.fullmatch(r"[0-9a-f]{40}", source.get("tap_git_head", ""))):
+            raise SystemExit(f"Homebrew formula revision mismatch for {name} {version}")
+        if not isinstance(source.get("path"), str) or not source["path"].startswith("Formula/") or not source["path"].endswith(".rb"):
+            raise SystemExit(f"Homebrew formula path missing from receipt for {name} {version}")
+        candidates = [path for path in prefix.rglob("*") if path.is_file()
+            and (path.name.lower() in {"license", "license.txt", "license.md", "license_1_0.txt", "copying", "copyright"}
+                 or path.name.lower().startswith(("copying.", "license.")))
+            and len(path.relative_to(prefix).parts) <= 6]
+        print(f"{name} {version}: {'notice text found' if candidates else 'no notice text; declaration evidence required'}")
+    raise SystemExit(0)
+
+if len(sys.argv) != 6:
+    raise SystemExit("usage: macos-license-inventory.py PACKAGE CORE_ROOT BREW_PREFIX POSTGIS_SOURCE GDAL_SOURCE")
 root, core_root, brew_prefix, postgis_archive, gdal_archive = map(Path, sys.argv[1:])
 root = root.resolve(); core_root = core_root.resolve()
 dependencies = json.loads((root / "bundled-dependencies.json").read_text())
@@ -17,10 +66,6 @@ dependencies = json.loads((root / "bundled-dependencies.json").read_text())
 
 def sha(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
-
-
-def command(*args):
-    return subprocess.check_output(args, text=True, stderr=subprocess.STDOUT)
 
 
 formula_libs = {}
@@ -38,21 +83,6 @@ for library, source in dependencies.items():
 
 info = json.loads(command("brew", "info", "--json=v2", *sorted({name for name, _ in formula_libs})))
 formula_data = {item["name"]: item for item in info.get("formulae", [])}
-expected_formulae = {
-    "boost": ("1.92.0", "BSL-1.0"),
-    "geos": ("3.15.0", "LGPL-2.1-or-later"),
-    "gmp": ("6.3.0", "LGPL-3.0-or-later OR GPL-2.0-or-later"),
-    "jpeg-turbo": ("3.2.0", "IJG AND Zlib AND BSD-3-Clause"),
-    "json-c": ("0.19", "MIT"),
-    "libtiff": ("4.7.2", "libtiff"),
-    "mpfr": ("4.2.2", "LGPL-3.0-or-later"),
-    "proj": ("9.8.1", "MIT"),
-    "protobuf-c": ("1.5.2_19", "BSD-2-Clause"),
-    "sfcgal": ("2.3.0_1", "LGPL-2.0-or-later"),
-    "webp": ("1.6.0", "BSD-3-Clause"),
-    "xz": ("5.8.3", "0BSD AND GPL-2.0-or-later"),
-    "zstd": ("1.5.7_1", "(BSD-3-Clause OR GPL-2.0-only) AND BSD-2-Clause AND MIT"),
-}
 if set(name for name, _ in formula_libs) != set(expected_formulae):
     raise SystemExit(f"incremental Homebrew closure changed: {sorted(formula_libs)}")
 components = []
@@ -73,33 +103,36 @@ for (name, version), libraries in sorted(formula_libs.items()):
     if formula.get("tap_git_head") != formula_revision:
         raise SystemExit(f"Homebrew API metadata does not match installed formula revision for {name} {version}")
     formula_path = Path(source_identity.get("path", ""))
-    try:
-        formula_relative = formula_path.parts[formula_path.parts.index("Formula"):]
-    except (ValueError, IndexError):
-        formula_relative = ("Formula", name[0], f"{name}.rb")
+    if not formula_path.is_relative_to("Formula") or formula_path.suffix != ".rb":
+        raise SystemExit(f"Homebrew formula path is incomplete for {name} {version}")
+    formula_relative = formula_path.parts
     formula_url = f"https://github.com/Homebrew/homebrew-core/blob/{formula_revision}/{'/'.join(formula_relative)}"
+    stable = formula.get("urls", {}).get("stable", {})
+    source_url, source_sha = stable.get("url"), stable.get("checksum")
+    if not source_url or not re.fullmatch(r"[0-9a-f]{64}", source_sha or ""):
+        raise SystemExit(f"Homebrew source identity is incomplete for {name} {version}")
+    license_expr = formula.get("license")
+    if not license_expr:
+        raise SystemExit(f"Homebrew licence expression missing for {name} {version}")
     candidates = sorted(path for path in prefix.rglob("*") if path.is_file()
         and (path.name.lower() in {"license", "license.txt", "license.md", "license_1_0.txt", "copying", "copyright"}
              or path.name.lower().startswith(("copying.", "license.")))
         and len(path.relative_to(prefix).parts) <= 6)
-    if not candidates:
-        raise SystemExit(f"no licence text found in Homebrew package {name} {version}")
     license_names = []
     for index, candidate in enumerate(candidates):
         license_name = f"{name}-{version}-license-{index + 1}.txt"
         (root / "LICENSES" / license_name).write_bytes(candidate.read_bytes())
         license_names.append(license_name)
-    stable = formula.get("urls", {}).get("stable", {})
-    source_url, source_sha = stable.get("url"), stable.get("checksum")
-    if not source_url or not re.fullmatch(r"[0-9a-f]{64}", source_sha or ""):
-        raise SystemExit(f"Homebrew source identity is incomplete for {name} {version}")
+    if not candidates:
+        evidence_name = f"{name}-{version}-licence-declaration.txt"
+        evidence = (f"Package: {name} {version}\nSource: {source_url}\nSource SHA-256: {source_sha}\n"
+                    f"Declared licence: {license_expr}\nUpstream declaration: {formula_url}\n")
+        (root / "LICENSES" / evidence_name).write_text(evidence)
+        license_names.append(evidence_name)
     paths = [f"lib/{lib}" for lib in sorted(libraries)]
-    license_expr = formula.get("license")
-    if not license_expr:
-        raise SystemExit(f"Homebrew licence expression missing for {name} {version}")
     if (version, license_expr) != expected_formulae[name]:
         raise SystemExit(f"unreviewed Homebrew version or licence for {name}: {version}, {license_expr}")
-    primary = candidates[0]
+    primary = candidates[0] if candidates else None
     # Homebrew describes the whole source package; narrow mixed package terms
     # to the exact shared libraries included in this archive.
     library_expression = license_expr
@@ -119,12 +152,19 @@ for (name, version), libraries in sorted(formula_libs.items()):
         review_note = "Only libzstd is included. Zstandard offers BSD-3-Clause or GPL-2.0-only terms; this distribution uses the included BSD-3-Clause notice. The other formula terms cover excluded package files."
         primary = next((path for path in candidates if path.name.lower() == "license"), None)
         if primary is None: raise SystemExit("zstd BSD-3-Clause licence text is missing")
+    if primary is None:
+        primary_index = 0
+        license_source = formula_url
+    else:
+        primary_index = candidates.index(primary)
+        license_source = str(primary)
     copyleft = "LGPL" in library_expression or "GPL" in library_expression
-    primary_index = candidates.index(primary)
     source_links = [source_url, formula_url,
                     f"https://github.com/BernieSumption/pg_binaries/blob/{__import__('os').environ['GITHUB_SHA']}/scripts/postgis/macos-build-publication.sh"]
+    notice_basis = ("The archive includes the applicable notice texts." if candidates else
+                    "The package contains no licence text; the archive includes declaration evidence identifying this exact source and formula licence.")
     review_basis = (f"Homebrew {name} {version} formula at {formula_url} identifies the source archive and package terms. {review_note} "
-                    "The archive includes the applicable notice texts. No source modifications are made.")
+                    f"{notice_basis} No source modifications are made.")
     if copyleft:
         review_basis += " The shared LGPL library is dynamically linked and can be replaced by users; corresponding source and build material are linked for the LGPL source and relinking requirements."
     else:
@@ -137,7 +177,7 @@ for (name, version), libraries in sorted(formula_libs.items()):
         "additional_license_files": [f"LICENSES/{filename}" for index, filename in enumerate(license_names)
                                       if index != primary_index],
         "source_url": source_url, "source_sha256": source_sha, "source_revision": formula_revision,
-        "license_source": str(primary),
+        "license_source": license_source,
         "redistribution_review": {
             "status": "resolved",
             "basis": review_basis,
