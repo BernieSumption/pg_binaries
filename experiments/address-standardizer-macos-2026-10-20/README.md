@@ -31,6 +31,8 @@ The manual trial uses the registered `.github/workflows/address-standardizer-mac
 
 [Run 39451801078](https://github.com/BernieSumption/pg_binaries/actions/runs/39451801078) built the final extension archive. Fresh-runner verification stopped at an incorrect path assertion: this PostgreSQL core installs extension dylibs in `lib/`, while the trial verifier expected `lib/postgresql/`. The verifier now checks the observed archive layout; dependency and SQL checks still need a fresh run.
 
+[Run 39452261117](https://github.com/BernieSumption/pg_binaries/actions/runs/39452261117) passed on macOS 15 arm64 with PostgreSQL 17.11. The build produced an Address Standardizer archive with SHA-256 `84f8db4f77a9951744cd8a3cd4623e9090e67f41ac69548b30d80c9ea5f31693`, and a separate runner verified its checksum, Mach-O dependencies, relocation, both `CREATE EXTENSION` statements and representative schema DDL. The checked PostgreSQL archive SHA-256 was `0db9ca0f4d0cf72fa32120aaf9a3f8e47c9dd2d97421ab2b53583af83be681b6`. This is a successful feasibility trial; the standard selected route and redistribution review remain open.
+
 ## Completion and cleanup
 
 The trial question is answered when the build produces the final extension archive and the fresh-runner job passes the archive suite and Mach-O closure inspection. If either fails, retain the logs and correct only concrete recipe errors before retrying.
