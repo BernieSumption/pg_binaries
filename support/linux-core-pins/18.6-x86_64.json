@@ -1,0 +1,8 @@
+{
+  "schema_version": 1,
+  "workflow": "selected-extension-publication.yml",
+  "run_id": 39443651071,
+  "artifact_name": "postgresql-linux-selected-core-18.6-x86_64-39443651071",
+  "archive_name": "postgresql-18.6-linux-x86_64.tar.gz",
+  "sha256": "071446ad8dd6943ef500750c465d643e9d1bdbacca06e2665cd5709df5e5042c"
+}
