@@ -59,8 +59,20 @@ export DYLD_LIBRARY_PATH="$conda_prefix/lib${DYLD_LIBRARY_PATH:+:$DYLD_LIBRARY_P
 
 cd "$work/source"
 SFCGAL_COMMIT=137203dae01faab4a1287934f9457e925e3b4383
+SFCGAL_SHA256=426abf9ac0de764a6098abe89c9dc84aa59273d0c5ff90819ed49a9c21f1c21f
 curl -fL --retry 3 -o sfcgal.tar.gz "https://gitlab.com/SFCGAL/SFCGAL/-/archive/$SFCGAL_COMMIT/SFCGAL-$SFCGAL_COMMIT.tar.gz"
-printf '%s  %s\n' 426abf9ac0de764a6098abe89c9dc84aa59273d0c5ff90819ed49a9c21f1c21f sfcgal.tar.gz | shasum -a 256 -c -
+printf '%s  %s\n' "$SFCGAL_SHA256" sfcgal.tar.gz | shasum -a 256 -c -
+python3 - "$output/sfcgal-source.json" "$SFCGAL_COMMIT" "$SFCGAL_SHA256" <<'PY'
+import json, pathlib, sys
+path, commit, sha256 = pathlib.Path(sys.argv[1]), sys.argv[2], sys.argv[3]
+path.write_text(json.dumps({
+    "component": "SFCGAL",
+    "version": "2.3.0",
+    "commit": commit,
+    "source_url": f"https://gitlab.com/SFCGAL/SFCGAL/-/archive/{commit}/SFCGAL-{commit}.tar.gz",
+    "source_sha256": sha256,
+}, indent=2, sort_keys=True) + "\n")
+PY
 tar -xzf sfcgal.tar.gz
 cmake -S "SFCGAL-$SFCGAL_COMMIT" -B sfcgal-build \
   -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$conda_prefix" \
@@ -83,6 +95,8 @@ cd postgis-3.6.4
   2>&1 | tee "$output/configure.log"
 make -j"$(sysctl -n hw.ncpu)" 2>&1 | tee "$output/build.log"
 make install 2>&1 | tee "$output/install.log"
+python3 "$repo/experiments/postgis-conda-macos-arm64-2026-10-21/record-runtime-closure.py" \
+  "$pgroot" "$conda_prefix" "$work" "$output" 2>&1 | tee "$output/runtime-closure.log"
 
 chmod 700 "$work/socket"
 "$pgroot/bin/initdb" -D "$work/data" --no-sync >"$output/initdb.log" 2>&1
