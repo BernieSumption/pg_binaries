@@ -3,12 +3,12 @@
   "postgresql_version": "18.6",
   "platform": "windows-x86_64",
   "architecture": "x86_64",
-  "artifact_name": "windows-core-selected-18.6-build-39444631332",
+  "artifact_name": "windows-core-selected-18.6-build-39562140440",
   "archive_name": "postgresql-18.6-windows-x86_64.tar.gz",
-  "run_id": "39444631332",
-  "build_id": "github-39444631332-1",
-  "source_revision": "787aae65851db6a5f06491283a3bbec1437f93bc",
-  "sha256": "7dee5b25cde652310715b8e46d7af66279e0d532c7996e6db674efd090a21b83",
+  "run_id": "39562140440",
+  "build_id": "github-39562140440-1",
+  "source_revision": "0ed44d987a4b75d60a16b01d6149ad99d569f54f",
+  "sha256": "dc6b7bbc1df71183ea79cc7a36c1f410d495446aaef4f96ab1adab3b547b7b17",
   "profile_id": "windows-publication-current-x86_64",
   "status": "current-profile-core-redistribution-pending"
 }
