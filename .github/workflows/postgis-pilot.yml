@@ -238,8 +238,8 @@ jobs:
         run: |
           test "$(uname -s)" = Darwin
           test "$(uname -m)" = arm64
-      - name: Install micromamba
-        run: brew install micromamba
+      - name: Install micromamba and protobuf-c build tool
+        run: brew install micromamba protobuf-c
       - name: Resolve conda-forge spatial and SFCGAL build dependencies
         run: |
           micromamba create --yes --prefix "$RUNNER_TEMP/postgis-conda-arm64-sfcgal-env" --channel conda-forge \

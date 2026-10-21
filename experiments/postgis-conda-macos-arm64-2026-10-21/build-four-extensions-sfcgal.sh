@@ -87,6 +87,17 @@ export GDAL_DATA="$gdal_prefix/share/gdal"
 export LDFLAGS="${LDFLAGS:-} -Wl,-rpath,$gdal_prefix/lib -Wl,-rpath,$conda_prefix/lib"
 export DYLD_LIBRARY_PATH="$gdal_prefix/lib:$conda_prefix/lib${DYLD_LIBRARY_PATH:+:$DYLD_LIBRARY_PATH}"
 
+protoc_c="$(brew --prefix protobuf-c)/bin/protoc-c"
+test -x "$protoc_c" || { echo 'Missing Homebrew protoc-c build tool' >&2; exit 1; }
+mkdir -p "$work/tools"
+cat > "$work/tools/protoc-c" <<EOF
+#!/usr/bin/env bash
+unset DYLD_LIBRARY_PATH
+exec "$protoc_c" "\$@"
+EOF
+chmod +x "$work/tools/protoc-c"
+export PATH="$work/tools:$PATH"
+
 cd "$work/source"
 SFCGAL_COMMIT=137203dae01faab4a1287934f9457e925e3b4383
 SFCGAL_SHA256=426abf9ac0de764a6098abe89c9dc84aa59273d0c5ff90819ed49a9c21f1c21f
