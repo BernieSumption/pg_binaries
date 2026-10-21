@@ -4,11 +4,11 @@ Clients receive PostgreSQL and extension archives containing upstream code and d
 
 ## Declared project licences
 
-Take upstream and package-manager licence declarations at face value. For an extension support decision, its declared licence is sufficient evidence that its ordinary dependencies are intended to be freely redistributable unless an explicit dependency term says otherwise. Do not investigate an upstream project's chain of title or write a separate legal analysis for each transitive package. The central [`LICENSES.md`](../LICENSES.md) records each shipped project, including statically linked code, with its declared licence and links to source and the declaration. When a distribution or package manager changes the source used in a build, link that provider as well. A project already listed does not need a new licence decision merely because another archive includes it.
+Take upstream and package-manager licence declarations at face value. When a project compiles dependencies into its own binary, its declared licence is sufficient evidence that those dependencies are compatible with it; list the project, without separate entries for the compiled dependencies. When our build scripts copy a dependency library into an archive, record that library's project in the central [`LICENSES.md`](../LICENSES.md), with its declared licence and links to source and the declaration. Do not investigate an upstream project's chain of title or write a separate legal analysis for each transitive package. When a distribution or package manager changes the source used in a build, link that provider as well. A project already listed does not need a new licence decision merely because another archive includes it.
 
 When a repository states a licence for the project and gives no separate terms for a data file it contains, apply the repository licence to that file and outputs derived from it. Do not investigate whether upstream had the right to license the data's earlier sources. Explicit separate file or dataset terms require their own review.
 
-An upstream licence declaration is sufficient evidence of a project's licence even if its package omits the licence text. Record the declared licence and a link to the declaration in `LICENSES.md`; do not create a substitute licence text. This applies to the Seahash 4.1.0 crate, which declares MIT but omits the text from its package.
+An upstream licence declaration is sufficient evidence of a project's licence even if its package omits the licence text. Record the declared licence and a link to the declaration in `LICENSES.md`; do not create a substitute licence text.
 
 ## Microsoft Visual C++ runtime
 
