@@ -1,0 +1,44 @@
+{
+  "architecture": "x86_64",
+  "archives": {
+    "postgis-3.6.4-postgresql-16.15-windows-x86_64.tar.gz": "0f1e267282ee5a7ae4c1f8f733ddf8f91a2b4db77b714647317b32e213bbd416",
+    "postgis_tiger_geocoder-2025.2-postgresql-16.15-windows-x86_64.tar.gz": "95c6a22e6172b48bf282fbedcb0700449c1d09bfb49a97f484baf8983bfbc765",
+    "postgresql-16.15-windows-x86_64.tar.gz": "859e5d287d50e622250a9c8bcc77e0aeb23106b721625648cd7834228e4d7973"
+  },
+  "case_results": {
+    "archive-suite": "passed",
+    "static-analysis": "passed"
+  },
+  "ci": {
+    "build_revision": "a43a441678abee15a4b50369c74e7d6ba622706b",
+    "provider": "github-actions",
+    "run_id": "39692422304",
+    "run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/39692422304",
+    "source_revision": "a43a441678abee15a4b50369c74e7d6ba622706b",
+    "test_revision": "a43a441678abee15a4b50369c74e7d6ba622706b"
+  },
+  "clean_system": true,
+  "dependency_check_profile": "windows-pe-archive-relocation-v1",
+  "dependency_checks_passed": true,
+  "endpoint": "current",
+  "environment": {
+    "architecture": "x86_64",
+    "image_id": "win22/20261012.333.1",
+    "os": "windows",
+    "os_version": "10.0.20348"
+  },
+  "extension_archive": "postgis_tiger_geocoder-2025.2-postgresql-16.15-windows-x86_64.tar.gz",
+  "platform": "windows-x86_64",
+  "postgresql_version": "16.15",
+  "profile_id": "tiger-publication-windows-x86_64-16.15",
+  "profile_revision": "334241673207f0be12c62c5a40af8033c0e9bc76da3569f3233c71a0aba97235",
+  "project": "PostGIS TIGER Geocoder",
+  "release_eligible": false,
+  "reports": {
+    "probe_output": "7006596639cdeeba546013a395d9acfd5316c6959f5ebc914094d07146d7624e",
+    "static_analysis": "b7c7d1eb013e65744cf9be6531659616b96e482c5606a71e4cd36270c39f19eb"
+  },
+  "schema_version": 1,
+  "test_revision": "a43a441678abee15a4b50369c74e7d6ba622706b",
+  "version": "2025.2"
+}
