@@ -136,8 +136,19 @@ def _profile_at_revision(root, revision, profile_id):
     if historical is None:
         raise coverage.CoverageError(f"verification profile {profile_id} was not registered at CI revision {revision}")
     declared = coverage.load_json(root / "support/verification-profiles.json")["profiles"][profile_id]
-    if historical != declared:
-        raise coverage.CoverageError("verification profile declaration changed after the CI run")
+    if (any(historical.get(field) != declared.get(field)
+            for field in ("scope", "platforms", "case_ids"))
+            or not set(declared["sources"]).issubset(historical.get("sources", []))):
+        raise coverage.CoverageError("verification profile cases or retained sources changed after the CI run")
+    hashes = {}
+    for path in historical["sources"]:
+        hashes[path] = hashlib.sha256(source(path).replace(b"\r\n", b"\n")).hexdigest()
+    old_revision = coverage.profile_revision(
+        profile_id, historical["scope"], historical["case_ids"],
+        historical["platforms"], hashes)
+    current = coverage.verification_profile(root, profile_id)
+    if old_revision not in current["compatible_profile_revisions"]:
+        raise coverage.CoverageError("CI profile revision has no reviewed current equivalence")
     for path in declared["sources"]:
         if source(path).replace(b"\r\n", b"\n") != (root / path).read_bytes().replace(b"\r\n", b"\n"):
             raise coverage.CoverageError(f"profile source {path} changed after the CI run")

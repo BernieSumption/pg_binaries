@@ -87,11 +87,10 @@ try {
   if ($postgisNames.Count -ne 1 -or $postgisNames[0] -cne 'postgis') {
     throw 'Unexpected top-level content in PostGIS archive.'
   }
-  foreach ($entry in @(@($tigerUnpack,'postgis_tiger_geocoder'))) {
-    $names = @(Get-ChildItem $entry[0] -Force | ForEach-Object Name | Sort-Object)
-    if ($names.Count -ne 2 -or $names -cnotcontains $entry[1] -or $names -cnotcontains 'metadata.json') {
-      throw "Unexpected top-level content in $($entry[1]) archive."
-    }
+  $tigerNames = @(Get-ChildItem $tigerUnpack -Force | ForEach-Object Name | Sort-Object)
+  if ($tigerNames.Count -ne 2 -or $tigerNames -cnotcontains 'postgis_tiger_geocoder' -or
+      $tigerNames -cnotcontains 'metadata.json') {
+    throw 'Unexpected top-level content in TIGER archive.'
   }
   $manifest = Get-Content (Join-Path $pgRoot 'manifest.json') -Raw | ConvertFrom-Json
   foreach ($key in @('component','version','postgresql_version','platform','architecture','build_id','source_revision')) {

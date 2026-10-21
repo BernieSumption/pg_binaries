@@ -351,6 +351,13 @@ def _os_version_parts(value, label):
     return tuple(parts)
 
 
+def profile_revision(profile_id, scope, cases, platforms, source_hashes):
+    digest_input = {"profile_id": profile_id, "scope": scope, "case_ids": cases,
+                    "platforms": platforms, "sources": source_hashes}
+    return hashlib.sha256(json.dumps(digest_input, sort_keys=True, separators=(",", ":"),
+                                     ensure_ascii=False).encode("utf-8")).hexdigest()
+
+
 def verification_profile(root, profile_id, allow_missing_sources=False):
     """Resolve a registered profile and hash its case list and current source files."""
     path = Path(root) / "support" / "verification-profiles.json"
@@ -408,13 +415,8 @@ def verification_profile(root, profile_id, allow_missing_sources=False):
             sources_available = False
             source_hashes[source] = None
             crlf_source_hashes[source] = None
-    def digest(hashes):
-        digest_input = {"profile_id": profile_id, "scope": scope, "case_ids": cases,
-                        "platforms": platforms, "sources": hashes}
-        return hashlib.sha256(json.dumps(digest_input, sort_keys=True, separators=(",", ":"),
-                                         ensure_ascii=False).encode("utf-8")).hexdigest()
-    revision = digest(source_hashes)
-    compatible = {revision, digest(crlf_source_hashes)}
+    revision = profile_revision(profile_id, scope, cases, platforms, source_hashes)
+    compatible = {revision, profile_revision(profile_id, scope, cases, platforms, crlf_source_hashes)}
     equivalences = registry.get("reviewed_equivalences", {})
     if not isinstance(equivalences, dict):
         raise CoverageError("reviewed_equivalences must be an object")
