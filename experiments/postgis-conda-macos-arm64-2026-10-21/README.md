@@ -1,19 +1,9 @@
-# PostGIS conda-forge macOS arm64 dependency trial
+# PostGIS macOS arm64 archive trial
 
-Created 2026-10-21.
+Created 2026-10-21 to test whether conda-forge spatial dependencies, source-built GDAL and SFCGAL, and unmodified PostGIS 3.6.4 can produce a relocatable four-name extension archive against the selected PostgreSQL 18.6 macOS arm64 core.
 
-## Question
+The manually dispatched `postgis-pilot.yml` workflow uses a standard `macos-15` arm64 runner and a conda-forge environment for GEOS, PROJ, CGAL and related build dependencies. `build-four-extensions-sfcgal.sh` builds GDAL and SFCGAL from pinned upstream sources, builds PostGIS, exercises all four SQL extensions, and assembles the runtime dylib closure and data files. `assemble-diagnostic-archive.py` writes the central licence pointer and binds the archive to the selected core. A separate runner checks the final archive's checksum, macOS deployment target, load paths, relocation and SQL behaviour.
 
-Do conda-forge GEOS, PROJ and GDAL packages and their resolved runtime dependencies have macOS deployment targets compatible with macOS 11, and can their dylib dependencies be identified for a later relocation assessment?
+The first archive run [39602429364](../../support/evidence/postgis-conda-archive-39602429364/README.md) built the four SQL extensions and recorded its dependency owners, then stopped on an obsolete licence-inventory lookup. The revised archive and verifier are under test. The diagnostic route does not yet establish selected publication coverage for other PostgreSQL versions or macOS Intel.
 
-## Inputs
-
-- A standard GitHub-hosted `macos-15` arm64 runner.
-- Current conda-forge packages for `geos`, `proj` and `gdal`, resolved together with their transitive dependencies by micromamba.
-- The `postgis_conda_macos_arm64_probe` option of the manually dispatched `postgis-pilot.yml` workflow. SFCGAL is excluded because [conda-forge does not currently publish it for macOS arm64](https://anaconda.org/conda-forge/sfcgal).
-
-The workflow records the explicit package URLs, package metadata, each loadable Mach-O file's deployment target and absolute `LC_RPATH` entries, and non-system absolute dylib dependencies. The temporary conda environment is kept outside the uploaded reports. It does not build PostGIS, alter package binaries, or produce a release archive.
-
-## Completion and cleanup
-
-The question is answered when a successful run records the resolved packages and all runtime dylibs can be inspected. A package with a deployment target newer than 11.0, an unresolved absolute dependency, or missing deployment metadata is a finding to carry into a later experiment. Preserve the workflow and short-retention artifact only while this question is active; remove this experiment after the dependency source is selected or if the package stack cannot meet macOS 11 without upstream changes. Recheck by 2027-01-21 if it remains open.
+Move the working recipe and verifier into `scripts/postgis/` when selected archive checks pass. Remove this experiment and its manual workflow jobs after that migration, or record the failure and remove them if the approach cannot meet the requirements without changing upstream source. Review it by 2027-01-21 if it remains open.
