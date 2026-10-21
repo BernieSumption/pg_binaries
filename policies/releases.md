@@ -16,7 +16,7 @@ Immediately after publication, run the anonymous download verification in [testi
 
 `tools/local_publication_dry_run.py` models publication order after candidate generation and preflight with a filesystem-backed store. It stages archive bytes and the candidate inventory under a new tag, verifies every candidate URL and checksum against new or retained local assets, and switches the current inventory only after verification. Its tests inject failures around promotion and retrieve all promoted references from the local store. The tool never calls GitHub and does not test anonymous network access; only the post-publication check above can establish that clients can download public assets.
 
-The existing workflows publish only temporary Actions artifacts. Their local preflight still checks the previous OS and PostgreSQL endpoint contract. Update it to require the [current verification evidence](testing.md) for every selected core/extension combination and to permit policy-driven inventory retirement. Exact assembled core and prerequisite checksums remain mandatory. This is tracked in [the migration backlog](../GOAL_BACKLOG.md#version-policy-migration); a passing old preflight is not evidence that the new contract is implemented.
+The existing workflows produce temporary Actions artifacts. Local preflight requires [current verification evidence](testing.md) for every selected core and extension target, including exact assembled core and prerequisite checksums. It permits retirement of no-longer-selected inventory entries while preserving references to still-selected downloads. A passing local preflight does not establish public availability.
 
 ## Licence pointer
 

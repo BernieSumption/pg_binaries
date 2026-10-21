@@ -315,9 +315,9 @@ def preflight_candidate(base_inventory, candidate, support, snapshot, staged_ass
     """Validate candidate references and staged bytes without contacting GitHub.
 
     ``staged_assets`` maps each new immutable download URL to an object with
-    ``path`` and ``sha256`` fields. Each new archive must carry the licence
-    inventory and review declarations defined in policies/releases.md. The result describes only this local
-    preflight; it never represents publication eligibility.
+    ``path`` and ``sha256`` fields. Each new archive must contain the central
+    licence pointer. The result describes only this local preflight; it never
+    represents publication eligibility.
     """
     root = Path(root) if root is not None else Path(__file__).resolve().parents[1]
     if not isinstance(candidate, dict) or candidate.get("candidate_status") != "structural-draft":
