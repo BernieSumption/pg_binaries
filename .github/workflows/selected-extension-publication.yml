@@ -179,7 +179,7 @@ jobs:
           }
           project, platform = request["project"], request["platform"]
           route = routes.get((project, platform))
-          if project == "PostGIS" and platform == "windows-x86_64" and request["postgresql_version"] == "18.6":
+          if project == "PostGIS" and platform == "windows-x86_64":
               route = "postgis-windows"
           if project == "PostGIS TIGER Geocoder" and platform in {"macos-arm64", "macos-x86_64", "windows-x86_64"} \
                   and request["postgresql_version"] != "18.6":

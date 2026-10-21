@@ -28,11 +28,11 @@ jobs:
           EXTENSION_VERSION: ${{ inputs.extension_version }}
         run: |
           set -euo pipefail
-          test "$POSTGRESQL_VERSION" = 18.6
+          case "$POSTGRESQL_VERSION" in 15.19|16.15|17.11|18.6) ;; *) exit 2 ;; esac
           test "$EXTENSION_VERSION" = 3.6.4
           python3 tools/extension_archive_plan.py --project PostGIS --platform windows-x86_64 --postgresql-version "$POSTGRESQL_VERSION" --extension-version "$EXTENSION_VERSION" --github-output "$GITHUB_OUTPUT"
           python3 tools/select_extension_work.py --project PostGIS --version "$EXTENSION_VERSION" --platform windows-x86_64 --postgresql-version "$POSTGRESQL_VERSION" > "$RUNNER_TEMP/selected-work.json"
-          python3 -c "import sys;sys.path.insert(0,'tools');import coverage;coverage.verification_profile('.', 'postgis-publication-windows-x86_64-18.6')"
+          python3 -c "import sys;sys.path.insert(0,'tools');import coverage;coverage.verification_profile('.', 'postgis-publication-windows-x86_64-$POSTGRESQL_VERSION')"
 
   build:
     needs: select
@@ -48,8 +48,9 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           $core=Join-Path $env:RUNNER_TEMP 'core'; New-Item -ItemType Directory -Force $core | Out-Null
-          python tools/windows_core_target.py --postgresql-version 18.6 --output (Join-Path $core base-target.json)
-          python tools/windows_core_candidate.py --selected-core --base-target (Join-Path $core base-target.json) --artifact-pin support/windows-core-artifact-pins/18.6-x86_64.json --output-directory $core
+          $pg='${{ needs.select.outputs.postgresql_version }}'
+          python tools/windows_core_target.py --postgresql-version $pg --output (Join-Path $core base-target.json)
+          python tools/windows_core_candidate.py --selected-core --base-target (Join-Path $core base-target.json) --artifact-pin "support/windows-core-artifact-pins/$pg-x86_64.json" --output-directory $core
           if($LASTEXITCODE -ne 0){throw 'Selected PostgreSQL core resolution failed'}
           $result=Get-Content (Join-Path $core result.json) -Raw|ConvertFrom-Json
           if($result.status -ne 'checked'){throw "Core candidate is not checked: $($result.status)"}
@@ -58,25 +59,26 @@ jobs:
         with:
           msystem: MINGW64
           update: true
-          install: base-devel curl tar autoconf automake libtool bison flex diffutils
+          install: base-devel curl tar git autoconf automake libtool bison flex diffutils
           pacboy: toolchain:p cmake:p ninja:p pkgconf:p gmp:p sfcgal:p geos:p proj:p gdal:p json-c:p libxml2:p
       - name: Build and package PostGIS against the selected core
         shell: msys2 {0}
         run: |
           set -euo pipefail
           root="$(cygpath -u "$RUNNER_TEMP")"
-          core="$root/core/postgresql-18.6-windows-x86_64.tar.gz"
+          pg='${{ needs.select.outputs.postgresql_version }}'
+          core="$root/core/postgresql-$pg-windows-x86_64.tar.gz"
           bash scripts/postgis/windows-build.sh "$core" "$root/postgis" "$root/core/identity.json"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: postgis-3.6.4-postgresql-18.6-windows-x86_64-candidate-${{ github.run_id }}
+          name: postgis-3.6.4-postgresql-${{ needs.select.outputs.postgresql_version }}-windows-x86_64-candidate-${{ github.run_id }}
           path: |
-            ${{ runner.temp }}/core/postgresql-18.6-windows-x86_64.tar.gz
-            ${{ runner.temp }}/core/postgresql-18.6-windows-x86_64.tar.gz.sha256
+            ${{ runner.temp }}/core/postgresql-${{ needs.select.outputs.postgresql_version }}-windows-x86_64.tar.gz
+            ${{ runner.temp }}/core/postgresql-${{ needs.select.outputs.postgresql_version }}-windows-x86_64.tar.gz.sha256
             ${{ runner.temp }}/core/identity.json
-            ${{ runner.temp }}/postgis/postgis-3.6.4-postgresql-18.6-windows-x86_64.tar.gz
-            ${{ runner.temp }}/postgis/postgis-3.6.4-postgresql-18.6-windows-x86_64.tar.gz.sha256
+            ${{ runner.temp }}/postgis/postgis-3.6.4-postgresql-${{ needs.select.outputs.postgresql_version }}-windows-x86_64.tar.gz
+            ${{ runner.temp }}/postgis/postgis-3.6.4-postgresql-${{ needs.select.outputs.postgresql_version }}-windows-x86_64.tar.gz.sha256
             ${{ runner.temp }}/postgis/runtime-package-owners.txt
             ${{ runner.temp }}/postgis/mingw/build.log
           if-no-files-found: warn
@@ -96,7 +98,7 @@ jobs:
         id: download
         continue-on-error: true
         with:
-          name: postgis-3.6.4-postgresql-18.6-windows-x86_64-candidate-${{ github.run_id }}
+          name: postgis-3.6.4-postgresql-${{ needs.select.outputs.postgresql_version }}-windows-x86_64-candidate-${{ github.run_id }}
           path: ${{ runner.temp }}/bundle
       - name: Verify exact archives and inspect PE imports on a fresh runner
         id: verify
@@ -116,7 +118,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: postgis-3.6.4-postgresql-18.6-windows-x86_64-verification-${{ github.run_id }}
+          name: postgis-3.6.4-postgresql-${{ needs.select.outputs.postgresql_version }}-windows-x86_64-verification-${{ github.run_id }}
           path: |
             ${{ runner.temp }}/bundle/postgis/publication/**
             ${{ runner.temp }}/bundle/postgis/static-analysis.json
@@ -125,7 +127,7 @@ jobs:
             ${{ runner.temp }}/bundle/postgis/initdb.log
             ${{ runner.temp }}/bundle/postgis/server.log
             support/evidence/postgis-windows-publication-${{ github.run_id }}/**
-            support/verification/postgis*-3.6.4-postgresql-18.6-windows-x86_64-current-${{ github.run_id }}.json
+            support/verification/postgis*-3.6.4-postgresql-${{ needs.select.outputs.postgresql_version }}-windows-x86_64-current-${{ github.run_id }}.json
           if-no-files-found: warn
           retention-days: 7
       - name: Require fresh-runner verification to pass

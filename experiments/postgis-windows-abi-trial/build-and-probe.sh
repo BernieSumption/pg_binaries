@@ -1,7 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-output_root=${1:?usage: build-and-probe.sh OUTPUT_ROOT}
+output_root=${1:?usage: build-and-probe.sh OUTPUT_ROOT [POSTGRESQL_VERSION]}
+pg_version=${2:-${PG_VERSION:-18.6}}
+case "$pg_version" in
+  15.19|16.15|17.11|18.6) ;;
+  *) printf 'Unsupported PostgreSQL version: %s\n' "$pg_version" >&2; exit 2 ;;
+esac
 repo_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 mkdir -p "$output_root"
 output_root=$(cd "$output_root" && pwd)
@@ -67,15 +72,43 @@ if findings:
     raise SystemExit("NetCDF dependency resolution failed before PostgreSQL/PostGIS compilation")
 PY
 
-curl -fL --retry 3 -o postgresql-18.6.tar.bz2 https://ftp.postgresql.org/pub/source/v18.6/postgresql-18.6.tar.bz2
-printf '%s  %s\n' 555610c24d53e4316da5b7d3fc25c279d96856d5e0e23ee308c328c5fa881d9f postgresql-18.6.tar.bz2 | sha256sum -c -
-tar -xjf postgresql-18.6.tar.bz2
-cd postgresql-18.6
+if test "$pg_version" = 16.15; then
+  read -r source_repository source_ref source_commit source_tree < <(python - "$repo_root" "$pg_version" <<'PY'
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(sys.argv[1]) / 'tools'))
+import postgresql_git_source
+source=postgresql_git_source.source_checkout(sys.argv[2], sys.argv[1])
+print(source['repository'], source['ref'], source['commit'], source['tree'])
+PY
+)
+  git init "postgresql-$pg_version"
+  cd "postgresql-$pg_version"
+  git remote add origin "$source_repository"
+  git fetch --depth=1 origin "$source_ref"
+  git checkout --detach "$source_commit"
+  test "$(git rev-parse HEAD^{tree})" = "$source_tree"
+else
+  read -r source_url source_sha < <(python - "$repo_root" "$pg_version" <<'PY'
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path(sys.argv[1]) / 'tools'))
+import source_archive
+source=source_archive.source_archive('postgresql', sys.argv[2], 'tar.gz', sys.argv[1])
+print(source['url'], source['sha256'])
+PY
+)
+  source_archive="postgresql-$pg_version.tar.gz"
+  curl -fL --retry 3 -o "$source_archive" "$source_url"
+  printf '%s  %s\n' "$source_sha" "$source_archive" | sha256sum -c -
+  tar -xzf "$source_archive"
+  cd "postgresql-$pg_version"
+fi
 CC=gcc ./configure --host=x86_64-w64-mingw32 --prefix="$pgroot" --without-readline --without-zlib --without-icu --without-openssl --without-libxml --without-lz4 --without-zstd --without-ldap --without-gssapi
 make -j2
 make install
 
-test "$("$pgroot/bin/pg_config.exe" --version)" = 'PostgreSQL 18.6'
+test "$("$pgroot/bin/pg_config.exe" --version)" = "PostgreSQL $pg_version"
 cd "$source_root"
 curl -fL --retry 3 -o postgis-3.6.4.tar.gz https://download.osgeo.org/postgis/source/postgis-3.6.4.tar.gz
 printf '%s  %s\n' ed8dc6679f1e06f7b113592b04cde2a7e00f1b1e681294c8ca2204058990cec6 postgis-3.6.4.tar.gz | sha256sum -c -

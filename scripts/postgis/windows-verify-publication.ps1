@@ -1,9 +1,13 @@
 param([Parameter(Mandatory=$true)][string]$CoreDirectory,[Parameter(Mandatory=$true)][string]$ExtensionDirectory,[Parameter(Mandatory=$true)][string]$OutputDirectory)
 $ErrorActionPreference='Stop'
 $PSNativeCommandUseErrorActionPreference=$true
-$pg='18.6'; $platform='windows-x86_64'; $version='3.6.4'
-$core=Join-Path $CoreDirectory "postgresql-$pg-$platform.tar.gz"
+$platform='windows-x86_64'; $version='3.6.4'
+$coreCandidates=@(Get-ChildItem $CoreDirectory -File | Where-Object { $_.Name -match '^postgresql-(15\.19|16\.15|17\.11|18\.6)-windows-x86_64\.tar\.gz$' })
+if($coreCandidates.Count -ne 1){throw 'Core directory must contain exactly one supported PostgreSQL archive'}
+$core=$coreCandidates[0].FullName
+$pg=[regex]::Match($coreCandidates[0].Name,'^postgresql-(15\.19|16\.15|17\.11|18\.6)-').Groups[1].Value
 $extension=Join-Path $ExtensionDirectory "postgis-$version-postgresql-$pg-$platform.tar.gz"
+if(-not (Test-Path $extension -PathType Leaf)){throw "PostGIS archive does not match selected PostgreSQL $pg core"}
 New-Item -ItemType Directory -Force $OutputDirectory | Out-Null
 foreach($archive in @($core,$extension)) {
   $line=(Get-Content "$archive.sha256" -Raw).Trim() -split '\s+',2

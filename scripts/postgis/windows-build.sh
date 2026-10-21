@@ -1,14 +1,26 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-core_archive=${1:?usage: windows-build.sh CORE_ARCHIVE OUTPUT_ROOT}
+core_archive=${1:?usage: windows-build.sh CORE_ARCHIVE OUTPUT_ROOT CORE_IDENTITY}
 output_root=${2:?usage: windows-build.sh CORE_ARCHIVE OUTPUT_ROOT}
 core_identity=${3:?usage: windows-build.sh CORE_ARCHIVE OUTPUT_ROOT CORE_IDENTITY}
 repo_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 trial_root="$repo_root/experiments/postgis-windows-abi-trial"
+pg_version=$(python - "$core_identity" "$core_archive" <<'PY'
+import json, re, sys
+from pathlib import Path
+value=json.loads(Path(sys.argv[1]).read_text(encoding='utf-8'))
+archive=Path(sys.argv[2])
+match=re.fullmatch(r'postgresql-(15\.19|16\.15|17\.11|18\.6)-windows-x86_64\.tar\.gz',archive.name)
+if not match or value.get('status') != 'checked' or Path(value.get('archive','')).name != archive.name:
+    raise SystemExit('core archive does not match a checked selected PostgreSQL identity')
+print(match.group(1))
+PY
+)
+export PG_VERSION="$pg_version"
 mkdir -p "$output_root"
 output_root=$(cd "$output_root" && pwd)
-bash "$trial_root/build-and-probe.sh" "$output_root/mingw"
+bash "$trial_root/build-and-probe.sh" "$output_root/mingw" "$pg_version"
 
 set -x
 test "${MSYSTEM:-}" = MINGW64
@@ -17,8 +29,8 @@ tar -xzf "$core_archive" -C "$output_root/selected"
 selected="$output_root/selected/postgresql"
 mingw="$output_root/mingw/postgresql"
 netcdf="$output_root/mingw/netcdf-no-ros3"
-test "$("$selected/bin/pg_config.exe" --version)" = 'PostgreSQL 18.6'
-test "$("$mingw/bin/pg_config.exe" --version)" = 'PostgreSQL 18.6'
+test "$("$selected/bin/pg_config.exe" --version)" = "PostgreSQL $pg_version"
+test "$("$mingw/bin/pg_config.exe" --version)" = "PostgreSQL $pg_version"
 
 shopt -s nullglob
 modules=("$mingw"/lib/postgis*.dll "$mingw"/lib/rtpostgis*.dll)
@@ -88,7 +100,7 @@ PY
 
 for file in "${sql[@]}"; do cp "$file" "$selected/share/extension/"; done
 for file in "${modules[@]}"; do cp "$file" "$selected/lib/"; done
-archive="$output_root/postgis-3.6.4-postgresql-18.6-windows-x86_64.tar.gz"
+archive="$output_root/postgis-3.6.4-postgresql-$pg_version-windows-x86_64.tar.gz"
 python - "$package/metadata.json" "$core_archive" "$core_identity" <<'PY'
 import hashlib, json, os, re, sys
 from pathlib import Path
@@ -106,7 +118,7 @@ metadata.write_text(json.dumps({
   'schema_version': 1, 'project': 'PostGIS', 'version': '3.6.4',
   'sql_names': ['postgis','postgis_raster','postgis_sfcgal','postgis_topology'],
   'requires': [],
-  'postgresql_version': '18.6', 'platform': 'windows', 'architecture': 'x86_64',
+  'postgresql_version': os.environ['PG_VERSION'], 'platform': 'windows', 'architecture': 'x86_64',
   'source': {'url':'https://download.osgeo.org/postgis/source/postgis-3.6.4.tar.gz',
              'sha256':'ed8dc6679f1e06f7b113592b04cde2a7e00f1b1e681294c8ca2204058990cec6'},
   'core_archive': {'basename':core.name,'sha256':digest},
