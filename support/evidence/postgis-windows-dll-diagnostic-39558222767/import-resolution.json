@@ -1,0 +1,54 @@
+{
+  "errors_truncated": false,
+  "findings_truncated": false,
+  "missing_symbols": [
+    {
+      "dll": "libhdf5-320.dll",
+      "importer": "D:/a/_temp/msys64/mingw64/bin/libnetcdf.dll",
+      "symbol": "H5Pset_fapl_ros3"
+    }
+  ],
+  "objdump_errors": [],
+  "root": "D:/a/_temp/postgis-windows/output/postgresql/lib/postgis_raster-3.dll",
+  "scanned_modules": 173,
+  "schema_version": 1,
+  "search_directories": [
+    "D:/a/_temp/postgis-windows/output/postgresql/bin",
+    "D:/a/_temp/msys64/mingw64/bin",
+    "D:/a/_temp/msys64/usr/bin"
+  ],
+  "unresolved_dlls": [
+    {
+      "dll": "dbghelp.dll",
+      "importer": "D:/a/_temp/msys64/mingw64/bin/libabsl_symbolize-2605.0.0.dll"
+    },
+    {
+      "dll": "XmlLite.dll",
+      "importer": "D:/a/_temp/msys64/mingw64/bin/libarchive-13.dll"
+    },
+    {
+      "dll": "WINHTTP.dll",
+      "importer": "D:/a/_temp/msys64/mingw64/bin/libaws-cpp-sdk-core.dll"
+    },
+    {
+      "dll": "WININET.dll",
+      "importer": "D:/a/_temp/msys64/mingw64/bin/libaws-cpp-sdk-core.dll"
+    },
+    {
+      "dll": "ODBC32.dll",
+      "importer": "D:/a/_temp/msys64/mingw64/bin/libgdal-39.dll"
+    },
+    {
+      "dll": "ODBCCP32.dll",
+      "importer": "D:/a/_temp/msys64/mingw64/bin/libgdal-39.dll"
+    },
+    {
+      "dll": "DWrite.dll",
+      "importer": "D:/a/_temp/msys64/mingw64/bin/libharfbuzz-0.dll"
+    },
+    {
+      "dll": "USP10.dll",
+      "importer": "D:/a/_temp/msys64/mingw64/bin/libharfbuzz-0.dll"
+    }
+  ]
+}
