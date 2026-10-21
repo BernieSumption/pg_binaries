@@ -124,12 +124,12 @@ jobs:
         run: |
           $bundle = Join-Path $env:RUNNER_TEMP 'bundle'
           ./scripts/tiger/windows-verify-publication.ps1 `
-            -CoreArchiveDirectory $bundle `
-            -PostGISArchive (Join-Path $bundle 'postgis-3.6.4-postgresql-18.6-windows-x86_64.tar.gz') `
-            -TigerArchive (Join-Path $bundle 'postgis_tiger_geocoder-2025.2-postgresql-18.6-windows-x86_64.tar.gz') `
+            -CoreArchiveDirectory (Join-Path $bundle 'core') `
+            -PostGISArchive (Join-Path $bundle 'postgis/postgis-3.6.4-postgresql-18.6-windows-x86_64.tar.gz') `
+            -TigerArchive (Join-Path $bundle 'tiger/postgis_tiger_geocoder-2025.2-postgresql-18.6-windows-x86_64.tar.gz') `
             -OutputDirectory (Join-Path $env:RUNNER_TEMP 'tiger-windows-verification') `
             -PostgreSQLVersion '18.6' `
-            -CoreIdentityPath (Join-Path $bundle 'identity.json')
+            -CoreIdentityPath (Join-Path $bundle 'core/identity.json')
       - uses: actions/upload-artifact@v4
         if: always()
         with:
