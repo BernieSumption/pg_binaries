@@ -63,7 +63,7 @@ This file records licence declarations for PostgreSQL, selected extensions, sepa
 - util-linux libuuid — BSD-3-Clause, LGPL-2.1-or-later and public-domain terms for the shipped library files, as declared by Ubuntu. [Source](https://github.com/util-linux/util-linux); [Ubuntu `libuuid1` package declaration](https://packages.ubuntu.com/jammy/libuuid1).
 - ARPACK-NG — BSD-3-Clause. [Source and `COPYING`](https://github.com/opencollab/arpack-ng/blob/master/COPYING).
 - Reference BLAS and LAPACK — modified BSD licence. [LAPACK source and licence declaration](https://github.com/Reference-LAPACK/lapack); [Ubuntu Jammy `libblas3` package](https://packages.ubuntu.com/jammy/libblas3) identifies the shipped BLAS as the reference implementation.
-- com_err — MIT-style terms with the MIT SIPB advertising restriction. [Source and file-level declaration](https://github.com/tytso/e2fsprogs/blob/master/lib/et/et_name.c).
+- e2fsprogs libcom_err — MIT-style terms. [Source and project notice](https://github.com/tytso/e2fsprogs/blob/master/NOTICE).
 - FYBA — MIT. The source declares the MIT licence in its [README](https://github.com/kartverket/fyba#license); the Ubuntu Jammy package identifies the FYBA source package for these libraries ([`libfyba0`](https://packages.ubuntu.com/jammy/libfyba0)).
 - keyutils library — LGPL. The [source project](https://kernel.googlesource.com/pub/scm/linux/kernel/git/dhowells/keyutils/) distinguishes the library's [`LICENCE.LGPL`](https://github.com/yugabyte/libkeyutils/blob/master/LICENCE.LGPL) from the GPL-licensed tools.
 - JBIG-KIT — GNU GPL. [Source and licence declaration](https://github.com/nu774/jbigkit).
