@@ -142,6 +142,7 @@ The Windows PostGIS trial archive's runtime owner report identifies these separa
 - OpenEXR — BSD-3-Clause. [Source and `LICENSE.md`](https://github.com/AcademySoftwareFoundation/openexr/blob/main/LICENSE.md); [MSYS2 package declaration](https://packages.msys2.org/package/mingw-w64-x86_64-openexr).
 - OpenH264 — BSD-2-Clause. [Source and `LICENSE`](https://github.com/cisco/openh264/blob/master/LICENSE); [MSYS2 package declaration](https://packages.msys2.org/package/mingw-w64-x86_64-openh264).
 - OpenJPH — BSD-2-Clause. [Source and `LICENSE`](https://github.com/aous72/OpenJPH/blob/master/LICENSE); [MSYS2 package declaration](https://packages.msys2.org/package/mingw-w64-x86_64-openjph).
+- PoDoFo — LGPL-2.0-or-later and GPL-2.0-or-later, as declared for the MSYS2 package. [Source](https://github.com/podofo/podofo); [MSYS2 package declaration](https://packages.msys2.org/package/mingw-w64-x86_64-podofo).
 - rav1e — BSD-2-Clause. [Source and `LICENSE`](https://github.com/xiph/rav1e/blob/master/LICENSE); [MSYS2 package declaration](https://packages.msys2.org/package/mingw-w64-x86_64-rav1e).
 - RE2 — BSD-3-Clause. [Source and `LICENSE`](https://github.com/google/re2/blob/main/LICENSE); [MSYS2 package declaration](https://packages.msys2.org/package/mingw-w64-x86_64-re2).
 - simdjson — Apache-2.0. [Source and `LICENSE`](https://github.com/simdjson/simdjson/blob/master/LICENSE); [MSYS2 package declaration](https://packages.msys2.org/package/mingw-w64-x86_64-simdjson).
@@ -153,6 +154,7 @@ The Windows PostGIS trial archive's runtime owner report identifies these separa
 - nghttp3 — MIT. [Source and `COPYING`](https://github.com/ngtcp2/nghttp3/blob/main/COPYING); [MSYS2 package declaration](https://packages.msys2.org/package/mingw-w64-x86_64-nghttp3).
 - ngtcp2 — MIT. [Source and `COPYING`](https://github.com/ngtcp2/ngtcp2/blob/main/COPYING); [MSYS2 package declaration](https://packages.msys2.org/package/mingw-w64-x86_64-ngtcp2).
 - zlib-ng — zlib licence. [Source and `LICENSE.md`](https://github.com/zlib-ng/zlib-ng/blob/develop/LICENSE.md); [MSYS2 package declaration](https://packages.msys2.org/package/mingw-w64-x86_64-zlib-ng).
+- x264 — GPL-2.0. [Source](https://code.videolan.org/videolan/x264); [upstream licence declaration](https://x264.org/licensing/); [MSYS2 `libx264` package](https://packages.msys2.org/package/mingw-w64-x86_64-libx264).
 
 ## Incomplete dependency inventory
 
