@@ -1,0 +1,19 @@
+{
+  "architecture": "x86_64",
+  "collection_versions": [
+    "2.1.3"
+  ],
+  "postgresql_version": "18.6",
+  "run_id": "39685011274",
+  "schema_version": 1,
+  "source_revision": "eaa4fea0a34d5e9a75a721e2426875f2c502ef35",
+  "source_sha256": {
+    "2.1.3": "a6b07864e5893d3b682bb3223fd6d33015709765c9d40d415c85112358f0e3e4"
+  },
+  "steps": {
+    "collection_build": "success",
+    "collection_verify": "success",
+    "core_build": "success"
+  },
+  "verifier_image_id": "sha256:3f0dae7b3e5fe8abbdf858af30ade4c8c01a601e7cda5eb17bafea8ca143dc53"
+}
