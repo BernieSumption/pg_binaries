@@ -25,6 +25,8 @@ function Assert-ArchiveHash([string]$archive) {
 
 Assert-ArchiveHash $coreArchive
 Assert-ArchiveHash $extensionArchive
+& python.exe (Join-Path $PSScriptRoot '../../tools/license_pointer.py') verify $extensionArchive postgis
+if ($LASTEXITCODE -ne 0) { throw 'PostGIS archive licence pointer is invalid' }
 $coreSha = (Get-FileHash $coreArchive -Algorithm SHA256).Hash.ToLowerInvariant()
 $extensionSha = (Get-FileHash $extensionArchive -Algorithm SHA256).Hash.ToLowerInvariant()
 $coreExtract = Join-Path $work 'core-extract'

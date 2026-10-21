@@ -128,7 +128,9 @@ Path(sys.argv[1]).write_text(json.dumps({
     "runtime_layout": "bin contains the recursive MinGW DLL closure; share contains GDAL/PROJ/SFCGAL data",
 }, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 PY
+python "$repo_root/tools/license_pointer.py" write "$package_root" postgis
 archive="$output_root/postgis-3.6.4-postgresql-18.6-windows-x86_64-trial.tar.gz"
 tar -czf "$archive" -C "$output_root/package" postgis
+python "$repo_root/tools/license_pointer.py" verify "$archive" postgis
 (cd "$output_root" && sha256sum "${archive##*/}" > "${archive##*/}.sha256")
 printf 'Created relocatable trial archive: %s\n' "$archive"
