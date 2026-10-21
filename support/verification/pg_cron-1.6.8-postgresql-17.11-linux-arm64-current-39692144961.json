@@ -1,0 +1,47 @@
+{
+  "assembled_core": {
+    "archive": "postgresql-17.11-linux-arm64.tar.gz",
+    "sha256": "6c1fe750d82629cc66ead9232d51ee0fb6088d195c21870b9d7136bd7fcf3a8e",
+    "version": "17.11"
+  },
+  "case_results": {
+    "pgcron-archive-suite": "passed"
+  },
+  "ci": {
+    "build_revision": "a43a441678abee15a4b50369c74e7d6ba622706b",
+    "provider": "github-actions",
+    "run_id": "39692144961",
+    "run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/39692144961",
+    "source_revision": "a43a441678abee15a4b50369c74e7d6ba622706b",
+    "test_revision": "a43a441678abee15a4b50369c74e7d6ba622706b"
+  },
+  "component": "pg_cron",
+  "environment": {
+    "architecture": "arm64",
+    "clean_system": true,
+    "dependency_check_profile": "pg_cron-runtime-v1",
+    "dependency_checks_passed": true,
+    "distribution": "Alpine Linux",
+    "distribution_version": "3.22.7",
+    "endpoint": "current",
+    "image_id": "sha256:b5c77c31ec3b44cec64611bf578f2a58e3224c76e843c6932a4f238f403abcf5",
+    "kernel_release": "7.0.0-1017-azure",
+    "os": "linux",
+    "os_version": "7.0.0"
+  },
+  "outcome": "passed",
+  "platform": "linux-arm64",
+  "postgresql_version": "17.11",
+  "prerequisite_archives": [],
+  "profile_id": "pgcron-publication-linux-arm64-17.11",
+  "profile_revision": "0a6786e47f6e66525ceb2847736f0895703b0db952d0dd00bf301a9f552083fc",
+  "project": "pg_cron",
+  "schema_version": 2,
+  "scope": "publication",
+  "sha256": "7873d603e1db44dfa5db8b9afde77320be7c2543d12f3465057954b79ce9ac49",
+  "test_cases": [
+    "pgcron-archive-suite"
+  ],
+  "test_revision": "a43a441678abee15a4b50369c74e7d6ba622706b",
+  "version": "1.6.8"
+}

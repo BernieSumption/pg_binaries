@@ -1,0 +1,34 @@
+{
+  "architecture": "x86_64",
+  "archives": {
+    "pg_cron-1.6.8-postgresql-16.15-linux-x86_64.tar.gz": "f96d259da5f061a3a47014ab2d8a26e8aaef97506a7fbc52f06ab58c06946227",
+    "postgresql-16.15-linux-x86_64.tar.gz": "7e5baeed24181247480b78eead1256cdf3ea52aeb3eb0e48091e9938aa664121"
+  },
+  "case_results": {
+    "pgcron-archive-suite": "passed"
+  },
+  "ci": {
+    "build_revision": "a43a441678abee15a4b50369c74e7d6ba622706b",
+    "provider": "github-actions",
+    "run_id": "39692151412",
+    "run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/39692151412",
+    "source_revision": "a43a441678abee15a4b50369c74e7d6ba622706b",
+    "test_revision": "a43a441678abee15a4b50369c74e7d6ba622706b"
+  },
+  "clean_system": true,
+  "dependency_check_profile": "pg_cron-runtime-v1",
+  "dependency_checks_passed": true,
+  "distribution": "Alpine Linux",
+  "distribution_version": "3.22.7",
+  "endpoint": "current",
+  "extension_archive": "pg_cron-1.6.8-postgresql-16.15-linux-x86_64.tar.gz",
+  "image_id": "sha256:433ece7ee94a707da9accc92d695361c38bf7c626f8b7095fba98c34c24cd313",
+  "kernel_release": "6.17.0-1022-azure",
+  "postgresql_version": "16.15",
+  "prerequisite_archives": [],
+  "profile_id": "pgcron-publication-linux-x86_64-16.15",
+  "profile_revision": "6b51975e1c8eafdd8a1e070cbd3493281508435d43a00ef49c1739379ced7bed",
+  "project": "pg_cron",
+  "test_revision": "a43a441678abee15a4b50369c74e7d6ba622706b",
+  "version": "1.6.8"
+}
