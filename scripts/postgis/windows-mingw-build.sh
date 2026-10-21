@@ -123,6 +123,19 @@ if test "$pg_version" = 15.19; then
   for symbol in GetNumConfigOptions MemoryContextContains; do
     nm "$pgroot/lib/libpostgres.a" | grep -Eq "[[:space:]]$symbol$"
   done
+  cat > "$output_root/selected-postgres-link-probe.c" <<'C'
+extern void GetNumConfigOptions(void);
+extern void MemoryContextContains(void);
+int main(void) {
+  GetNumConfigOptions();
+  MemoryContextContains();
+  return 0;
+}
+C
+  gcc "$output_root/selected-postgres-link-probe.c" \
+    "$pgroot/lib/libpostgres.a" -o "$output_root/selected-postgres-direct.exe"
+  gcc "$output_root/selected-postgres-link-probe.c" -L"$pgroot/lib" \
+    -Wl,-t -lpostgres -o "$output_root/selected-postgres-search.exe"
 fi
 cd "$source_root"
 curl -fL --retry 3 -o postgis-3.6.4.tar.gz https://download.osgeo.org/postgis/source/postgis-3.6.4.tar.gz
