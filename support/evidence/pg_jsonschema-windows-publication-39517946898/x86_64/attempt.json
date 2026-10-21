@@ -1,0 +1,24 @@
+{
+  "architecture": "x86_64",
+  "archives": {
+    "pg_jsonschema-0.3.4-postgresql-18.6-windows-x86_64.tar.gz": "3c2af3241a52979e36827324f0184575032b70d66b75d33ccf1440655f89242c",
+    "postgresql-18.6-windows-x86_64.tar.gz": "8f5cbed1c6206f1800a6ee2ac3d23c8d27d529cc2db167f48be225eaae07387d"
+  },
+  "archives_present": {
+    "pg_jsonschema-0.3.4-postgresql-18.6-windows-x86_64.tar.gz": true,
+    "postgresql-18.6-windows-x86_64.tar.gz": true
+  },
+  "core_identity_known": true,
+  "core_status": "current-profile-core-redistribution-pending",
+  "pg_jsonschema_version": "0.3.4",
+  "postgresql_version": "18.6",
+  "profile_id": "pg-jsonschema-publication-windows-x86_64-18.6",
+  "release_eligible": false,
+  "run_id": "39517946898",
+  "schema_version": 1,
+  "source_revision": "a94b38bfe7e83b49578fbead4868c786b8b0b680",
+  "steps": {
+    "archive-suite": "success",
+    "static-analysis": "success"
+  }
+}
