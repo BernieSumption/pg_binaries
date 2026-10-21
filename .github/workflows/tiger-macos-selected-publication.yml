@@ -125,7 +125,8 @@ jobs:
         with:
           name: postgis-macos-${{ needs.select.outputs.architecture }}-${{ needs.select.outputs.postgresql_version }}-build-${{ github.run_id }}
           path: ${{ runner.temp }}/postgis-bundle
-      - name: Relocate and exercise the final PostGIS and TIGER archives
+      - id: verify
+        name: Relocate and exercise the final PostGIS and TIGER archives
         env:
           PG_VERSION: ${{ needs.select.outputs.postgresql_version }}
           ARCHITECTURE: ${{ needs.select.outputs.architecture }}
@@ -139,6 +140,34 @@ jobs:
             "$RUNNER_TEMP/tiger/verification/postgis/postgis-3.6.4-postgresql-$PG_VERSION-macos-$ARCHITECTURE.tar.gz" \
             "$RUNNER_TEMP/tiger/output/postgis_tiger_geocoder-2025.2-postgresql-$PG_VERSION-macos-$ARCHITECTURE.tar.gz" \
             "$RUNNER_TEMP/tiger/verification" "$PG_VERSION" "$ARCHITECTURE"
+      - name: Emit archive-bound publication record
+        if: always()
+        env:
+          PG_VERSION: ${{ needs.select.outputs.postgresql_version }}
+          ARCHITECTURE: ${{ needs.select.outputs.architecture }}
+          VERIFY_RESULT: ${{ steps.verify.outcome }}
+        run: |
+          python3 tools/emit_tiger_macos_publication.py \
+            --core "$RUNNER_TEMP/tiger/core" \
+            --postgis "$RUNNER_TEMP/tiger/verification/postgis/postgis-3.6.4-postgresql-$PG_VERSION-macos-$ARCHITECTURE.tar.gz" \
+            --tiger "$RUNNER_TEMP/tiger/output/postgis_tiger_geocoder-2025.2-postgresql-$PG_VERSION-macos-$ARCHITECTURE.tar.gz" \
+            --output "$RUNNER_TEMP/tiger/verification/publication" \
+            --postgresql-version "$PG_VERSION" --architecture "$ARCHITECTURE" \
+            --archive-suite-result "$VERIFY_RESULT" --static-analysis-result "$VERIFY_RESULT" \
+            --os-version "$(sw_vers -productVersion)" --image-id "${ImageOS:-unknown}/${ImageVersion:-unknown}"
+      - name: Import and retain selected TIGER verification evidence
+        if: success()
+        env:
+          PG_VERSION: ${{ needs.select.outputs.postgresql_version }}
+          ARCHITECTURE: ${{ needs.select.outputs.architecture }}
+        run: |
+          python3 tools/import_tiger_macos_publication.py \
+            --artifact "$RUNNER_TEMP/tiger" --run-id "$GITHUB_RUN_ID" \
+            --postgresql-version "$PG_VERSION" --architecture "$ARCHITECTURE"
+          mkdir -p "$RUNNER_TEMP/tiger/retained/support/evidence" "$RUNNER_TEMP/tiger/retained/support/verification"
+          cp -R "support/evidence/tiger-macos-publication-$GITHUB_RUN_ID" "$RUNNER_TEMP/tiger/retained/support/evidence/"
+          cp "support/verification/postgis_tiger_geocoder-2025.2-postgresql-$PG_VERSION-macos-$ARCHITECTURE-current-$GITHUB_RUN_ID.json" \
+            "$RUNNER_TEMP/tiger/retained/support/verification/"
       - uses: actions/upload-artifact@v4
         if: always()
         with:

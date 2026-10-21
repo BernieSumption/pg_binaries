@@ -168,19 +168,43 @@ jobs:
         if: steps.download.outcome == 'success'
         run: |
           $bundle = Join-Path $env:RUNNER_TEMP 'bundle'
+          $evidence = Join-Path $env:RUNNER_TEMP 'tiger-windows-verification'
           ./scripts/tiger/windows-verify-publication.ps1 `
             -CoreArchiveDirectory (Join-Path $bundle 'core') `
             -PostGISArchive (Join-Path $bundle 'postgis/postgis-3.6.4-postgresql-${{ needs.select.outputs.postgresql_version }}-windows-x86_64.tar.gz') `
             -TigerArchive (Join-Path $bundle 'tiger/postgis_tiger_geocoder-2025.2-postgresql-${{ needs.select.outputs.postgresql_version }}-windows-x86_64.tar.gz') `
-            -OutputDirectory (Join-Path $env:RUNNER_TEMP 'tiger-windows-verification') `
+            -OutputDirectory $evidence `
             -PostgreSQLVersion '${{ needs.select.outputs.postgresql_version }}' `
             -CoreIdentityPath (Join-Path $bundle 'core/identity.json')
+          if ($LASTEXITCODE -ne 0) { throw 'Windows TIGER verification failed.' }
+          Copy-Item (Join-Path $evidence 'static-analysis.json') (Join-Path $bundle 'tiger/static-analysis.json') -Force
+          Copy-Item (Join-Path $evidence 'probe-output.txt') (Join-Path $bundle 'tiger/probe-output.txt') -Force
+          $steps = Join-Path $evidence 'steps.json'
+          '{"archive-suite":"passed","static-analysis":"passed"}' | Set-Content -Encoding ascii $steps
+          $osVersion = (Get-CimInstance Win32_OperatingSystem).Version
+          $imageId = "$env:ImageOS/$env:ImageVersion"
+          python tools/emit_tiger_windows_publication.py `
+            --core-archives (Join-Path $bundle 'core') `
+            --postgis-archives (Join-Path $bundle 'postgis') `
+            --tiger-archives (Join-Path $bundle 'tiger') `
+            --output (Join-Path $bundle 'tiger/publication') `
+            --steps $steps --os-version $osVersion --image-id $imageId
+          if ($LASTEXITCODE -ne 0) { throw 'Could not emit archive-bound Windows TIGER publication evidence.' }
+          python tools/import_tiger_windows_publication.py `
+            --core-archives (Join-Path $bundle 'core') `
+            --postgis-archives (Join-Path $bundle 'postgis') `
+            --tiger-archives (Join-Path $bundle 'tiger') `
+            --run-id $env:GITHUB_RUN_ID
+          if ($LASTEXITCODE -ne 0) { throw 'Could not import Windows TIGER publication evidence.' }
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: tiger-windows-verification-${{ needs.select.outputs.postgresql_version }}-${{ github.run_id }}
           path: |
             ${{ runner.temp }}/tiger-windows-verification/**
+            ${{ runner.temp }}/bundle/tiger/publication/**
+            support/evidence/tiger-windows-publication-${{ github.run_id }}/**
+            support/verification/postgis_tiger_geocoder-2025.2-postgresql-${{ needs.select.outputs.postgresql_version }}-windows-x86_64-current-${{ github.run_id }}.json
           if-no-files-found: warn
           retention-days: 7
       - name: Require the selected Windows TIGER archive verification
