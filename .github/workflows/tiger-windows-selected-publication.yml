@@ -1,0 +1,146 @@
+name: TIGER Geocoder selected PostgreSQL Windows x86-64 publication
+
+on:
+  workflow_call:
+    inputs:
+      postgresql_version: {required: true, type: string}
+      extension_version: {required: true, type: string}
+  workflow_dispatch:
+    inputs:
+      postgresql_version:
+        description: Exact selected PostgreSQL release
+        required: true
+        type: choice
+        options: ['18.6']
+      extension_version:
+        description: Exact selected TIGER Geocoder release
+        required: true
+        type: choice
+        options: ['2025.2']
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  select:
+    runs-on: ubuntu-latest
+    outputs:
+      postgresql_version: ${{ steps.plan.outputs.postgresql_version }}
+      extension_version: ${{ steps.plan.outputs.selected_version }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: plan
+        env:
+          POSTGRESQL_VERSION: ${{ inputs.postgresql_version }}
+          EXTENSION_VERSION: ${{ inputs.extension_version }}
+        run: |
+          set -euo pipefail
+          test "$POSTGRESQL_VERSION" = 18.6
+          test "$EXTENSION_VERSION" = 2025.2
+          python3 tools/extension_archive_plan.py \
+            --project "PostGIS TIGER Geocoder" --platform windows-x86_64 \
+            --postgresql-version "$POSTGRESQL_VERSION" --extension-version "$EXTENSION_VERSION" \
+            --github-output "$GITHUB_OUTPUT"
+
+  build:
+    needs: select
+    runs-on: windows-2022
+    timeout-minutes: 180
+    defaults: {run: {shell: pwsh}}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Resolve the checked PostgreSQL core artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $core = Join-Path $env:RUNNER_TEMP 'core'
+          New-Item -ItemType Directory -Force $core | Out-Null
+          python tools/windows_core_target.py --postgresql-version '${{ needs.select.outputs.postgresql_version }}' --output (Join-Path $core 'base-target.json')
+          python tools/windows_core_candidate.py --selected-core --base-target (Join-Path $core 'base-target.json') --artifact-pin support/windows-core-artifact-pins/18.6-x86_64.json --output-directory $core
+          if ($LASTEXITCODE -ne 0) { throw 'Selected PostgreSQL core resolution failed.' }
+          $result = Get-Content (Join-Path $core 'result.json') -Raw | ConvertFrom-Json
+          if ($result.status -ne 'checked') { throw "Core candidate is not checked: $($result.status)" }
+          Copy-Item (Join-Path $core 'result.json') (Join-Path $core 'identity.json')
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: base-devel curl tar autoconf automake libtool bison flex diffutils
+          pacboy: toolchain:p cmake:p ninja:p pkgconf:p gmp:p sfcgal:p geos:p proj:p gdal:p json-c:p libxml2:p
+      - name: Build the selected PostGIS prerequisite against the checked core
+        shell: msys2 {0}
+        run: |
+          set -euo pipefail
+          root="$(cygpath -u "$RUNNER_TEMP")"
+          bash scripts/postgis/windows-build.sh "$root/core/postgresql-18.6-windows-x86_64.tar.gz" "$root/postgis" "$root/core/identity.json"
+      - name: Build the selected TIGER Geocoder SQL archive
+        run: |
+          $source = Join-Path $env:RUNNER_TEMP 'postgis_tiger_geocoder-2025.2.tar.gz'
+          Invoke-WebRequest -Uri 'https://download.osgeo.org/postgis/source/postgis_tiger_geocoder/postgis_tiger_geocoder-2025.2.tar.gz' -OutFile $source
+          ./scripts/tiger/windows-build.ps1 `
+            -SourceArchive $source `
+            -SourceSha256 'c33cfbfb40785db8754a36be66060e8d023773e7e1be8fb8a622bb3c48db9f54' `
+            -MinGWPGConfig (Join-Path $env:RUNNER_TEMP 'postgis/mingw/postgresql/bin/pg_config.exe') `
+            -PostgreSQLVersion '18.6' `
+            -OutputDirectory (Join-Path $env:RUNNER_TEMP 'tiger')
+          if ($LASTEXITCODE -ne 0) { throw 'Selected TIGER Geocoder Windows build failed.' }
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: tiger-windows-selected-18.6-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/core/postgresql-18.6-windows-x86_64.tar.gz
+            ${{ runner.temp }}/core/postgresql-18.6-windows-x86_64.tar.gz.sha256
+            ${{ runner.temp }}/core/identity.json
+            ${{ runner.temp }}/postgis/postgis-3.6.4-postgresql-18.6-windows-x86_64.tar.gz
+            ${{ runner.temp }}/postgis/postgis-3.6.4-postgresql-18.6-windows-x86_64.tar.gz.sha256
+            ${{ runner.temp }}/tiger/postgis_tiger_geocoder-2025.2-postgresql-18.6-windows-x86_64.tar.gz
+            ${{ runner.temp }}/tiger/postgis_tiger_geocoder-2025.2-postgresql-18.6-windows-x86_64.tar.gz.sha256
+          if-no-files-found: error
+          retention-days: 7
+
+  verify:
+    needs: [select, build]
+    if: always() && needs.select.result == 'success'
+    runs-on: windows-2022
+    timeout-minutes: 45
+    defaults: {run: {shell: pwsh}}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - uses: actions/download-artifact@v4
+        id: download
+        continue-on-error: true
+        with:
+          name: tiger-windows-selected-18.6-${{ github.run_id }}
+          path: ${{ runner.temp }}/bundle
+      - name: Verify the transferred core, PostGIS and TIGER archives after relocation
+        id: verify
+        if: steps.download.outcome == 'success'
+        run: |
+          $bundle = Join-Path $env:RUNNER_TEMP 'bundle'
+          ./scripts/tiger/windows-verify-publication.ps1 `
+            -CoreArchiveDirectory $bundle `
+            -PostGISArchive (Join-Path $bundle 'postgis-3.6.4-postgresql-18.6-windows-x86_64.tar.gz') `
+            -TigerArchive (Join-Path $bundle 'postgis_tiger_geocoder-2025.2-postgresql-18.6-windows-x86_64.tar.gz') `
+            -OutputDirectory (Join-Path $env:RUNNER_TEMP 'tiger-windows-verification') `
+            -PostgreSQLVersion '18.6' `
+            -CoreIdentityPath (Join-Path $bundle 'identity.json')
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: tiger-windows-verification-18.6-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/tiger-windows-verification/**
+          if-no-files-found: warn
+          retention-days: 7
+      - name: Require the selected Windows TIGER archive verification
+        if: always()
+        run: |
+          if ('${{ needs.build.result }}' -ne 'success' -or '${{ steps.download.outcome }}' -ne 'success' -or '${{ steps.verify.outcome }}' -ne 'success') {
+            throw 'Selected Windows TIGER publication verification failed.'
+          }
