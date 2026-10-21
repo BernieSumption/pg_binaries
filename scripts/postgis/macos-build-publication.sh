@@ -1,216 +1,204 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-core_archives=${1:?usage: macos-build-publication.sh CORE_ARCHIVES TARGET_CONFIG OUTPUT}
-target_config=${2:?resolved target config required}
-output=${3:?output directory required}
+core_archives=${1:?usage: macos-build-publication.sh CORE_ARCHIVES TARGET_CONFIG CONDA_PREFIX OUTPUT}
+target_config=${2:?resolved core target config required}
+conda_prefix=${3:?conda environment prefix required}
+output=${4:?output directory required}
 repo=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 source "$repo/scripts/macos/core-prefix.sh"
+
 selection=$(python3 - "$target_config" <<'PY'
 import json, sys
-from pathlib import Path
-target=json.loads(Path(sys.argv[1]).read_text())
-if (target.get('postgresql_version') != '18.6' or target.get('architecture') != 'arm64'
-        or target.get('platform') != 'macos-arm64'):
-    raise SystemExit('unsupported selected PostGIS macOS target')
-core=target.get('core_archive', {})
-if core.get('basename') != 'postgresql-18.6-macos-arm64.tar.gz': raise SystemExit('core identity mismatch')
-for key in ('sha256','build_id','source_revision'):
-    if not core.get(key): raise SystemExit(f'resolved core lacks {key}')
-print(core['basename'],core['sha256'],core['build_id'],core['source_revision'])
+target = json.load(open(sys.argv[1], encoding="utf-8"))
+if (target.get("postgresql_version") != "18.6" or target.get("architecture") != "arm64"
+        or target.get("platform") != "macos-arm64"):
+    raise SystemExit("unsupported selected PostGIS macOS target")
+core = target.get("core_archive", {})
+if core.get("basename") != "postgresql-18.6-macos-arm64.tar.gz":
+    raise SystemExit("selected core archive identity mismatch")
+for key in ("sha256", "build_id", "source_revision"):
+    if not core.get(key):
+        raise SystemExit(f"resolved core lacks {key}")
+print(core["basename"], core["sha256"], core["build_id"], core["source_revision"])
 PY
 )
 read -r core_name core_sha core_build_id core_revision <<< "$selection"
 core_archives=$(cd "$core_archives" && pwd)
-mkdir -p "$output"; output=$(cd "$output" && pwd)
-[[ $(uname -s) == Darwin && $(uname -m) == arm64 ]] || { echo 'Build requires native macOS arm64' >&2; exit 1; }
+conda_prefix=$(cd "$conda_prefix" && pwd)
+mkdir -p "$output"
+output=$(cd "$output" && pwd)
+[[ $(uname -s) == Darwin && $(uname -m) == arm64 ]] || { echo "Build requires native macOS arm64" >&2; exit 1; }
+for tool in curl make python3 cmake; do command -v "$tool" >/dev/null || { echo "Missing runner tool: $tool" >&2; exit 1; }; done
+for tool in cmake geos-config xml2-config; do test -x "$conda_prefix/bin/$tool" || { echo "Missing conda tool: $tool" >&2; exit 1; }; done
+
 core_archive="$core_archives/$core_name"
 test -s "$core_archive" && (cd "$core_archives" && shasum -a 256 -c "$core_name.sha256")
 printf '%s  %s\n' "$core_sha" "$core_archive" | shasum -a 256 -c -
-work=$(mktemp -d "${RUNNER_TEMP:-/tmp}/postgis-macos-build.XXXXXX")
+work=$(mktemp -d "${RUNNER_TEMP:-/tmp}/postgis-conda-build.XXXXXX")
 prefix_link_created=false
 cleanup() { macos_remove_core_prefix; rm -rf "$work"; }
 trap cleanup EXIT
-mkdir -p "$work/core" "$work/source" "$work/gdal" "$work/bundle-prefix/lib"
+mkdir -p "$work/core" "$work/source" "$work/gdal-source" "$work/gdal-build" "$work/socket"
 tar -xzf "$core_archive" -C "$work/core"
 pgroot="$work/core/postgresql"
-find "$pgroot" -type f -print | sort > "$work/core-files.txt"
 prefix=$(macos_core_prefix_from_archive "$pgroot" 18.6 arm64 "$core_build_id" "$core_revision")
 macos_restore_core_prefix "$prefix" "$pgroot"
 prefix_link_created=true
 pg_config="$prefix/bin/pg_config"
-test "$("$pg_config" --version)" = 'PostgreSQL 18.6'
+test "$("$pg_config" --version)" = "PostgreSQL 18.6"
+
 export MACOSX_DEPLOYMENT_TARGET=11.0
-brew_prefix=$(brew --prefix)
-for formula in geos proj sfcgal json-c libxml2 protobuf-c pcre2; do brew --prefix "$formula" >/dev/null; done
+export PATH="$conda_prefix/bin:$PATH"
+export PKG_CONFIG_PATH="$conda_prefix/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
+export PROJ_DATA="$conda_prefix/share/proj"
+export PROJ_LIB="$conda_prefix/share/proj"
+
+gdal_sha256=5e0c388d83da2d686cc00a40272882432cdb54edff43d4af173e532844a0a0ea
+cd "$work/gdal-source"
+curl -fL --retry 3 -o gdal.tar.gz https://download.osgeo.org/gdal/3.13.3/gdal-3.13.3.tar.gz
+printf '%s  %s\n' "$gdal_sha256" gdal.tar.gz | shasum -a 256 -c -
+python3 - "$output/gdal-source.json" "$gdal_sha256" <<'PY'
+import json, pathlib, sys
+path, sha256 = pathlib.Path(sys.argv[1]), sys.argv[2]
+path.write_text(json.dumps({
+    "component": "GDAL",
+    "version": "3.13.3",
+    "source_url": "https://download.osgeo.org/gdal/3.13.3/gdal-3.13.3.tar.gz",
+    "source_sha256": sha256,
+}, indent=2, sort_keys=True) + "\n")
+PY
+tar -xzf gdal.tar.gz
+gdal_prefix="$work/gdal-prefix"
+cmake -S gdal-3.13.3 -B "$work/gdal-build" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$gdal_prefix" \
+  -DCMAKE_PREFIX_PATH="$conda_prefix" -DPROJ_ROOT="$conda_prefix" \
+  -DBUILD_SHARED_LIBS=ON -DBUILD_APPS=OFF -DGDAL_BUILD_OPTIONAL_DRIVERS=OFF \
+  -DOGR_BUILD_OPTIONAL_DRIVERS=OFF -DGDAL_ENABLE_DRIVER_PNG=ON -DGDAL_ENABLE_DRIVER_JPEG=ON \
+  -DGDAL_USE_EXTERNAL_LIBS=OFF -DGDAL_USE_INTERNAL_LIBS=ON \
+  -DGDAL_USE_PROJ=ON -DGDAL_USE_GEOS=ON 2>&1 | tee "$output/gdal-configure.log"
+cmake --build "$work/gdal-build" --parallel "$(sysctl -n hw.ncpu)" 2>&1 | tee "$output/gdal-build.log"
+cmake --install "$work/gdal-build" 2>&1 | tee "$output/gdal-install.log"
+test -x "$gdal_prefix/bin/gdal-config"
+
+export PG_MACOS_DEPENDENCY_PREFIX="$gdal_prefix:$conda_prefix"
+export PATH="$gdal_prefix/bin:$PATH"
+export PKG_CONFIG_PATH="$gdal_prefix/lib/pkgconfig:$conda_prefix/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
+export GDAL_DATA="$gdal_prefix/share/gdal"
+export LDFLAGS="${LDFLAGS:-} -Wl,-rpath,$gdal_prefix/lib -Wl,-rpath,$conda_prefix/lib"
+export DYLD_LIBRARY_PATH="$gdal_prefix/lib:$conda_prefix/lib${DYLD_LIBRARY_PATH:+:$DYLD_LIBRARY_PATH}"
+
+protoc_c="$(brew --prefix protobuf-c)/bin/protoc-c"
+test -x "$protoc_c" || { echo 'Missing Homebrew protoc-c build tool' >&2; exit 1; }
+mkdir -p "$work/tools"
+cat > "$work/tools/protoc-c" <<EOF
+#!/usr/bin/env bash
+unset DYLD_LIBRARY_PATH
+exec "$protoc_c" "\$@"
+EOF
+chmod +x "$work/tools/protoc-c"
+export PATH="$work/tools:$PATH"
+
+cd "$work/source"
+SFCGAL_COMMIT=137203dae01faab4a1287934f9457e925e3b4383
+SFCGAL_SHA256=426abf9ac0de764a6098abe89c9dc84aa59273d0c5ff90819ed49a9c21f1c21f
+curl -fL --retry 3 -o sfcgal.tar.gz "https://gitlab.com/SFCGAL/SFCGAL/-/archive/$SFCGAL_COMMIT/SFCGAL-$SFCGAL_COMMIT.tar.gz"
+printf '%s  %s\n' "$SFCGAL_SHA256" sfcgal.tar.gz | shasum -a 256 -c -
+python3 - "$output/sfcgal-source.json" "$SFCGAL_COMMIT" "$SFCGAL_SHA256" <<'PY'
+import json, pathlib, sys
+path, commit, sha256 = pathlib.Path(sys.argv[1]), sys.argv[2], sys.argv[3]
+path.write_text(json.dumps({
+    "component": "SFCGAL",
+    "version": "2.3.0",
+    "commit": commit,
+    "source_url": f"https://gitlab.com/SFCGAL/SFCGAL/-/archive/{commit}/SFCGAL-{commit}.tar.gz",
+    "source_sha256": sha256,
+}, indent=2, sort_keys=True) + "\n")
+PY
+tar -xzf sfcgal.tar.gz
+cmake -S "SFCGAL-$SFCGAL_COMMIT" -B sfcgal-build \
+  -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$conda_prefix" \
+  -DCMAKE_PREFIX_PATH="$conda_prefix" -DCMAKE_INSTALL_RPATH="$conda_prefix/lib" \
+  -DSFCGAL_BUILD_TESTS=OFF 2>&1 | tee "$output/sfcgal-configure.log"
+cmake --build sfcgal-build --parallel "$(sysctl -n hw.ncpu)" 2>&1 | tee "$output/sfcgal-build.log"
+cmake --install sfcgal-build 2>&1 | tee "$output/sfcgal-install.log"
+test -x "$conda_prefix/bin/sfcgal-config"
+
 core_xml="$pgroot/lib/libxml2.16.dylib"
-[[ -f "$core_xml" ]] || { echo 'checked core lacks libxml2 2.15.4' >&2; exit 1; }
-[[ "$("$(brew --prefix libxml2)/bin/xml2-config" --version)" == 2.15.4 ]] || { echo 'Homebrew libxml2 headers do not match checked core 2.15.4' >&2; exit 1; }
+[[ -f "$core_xml" ]] || { echo 'checked PostgreSQL core lacks libxml2.16.dylib' >&2; exit 1; }
+[[ "$("$conda_prefix/bin/xml2-config" --version)" == 2.15.4 ]] || { echo 'conda libxml2 headers do not match checked core libxml2 2.15.4' >&2; exit 1; }
 xml2_config="$work/xml2-config"
 cat > "$xml2_config" <<EOF
 #!/usr/bin/env bash
 case "\${1:-}" in
-  --cflags) exec "$(brew --prefix libxml2)/bin/xml2-config" --cflags ;;
+  --cflags) exec "$conda_prefix/bin/xml2-config" --cflags ;;
   --libs) printf '%s\\n' "$core_xml -lz -liconv" ;;
   --version) printf '%s\\n' 2.15.4 ;;
-  *) exec "$(brew --prefix libxml2)/bin/xml2-config" "\$@" ;;
+  *) exec "$conda_prefix/bin/xml2-config" "\$@" ;;
 esac
 EOF
 chmod +x "$xml2_config"
-for tool in cmake gmake; do command -v "$tool" >/dev/null; done
+export PG_MACOS_DEPENDENCY_PREFIX="$gdal_prefix:$pgroot:$conda_prefix"
 
-cd "$work/source"
-curl -fL --retry 3 -o gdal.tar.gz https://download.osgeo.org/gdal/3.13.3/gdal-3.13.3.tar.gz
-printf '%s  %s\n' 5e0c388d83da2d686cc00a40272882432cdb54edff43d4af173e532844a0a0ea gdal.tar.gz | shasum -a 256 -c -
-tar -xzf gdal.tar.gz
-gdal_prefix="$work/gdal/prefix"
-cmake -S gdal-3.13.3 -B gdal-build -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$gdal_prefix" \
-  -DCMAKE_PREFIX_PATH="$(brew --prefix proj)" -DPROJ_ROOT="$(brew --prefix proj)" \
-  -DBUILD_SHARED_LIBS=ON -DBUILD_APPS=OFF -DGDAL_BUILD_OPTIONAL_DRIVERS=OFF \
-  -DOGR_BUILD_OPTIONAL_DRIVERS=OFF -DGDAL_ENABLE_DRIVER_PNG=ON -DGDAL_ENABLE_DRIVER_JPEG=ON \
-  -DGDAL_USE_EXTERNAL_LIBS=OFF -DGDAL_USE_INTERNAL_LIBS=ON 2>&1 | tee "$output/gdal-configure.log"
-cmake --build gdal-build --parallel "$(sysctl -n hw.ncpu)" 2>&1 | tee "$output/gdal-build.log"
-cmake --install gdal-build 2>&1 | tee "$output/gdal-install.log"
-
-for path in "$brew_prefix"/lib/*.dylib "$gdal_prefix"/lib/*.dylib; do
-  [[ -e "$path" ]] || continue
-  name=$(basename "$path")
-  if [[ -e "$work/bundle-prefix/lib/$name" ]]; then
-    cmp -s "$path" "$work/bundle-prefix/lib/$name" || { echo "dependency prefix collision: $name" >&2; exit 1; }
-  else ln -s "$path" "$work/bundle-prefix/lib/$name"; fi
-done
-export PG_MACOS_DEPENDENCY_PREFIX="$work/bundle-prefix"
-export PATH="$gdal_prefix/bin:$PATH"
-export PKG_CONFIG_PATH="$gdal_prefix/lib/pkgconfig:$brew_prefix/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
-export GDAL_DATA="$gdal_prefix/share/gdal"
-export LDFLAGS="${LDFLAGS:-} -Wl,-rpath,$gdal_prefix/lib"
-cd "$work/source"
 curl -fL --retry 3 -o postgis.tar.gz https://download.osgeo.org/postgis/source/postgis-3.6.4.tar.gz
 printf '%s  %s\n' ed8dc6679f1e06f7b113592b04cde2a7e00f1b1e681294c8ca2204058990cec6 postgis.tar.gz | shasum -a 256 -c -
 tar -xzf postgis.tar.gz
 cd postgis-3.6.4
-./configure --prefix="$pgroot" --with-pgconfig="$pg_config" --with-gdalconfig="$gdal_prefix/bin/gdal-config" \
-  --with-geosconfig="$(brew --prefix geos)/bin/geos-config" --with-projdir="$(brew --prefix proj)" \
-  --with-jsondir="$(brew --prefix json-c)" --with-xml2config="$work/xml2-config" \
-  --with-sfcgal="$(brew --prefix sfcgal)/bin/sfcgal-config" 2>&1 | tee "$output/configure.log"
-gmake -j"$(sysctl -n hw.ncpu)" 2>&1 | tee "$output/build.log"
-gmake install 2>&1 | tee "$output/install.log"
-python3 - "$pgroot" "$work/core-files.txt" <<'PY'
-from pathlib import Path
-import re,sys
-root=Path(sys.argv[1]); original=set(Path(sys.argv[2]).read_text().splitlines())
-names=('postgis','postgis_raster','postgis_sfcgal','postgis_topology')
-share=root/'share/extension'; modules=set()
-for name in names:
-    control=share/f'{name}.control'
-    if not control.is_file(): raise SystemExit(f'missing installed {name}.control')
-    match=re.search(r"^\s*module_pathname\s*=\s*['\"]?\$libdir/([^'\"\s]+)",control.read_text(),re.M)
-    if match: modules.add(match.group(1))
-    for sql in share.glob(f'{name}--*.sql'):
-        modules.update(re.findall(r'\$libdir/([A-Za-z0-9_.-]+)',sql.read_text()))
-if not modules: raise SystemExit('no PostGIS modules were identified from selected SQL files')
-for path in (root/'lib').iterdir():
-    if str(path) in original or not path.is_file(): continue
-    stem=path.name
-    if path.suffix in {'.dylib','.so'} and not any(stem in {m,m+'.dylib',m+'.so'} for m in modules): path.unlink()
-for path in share.iterdir():
-    if str(path) in original: continue
-    if not any(path.name in {name, name+'.control'} or path.name.startswith(name+'--') for name in names):
-        if path.is_file() or path.is_symlink(): path.unlink()
-for path in (root/'bin').iterdir():
-    if str(path) not in original and (path.is_file() or path.is_symlink()): path.unlink()
-PY
-cp -a "$(brew --prefix proj)/share/proj" "$pgroot/share/"
-cp -a "$gdal_prefix/share/gdal" "$pgroot/share/"
+./configure --prefix="$pgroot" --with-pgconfig="$pg_config" \
+  --with-gdalconfig="$gdal_prefix/bin/gdal-config" \
+  --with-geosconfig="$conda_prefix/bin/geos-config" \
+  --with-projdir="$conda_prefix" --with-jsondir="$conda_prefix" \
+  --with-xml2config="$xml2_config" \
+  --with-sfcgal="$conda_prefix/bin/sfcgal-config" \
+  2>&1 | tee "$output/configure.log"
+make -j"$(sysctl -n hw.ncpu)" 2>&1 | tee "$output/build.log"
+make install 2>&1 | tee "$output/install.log"
+python3 "$repo/scripts/postgis/record-macos-runtime-closure.py" \
+  "$pgroot" "$conda_prefix" "$gdal_prefix" "$work" "$output" 2>&1 | tee "$output/runtime-closure.log"
 
-bundle_root="$work/postgis-bundle-root"
-python3 - "$pgroot" "$bundle_root" "$gdal_prefix" <<'PY'
+chmod 700 "$work/socket"
+"$pgroot/bin/initdb" -D "$work/data" --no-sync >"$output/initdb.log" 2>&1
+"$pgroot/bin/pg_ctl" -D "$work/data" -l "$output/postgres.log" \
+  -o "-k $work/socket -p 55439" start
+cleanup() {
+  "$pgroot/bin/pg_ctl" -D "$work/data" -m immediate stop >/dev/null 2>&1 || true
+  macos_remove_core_prefix
+  rm -rf "$work"
+}
+trap cleanup EXIT
+"$pgroot/bin/psql" -X -v ON_ERROR_STOP=1 -h "$work/socket" -p 55439 -d postgres \
+  >"$output/sql-probe.txt" 2>&1 <<'SQL'
+SELECT name FROM pg_available_extensions
+WHERE name IN ('postgis', 'postgis_raster', 'postgis_sfcgal', 'postgis_topology') ORDER BY name;
+CREATE EXTENSION postgis;
+CREATE EXTENSION postgis_raster;
+CREATE EXTENSION postgis_sfcgal;
+CREATE EXTENSION postgis_topology;
+DO $$
+BEGIN
+  IF NOT (ST_X(ST_Transform(ST_SetSRID(ST_Point(1,0),4326),3857)) BETWEEN 111319 AND 111320) THEN
+    RAISE EXCEPTION 'PROJ transform returned unexpected coordinates';
+  END IF;
+  IF ST_Width(ST_AsRaster(ST_SetSRID(ST_Point(0,0),4326),4,4,'8BUI',7)) <> 4 THEN
+    RAISE EXCEPTION 'raster operation returned unexpected width';
+  END IF;
+  PERFORM topology.CreateTopology('pilot_topology',4326);
+  IF postgis_sfcgal_version() IS NULL THEN
+    RAISE EXCEPTION 'SFCGAL version probe returned NULL';
+  END IF;
+END $$;
+SQL
+
+python3 - "$pgroot/share/extension" "$output" <<'PY'
 from pathlib import Path
-import re, shutil, sys
-source, root, gdal_prefix = map(Path, sys.argv[1:])
-names = ('postgis','postgis_raster','postgis_sfcgal','postgis_topology')
-(root/'lib').mkdir(parents=True,exist_ok=True)
-(root/'share/extension').mkdir(parents=True,exist_ok=True)
-for path in (source/'lib').glob('*.dylib'):
-    shutil.copy2(path,root/'lib'/path.name)
+import sys
+share, output = map(Path, sys.argv[1:])
+names = ("postgis", "postgis_raster", "postgis_sfcgal", "postgis_topology")
 for name in names:
-    control=source/'share/extension'/f'{name}.control'
-    sql=sorted((source/'share/extension').glob(f'{name}--*.sql'))
-    if not control.is_file() or not sql: raise SystemExit(f'missing SQL files for {name}')
-    shutil.copy2(control,root/'share/extension'/control.name)
-    for path in sql: shutil.copy2(path,root/'share/extension'/path.name)
-    modules=set()
-    if match:=re.search(r"^\s*module_pathname\s*=\s*['\"]?\$libdir/([^'\"\s]+)",control.read_text(),re.M): modules.add(match.group(1))
-    for path in sql: modules.update(re.findall(r'\$libdir/([A-Za-z0-9_.-]+)',path.read_text()))
-    for module in modules:
-        choices=[source/'lib'/f'{module}{suffix}' for suffix in ('','.dylib','.so')]
-        found=[path for path in choices if path.is_file()]
-        if len(found)!=1: raise SystemExit(f'expected one installed module for {module}: {found}')
-        shutil.copy2(found[0],root/'lib'/found[0].name)
-for path in (gdal_prefix/'lib').glob('*.dylib'):
-    if path.name.startswith('libgdal'):
-        continue
-    target=root/'lib'/path.name
-    if not target.exists(): target.symlink_to(path.resolve())
-gdal_names=[path for path in (gdal_prefix/'lib').glob('libgdal.*.dylib')
-            if re.fullmatch(r'libgdal\.\d+\.dylib',path.name)]
-if len(gdal_names)!=1: raise SystemExit(f'expected one GDAL soname dylib, found {gdal_names}')
-shutil.copy2(gdal_names[0],root/'lib'/gdal_names[0].name)
-for relative in ('share/proj','share/gdal'):
-    shutil.copytree(source/relative,root/relative,dirs_exist_ok=True)
+    if not (share / f"{name}.control").is_file():
+        raise SystemExit(f"missing installed SQL extension output for {name}")
+Path(output, "sql-names.txt").write_text("\n".join(names) + "\n")
 PY
-python3 "$repo/scripts/macos/bundle.py" "$bundle_root" arm64 2>&1 | tee "$output/bundle.log"
-python3 - "$bundle_root" "$output" <<'PY'
-from pathlib import Path
-import json, shutil, subprocess, sys
-root, output = map(Path, sys.argv[1:])
-package = output / 'package/postgis'
-package.mkdir(parents=True, exist_ok=True)
-dependencies = json.loads((root / 'bundled-dependencies.json').read_text())
-(output / 'postgis-bundled-dependencies.json').write_text(json.dumps(dependencies, indent=2, sort_keys=True) + '\n')
-PY
-python3 - "$bundle_root" "$output" <<'PY'
-import json, pathlib, shutil, sys
-root, output=map(pathlib.Path,sys.argv[1:])
-package=output/'package/postgis'
-for directory in ('lib','share/extension','share/proj','share/gdal'):
-    (package/directory).mkdir(parents=True,exist_ok=True)
-names=('postgis','postgis_raster','postgis_sfcgal','postgis_topology')
-for name in names:
-    control=root/'share/extension'/f'{name}.control'
-    sql=sorted((root/'share/extension').glob(f'{name}--*.sql'))
-    if not control.is_file() or not sql: raise SystemExit(f'missing SQL files for {name}')
-    shutil.copy2(control,package/'share/extension'/control.name)
-    for path in sql: shutil.copy2(path,package/'share/extension'/path.name)
-    modules=set()
-    import re
-    if match:=re.search(r"^\s*module_pathname\s*=\s*['\"]?\$libdir/([^'\"\s]+)",control.read_text(),re.M): modules.add(match.group(1))
-    for path in sql: modules.update(re.findall(r'\$libdir/([A-Za-z0-9_.-]+)',path.read_text()))
-    for module in modules:
-        choices=[root/'lib'/f'{module}{suffix}' for suffix in ('','.dylib','.so')]
-        found=[path for path in choices if path.is_file()]
-        if len(found)!=1: raise SystemExit(f'expected one installed module for {module}: {found}')
-        shutil.copy2(found[0],package/'lib'/found[0].name)
-for relative in ('share/proj','share/gdal'):
-    shutil.copytree(root/relative,package/relative,dirs_exist_ok=True)
-dependency_map=json.loads((output/'postgis-bundled-dependencies.json').read_text())
-for name in dependency_map:
-    path=root/'lib'/name
-    if path.is_file(): shutil.copy2(path,package/'lib'/name)
-for path in (root/'lib').glob('libgdal*.dylib'):
-    if path.is_file(): shutil.copy2(path,package/'lib'/path.name)
-(package/'LICENSES').mkdir(exist_ok=True)
-(package/'bundled-dependencies.json').write_text(json.dumps(dependency_map,indent=2,sort_keys=True)+'\n')
-PY
-python3 "$repo/tools/license_pointer.py" write "$output/package/postgis" postgis
-mv "$output/package/postgis/bundled-dependencies.json" "$output/package/postgis/LICENSES/postgis-bundled-dependencies.json"
-python3 - "$output/package/metadata.json" "$core_name" "$core_sha" <<'PY'
-import json,pathlib,sys
-p=pathlib.Path(sys.argv[1]); core,sha=sys.argv[2:]
-p.write_text(json.dumps({'project':'postgis','version':'3.6.4','sql_names':['postgis','postgis_raster','postgis_sfcgal','postgis_topology'],'requires':[],'configuration_prerequisites':[],'runtime_prerequisites':[{'type':'environment_variable','name':'PROJ_DATA','value_relative_to_prefix':'share/proj'},{'type':'environment_variable','name':'PROJ_LIB','value_relative_to_prefix':'share/proj'},{'type':'environment_variable','name':'GDAL_DATA','value_relative_to_prefix':'share/gdal'}],'postgresql_version':'18.6','platform':'macos','architecture':'arm64','build_id':f"github-{__import__('os').environ['GITHUB_RUN_ID']}-{__import__('os').environ['GITHUB_RUN_ATTEMPT']}",'source_revision':__import__('os').environ['GITHUB_SHA'],'build_configuration':'native-macos;deployment-target=11.0;gdal=3.13.3;gdal-drivers=GTiff,PNG,JPEG','source':{'url':'https://download.osgeo.org/postgis/source/postgis-3.6.4.tar.gz','sha256':'ed8dc6679f1e06f7b113592b04cde2a7e00f1b1e681294c8ca2204058990cec6'},'core_archive':{'basename':core,'sha256':sha}},indent=2,sort_keys=True)+'\n')
-PY
-archive=postgis-3.6.4-postgresql-18.6-macos-arm64.tar.gz
-tar -C "$output/package" -czf "$output/$archive" postgis metadata.json
-python3 "$repo/tools/license_pointer.py" verify "$output/$archive" postgis
-(cd "$output" && shasum -a 256 "$archive" > "$archive.sha256")
-echo "PASS: built PostGIS 3.6.4 macOS arm64 archive"
+
+python3 "$repo/scripts/postgis/assemble-macos-archive.py" \
+  "$work/conda-runtime-closure" "$output" "$work/source/postgis.tar.gz" \
+  "$pgroot" "$core_archive" "$target_config"
