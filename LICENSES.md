@@ -38,7 +38,7 @@ This file records licence declarations for projects whose code or data is includ
 - PCRE2 — BSD-3-Clause WITH PCRE2-exception. Its enabled JIT includes separately licensed SLJIT under 2-clause BSD. [PCRE2 declaration](https://github.com/PCRE2Project/pcre2/blob/pcre2-10.48/LICENCE.md); [SLJIT declaration](https://github.com/PCRE2Project/pcre2/blob/pcre2-10.48/deps/sljit/LICENSE).
 - GDAL — MIT-style terms. [GDAL licence declaration](https://gdal.org/en/stable/license.html); [source release](https://download.osgeo.org/gdal/3.13.3/gdal-3.13.3.tar.gz).
 - HDF5 — BSD-3-Clause. [Source](https://github.com/HDFGroup/hdf5); [`LICENSE` declaration](https://github.com/HDFGroup/hdf5/blob/develop/LICENSE).
-- libaec — BSD-2-Clause. [Source](https://github.com/Deutsches-Klimarechenzentrum/libaec); [`LICENSE.txt` declaration](https://github.com/Deutsches-Klimarechenzentrum/libaec/blob/main/LICENSE.txt).
+- libaec and its SZIP-compatible `libsz` library — BSD-2-Clause. [Source](https://github.com/Deutsches-Klimarechenzentrum/libaec); [`LICENSE.txt` declaration](https://github.com/Deutsches-Klimarechenzentrum/libaec/blob/main/LICENSE.txt).
 - NetCDF-C — BSD-3-Clause. [Source](https://github.com/Unidata/netcdf-c/tree/v4.10.1); [`COPYRIGHT` declaration](https://github.com/Unidata/netcdf-c/blob/v4.10.1/COPYRIGHT).
 - PROJ — MIT. [Source and `COPYING`](https://github.com/OSGeo/PROJ/blob/master/COPYING).
 - PROJ-data — per-file terms, recorded in upstream [`README.DATA`](https://github.com/OSGeo/PROJ-data/blob/master/README.DATA) and `copyright_and_licenses.csv`; the build retains the applicable licence texts.
@@ -58,10 +58,66 @@ This file records licence declarations for projects whose code or data is includ
 - OpenSSL — Apache-2.0. [Source](https://github.com/openssl/openssl); [`LICENSE.txt`](https://github.com/openssl/openssl/blob/openssl-3.5.8/LICENSE.txt).
 - Zstandard — BSD-3-Clause for the bundled library. [Source](https://github.com/facebook/zstd); [`LICENSE`](https://github.com/facebook/zstd/blob/v1.5.7/LICENSE). Bundled divsufsort code has a separate [MIT-style notice](https://github.com/facebook/zstd/blob/v1.5.7/lib/dictBuilder/divsufsort.c).
 - GNU C Library (glibc) — LGPL-2.1-or-later for the library, with file-specific GPL-2.0 and GFDL terms declared by the Ubuntu package. [Source](https://sourceware.org/glibc/); [Ubuntu `libc6` package declaration](https://packages.ubuntu.com/jammy/libc6).
-- GCC runtime libraries (`libgcc` and `libstdc++`) — GPL-3.0-or-later WITH GCC Runtime Library Exception 3.1, as declared by Ubuntu's `gcc-12-base` copyright file. [Source](https://gcc.gnu.org/); [Ubuntu `gcc-12-base` package declaration](https://packages.ubuntu.com/jammy/gcc-12-base).
+- GCC runtime libraries (`libgcc`, `libgfortran`, `libquadmath` and `libstdc++`) — GPL-3.0-or-later WITH GCC Runtime Library Exception 3.1, as declared by Ubuntu's `gcc-12-base` copyright file. [Source](https://gcc.gnu.org/); [Ubuntu `gcc-12-base` package declaration](https://packages.ubuntu.com/jammy/gcc-12-base).
 - musl — MIT and file-specific permissive or public-domain terms, as declared by Ubuntu. [Source](https://musl.libc.org/); [Ubuntu `musl` package declaration](https://packages.ubuntu.com/jammy/musl).
 - util-linux libuuid — BSD-3-Clause, LGPL-2.1-or-later and public-domain terms for the shipped library files, as declared by Ubuntu. [Source](https://github.com/util-linux/util-linux); [Ubuntu `libuuid1` package declaration](https://packages.ubuntu.com/jammy/libuuid1).
 - uthash — BSD-1-Clause. The selected collection source [vendors uthash](https://github.com/aws/pgcollection/tree/v2.1.3/include/uthash) with its [licence declaration](https://github.com/aws/pgcollection/blob/v2.1.3/include/uthash/LICENSE).
+- ARPACK-NG — BSD-3-Clause. [Source and `COPYING`](https://github.com/opencollab/arpack-ng/blob/master/COPYING).
+- Reference BLAS and LAPACK — modified BSD licence. [LAPACK source and licence declaration](https://github.com/Reference-LAPACK/lapack); [Ubuntu Jammy `libblas3` package](https://packages.ubuntu.com/jammy/libblas3) identifies the shipped BLAS as the reference implementation.
+- com_err — MIT-style terms with the MIT SIPB advertising restriction. [Source and file-level declaration](https://github.com/tytso/e2fsprogs/blob/master/lib/et/et_name.c).
+- FYBA — MIT. The source declares the MIT licence in its [README](https://github.com/kartverket/fyba#license); the Ubuntu Jammy package identifies the FYBA source package for these libraries ([`libfyba0`](https://packages.ubuntu.com/jammy/libfyba0)).
+- keyutils library — LGPL. The [source project](https://kernel.googlesource.com/pub/scm/linux/kernel/git/dhowells/keyutils/) distinguishes the library's [`LICENCE.LGPL`](https://github.com/yugabyte/libkeyutils/blob/master/LICENCE.LGPL) from the GPL-licensed tools.
+- JBIG-KIT — GNU GPL. [Source and licence declaration](https://github.com/nu774/jbigkit).
+- p11-kit — BSD-3-Clause. [Source and `COPYING`](https://github.com/p11-glue/p11-kit/blob/master/COPYING).
+- libtirpc — BSD-3-Clause. [Source and `COPYING`](https://github.com/alisw/libtirpc/blob/master/COPYING).
+- GNU libtasn1 — LGPL-2.1-or-later for the library. [Source and licence declaration](https://github.com/gnutls/libtasn1/blob/master/README.md).
+- GNU libunistring — LGPL-3.0-or-later OR GPL-2.0-or-later for the library and headers. [Source and licence declaration](https://github.com/gnu-mirror-unofficial/libunistring/blob/master/README).
+- libssh — LGPL-2.1-or-later. [Source and licence declaration](https://github.com/canonical/libssh).
+- librtmp — LGPL-2.1-or-later for the library. [Source and licence declaration](https://github.com/mstorsjo/rtmpdump/blob/master/librtmp/rtmp.h).
+- AOM — BSD-3-Clause. [Source and `LICENSE`](https://aomedia.googlesource.com/aom/+/refs/heads/main/LICENSE).
+- Armadillo — Apache-2.0. [Source and `LICENSE.txt`](https://gitlab.com/conradsnicta/armadillo-code/-/blob/14.2.x/LICENSE.txt).
+- Blosc — BSD-3-Clause. [Source and `LICENSE.txt`](https://github.com/Blosc/c-blosc/blob/main/LICENSE.txt).
+- Brotli — MIT. [Source and `LICENSE`](https://github.com/google/brotli/blob/master/LICENSE).
+- bzip2 — bzip2 licence. [Source and `LICENSE`](https://gitlab.com/bzip2/bzip2/-/blob/bzip2-1.0.8/LICENSE).
+- CFITSIO — ISC, as declared by the upstream [source package specification](https://github.com/HEASARC/cfitsio/blob/develop/cfitsio.spec); [source and licence file](https://github.com/HEASARC/cfitsio/tree/develop/licenses).
+- CharLS — BSD-3-Clause. [Source and `LICENSE`](https://github.com/team-charls/charls/blob/main/LICENSE).
+- dav1d — BSD-2-Clause. [Source and `COPYING`](https://code.videolan.org/videolan/dav1d/-/blob/master/COPYING).
+- libde265 — LGPL-3.0-or-later. [Source and `COPYING`](https://github.com/strukturag/libde265/blob/master/COPYING).
+- Expat — MIT. [Source and `COPYING`](https://github.com/libexpat/libexpat/blob/master/expat/COPYING).
+- libffi — MIT. [Source and `LICENSE`](https://github.com/libffi/libffi/blob/master/LICENSE).
+- Fontconfig — MIT. [Source and licence declaration](https://gitlab.freedesktop.org/fontconfig/fontconfig/-/blob/main/COPYING).
+- FreeType — FTL (FreeType licence) OR GPL-2.0-or-later. [Source and licence declarations](https://gitlab.freedesktop.org/freetype/freetype/-/blob/master/docs/FTL.TXT).
+- FreeXL — MPL-1.1. [Source and `COPYING`](https://www.gaia-gis.it/fossil/freexl/file?name=COPYING).
+- libgeotiff — MIT. [Source and `LICENSE`](https://github.com/OSGeo/libgeotiff/blob/master/LICENSE).
+- giflib — MIT. [Source and `COPYING`](https://sourceforge.net/p/giflib/code/ci/master/tree/COPYING).
+- GnuTLS — LGPL-2.1-or-later for the library. [Source and licence declaration](https://gitlab.com/gnutls/gnutls/-/blob/master/COPYING).
+- HDF4 — BSD-style licence. [Source and `COPYING`](https://github.com/HDFGroup/hdf4/blob/master/COPYING).
+- libheif — LGPL-3.0-or-later. [Source and `COPYING`](https://github.com/strukturag/libheif/blob/master/COPYING).
+- libidn2 — LGPL-3.0-or-later OR GPL-2.0-or-later for the library. [Source and licence declaration](https://gitlab.com/gnu-libidn/libidn2/-/blob/master/COPYING).
+- libkml — BSD-3-Clause. [Source and licence declaration](https://github.com/libkml/libkml/blob/master/COPYING).
+- Little CMS — MIT. [Source and `LICENSE`](https://github.com/mm2/Little-CMS/blob/master/LICENSE).
+- OpenLDAP — OpenLDAP Public License. [Source and licence declaration](https://www.openldap.org/software/release/license.html).
+- GNU libtool — LGPL-2.1-or-later for libltdl. [Source and `COPYING.LIB`](https://git.savannah.gnu.org/cgit/libtool.git/tree/COPYING.LIB).
+- minizip — zlib licence. [Source and licence declaration](https://github.com/madler/zlib/tree/develop/contrib/minizip).
+- MySQL client library — GPL-2.0 with the FOSS License Exception. [Source and licence declaration](https://github.com/mysql/mysql-server/blob/8.0/LICENSE).
+- Nettle, including its hogweed library — LGPL-3.0-or-later OR GPL-2.0-or-later. [Source and licence declaration](https://git.lysator.liu.se/nettle/nettle/-/blob/master/COPYING.LESSERv3).
+- Mozilla NSPR — MPL-2.0. [Source and `LICENSE`](https://github.com/nss-dev/nspr/blob/master/LICENSE).
+- Mozilla NSS — MPL-2.0. [Source and `LICENSE`](https://github.com/nss-dev/nss/blob/main/LICENSE).
+- NUMA library — LGPL-2.1-or-later. [Source and `COPYING`](https://github.com/numactl/numactl/blob/master/COPYING).
+- unixODBC — LGPL-2.1-or-later for the libraries. [Source and licence declaration](https://github.com/lurcher/unixODBC/blob/master/COPYING).
+- OGDI — MIT. [Source and `LICENSE`](https://github.com/libogdi/ogdi/blob/master/LICENSE).
+- OpenJPEG — BSD-2-Clause. [Source and `LICENSE`](https://github.com/uclouvain/openjpeg/blob/master/LICENSE).
+- libpng — libpng licence. [Source and licence declaration](http://www.libpng.org/pub/png/src/libpng-LICENSE.txt).
+- Poppler — GPL-2.0-or-later. [Source and `COPYING`](https://gitlab.freedesktop.org/poppler/poppler/-/blob/master/COPYING).
+- Qhull — Qhull licence. [Source and licence declaration](https://github.com/qhull/qhull/blob/master/COPYING.txt).
+- librttopo — GPL-2.0-or-later. [Source and `COPYING`](https://git.osgeo.org/gitea/rttopo/librttopo/src/branch/master/COPYING).
+- Cyrus SASL — BSD-style licence. [Source and `COPYING`](https://github.com/cyrusimap/cyrus-sasl/blob/master/COPYING).
+- Snappy — BSD-3-Clause. [Source and `COPYING`](https://github.com/google/snappy/blob/main/COPYING).
+- SpatiaLite — MPL-1.1. [Source and licence declaration](https://www.gaia-gis.it/fossil/libspatialite/file?name=COPYING).
+- SuperLU — BSD-3-Clause. [Source and `License.txt`](https://github.com/xiaoyeli/superlu/blob/master/License.txt).
+- uriparser — BSD-3-Clause. [Source and `COPYING`](https://github.com/uriparser/uriparser/blob/main/COPYING).
+- x265 — GPL-2.0-or-later. [Source and `COPYING`](https://bitbucket.org/multicoreware/x265_git/src/master/COPYING).
+- Xerces-C++ — Apache-2.0. [Source and `LICENSE`](https://github.com/apache/xerces-cpp/blob/master/LICENSE).
 - Microsoft Visual C++ runtime — human-reviewed redistributable component under Microsoft's [Visual Studio 2022 licence terms](https://visualstudio.microsoft.com/license-terms/) and [Visual C++ runtime redistribution list](https://learn.microsoft.com/en-us/visualstudio/releases/2022/redistribution#visual-c-runtime-files). The [licence policy](policies/licenses.md#microsoft-visual-c-runtime) records the approval. Microsoft does not publish its source under an open-source licence.
 
 ## Cargo dependencies of pg_jsonschema
