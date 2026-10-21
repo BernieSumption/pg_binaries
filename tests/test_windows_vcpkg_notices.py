@@ -16,11 +16,13 @@ class WindowsVcpkgNoticeTests(unittest.TestCase):
         self.archive_path = Path(self.temp.name) / "postgresql.tar.gz"
         self.entries = {
             "LICENSES/vcpkg-dll-map.json": b'{"components":['
+            b'{"dll":"lz4.dll","port":"lz4","version":"1.10.0"},'
             b'{"dll":"zstd.dll","port":"zstd","version":"1.5.7"},'
             b'{"dll":"libxml2.dll","port":"libxml2","version":"2.15.3"}]}',
         }
         self.bundle = bytearray()
         for filename, source in (
+                ("lz4-1.10.0-xxhash.txt", "lz4-1.10.0-xxhash-notice.txt"),
                 ("zstd-1.5.7-divsufsort.txt", "zstd-1.5.7-divsufsort-notice.txt"),
                 ("libxml2-v2.15.3-dict-c.txt", "libxml2-v2.15.3-dict-c-notice.txt"),
                 ("libxml2-v2.15.3-list-c.txt", "libxml2-v2.15.3-list-c-notice.txt")):

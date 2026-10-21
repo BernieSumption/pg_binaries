@@ -143,6 +143,10 @@ $libxml2Components = @($vcpkgDllOwnership.components | Where-Object { $_.port -e
 if ($libxml2Components.Count -eq 0 -or @($libxml2Components | Where-Object { $_.version -ne '2.15.3' }).Count -ne 0) {
   throw 'The reviewed libxml2 dict.c and list.c notices are pinned to libxml2 2.15.3'
 }
+$lz4Components = @($vcpkgDllOwnership.components | Where-Object { $_.port -eq 'lz4' })
+if ($lz4Components.Count -eq 0 -or @($lz4Components | Where-Object { $_.version -ne '1.10.0' }).Count -ne 0) {
+  throw 'The reviewed LZ4 xxHash notice is pinned to lz4 1.10.0'
+}
 $dependencyLicenses = Join-Path $pgLicenses 'dependencies'
 New-Item -ItemType Directory -Force $dependencyLicenses | Out-Null
 Get-ChildItem (Join-Path $vcpkg 'share') -Directory | ForEach-Object {
@@ -157,6 +161,8 @@ Copy-Item (Join-Path $repo 'support/licences/libxml2-v2.15.3-dict-c-notice.txt')
   (Join-Path $dependencyLicenses 'libxml2-v2.15.3-dict-c.txt')
 Copy-Item (Join-Path $repo 'support/licences/libxml2-v2.15.3-list-c-notice.txt') `
   (Join-Path $dependencyLicenses 'libxml2-v2.15.3-list-c.txt')
+Copy-Item (Join-Path $repo 'support/licences/lz4-1.10.0-xxhash-notice.txt') `
+  (Join-Path $dependencyLicenses 'lz4-1.10.0-xxhash.txt')
 $dependencyNotices = @(Get-ChildItem $dependencyLicenses -File | Sort-Object Name)
 $dependencyNoticeBundle = Join-Path $dependencyLicenses 'NOTICE-BUNDLE.txt'
 if ($dependencyNotices.Count -eq 0) { throw 'No vcpkg dependency copyright notices were installed' }

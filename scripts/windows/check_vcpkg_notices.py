@@ -7,6 +7,8 @@ import tarfile
 
 
 NOTICES = {
+    "lz4.dll": ("lz4", "1.10.0", "lz4-1.10.0-xxhash.txt",
+                "support/licences/lz4-1.10.0-xxhash-notice.txt"),
     "zstd.dll": ("zstd", "1.5.7", "zstd-1.5.7-divsufsort.txt",
                  "support/licences/zstd-1.5.7-divsufsort-notice.txt"),
     "libxml2.dll": ("libxml2", "2.15.3", "libxml2-v2.15.3-dict-c.txt",
