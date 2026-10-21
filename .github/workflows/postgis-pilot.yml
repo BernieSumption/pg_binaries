@@ -252,7 +252,7 @@ jobs:
           mkdir -p "$RUNNER_TEMP/postgis-conda-macos-arm64-archive/core"
           cp experiments/postgis-macos-arm64-2026-10-20/base-target.json "$RUNNER_TEMP/postgis-conda-macos-arm64-archive/base-target.json"
           bash scripts/macos/resolve-core.sh "$RUNNER_TEMP/postgis-conda-macos-arm64-archive/base-target.json" "$RUNNER_TEMP/postgis-conda-macos-arm64-archive/core"
-      - name: Build the diagnostic PostGIS archive and pending package inventory
+      - name: Build the diagnostic PostGIS archive
         env:
           GITHUB_RUN_ID: ${{ github.run_id }}
           GITHUB_RUN_ATTEMPT: ${{ github.run_attempt }}
