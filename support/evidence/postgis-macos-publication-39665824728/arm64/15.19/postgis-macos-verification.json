@@ -1,0 +1,23 @@
+{
+  "architecture": "arm64",
+  "archives": {
+    "postgis-3.6.4-postgresql-15.19-macos-arm64.tar.gz": "3bb0ab4aeff88326fb0312beba048678e10eff591b6c0a809a14fb4ab400b14c",
+    "postgresql-15.19-macos-arm64.tar.gz": "1f19ebdab54ca3c07660df092962ae25fa30d6fa408be029497371e6a68dfe83"
+  },
+  "build_id": "github-39665824728-1",
+  "extension": "postgis",
+  "outcome": "passed",
+  "platform": "macos-arm64",
+  "postgresql_version": "15.19",
+  "runner_os": "macOS-15.7.9-arm64-arm-64bit-Mach-O",
+  "schema_version": 1,
+  "source_revision": "eeb9df16e54a0cf0a3aacf98724c85035a3f6201",
+  "sql_probes": [
+    "probe-output.txt",
+    "raster-probe.txt"
+  ],
+  "static_analysis": "static-analysis.json",
+  "test_revision": "eeb9df16e54a0cf0a3aacf98724c85035a3f6201",
+  "test_run_id": "39665824728",
+  "version": "3.6.4"
+}

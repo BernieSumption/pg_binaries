@@ -1,0 +1,46 @@
+{
+  "assembled_core": {
+    "archive": "postgresql-15.19-macos-arm64.tar.gz",
+    "sha256": "1f19ebdab54ca3c07660df092962ae25fa30d6fa408be029497371e6a68dfe83",
+    "version": "15.19"
+  },
+  "case_results": {
+    "archive-suite": "passed",
+    "static-analysis": "passed"
+  },
+  "ci": {
+    "build_revision": "eeb9df16e54a0cf0a3aacf98724c85035a3f6201",
+    "provider": "github-actions",
+    "run_id": "39665824728",
+    "run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/39665824728",
+    "source_revision": "eeb9df16e54a0cf0a3aacf98724c85035a3f6201",
+    "test_revision": "eeb9df16e54a0cf0a3aacf98724c85035a3f6201"
+  },
+  "component": "postgis_sfcgal",
+  "environment": {
+    "architecture": "arm64",
+    "clean_system": true,
+    "dependency_check_profile": "macho-system-dependencies-v1",
+    "dependency_checks_passed": true,
+    "endpoint": "current",
+    "image_id": "macos-15-arm64/20260907.0337",
+    "os": "macos",
+    "os_version": "15.7.9"
+  },
+  "outcome": "passed",
+  "platform": "macos-arm64",
+  "postgresql_version": "15.19",
+  "prerequisite_archives": [],
+  "profile_id": "postgis-publication-macos-arm64-15.19",
+  "profile_revision": "25f5c129a9e01020c86d1a7ed211ed64638ab889960d33100a19885862767779",
+  "project": "PostGIS",
+  "schema_version": 2,
+  "scope": "publication",
+  "sha256": "3bb0ab4aeff88326fb0312beba048678e10eff591b6c0a809a14fb4ab400b14c",
+  "test_cases": [
+    "archive-suite",
+    "static-analysis"
+  ],
+  "test_revision": "eeb9df16e54a0cf0a3aacf98724c85035a3f6201",
+  "version": "3.6.4"
+}
