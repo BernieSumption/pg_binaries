@@ -116,6 +116,10 @@ for pass in 1 2 3 4; do
 done
 sort -u /work/runtime-sources.tsv | while IFS=$'\t' read -r library path; do
   owner=$(dpkg-query -S "$path" 2>/dev/null | head -n 1 || true)
+  if [[ -z $owner ]]; then
+    resolved=$(realpath "$path")
+    owner=$(dpkg-query -S "$resolved" 2>/dev/null | head -n 1 || true)
+  fi
   printf '%s\t%s\t%s\n' "$library" "$path" "${owner:-unowned}"
 done > /out/runtime-package-owners.txt
 while IFS= read -r -d '' elf; do
