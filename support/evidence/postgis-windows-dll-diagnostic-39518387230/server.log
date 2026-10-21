@@ -1,0 +1,15 @@
+2026-10-21 00:19:53.762 UTC [8120] LOG:  starting PostgreSQL 18.6 on x86_64-w64-mingw32, compiled by gcc.exe (Rev6, Built by MSYS2 project) 16.2.0, 64-bit
+2026-10-21 00:19:53.765 UTC [8120] LOG:  listening on IPv6 address "::1", port 55438
+2026-10-21 00:19:53.765 UTC [8120] LOG:  listening on IPv4 address "127.0.0.1", port 55438
+2026-10-21 00:19:53.785 UTC [7608] LOG:  database system was shut down at 2026-10-21 00:19:53 UTC
+2026-10-21 00:19:53.787 UTC [8120] LOG:  database system is ready to accept connections
+2026-10-21 00:19:54.504 UTC [4788] ERROR:  could not load library "D:/a/_temp/postgis-windows/output/mingw/postgresql/lib/postgis_raster-3.dll": The specified procedure could not be found.
+	
+2026-10-21 00:19:54.504 UTC [4788] CONTEXT:  SQL statement "CREATE OR REPLACE FUNCTION raster_in(cstring)
+	    RETURNS raster
+	    AS '$libdir/postgis_raster-3','RASTER_in'
+	    LANGUAGE 'c' IMMUTABLE STRICT PARALLEL SAFE"
+	extension script file "postgis_raster--3.6.4.sql", near line 98
+2026-10-21 00:19:54.504 UTC [4788] STATEMENT:  CREATE EXTENSION postgis_raster;
+2026-10-21 00:19:54.523 UTC [8120] LOG:  received immediate shutdown request
+2026-10-21 00:19:54.531 UTC [8120] LOG:  database system is shut down

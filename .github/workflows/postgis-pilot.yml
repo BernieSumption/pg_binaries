@@ -326,7 +326,7 @@ jobs:
             ${{ runner.temp }}/postgis-windows/output/build.log
             ${{ runner.temp }}/postgis-windows/output/cross-install.log
             ${{ runner.temp }}/postgis-windows/output/mingw/build.log
-            ${{ runner.temp }}/postgis-windows/output/mingw/dll-diagnostic.log
+            ${{ runner.temp }}/postgis-windows/output/mingw/dll-diagnostic/**
             ${{ runner.temp }}/postgis-windows/output/mingw/cluster/server.log
             ${{ runner.temp }}/postgis-windows/output/selected-cluster/server.log
             ${{ runner.temp }}/postgis-windows/output/mingw/source/postgresql-18.6/config.log

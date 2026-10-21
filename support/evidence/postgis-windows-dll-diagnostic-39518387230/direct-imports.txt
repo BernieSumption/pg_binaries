@@ -1,0 +1,18 @@
+=== /d/a/_temp/postgis-windows/output/mingw/postgresql/lib/postgis_raster-3.dll ===
+libgdal-39.dll
+libgeos_c.dll
+KERNEL32.dll
+msvcrt.dll
+libproj-25.dll
+postgres.exe
+Candidates for libgdal-39.dll:
+  /mingw64/bin/libgdal-39.dll
+Candidates for libgeos_c.dll:
+  /mingw64/bin/libgeos_c.dll
+Candidates for KERNEL32.dll:
+Candidates for msvcrt.dll:
+Candidates for libproj-25.dll:
+  /mingw64/bin/libproj-25.dll
+Candidates for postgres.exe:
+  /d/a/_temp/postgis-windows/output/mingw/postgresql/bin/postgres.exe
+  /mingw64/bin/postgres.exe

@@ -37,28 +37,32 @@ export PG_CONFIG="$pgroot/bin/pg_config.exe"
 make
 make install
 
-{
-  shopt -s nocasematch
-  printf 'PATH=%s\n' "$PATH"
-  modules=("$pgroot"/lib/postgis_raster-3.dll /mingw64/bin/gdal*.dll)
-  for module in "${modules[@]}"; do
-    test -f "$module" || continue
-    printf '\n=== %s ===\n' "$module"
-    imports=$(objdump -p "$module" | sed -n 's/^[[:space:]]*DLL Name: //p')
-    printf '%s\n' "$imports"
-    while IFS= read -r dll; do
-      test -n "$dll" || continue
-      printf 'Candidates for %s:\n' "$dll"
-      for path_dir in "$pgroot/bin" /mingw64/bin; do
-        for candidate in "$path_dir"/*; do
-          if [[ -f "$candidate" && "${candidate##*/}" == "$dll" ]]; then
-            printf '  %s\n' "$candidate"
-          fi
-        done
-      done
-    done <<< "$imports"
-  done
-} 2>&1 | tee "$output_root/dll-diagnostic.log"
+set +x
+diagnostic_root="$output_root/dll-diagnostic"
+mkdir -p "$diagnostic_root"
+modules=(
+  "$pgroot/lib/postgis_raster-3.dll"
+  "$pgroot/bin/postgres.exe"
+  /mingw64/bin/libgdal-*.dll
+  /mingw64/bin/libgeos_c.dll
+  /mingw64/bin/libproj-*.dll
+)
+for module in "${modules[@]}"; do
+  test -f "$module" || continue
+  report="$diagnostic_root/${module##*/}.txt"
+  {
+    printf 'File: %s\n' "$module"
+    printf 'Direct DLL imports:\n'
+    objdump -p "$module" | sed -n 's/^[[:space:]]*DLL Name: /  /p'
+    printf '\nFull objdump -p import and export tables:\n'
+    objdump -p "$module"
+  } > "$report"
+  if test "$(wc -c < "$report")" -gt 1048576; then
+    head -c 1048576 "$report" > "$report.truncated"
+    mv "$report.truncated" "$report"
+    printf '\n[report truncated at 1 MiB]\n' >> "$report"
+  fi
+done
 
 work="$output_root/cluster"
 mkdir -p "$work"

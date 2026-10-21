@@ -1,0 +1,5 @@
+# Windows PostGIS raster loading diagnostic
+
+On 2026-10-21, [run 39518387230](https://github.com/BernieSumption/pg_binaries/actions/runs/39518387230) rebuilt unmodified PostGIS 3.6.4 and PostgreSQL 18.6 with the same MinGW toolchain. `CREATE EXTENSION postgis` passed; `CREATE EXTENSION postgis_raster` again failed while loading `postgis_raster-3.dll` with Windows error 127. The [server log](server.log) records the failure at the raster input function before any probe of the selected MSVC core.
+
+The retained [direct-import summary](direct-imports.txt) shows that the raster module imports `libgdal-39.dll`, `libgeos_c.dll`, `libproj-25.dll` and `postgres.exe`, with a candidate for each on the runner's search path. This establishes neither which imported procedure is missing nor whether a dependency of GDAL is involved. The diagnostic's intended GDAL glob missed `libgdal-39.dll`, and tracing every path candidate made its full log unnecessarily noisy. A narrower import/export report is the next trial before changing the compiler route.
