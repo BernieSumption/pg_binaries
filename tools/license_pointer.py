@@ -21,7 +21,7 @@ def write_pointer(payload_root, component):
     path.parent.mkdir(parents=True, exist_ok=True)
     if path.exists() or path.is_symlink():
         raise LicensePointerError(f"licence pointer already exists: {path}")
-    path.write_text(LICENSE_POINTER, encoding="utf-8")
+    path.write_bytes(LICENSE_POINTER.encode("utf-8"))
     return path
 
 
