@@ -136,6 +136,7 @@ C
     "$pgroot/lib/libpostgres.a" -o "$output_root/selected-postgres-direct.exe"
   gcc "$output_root/selected-postgres-link-probe.c" -L"$pgroot/lib" \
     -Wl,-t -lpostgres -o "$output_root/selected-postgres-search.exe"
+  export LDFLAGS="-L$pgroot/lib ${LDFLAGS:-}"
 fi
 cd "$source_root"
 curl -fL --retry 3 -o postgis-3.6.4.tar.gz https://download.osgeo.org/postgis/source/postgis-3.6.4.tar.gz
