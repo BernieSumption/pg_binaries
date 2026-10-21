@@ -22,6 +22,14 @@ on:
         description: Build a non-publication PostGIS archive with its MinGW runtime closure and verify it on a fresh Windows runner
         required: false
         type: boolean
+      postgis_windows_import_diagnostic:
+        description: Inspect DLL imports from a prior cross-install trial against the selected Windows core
+        required: false
+        type: boolean
+      diagnostic_run_id:
+        description: Source run ID for the Windows import diagnostic
+        required: false
+        type: string
       postgis_conda_macos_arm64_probe:
         description: Inspect conda-forge spatial dependencies for the macOS 11 arm64 floor
         required: false
@@ -40,7 +48,7 @@ on:
         type: boolean
 jobs:
   plan:
-    if: ${{ inputs.address_standardizer_probe != true && inputs.postgis_macos_arm64_probe != true && inputs.postgis_windows_abi_probe != true && inputs.postgis_windows_selected_core_probe != true && inputs.postgis_windows_relocatable_trial != true && inputs.postgis_conda_macos_arm64_probe != true && inputs.postgis_conda_macos_arm64_build_probe != true && inputs.postgis_conda_macos_arm64_sfcgal_build_probe != true && inputs.postgis_conda_macos_arm64_sfcgal_archive_probe != true }}
+    if: ${{ inputs.address_standardizer_probe != true && inputs.postgis_macos_arm64_probe != true && inputs.postgis_windows_abi_probe != true && inputs.postgis_windows_selected_core_probe != true && inputs.postgis_windows_relocatable_trial != true && inputs.postgis_windows_import_diagnostic != true && inputs.postgis_conda_macos_arm64_probe != true && inputs.postgis_conda_macos_arm64_build_probe != true && inputs.postgis_conda_macos_arm64_sfcgal_build_probe != true && inputs.postgis_conda_macos_arm64_sfcgal_archive_probe != true }}
     runs-on: ubuntu-24.04
     outputs:
       project: ${{ steps.select.outputs.project }}
@@ -509,6 +517,72 @@ jobs:
             ${{ runner.temp }}/postgis-windows-trial/output/selected-cluster/server.log
           if-no-files-found: warn
           retention-days: 3
+
+  windows-postgis-import-diagnostic:
+    if: ${{ inputs.postgis_windows_import_diagnostic == true }}
+    runs-on: windows-2022
+    timeout-minutes: 40
+    permissions:
+      actions: read
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download prior cross-install trial output
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_RUN_ID: ${{ inputs.diagnostic_run_id }}
+        run: |
+          if ($env:SOURCE_RUN_ID -notmatch '^[0-9]+$') { throw 'A numeric diagnostic_run_id is required.' }
+          gh run download $env:SOURCE_RUN_ID --repo $env:GITHUB_REPOSITORY `
+            --name "postgis-windows-relocatable-trial-$env:SOURCE_RUN_ID" `
+            --dir (Join-Path $env:RUNNER_TEMP 'postgis-import-diagnostic')
+          if ($LASTEXITCODE -ne 0) { throw 'Prior cross-install artifact is unavailable.' }
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: >-
+            base-devel
+            python
+          pacboy: >-
+            toolchain:p
+            gmp:p
+            sfcgal:p
+            geos:p
+            proj:p
+            gdal:p
+            json-c:p
+            libxml2:p
+      - name: Inspect imports with the selected core first in DLL search order
+        shell: msys2 {0}
+        run: |
+          set -euo pipefail
+          root="$(cygpath -u "$RUNNER_TEMP")/postgis-import-diagnostic"
+          mkdir -p "$root/reports"
+          python experiments/postgis-windows-abi-trial/diagnose-imports.py \
+            --root "$root/selected/postgresql/lib/postgis_raster-3.dll" \
+            --search-directory "$root/selected/postgresql/bin" \
+            --search-directory "$root/mingw/netcdf-no-ros3/bin" \
+            --search-directory "$root/mingw/postgresql/bin" \
+            --search-directory "$root/mingw/postgresql/lib" \
+            --search-directory /mingw64/bin \
+            --search-directory /mingw64/lib \
+            --search-directory /usr/bin \
+            --output "$root/reports/selected-core-raster-imports.json" || true
+          python - "$root/reports/selected-core-raster-imports.json" <<'PY'
+          import json, sys
+          report=json.load(open(sys.argv[1]))
+          for key in ('missing_symbols','unresolved_dlls','objdump_errors'):
+              print(key, json.dumps(report[key], indent=2))
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: postgis-windows-import-diagnostic-${{ github.run_id }}
+          path: ${{ runner.temp }}/postgis-import-diagnostic/reports/*
+          if-no-files-found: warn
+          retention-days: 7
 
   windows-postgis-relocatable-verify:
     needs: windows-postgis-relocatable-build

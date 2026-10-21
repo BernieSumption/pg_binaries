@@ -17,6 +17,7 @@ mkdir -p "$output_root/selected"
 tar -xzf "$core_archive" -C "$output_root/selected"
 selected="$output_root/selected/postgresql"
 mingw="$output_root/mingw/postgresql"
+source_root="$output_root/mingw/source"
 netcdf="$output_root/netcdf-no-ros3"
 test "$("$selected/bin/pg_config.exe" --version)" = 'PostgreSQL 18.6'
 test "$("$mingw/bin/pg_config.exe" --version)" = 'PostgreSQL 18.6'
