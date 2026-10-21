@@ -1,0 +1,46 @@
+{
+  "assembled_core": {
+    "archive": "postgresql-17.11-macos-arm64.tar.gz",
+    "sha256": "45d7f843ee50afbe3f718d9ff8ad4e27d6d0ab434616892dfb04bdcb4a645379",
+    "version": "17.11"
+  },
+  "case_results": {
+    "archive-suite": "passed",
+    "static-analysis": "passed"
+  },
+  "ci": {
+    "build_revision": "7a5b4146b77563bd004a7c5db3a2bcfbfb6f38fd",
+    "provider": "github-actions",
+    "run_id": "39682730632",
+    "run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/39682730632",
+    "source_revision": "7a5b4146b77563bd004a7c5db3a2bcfbfb6f38fd",
+    "test_revision": "7a5b4146b77563bd004a7c5db3a2bcfbfb6f38fd"
+  },
+  "component": "postgis",
+  "environment": {
+    "architecture": "arm64",
+    "clean_system": true,
+    "dependency_check_profile": "macho-system-dependencies-v1",
+    "dependency_checks_passed": true,
+    "endpoint": "current",
+    "image_id": "macos-15-arm64/20260907.0337",
+    "os": "macos",
+    "os_version": "15.7.9"
+  },
+  "outcome": "passed",
+  "platform": "macos-arm64",
+  "postgresql_version": "17.11",
+  "prerequisite_archives": [],
+  "profile_id": "postgis-publication-macos-arm64-17.11",
+  "profile_revision": "58b6b0c2e8e36720bd36e539749c4efb76d2ab8450d7d3866a7c1bcdd27ff273",
+  "project": "PostGIS",
+  "schema_version": 2,
+  "scope": "publication",
+  "sha256": "3347e4617b09526dee81fbf06503c26669040f047d286db17a6f38cda9e57c3b",
+  "test_cases": [
+    "archive-suite",
+    "static-analysis"
+  ],
+  "test_revision": "7a5b4146b77563bd004a7c5db3a2bcfbfb6f38fd",
+  "version": "3.6.4"
+}

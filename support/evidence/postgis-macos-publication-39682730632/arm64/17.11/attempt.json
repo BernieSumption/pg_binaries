@@ -1,0 +1,14 @@
+{
+  "archives": {
+    "postgis-3.6.4-postgresql-17.11-macos-arm64.tar.gz": "3347e4617b09526dee81fbf06503c26669040f047d286db17a6f38cda9e57c3b",
+    "postgresql-17.11-macos-arm64.tar.gz": "45d7f843ee50afbe3f718d9ff8ad4e27d6d0ab434616892dfb04bdcb4a645379"
+  },
+  "run_id": "39682730632",
+  "schema_version": 1,
+  "source_revision": "7a5b4146b77563bd004a7c5db3a2bcfbfb6f38fd",
+  "steps": {
+    "archive-suite": "success",
+    "diagnostics": "skipped",
+    "symbols": "skipped"
+  }
+}
