@@ -114,10 +114,15 @@ make install
 test "$("$pgroot/bin/pg_config.exe" --version)" = "PostgreSQL $pg_version"
 if test "$pg_version" = 15.19; then
   test -f "$selected_import_lib"
+  selected_executable="$(dirname "$(dirname "$selected_import_lib")")/bin/postgres.exe"
+  test -f "$selected_executable"
+  python "$repo_root/scripts/postgis/windows-selected-exports.py" \
+    "$selected_executable" "$output_root/selected-postgres.def"
+  dlltool -d "$output_root/selected-postgres.def" -D postgres.exe \
+    -l "$pgroot/lib/libpostgres.a"
   for symbol in GetNumConfigOptions MemoryContextContains; do
-    nm "$selected_import_lib" | grep -Eq "[[:space:]]$symbol$"
+    nm "$pgroot/lib/libpostgres.a" | grep -Eq "[[:space:]]$symbol$"
   done
-  cp "$selected_import_lib" "$pgroot/lib/libpostgres.a"
 fi
 cd "$source_root"
 curl -fL --retry 3 -o postgis-3.6.4.tar.gz https://download.osgeo.org/postgis/source/postgis-3.6.4.tar.gz
