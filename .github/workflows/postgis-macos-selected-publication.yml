@@ -12,9 +12,6 @@ on:
       architecture:
         required: true
         type: string
-      conda_build_only:
-        required: false
-        type: boolean
   workflow_dispatch:
     inputs:
       postgresql_version:
@@ -35,11 +32,6 @@ on:
         type: choice
         options: [arm64]
         default: arm64
-      conda_build_only:
-        description: Build and probe all four PostGIS SQL extensions with conda-forge dependencies without creating a release archive
-        required: false
-        type: boolean
-        default: false
 
 permissions:
   actions: read
@@ -71,19 +63,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install native build dependencies
-        if: inputs.conda_build_only != true
         run: brew install make cmake geos proj sfcgal json-c libxml2 protobuf-c pcre2
-      - name: Install micromamba
-        if: inputs.conda_build_only == true
-        run: brew install micromamba
-      - name: Resolve conda-forge spatial and SFCGAL build dependencies
-        if: inputs.conda_build_only == true
-        run: |
-          micromamba create --yes --prefix "$RUNNER_TEMP/postgis-conda-arm64-sfcgal-env" --channel conda-forge \
-            geos proj gdal json-c libxml2 pcre2 pkg-config cmake \
-            cgal-cpp=6.1.1 libboost-devel gmp mpfr eigen nlohmann_json
       - name: Preflight exact Homebrew licence evidence
-        if: inputs.conda_build_only != true
         run: python3 scripts/postgis/macos-license-inventory.py --preflight
       - name: Resolve checked PostgreSQL 18.6 arm64 core
         env:
@@ -97,16 +78,7 @@ jobs:
           cp '${{ needs.select.outputs.target }}' "$RUNNER_TEMP/postgis/base-target.json"
           bash scripts/macos/resolve-core.sh "$RUNNER_TEMP/postgis/base-target.json" "$RUNNER_TEMP/postgis/core"
       - name: Build and package PostGIS 3.6.4
-        if: inputs.conda_build_only != true
         run: bash scripts/postgis/macos-build-publication.sh "$RUNNER_TEMP/postgis/core" "$RUNNER_TEMP/postgis/core/target.json" "$RUNNER_TEMP/postgis/output"
-      - name: Build and probe PostGIS 3.6.4 with conda-forge dependencies
-        if: inputs.conda_build_only == true
-        run: |
-          bash scripts/postgis/macos-build-conda-pilot.sh \
-            "$RUNNER_TEMP/postgis/core" \
-            "$RUNNER_TEMP/postgis/core/target.json" \
-            "$RUNNER_TEMP/postgis-conda-arm64-sfcgal-env" \
-            "$RUNNER_TEMP/postgis/output"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -116,11 +88,6 @@ jobs:
             ${{ runner.temp }}/postgis/core/postgresql-18.6-macos-arm64.tar.gz.sha256
             ${{ runner.temp }}/postgis/core/target.json
             ${{ runner.temp }}/postgis/output/*.log
-            ${{ runner.temp }}/postgis/output/sql-names.txt
-            ${{ runner.temp }}/postgis/output/sql-probe.txt
-            ${{ runner.temp }}/postgis/output/build-only.txt
-            ${{ runner.temp }}/postgis/output/sfcgal-commit.txt
-            ${{ runner.temp }}/postgis/output/sfcgal-source.sha256
             ${{ runner.temp }}/postgis/output/postgis-bundled-dependencies.json
             ${{ runner.temp }}/postgis/output/postgis-3.6.4-postgresql-18.6-macos-arm64.tar.gz
             ${{ runner.temp }}/postgis/output/postgis-3.6.4-postgresql-18.6-macos-arm64.tar.gz.sha256
@@ -129,7 +96,7 @@ jobs:
 
   verify:
     needs: [select, build]
-    if: always() && needs.select.result == 'success' && inputs.conda_build_only != true
+    if: always() && needs.select.result == 'success'
     runs-on: macos-15
     timeout-minutes: 60
     steps:
