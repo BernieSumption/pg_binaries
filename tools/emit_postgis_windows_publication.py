@@ -45,9 +45,9 @@ def emit(root, core_dir, extension_dir, output, steps, os_version, image_id):
     verify_archive(core, "postgresql")
     verify_archive(extension, "postgis")
     with tarfile.open(extension, "r:gz") as archive:
-        matches = [m for m in archive.getmembers() if m.name == "metadata.json" and m.isfile() and m.size <= 1048576]
+        matches = [m for m in archive.getmembers() if m.name == "postgis/metadata.json" and m.isfile() and m.size <= 1048576]
         if len(matches) != 1:
-            raise coverage.CoverageError("PostGIS archive requires one bounded metadata.json")
+            raise coverage.CoverageError("PostGIS archive requires one bounded postgis/metadata.json")
         metadata = json.load(archive.extractfile(matches[0]))
     if (metadata.get("project") != "PostGIS" or metadata.get("version") != VERSION
             or metadata.get("postgresql_version") != PG_VERSION or metadata.get("platform") != "windows"
