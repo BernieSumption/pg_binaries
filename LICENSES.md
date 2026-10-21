@@ -37,7 +37,7 @@ This file records licence declarations for projects whose code or data is includ
 - zlib — zlib licence. [Source and licence declaration](https://github.com/madler/zlib/blob/develop/README); [vcpkg port](https://github.com/microsoft/vcpkg/blob/9e593bb18ea69cc5095e012465dcd675a822ed0d/ports/zlib/portfile.cmake).
 - PCRE2 — BSD-3-Clause WITH PCRE2-exception. Its enabled JIT includes separately licensed SLJIT under 2-clause BSD. [PCRE2 declaration](https://github.com/PCRE2Project/pcre2/blob/pcre2-10.48/LICENCE.md); [SLJIT declaration](https://github.com/PCRE2Project/pcre2/blob/pcre2-10.48/deps/sljit/LICENSE).
 - GDAL — MIT-style terms. [GDAL licence declaration](https://gdal.org/en/stable/license.html); [source release](https://download.osgeo.org/gdal/3.13.3/gdal-3.13.3.tar.gz).
-- PROJ — MIT. Its current expression and package version are recorded in the [PostGIS macOS inventory builder](scripts/postgis/macos-license-inventory.py); [source and `COPYING`](https://github.com/OSGeo/PROJ/blob/master/COPYING).
+- PROJ — MIT. [Source and `COPYING`](https://github.com/OSGeo/PROJ/blob/master/COPYING).
 - PROJ-data — per-file terms, recorded in upstream [`README.DATA`](https://github.com/OSGeo/PROJ-data/blob/master/README.DATA) and `copyright_and_licenses.csv`; the build retains the applicable licence texts.
 - ICU4C — Unicode License v3. [Source](https://github.com/unicode-org/icu); [`LICENSE`](https://github.com/unicode-org/icu/blob/release-78-1/LICENSE).
 - libxml2 — licence terms declared in its `Copyright` file. [Source](https://gitlab.gnome.org/GNOME/libxml2); [`Copyright`](https://gitlab.gnome.org/GNOME/libxml2/-/blob/master/Copyright).

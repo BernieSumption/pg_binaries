@@ -144,19 +144,19 @@ PY
       echo "cannot inspect pinned macOS core builder revision" >&2
       exit 1
     fi
-    git -C "$repo" diff --quiet "$source_revision" HEAD -- \
+    if git -C "$repo" diff --quiet "$source_revision" HEAD -- \
       scripts/macos/build.sh scripts/macos/build-source-dependencies.sh \
       scripts/macos/bundle.py tools/license_pointer.py \
       tools/source_archive.py tools/discover_builtins.py \
-      tools/create_macos_symbols.py || {
-        echo "pinned macOS core build inputs changed" >&2
-        exit 1
-      }
-    check_source_archive
-    echo "Reusing pinned PostgreSQL $version core from Actions run $pin_run_id"
-    exit 0
+      tools/create_macos_symbols.py; then
+      check_source_archive
+      echo "Reusing pinned PostgreSQL $version core from Actions run $pin_run_id"
+      exit 0
+    fi
+    echo "Pinned macOS core build inputs changed; building PostgreSQL $version on this runner"
+  else
+    echo "Pinned macOS core artifact is unavailable; building PostgreSQL $version on this runner"
   fi
-  echo "Pinned macOS core artifact is unavailable; building PostgreSQL $version on this runner"
 else
   pin_status=$?
   [[ $pin_status -eq 3 ]] || exit "$pin_status"
