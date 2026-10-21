@@ -84,9 +84,8 @@ jobs:
           python tools/windows_core_target_config.py --base-target (Join-Path $env:RUNNER_TEMP 'core/base-target.json') --core-archive $archive --source-run-id $env:GITHUB_RUN_ID --source-run-attempt $env:GITHUB_RUN_ATTEMPT --source-artifact-name $artifactName --output $target
           if ($LASTEXITCODE -ne 0) { throw 'Generated core target identity validation failed.' }
           $identity = Get-Content $target -Raw | ConvertFrom-Json
-          $identity | Add-Member -NotePropertyName status -NotePropertyValue 'checked'
+          $identity.status = 'checked'
           $identity | Add-Member -NotePropertyName archive -NotePropertyValue $archive
-          $identity | Add-Member -NotePropertyName postgresql_version -NotePropertyValue $env:PG_VERSION -Force
           $identity | ConvertTo-Json -Depth 10 | Set-Content -Encoding utf8 (Join-Path $env:RUNNER_TEMP 'core/identity.json')
       - uses: msys2/setup-msys2@v2
         with:
