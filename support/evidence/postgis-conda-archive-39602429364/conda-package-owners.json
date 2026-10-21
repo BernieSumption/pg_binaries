@@ -1,0 +1,496 @@
+{
+  "bundled_libraries": [
+    {
+      "conda_meta_record": "lerc-4.2.0-h1eee2c3_0.json",
+      "owner_status": "conda-package",
+      "payload_path": "lib/libLerc.4.dylib",
+      "source_path": "/Users/runner/work/_temp/postgis-conda-arm64-sfcgal-env/lib/libLerc.4.dylib"
+    },
+    {
+      "matches": [],
+      "owner_status": "unresolved",
+      "payload_path": "lib/libSFCGAL.2.3.0.dylib",
+      "source_path": "/Users/runner/work/_temp/postgis-conda-arm64-sfcgal-env/lib/libSFCGAL.2.3.0.dylib"
+    },
+    {
+      "conda_meta_record": "libboost-1.88.0-h0419b56_7.json",
+      "owner_status": "conda-package",
+      "payload_path": "lib/libboost_serialization.dylib",
+      "source_path": "/Users/runner/work/_temp/postgis-conda-arm64-sfcgal-env/lib/libboost_serialization.dylib"
+    },
+    {
+      "conda_meta_record": "libboost-1.88.0-h0419b56_7.json",
+      "owner_status": "conda-package",
+      "payload_path": "lib/libboost_thread.dylib",
+      "source_path": "/Users/runner/work/_temp/postgis-conda-arm64-sfcgal-env/lib/libboost_thread.dylib"
+    },
+    {
+      "conda_meta_record": "libcxx-23.1.4-h55c6f16_0.json",
+      "owner_status": "conda-package",
+      "payload_path": "lib/libc++.1.0.dylib",
+      "source_path": "/Users/runner/work/_temp/postgis-conda-arm64-sfcgal-env/lib/libc++.1.0.dylib"
+    },
+    {
+      "conda_meta_record": "krb5-1.22.2-h34f8a20_2.json",
+      "owner_status": "conda-package",
+      "payload_path": "lib/libcom_err.3.0.dylib",
+      "source_path": "/Users/runner/work/_temp/postgis-conda-arm64-sfcgal-env/lib/libcom_err.3.0.dylib"
+    },
+    {
+      "owner_status": "checked-core",
+      "payload_path": "lib/libcrypto.3.dylib",
+      "source_path": "/Users/runner/work/_temp/postgis-conda-build.lBRo79/core/postgresql/lib/libcrypto.3.dylib"
+    },
+    {
+      "conda_meta_record": "libcurl-8.23.0-h6651222_0.json",
+      "owner_status": "conda-package",
+      "payload_path": "lib/libcurl.4.dylib",
+      "source_path": "/Users/runner/work/_temp/postgis-conda-arm64-sfcgal-env/lib/libcurl.4.dylib"
+    },
+    {
+      "conda_meta_record": "libdeflate-1.25-he7e0567_1.json",
+      "owner_status": "conda-package",
+      "payload_path": "lib/libdeflate.0.dylib",
+      "source_path": "/Users/runner/work/_temp/postgis-conda-arm64-sfcgal-env/lib/libdeflate.0.dylib"
+    },
+    {
+      "component": "GDAL",
+      "owner_status": "source-build",
+      "payload_path": "lib/libgdal.39.3.13.3.dylib",
+      "source_path": "/Users/runner/work/_temp/postgis-conda-build.lBRo79/gdal-prefix/lib/libgdal.39.3.13.3.dylib"
+    },
+    {
+      "conda_meta_record": "geos-3.14.1-ha834cd8_0.json",
+      "owner_status": "conda-package",
+      "payload_path": "lib/libgeos.3.14.1.dylib",
+      "source_path": "/Users/runner/work/_temp/postgis-conda-arm64-sfcgal-env/lib/libgeos.3.14.1.dylib"
+    },
+    {
+      "conda_meta_record": "geos-3.14.1-ha834cd8_0.json",
+      "owner_status": "conda-package",
+      "payload_path": "lib/libgeos_c.1.20.5.dylib",
+      "source_path": "/Users/runner/work/_temp/postgis-conda-arm64-sfcgal-env/lib/libgeos_c.1.20.5.dylib"
+    },
+    {
+      "conda_meta_record": "gmp-6.3.0-hf5e55b1_3.json",
+      "owner_status": "conda-package",
+      "payload_path": "lib/libgmp.10.dylib",
+      "source_path": "/Users/runner/work/_temp/postgis-conda-arm64-sfcgal-env/lib/libgmp.10.dylib"
+    },
+    {
+      "conda_meta_record": "gmp-6.3.0-hf5e55b1_3.json",
+      "owner_status": "conda-package",
+      "payload_path": "lib/libgmpxx.4.dylib",
+      "source_path": "/Users/runner/work/_temp/postgis-conda-arm64-sfcgal-env/lib/libgmpxx.4.dylib"
+    },
+    {
+      "conda_meta_record": "krb5-1.22.2-h34f8a20_2.json",
+      "owner_status": "conda-package",
+      "payload_path": "lib/libgssapi_krb5.2.2.dylib",
+      "source_path": "/Users/runner/work/_temp/postgis-conda-arm64-sfcgal-env/lib/libgssapi_krb5.2.2.dylib"
+    },
+    {
+      "conda_meta_record": "libiconv-1.18-he4c29f2_3.json",
+      "owner_status": "conda-package",
+      "payload_path": "lib/libiconv.2.dylib",
+      "source_path": "/Users/runner/work/_temp/postgis-conda-arm64-sfcgal-env/lib/libiconv.2.dylib"
+    },
+    {
+      "conda_meta_record": "icu-78.3-py313h8c68c59_2.json",
+      "owner_status": "conda-package",
+      "payload_path": "lib/libicudata.78.3.dylib",
+      "source_path": "/Users/runner/work/_temp/postgis-conda-arm64-sfcgal-env/lib/libicudata.78.3.dylib"
+    },
+    {
+      "conda_meta_record": "icu-78.3-py313h8c68c59_2.json",
+      "owner_status": "conda-package",
+      "payload_path": "lib/libicui18n.78.3.dylib",
+      "source_path": "/Users/runner/work/_temp/postgis-conda-arm64-sfcgal-env/lib/libicui18n.78.3.dylib"
+    },
+    {
+      "conda_meta_record": "icu-78.3-py313h8c68c59_2.json",
+      "owner_status": "conda-package",
+      "payload_path": "lib/libicuuc.78.3.dylib",
+      "source_path": "/Users/runner/work/_temp/postgis-conda-arm64-sfcgal-env/lib/libicuuc.78.3.dylib"
+    },
+    {
+      "conda_meta_record": "libjpeg-turbo-3.2.0-h84a0fba_1.json",
+      "owner_status": "conda-package",
+      "payload_path": "lib/libjpeg.8.3.2.dylib",
+      "source_path": "/Users/runner/work/_temp/postgis-conda-arm64-sfcgal-env/lib/libjpeg.8.3.2.dylib"
+    },
+    {
+      "conda_meta_record": "json-c-0.18-h74c22ad_2.json",
+      "owner_status": "conda-package",
+      "payload_path": "lib/libjson-c.5.4.0.dylib",
+      "source_path": "/Users/runner/work/_temp/postgis-conda-arm64-sfcgal-env/lib/libjson-c.5.4.0.dylib"
+    },
+    {
+      "conda_meta_record": "krb5-1.22.2-h34f8a20_2.json",
+      "owner_status": "conda-package",
+      "payload_path": "lib/libk5crypto.3.1.dylib",
+      "source_path": "/Users/runner/work/_temp/postgis-conda-arm64-sfcgal-env/lib/libk5crypto.3.1.dylib"
+    },
+    {
+      "conda_meta_record": "krb5-1.22.2-h34f8a20_2.json",
+      "owner_status": "conda-package",
+      "payload_path": "lib/libkrb5.3.3.dylib",
+      "source_path": "/Users/runner/work/_temp/postgis-conda-arm64-sfcgal-env/lib/libkrb5.3.3.dylib"
+    },
+    {
+      "conda_meta_record": "krb5-1.22.2-h34f8a20_2.json",
+      "owner_status": "conda-package",
+      "payload_path": "lib/libkrb5support.1.1.dylib",
+      "source_path": "/Users/runner/work/_temp/postgis-conda-arm64-sfcgal-env/lib/libkrb5support.1.1.dylib"
+    },
+    {
+      "conda_meta_record": "liblzma-5.8.3-h8088a28_1.json",
+      "owner_status": "conda-package",
+      "payload_path": "lib/liblzma.5.dylib",
+      "source_path": "/Users/runner/work/_temp/postgis-conda-arm64-sfcgal-env/lib/liblzma.5.dylib"
+    },
+    {
+      "conda_meta_record": "mpfr-4.2.2-h72846b0_1.json",
+      "owner_status": "conda-package",
+      "payload_path": "lib/libmpfr.6.dylib",
+      "source_path": "/Users/runner/work/_temp/postgis-conda-arm64-sfcgal-env/lib/libmpfr.6.dylib"
+    },
+    {
+      "conda_meta_record": "libnghttp2-1.68.1-h435687b_1.json",
+      "owner_status": "conda-package",
+      "payload_path": "lib/libnghttp2.14.dylib",
+      "source_path": "/Users/runner/work/_temp/postgis-conda-arm64-sfcgal-env/lib/libnghttp2.14.dylib"
+    },
+    {
+      "conda_meta_record": "proj-9.9.0-h51dee2d_0.json",
+      "owner_status": "conda-package",
+      "payload_path": "lib/libproj.25.9.9.0.dylib",
+      "source_path": "/Users/runner/work/_temp/postgis-conda-arm64-sfcgal-env/lib/libproj.25.9.9.0.dylib"
+    },
+    {
+      "conda_meta_record": "libpsl-0.23.1-hdb0c161_1.json",
+      "owner_status": "conda-package",
+      "payload_path": "lib/libpsl.5.dylib",
+      "source_path": "/Users/runner/work/_temp/postgis-conda-arm64-sfcgal-env/lib/libpsl.5.dylib"
+    },
+    {
+      "conda_meta_record": "libwebp-base-1.6.0-h202fb40_1.json",
+      "owner_status": "conda-package",
+      "payload_path": "lib/libsharpyuv.0.1.2.dylib",
+      "source_path": "/Users/runner/work/_temp/postgis-conda-arm64-sfcgal-env/lib/libsharpyuv.0.1.2.dylib"
+    },
+    {
+      "conda_meta_record": "libsqlite-3.54.1-hca69786_0.json",
+      "owner_status": "conda-package",
+      "payload_path": "lib/libsqlite3.3.54.1.dylib",
+      "source_path": "/Users/runner/work/_temp/postgis-conda-arm64-sfcgal-env/lib/libsqlite3.3.54.1.dylib"
+    },
+    {
+      "conda_meta_record": "libssh2-1.11.1-hbf2880b_1.json",
+      "owner_status": "conda-package",
+      "payload_path": "lib/libssh2.1.0.1.dylib",
+      "source_path": "/Users/runner/work/_temp/postgis-conda-arm64-sfcgal-env/lib/libssh2.1.0.1.dylib"
+    },
+    {
+      "owner_status": "checked-core",
+      "payload_path": "lib/libssl.3.dylib",
+      "source_path": "/Users/runner/work/_temp/postgis-conda-build.lBRo79/core/postgresql/lib/libssl.3.dylib"
+    },
+    {
+      "conda_meta_record": "libtiff-4.7.2-hf67920b_1.json",
+      "owner_status": "conda-package",
+      "payload_path": "lib/libtiff.6.dylib",
+      "source_path": "/Users/runner/work/_temp/postgis-conda-arm64-sfcgal-env/lib/libtiff.6.dylib"
+    },
+    {
+      "conda_meta_record": "libwebp-base-1.6.0-h202fb40_1.json",
+      "owner_status": "conda-package",
+      "payload_path": "lib/libwebp.7.2.0.dylib",
+      "source_path": "/Users/runner/work/_temp/postgis-conda-arm64-sfcgal-env/lib/libwebp.7.2.0.dylib"
+    },
+    {
+      "owner_status": "checked-core",
+      "payload_path": "lib/libxml2.16.dylib",
+      "source_path": "/Users/runner/work/_temp/postgis-conda-build.lBRo79/core/postgresql/lib/libxml2.16.dylib"
+    },
+    {
+      "conda_meta_record": "libzlib-1.3.2-h8088a28_3.json",
+      "owner_status": "conda-package",
+      "payload_path": "lib/libz.1.3.2.dylib",
+      "source_path": "/Users/runner/work/_temp/postgis-conda-arm64-sfcgal-env/lib/libz.1.3.2.dylib"
+    },
+    {
+      "conda_meta_record": "zstd-1.5.7-hf451053_7.json",
+      "owner_status": "conda-package",
+      "payload_path": "lib/libzstd.1.5.7.dylib",
+      "source_path": "/Users/runner/work/_temp/postgis-conda-arm64-sfcgal-env/lib/libzstd.1.5.7.dylib"
+    }
+  ],
+  "conda_meta_records": [
+    {
+      "build": "ha834cd8_0",
+      "license": "LGPL-2.1-only",
+      "name": "geos",
+      "record": "conda-meta-records/geos-3.14.1-ha834cd8_0.json",
+      "sha256": "00a7929b3a38cc9d6bf5a75d6041d3d042a98efb92fd3df75f8eaaebed22bb09",
+      "sha256_package": "6bb801cb23b7e884c2e6ce96d933d141d6d87ad07f5bf8d13d6a59a3403952fa",
+      "url": "https://conda.anaconda.org/conda-forge/osx-arm64/geos-3.14.1-ha834cd8_0.conda",
+      "version": "3.14.1"
+    },
+    {
+      "build": "hf5e55b1_3",
+      "license": "GPL-2.0-or-later OR LGPL-3.0-or-later",
+      "name": "gmp",
+      "record": "conda-meta-records/gmp-6.3.0-hf5e55b1_3.json",
+      "sha256": "5730ce40ba88630ef67d4cba3e7294ca1a6fd0f57e5adb9bd95c31a48a1b5319",
+      "sha256_package": "980cb1bbc3656d6f923d44297a2c4ab75f20482b8930c70537fd7f1ef2378894",
+      "url": "https://conda.anaconda.org/conda-forge/osx-arm64/gmp-6.3.0-hf5e55b1_3.conda",
+      "version": "6.3.0"
+    },
+    {
+      "build": "py313h8c68c59_2",
+      "license": "MIT",
+      "name": "icu",
+      "record": "conda-meta-records/icu-78.3-py313h8c68c59_2.json",
+      "sha256": "db63e0d5197a10414dbda476401a6daa938085427334c8b3745cc1337ae959f1",
+      "sha256_package": "5c06f864d6b6e3cddf3915a859a1151657e337362301d765d249e241563cc679",
+      "url": "https://conda.anaconda.org/conda-forge/osx-arm64/icu-78.3-py313h8c68c59_2.conda",
+      "version": "78.3"
+    },
+    {
+      "build": "h74c22ad_2",
+      "license": "MIT",
+      "name": "json-c",
+      "record": "conda-meta-records/json-c-0.18-h74c22ad_2.json",
+      "sha256": "3fae9e701be10aead9aa51d91562061e8930c460194aad80e954d68a553580ec",
+      "sha256_package": "a52f1c0878e945a9f414d363f33592b6dc83eb9df0ddabc742bd3a4c1dd68627",
+      "url": "https://conda.anaconda.org/conda-forge/osx-arm64/json-c-0.18-h74c22ad_2.conda",
+      "version": "0.18"
+    },
+    {
+      "build": "h34f8a20_2",
+      "license": "MIT",
+      "name": "krb5",
+      "record": "conda-meta-records/krb5-1.22.2-h34f8a20_2.json",
+      "sha256": "732e3a3940fb9e848f3c03431c7873f05cc7c6c5150e6b4f29e70264b9ff2e95",
+      "sha256_package": "aaea1d42b07769920db2af7471ece9399d2613448863da64ad8272998db5db34",
+      "url": "https://conda.anaconda.org/conda-forge/osx-arm64/krb5-1.22.2-h34f8a20_2.conda",
+      "version": "1.22.2"
+    },
+    {
+      "build": "h1eee2c3_0",
+      "license": "Apache-2.0",
+      "name": "lerc",
+      "record": "conda-meta-records/lerc-4.2.0-h1eee2c3_0.json",
+      "sha256": "c47fec445ac15cec113874d04e8d15e662aa30e2881a994da846c92ba6eabc58",
+      "sha256_package": "c97aa17d16d2ac332ba9f184e82ce8f72dcb10e9a10c5f299030be2d44e191b9",
+      "url": "https://conda.anaconda.org/conda-forge/osx-arm64/lerc-4.2.0-h1eee2c3_0.conda",
+      "version": "4.2.0"
+    },
+    {
+      "build": "h0419b56_7",
+      "license": "BSL-1.0",
+      "name": "libboost",
+      "record": "conda-meta-records/libboost-1.88.0-h0419b56_7.json",
+      "sha256": "8fbfafc882ac44c5208b0978d06989abe32d539dbc5cf12292de92b358915a23",
+      "sha256_package": "d3872915a43512b0404e131d965e6e8c1e2546b13ccfd2463ef72fbfe1456afc",
+      "url": "https://conda.anaconda.org/conda-forge/osx-arm64/libboost-1.88.0-h0419b56_7.conda",
+      "version": "1.88.0"
+    },
+    {
+      "build": "h6651222_0",
+      "license": "curl",
+      "name": "libcurl",
+      "record": "conda-meta-records/libcurl-8.23.0-h6651222_0.json",
+      "sha256": "6b5782d38fd06ebf0cb0dc3d3bc9c0ea7b7746f3d5ae91378f5423d24d500022",
+      "sha256_package": "d9f60525b665e50da15c84fcb4e74e6b1f0a56ea4c89a02d4258f23c3fe1f02c",
+      "url": "https://conda.anaconda.org/conda-forge/osx-arm64/libcurl-8.23.0-h6651222_0.conda",
+      "version": "8.23.0"
+    },
+    {
+      "build": "h55c6f16_0",
+      "license": "Apache-2.0 WITH LLVM-exception",
+      "name": "libcxx",
+      "record": "conda-meta-records/libcxx-23.1.4-h55c6f16_0.json",
+      "sha256": "36ff054e1a26054fa9b01b2e8af1a76628ca21c6ca4052deeaf658d63a07ac87",
+      "sha256_package": "a8ea9f3807c18e834968c805cddec95664c1ea2dd45ef3299b74a550efb97ab3",
+      "url": "https://conda.anaconda.org/conda-forge/osx-arm64/libcxx-23.1.4-h55c6f16_0.conda",
+      "version": "23.1.4"
+    },
+    {
+      "build": "he7e0567_1",
+      "license": "MIT",
+      "name": "libdeflate",
+      "record": "conda-meta-records/libdeflate-1.25-he7e0567_1.json",
+      "sha256": "adf341b391785506ed198debf070db4918fae65727295e1c60e173b43229e881",
+      "sha256_package": "d896f4aa4ce4c590c2838678cb1917356fdb461d2a189991c0280c818c362172",
+      "url": "https://conda.anaconda.org/conda-forge/osx-arm64/libdeflate-1.25-he7e0567_1.conda",
+      "version": "1.25"
+    },
+    {
+      "build": "he4c29f2_3",
+      "license": "LGPL-2.1-only",
+      "name": "libiconv",
+      "record": "conda-meta-records/libiconv-1.18-he4c29f2_3.json",
+      "sha256": "7c25d62b0609979a1f9f51e5f7d47613ef635595c4af0e162a3877398ebeb373",
+      "sha256_package": "689a14968267f2f97c07112fca5636e7d756036b9aee969911267c20bd3eea1f",
+      "url": "https://conda.anaconda.org/conda-forge/osx-arm64/libiconv-1.18-he4c29f2_3.conda",
+      "version": "1.18"
+    },
+    {
+      "build": "h84a0fba_1",
+      "license": "IJG AND BSD-3-Clause AND Zlib",
+      "name": "libjpeg-turbo",
+      "record": "conda-meta-records/libjpeg-turbo-3.2.0-h84a0fba_1.json",
+      "sha256": "e37a9a2742cabe88a4a643274c06c449d8be8c3521d0cd7d5996e9ff7f8ea8f8",
+      "sha256_package": "05006418f9392c9b723e8428808db106de0350a497832f95f921b85ff1072310",
+      "url": "https://conda.anaconda.org/conda-forge/osx-arm64/libjpeg-turbo-3.2.0-h84a0fba_1.conda",
+      "version": "3.2.0"
+    },
+    {
+      "build": "h8088a28_1",
+      "license": "0BSD",
+      "name": "liblzma",
+      "record": "conda-meta-records/liblzma-5.8.3-h8088a28_1.json",
+      "sha256": "5d62c61b08faf936a40a5629669554f15a32d031c394d164b820c6d24b89b91e",
+      "sha256_package": "23d0630046a3e8b164d8f80f2b74ed2605af2e7050ab9913018056402fae4311",
+      "url": "https://conda.anaconda.org/conda-forge/osx-arm64/liblzma-5.8.3-h8088a28_1.conda",
+      "version": "5.8.3"
+    },
+    {
+      "build": "h435687b_1",
+      "license": "MIT",
+      "name": "libnghttp2",
+      "record": "conda-meta-records/libnghttp2-1.68.1-h435687b_1.json",
+      "sha256": "2f0fce0d217f14d0ec8d8382e80c6838d03eb07913399b28436d2f0641f0983c",
+      "sha256_package": "445440d8cccccb6585f71d1eb7c949d64a2af2ced5481d924621424ff3b6a398",
+      "url": "https://conda.anaconda.org/conda-forge/osx-arm64/libnghttp2-1.68.1-h435687b_1.conda",
+      "version": "1.68.1"
+    },
+    {
+      "build": "hdb0c161_1",
+      "license": "MIT",
+      "name": "libpsl",
+      "record": "conda-meta-records/libpsl-0.23.1-hdb0c161_1.json",
+      "sha256": "80ea1df66a47c1bcbb07c838da8f8de257df593a37030adca8b1432f135f93ab",
+      "sha256_package": "c8c3153df39abedf3413483f672151ad70f1adb0c06c192bdf7ec432c3616b07",
+      "url": "https://conda.anaconda.org/conda-forge/osx-arm64/libpsl-0.23.1-hdb0c161_1.conda",
+      "version": "0.23.1"
+    },
+    {
+      "build": "hca69786_0",
+      "license": "blessing",
+      "name": "libsqlite",
+      "record": "conda-meta-records/libsqlite-3.54.1-hca69786_0.json",
+      "sha256": "25d0b9d8fd4a20bf6e40bd6c9c3b4d91d6c2ff12499b9d3e66f821676a902066",
+      "sha256_package": "998cd122027b2523f2f25807b1d476b82a168489d16b1430fd848a9a6b606a80",
+      "url": "https://conda.anaconda.org/conda-forge/osx-arm64/libsqlite-3.54.1-hca69786_0.conda",
+      "version": "3.54.1"
+    },
+    {
+      "build": "hbf2880b_1",
+      "license": "BSD-3-Clause",
+      "name": "libssh2",
+      "record": "conda-meta-records/libssh2-1.11.1-hbf2880b_1.json",
+      "sha256": "236abc6bf403c636fb4e3ee07291e60efe95a2210223aad4082ef197530a9733",
+      "sha256_package": "a056e518c3d2d09fbb1778cea80c0c95338fb24adf1a817bbf90fb484850a304",
+      "url": "https://conda.anaconda.org/conda-forge/osx-arm64/libssh2-1.11.1-hbf2880b_1.conda",
+      "version": "1.11.1"
+    },
+    {
+      "build": "hf67920b_1",
+      "license": "HPND",
+      "name": "libtiff",
+      "record": "conda-meta-records/libtiff-4.7.2-hf67920b_1.json",
+      "sha256": "99d2905fe7674444b0b4f4766569a710933ae794ca175543b034cde2ef8ce870",
+      "sha256_package": "847d22a86ae28f66d3888702698254d25bb4eac3a0f64c1fabfb1842ac00be4c",
+      "url": "https://conda.anaconda.org/conda-forge/osx-arm64/libtiff-4.7.2-hf67920b_1.conda",
+      "version": "4.7.2"
+    },
+    {
+      "build": "h202fb40_1",
+      "license": "BSD-3-Clause",
+      "name": "libwebp-base",
+      "record": "conda-meta-records/libwebp-base-1.6.0-h202fb40_1.json",
+      "sha256": "1f906e8e08144476100c054aa59fed0ef69cc235af5bc3e4a45b021e760d4995",
+      "sha256_package": "0ff54650d470c7e54cbeffdd53a8c063e055a7bcf784388c0385ce5c4741b0f4",
+      "url": "https://conda.anaconda.org/conda-forge/osx-arm64/libwebp-base-1.6.0-h202fb40_1.conda",
+      "version": "1.6.0"
+    },
+    {
+      "build": "h8088a28_3",
+      "license": "Zlib",
+      "name": "libzlib",
+      "record": "conda-meta-records/libzlib-1.3.2-h8088a28_3.json",
+      "sha256": "197bf758224037b238536c5d5c3ea6177ef97d268f2509811d377c0956903f2e",
+      "sha256_package": "a18fa5d5bac452401459f966cf0d872224e8080c4ff93c77e168d43ab42ef9d7",
+      "url": "https://conda.anaconda.org/conda-forge/osx-arm64/libzlib-1.3.2-h8088a28_3.conda",
+      "version": "1.3.2"
+    },
+    {
+      "build": "h72846b0_1",
+      "license": "LGPL-3.0-only",
+      "name": "mpfr",
+      "record": "conda-meta-records/mpfr-4.2.2-h72846b0_1.json",
+      "sha256": "2ec8fc43c80a3337cd0779eb6a3778a87882ee820260c0f7cf0b897730c773c0",
+      "sha256_package": "6a86fe9c09d708d71508c601dec53fb7a4fbfb23e6f57a590ef832afdca738c4",
+      "url": "https://conda.anaconda.org/conda-forge/osx-arm64/mpfr-4.2.2-h72846b0_1.conda",
+      "version": "4.2.2"
+    },
+    {
+      "build": "h51dee2d_0",
+      "license": "MIT",
+      "name": "proj",
+      "record": "conda-meta-records/proj-9.9.0-h51dee2d_0.json",
+      "sha256": "acbd9e73ab63e67346f2477ae906e357dc3c14214cbdec2c57e67f114954137a",
+      "sha256_package": "025c310a5065f543d35fcc99d2aff61fdb890a2c5f57aad5a6a3905ba9ec8b76",
+      "url": "https://conda.anaconda.org/conda-forge/osx-arm64/proj-9.9.0-h51dee2d_0.conda",
+      "version": "9.9.0"
+    },
+    {
+      "build": "hf451053_7",
+      "license": "BSD-3-Clause",
+      "name": "zstd",
+      "record": "conda-meta-records/zstd-1.5.7-hf451053_7.json",
+      "sha256": "c3f83f23db70ab6d0421bd9b4f34eb0b0e273435e3d4ddc66019454ef0ec7fc0",
+      "sha256_package": "da867f5092eb0cb746d353694f0098031fd9817a4ce7d5743121209ae0f406ca",
+      "url": "https://conda.anaconda.org/conda-forge/osx-arm64/zstd-1.5.7-hf451053_7.conda",
+      "version": "1.5.7"
+    }
+  ],
+  "non_conda_build_sources": [
+    {
+      "component": "GDAL",
+      "source_sha256": "5e0c388d83da2d686cc00a40272882432cdb54edff43d4af173e532844a0a0ea",
+      "source_url": "https://download.osgeo.org/gdal/3.13.3/gdal-3.13.3.tar.gz",
+      "version": "3.13.3"
+    },
+    {
+      "commit": "137203dae01faab4a1287934f9457e925e3b4383",
+      "component": "SFCGAL",
+      "source_sha256": "426abf9ac0de764a6098abe89c9dc84aa59273d0c5ff90819ed49a9c21f1c21f",
+      "source_url": "https://gitlab.com/SFCGAL/SFCGAL/-/archive/137203dae01faab4a1287934f9457e925e3b4383/SFCGAL-137203dae01faab4a1287934f9457e925e3b4383.tar.gz",
+      "version": "2.3.0"
+    }
+  ],
+  "ownership_status": "unresolved",
+  "runtime_data_package_file_counts": {
+    "share/gdal": {},
+    "share/proj": {
+      "proj-9.9.0-h51dee2d_0.json": 16
+    }
+  },
+  "runtime_data_source_build_file_counts": {
+    "share/gdal": 26,
+    "share/proj": 0
+  },
+  "schema_version": 1,
+  "unresolved_files": [
+    {
+      "matches": [],
+      "payload_path": "lib/libSFCGAL.2.3.0.dylib",
+      "reason": "no conda-meta file owner",
+      "source_path": "/Users/runner/work/_temp/postgis-conda-arm64-sfcgal-env/lib/libSFCGAL.2.3.0.dylib"
+    }
+  ]
+}
