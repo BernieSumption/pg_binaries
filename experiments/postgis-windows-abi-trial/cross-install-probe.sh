@@ -71,7 +71,9 @@ for module in "${modules[@]}"; do
   resolved="$output_root/package/$(basename "$module").modules.json"
   if ! python "$repo_root/experiments/postgis-windows-abi-trial/diagnose-imports.py" \
     --root "$module" \
-    --search-directory "$output_root/netcdf-no-ros3/bin" \
+    --search-directory "$selected/bin" \
+    --search-directory "$selected/lib" \
+    --search-directory "$netcdf/bin" \
     --search-directory "$mingw/bin" \
     --search-directory "$mingw/lib" \
     --search-directory /mingw64/bin \
@@ -90,16 +92,21 @@ if findings:
     print(json.dumps(findings, indent=2))
     raise SystemExit("PostGIS module runtime resolution failed")
 PY
-  python - "$resolved" "$package_root/bin" "$module_basenames" <<'PY'
-import json, shutil, sys
+  python - "$resolved" "$package_root/bin" "$module_basenames" "$selected/bin" <<'PY'
+import filecmp, json, shutil, sys
 from pathlib import Path
-resolved_path, destination, roots_path = map(Path, sys.argv[1:])
+resolved_path, destination, roots_path, selected_bin = map(Path, sys.argv[1:])
 roots = {line.casefold() for line in roots_path.read_text().splitlines()}
+core_dlls = {path.name.casefold() for path in selected_bin.glob('*.dll')}
 destination.mkdir(parents=True, exist_ok=True)
 for source_text in json.loads(resolved_path.read_text(encoding="utf-8")):
     source = Path(source_text)
-    if source.suffix.casefold() == ".dll" and source.name.casefold() not in roots:
-        shutil.copy2(source, destination / source.name)
+    if source.suffix.casefold() == ".dll" and source.name.casefold() not in roots | core_dlls:
+        target = destination / source.name
+        if target.exists() and not filecmp.cmp(source, target, shallow=False):
+            raise SystemExit(f'conflicting runtime DLLs: {target}')
+        if not target.exists():
+            shutil.copy2(source, target)
 PY
 done
 selected_sha=$(sha256sum "$core_archive" | cut -d' ' -f1)
