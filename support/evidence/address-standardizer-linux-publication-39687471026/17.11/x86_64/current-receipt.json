@@ -1,0 +1,50 @@
+{
+  "architecture": "x86_64",
+  "archives": {
+    "address-standardizer-3.7.0-postgresql-17.11-linux-x86_64.tar.gz": "9e27b03b0148264ab34981c63687c785a422318be71e9bacf54947a5ac8a6778",
+    "postgresql-17.11-linux-x86_64.tar.gz": "a437d1389e4077c9a9ba7315765f13f5b66c9c79534c7f4611e22c16b62c8d49"
+  },
+  "case_results": {
+    "archive-suite": "passed",
+    "elf-closure": "passed"
+  },
+  "ci": {
+    "build_revision": "43dcb200d7297498912a940648483618eb2fbd18",
+    "provider": "github-actions",
+    "run_id": "39687471026",
+    "run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/39687471026",
+    "source_revision": "43dcb200d7297498912a940648483618eb2fbd18",
+    "test_revision": "43dcb200d7297498912a940648483618eb2fbd18"
+  },
+  "clean_system": true,
+  "dependency_check_profile": "linux-elf-alpine-relocation-v1",
+  "dependency_checks_passed": true,
+  "endpoint": "current",
+  "environment": {
+    "architecture": "x86_64",
+    "clean_system": true,
+    "dependency_check_profile": "linux-elf-alpine-relocation-v1",
+    "dependency_checks_passed": true,
+    "distribution": "Alpine Linux 3.22",
+    "endpoint": "current",
+    "image_id": "sha256:5264fb980d42ddf56b52e4b12bcd9a002f7d787602935f6e6889656f869e1e79",
+    "os": "linux",
+    "os_version": "6.17.0"
+  },
+  "extension_archive": "address-standardizer-3.7.0-postgresql-17.11-linux-x86_64.tar.gz",
+  "platform": "linux-x86_64",
+  "postgresql_version": "17.11",
+  "profile_id": "address-standardizer-publication-linux-x86_64-17.11",
+  "profile_revision": "adfefa0488a27d60861079e261d908dbc5275b4ebb9a7d69e382770d03d4124f",
+  "project": "Address Standardizer",
+  "redistribution_status": "resolved",
+  "release_eligible": false,
+  "reports": {
+    "build_evidence": "05bf5ddcde08b66681a9069c8f405b74df8b2e1bfedf09407f33b491094098ef",
+    "core_resolution": "b29e3404e3bef247e87425f8ec4e3cdc38ea9c25cee549759633234a5cd6e00f",
+    "elf_closure": "818560a0de05043f316b89ffdf520fb09eb800384a2e7c9ca95377da536e9a86"
+  },
+  "schema_version": 1,
+  "test_revision": "43dcb200d7297498912a940648483618eb2fbd18",
+  "version": "3.7.0"
+}
