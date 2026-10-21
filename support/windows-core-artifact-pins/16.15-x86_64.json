@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "workflow": "postgresql-windows-selected-publication.yml",
-  "run_id": 39570352068,
-  "artifact_name": "windows-core-selected-16.15-build-39570352068",
+  "run_id": 39667449865,
+  "artifact_name": "windows-core-selected-16.15-build-39667449865",
   "archive_name": "postgresql-16.15-windows-x86_64.tar.gz",
-  "sha256": "d2953539433a05f551a53bd85b76e05516632e9d5b105de422db72b948c6f805"
+  "sha256": "859e5d287d50e622250a9c8bcc77e0aeb23106b721625648cd7834228e4d7973"
 }
