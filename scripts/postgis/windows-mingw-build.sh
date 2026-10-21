@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-output_root=${1:?usage: windows-mingw-build.sh OUTPUT_ROOT [POSTGRESQL_VERSION]}
+output_root=${1:?usage: windows-mingw-build.sh OUTPUT_ROOT [POSTGRESQL_VERSION] [SELECTED_POSTGRES_IMPORT_LIBRARY]}
 pg_version=${2:-${PG_VERSION:-18.6}}
+selected_import_lib=${3:-}
 case "$pg_version" in
   15.19|16.15|17.11|18.6) ;;
   *) printf 'Unsupported PostgreSQL version: %s\n' "$pg_version" >&2; exit 2 ;;
@@ -111,6 +112,13 @@ make -j2
 make install
 
 test "$("$pgroot/bin/pg_config.exe" --version)" = "PostgreSQL $pg_version"
+if test "$pg_version" = 15.19; then
+  test -f "$selected_import_lib"
+  for symbol in GetNumConfigOptions MemoryContextContains; do
+    nm "$selected_import_lib" | grep -Eq "[[:space:]]$symbol$"
+  done
+  cp "$selected_import_lib" "$pgroot/lib/libpostgres.a"
+fi
 cd "$source_root"
 curl -fL --retry 3 -o postgis-3.6.4.tar.gz https://download.osgeo.org/postgis/source/postgis-3.6.4.tar.gz
 printf '%s  %s\n' ed8dc6679f1e06f7b113592b04cde2a7e00f1b1e681294c8ca2204058990cec6 postgis-3.6.4.tar.gz | sha256sum -c -

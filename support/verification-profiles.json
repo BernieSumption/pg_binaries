@@ -1018,6 +1018,13 @@
         "reason": "2026-10-21: narrowed to verification inputs; case IDs and retained source bytes are unchanged."
       }
     ],
+    "postgis-publication-windows-x86_64-18.6": [
+      {
+        "current": "85f023ed9399b48fd2c4279ea1c20c22e3eecbc3000145442e29c34def74f335",
+        "previous": "3ce222f3c6c3a7a9882397a8a1cfee1eace94c00f2c216f70364928636a39930",
+        "reason": "2026-10-21: narrowed source list; CI revision has identical retained verifier sources and cases."
+      }
+    ],
     "postgresql-publication-macos-arm64-18.6": [
       {
         "current": "ef74111cc78246494da6cbb62ebb4065bca743b69b90cbe9ef7a8cde790953f2",

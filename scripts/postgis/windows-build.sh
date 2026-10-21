@@ -20,13 +20,12 @@ PY
 export PG_VERSION="$pg_version"
 mkdir -p "$output_root"
 output_root=$(cd "$output_root" && pwd)
-bash "$recipe_root/windows-mingw-build.sh" "$output_root/mingw" "$pg_version"
-
 set -x
 test "${MSYSTEM:-}" = MINGW64
 mkdir -p "$output_root/selected" "$output_root/package/postgis"
 tar -xzf "$core_archive" -C "$output_root/selected"
 selected="$output_root/selected/postgresql"
+bash "$recipe_root/windows-mingw-build.sh" "$output_root/mingw" "$pg_version" "$selected/lib/postgres.lib"
 mingw="$output_root/mingw/postgresql"
 netcdf="$output_root/mingw/netcdf-no-ros3"
 test "$("$selected/bin/pg_config.exe" --version)" = "PostgreSQL $pg_version"
