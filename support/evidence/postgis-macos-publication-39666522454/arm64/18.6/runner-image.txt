@@ -1,0 +1,337 @@
+postgis_macos / verify	UNKNOWN STEP	﻿2026-10-21T20:33:04.9039930Z Current runner version: '2.338.0'
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:04.9069740Z ##[group]Runner Image Provisioner
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:04.9070330Z Hosted Compute Agent
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:04.9070720Z Version: 20260828.587
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:04.9071140Z Commit: abac92662cab4cc7352de4f9f9d2e2419aad9c29
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:04.9071610Z Build Date: 2026-08-28T16:44:25Z
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:04.9072060Z Worker ID: {2b89f58a-0c9c-4661-b5f7-90341604dd1a}
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:04.9072520Z Azure Region: westus
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:04.9072910Z ##[endgroup]
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:04.9073860Z ##[group]Operating System
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:04.9074250Z macOS
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:04.9074590Z 15.7.9
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:04.9074910Z 24G830
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:04.9075250Z ##[endgroup]
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:04.9075610Z ##[group]Runner Image
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:04.9076000Z Image: macos-15-arm64
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:04.9076370Z Version: 20260907.0337.1
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:04.9077230Z Included Software: https://github.com/actions/runner-images/blob/macos-15-arm64/20260907.0337/images/macos/macos-15-arm64-Readme.md
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:04.9078260Z Image Release: https://github.com/actions/runner-images/releases/tag/macos-15-arm64%2F20260907.0337
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:04.9078930Z ##[endgroup]
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:04.9079740Z ##[group]GITHUB_TOKEN Permissions
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:04.9081010Z Actions: read
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:04.9081380Z Contents: read
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:04.9081740Z Metadata: read
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:04.9082110Z ##[endgroup]
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:04.9083580Z Secret source: Actions
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:04.9084150Z Cache mode: write
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:04.9085630Z Prepare workflow directory
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:04.9380950Z Prepare all required actions
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:04.9456010Z Getting action download info
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:05.2936510Z Download action repository 'actions/checkout@v4' (SHA:11d5960a326750d5838078e36cf38b85af677262)
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:05.7155920Z Download action repository 'actions/download-artifact@v4' (SHA:d3f86a106a0bac45b974a628896c90dbdf5c8093)
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:06.3079800Z Download action repository 'actions/upload-artifact@v4' (SHA:ea165f8d65b6e75b540449e92b4886f43607fa02)
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:06.6824520Z Uses: BernieSumption/pg_binaries/.github/workflows/postgis-macos-selected-publication.yml@refs/heads/spike (8055a27cd4b70ffb867d96c7856645e22a07b6b6)
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:06.6828530Z ##[group] Inputs
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:06.6828990Z   postgresql_version: 18.6
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:06.6829560Z   extension_version: 3.6.4
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:06.6830060Z   architecture: arm64
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:06.6830460Z   project: PostGIS
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:06.6830850Z   platform: macos-arm64
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:06.6831280Z ##[endgroup]
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:06.6831760Z Complete job name: postgis_macos / verify
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:06.7512080Z ##[group]Run actions/checkout@v4
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:06.7514130Z with:
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:06.7515290Z   repository: BernieSumption/pg_binaries
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:06.7524800Z   token: ***
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:06.7525980Z   ssh-strict: true
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:06.7527020Z   ssh-user: git
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:06.7528120Z   persist-credentials: true
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:06.7529520Z   clean: true
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:06.7530620Z   sparse-checkout-cone-mode: true
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:06.7531890Z   fetch-depth: 1
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:06.7532940Z   fetch-tags: false
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:06.7534060Z   show-progress: true
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:06.7535170Z   lfs: false
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:06.7536300Z   submodules: false
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:06.7537420Z   set-safe-directory: true
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:06.7538660Z   allow-unsafe-pr-checkout: false
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:06.7541930Z ##[endgroup]
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:07.3015750Z Syncing repository: BernieSumption/pg_binaries
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:07.3020010Z ##[group]Getting Git version info
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:07.3021890Z Working directory is '/Users/runner/work/pg_binaries/pg_binaries'
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:07.3024450Z [command]/opt/homebrew/bin/git version
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:07.3507770Z git version 2.55.0
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:07.3531210Z ##[endgroup]
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:07.3538700Z Copying '/Users/runner/.gitconfig' to '/Users/runner/work/_temp/56244c31-663f-4079-ab61-19193914d099/.gitconfig'
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:07.3550810Z Temporarily overriding HOME='/Users/runner/work/_temp/56244c31-663f-4079-ab61-19193914d099' before making global git config changes
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:07.3552630Z Adding repository directory to the temporary git global config as a safe directory
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:07.3557540Z [command]/opt/homebrew/bin/git config --global --add safe.directory /Users/runner/work/pg_binaries/pg_binaries
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:07.3724820Z Deleting the contents of '/Users/runner/work/pg_binaries/pg_binaries'
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:07.3731140Z ##[group]Initializing the repository
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:07.3738430Z [command]/opt/homebrew/bin/git init /Users/runner/work/pg_binaries/pg_binaries
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:07.4012520Z hint: Using 'master' as the name for the initial branch. This default branch name
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:07.4015000Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:07.4017200Z hint: to use in all of your new repositories, which will suppress this warning,
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:07.4019130Z hint: call:
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:07.4020180Z hint:
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:07.4021540Z hint: 	git config --global init.defaultBranch <name>
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:07.4023190Z hint:
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:07.4024660Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:07.4026840Z hint: 'development'. The just-created branch can be renamed via this command:
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:07.4028640Z hint:
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:07.4029820Z hint: 	git branch -m <name>
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:07.4031070Z hint:
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:07.4032690Z hint: Disable this message with "git config set advice.defaultBranchName false"
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:07.4035220Z Initialized empty Git repository in /Users/runner/work/pg_binaries/pg_binaries/.git/
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:07.4039650Z [command]/opt/homebrew/bin/git remote add origin https://github.com/BernieSumption/pg_binaries
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:07.4122450Z ##[endgroup]
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:07.4124860Z ##[group]Disabling automatic garbage collection
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:07.4126760Z [command]/opt/homebrew/bin/git config --local gc.auto 0
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:07.4211990Z ##[endgroup]
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:07.4214090Z ##[group]Setting up auth
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:07.4217040Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp core\.sshCommand
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:07.4318680Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:07.5503410Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:07.5589670Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:07.6622910Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:07.6697550Z [command]/opt/homebrew/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:07.7671560Z [command]/opt/homebrew/bin/git config --local http.https://github.com/.extraheader AUTHORIZATION: basic ***
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:07.7952370Z ##[endgroup]
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:07.7954950Z ##[group]Fetching the repository
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:07.7968150Z [command]/opt/homebrew/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules --depth=1 origin +8055a27cd4b70ffb867d96c7856645e22a07b6b6:refs/remotes/origin/spike
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:09.4807540Z From https://github.com/BernieSumption/pg_binaries
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:09.4811470Z  * [new ref]         8055a27cd4b70ffb867d96c7856645e22a07b6b6 -> origin/spike
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:09.4820250Z ##[endgroup]
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:09.4822000Z ##[group]Determining the checkout info
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:09.4826090Z ##[endgroup]
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:09.4828020Z [command]/opt/homebrew/bin/git sparse-checkout disable
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:09.4939750Z [command]/opt/homebrew/bin/git config --local --unset-all extensions.worktreeConfig
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:09.5014160Z ##[group]Checking out the ref
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:09.5015180Z [command]/opt/homebrew/bin/git checkout --progress --force -B spike refs/remotes/origin/spike
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:10.6176030Z Updating files:  47% (4841/10218)
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:10.6341710Z Updating files:  48% (4905/10218)
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:10.6678970Z Updating files:  49% (5007/10218)
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:10.7005360Z Updating files:  50% (5109/10218)
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:10.7276880Z Updating files:  51% (5212/10218)
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:10.7460230Z Updating files:  52% (5314/10218)
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:10.7764160Z Updating files:  53% (5416/10218)
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:10.7943430Z Updating files:  54% (5518/10218)
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:10.8691610Z Updating files:  55% (5620/10218)
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:10.8963390Z Updating files:  56% (5723/10218)
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:10.9320050Z Updating files:  57% (5825/10218)
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:10.9564400Z Updating files:  58% (5927/10218)
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:10.9814080Z Updating files:  59% (6029/10218)
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:10.9981600Z Updating files:  60% (6131/10218)
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:11.0132450Z Updating files:  61% (6233/10218)
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:11.0350410Z Updating files:  62% (6336/10218)
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:11.0588620Z Updating files:  63% (6438/10218)
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:11.0835370Z Updating files:  64% (6540/10218)
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:11.1418950Z Updating files:  65% (6642/10218)
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:11.1587310Z Updating files:  66% (6744/10218)
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:11.1836490Z Updating files:  67% (6847/10218)
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:11.2239520Z Updating files:  68% (6949/10218)
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:11.2839350Z Updating files:  69% (7051/10218)
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:11.3247260Z Updating files:  70% (7153/10218)
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:11.3508680Z Updating files:  71% (7255/10218)
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:11.3908350Z Updating files:  72% (7357/10218)
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:11.4171280Z Updating files:  73% (7460/10218)
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:11.4457640Z Updating files:  74% (7562/10218)
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:11.4810600Z Updating files:  75% (7664/10218)
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:11.5105600Z Updating files:  76% (7766/10218)
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:11.5158070Z Updating files:  77% (7868/10218)
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:11.5253650Z Updating files:  78% (7971/10218)
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:11.5302710Z Updating files:  79% (8073/10218)
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:11.5364440Z Updating files:  79% (8106/10218)
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:11.5521350Z Updating files:  80% (8175/10218)
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:11.5695780Z Updating files:  81% (8277/10218)
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:11.5825380Z Updating files:  82% (8379/10218)
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:11.6026200Z Updating files:  83% (8481/10218)
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:11.6181740Z Updating files:  84% (8584/10218)
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:11.6310850Z Updating files:  85% (8686/10218)
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:11.6522110Z Updating files:  86% (8788/10218)
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:11.6656990Z Updating files:  87% (8890/10218)
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:11.6824600Z Updating files:  88% (8992/10218)
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:11.6966120Z Updating files:  89% (9095/10218)
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:11.7206940Z Updating files:  90% (9197/10218)
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:11.7334280Z Updating files:  91% (9299/10218)
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:11.7476300Z Updating files:  92% (9401/10218)
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:11.7568230Z Updating files:  93% (9503/10218)
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:11.7662870Z Updating files:  94% (9605/10218)
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:11.7862280Z Updating files:  95% (9708/10218)
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:11.8302490Z Updating files:  96% (9810/10218)
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:11.8477510Z Updating files:  97% (9912/10218)
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:11.8612310Z Updating files:  98% (10014/10218)
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:11.8748930Z Updating files:  99% (10116/10218)
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:11.8750960Z Updating files: 100% (10218/10218)
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:11.8751750Z Updating files: 100% (10218/10218), done.
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:11.8940640Z Switched to a new branch 'spike'
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:11.8958560Z branch 'spike' set up to track 'origin/spike'.
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:11.9075260Z ##[endgroup]
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:11.9181860Z [command]/opt/homebrew/bin/git log -1 --format=%H
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:11.9266200Z 8055a27cd4b70ffb867d96c7856645e22a07b6b6
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:11.9608820Z ##[group]Run actions/download-artifact@v4
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:11.9609090Z with:
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:11.9609360Z   name: postgis-macos-arm64-18.6-build-39666522454
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:11.9609650Z   path: /Users/runner/work/_temp/postgis-bundle
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:11.9609950Z   merge-multiple: false
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:11.9610140Z   repository: BernieSumption/pg_binaries
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:11.9610350Z   run-id: 39666522454
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:11.9610510Z ##[endgroup]
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:12.1353830Z Downloading single artifact
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:12.1643790Z (node:1212) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:12.1648690Z (Use `node --trace-deprecation ...` to show where the warning was created)
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:12.3444060Z Preparing to download the following artifacts:
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:12.3445010Z - postgis-macos-arm64-18.6-build-39666522454 (ID: 12379367345, Size: 54369678, Expected Digest: sha256:ec4bd8cae4aa02c7311bbb684b8c1c1d15f9a2e73940faa81581dc43954b8920)
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:12.5354690Z Redirecting to blob download url: https://productionresultssa8.blob.core.windows.net/actions-results/41f5bb0e-08a4-4ab8-a97b-c088699a923b/workflow-job-run-c2b90c40-2eee-5329-b5aa-697ad7d8f80a/artifacts/7fa5885aa9a4e9d307707f105a354ad5cc672873033ce3f27289448148e0daad.zip
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:12.5355810Z Starting download of artifact to: /Users/runner/work/_temp/postgis-bundle
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:12.7640580Z (node:1212) [DEP0005] DeprecationWarning: Buffer() is deprecated due to security and usability issues. Please use the Buffer.alloc(), Buffer.allocUnsafe(), or Buffer.from() methods instead.
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:14.7042180Z SHA256 digest of downloaded artifact is ec4bd8cae4aa02c7311bbb684b8c1c1d15f9a2e73940faa81581dc43954b8920
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:14.7043420Z Artifact download completed successfully.
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:14.7044010Z Total of 1 artifact(s) downloaded
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:14.7226680Z Download artifact has finished successfully
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:14.7528870Z ##[group]Run mkdir -p "$RUNNER_TEMP/postgis-verification/core" "$RUNNER_TEMP/postgis-verification/extension"
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:14.7529660Z [36;1mmkdir -p "$RUNNER_TEMP/postgis-verification/core" "$RUNNER_TEMP/postgis-verification/extension"[0m
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:14.7530420Z [36;1mif [[ -d "$RUNNER_TEMP/postgis-bundle/core" ]]; then cp -a "$RUNNER_TEMP/postgis-bundle/core/." "$RUNNER_TEMP/postgis-verification/core/"; fi[0m
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:14.7531330Z [36;1mif [[ -d "$RUNNER_TEMP/postgis-bundle/output" ]]; then cp -a "$RUNNER_TEMP/postgis-bundle/output/." "$RUNNER_TEMP/postgis-verification/extension/"; fi[0m
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:14.7759130Z shell: /bin/bash -e {0}
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:14.7759400Z ##[endgroup]
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:14.8684770Z ##[group]Run bash scripts/postgis/macos-verify-publication.sh \
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:14.8685250Z [36;1mbash scripts/postgis/macos-verify-publication.sh \[0m
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:14.8685750Z [36;1m  "$RUNNER_TEMP/postgis-verification/core/postgresql-$PG_VERSION-macos-$ARCHITECTURE.tar.gz" \[0m
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:14.8686460Z [36;1m  "$RUNNER_TEMP/postgis-verification/extension" "$RUNNER_TEMP/postgis-verification" "$ARCHITECTURE"[0m
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:14.8721180Z shell: /bin/bash -e {0}
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:14.8721450Z env:
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:14.8721660Z   ARCHITECTURE: arm64
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:14.8721920Z   PG_VERSION: 18.6
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:14.8722080Z ##[endgroup]
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:15.4278380Z postgresql-18.6-macos-arm64.tar.gz: OK
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:15.5493550Z postgis-3.6.4-postgresql-18.6-macos-arm64.tar.gz: OK
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:45.8793040Z Inspected 168 Mach-O files; 0 finding(s).
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:46.9565960Z waiting for server to start.... done
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:46.9567350Z server started
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:46.9840880Z  postgres_version 
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:46.9841160Z ------------------
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:46.9841480Z  18.6
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:46.9841680Z (1 row)
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:46.9841820Z 
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:46.9886460Z        name       | default_version 
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:46.9894380Z ------------------+-----------------
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:46.9895200Z  postgis          | 3.6.4
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:46.9896220Z  postgis_raster   | 3.6.4
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:46.9897090Z  postgis_sfcgal   | 3.6.4
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:46.9897840Z  postgis_topology | 3.6.4
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:46.9898760Z (4 rows)
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:46.9899160Z 
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:47.4637820Z CREATE EXTENSION
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:47.5713670Z CREATE EXTENSION
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:47.5885400Z CREATE EXTENSION
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:47.5942940Z CREATE EXTENSION
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:47.6055100Z                                                                                                                                                                                                                                                                           postgis_full_version                                                                                                                                                                                                                                                                          
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:47.6058050Z ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:47.6062420Z  POSTGIS="3.6.4 94d984b" [EXTENSION] PGSQL="180" GEOS="3.14.1-CAPI-1.20.5" SFCGAL="SFCGAL 2.3.0, CGAL 6.1.1, BOOST 1.88.0" PROJ="9.9.0 NETWORK_ENABLED=OFF URL_ENDPOINT=https://cdn.proj.org USER_WRITABLE_DIRECTORY=/Users/runner/Library/Application Support/proj DATABASE_PATH=/Users/runner/work/_temp/postgis-macos-verify.ZZHq6i/assembled/postgresql-relocated/share/proj/proj.db" (compiled against PROJ 9.9.0) GDAL="GDAL 3.13.3 "Iowa City", released 2026/08/13" LIBXML="2.15.4" LIBJSON="0.18" LIBPROTOBUF="1.5.2" WAGYU="0.5.0 (Internal)" TOPOLOGY RASTER
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:47.6067900Z (1 row)
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:47.6068260Z 
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:47.6123030Z                   st_astext                   
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:47.6123910Z ----------------------------------------------
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:47.6124790Z  POINT(-14226.630923380362 6711542.475587634)
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:47.6125440Z (1 row)
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:47.6125830Z 
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:47.6126400Z DO
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:47.6181080Z  geos_works 
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:47.6182170Z ------------
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:47.6182670Z  t
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:47.6185250Z (1 row)
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:47.6185830Z 
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:47.6273620Z  st_value 
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:47.6274330Z ----------
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:47.6274820Z         7
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:47.6275370Z (1 row)
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:47.6275680Z 
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:47.6355470Z  createtopology 
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:47.6356300Z ----------------
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:47.6356900Z               1
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:47.6357370Z (1 row)
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:47.6357700Z 
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:47.6395080Z     st_astext    
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:47.6396220Z -----------------
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:47.6397660Z  POINT Z (1 1 1)
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:47.6398670Z (1 row)
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:47.6399130Z 
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:47.7018770Z SET
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:47.7437020Z DO
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:47.9157590Z waiting for server to shut down.... done
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:47.9158660Z server stopped
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:48.3945310Z PASS: PostGIS 3.6.4 archive verified on a fresh macOS arm64 runner
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:48.8510220Z ##[group]Run python3 - "$RUNNER_TEMP/postgis-verification" <<'PY'
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:48.8510900Z [36;1mpython3 - "$RUNNER_TEMP/postgis-verification" <<'PY'[0m
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:48.8511340Z [36;1mimport hashlib,json,os,pathlib,sys[0m
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:48.8511920Z [36;1mroot=pathlib.Path(sys.argv[1]); out=root/'publication'; out.mkdir(parents=True,exist_ok=True)[0m
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:48.8512730Z [36;1marchitecture=os.environ['ARCHITECTURE'][0m
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:48.8513110Z [36;1mpg_version=os.environ['PG_VERSION'][0m
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:48.8513790Z [36;1mnames=(f'postgresql-{pg_version}-macos-{architecture}.tar.gz',f'postgis-3.6.4-postgresql-{pg_version}-macos-{architecture}.tar.gz')[0m
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:48.8514330Z [36;1marchives={}[0m
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:48.8514690Z [36;1mfor name in names:[0m
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:48.8514990Z [36;1m    path=next(root.rglob(name),None)[0m
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:48.8515730Z [36;1m    if path and path.is_file(): archives[name]=hashlib.sha256(path.read_bytes()).hexdigest()[0m
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:48.8517280Z [36;1m(out/'attempt.json').write_text(json.dumps({'schema_version':1,'run_id':os.environ['GITHUB_RUN_ID'],'source_revision':os.environ['GITHUB_SHA'],'steps':{'archive-suite':os.environ.get('VERIFY_OUTCOME','failure'),'symbols':'skipped','diagnostics':'skipped'},'archives':archives},indent=2,sort_keys=True)+'\n')[0m
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:48.8518410Z [36;1mPY[0m
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:48.8749410Z shell: /bin/bash -e {0}
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:48.8749690Z env:
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:48.8749980Z   VERIFY_OUTCOME: success
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:48.8750450Z   GITHUB_SHA: 8055a27cd4b70ffb867d96c7856645e22a07b6b6
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:48.8750820Z   GITHUB_RUN_ID: 39666522454
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:48.8751170Z   ARCHITECTURE: arm64
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:48.8751530Z   PG_VERSION: 18.6
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:48.8751760Z ##[endgroup]
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:49.0314030Z ##[group]Run actions/upload-artifact@v4
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:49.0314490Z with:
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:49.0314790Z   name: postgis-macos-arm64-18.6-publication-39666522454
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:49.0315130Z   path: /Users/runner/work/_temp/postgis-verification/**
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:49.0315520Z   if-no-files-found: warn
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:49.0315770Z   retention-days: 30
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:49.0316070Z   compression-level: 6
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:49.0316370Z   overwrite: false
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:49.0316610Z   include-hidden-files: false
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:49.0316860Z ##[endgroup]
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:49.5299160Z (node:4927) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:49.5304620Z (Use `node --trace-deprecation ...` to show where the warning was created)
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:49.5467140Z With the provided path, there will be 52 files uploaded
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:49.5473690Z Artifact name is valid!
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:49.5474080Z Root directory input is valid!
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:49.8779520Z Beginning upload of artifact content to blob storage
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:50.1694180Z (node:4927) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:50.7552960Z Uploaded bytes 8388608
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:50.9446430Z Uploaded bytes 16777216
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:51.2607550Z Uploaded bytes 25165824
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:51.3522730Z Uploaded bytes 33554432
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:51.5982130Z Uploaded bytes 41943040
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:51.8588820Z Uploaded bytes 50331648
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:51.9776730Z Uploaded bytes 54375277
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:52.0238450Z Finished uploading artifact content to blob storage!
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:52.0246180Z SHA256 digest of uploaded artifact zip is fe2ac5cc869d65fa3c3b65abc8ec2833935da1ef837dc5a1923985d65f471b19
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:52.0251690Z Finalizing artifact upload
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:52.2881180Z Artifact postgis-macos-arm64-18.6-publication-39666522454.zip successfully finalized. Artifact ID 12379039080
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:52.2883620Z Artifact postgis-macos-arm64-18.6-publication-39666522454 has been successfully uploaded! Final size is 54375277 bytes. Artifact ID is 12379039080
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:52.2903230Z Artifact download URL: https://github.com/BernieSumption/pg_binaries/actions/runs/39666522454/artifacts/12379039080
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:52.3087340Z ##[group]Run test 'success' = success
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:52.3088060Z [36;1mtest 'success' = success[0m
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:52.3162210Z shell: /bin/bash -e {0}
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:52.3162430Z ##[endgroup]
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:52.3847280Z Post job cleanup.
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:52.5336810Z [command]/opt/homebrew/bin/git version
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:52.5636520Z git version 2.55.0
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:52.5685690Z Copying '/Users/runner/.gitconfig' to '/Users/runner/work/_temp/b6d72bb2-3ff7-4f0b-a765-4630714e9915/.gitconfig'
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:52.5703630Z Temporarily overriding HOME='/Users/runner/work/_temp/b6d72bb2-3ff7-4f0b-a765-4630714e9915' before making global git config changes
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:52.5707690Z Adding repository directory to the temporary git global config as a safe directory
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:52.5709450Z [command]/opt/homebrew/bin/git config --global --add safe.directory /Users/runner/work/pg_binaries/pg_binaries
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:52.5838800Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp core\.sshCommand
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:52.5921410Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:52.7688150Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:52.7748910Z http.https://github.com/.extraheader
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:52.7755590Z [command]/opt/homebrew/bin/git config --local --unset-all http.https://github.com/.extraheader
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:52.7832120Z [command]/opt/homebrew/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:52.9107880Z [command]/opt/homebrew/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:52.9196480Z [command]/opt/homebrew/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:53.0750410Z Cleaning up orphan processes
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T20:33:53.2537970Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/checkout@v4, actions/download-artifact@v4, actions/upload-artifact@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
