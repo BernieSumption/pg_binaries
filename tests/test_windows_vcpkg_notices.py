@@ -43,6 +43,20 @@ class WindowsVcpkgNoticeTests(unittest.TestCase):
     def test_accepts_exact_mapped_notices_in_archive(self):
         check_vcpkg_notices.check_archive(self.archive_path, ROOT)
 
+    def test_accepts_windows_checkout_line_endings(self):
+        for path, content in list(self.entries.items()):
+            if path.startswith("LICENSES/dependencies/"):
+                self.entries[path] = content.replace(b"\n", b"\r\n")
+        self._write_archive()
+        check_vcpkg_notices.check_archive(self.archive_path, ROOT)
+
+    def test_rejects_changed_notice_text_with_windows_line_endings(self):
+        path = "LICENSES/dependencies/zstd-1.5.7-divsufsort.txt"
+        self.entries[path] = self.entries[path].replace(b"\n", b"\r\n") + b"altered\r\n"
+        self._write_archive()
+        with self.assertRaisesRegex(ValueError, "archive notice differs"):
+            check_vcpkg_notices.check_archive(self.archive_path, ROOT)
+
     def test_rejects_wrong_selected_version(self):
         self.entries["LICENSES/vcpkg-dll-map.json"] = self.entries[
             "LICENSES/vcpkg-dll-map.json"].replace(b"1.5.7", b"1.5.6")

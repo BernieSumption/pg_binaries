@@ -16,6 +16,13 @@ LIBXML_LIST = ("libxml2-v2.15.3-list-c.txt",
                "support/licences/libxml2-v2.15.3-list-c-notice.txt")
 
 
+def notice_text(data: bytes) -> bytes:
+    normalized = data.replace(b"\r\n", b"\n")
+    if b"\r" in normalized:
+        raise ValueError("notice contains a bare carriage return")
+    return normalized
+
+
 def check_archive(archive_path: Path, repo: Path) -> None:
     with tarfile.open(archive_path, "r:gz") as archive:
         members = {member.name: member for member in archive.getmembers() if member.isfile()}
@@ -37,17 +44,18 @@ def check_archive(archive_path: Path, repo: Path) -> None:
                 raise ValueError(f"{dll} is not mapped to {port} {version}")
             expected = (repo / source_name).read_bytes()
             packaged = read(f"LICENSES/dependencies/{packaged_name}")
-            if packaged != expected:
+            if notice_text(packaged) != notice_text(expected):
                 raise ValueError(f"archive notice differs from reviewed {port} {version} notice")
             bundle = read("LICENSES/dependencies/NOTICE-BUNDLE.txt")
-            if expected not in bundle:
+            if packaged not in bundle:
                 raise ValueError(f"NOTICE-BUNDLE.txt omits {packaged_name}")
 
         filename, source_name = LIBXML_LIST
         expected = (repo / source_name).read_bytes()
-        if read(f"LICENSES/dependencies/{filename}") != expected:
+        packaged = read(f"LICENSES/dependencies/{filename}")
+        if notice_text(packaged) != notice_text(expected):
             raise ValueError("archive notice differs from reviewed libxml2 2.15.3 list.c notice")
-        if expected not in read("LICENSES/dependencies/NOTICE-BUNDLE.txt"):
+        if packaged not in read("LICENSES/dependencies/NOTICE-BUNDLE.txt"):
             raise ValueError(f"NOTICE-BUNDLE.txt omits {filename}")
 
 
