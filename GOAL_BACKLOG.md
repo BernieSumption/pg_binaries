@@ -12,6 +12,8 @@ The current candidate preflight already implements the selected-target, current-
 
 All eight selected Linux pgAudit targets have current-profile passing records for PostgreSQL 15.19, 16.15, 17.11 and 18.6 on x86-64 and arm64. Their imported receipts, records and static reports bind each final extension and exact core archive. The final x86-64 [PostgreSQL 16.15 run 39684099905](support/evidence/pgaudit-publication-39684099905/README.md) and [15.19 run 39684116150](support/evidence/pgaudit-publication-39684116150/README.md) complete the matrix; all eight records are retained in `support/verification/`.
 
+PostgreSQL 18.6 and pgvector 0.8.7 [Linux x86-64 run 39687070484](support/evidence/linux-publication-39687070484/README.md) pass the current paired final-archive profile. The imported records bind both archive bytes; refresh the remaining selected pgvector and PostgreSQL targets.
+
 macOS arm64 pgAudit 18.0 [PostgreSQL 18.6 run 39685319340](support/evidence/pgaudit-macos-publication-39685319340/README.md) passed the current final-archive profile. Its imported record binds the selected core and extension bytes, with static, symbol and diagnostic evidence. Refresh the other seven declared macOS pgAudit targets.
 
 Collection 2.1.3 and 1.1.1 have six passing Linux selected-target records: both versions on both architectures for PostgreSQL 18.6, including [1.1.1 x86-64 run 39686187057](support/evidence/collection-publication-39686187057/README.md), and both versions on PostgreSQL 17.11 x86-64. The imported records bind the final extension and exact core archive bytes; expand both versions across the remaining declared Linux and macOS targets.
