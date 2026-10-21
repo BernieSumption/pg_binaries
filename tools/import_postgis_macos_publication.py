@@ -193,6 +193,7 @@ def import_run(root, build_artifact, verification_artifact, runner_image_evidenc
     if (verifier.get("outcome") != "passed" or str(verifier.get("test_run_id")) != run_id
             or verifier.get("test_revision") != metadata["source_revision"]
             or verifier.get("archives") != digests or verifier.get("platform") != platform
+            or verifier.get("architecture") != architecture
             or verifier.get("postgresql_version") != PG_VERSION or verifier.get("version") != EXTENSION_VERSION):
         raise coverage.CoverageError("fresh-runner verifier record does not bind the selected run and archives")
     if (static.get("passed") is not True or static.get("findings")
@@ -211,8 +212,9 @@ def import_run(root, build_artifact, verification_artifact, runner_image_evidenc
             or not re.search(r"(?m)^SET\s*$", raster_text)
             or not re.search(r"(?m)^DO\s*$", raster_text)):
         raise coverage.CoverageError("retained SQL and raster probe outputs do not show all selected checks")
-    suffix = "-arm64" if architecture == "arm64" else ""
-    os_version = re.match(rf"macOS-(\d+(?:\.\d+)+){suffix}$", verifier["runner_os"])
+    os_version = re.fullmatch(
+        rf"macOS-(\d+(?:\.\d+)+)-{re.escape(architecture)}(?:-.*)?",
+        verifier["runner_os"])
     if not os_version:
         raise coverage.CoverageError("cannot extract macOS version from verifier runner identity")
 
