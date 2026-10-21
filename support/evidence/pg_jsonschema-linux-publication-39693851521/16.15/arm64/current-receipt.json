@@ -1,0 +1,87 @@
+{
+  "architecture": "arm64",
+  "archives": {
+    "pg_jsonschema-0.3.4-postgresql-16.15-linux-arm64.tar.gz": "0c8d5de7b2e6b86729086240c4373536f18dc3bfa3b5277375db416857228ed0",
+    "postgresql-16.15-linux-arm64.tar.gz": "518eacc2ca54ddc8af5068bdcf509645a92b147b247a48358cc4ec101c7f8875"
+  },
+  "case_results": {
+    "archive-suite": "passed",
+    "elf-closure": "passed"
+  },
+  "ci": {
+    "build_revision": "4175ae84152b4ae4a02f1cf13d52648270e707f0",
+    "provider": "github-actions",
+    "run_id": "39693851521",
+    "run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/39693851521",
+    "source_revision": "4175ae84152b4ae4a02f1cf13d52648270e707f0",
+    "test_revision": "4175ae84152b4ae4a02f1cf13d52648270e707f0"
+  },
+  "clean_system": true,
+  "core_origin": "reused",
+  "core_provenance": {
+    "artifact_name": "pgaudit-linux-core-16.15-arm64-39684108745",
+    "build_id": "github-39684108745-1",
+    "build_inputs": {
+      "base_image": "ubuntu:22.04",
+      "base_image_digest": "sha256:0a9887931b0e38af2e3487ed39e29436b0535c4f3f52e57745baaf79d1898956",
+      "packages_sha256": "85d39ad768203ba1adad6c4c21223625a93cbff837b41767e2394e1358b60c3e"
+    },
+    "head_sha": "9c3dad15cb1ae038368b782d0bc1bb6a66d49636",
+    "provider": "github-actions",
+    "run_attempt": 1,
+    "run_id": "39684108745",
+    "source_revision": "9c3dad15cb1ae038368b782d0bc1bb6a66d49636"
+  },
+  "core_resolution": {
+    "architecture": "arm64",
+    "archive": "postgresql-16.15-linux-arm64.tar.gz",
+    "origin": "reused",
+    "postgresql_version": "16.15",
+    "provenance": {
+      "artifact_name": "pgaudit-linux-core-16.15-arm64-39684108745",
+      "build_id": "github-39684108745-1",
+      "build_inputs": {
+        "base_image": "ubuntu:22.04",
+        "base_image_digest": "sha256:0a9887931b0e38af2e3487ed39e29436b0535c4f3f52e57745baaf79d1898956",
+        "packages_sha256": "85d39ad768203ba1adad6c4c21223625a93cbff837b41767e2394e1358b60c3e"
+      },
+      "head_sha": "9c3dad15cb1ae038368b782d0bc1bb6a66d49636",
+      "provider": "github-actions",
+      "run_attempt": 1,
+      "run_id": "39684108745",
+      "source_revision": "9c3dad15cb1ae038368b782d0bc1bb6a66d49636"
+    },
+    "schema_version": 1,
+    "sha256": "518eacc2ca54ddc8af5068bdcf509645a92b147b247a48358cc4ec101c7f8875"
+  },
+  "dependency_check_profile": "linux-elf-alpine-relocation-v1",
+  "dependency_checks_passed": true,
+  "endpoint": "current",
+  "environment": {
+    "architecture": "arm64",
+    "clean_system": true,
+    "dependency_check_profile": "linux-elf-alpine-relocation-v1",
+    "dependency_checks_passed": true,
+    "distribution": "Alpine Linux 3.22",
+    "endpoint": "current",
+    "image_id": "sha256:1f06db3086b01dbce08e3d44b838bd40b6609742c2af4e115629e7e1c5ebcb10",
+    "os": "linux",
+    "os_version": "7.0.0"
+  },
+  "extension_archive": "pg_jsonschema-0.3.4-postgresql-16.15-linux-arm64.tar.gz",
+  "platform": "linux-arm64",
+  "postgresql_version": "16.15",
+  "profile_id": "pg-jsonschema-publication-linux-arm64-16.15",
+  "profile_revision": "23410a6eceb273186f8eabec273cea73196abd191d725a1cfdd63d2c9cf25800",
+  "project": "pg_jsonschema",
+  "redistribution_status": "postgresql-core-redistribution-review-pending",
+  "release_eligible": false,
+  "reports": {
+    "build_evidence": "23f864da7ec3f579c0805ac72013bfb96474b2fd39e3c425955624b08468c73d",
+    "elf_closure": "6ed694ae134805b9c519fd29be279940baff00ca59678c3e96f3f3949de60616",
+    "probe_output": "792100a2ac9bc908b71bcffbaff4bb4020a94c682470aacca5b182e19ce4f434"
+  },
+  "schema_version": 1,
+  "test_revision": "4175ae84152b4ae4a02f1cf13d52648270e707f0",
+  "version": "0.3.4"
+}

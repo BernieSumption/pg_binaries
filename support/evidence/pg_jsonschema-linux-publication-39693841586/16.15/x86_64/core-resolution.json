@@ -1,0 +1,22 @@
+{
+  "architecture": "x86_64",
+  "archive": "postgresql-16.15-linux-x86_64.tar.gz",
+  "origin": "reused",
+  "postgresql_version": "16.15",
+  "provenance": {
+    "artifact_name": "pgaudit-linux-core-16.15-x86_64-39684099905",
+    "build_id": "github-39684099905-1",
+    "build_inputs": {
+      "base_image": "ubuntu:22.04",
+      "base_image_digest": "sha256:0a9887931b0e38af2e3487ed39e29436b0535c4f3f52e57745baaf79d1898956",
+      "packages_sha256": "9aa0a1845ff9193ff96b59684afd11e45e811481e0f46bb9d22bd9b126c463d4"
+    },
+    "head_sha": "9c3dad15cb1ae038368b782d0bc1bb6a66d49636",
+    "provider": "github-actions",
+    "run_attempt": 1,
+    "run_id": "39684099905",
+    "source_revision": "9c3dad15cb1ae038368b782d0bc1bb6a66d49636"
+  },
+  "schema_version": 1,
+  "sha256": "7e5baeed24181247480b78eead1256cdf3ea52aeb3eb0e48091e9938aa664121"
+}
