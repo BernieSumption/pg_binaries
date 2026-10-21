@@ -151,6 +151,9 @@ jobs:
               ("PostGIS", "macos-x86_64"): "postgis-macos",
               ("PostGIS TIGER Geocoder", "linux-x86_64"): "tiger-linux",
               ("PostGIS TIGER Geocoder", "linux-arm64"): "tiger-linux",
+              ("PostGIS TIGER Geocoder", "macos-arm64"): "tiger-macos",
+              ("PostGIS TIGER Geocoder", "macos-x86_64"): "tiger-macos",
+              ("PostGIS TIGER Geocoder", "windows-x86_64"): "tiger-windows",
               ("Address Standardizer", "linux-x86_64"): "address-standardizer-linux",
               ("Address Standardizer", "linux-arm64"): "address-standardizer-linux",
               ("Address Standardizer", "macos-arm64"): "address-standardizer-macos",
@@ -178,6 +181,9 @@ jobs:
           route = routes.get((project, platform))
           if project == "PostGIS" and platform == "windows-x86_64" and request["postgresql_version"] == "18.6":
               route = "postgis-windows"
+          if project == "PostGIS TIGER Geocoder" and platform in {"macos-arm64", "macos-x86_64", "windows-x86_64"} \
+                  and request["postgresql_version"] != "18.6":
+              route = None
           if route is None:
               raise SystemExit(f"No selected publication workflow serves {project} on {platform}")
           with open(sys.argv[2], "a", encoding="utf-8") as output:
@@ -402,6 +408,23 @@ jobs:
       postgresql_version: ${{ needs.plan.outputs.postgresql_version }}
       extension_version: ${{ needs.plan.outputs.extension_version }}
       architecture: ${{ needs.plan.outputs.architecture }}
+
+  tiger_macos:
+    needs: plan
+    if: needs.plan.outputs.should_dispatch == 'true' && needs.plan.outputs.route == 'tiger-macos'
+    uses: ./.github/workflows/tiger-macos-selected-publication.yml
+    with:
+      postgresql_version: ${{ needs.plan.outputs.postgresql_version }}
+      extension_version: ${{ needs.plan.outputs.extension_version }}
+      architecture: ${{ needs.plan.outputs.architecture }}
+
+  tiger_windows:
+    needs: plan
+    if: needs.plan.outputs.should_dispatch == 'true' && needs.plan.outputs.route == 'tiger-windows'
+    uses: ./.github/workflows/tiger-windows-selected-publication.yml
+    with:
+      postgresql_version: ${{ needs.plan.outputs.postgresql_version }}
+      extension_version: ${{ needs.plan.outputs.extension_version }}
 
   pgvector_linux:
     needs: plan
