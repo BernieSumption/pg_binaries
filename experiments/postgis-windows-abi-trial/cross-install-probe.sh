@@ -109,6 +109,22 @@ for source_text in json.loads(resolved_path.read_text(encoding="utf-8")):
             shutil.copy2(source, target)
 PY
 done
+python - "$output_root/package" "$package_root/bin" "$output_root/runtime-package-owners.txt" <<'PY'
+import json, subprocess, sys
+from pathlib import Path
+
+reports, bundled, output = map(Path, sys.argv[1:])
+sources = {}
+for report in reports.glob('*.modules.json'):
+    for value in json.loads(report.read_text(encoding='utf-8')):
+        source = Path(value)
+        if (bundled / source.name).is_file():
+            sources.setdefault(source.name.casefold(), source)
+with output.open('w', encoding='utf-8') as stream:
+    for name, source in sorted(sources.items()):
+        owner = subprocess.run(['pacman', '-Qo', str(source)], capture_output=True, text=True)
+        print(f'{name}\t{source}\t{owner.stdout.strip() if owner.returncode == 0 else "source-built or unowned"}', file=stream)
+PY
 selected_sha=$(sha256sum "$core_archive" | cut -d' ' -f1)
 postgis_sha=$(sha256sum "$source_root/postgis-3.6.4.tar.gz" | cut -d' ' -f1)
 python - "$package_root/metadata.json" "$selected_sha" "$postgis_sha" <<'PY'
