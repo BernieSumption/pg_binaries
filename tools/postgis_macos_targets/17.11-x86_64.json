@@ -1,0 +1,12 @@
+{
+  "schema_version": 1,
+  "project": "PostGIS",
+  "extension_version": "3.6.4",
+  "postgresql_version": "17.11",
+  "architecture": "x86_64",
+  "platform": "macos-x86_64",
+  "profile_id": "postgis-publication-macos-x86_64-17.11",
+  "core_archive": {
+    "basename": "postgresql-17.11-macos-x86_64.tar.gz"
+  }
+}
