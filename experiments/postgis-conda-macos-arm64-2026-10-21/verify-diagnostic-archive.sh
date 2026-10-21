@@ -13,6 +13,8 @@ for archive in "$core_archive" "$extension"; do
   test -s "$archive"
   (cd "$(dirname "$archive")" && shasum -a 256 -c "$(basename "$archive").sha256")
 done
+python3 "$repo/tools/license_pointer.py" verify "$core_archive" postgresql
+python3 "$repo/tools/license_pointer.py" verify "$extension" postgis
 work=$(mktemp -d "${RUNNER_TEMP:-/tmp}/postgis-conda-verify.XXXXXX")
 data=; socket="$work/socket"; pgctl=
 cleanup() { [[ -z "$data" || -z "$pgctl" ]] || "$pgctl" -D "$data" -m immediate stop >/dev/null 2>&1 || true; rm -rf "$work"; }
@@ -30,26 +32,6 @@ expected={'project':'postgis','version':'3.6.4','sql_names':['postgis','postgis_
 if any(metadata.get(key)!=value for key,value in expected.items()): raise SystemExit('archive metadata identity mismatch')
 if not metadata.get('build_id','').startswith('github-') or len(metadata.get('source_revision',''))!=40: raise SystemExit('missing build provenance')
 if hashlib.sha256(extension.read_bytes()).hexdigest()!=pathlib.Path(str(extension)+'.sha256').read_text().split()[0]: raise SystemExit('extension checksum mismatch')
-inventory=json.loads((root/'LICENSES/postgis-inventory.json').read_text())
-if not inventory.get('components') or any(item.get('redistribution_review',{}).get('status')!='pending' for item in inventory['components']): raise SystemExit('diagnostic inventory must remain pending')
-core_inventory=json.loads((pgroot/'LICENSES/inventory.json').read_text())
-for item in inventory.get('reused_core_dependencies',[]):
-    path=pgroot/'lib'/item['library']
-    owner=next((value for value in core_inventory['components'] if item['library'] in value.get('libraries',[])),None)
-    if not path.is_file() or hashlib.sha256(path.read_bytes()).hexdigest()!=item.get('sha256') or not owner or owner.get('redistribution_review',{}).get('status')!='resolved': raise SystemExit(f"invalid reused core dependency: {item.get('library')}")
-    if item.get('license_file')!='LICENSES/'+owner.get('license_file'): raise SystemExit(f"core licence reference mismatch: {item.get('library')}")
-mapped=set()
-for item in inventory['components']:
-    license_path=root/item['license_file']
-    if not license_path.is_file() or not license_path.stat().st_size: raise SystemExit(f"missing declaration or notice: {item['license_file']}")
-    for path in item['payload_paths']:
-        candidate=root/path
-        if not candidate.exists(): raise SystemExit(f'missing mapped payload: {path}')
-        members={p.relative_to(root).as_posix() for p in candidate.rglob('*') if p.is_file()} if candidate.is_dir() else {path}
-        if mapped.intersection(members): raise SystemExit(f'duplicate payload mapping: {path}')
-        mapped.update(members)
-actual={p.relative_to(root).as_posix() for top in ('lib','share') for p in (root/top).rglob('*') if p.is_file()}
-if actual!=mapped: raise SystemExit(f'payload mapping mismatch: missing={sorted(actual-mapped)} extra={sorted(mapped-actual)}')
 for name in expected['sql_names']:
     if not (root/f'share/extension/{name}.control').is_file(): raise SystemExit(f'missing SQL extension {name}')
 for source in root.rglob('*'):
@@ -74,4 +56,4 @@ DO $$ DECLARE r raster; BEGIN
 END $$;
 SQL
 "$pgctl" -D "$data" -m fast -w stop; data=; pgctl=
-echo 'PASS: diagnostic PostGIS archive passed fresh-runner relocation, static and SQL checks; licence inventory remains pending'
+echo 'PASS: diagnostic PostGIS archive passed fresh-runner relocation, static and SQL checks'

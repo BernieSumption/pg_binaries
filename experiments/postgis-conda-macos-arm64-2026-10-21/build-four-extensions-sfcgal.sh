@@ -189,6 +189,5 @@ Path(output, "sql-names.txt").write_text("\n".join(names) + "\n")
 PY
 
 python3 "$repo/experiments/postgis-conda-macos-arm64-2026-10-21/assemble-diagnostic-archive.py" \
-  "$work/conda-runtime-closure" "$output" "$conda_prefix" \
-  "$work/source/postgis.tar.gz" "$work/gdal-source/gdal.tar.gz" \
-  "$work/source/sfcgal.tar.gz" "$pgroot" "$core_archive" "$target_config"
+  "$work/conda-runtime-closure" "$output" "$work/source/postgis.tar.gz" \
+  "$pgroot" "$core_archive" "$target_config"
