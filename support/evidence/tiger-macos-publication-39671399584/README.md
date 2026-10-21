@@ -1,0 +1,3 @@
+# macOS arm64 TIGER Geocoder verification
+
+[Run 39671399584](https://github.com/BernieSumption/pg_binaries/actions/runs/39671399584) built TIGER Geocoder 2025.2 for PostgreSQL 18.6 and verified the final archives on a separate macOS arm64 runner. The passing SQL and static-analysis result binds exact PostgreSQL, PostGIS 3.6.4 and TIGER archive hashes in the [hash report](arm64/18.6/archive-hashes.json) and [verification record](../../verification/postgis_tiger_geocoder-2025.2-postgresql-18.6-macos-arm64-current-39671399584.json). The importer checked the downloaded archive bytes, checksum sidecars, report hashes and current verification profile before retaining this evidence.
