@@ -15,7 +15,11 @@ $extensionArchive = Join-Path $ArchiveDirectory 'postgis-3.6.4-postgresql-18.6-w
 function Assert-ArchiveHash([string]$archive) {
   $line = (Get-Content "$archive.sha256" -Raw).Trim()
   $parts = $line -split '\s+', 2
-  if ($parts.Count -ne 2 -or $parts[1] -ne (Split-Path $archive -Leaf)) {
+  $name = $null
+  if ($parts.Count -eq 2) {
+    $name = if ($parts[1].StartsWith('*')) { $parts[1].Substring(1) } else { $parts[1] }
+  }
+  if ($parts.Count -ne 2 -or $parts[0] -notmatch '^[0-9a-fA-F]{64}$' -or $name -ne (Split-Path $archive -Leaf)) {
     throw "Invalid checksum companion for $archive"
   }
   if ((Get-FileHash $archive -Algorithm SHA256).Hash.ToLowerInvariant() -ne $parts[0]) {

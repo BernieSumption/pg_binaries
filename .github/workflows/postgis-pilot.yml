@@ -26,6 +26,10 @@ on:
         description: Inspect DLL imports from a prior cross-install trial against the selected Windows core
         required: false
         type: boolean
+      postgis_windows_relocatable_replay:
+        description: Repack the prior Windows PostGIS trial with the central licence pointer and verify it without rebuilding
+        required: false
+        type: boolean
       diagnostic_run_id:
         description: Source run ID for the Windows import diagnostic
         required: false
@@ -48,7 +52,7 @@ on:
         type: boolean
 jobs:
   plan:
-    if: ${{ inputs.address_standardizer_probe != true && inputs.postgis_macos_arm64_probe != true && inputs.postgis_windows_abi_probe != true && inputs.postgis_windows_selected_core_probe != true && inputs.postgis_windows_relocatable_trial != true && inputs.postgis_windows_import_diagnostic != true && inputs.postgis_conda_macos_arm64_probe != true && inputs.postgis_conda_macos_arm64_build_probe != true && inputs.postgis_conda_macos_arm64_sfcgal_build_probe != true && inputs.postgis_conda_macos_arm64_sfcgal_archive_probe != true }}
+    if: ${{ inputs.address_standardizer_probe != true && inputs.postgis_macos_arm64_probe != true && inputs.postgis_windows_abi_probe != true && inputs.postgis_windows_selected_core_probe != true && inputs.postgis_windows_relocatable_trial != true && inputs.postgis_windows_import_diagnostic != true && inputs.postgis_windows_relocatable_replay != true && inputs.postgis_conda_macos_arm64_probe != true && inputs.postgis_conda_macos_arm64_build_probe != true && inputs.postgis_conda_macos_arm64_sfcgal_build_probe != true && inputs.postgis_conda_macos_arm64_sfcgal_archive_probe != true }}
     runs-on: ubuntu-24.04
     outputs:
       project: ${{ steps.select.outputs.project }}
@@ -506,13 +510,13 @@ jobs:
         with:
           name: postgis-windows-relocatable-trial-${{ github.run_id }}
           path: |
-            ${{ runner.temp }}/postgis-windows-trial/output/**
             ${{ runner.temp }}/postgis-windows-trial/output/postgresql-18.6-windows-x86_64.tar.gz
             ${{ runner.temp }}/postgis-windows-trial/output/postgresql-18.6-windows-x86_64.tar.gz.sha256
             ${{ runner.temp }}/postgis-windows-trial/output/postgis-3.6.4-postgresql-18.6-windows-x86_64-trial.tar.gz
             ${{ runner.temp }}/postgis-windows-trial/output/postgis-3.6.4-postgresql-18.6-windows-x86_64-trial.tar.gz.sha256
-            ${{ runner.temp }}/postgis-windows-trial/output/build.log
+            ${{ runner.temp }}/postgis-windows-trial/output/mingw/build.log
             ${{ runner.temp }}/postgis-windows-trial/output/cross-install.log
+            ${{ runner.temp }}/postgis-windows-trial/output/runtime-package-owners.txt
             ${{ runner.temp }}/postgis-windows-trial/output/package/*.json
             ${{ runner.temp }}/postgis-windows-trial/output/selected-cluster/server.log
           if-no-files-found: warn
@@ -611,6 +615,9 @@ jobs:
         shell: pwsh
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
       - name: Download the exact trial archive bytes from the build runner
         id: download
         continue-on-error: true
@@ -641,6 +648,58 @@ jobs:
           if (-not (Test-Path $result) -or (Get-Content $result -Raw | ConvertFrom-Json).outcome -ne 'passed') {
             throw 'Fresh-runner PostGIS archive verification did not pass'
           }
+
+  windows-postgis-relocatable-replay:
+    if: ${{ inputs.postgis_windows_relocatable_replay == true }}
+    runs-on: windows-2022
+    timeout-minutes: 60
+    permissions:
+      actions: read
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Download prior build archives
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_RUN_ID: ${{ inputs.diagnostic_run_id }}
+        run: |
+          if ($env:SOURCE_RUN_ID -notmatch '^[0-9]+$') { throw 'A numeric diagnostic_run_id is required.' }
+          gh run download $env:SOURCE_RUN_ID --repo $env:GITHUB_REPOSITORY `
+            --name "postgis-windows-relocatable-trial-$env:SOURCE_RUN_ID" `
+            --dir (Join-Path $env:RUNNER_TEMP 'postgis-windows-trial')
+          if ($LASTEXITCODE -ne 0) { throw 'Prior build archive artifact is unavailable.' }
+      - name: Add the central licence pointer without changing runtime members
+        shell: pwsh
+        run: |
+          $root = Join-Path $env:RUNNER_TEMP 'postgis-windows-trial'
+          $archive = Join-Path $root 'postgis-3.6.4-postgresql-18.6-windows-x86_64-trial.tar.gz'
+          $repacked = Join-Path $root 'repacked-postgis.tar.gz'
+          $reportDir = Join-Path $root 'verification'
+          New-Item -ItemType Directory -Force $reportDir | Out-Null
+          python experiments/license_repack/repack.py $archive postgis $repacked (Join-Path $reportDir 'repack-report.json')
+          if ($LASTEXITCODE -ne 0) { throw 'Licence-only archive repack failed.' }
+          Move-Item $archive "$archive.original"
+          Move-Item $repacked $archive
+          $digest = (Get-FileHash $archive -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$digest  $([IO.Path]::GetFileName($archive))" | Set-Content -Encoding ascii "$archive.sha256"
+          "$digest  $([IO.Path]::GetFileName($archive))" | Set-Content -Encoding ascii (Join-Path $reportDir 'repacked-archive.sha256')
+      - name: Verify repacked archive on this fresh runner
+        shell: pwsh
+        run: |
+          ./experiments/postgis-windows-abi-trial/verify-relocatable-trial.ps1 `
+            -ArchiveDirectory (Join-Path $env:RUNNER_TEMP 'postgis-windows-trial') `
+            -OutputDirectory (Join-Path $env:RUNNER_TEMP 'postgis-windows-trial/verification')
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: postgis-windows-relocatable-replay-${{ github.run_id }}
+          path: ${{ runner.temp }}/postgis-windows-trial/verification/**
+          if-no-files-found: warn
+          retention-days: 7
 
   linux-postgis:
     needs: plan
