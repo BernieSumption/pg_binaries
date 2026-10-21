@@ -723,6 +723,31 @@ class CoverageTests(unittest.TestCase):
             binary_lf = coverage.verification_profile(root, "fixture-windows")
             self.assertNotEqual(binary_crlf["profile_revision"], binary_lf["profile_revision"])
 
+    def test_reviewed_equivalence_expires_when_verifier_changes(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            profile = self.add_profile(root)
+            registry_path = root / "support" / "verification-profiles.json"
+            registry = json.loads(registry_path.read_text(encoding="utf-8"))
+            previous = "b" * 64
+            registry["reviewed_equivalences"] = {
+                "fixture-linux": [{"current": profile["profile_revision"],
+                                   "previous": previous,
+                                   "reason": "Removed a build-only source after review."}],
+            }
+            registry_path.write_text(json.dumps(registry), encoding="utf-8")
+            unchanged = coverage.verification_profile(root, "fixture-linux")
+            self.assertIn(previous, unchanged["compatible_profile_revisions"])
+
+            (root / "tests" / "fixture.sh").write_text("changed verifier", encoding="utf-8")
+            changed = coverage.verification_profile(root, "fixture-linux")
+            self.assertNotIn(previous, changed["compatible_profile_revisions"])
+
+            registry["reviewed_equivalences"]["fixture-linux"][0]["previous"] = "bad"
+            registry_path.write_text(json.dumps(registry), encoding="utf-8")
+            with self.assertRaisesRegex(coverage.CoverageError, "invalid reviewed equivalence"):
+                coverage.verification_profile(root, "fixture-linux")
+
     @staticmethod
     def add_workflow_source_profile(root, source=".github/workflows/linux-publication.yml"):
         root = Path(root)

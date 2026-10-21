@@ -414,9 +414,22 @@ def verification_profile(root, profile_id, allow_missing_sources=False):
         return hashlib.sha256(json.dumps(digest_input, sort_keys=True, separators=(",", ":"),
                                          ensure_ascii=False).encode("utf-8")).hexdigest()
     revision = digest(source_hashes)
+    compatible = {revision, digest(crlf_source_hashes)}
+    equivalences = registry.get("reviewed_equivalences", {})
+    if not isinstance(equivalences, dict):
+        raise CoverageError("reviewed_equivalences must be an object")
+    for entry in equivalences.get(profile_id, []):
+        if (not isinstance(entry, dict) or set(entry) != {"current", "previous", "reason"}
+                or any(not isinstance(entry[key], str) or not entry[key]
+                       for key in ("current", "previous", "reason"))
+                or not SHA256.fullmatch(entry["current"])
+                or not SHA256.fullmatch(entry["previous"])):
+            raise CoverageError(f"verification profile {profile_id}: invalid reviewed equivalence")
+        if entry["current"] == revision:
+            compatible.add(entry["previous"])
     return {"profile_id": profile_id, "scope": scope, "case_ids": cases,
             "platforms": platforms, "profile_revision": revision,
-            "compatible_profile_revisions": sorted({revision, digest(crlf_source_hashes)}),
+            "compatible_profile_revisions": sorted(compatible),
             "sources_available": sources_available}
 
 
