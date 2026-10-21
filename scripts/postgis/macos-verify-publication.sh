@@ -5,10 +5,18 @@ archives=${2:?extension archive directory required}
 output=${3:?output directory required}
 architecture=${4:?architecture required}
 repo=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
+core_name=$(basename "$core_archive")
+if [[ $core_name =~ ^postgresql-(15\.19|16\.15|17\.11|18\.6)-macos-(arm64|x86_64)\.tar\.gz$ ]]; then
+  pg_version=${BASH_REMATCH[1]}
+  core_architecture=${BASH_REMATCH[2]}
+else
+  echo "Unsupported selected PostgreSQL core archive: $core_name" >&2; exit 1
+fi
+[[ $core_architecture == "$architecture" ]] || { echo "Core archive architecture mismatch" >&2; exit 1; }
 mkdir -p "$output"; output=$(cd "$output" && pwd)
 [[ $architecture == arm64 || $architecture == x86_64 ]] || { echo 'Unsupported macOS architecture' >&2; exit 1; }
 [[ $(uname -s) == Darwin && $(uname -m) == "$architecture" ]] || { echo "Verification requires fresh native macOS $architecture" >&2; exit 1; }
-extension="$archives/postgis-3.6.4-postgresql-18.6-macos-$architecture.tar.gz"
+extension="$archives/postgis-3.6.4-postgresql-$pg_version-macos-$architecture.tar.gz"
 python3 "$repo/tools/license_pointer.py" verify "$extension" postgis
 for archive in "$core_archive" "$extension"; do test -s "$archive"; (cd "$(dirname "$archive")" && shasum -a 256 -c "$(basename "$archive").sha256"); done
 core_sha=$(shasum -a 256 "$core_archive" | awk '{print $1}')
@@ -21,12 +29,12 @@ mkdir -p "$work/assembled" "$work/extract" "$work/socket"
 tar -xzf "$core_archive" -C "$work/assembled"
 tar -xzf "$extension" -C "$work/extract"
 pgroot="$work/assembled/postgresql"; extroot="$work/extract/postgis"
-python3 - "$extroot" "$extension" "$core_archive" "$core_sha" "$ext_sha" "$architecture" <<'PY'
+python3 - "$extroot" "$extension" "$core_archive" "$core_sha" "$ext_sha" "$architecture" "$pg_version" <<'PY'
 import hashlib,json,pathlib,sys,tarfile
 ext,archive,core=map(pathlib.Path,sys.argv[1:4]); core_sha,ext_sha,architecture=sys.argv[4:7]
 with tarfile.open(archive,'r:gz') as stream:
     metadata=json.load(stream.extractfile('metadata.json'))
-expected={'project':'postgis','version':'3.6.4','sql_names':['postgis','postgis_raster','postgis_sfcgal','postgis_topology'],'postgresql_version':'18.6','platform':'macos','architecture':architecture,'core_archive':{'basename':core.name,'sha256':core_sha}}
+expected={'project':'postgis','version':'3.6.4','sql_names':['postgis','postgis_raster','postgis_sfcgal','postgis_topology'],'postgresql_version':sys.argv[7],'platform':'macos','architecture':architecture,'core_archive':{'basename':core.name,'sha256':core_sha}}
 if any(metadata.get(key)!=value for key,value in expected.items()): raise SystemExit('PostGIS archive metadata identity mismatch')
 if not metadata.get('build_id','').startswith('github-') or len(metadata.get('source_revision',''))!=40: raise SystemExit('missing PostGIS build provenance')
 if hashlib.sha256(archive.read_bytes()).hexdigest()!=ext_sha: raise SystemExit('extension archive bytes changed')
@@ -60,7 +68,7 @@ DO $$ DECLARE r raster; BEGIN
 END $$;
 SQL
 "$pg_ctl" -D "$data_dir" -m fast -w stop; pg_ctl=; data_dir=
-python3 - "$output/static-analysis.json" "$extension" "$core_archive" "$output/publication/postgis-macos-verification.json" "$architecture" <<'PY'
+python3 - "$output/static-analysis.json" "$extension" "$core_archive" "$output/publication/postgis-macos-verification.json" "$architecture" "$pg_version" <<'PY'
 import hashlib,json,pathlib,platform,sys,tarfile,os
 report,extension,core,out=map(pathlib.Path,sys.argv[1:5]); architecture=sys.argv[5]
 r=json.loads(report.read_text())
@@ -71,6 +79,6 @@ if isinstance(actual,list): actual={item['basename']:item['sha256'] for item in 
 if actual!=expected: raise SystemExit('static report does not bind final archive bytes')
 out.parent.mkdir(parents=True,exist_ok=True)
 if architecture not in {'arm64','x86_64'}: raise SystemExit('missing selected macOS architecture')
-out.write_text(json.dumps({'schema_version':1,'outcome':'passed','platform':f'macos-{architecture}','architecture':architecture,'postgresql_version':'18.6','extension':'postgis','version':'3.6.4','build_id':json.loads(tarfile.open(extension,'r:gz').extractfile('metadata.json').read())['build_id'],'source_revision':json.loads(tarfile.open(extension,'r:gz').extractfile('metadata.json').read())['source_revision'],'test_run_id':os.environ.get('GITHUB_RUN_ID'),'test_revision':os.environ.get('GITHUB_SHA'),'runner_os':platform.platform(),'archives':expected,'static_analysis':'static-analysis.json','sql_probes':['probe-output.txt','raster-probe.txt']},indent=2,sort_keys=True)+'\n')
+out.write_text(json.dumps({'schema_version':1,'outcome':'passed','platform':f'macos-{architecture}','architecture':architecture,'postgresql_version':sys.argv[6],'extension':'postgis','version':'3.6.4','build_id':json.loads(tarfile.open(extension,'r:gz').extractfile('metadata.json').read())['build_id'],'source_revision':json.loads(tarfile.open(extension,'r:gz').extractfile('metadata.json').read())['source_revision'],'test_run_id':os.environ.get('GITHUB_RUN_ID'),'test_revision':os.environ.get('GITHUB_SHA'),'runner_os':platform.platform(),'archives':expected,'static_analysis':'static-analysis.json','sql_probes':['probe-output.txt','raster-probe.txt']},indent=2,sort_keys=True)+'\n')
 PY
 echo "PASS: PostGIS 3.6.4 archive verified on a fresh macOS $architecture runner"

@@ -12,19 +12,21 @@ selection=$(python3 - "$target_config" <<'PY'
 import json, sys
 target = json.load(open(sys.argv[1], encoding="utf-8"))
 architecture = target.get("architecture")
-if (target.get("postgresql_version") != "18.6" or architecture not in {"arm64", "x86_64"}
+pg_version = target.get("postgresql_version")
+if (pg_version not in {"15.19", "16.15", "17.11", "18.6"} or architecture not in {"arm64", "x86_64"}
         or target.get("platform") != f"macos-{architecture}"):
     raise SystemExit("unsupported selected PostGIS macOS target")
 core = target.get("core_archive", {})
-if core.get("basename") != f"postgresql-18.6-macos-{architecture}.tar.gz":
+if (target.get("project") != "PostGIS" or target.get("extension_version") != "3.6.4"
+        or core.get("basename") != f"postgresql-{pg_version}-macos-{architecture}.tar.gz"):
     raise SystemExit("selected core archive identity mismatch")
 for key in ("sha256", "build_id", "source_revision"):
     if not core.get(key):
         raise SystemExit(f"resolved core lacks {key}")
-print(architecture, core["basename"], core["sha256"], core["build_id"], core["source_revision"])
+print(pg_version, architecture, core["basename"], core["sha256"], core["build_id"], core["source_revision"])
 PY
 )
-read -r architecture core_name core_sha core_build_id core_revision <<< "$selection"
+read -r pg_version architecture core_name core_sha core_build_id core_revision <<< "$selection"
 core_archives=$(cd "$core_archives" && pwd)
 conda_prefix=$(cd "$conda_prefix" && pwd)
 mkdir -p "$output"
@@ -43,11 +45,11 @@ trap cleanup EXIT
 mkdir -p "$work/core" "$work/source" "$work/gdal-source" "$work/gdal-build" "$work/socket"
 tar -xzf "$core_archive" -C "$work/core"
 pgroot="$work/core/postgresql"
-prefix=$(macos_core_prefix_from_archive "$pgroot" 18.6 "$architecture" "$core_build_id" "$core_revision")
+prefix=$(macos_core_prefix_from_archive "$pgroot" "$pg_version" "$architecture" "$core_build_id" "$core_revision")
 macos_restore_core_prefix "$prefix" "$pgroot"
 prefix_link_created=true
 pg_config="$prefix/bin/pg_config"
-test "$("$pg_config" --version)" = "PostgreSQL 18.6"
+test "$("$pg_config" --version)" = "PostgreSQL $pg_version"
 
 export MACOSX_DEPLOYMENT_TARGET=11.0
 export PATH="$conda_prefix/bin:$PATH"
@@ -203,4 +205,4 @@ PY
 python3 "$repo/scripts/postgis/assemble-macos-archive.py" \
   "$work/conda-runtime-closure" "$output" "$work/source/postgis.tar.gz" \
   "$pgroot" "$core_archive" "$target_config" \
-  --build-configuration "selected-macos-$architecture;deployment-target=11.0;gdal=3.13.3;gdal-drivers=GTiff,PNG,JPEG;dependencies=conda-forge"
+  --build-configuration "selected-macos-$architecture-postgresql-$pg_version;deployment-target=11.0;gdal=3.13.3;gdal-drivers=GTiff,PNG,JPEG;dependencies=conda-forge"

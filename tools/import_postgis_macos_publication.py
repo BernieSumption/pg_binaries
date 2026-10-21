@@ -16,7 +16,7 @@ import coverage
 import license_pointer
 
 
-PG_VERSION = "18.6"
+PG_VERSIONS = {"15.19", "16.15", "17.11", "18.6"}
 EXTENSION_VERSION = "3.6.4"
 TARGETS = Path(__file__).resolve().parent / "postgis_macos_targets"
 SQL_NAMES = ["postgis", "postgis_raster", "postgis_sfcgal", "postgis_topology"]
@@ -79,7 +79,7 @@ def _write_json(path, value):
     path.write_text(serialized, encoding="utf-8")
 
 
-def _metadata(archive, core_name, core_sha, architecture):
+def _metadata(archive, core_name, core_sha, architecture, pg_version):
     try:
         with tarfile.open(archive, "r:gz") as stream:
             members = stream.getmembers()
@@ -99,7 +99,7 @@ def _metadata(archive, core_name, core_sha, architecture):
         raise coverage.CoverageError(f"cannot inspect PostGIS archive: {exc}") from exc
     expected = {
         "project": "postgis", "version": EXTENSION_VERSION, "sql_names": SQL_NAMES,
-        "postgresql_version": PG_VERSION, "platform": "macos", "architecture": architecture,
+        "postgresql_version": pg_version, "platform": "macos", "architecture": architecture,
         "core_archive": {"basename": core_name, "sha256": core_sha},
     }
     if not isinstance(metadata, dict) or any(metadata.get(key) != value for key, value in expected.items()):
@@ -148,23 +148,27 @@ def import_run(root, build_artifact, verification_artifact, runner_image_evidenc
     run_id = str(run_id)
     if not re.fullmatch(r"[1-9][0-9]*", run_id):
         raise coverage.CoverageError("run_id must be numeric")
-    target_path = Path(target_path) if target_path else TARGETS / f"{PG_VERSION}-arm64.json"
+    target_path = Path(target_path) if target_path else TARGETS / "18.6-arm64.json"
     target = _read_json(target_path)
+    pg_version = target.get("postgresql_version")
     architecture = target.get("architecture")
     platform = target.get("platform")
     profile_id = target.get("profile_id")
     if (architecture not in {"arm64", "x86_64"} or platform != f"macos-{architecture}"
-            or target.get("postgresql_version") != PG_VERSION
+            or pg_version not in PG_VERSIONS
             or target.get("extension_version") != EXTENSION_VERSION
-            or profile_id != f"postgis-publication-macos-{architecture}-{PG_VERSION}"):
+            or target.get("project") != "PostGIS"
+            or target.get("schema_version") != 1
+            or target.get("core_archive", {}).get("basename") != f"postgresql-{pg_version}-{platform}.tar.gz"
+            or profile_id != f"postgis-publication-macos-{architecture}-{pg_version}"):
         raise coverage.CoverageError("selected PostGIS macOS target is invalid")
     profile = coverage.verification_profile(root, profile_id)
     if (profile["scope"] != "publication" or profile["platforms"] != [platform]
             or profile["case_ids"] != CASES):
         raise coverage.CoverageError("registered profile does not match selected PostGIS macOS publication")
 
-    core_name = f"postgresql-{PG_VERSION}-{platform}.tar.gz"
-    extension_name = f"postgis-{EXTENSION_VERSION}-postgresql-{PG_VERSION}-{platform}.tar.gz"
+    core_name = f"postgresql-{pg_version}-{platform}.tar.gz"
+    extension_name = f"postgis-{EXTENSION_VERSION}-postgresql-{pg_version}-{platform}.tar.gz"
     core = build_artifact / "core" / core_name
     extension = build_artifact / "output" / extension_name
     if any(path.is_symlink() or not path.is_file() for path in (core, extension)):
@@ -178,7 +182,7 @@ def import_run(root, build_artifact, verification_artifact, runner_image_evidenc
             or core_identity.get("basename") != core_name
             or core_identity.get("sha256") != digests[core_name]):
         raise coverage.CoverageError("core target provenance does not match the downloaded core bytes")
-    metadata = _metadata(extension, core_name, digests[core_name], architecture)
+    metadata = _metadata(extension, core_name, digests[core_name], architecture, pg_version)
     _profile_at_revision(root, metadata["source_revision"], profile_id)
     license_pointer.verify_archive(extension, "postgis")
 
@@ -194,7 +198,7 @@ def import_run(root, build_artifact, verification_artifact, runner_image_evidenc
             or verifier.get("test_revision") != metadata["source_revision"]
             or verifier.get("archives") != digests or verifier.get("platform") != platform
             or verifier.get("architecture") != architecture
-            or verifier.get("postgresql_version") != PG_VERSION or verifier.get("version") != EXTENSION_VERSION):
+            or verifier.get("postgresql_version") != pg_version or verifier.get("version") != EXTENSION_VERSION):
         raise coverage.CoverageError("fresh-runner verifier record does not bind the selected run and archives")
     if (static.get("passed") is not True or static.get("findings")
             or static.get("architecture") != architecture):
@@ -240,7 +244,7 @@ def import_run(root, build_artifact, verification_artifact, runner_image_evidenc
     receipt = {
         "schema_version": 1, "profile_id": profile_id,
         "profile_revision": profile["profile_revision"], "test_revision": verifier["test_revision"],
-        "project": "PostGIS", "version": EXTENSION_VERSION, "postgresql_version": PG_VERSION,
+        "project": "PostGIS", "version": EXTENSION_VERSION, "postgresql_version": pg_version,
         "platform": platform, "architecture": architecture, "endpoint": "current",
         "case_results": results, "archives": digests, "extension_archive": extension_name,
         "core_target": core_target, "build_id": metadata["build_id"], "ci": ci,
@@ -254,14 +258,14 @@ def import_run(root, build_artifact, verification_artifact, runner_image_evidenc
             "case_results": results, "test_revision": verifier["test_revision"], "ci": ci,
             "outcome": "passed", "sha256": digests[extension_name], "component": component,
             "project": "PostGIS", "version": EXTENSION_VERSION, "platform": platform,
-            "postgresql_version": PG_VERSION,
-            "assembled_core": {"archive": core_name, "sha256": digests[core_name], "version": PG_VERSION},
+            "postgresql_version": pg_version,
+            "assembled_core": {"archive": core_name, "sha256": digests[core_name], "version": pg_version},
             "prerequisite_archives": [], "environment": environment,
         }
         coverage.validate_verification_record(record, coverage.load_json(root / "support.json"), root)
         records.append((component, record))
 
-    evidence_dir = root / "support/evidence" / f"postgis-macos-publication-{run_id}" / architecture / PG_VERSION
+    evidence_dir = root / "support/evidence" / f"postgis-macos-publication-{run_id}" / architecture / pg_version
     copies = [
         (verification_artifact / "publication/attempt.json", evidence_dir / "attempt.json"),
         (verification_artifact / "publication/postgis-macos-verification.json", evidence_dir / "postgis-macos-verification.json"),
@@ -277,7 +281,7 @@ def import_run(root, build_artifact, verification_artifact, runner_image_evidenc
     destinations = [receipt_path]
     for component, record in records:
         destination = root / "support/verification" / (
-            f"{component}-3.6.4-postgresql-18.6-macos-{architecture}-current-{run_id}.json")
+            f"{component}-{EXTENSION_VERSION}-postgresql-{pg_version}-macos-{architecture}-current-{run_id}.json")
         _write_json(destination, record)
         destinations.append(destination)
     return [str(path.relative_to(root)) for path in destinations]
