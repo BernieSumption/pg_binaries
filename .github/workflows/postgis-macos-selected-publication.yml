@@ -30,7 +30,7 @@ on:
         description: Native macOS architecture
         required: true
         type: choice
-        options: [arm64]
+        options: [arm64, x86_64]
         default: arm64
 
 permissions:
@@ -42,6 +42,8 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       target: ${{ steps.target.outputs.target }}
+      architecture: ${{ steps.target.outputs.architecture }}
+      runner: ${{ steps.target.outputs.runner }}
     steps:
       - uses: actions/checkout@v4
       - id: target
@@ -51,14 +53,17 @@ jobs:
           ARCHITECTURE: ${{ inputs.architecture }}
         run: |
           set -euo pipefail
-          [[ "$PG_VERSION" == 18.6 && "$EXT_VERSION" == 3.6.4 && "$ARCHITECTURE" == arm64 ]]
+          [[ "$PG_VERSION" == 18.6 && "$EXT_VERSION" == 3.6.4 ]]
+          [[ "$ARCHITECTURE" == arm64 || "$ARCHITECTURE" == x86_64 ]]
           python3 tools/select_extension_work.py --project PostGIS --version "$EXT_VERSION" \
-            --platform macos-arm64 --postgresql-version "$PG_VERSION" > "$RUNNER_TEMP/selection.json"
-          echo 'target=tools/postgis_macos_targets/18.6-arm64.json' >> "$GITHUB_OUTPUT"
+            --platform "macos-$ARCHITECTURE" --postgresql-version "$PG_VERSION" > "$RUNNER_TEMP/selection.json"
+          echo "target=tools/postgis_macos_targets/18.6-$ARCHITECTURE.json" >> "$GITHUB_OUTPUT"
+          echo "architecture=$ARCHITECTURE" >> "$GITHUB_OUTPUT"
+          if [[ "$ARCHITECTURE" == arm64 ]]; then echo 'runner=macos-15' >> "$GITHUB_OUTPUT"; else echo 'runner=macos-15-intel' >> "$GITHUB_OUTPUT"; fi
 
   build:
     needs: select
-    runs-on: macos-15
+    runs-on: ${{ needs.select.outputs.runner }}
     timeout-minutes: 120
     steps:
       - uses: actions/checkout@v4
@@ -66,10 +71,10 @@ jobs:
         run: brew install micromamba protobuf-c
       - name: Resolve conda-forge spatial and SFCGAL build dependencies
         run: |
-          micromamba create --yes --prefix "$RUNNER_TEMP/postgis-conda-arm64-sfcgal-env" --channel conda-forge \
+          micromamba create --yes --prefix "$RUNNER_TEMP/postgis-conda-${{ needs.select.outputs.architecture }}-sfcgal-env" --channel conda-forge \
             geos proj gdal json-c libxml2 pcre2 protobuf-c pkg-config cmake \
             cgal-cpp=6.1.1 libboost-devel gmp mpfr eigen nlohmann_json
-      - name: Resolve checked PostgreSQL 18.6 arm64 core
+      - name: Resolve selected PostgreSQL 18.6 core
         env:
           GH_TOKEN: ${{ github.token }}
           GITHUB_REPOSITORY: ${{ github.repository }}
@@ -89,26 +94,26 @@ jobs:
           bash scripts/postgis/macos-build-publication.sh \
             "$RUNNER_TEMP/postgis/core" \
             "$RUNNER_TEMP/postgis/core/target.json" \
-            "$RUNNER_TEMP/postgis-conda-arm64-sfcgal-env" \
+            "$RUNNER_TEMP/postgis-conda-${{ needs.select.outputs.architecture }}-sfcgal-env" \
             "$RUNNER_TEMP/postgis/output"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: postgis-macos-arm64-18.6-build-${{ github.run_id }}
+          name: postgis-macos-${{ needs.select.outputs.architecture }}-18.6-build-${{ github.run_id }}
           path: |
-            ${{ runner.temp }}/postgis/core/postgresql-18.6-macos-arm64.tar.gz
-            ${{ runner.temp }}/postgis/core/postgresql-18.6-macos-arm64.tar.gz.sha256
+            ${{ runner.temp }}/postgis/core/postgresql-18.6-macos-${{ needs.select.outputs.architecture }}.tar.gz
+            ${{ runner.temp }}/postgis/core/postgresql-18.6-macos-${{ needs.select.outputs.architecture }}.tar.gz.sha256
             ${{ runner.temp }}/postgis/core/target.json
             ${{ runner.temp }}/postgis/output/**
-            ${{ runner.temp }}/postgis/output/postgis-3.6.4-postgresql-18.6-macos-arm64.tar.gz
-            ${{ runner.temp }}/postgis/output/postgis-3.6.4-postgresql-18.6-macos-arm64.tar.gz.sha256
+            ${{ runner.temp }}/postgis/output/postgis-3.6.4-postgresql-18.6-macos-${{ needs.select.outputs.architecture }}.tar.gz
+            ${{ runner.temp }}/postgis/output/postgis-3.6.4-postgresql-18.6-macos-${{ needs.select.outputs.architecture }}.tar.gz.sha256
           if-no-files-found: warn
           retention-days: 7
 
   verify:
     needs: [select, build]
     if: always() && needs.select.result == 'success'
-    runs-on: macos-15
+    runs-on: ${{ needs.select.outputs.runner }}
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
@@ -117,7 +122,7 @@ jobs:
         continue-on-error: true
         uses: actions/download-artifact@v4
         with:
-          name: postgis-macos-arm64-18.6-build-${{ github.run_id }}
+          name: postgis-macos-${{ needs.select.outputs.architecture }}-18.6-build-${{ github.run_id }}
           path: ${{ runner.temp }}/postgis-bundle
       - name: Prepare fresh-runner verification directories
         if: always()
@@ -129,21 +134,25 @@ jobs:
         id: verify_archive
         if: always() && steps.download.outcome == 'success'
         continue-on-error: true
+        env:
+          ARCHITECTURE: ${{ needs.select.outputs.architecture }}
         run: |
           bash scripts/postgis/macos-verify-publication.sh \
-            "$RUNNER_TEMP/postgis-verification/core/postgresql-18.6-macos-arm64.tar.gz" \
-            "$RUNNER_TEMP/postgis-verification/extension" "$RUNNER_TEMP/postgis-verification"
+            "$RUNNER_TEMP/postgis-verification/core/postgresql-18.6-macos-$ARCHITECTURE.tar.gz" \
+            "$RUNNER_TEMP/postgis-verification/extension" "$RUNNER_TEMP/postgis-verification" "$ARCHITECTURE"
       - name: Emit archive-bound attempt record
         if: always()
         env:
           VERIFY_OUTCOME: ${{ steps.verify_archive.outcome }}
           GITHUB_SHA: ${{ github.sha }}
           GITHUB_RUN_ID: ${{ github.run_id }}
+          ARCHITECTURE: ${{ needs.select.outputs.architecture }}
         run: |
           python3 - "$RUNNER_TEMP/postgis-verification" <<'PY'
           import hashlib,json,os,pathlib,sys
           root=pathlib.Path(sys.argv[1]); out=root/'publication'; out.mkdir(parents=True,exist_ok=True)
-          names=('postgresql-18.6-macos-arm64.tar.gz','postgis-3.6.4-postgresql-18.6-macos-arm64.tar.gz')
+          architecture=os.environ['ARCHITECTURE']
+          names=(f'postgresql-18.6-macos-{architecture}.tar.gz',f'postgis-3.6.4-postgresql-18.6-macos-{architecture}.tar.gz')
           archives={}
           for name in names:
               path=next(root.rglob(name),None)
@@ -153,7 +162,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: postgis-macos-arm64-18.6-publication-${{ github.run_id }}
+          name: postgis-macos-${{ needs.select.outputs.architecture }}-18.6-publication-${{ github.run_id }}
           path: ${{ runner.temp }}/postgis-verification/**
           if-no-files-found: warn
           retention-days: 30

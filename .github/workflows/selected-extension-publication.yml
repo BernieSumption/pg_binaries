@@ -148,6 +148,7 @@ jobs:
               ("PostGIS", "linux-x86_64"): "postgis-linux",
               ("PostGIS", "linux-arm64"): "postgis-linux",
               ("PostGIS", "macos-arm64"): "postgis-macos",
+              ("PostGIS", "macos-x86_64"): "postgis-macos",
               ("PostGIS TIGER Geocoder", "linux-x86_64"): "tiger-linux",
               ("PostGIS TIGER Geocoder", "linux-arm64"): "tiger-linux",
               ("Address Standardizer", "linux-x86_64"): "address-standardizer-linux",

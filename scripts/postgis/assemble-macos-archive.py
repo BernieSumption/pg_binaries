@@ -51,9 +51,7 @@ def main():
     parser.add_argument("core_root", type=Path)
     parser.add_argument("core_archive", type=Path)
     parser.add_argument("core_target", type=Path)
-    parser.add_argument("--build-configuration", default=(
-        "selected-macos-arm64;deployment-target=11.0;"
-        "gdal=3.13.3;gdal-drivers=GTiff,PNG,JPEG;dependencies=conda-forge"))
+    parser.add_argument("--build-configuration", required=True)
     args = parser.parse_args()
 
     source, output = args.payload_root.resolve(), args.output.resolve()
@@ -65,6 +63,9 @@ def main():
     owner_report = json.loads((output / "conda-package-owners.json").read_text())
     core_root = args.core_root.resolve()
     core_target = json.loads(args.core_target.read_text())
+    architecture = core_target.get("architecture")
+    if architecture not in {"arm64", "x86_64"}:
+        raise SystemExit("selected core target has unsupported macOS architecture")
     if sha256(args.core_archive) != core_target["core_archive"]["sha256"]:
         raise SystemExit("selected core archive SHA-256 changed before packaging")
     unresolved = owner_report.get("unresolved_files", [])
@@ -109,7 +110,7 @@ def main():
             {"type": "environment_variable", "name": "PROJ_DATA", "value_relative_to_prefix": "share/proj"},
             {"type": "environment_variable", "name": "PROJ_LIB", "value_relative_to_prefix": "share/proj"},
             {"type": "environment_variable", "name": "GDAL_DATA", "value_relative_to_prefix": "share/gdal"},
-        ], "postgresql_version": "18.6", "platform": "macos", "architecture": "arm64",
+        ], "postgresql_version": "18.6", "platform": "macos", "architecture": architecture,
         "build_id": f"github-{os.environ['GITHUB_RUN_ID']}-{os.environ.get('GITHUB_RUN_ATTEMPT', '1')}",
         "source_revision": os.environ["GITHUB_SHA"],
         "build_configuration": args.build_configuration,
@@ -117,7 +118,7 @@ def main():
         "core_archive": {"basename": core["basename"], "sha256": core["sha256"]},
     }
     (package_root / "metadata.json").write_text(json.dumps(metadata, indent=2, sort_keys=True) + "\n")
-    archive = output / "postgis-3.6.4-postgresql-18.6-macos-arm64.tar.gz"
+    archive = output / f"postgis-3.6.4-postgresql-18.6-macos-{architecture}.tar.gz"
     with tarfile.open(archive, "w:gz") as stream:
         stream.add(package, arcname="postgis", recursive=True)
         stream.add(package_root / "metadata.json", arcname="metadata.json")

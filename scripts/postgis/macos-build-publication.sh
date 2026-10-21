@@ -11,24 +11,25 @@ source "$repo/scripts/macos/core-prefix.sh"
 selection=$(python3 - "$target_config" <<'PY'
 import json, sys
 target = json.load(open(sys.argv[1], encoding="utf-8"))
-if (target.get("postgresql_version") != "18.6" or target.get("architecture") != "arm64"
-        or target.get("platform") != "macos-arm64"):
+architecture = target.get("architecture")
+if (target.get("postgresql_version") != "18.6" or architecture not in {"arm64", "x86_64"}
+        or target.get("platform") != f"macos-{architecture}"):
     raise SystemExit("unsupported selected PostGIS macOS target")
 core = target.get("core_archive", {})
-if core.get("basename") != "postgresql-18.6-macos-arm64.tar.gz":
+if core.get("basename") != f"postgresql-18.6-macos-{architecture}.tar.gz":
     raise SystemExit("selected core archive identity mismatch")
 for key in ("sha256", "build_id", "source_revision"):
     if not core.get(key):
         raise SystemExit(f"resolved core lacks {key}")
-print(core["basename"], core["sha256"], core["build_id"], core["source_revision"])
+print(architecture, core["basename"], core["sha256"], core["build_id"], core["source_revision"])
 PY
 )
-read -r core_name core_sha core_build_id core_revision <<< "$selection"
+read -r architecture core_name core_sha core_build_id core_revision <<< "$selection"
 core_archives=$(cd "$core_archives" && pwd)
 conda_prefix=$(cd "$conda_prefix" && pwd)
 mkdir -p "$output"
 output=$(cd "$output" && pwd)
-[[ $(uname -s) == Darwin && $(uname -m) == arm64 ]] || { echo "Build requires native macOS arm64" >&2; exit 1; }
+[[ $(uname -s) == Darwin && $(uname -m) == "$architecture" ]] || { echo "Build requires native macOS $architecture" >&2; exit 1; }
 for tool in curl make python3 cmake; do command -v "$tool" >/dev/null || { echo "Missing runner tool: $tool" >&2; exit 1; }; done
 for tool in cmake geos-config xml2-config; do test -x "$conda_prefix/bin/$tool" || { echo "Missing conda tool: $tool" >&2; exit 1; }; done
 
@@ -42,7 +43,7 @@ trap cleanup EXIT
 mkdir -p "$work/core" "$work/source" "$work/gdal-source" "$work/gdal-build" "$work/socket"
 tar -xzf "$core_archive" -C "$work/core"
 pgroot="$work/core/postgresql"
-prefix=$(macos_core_prefix_from_archive "$pgroot" 18.6 arm64 "$core_build_id" "$core_revision")
+prefix=$(macos_core_prefix_from_archive "$pgroot" 18.6 "$architecture" "$core_build_id" "$core_revision")
 macos_restore_core_prefix "$prefix" "$pgroot"
 prefix_link_created=true
 pg_config="$prefix/bin/pg_config"
@@ -153,7 +154,7 @@ cd postgis-3.6.4
 make -j"$(sysctl -n hw.ncpu)" 2>&1 | tee "$output/build.log"
 make install 2>&1 | tee "$output/install.log"
 python3 "$repo/scripts/postgis/record-macos-runtime-closure.py" \
-  "$pgroot" "$conda_prefix" "$gdal_prefix" "$work" "$output" 2>&1 | tee "$output/runtime-closure.log"
+  "$pgroot" "$conda_prefix" "$gdal_prefix" "$work" "$output" "$architecture" 2>&1 | tee "$output/runtime-closure.log"
 
 chmod 700 "$work/socket"
 "$pgroot/bin/initdb" -D "$work/data" --no-sync >"$output/initdb.log" 2>&1
@@ -201,4 +202,5 @@ PY
 
 python3 "$repo/scripts/postgis/assemble-macos-archive.py" \
   "$work/conda-runtime-closure" "$output" "$work/source/postgis.tar.gz" \
-  "$pgroot" "$core_archive" "$target_config"
+  "$pgroot" "$core_archive" "$target_config" \
+  --build-configuration "selected-macos-$architecture;deployment-target=11.0;gdal=3.13.3;gdal-drivers=GTiff,PNG,JPEG;dependencies=conda-forge"

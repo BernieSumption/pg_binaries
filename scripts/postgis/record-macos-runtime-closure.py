@@ -12,7 +12,10 @@ import subprocess
 import sys
 
 
-pgroot, conda_prefix, gdal_prefix, temp_root, output = map(Path, sys.argv[1:])
+pgroot, conda_prefix, gdal_prefix, temp_root, output = map(Path, sys.argv[1:6])
+architecture = sys.argv[6]
+if architecture not in {"arm64", "x86_64"}:
+    raise SystemExit(f"unsupported macOS architecture: {architecture}")
 repo = Path(__file__).resolve().parents[2]
 closure_root = temp_root / "conda-runtime-closure"
 names = ("postgis", "postgis_raster", "postgis_sfcgal", "postgis_topology")
@@ -46,7 +49,7 @@ if not modules:
 environment = os.environ.copy()
 environment["PG_MACOS_DEPENDENCY_PREFIX"] = os.pathsep.join((str(gdal_prefix), str(pgroot), str(conda_prefix)))
 subprocess.run(
-    [sys.executable, str(repo / "scripts/postgis/bundle-macos.py"), str(closure_root), "arm64"],
+    [sys.executable, str(repo / "scripts/postgis/bundle-macos.py"), str(closure_root), architecture],
     check=True,
     env=environment,
 )
