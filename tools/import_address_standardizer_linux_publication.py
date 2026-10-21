@@ -139,9 +139,6 @@ def import_run(root, core_archives, archives, run_id):
 
     report_names = {"elf_closure": (archives / "static-analysis/address-standardizer.json", "elf-closure.json"),
                     "build_evidence": (archives / "build-evidence.txt", "build-evidence.txt"),
-                    "address_standardizer_license": (archives / "Address-Standardizer-COPYING.txt", "Address-Standardizer-COPYING.txt"),
-                    "pcre2_license": (archives / "PCRE2-LICENCE.md", "PCRE2-LICENCE.md"),
-                    "sljit_license": (archives / "SLJIT-LICENSE.txt", "SLJIT-LICENSE.txt"),
                     "probe_output": (archives / "probe-output.txt", "probe-output.txt")}
     if resolution is not None:
         report_names["core_resolution"] = (resolution_path, "core-resolution.json")

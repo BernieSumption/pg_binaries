@@ -138,9 +138,6 @@ class AddressStandardizerLinuxPublication(unittest.TestCase):
                 (archives / "build-evidence.txt").write_text(
                     f"address_standardizer_source_commit={publication.SOURCE_COMMIT}\n"
                     f"pcre2_source_sha256={publication.PCRE2_SHA256}\n", encoding="utf-8")
-                (archives / "Address-Standardizer-COPYING.txt").write_text("upstream extension licence\n", encoding="utf-8")
-                (archives / "PCRE2-LICENCE.md").write_text("upstream PCRE2 licence\n", encoding="utf-8")
-                (archives / "SLJIT-LICENSE.txt").write_text("upstream SLJIT licence\n", encoding="utf-8")
                 (archives / "probe-output.txt").write_text(
                     f"PASS: Address Standardizer 3.7.0 with PostgreSQL {pg_version} on relocated Alpine 3.22\n",
                     encoding="utf-8")

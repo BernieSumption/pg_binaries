@@ -177,10 +177,7 @@ def emit(root, archives, core_archives, output, architecture, build_result, veri
             or f"pcre2_source_sha256={PCRE2_SHA256}" not in build_evidence.read_text(encoding="utf-8")):
         raise coverage.CoverageError("build evidence does not identify the pinned upstream sources")
 
-    report_paths = {"elf_closure": static_path, "build_evidence": build_evidence,
-                    "address_standardizer_license": archives / "Address-Standardizer-COPYING.txt",
-                    "pcre2_license": archives / "PCRE2-LICENCE.md",
-                    "sljit_license": archives / "SLJIT-LICENSE.txt"}
+    report_paths = {"elf_closure": static_path, "build_evidence": build_evidence}
     if resolution is not None:
         report_paths["core_resolution"] = resolution_path
     for key, path in report_paths.items():
