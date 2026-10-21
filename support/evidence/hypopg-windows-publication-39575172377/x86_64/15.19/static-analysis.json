@@ -1,0 +1,51 @@
+{
+  "architecture": "x86_64",
+  "archives": {
+    "hypopg-1.4.3-postgresql-15.19-windows-x86_64.tar.gz": "3c273e0d8eceaa85fe490fc04464e9a5519a57373b5b38f98181c20a4fcd0ba3",
+    "postgresql-15.19-windows-x86_64.tar.gz": "b1793090085453fdcba4a7af14084ea5e1695b50390833d3c997840f78a9a809"
+  },
+  "checks": [
+    "current-profile-core-manifest",
+    "safe-archive-paths",
+    "source-and-core-metadata",
+    "project-named-licence-inventory",
+    "native-extension-identity",
+    "archive-bound-pe-dependency-analysis",
+    "archive-bound-pdb-identity"
+  ],
+  "inspected_files": [
+    "hypopg/LICENSES/HypoPG.txt",
+    "hypopg/LICENSES/hypopg-inventory.json",
+    "hypopg/lib/hypopg.dll",
+    "hypopg/share/extension/hypopg--1.3.1--1.4.0.sql",
+    "hypopg/share/extension/hypopg--1.3.1.sql",
+    "hypopg/share/extension/hypopg--1.4.0--1.4.1.sql",
+    "hypopg/share/extension/hypopg--1.4.0.sql",
+    "hypopg/share/extension/hypopg--1.4.1--1.4.2.sql",
+    "hypopg/share/extension/hypopg--1.4.1.sql",
+    "hypopg/share/extension/hypopg--1.4.2--1.4.3.sql",
+    "hypopg/share/extension/hypopg--1.4.2.sql",
+    "hypopg/share/extension/hypopg--1.4.3.sql",
+    "hypopg/share/extension/hypopg.control",
+    "metadata.json",
+    "postgresql/manifest.json"
+  ],
+  "limits": [
+    "The PostgreSQL PE dependency checker separately inspects the relocated core plus extension DLL."
+  ],
+  "native_extension_files": [
+    "hypopg/lib/hypopg.dll"
+  ],
+  "passed": true,
+  "pe_dependency_analysis_sha256": "4d9c9f23704880ebbe82cca9e7a008679556ac3c156d7c28bc9b73c898892a80",
+  "platform": "windows",
+  "schema_version": 1,
+  "symbols": {
+    "module": "hypopg/lib/hypopg.dll",
+    "module_sha256": "67ceac2e6d90885f737291955f6a3ac35bdd8a28d94bc91c92e5b62f0739e964",
+    "pdb_basename": "hypopg.pdb",
+    "pdb_sha256": "f65c42b1e7973d3e5aa2ffb54efa160804c903127e754c93bf1ee42013919e8d",
+    "rsds_age": 1,
+    "rsds_guid": "fcd57fcf9f8c4b79991103bbb9dd1b1a"
+  }
+}

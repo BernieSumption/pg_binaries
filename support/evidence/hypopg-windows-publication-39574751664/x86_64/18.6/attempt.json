@@ -1,0 +1,25 @@
+{
+  "architecture": "x86_64",
+  "archives": {
+    "hypopg-1.4.3-postgresql-18.6-windows-x86_64.tar.gz": "e621e8ae958a0c3562c1f4fd5a474f9103c6bb56f245d034224863448c04d5f7",
+    "postgresql-18.6-windows-x86_64.tar.gz": "dc6b7bbc1df71183ea79cc7a36c1f410d495446aaef4f96ab1adab3b547b7b17"
+  },
+  "archives_present": {
+    "hypopg-1.4.3-postgresql-18.6-windows-x86_64.tar.gz": true,
+    "postgresql-18.6-windows-x86_64.tar.gz": true
+  },
+  "core_build_id": "github-39562140440-1",
+  "core_source_revision": "0ed44d987a4b75d60a16b01d6149ad99d569f54f",
+  "core_status": "current-profile-core-redistribution-pending",
+  "hypopg_version": "1.4.3",
+  "postgresql_version": "18.6",
+  "profile_id": "hypopg-publication-windows-x86_64-18.6",
+  "release_eligible": false,
+  "run_id": "39574751664",
+  "schema_version": 1,
+  "source_revision": "19acf0dcd369f345a04cca45938edff67699eb0f",
+  "steps": {
+    "archive-suite": "success",
+    "static-analysis": "success"
+  }
+}
