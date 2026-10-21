@@ -1,0 +1,3 @@
+# pgAudit Linux publication evidence
+
+[Run 39684108745](https://github.com/BernieSumption/pg_binaries/actions/runs/39684108745) passed selected pgAudit 16.1 publication verification on PostgreSQL 16.15 Linux arm64. The imported receipt, verification record and ELF report match the downloaded final pgAudit archive and exact PostgreSQL core archive. The record matches the current verification profile.
