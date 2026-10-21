@@ -1,0 +1,47 @@
+{
+  "assembled_core": {
+    "archive": "postgresql-15.19-linux-x86_64.tar.gz",
+    "sha256": "3c0c54417212436a685243ce7c80736cf4fe14bca61c53908717254ebfb04075",
+    "version": "15.19"
+  },
+  "case_results": {
+    "archive-suite": "passed"
+  },
+  "ci": {
+    "build_revision": "4175ae84152b4ae4a02f1cf13d52648270e707f0",
+    "provider": "github-actions",
+    "run_id": "39693799076",
+    "run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/39693799076",
+    "source_revision": "4175ae84152b4ae4a02f1cf13d52648270e707f0",
+    "test_revision": "4175ae84152b4ae4a02f1cf13d52648270e707f0"
+  },
+  "component": "hypopg",
+  "environment": {
+    "architecture": "x86_64",
+    "clean_system": true,
+    "dependency_check_profile": "hypopg-runtime-v1",
+    "dependency_checks_passed": true,
+    "distribution": "Alpine Linux",
+    "distribution_version": "3.22.7",
+    "endpoint": "current",
+    "image_id": "sha256:746255492c3d8fb5a6123e031a4dc573ffe34be98872ffe620e115d9433dc917",
+    "kernel_release": "6.17.0-1022-azure",
+    "os": "linux",
+    "os_version": "6.17.0"
+  },
+  "outcome": "passed",
+  "platform": "linux-x86_64",
+  "postgresql_version": "15.19",
+  "prerequisite_archives": [],
+  "profile_id": "hypopg-publication-linux-x86_64-15.19",
+  "profile_revision": "ff9bc0240fa1784e0671cfbd35fdd9a70460c4642b846fa9dafeffec7b3823a2",
+  "project": "HypoPG",
+  "schema_version": 2,
+  "scope": "publication",
+  "sha256": "ae31d46b9554d3e23b7080af0366ee86a8645f201af11d5547753e9d0adf4973",
+  "test_cases": [
+    "archive-suite"
+  ],
+  "test_revision": "4175ae84152b4ae4a02f1cf13d52648270e707f0",
+  "version": "1.4.3"
+}
