@@ -109,35 +109,6 @@ jobs:
         run: |
           $core = Join-Path $env:RUNNER_TEMP 'core'
           Copy-Item (Join-Path $core 'result.json') (Join-Path $core 'identity.json') -Force
-      - name: Create Windows core verification identity
-        if: always() && (steps.core_candidate.outputs.status == 'checked' || steps.core_candidate.outputs.status == 'missing' || steps.core_candidate.outputs.status == 'stale')
-        env:
-          PG_VERSION: ${{ needs.select.outputs.postgresql_version }}
-        run: |
-          $core = Join-Path $env:RUNNER_TEMP 'core'
-          $identity = Get-Content (Join-Path $core 'identity.json') -Raw | ConvertFrom-Json
-          $target = Get-Content (Join-Path $core 'candidate-target.json') -Raw | ConvertFrom-Json
-          $archiveName = "postgresql-$env:PG_VERSION-windows-x86_64.tar.gz"
-          $archive = Join-Path $core $archiveName
-          $hash = (Get-FileHash $archive -Algorithm SHA256).Hash.ToLowerInvariant()
-          $manifest = tar.exe -xOzf $archive 'postgresql/manifest.json' | ConvertFrom-Json
-          if ($LASTEXITCODE -ne 0) { throw 'Could not read selected core manifest.' }
-          if ($identity.status -ne 'checked' -or $identity.sha256 -cne $hash) { throw 'Selected core identity does not match the archive.' }
-          $verificationIdentity = [ordered]@{
-            schema_version = 1
-            postgresql_version = $env:PG_VERSION
-            platform = 'windows-x86_64'
-            architecture = 'x86_64'
-            artifact_name = $target.artifact_name
-            archive_name = $archiveName
-            run_id = [string]$manifest.build_id -replace '^github-([0-9]+)-.*$', '$1'
-            build_id = $manifest.build_id
-            source_revision = $manifest.source_revision
-            sha256 = $hash
-            profile_id = 'windows-publication-current-x86_64'
-            status = 'current-profile-core-redistribution-pending'
-          }
-          $verificationIdentity | ConvertTo-Json -Depth 4 | Set-Content -Encoding utf8 (Join-Path $core 'verification-identity.json')
       - uses: msys2/setup-msys2@v2
         with:
           msystem: MINGW64
@@ -169,7 +140,6 @@ jobs:
             ${{ runner.temp }}/core/postgresql-${{ needs.select.outputs.postgresql_version }}-windows-x86_64.tar.gz
             ${{ runner.temp }}/core/postgresql-${{ needs.select.outputs.postgresql_version }}-windows-x86_64.tar.gz.sha256
             ${{ runner.temp }}/core/identity.json
-            ${{ runner.temp }}/core/verification-identity.json
             ${{ runner.temp }}/postgis/postgis-3.6.4-postgresql-${{ needs.select.outputs.postgresql_version }}-windows-x86_64.tar.gz
             ${{ runner.temp }}/postgis/postgis-3.6.4-postgresql-${{ needs.select.outputs.postgresql_version }}-windows-x86_64.tar.gz.sha256
             ${{ runner.temp }}/tiger/postgis_tiger_geocoder-2025.2-postgresql-${{ needs.select.outputs.postgresql_version }}-windows-x86_64.tar.gz
@@ -204,7 +174,7 @@ jobs:
             -TigerArchive (Join-Path $bundle 'tiger/postgis_tiger_geocoder-2025.2-postgresql-${{ needs.select.outputs.postgresql_version }}-windows-x86_64.tar.gz') `
             -OutputDirectory (Join-Path $env:RUNNER_TEMP 'tiger-windows-verification') `
             -PostgreSQLVersion '${{ needs.select.outputs.postgresql_version }}' `
-            -CoreIdentityPath (Join-Path $bundle 'core/verification-identity.json')
+            -CoreIdentityPath (Join-Path $bundle 'core/identity.json')
       - uses: actions/upload-artifact@v4
         if: always()
         with:

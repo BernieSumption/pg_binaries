@@ -22,18 +22,38 @@ $TigerArchive = (Resolve-Path $TigerArchive).Path
 New-Item -ItemType Directory -Force $OutputDirectory | Out-Null
 $OutputDirectory = (Resolve-Path $OutputDirectory).Path
 
-$identityArguments = @('--postgresql-version', $PostgreSQLVersion)
-if ($CoreIdentityPath) { $identityArguments += @('--path', (Resolve-Path $CoreIdentityPath).Path) }
-$coreIdentity = (& $python (Join-Path $repo 'tools/windows_core_pin.py') @identityArguments | ConvertFrom-Json)
-if ($LASTEXITCODE -ne 0 -or -not $coreIdentity) { throw 'Cannot load the pinned Windows PostgreSQL core identity.' }
-$coreArchive = Join-Path $coreDirectory $coreIdentity.archive_name
+$coreIdentityPath = if ($CoreIdentityPath) { (Resolve-Path $CoreIdentityPath).Path } else { throw 'A checked Windows PostgreSQL core identity is required.' }
+$coreIdentity = Get-Content $coreIdentityPath -Raw | ConvertFrom-Json
+$coreIdentityFields = @($coreIdentity.PSObject.Properties.Name)
+$coreArchiveName = "postgresql-$PostgreSQLVersion-windows-x86_64.tar.gz"
+$coreIdentityArchiveName = if ($coreIdentityFields -contains 'archive_name') {
+  [string]$coreIdentity.archive_name
+} elseif ($coreIdentityFields -contains 'archive') {
+  [IO.Path]::GetFileName([string]$coreIdentity.archive)
+} else {
+  ''
+}
+if ($coreIdentity.status -cne 'checked' -or $coreIdentityArchiveName -cne $coreArchiveName -or
+    $coreIdentity.sha256 -notmatch '^[0-9a-f]{64}$') {
+  throw 'Core identity does not describe a checked archive for the requested PostgreSQL target.'
+}
+$coreArchive = Join-Path $coreDirectory $coreArchiveName
+$coreHash = (Get-FileHash $coreArchive -Algorithm SHA256).Hash.ToLowerInvariant()
+if ($coreHash -cne $coreIdentity.sha256) { throw 'Core archive differs from the checked PostgreSQL identity.' }
+$expectedBuildId = if ($coreIdentityFields -contains 'build_id') {
+  [string]$coreIdentity.build_id
+} else {
+  "github-$($coreIdentity.run_id)-$($coreIdentity.run_attempt)"
+}
+if ($expectedBuildId -notmatch '^github-[1-9][0-9]*-[1-9][0-9]*$' -or
+    $coreIdentity.source_revision -notmatch '^[0-9a-f]{40}$') {
+  throw 'Core identity has invalid build provenance.'
+}
 $postgisName = "postgis-3.6.4-postgresql-$PostgreSQLVersion-windows-x86_64.tar.gz"
 $tigerName = "postgis_tiger_geocoder-2025.2-postgresql-$PostgreSQLVersion-windows-x86_64.tar.gz"
 if ([IO.Path]::GetFileName($PostGISArchive) -cne $postgisName -or [IO.Path]::GetFileName($TigerArchive) -cne $tigerName) {
   throw 'PostGIS or TIGER archive name does not match the requested target.'
 }
-$coreHash = (Get-FileHash $coreArchive -Algorithm SHA256).Hash.ToLowerInvariant()
-if ($coreHash -cne $coreIdentity.sha256) { throw 'Core archive differs from the pinned PostgreSQL artifact.' }
 foreach ($entry in @(@($coreArchive, 'postgresql'), @($PostGISArchive, 'postgis'), @($TigerArchive, 'postgis_tiger_geocoder'))) {
   if (-not (Test-Path $entry[0] -PathType Leaf) -or -not (Test-Path "$($entry[0]).sha256" -PathType Leaf)) {
     throw "Archive or checksum sidecar is missing: $($entry[0])"
@@ -81,7 +101,7 @@ try {
       postgresql_version { $PostgreSQLVersion }
       platform { 'windows' }
       architecture { 'x86_64' }
-      build_id { $coreIdentity.build_id }
+      build_id { $expectedBuildId }
       source_revision { $coreIdentity.source_revision }
     }
     if ($manifest.$key -cne $expected) { throw "Core manifest $key mismatch." }
