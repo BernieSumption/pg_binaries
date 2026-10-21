@@ -107,6 +107,8 @@ def identify(source, payload):
     if len(matches) == 1:
         selected_records.add(matches[0])
         return {"payload_path": payload, "source_path": source, "owner_status": "conda-package", "conda_meta_record": matches[0]}
+    if not matches and resolved.name == "libSFCGAL.2.3.0.dylib":
+        return {"payload_path": payload, "source_path": source, "owner_status": "source-build", "component": "SFCGAL"}
     reason = "no conda-meta file owner" if not matches else "multiple conda-meta file owners"
     unresolved.append({"payload_path": payload, "source_path": source, "reason": reason, "matches": matches})
     return {"payload_path": payload, "source_path": source, "owner_status": "unresolved", "matches": matches}
