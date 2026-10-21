@@ -109,10 +109,15 @@ for pass in 1 2 3 4; do
       dest="$stage/lib/runtime/$library"
       if [[ ! -e "$dest" ]]; then
         cp -L "$path" "$dest"
+        printf '%s\t%s\n' "$library" "$path" >> /work/runtime-sources.tsv
       fi
     done < <(ldd "$elf" 2>/dev/null | awk '$2 == "=>" && $3 ~ /^\// {print $1, $3}')
   done < <(find "$stage/lib" -type f -print0)
 done
+sort -u /work/runtime-sources.tsv | while IFS=$'\t' read -r library path; do
+  owner=$(dpkg-query -S "$path" 2>/dev/null | head -n 1 || true)
+  printf '%s\t%s\t%s\n' "$library" "$path" "${owner:-unowned}"
+done > /out/runtime-package-owners.txt
 while IFS= read -r -d '' elf; do
   if ! file -b "$elf" | grep -q ELF; then continue; fi
   case "$elf" in
