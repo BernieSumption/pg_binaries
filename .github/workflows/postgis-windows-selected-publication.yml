@@ -1,0 +1,134 @@
+name: PostGIS selected PostgreSQL Windows x86-64 publication
+
+on:
+  workflow_call:
+    inputs:
+      postgresql_version: {required: true, type: string}
+      extension_version: {required: true, type: string}
+  workflow_dispatch:
+    inputs:
+      postgresql_version: {description: Exact selected PostgreSQL release, required: true, type: string}
+      extension_version: {description: Exact selected PostGIS release, required: true, type: string}
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  select:
+    runs-on: ubuntu-latest
+    outputs:
+      postgresql_version: ${{ steps.plan.outputs.postgresql_version }}
+      extension_version: ${{ steps.plan.outputs.selected_version }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: plan
+        env:
+          POSTGRESQL_VERSION: ${{ inputs.postgresql_version }}
+          EXTENSION_VERSION: ${{ inputs.extension_version }}
+        run: |
+          set -euo pipefail
+          test "$POSTGRESQL_VERSION" = 18.6
+          test "$EXTENSION_VERSION" = 3.6.4
+          python3 tools/extension_archive_plan.py --project PostGIS --platform windows-x86_64 --postgresql-version "$POSTGRESQL_VERSION" --extension-version "$EXTENSION_VERSION" --github-output "$GITHUB_OUTPUT"
+          python3 tools/select_extension_work.py --project PostGIS --version "$EXTENSION_VERSION" --platform windows-x86_64 --postgresql-version "$POSTGRESQL_VERSION" > "$RUNNER_TEMP/selected-work.json"
+          python3 -c "import sys;sys.path.insert(0,'tools');import coverage;coverage.verification_profile('.', 'postgis-publication-windows-x86_64-18.6')"
+
+  build:
+    needs: select
+    runs-on: windows-2022
+    timeout-minutes: 180
+    defaults: {run: {shell: pwsh}}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Resolve checked PostgreSQL core artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $core=Join-Path $env:RUNNER_TEMP 'core'; New-Item -ItemType Directory -Force $core | Out-Null
+          python tools/windows_core_target.py --postgresql-version 18.6 --output (Join-Path $core base-target.json)
+          python tools/windows_core_candidate.py --selected-core --base-target (Join-Path $core base-target.json) --artifact-pin support/windows-core-artifact-pins/18.6-x86_64.json --output-directory $core
+          if($LASTEXITCODE -ne 0){throw 'Selected PostgreSQL core resolution failed'}
+          $result=Get-Content (Join-Path $core result.json) -Raw|ConvertFrom-Json
+          if($result.status -ne 'checked'){throw "Core candidate is not checked: $($result.status)"}
+          Copy-Item (Join-Path $core result.json) (Join-Path $core identity.json)
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: base-devel curl tar autoconf automake libtool bison flex diffutils
+          pacboy: toolchain:p cmake:p ninja:p pkgconf:p gmp:p sfcgal:p geos:p proj:p gdal:p json-c:p libxml2:p
+      - name: Build and package PostGIS against the selected core
+        shell: msys2 {0}
+        run: |
+          set -euo pipefail
+          root="$(cygpath -u "$RUNNER_TEMP")"
+          core="$root/core/postgresql-18.6-windows-x86_64.tar.gz"
+          bash scripts/postgis/windows-build.sh "$core" "$root/postgis" "$root/core/identity.json"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: postgis-3.6.4-postgresql-18.6-windows-x86_64-candidate-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/core/postgresql-18.6-windows-x86_64.tar.gz
+            ${{ runner.temp }}/core/postgresql-18.6-windows-x86_64.tar.gz.sha256
+            ${{ runner.temp }}/core/identity.json
+            ${{ runner.temp }}/postgis/postgis-3.6.4-postgresql-18.6-windows-x86_64.tar.gz
+            ${{ runner.temp }}/postgis/postgis-3.6.4-postgresql-18.6-windows-x86_64.tar.gz.sha256
+            ${{ runner.temp }}/postgis/runtime-package-owners.txt
+            ${{ runner.temp }}/postgis/mingw/build.log
+          if-no-files-found: warn
+          retention-days: 7
+
+  verify:
+    needs: [select, build]
+    if: always() && needs.select.result == 'success'
+    runs-on: windows-2022
+    timeout-minutes: 45
+    defaults: {run: {shell: pwsh}}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - uses: actions/download-artifact@v4
+        id: download
+        continue-on-error: true
+        with:
+          name: postgis-3.6.4-postgresql-18.6-windows-x86_64-candidate-${{ github.run_id }}
+          path: ${{ runner.temp }}/bundle
+      - name: Verify exact archives and inspect PE imports on a fresh runner
+        id: verify
+        if: steps.download.outcome == 'success'
+        run: |
+          $bundle=Join-Path $env:RUNNER_TEMP bundle
+          ./scripts/postgis/windows-verify-publication.ps1 -CoreDirectory (Join-Path $bundle core) -ExtensionDirectory (Join-Path $bundle postgis) -OutputDirectory (Join-Path $bundle postgis)
+      - name: Create archive-bound receipt and component records
+        if: always() && steps.verify.outcome == 'success'
+        run: |
+          $bundle=Join-Path $env:RUNNER_TEMP bundle; $postgis=Join-Path $bundle postgis
+          @{ 'archive-suite'='passed'; 'static-analysis'='passed' } | ConvertTo-Json | Set-Content -Encoding utf8 (Join-Path $postgis steps.json)
+          python tools/emit_postgis_windows_publication.py --core-archives (Join-Path $bundle core) --archives $postgis --output (Join-Path $postgis publication) --steps (Join-Path $postgis steps.json) --os-version (Get-CimInstance Win32_OperatingSystem).Version --image-id "$env:ImageOS/$env:ImageVersion"
+          if($LASTEXITCODE -ne 0){throw 'PostGIS publication receipt or records failed'}
+          python tools/import_postgis_windows_publication.py --core-archives (Join-Path $bundle core) --archives $postgis --run-id $env:GITHUB_RUN_ID
+          if($LASTEXITCODE -ne 0){throw 'PostGIS publication evidence import failed'}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: postgis-3.6.4-postgresql-18.6-windows-x86_64-verification-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/bundle/postgis/publication/**
+            ${{ runner.temp }}/bundle/postgis/static-analysis.json
+            ${{ runner.temp }}/bundle/postgis/pe-dependency-analysis.json
+            ${{ runner.temp }}/bundle/postgis/probe-output.txt
+            ${{ runner.temp }}/bundle/postgis/initdb.log
+            ${{ runner.temp }}/bundle/postgis/server.log
+            support/evidence/postgis-windows-publication-${{ github.run_id }}/**
+            support/verification/postgis-*-postgresql-18.6-windows-x86_64-current-${{ github.run_id }}.json
+          if-no-files-found: warn
+          retention-days: 7
+      - name: Require fresh-runner verification to pass
+        if: always()
+        run: |
+          if ('${{ needs.build.result }}' -ne 'success' -or '${{ steps.download.outcome }}' -ne 'success' -or '${{ steps.verify.outcome }}' -ne 'success') { throw 'PostGIS Windows publication verification failed' }
