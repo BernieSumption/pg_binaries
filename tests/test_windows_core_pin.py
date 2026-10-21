@@ -25,6 +25,9 @@ class WindowsCorePinTests(unittest.TestCase):
                 self.assertEqual(identity["sha256"], record["sha256"])
                 self.assertEqual(identity["source_revision"], record["ci"]["build_revision"])
                 self.assertEqual(record["outcome"], "passed")
+                artifact = load_artifact_pin(version)
+                for field in ("run_id", "artifact_name", "archive_name", "sha256"):
+                    self.assertEqual(str(identity[field]), str(artifact[field]))
                 with self.assertRaisesRegex(ValueError, "expected"):
                     load_identity(PIN_PATH, pg_version=version if version != "18.6" else "15.19")
 
