@@ -12,7 +12,7 @@ An upstream licence declaration is sufficient evidence of a project's licence ev
 
 ## Human-reviewed alternative terms
 
-The user accepts [SQLite's public-domain blessing](https://www.sqlite.org/copyright.html) for the SQLite runtime copied into a download. The user also accepts the [Independent JPEG Group licence](https://github.com/libjpeg-turbo/libjpeg-turbo/blob/main/README.ijg) for JPEG code in copied libjpeg-turbo libraries. These are human-reviewed alternatives under the functional specification; their project declarations remain linked in [`LICENSES.md`](../LICENSES.md).
+The user accepts [SQLite's public-domain blessing](https://www.sqlite.org/copyright.html) for the SQLite runtime copied into a download. The user also accepts the [Independent JPEG Group licence](https://github.com/libjpeg-turbo/libjpeg-turbo/blob/main/README.ijg) for JPEG code in copied libjpeg-turbo libraries. The user has reviewed and approved the declared [bzip2/libbzip2 licence](https://gitlab.com/bzip2/bzip2/-/blob/bzip2-1.0.8/LICENSE) and [Qhull licence](https://github.com/qhull/qhull/blob/master/COPYING.txt) for their separately copied runtime libraries. These are human-reviewed alternatives under the functional specification; their project declarations remain linked in [`LICENSES.md`](../LICENSES.md).
 
 ## Microsoft Visual C++ runtime
 

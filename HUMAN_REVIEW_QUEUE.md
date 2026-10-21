@@ -1,10 +1,10 @@
 # Human review queue
 
-## Custom permissive licences in the Linux PostGIS closure
+## libcom_err licence in the Linux PostGIS closure
 
-The selected Linux PostGIS archive includes bzip2, e2fsprogs `libcom_err.so.2` and Qhull. The [bzip2 licence](https://gitlab.com/bzip2/bzip2/-/blob/bzip2-1.0.8/LICENSE) permits source and binary redistribution with notice, origin and endorsement conditions. The [e2fsprogs notice](https://github.com/tytso/e2fsprogs/blob/master/NOTICE) declares its `lib/et` library MIT-style. [Qhull's declaration](https://github.com/qhull/qhull/blob/master/COPYING.txt) permits copying, modification and redistribution with notice conditions. These are custom licences absent from the [OSI-approved list](https://opensource.org/licenses), so the [functional specification](specs/functional.md#maintain-a-list-of-all-licenses-and-link-to-it-in-downloads) requires a human-reviewed alternative. This is a licence-classification question, not a finding that redistribution is prohibited.
+The selected Linux PostGIS archive copies `libcom_err.so.2` from e2fsprogs. The [e2fsprogs notice](https://github.com/tytso/e2fsprogs/blob/master/NOTICE) gives the `lib/et` library MIT-style terms as an explicit exception to its GPLv2 terms for the filesystem utilities. The [library source terms](https://github.com/tytso/e2fsprogs/blob/master/lib/et/et_name.c) permit use, copying, modification and distribution, with a condition against using MIT or MIT SIPB names in advertising without permission. This is a known permissive licence, but it differs from the standard OSI-approved MIT licence. The [functional specification](specs/functional.md#maintain-a-list-of-all-licenses-and-link-to-it-in-downloads) therefore requires a human-reviewed alternative.
 
-Decision needed: Are these three declared licences acceptable for our downloads? A general policy accepting custom permissive licences that clearly allow free source and binary redistribution, subject to ordinary notice and non-endorsement conditions, would also settle similar future cases. If approved, record the decision in `policies/licenses.md`. Build and verification work can continue.
+Decision needed: May we accept the declared MIT-style terms for the copied `libcom_err` library? The bzip2 and Qhull licences have been reviewed and approved in `policies/licenses.md`. Build and verification work can continue.
 
 ## Backlog ideas
 
