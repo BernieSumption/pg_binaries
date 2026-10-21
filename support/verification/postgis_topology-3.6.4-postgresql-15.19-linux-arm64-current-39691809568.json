@@ -1,0 +1,47 @@
+{
+  "assembled_core": {
+    "archive": "postgresql-15.19-linux-arm64.tar.gz",
+    "sha256": "9c6e0f4e0fdccf7721464711ad78c3cdc6f2f51024fc963ddab8d090965e67b1",
+    "version": "15.19"
+  },
+  "case_results": {
+    "archive-suite": "passed"
+  },
+  "ci": {
+    "build_revision": "326c1818a785e002f41a1ae679edf8a2a5f16694",
+    "provider": "github-actions",
+    "run_id": "39691809568",
+    "run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/39691809568",
+    "source_revision": "326c1818a785e002f41a1ae679edf8a2a5f16694",
+    "test_revision": "326c1818a785e002f41a1ae679edf8a2a5f16694"
+  },
+  "component": "postgis_topology",
+  "environment": {
+    "architecture": "arm64",
+    "clean_system": true,
+    "dependency_check_profile": "postgis-runtime-v1",
+    "dependency_checks_passed": true,
+    "distribution": "Alpine Linux",
+    "distribution_version": "3.22.7",
+    "endpoint": "current",
+    "image_id": "sha256:518dd5275a44a739e96230fd2a65888ea6dbc369a349f1d812c130213df0e7b2",
+    "kernel_release": "7.0.0-1017-azure",
+    "os": "linux",
+    "os_version": "7.0.0"
+  },
+  "outcome": "passed",
+  "platform": "linux-arm64",
+  "postgresql_version": "15.19",
+  "prerequisite_archives": [],
+  "profile_id": "postgis-publication-linux-arm64-15.19",
+  "profile_revision": "e9e394c6ee06f6f12527f3eb6d35f5553fa45499fae703d3feea24c6eb3004ef",
+  "project": "PostGIS",
+  "schema_version": 2,
+  "scope": "publication",
+  "sha256": "b3262ec9c47cf242ed534e17ef6fd047e38e91390d9bd95150617eb870745470",
+  "test_cases": [
+    "archive-suite"
+  ],
+  "test_revision": "326c1818a785e002f41a1ae679edf8a2a5f16694",
+  "version": "3.6.4"
+}
