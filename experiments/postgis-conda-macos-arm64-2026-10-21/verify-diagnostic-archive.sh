@@ -47,6 +47,14 @@ data="$work/data"; pgctl="$pgroot/bin/pg_ctl"
 "$pgroot/bin/initdb" -D "$data" --encoding=UTF8 --locale=C --no-instructions >"$output/initdb.log" 2>&1
 "$pgctl" -D "$data" -l "$output/postgres.log" -o "-k $socket -p 55442 -h ''" -w start
 "$pgroot/bin/psql" -X -v ON_ERROR_STOP=1 -h "$socket" -p 55442 -d postgres -f "$repo/scripts/postgis/probe.sql" | tee "$output/probe-output.txt"
+"$pgroot/bin/psql" -X -v ON_ERROR_STOP=1 -h "$socket" -p 55442 -d postgres <<'SQL'
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT FROM pg_proc WHERE proname = 'st_asmvt') OR
+     NOT EXISTS (SELECT FROM pg_proc WHERE proname = 'st_asgeobuf') THEN
+    RAISE EXCEPTION 'protobuf-enabled PostGIS functions are unavailable';
+  END IF;
+END $$;
+SQL
 "$pgroot/bin/psql" -X -v ON_ERROR_STOP=1 -h "$socket" -p 55442 -d postgres <<'SQL' | tee "$output/raster-probe.txt"
 SET postgis.gdal_enabled_drivers = 'GTiff PNG JPEG';
 DO $$ DECLARE r raster; BEGIN

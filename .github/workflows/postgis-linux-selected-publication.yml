@@ -243,7 +243,7 @@ jobs:
             ${{ runner.temp }}/postgis/static-analysis/**
             ${{ runner.temp }}/postgis-publication/**
             support/evidence/postgis-publication-${{ github.run_id }}/${{ needs.select.outputs.architecture }}/${{ needs.select.outputs.postgresql_version }}/**
-            support/verification/postgis-*-postgresql-${{ needs.select.outputs.postgresql_version }}-linux-${{ needs.select.outputs.architecture }}-current-${{ github.run_id }}.json
+            support/verification/postgis*-3.6.4-postgresql-${{ needs.select.outputs.postgresql_version }}-linux-${{ needs.select.outputs.architecture }}-current-${{ github.run_id }}.json
           if-no-files-found: warn
           retention-days: 7
       - name: Require build, provenance, verification and receipt generation to pass

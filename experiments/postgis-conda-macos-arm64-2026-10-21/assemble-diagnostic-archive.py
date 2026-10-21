@@ -78,6 +78,17 @@ def main():
             raise SystemExit(f"checked-core dependency differs from selected core: {library}")
         staged.unlink()
 
+    # These dependencies have the same library install names as the selected
+    # core. The fresh-runner relocation test checks the resulting combination.
+    for library in (
+            "libicudata.78.3.dylib", "libicui18n.78.3.dylib",
+            "libicuuc.78.3.dylib", "libzstd.1.5.7.dylib"):
+        staged = package / "lib" / library
+        if staged.is_file():
+            if not (core_root / "lib" / library).is_file():
+                raise SystemExit(f"selected core lacks {library}")
+            staged.unlink()
+
     remove_absolute_rpaths(package / "lib")
     subprocess.run(("python3", str(Path(__file__).resolve().parents[2] / "tools/license_pointer.py"),
                     "write", str(package), "postgis"), check=True)

@@ -125,7 +125,7 @@ jobs:
             ${{ runner.temp }}/bundle/postgis/initdb.log
             ${{ runner.temp }}/bundle/postgis/server.log
             support/evidence/postgis-windows-publication-${{ github.run_id }}/**
-            support/verification/postgis-*-postgresql-18.6-windows-x86_64-current-${{ github.run_id }}.json
+            support/verification/postgis*-3.6.4-postgresql-18.6-windows-x86_64-current-${{ github.run_id }}.json
           if-no-files-found: warn
           retention-days: 7
       - name: Require fresh-runner verification to pass

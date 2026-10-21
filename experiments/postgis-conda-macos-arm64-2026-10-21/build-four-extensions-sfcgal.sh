@@ -137,7 +137,7 @@ cd postgis-3.6.4
   --with-geosconfig="$conda_prefix/bin/geos-config" \
   --with-projdir="$conda_prefix" --with-jsondir="$conda_prefix" \
   --with-xml2config="$xml2_config" \
-  --with-sfcgal="$conda_prefix/bin/sfcgal-config" --without-protobuf \
+  --with-sfcgal="$conda_prefix/bin/sfcgal-config" \
   2>&1 | tee "$output/configure.log"
 make -j"$(sysctl -n hw.ncpu)" 2>&1 | tee "$output/build.log"
 make install 2>&1 | tee "$output/install.log"
