@@ -13,7 +13,7 @@ import sys
 SYSTEM_DLLS = {
     "advapi32.dll", "bcrypt.dll", "bcryptprimitives.dll", "cfgmgr32.dll",
     "combase.dll", "comctl32.dll", "comdlg32.dll", "crypt32.dll",
-    "dnsapi.dll", "gdi32.dll", "gdi32full.dll", "imm32.dll", "iphlpapi.dll",
+    "dbghelp.dll", "dnsapi.dll", "gdi32.dll", "gdi32full.dll", "imm32.dll", "iphlpapi.dll",
     "kernel32.dll", "kernelbase.dll", "msvcrt.dll", "mswsock.dll",
     "ncrypt.dll", "netapi32.dll", "normaliz.dll", "ntdll.dll", "ole32.dll",
     "oleaut32.dll", "powrprof.dll", "profapi.dll", "psapi.dll", "rpcrt4.dll",
