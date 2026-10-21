@@ -60,6 +60,7 @@ export DYLD_LIBRARY_PATH="$conda_prefix/lib${DYLD_LIBRARY_PATH:+:$DYLD_LIBRARY_P
 cd "$work/source"
 SFCGAL_COMMIT=137203dae01faab4a1287934f9457e925e3b4383
 curl -fL --retry 3 -o sfcgal.tar.gz "https://gitlab.com/SFCGAL/SFCGAL/-/archive/$SFCGAL_COMMIT/SFCGAL-$SFCGAL_COMMIT.tar.gz"
+printf '%s  %s\n' 426abf9ac0de764a6098abe89c9dc84aa59273d0c5ff90819ed49a9c21f1c21f sfcgal.tar.gz | shasum -a 256 -c -
 tar -xzf sfcgal.tar.gz
 cmake -S "SFCGAL-$SFCGAL_COMMIT" -B sfcgal-build \
   -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$conda_prefix" \
