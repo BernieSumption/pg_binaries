@@ -6,6 +6,12 @@ The macOS PostGIS diagnostic archive's runtime closure includes SQLite through i
 
 Decision needed: May projects whose authors explicitly dedicate their shipped code to the public domain be accepted as a general alternative? If approved, record that decision in `policies/licenses.md` and retain SQLite's declaration and source link in `LICENSES.md`. If not, the macOS PostGIS runtime closure needs a suitable replacement before publication. Other build and verification work can continue.
 
+## IJG JPEG library licence
+
+Selected PostGIS builds include libjpeg-turbo, whose shipped JPEG implementation includes code under the [Independent JPEG Group licence](https://github.com/libjpeg-turbo/libjpeg-turbo/blob/main/README.ijg). `LICENSES.md` records that declaration. The IJG licence is absent from the [OSI-approved licence list](https://opensource.org/licenses), and `policies/licenses.md` has no human-reviewed alternative for it. This is a licence-classification question, not a finding that the terms prohibit redistribution.
+
+Decision needed: Is the IJG licence acceptable for the JPEG code in our downloads? If approved, record the human-reviewed alternative in `policies/licenses.md`. If not, selected archives that include this code need a suitable replacement before publication. Build and verification work can continue.
+
 ## Backlog ideas
 
 From Bernie: Adding this here so that we don't forget it. Don't start work on this yet. I'd like to discuss the viability of these and specify them properly before we go ahead. If indeed we decide to go ahead at all.
