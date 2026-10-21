@@ -1,0 +1,34 @@
+{
+  "architecture": "arm64",
+  "archives": {
+    "collection-2.1.3-postgresql-18.6-linux-arm64.tar.gz": "177677c62fe3cd4aba3f2ad39518d4b29574403a379fcbfbb2e85725e9135ad3",
+    "postgresql-18.6-linux-arm64.tar.gz": "20380aa9c45dad4a23871f69769e1148923d7ce9f7da514bbdb843d93dd26706"
+  },
+  "case_results": {
+    "collection-archive-suite": "passed"
+  },
+  "ci": {
+    "build_revision": "c59d5650a9f8bdc16038688f6e6ac267227cb6c5",
+    "provider": "github-actions",
+    "run_id": "39686179721",
+    "run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/39686179721",
+    "source_revision": "c59d5650a9f8bdc16038688f6e6ac267227cb6c5",
+    "test_revision": "c59d5650a9f8bdc16038688f6e6ac267227cb6c5"
+  },
+  "clean_system": true,
+  "dependency_check_profile": "collection-runtime-v1",
+  "dependency_checks_passed": true,
+  "distribution": "Alpine Linux",
+  "distribution_version": "3.22.7",
+  "endpoint": "current",
+  "extension_archive": "collection-2.1.3-postgresql-18.6-linux-arm64.tar.gz",
+  "image_id": "sha256:5d31a566265ad8938be5180955b5717c452a19318279e022ae9953004718dcc3",
+  "kernel_release": "7.0.0-1017-azure",
+  "postgresql_version": "18.6",
+  "prerequisite_archives": [],
+  "profile_id": "collection-publication-linux-arm64-18.6-2.1.3",
+  "profile_revision": "c16c5f6437b2e7d5448c6aa290ea6054d5a75a680afca66ab7db9f4a31f677d8",
+  "project": "collection",
+  "test_revision": "c59d5650a9f8bdc16038688f6e6ac267227cb6c5",
+  "version": "2.1.3"
+}
