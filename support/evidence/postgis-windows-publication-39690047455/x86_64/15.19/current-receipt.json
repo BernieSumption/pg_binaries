@@ -1,0 +1,45 @@
+{
+  "architecture": "x86_64",
+  "archives": {
+    "postgis-3.6.4-postgresql-15.19-windows-x86_64.tar.gz": "f0ea74c4cc37729a3b36ee693000de52c2fa071086e5030e87239cd5364b6247",
+    "postgresql-15.19-windows-x86_64.tar.gz": "22c61ca5ed86710e94b03d32fa429b3edf230671eeacda9fc07a4b4795eee792"
+  },
+  "case_results": {
+    "archive-suite": "passed",
+    "static-analysis": "passed"
+  },
+  "ci": {
+    "build_revision": "0a3890a487fbbf2c60daf8ed29681ba2f43e3d71",
+    "provider": "github-actions",
+    "run_id": "39690047455",
+    "run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/39690047455",
+    "source_revision": "0a3890a487fbbf2c60daf8ed29681ba2f43e3d71",
+    "test_revision": "0a3890a487fbbf2c60daf8ed29681ba2f43e3d71"
+  },
+  "clean_system": true,
+  "core_status": "checked",
+  "dependency_check_profile": "windows-pe-archive-relocation-v1",
+  "dependency_checks_passed": true,
+  "endpoint": "current",
+  "environment": {
+    "architecture": "x86_64",
+    "image_id": "win22/20261012.333.1",
+    "os": "windows",
+    "os_version": "10.0.20348"
+  },
+  "extension_archive": "postgis-3.6.4-postgresql-15.19-windows-x86_64.tar.gz",
+  "platform": "windows-x86_64",
+  "postgresql_version": "15.19",
+  "profile_id": "postgis-publication-windows-x86_64-15.19",
+  "profile_revision": "70698d6c442b4b0aee4fa397d1dad15a62a6aed052827d37a22edc99b90e8f06",
+  "project": "PostGIS",
+  "release_eligible": false,
+  "reports": {
+    "pe_dependency_analysis": "056f58016e501e9d49c4fbb53291ce09af0c441fe670bf496069f1acc017e03d",
+    "probe_output": "ec6a402dc60fceadcc99136f0b9f4cd78c5e4ff85c9217056be90fa760e40089",
+    "static_analysis": "40f6917ef619de1d5646903b2008b1a13d6c3e8f705e3f95e87f22f1628cc749"
+  },
+  "schema_version": 1,
+  "test_revision": "0a3890a487fbbf2c60daf8ed29681ba2f43e3d71",
+  "version": "3.6.4"
+}
