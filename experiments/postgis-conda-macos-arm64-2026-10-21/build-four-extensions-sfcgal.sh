@@ -58,7 +58,7 @@ export LDFLAGS="${LDFLAGS:-} -Wl,-rpath,$conda_prefix/lib"
 export DYLD_LIBRARY_PATH="$conda_prefix/lib${DYLD_LIBRARY_PATH:+:$DYLD_LIBRARY_PATH}"
 
 cd "$work/source"
-SFCGAL_COMMIT=d1ba2619e8fa8ce2f6ff6bab7fe0d51fbc9413a0
+SFCGAL_COMMIT=137203dae01faab4a1287934f9457e925e3b4383
 curl -fL --retry 3 -o sfcgal.tar.gz "https://gitlab.com/SFCGAL/SFCGAL/-/archive/$SFCGAL_COMMIT/SFCGAL-$SFCGAL_COMMIT.tar.gz"
 tar -xzf sfcgal.tar.gz
 cmake -S "SFCGAL-$SFCGAL_COMMIT" -B sfcgal-build \

@@ -1,0 +1,33 @@
+{
+  "architecture": "x86_64",
+  "archives": {
+    "pg_jsonschema-0.3.4-postgresql-16.15-macos-x86_64.tar.gz": "074a0882cc6f148172c88cb0705f2783d96ab09bb1cc98026cf71b45e4cd3823",
+    "postgresql-16.15-macos-x86_64.tar.gz": "2f002022c9e5aaba8cbd1583faa2913040b1e066d49cd9012214029b055e3a67"
+  },
+  "archives_present": {
+    "pg_jsonschema-0.3.4-postgresql-16.15-macos-x86_64.tar.gz": true,
+    "postgresql-16.15-macos-x86_64.tar.gz": true
+  },
+  "core_run_id": "39446489032",
+  "core_status": "current-profile-core-redistribution-pending",
+  "pg_jsonschema_version": "0.3.4",
+  "postgresql_version": "16.15",
+  "profile_id": "pg-jsonschema-publication-macos-x86_64-16.15",
+  "release_blockers": [
+    "postgresql-core-redistribution-review-pending"
+  ],
+  "release_eligible": false,
+  "reports": {
+    "build_evidence": "bae6aa62c814294c7a683a1645743a31910ad0ad3aede61ae9d9d7bbf839c80b",
+    "cargo_license_inventory": "a173c9f2959650e0a03a011f5fc685c359d14acf818a078c2ee0dc5da9d82117",
+    "probe_output": "80e8aa2fe97a7f4cbc6f19ee4c839c42258e8d004d44f48f34f1b6650fbd89bc",
+    "static_analysis": "c0b3dd207d0ea6f5acac9a3c0329b895eee56da4c9609292dc732608aa349ae1"
+  },
+  "run_id": "39516517394",
+  "schema_version": 1,
+  "source_revision": "629684c0f4c6e4fff70bae1bdeda16b6129eb438",
+  "steps": {
+    "archive-suite": "success",
+    "static-analysis": "success"
+  }
+}

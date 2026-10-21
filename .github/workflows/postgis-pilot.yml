@@ -27,7 +27,7 @@ on:
         required: false
         type: boolean
       postgis_conda_macos_arm64_sfcgal_build_probe:
-        description: Build pinned upstream SFCGAL 2.2.0 with conda-forge dependencies, then build and probe four PostGIS 3.6.4 extensions on PostgreSQL 18.6 arm64
+        description: Build pinned upstream SFCGAL 2.3.0 with conda-forge dependencies, then build and probe four PostGIS 3.6.4 extensions on PostgreSQL 18.6 arm64
         required: false
         type: boolean
 jobs:
@@ -176,7 +176,7 @@ jobs:
         run: |
           micromamba create --yes --prefix "$RUNNER_TEMP/postgis-conda-arm64-sfcgal-env" --channel conda-forge \
             geos proj gdal json-c libxml2 pcre2 pkg-config cmake \
-            cgal boost gmp mpfr eigen nlohmann_json
+            cgal-cpp=6.1.1 boost gmp mpfr eigen nlohmann_json
       - name: Resolve selected PostgreSQL 18.6 macOS arm64 core
         env:
           GH_TOKEN: ${{ github.token }}
