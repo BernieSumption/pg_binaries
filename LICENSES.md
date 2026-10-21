@@ -37,6 +37,9 @@ This file records licence declarations for projects whose code or data is includ
 - zlib — zlib licence. [Source and licence declaration](https://github.com/madler/zlib/blob/develop/README); [vcpkg port](https://github.com/microsoft/vcpkg/blob/9e593bb18ea69cc5095e012465dcd675a822ed0d/ports/zlib/portfile.cmake).
 - PCRE2 — BSD-3-Clause WITH PCRE2-exception. Its enabled JIT includes separately licensed SLJIT under 2-clause BSD. [PCRE2 declaration](https://github.com/PCRE2Project/pcre2/blob/pcre2-10.48/LICENCE.md); [SLJIT declaration](https://github.com/PCRE2Project/pcre2/blob/pcre2-10.48/deps/sljit/LICENSE).
 - GDAL — MIT-style terms. [GDAL licence declaration](https://gdal.org/en/stable/license.html); [source release](https://download.osgeo.org/gdal/3.13.3/gdal-3.13.3.tar.gz).
+- HDF5 — BSD-3-Clause. [Source](https://github.com/HDFGroup/hdf5); [`LICENSE` declaration](https://github.com/HDFGroup/hdf5/blob/develop/LICENSE).
+- libaec — BSD-2-Clause. [Source](https://github.com/Deutsches-Klimarechenzentrum/libaec); [`LICENSE.txt` declaration](https://github.com/Deutsches-Klimarechenzentrum/libaec/blob/main/LICENSE.txt).
+- NetCDF-C — BSD-3-Clause. [Source](https://github.com/Unidata/netcdf-c/tree/v4.10.1); [`COPYRIGHT` declaration](https://github.com/Unidata/netcdf-c/blob/v4.10.1/COPYRIGHT).
 - PROJ — MIT. [Source and `COPYING`](https://github.com/OSGeo/PROJ/blob/master/COPYING).
 - PROJ-data — per-file terms, recorded in upstream [`README.DATA`](https://github.com/OSGeo/PROJ-data/blob/master/README.DATA) and `copyright_and_licenses.csv`; the build retains the applicable licence texts.
 - ICU4C — Unicode License v3. [Source](https://github.com/unicode-org/icu); [`LICENSE`](https://github.com/unicode-org/icu/blob/release-78-1/LICENSE).

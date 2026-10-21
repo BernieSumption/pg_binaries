@@ -1,0 +1,7 @@
+# Windows PostGIS relocation trial
+
+On 2026-10-21, [build run 39609513656](https://github.com/BernieSumption/pg_binaries/actions/runs/39609513656) assembled an unmodified PostGIS 3.6.4 trial archive against the selected PostgreSQL 18.6 Windows x86-64 core. Its fresh-runner verifier stopped before extraction because its checksum parser did not accept the binary-file marker emitted by MSYS2 `sha256sum`.
+
+[Replay run 39614738228](https://github.com/BernieSumption/pg_binaries/actions/runs/39614738228) downloaded those exact archive bytes, added the required central licence pointer, and verified the repacked archive on a separate Windows Server 2022 runner. The [repack summary](repack-summary.json) records that all 863 retained members were unchanged and two pointer members were added. The [result](result.json) binds the tested PostGIS archive SHA-256 `34bb175ef02e6e20d50f7debb954a688f74efb3834ebcf8a22cd86f873df0555` to the selected PostgreSQL core SHA-256 `dc6b7bbc1df71183ea79cc7a36c1f410d495446aaef4f96ab1adab3b547b7b17`.
+
+The fresh runner checked archive hashes and core binding, relocated both installations, started PostgreSQL, created `postgis`, `postgis_raster`, `postgis_topology`, and `postgis_sfcgal`, and passed the [SQL probe](probe-output.txt). This is a non-publication trial. The selected archive path still needs publication metadata, static PE dependency analysis, a complete shipped-project licence list, and final-archive verification records for every declared Windows target.
