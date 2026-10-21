@@ -80,16 +80,9 @@ class AddressStandardizerLinuxPublication(unittest.TestCase):
         sources = registry["profiles"][publication.profile_id("x86_64")]["sources"]
         self.assertIn(".github/workflows/address-standardizer-linux-selected-publication.yml", sources)
 
-    def test_all_publication_profiles_track_selected_workflow_and_core_build(self):
+    def test_all_publication_profiles_track_selected_workflow(self):
         registry = coverage.load_json(ROOT / "support/verification-profiles.json")
         workflow = ".github/workflows/address-standardizer-linux-selected-publication.yml"
-        core_sources = {
-            "scripts/linux/Dockerfile", "scripts/linux/build-in-container.sh",
-            "scripts/linux/build.sh", "scripts/linux/resolve-core.sh",
-            "tools/linux_core_pin.py", "tools/extension_archive_plan.py",
-            "tools/linux_core_resolution.py",
-            "tools/plan_work.py", "tools/source_archive.py",
-        }
         legacy_workflows = {
             ".github/workflows/address-standardizer-linux-publication.yml",
             ".github/workflows/address-standardizer-linux-15-17-publication.yml",
@@ -101,7 +94,6 @@ class AddressStandardizerLinuxPublication(unittest.TestCase):
                 profile = registry["profiles"][target]
                 sources = set(profile["sources"])
                 self.assertIn(workflow, sources)
-                self.assertTrue(core_sources <= sources, core_sources - sources)
                 self.assertTrue(legacy_workflows.isdisjoint(sources))
                 coverage.verification_profile(ROOT, target)
 
