@@ -115,7 +115,7 @@ try {
     }
   }
   if ($postgisMetadata.project -cne 'PostGIS' -or $postgisMetadata.version -cne '3.6.4' -or
-      $postgisMetadata.core_archive -and ($postgisMetadata.core_archive.basename -cne $coreIdentity.archive_name -or $postgisMetadata.core_archive.sha256 -cne $coreHash)) {
+      $postgisMetadata.core_archive -and ($postgisMetadata.core_archive.basename -cne $coreIdentityArchiveName -or $postgisMetadata.core_archive.sha256 -cne $coreHash)) {
     throw 'PostGIS metadata does not match the expected project, version, or linked core archive.'
   }
   if ($postgisMetadata.source -and ($postgisMetadata.source.url -cne 'https://download.osgeo.org/postgis/source/postgis-3.6.4.tar.gz' -or
