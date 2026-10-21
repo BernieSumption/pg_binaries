@@ -1,5 +1,13 @@
 # Human review queue
 
+## Proposed extension-licence presumption for archive dependencies
+
+The user intends a cursory redistribution check that excludes clearly non-redistributable commercial software, and is willing to take an extension project's licence as evidence that its ordinary dependencies are redistributable. The [release policy](policies/releases.md#redistribution-review-before-publication) now uses that presumption for support decisions and relies on upstream/package-manager declarations for routine package reviews. It does not require a separate legal investigation of every transitive dependency.
+
+The [functional specification](specs/functional.md#downloads-include-redistribution-obligations) still requires each download to include applicable licence texts, notices, component/version mappings, and required source offers or links. An extension's licence does not itself supply those materials for separately bundled libraries. For example, the selected Windows PostgreSQL archive contains GNU libiconv DLLs under LGPL 2.1, whose [section 4](https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html) imposes a corresponding-source requirement when distributing the library in object-code form. The extension-licence presumption also cannot apply to PostgreSQL's own dependencies.
+
+**Decision requested:** Is the lighter declaration-led review sufficient while retaining the specification's archive contents and source-delivery requirements, or do you intend to change those requirements too? If the latter, please specify the desired change to `specs/functional.md`; a specification change cannot remove obligations imposed by third-party licences. Until resolved, do not clear redistribution review for a final archive solely from its top-level extension licence. Build and runtime verification may continue independently.
+
 ## Source assets required by bundled copyleft libraries
 
 The selected Windows PostgreSQL archive bundles GNU libiconv 1.19 `iconv-2.dll` and `charset-1.dll` from pinned vcpkg, including three vcpkg source patches. The [exact-archive review](support/evidence/windows-vcpkg-redistribution-2026-10-20/README.md) leaves their redistribution status pending. [LGPL 2.1 section 4](https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html) requires corresponding source when distributing the library in object-code form; for a downloadable binary, equivalent source access from the same designated place satisfies that clause. Section 6's written-offer option concerns a work linked with the library and does not clearly replace section 4's obligation for the separately bundled DLLs. A bare upstream source URL also does not establish access controlled by this project for the lifetime of its download.
