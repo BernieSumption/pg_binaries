@@ -82,6 +82,7 @@ source=postgresql_git_source.source_checkout(sys.argv[2], sys.argv[1])
 print(source['repository'], source['ref'], source['commit'], source['tree'])
 PY
 )
+  source_tree=${source_tree%$'\r'}
   git init "postgresql-$pg_version"
   cd "postgresql-$pg_version"
   git remote add origin "$source_repository"
