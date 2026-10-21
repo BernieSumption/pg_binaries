@@ -33,11 +33,6 @@ def is_system(path):
     return path.startswith(("/usr/lib/", "/System/Library/"))
 
 
-def dependency_prefixes():
-    value = os.environ.get("PG_MACOS_DEPENDENCY_PREFIX", "")
-    return [pathlib.Path(prefix).resolve() for prefix in value.split(os.pathsep) if prefix]
-
-
 def digest(path):
     return hashlib.sha256(path.read_bytes()).digest()
 
@@ -50,8 +45,9 @@ def files():
 
 def resolve_dependency(dep):
     if dep.startswith("/"):
-        prefixes = dependency_prefixes()
-        for prefix in prefixes:
+        dependency_prefix = os.environ.get("PG_MACOS_DEPENDENCY_PREFIX")
+        if dependency_prefix:
+            prefix = pathlib.Path(dependency_prefix).resolve()
             for directory in ("lib", "lib64"):
                 candidate = prefix / directory / pathlib.Path(dep).name
                 try:
@@ -60,14 +56,6 @@ def resolve_dependency(dep):
                     continue
                 if resolved.is_relative_to(prefix) and resolved.is_file():
                     return resolved
-        absolute_path = pathlib.Path(dep)
-        configured_prefixes = [
-            pathlib.Path(prefix).absolute()
-            for prefix in os.environ.get("PG_MACOS_DEPENDENCY_PREFIX", "").split(os.pathsep)
-            if prefix
-        ]
-        if any(absolute_path.absolute().is_relative_to(prefix) for prefix in configured_prefixes):
-            return None
         return pathlib.Path(dep)
     at_rpath = dep.startswith("@rpath/")
     name = dep.removeprefix("@rpath/") if at_rpath else dep
@@ -76,21 +64,23 @@ def resolve_dependency(dep):
 
     candidates = []
     if at_rpath:
-        candidates.append((libdir / name, None))
+        candidates.append(libdir / name)
 
-    if pathlib.PurePosixPath(name).name == name:
-        for prefix in dependency_prefixes():
-            candidates.extend(((prefix / "lib" / name, prefix), (prefix / "lib64" / name, prefix)))
+    dependency_prefix = os.environ.get("PG_MACOS_DEPENDENCY_PREFIX")
+    if dependency_prefix and pathlib.PurePosixPath(name).name == name:
+        prefix = pathlib.Path(dependency_prefix).resolve()
+        candidates.extend((prefix / "lib" / name, prefix / "lib64" / name))
 
     if at_rpath:
         for homebrew_prefix in ("/usr/local/opt", "/opt/homebrew/opt"):
-            candidates.extend((candidate, None) for candidate in pathlib.Path(homebrew_prefix).glob("*/lib/" + name))
+            candidates.extend(pathlib.Path(homebrew_prefix).glob("*/lib/" + name))
 
-    for candidate, confinement_prefix in candidates:
+    for candidate in candidates:
         try:
             resolved = candidate.resolve(strict=True)
-            if confinement_prefix and not resolved.is_relative_to(confinement_prefix):
-                continue
+            if dependency_prefix and candidate.is_relative_to(prefix):
+                if not resolved.is_relative_to(prefix):
+                    continue
             if resolved.is_file():
                 return resolved
         except (OSError, RuntimeError):

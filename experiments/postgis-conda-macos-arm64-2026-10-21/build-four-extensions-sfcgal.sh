@@ -39,7 +39,7 @@ work=$(mktemp -d "${RUNNER_TEMP:-/tmp}/postgis-conda-build.XXXXXX")
 prefix_link_created=false
 cleanup() { macos_remove_core_prefix; rm -rf "$work"; }
 trap cleanup EXIT
-mkdir -p "$work/core" "$work/source" "$work/gdal-source" "$work/gdal-build" "$work/socket"
+mkdir -p "$work/core" "$work/source" "$work/gdal-source" "$work/gdal-build" "$work/socket" "$work/dependency-prefix/lib"
 tar -xzf "$core_archive" -C "$work/core"
 pgroot="$work/core/postgresql"
 prefix=$(macos_core_prefix_from_archive "$pgroot" 18.6 arm64 "$core_build_id" "$core_revision")
@@ -80,7 +80,15 @@ cmake --build "$work/gdal-build" --parallel "$(sysctl -n hw.ncpu)" 2>&1 | tee "$
 cmake --install "$work/gdal-build" 2>&1 | tee "$output/gdal-install.log"
 test -x "$gdal_prefix/bin/gdal-config"
 
-export PG_MACOS_DEPENDENCY_PREFIX="$gdal_prefix:$conda_prefix"
+for path in "$conda_prefix"/lib/*.dylib "$gdal_prefix"/lib/*.dylib; do
+  [[ -e "$path" ]] || continue
+  name=$(basename "$path")
+  if [[ "$path" == "$conda_prefix"/lib/libgdal*.dylib ]]; then continue; fi
+  if [[ -e "$work/dependency-prefix/lib/$name" ]]; then
+    cmp -s "$path" "$work/dependency-prefix/lib/$name" || { echo "dependency prefix collision: $name" >&2; exit 1; }
+  else ln -s "$path" "$work/dependency-prefix/lib/$name"; fi
+done
+export PG_MACOS_DEPENDENCY_PREFIX="$work/dependency-prefix"
 export PATH="$gdal_prefix/bin:$PATH"
 export PKG_CONFIG_PATH="$gdal_prefix/lib/pkgconfig:$conda_prefix/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
 export GDAL_DATA="$gdal_prefix/share/gdal"
