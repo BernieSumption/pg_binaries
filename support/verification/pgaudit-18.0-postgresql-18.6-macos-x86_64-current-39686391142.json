@@ -1,0 +1,48 @@
+{
+  "assembled_core": {
+    "archive": "postgresql-18.6-macos-x86_64.tar.gz",
+    "sha256": "cf69410f5a635fcbfdf923fe0fc66aab3902e270575d35a5eec22f5db29db7ce",
+    "version": "18.6"
+  },
+  "case_results": {
+    "archive-suite": "passed",
+    "diagnostics": "passed",
+    "symbols": "passed"
+  },
+  "ci": {
+    "build_revision": "c59d5650a9f8bdc16038688f6e6ac267227cb6c5",
+    "provider": "github-actions",
+    "run_id": "39686391142",
+    "run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/39686391142",
+    "source_revision": "c59d5650a9f8bdc16038688f6e6ac267227cb6c5",
+    "test_revision": "c59d5650a9f8bdc16038688f6e6ac267227cb6c5"
+  },
+  "component": "pgaudit",
+  "environment": {
+    "architecture": "x86_64",
+    "clean_system": true,
+    "dependency_check_profile": "macho-system-dependencies-v1",
+    "dependency_checks_passed": true,
+    "endpoint": "current",
+    "image_id": "macos15/20260824.0482.1",
+    "os": "macos",
+    "os_version": "15.7.9"
+  },
+  "outcome": "passed",
+  "platform": "macos-x86_64",
+  "postgresql_version": "18.6",
+  "prerequisite_archives": [],
+  "profile_id": "pgaudit-publication-macos-x86_64-18.6",
+  "profile_revision": "368ab29a3430fde730bf7e6f1500867ac10f7b9e6c2111c5eb232cde31695b75",
+  "project": "pgaudit",
+  "schema_version": 2,
+  "scope": "publication",
+  "sha256": "d26b14b21a0352580c3ffc5f6c79f1eccb6d8da5c4117ad058121409590b491d",
+  "test_cases": [
+    "archive-suite",
+    "diagnostics",
+    "symbols"
+  ],
+  "test_revision": "c59d5650a9f8bdc16038688f6e6ac267227cb6c5",
+  "version": "18.0"
+}

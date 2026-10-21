@@ -1,0 +1,22 @@
+{
+  "architecture": "x86_64",
+  "archives": {
+    "pgaudit-18.0-postgresql-18.6-macos-x86_64.tar.gz": "d26b14b21a0352580c3ffc5f6c79f1eccb6d8da5c4117ad058121409590b491d",
+    "postgresql-18.6-macos-x86_64.tar.gz": "cf69410f5a635fcbfdf923fe0fc66aab3902e270575d35a5eec22f5db29db7ce"
+  },
+  "archives_present": {
+    "pgaudit-18.0-postgresql-18.6-macos-x86_64.tar.gz": true,
+    "postgresql-18.6-macos-x86_64.tar.gz": true
+  },
+  "pgaudit_version": "18.0",
+  "postgresql_version": "18.6",
+  "profile_id": "pgaudit-publication-macos-x86_64-18.6",
+  "run_id": "39686391142",
+  "schema_version": 1,
+  "source_revision": "c59d5650a9f8bdc16038688f6e6ac267227cb6c5",
+  "steps": {
+    "archive-suite": "success",
+    "diagnostics": "success",
+    "symbols": "success"
+  }
+}
