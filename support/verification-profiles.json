@@ -1018,6 +1018,13 @@
         "reason": "2026-10-21: narrowed to verification inputs; case IDs and retained source bytes are unchanged."
       }
     ],
+    "postgis-publication-windows-x86_64-17.11": [
+      {
+        "current": "ac4dcb2816f21f6ec7801ffc2066a50285dc8f22d2fd724cf7f8b7bfe855ac7e",
+        "previous": "20200559c9376b4aa41a612d7b30e58bdeb68168f2e4994df5bb693f7495749c",
+        "reason": "2026-10-21: narrowed source list; CI revision has identical retained verifier sources and cases."
+      }
+    ],
     "postgis-publication-windows-x86_64-18.6": [
       {
         "current": "85f023ed9399b48fd2c4279ea1c20c22e3eecbc3000145442e29c34def74f335",

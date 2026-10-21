@@ -1,0 +1,48 @@
+{
+  "assembled_core": {
+    "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+    "sha256": "2b3f69fdc727a782b426a4ca108fc33070c3da4f693b80bcaffd02b66ffdcac6",
+    "version": "17.11"
+  },
+  "case_results": {
+    "archive-suite": "passed",
+    "static-analysis": "passed"
+  },
+  "ci": {
+    "build_revision": "336d1e9ed59165731117dcb1e4b638bf23f5e0fb",
+    "provider": "github-actions",
+    "run_id": "39677880223",
+    "run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/39677880223",
+    "source_revision": "336d1e9ed59165731117dcb1e4b638bf23f5e0fb",
+    "test_revision": "336d1e9ed59165731117dcb1e4b638bf23f5e0fb"
+  },
+  "component": "postgis_raster",
+  "core_status": "checked",
+  "environment": {
+    "architecture": "x86_64",
+    "clean_system": true,
+    "dependency_check_profile": "windows-pe-archive-relocation-v1",
+    "dependency_checks_passed": true,
+    "endpoint": "current",
+    "image_id": "win22/20261012.333.1",
+    "os": "windows",
+    "os_version": "10.0.20348"
+  },
+  "outcome": "passed",
+  "platform": "windows-x86_64",
+  "postgresql_version": "17.11",
+  "prerequisite_archives": [],
+  "profile_id": "postgis-publication-windows-x86_64-17.11",
+  "profile_revision": "20200559c9376b4aa41a612d7b30e58bdeb68168f2e4994df5bb693f7495749c",
+  "project": "PostGIS",
+  "release_eligible": false,
+  "schema_version": 2,
+  "scope": "publication",
+  "sha256": "3a933e12d6eb9a7fed46f22632ce7c096eed2caeacce8f869468ed917fe0c0dd",
+  "test_cases": [
+    "archive-suite",
+    "static-analysis"
+  ],
+  "test_revision": "336d1e9ed59165731117dcb1e4b638bf23f5e0fb",
+  "version": "3.6.4"
+}

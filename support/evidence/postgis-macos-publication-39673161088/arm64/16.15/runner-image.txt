@@ -1,0 +1,4 @@
+postgis_macos / build	UNKNOWN STEP	2026-10-21T20:46:38.5180260Z Image: macos-15-arm64
+postgis_macos / build	UNKNOWN STEP	2026-10-21T20:46:38.5182540Z Image Release: https://github.com/actions/runner-images/releases/tag/macos-15-arm64%2F20260907.0337
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T21:42:01.4122360Z Image: macos-15-arm64
+postgis_macos / verify	UNKNOWN STEP	2026-10-21T21:42:01.4124740Z Image Release: https://github.com/actions/runner-images/releases/tag/macos-15-arm64%2F20260907.0337
