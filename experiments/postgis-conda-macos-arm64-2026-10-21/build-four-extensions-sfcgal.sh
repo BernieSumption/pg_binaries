@@ -112,6 +112,22 @@ cmake --build sfcgal-build --parallel "$(sysctl -n hw.ncpu)" 2>&1 | tee "$output
 cmake --install sfcgal-build 2>&1 | tee "$output/sfcgal-install.log"
 test -x "$conda_prefix/bin/sfcgal-config"
 
+core_xml="$pgroot/lib/libxml2.16.dylib"
+[[ -f "$core_xml" ]] || { echo 'checked PostgreSQL core lacks libxml2.16.dylib' >&2; exit 1; }
+[[ "$("$conda_prefix/bin/xml2-config" --version)" == 2.15.4 ]] || { echo 'conda libxml2 headers do not match checked core libxml2 2.15.4' >&2; exit 1; }
+xml2_config="$work/xml2-config"
+cat > "$xml2_config" <<EOF
+#!/usr/bin/env bash
+case "\${1:-}" in
+  --cflags) exec "$conda_prefix/bin/xml2-config" --cflags ;;
+  --libs) printf '%s\\n' "$core_xml -lz -liconv" ;;
+  --version) printf '%s\\n' 2.15.4 ;;
+  *) exec "$conda_prefix/bin/xml2-config" "\$@" ;;
+esac
+EOF
+chmod +x "$xml2_config"
+export PG_MACOS_DEPENDENCY_PREFIX="$gdal_prefix:$pgroot:$conda_prefix"
+
 curl -fL --retry 3 -o postgis.tar.gz https://download.osgeo.org/postgis/source/postgis-3.6.4.tar.gz
 printf '%s  %s\n' ed8dc6679f1e06f7b113592b04cde2a7e00f1b1e681294c8ca2204058990cec6 postgis.tar.gz | shasum -a 256 -c -
 tar -xzf postgis.tar.gz
@@ -120,7 +136,7 @@ cd postgis-3.6.4
   --with-gdalconfig="$gdal_prefix/bin/gdal-config" \
   --with-geosconfig="$conda_prefix/bin/geos-config" \
   --with-projdir="$conda_prefix" --with-jsondir="$conda_prefix" \
-  --with-xml2config="$conda_prefix/bin/xml2-config" \
+  --with-xml2config="$xml2_config" \
   --with-sfcgal="$conda_prefix/bin/sfcgal-config" --without-protobuf \
   2>&1 | tee "$output/configure.log"
 make -j"$(sysctl -n hw.ncpu)" 2>&1 | tee "$output/build.log"
@@ -171,3 +187,8 @@ for name in names:
         raise SystemExit(f"missing installed SQL extension output for {name}")
 Path(output, "sql-names.txt").write_text("\n".join(names) + "\n")
 PY
+
+python3 "$repo/experiments/postgis-conda-macos-arm64-2026-10-21/assemble-diagnostic-archive.py" \
+  "$work/conda-runtime-closure" "$output" "$conda_prefix" \
+  "$work/source/postgis.tar.gz" "$work/gdal-source/gdal.tar.gz" \
+  "$work/source/sfcgal.tar.gz" "$pgroot" "$core_archive" "$target_config"
