@@ -1,0 +1,21 @@
+{
+  "architecture": "x86_64",
+  "archives": {
+    "pgtap-1.3.4-postgresql-15.19-windows-x86_64.tar.gz": "eaf04970c40f18ad51db2a6091b869f79dae3a6def7b241c128081b90f6e6a4c",
+    "postgresql-15.19-windows-x86_64.tar.gz": "22c61ca5ed86710e94b03d32fa429b3edf230671eeacda9fc07a4b4795eee792"
+  },
+  "archives_present": {
+    "pgtap-1.3.4-postgresql-15.19-windows-x86_64.tar.gz": true,
+    "postgresql-15.19-windows-x86_64.tar.gz": true
+  },
+  "pgtap_version": "1.3.4",
+  "postgresql_version": "15.19",
+  "profile_id": "pgtap-publication-windows-x86_64-15.19",
+  "run_id": "39694137851",
+  "schema_version": 1,
+  "source_revision": "2f51d1d5fe03ab4c5b0fa3fb2bb0bc28828bd7b1",
+  "steps": {
+    "archive-suite": "success",
+    "static-analysis": "success"
+  }
+}

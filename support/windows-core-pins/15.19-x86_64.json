@@ -3,12 +3,12 @@
   "postgresql_version": "15.19",
   "platform": "windows-x86_64",
   "architecture": "x86_64",
-  "artifact_name": "windows-core-selected-15.19-build-39570352294",
+  "artifact_name": "windows-core-selected-15.19-build-39667448184",
   "archive_name": "postgresql-15.19-windows-x86_64.tar.gz",
-  "run_id": "39570352294",
-  "build_id": "github-39570352294-1",
-  "source_revision": "37e6af430182db3f4adb7cd9727e0d175513acac",
-  "sha256": "b1793090085453fdcba4a7af14084ea5e1695b50390833d3c997840f78a9a809",
+  "run_id": 39667448184,
+  "build_id": "github-39667448184-1",
+  "source_revision": "f8305c5a1ab80f7d9a306e22989d7ab85d0a493e",
+  "sha256": "22c61ca5ed86710e94b03d32fa429b3edf230671eeacda9fc07a4b4795eee792",
   "profile_id": "windows-publication-current-x86_64",
   "status": "current-profile-core-redistribution-pending"
 }
