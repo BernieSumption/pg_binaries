@@ -18,7 +18,7 @@ on:
         description: Selected PostgreSQL release
         required: true
         type: choice
-        options: ['18.6']
+        options: ['16.15', '17.11', '18.6']
         default: '18.6'
       extension_version:
         description: TIGER Geocoder release
@@ -53,7 +53,8 @@ jobs:
           ARCHITECTURE: ${{ inputs.architecture }}
         run: |
           set -euo pipefail
-          [[ "$PG_VERSION" == 18.6 && "$EXT_VERSION" == 2025.2 ]]
+          [[ "$PG_VERSION" == 16.15 || "$PG_VERSION" == 17.11 || "$PG_VERSION" == 18.6 ]]
+          [[ "$EXT_VERSION" == 2025.2 ]]
           [[ "$ARCHITECTURE" == arm64 || "$ARCHITECTURE" == x86_64 ]]
           python3 tools/extension_archive_plan.py --project "PostGIS TIGER Geocoder" \
             --extension-version "$EXT_VERSION" --platform "macos-$ARCHITECTURE" \
@@ -79,7 +80,7 @@ jobs:
       - name: Download the exact core used by the selected PostGIS build
         uses: actions/download-artifact@v4
         with:
-          name: postgis-macos-${{ needs.select.outputs.architecture }}-18.6-build-${{ github.run_id }}
+          name: postgis-macos-${{ needs.select.outputs.architecture }}-${{ needs.select.outputs.postgresql_version }}-build-${{ github.run_id }}
           path: ${{ runner.temp }}/postgis-bundle
       - name: Stage the PostGIS core archive and target
         env:
@@ -100,7 +101,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: tiger-macos-${{ needs.select.outputs.architecture }}-18.6-build-${{ github.run_id }}
+          name: tiger-macos-${{ needs.select.outputs.architecture }}-${{ needs.select.outputs.postgresql_version }}-build-${{ github.run_id }}
           path: |
             ${{ runner.temp }}/tiger/core/**
             ${{ runner.temp }}/tiger/output/**
@@ -117,12 +118,12 @@ jobs:
       - name: Download TIGER build archives
         uses: actions/download-artifact@v4
         with:
-          name: tiger-macos-${{ needs.select.outputs.architecture }}-18.6-build-${{ github.run_id }}
+          name: tiger-macos-${{ needs.select.outputs.architecture }}-${{ needs.select.outputs.postgresql_version }}-build-${{ github.run_id }}
           path: ${{ runner.temp }}/tiger
       - name: Download exact PostGIS prerequisite archive
         uses: actions/download-artifact@v4
         with:
-          name: postgis-macos-${{ needs.select.outputs.architecture }}-18.6-build-${{ github.run_id }}
+          name: postgis-macos-${{ needs.select.outputs.architecture }}-${{ needs.select.outputs.postgresql_version }}-build-${{ github.run_id }}
           path: ${{ runner.temp }}/postgis-bundle
       - name: Relocate and exercise the final PostGIS and TIGER archives
         env:
@@ -141,7 +142,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: tiger-macos-${{ needs.select.outputs.architecture }}-18.6-verification-${{ github.run_id }}
+          name: tiger-macos-${{ needs.select.outputs.architecture }}-${{ needs.select.outputs.postgresql_version }}-verification-${{ github.run_id }}
           path: ${{ runner.temp }}/tiger/**
           if-no-files-found: warn
           retention-days: 30
