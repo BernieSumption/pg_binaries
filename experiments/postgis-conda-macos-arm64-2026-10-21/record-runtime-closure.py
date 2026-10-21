@@ -12,7 +12,7 @@ import subprocess
 import sys
 
 
-pgroot, conda_prefix, temp_root, output = map(Path, sys.argv[1:])
+pgroot, conda_prefix, gdal_prefix, temp_root, output = map(Path, sys.argv[1:])
 repo = Path(__file__).resolve().parents[2]
 closure_root = temp_root / "conda-runtime-closure"
 names = ("postgis", "postgis_raster", "postgis_sfcgal", "postgis_topology")
@@ -51,10 +51,10 @@ subprocess.run(
     env=environment,
 )
 
-for name in ("gdal", "proj"):
-    source = conda_prefix / "share" / name
+for name, prefix in (("gdal", gdal_prefix), ("proj", conda_prefix)):
+    source = prefix / "share" / name
     if not source.is_dir():
-        raise SystemExit(f"missing conda runtime data directory: {source}")
+        raise SystemExit(f"missing runtime data directory: {source}")
     shutil.copytree(source, closure_root / "share" / name, symlinks=True)
 
 dependencies_path = closure_root / "bundled-dependencies.json"
@@ -95,6 +95,8 @@ def identify(source, payload):
         return {"payload_path": payload, "source_path": source, "owner_status": "unresolved"}
     if resolved.is_relative_to(pgroot.resolve()):
         return {"payload_path": payload, "source_path": source, "owner_status": "checked-core"}
+    if resolved.is_relative_to(gdal_prefix.resolve()):
+        return {"payload_path": payload, "source_path": source, "owner_status": "source-build", "component": "GDAL"}
     if not resolved.is_relative_to(conda_prefix.resolve()):
         unresolved.append({"payload_path": payload, "source_path": source, "reason": "source is outside conda prefix and checked core"})
         return {"payload_path": payload, "source_path": source, "owner_status": "external"}
@@ -112,14 +114,17 @@ def identify(source, payload):
 
 libraries = [identify(source, f"lib/{name}") for name, source in sorted(dependencies.items())]
 data_counts = {"share/gdal": Counter(), "share/proj": Counter()}
-for directory in data_counts:
-    source_root = conda_prefix / directory
+source_build_data_counts = {"share/gdal": 0, "share/proj": 0}
+for directory, prefix in (("share/gdal", gdal_prefix), ("share/proj", conda_prefix)):
+    source_root = prefix / directory
     for path in sorted(source_root.rglob("*")):
         if not path.is_file():
             continue
         item = identify(str(path), f"{directory}/{path.relative_to(source_root).as_posix()}")
         if item["owner_status"] == "conda-package":
             data_counts[directory][item["conda_meta_record"]] += 1
+        elif item["owner_status"] == "source-build":
+            source_build_data_counts[directory] += 1
 
 metadata_root = output / "conda-meta-records"
 metadata_root.mkdir(exist_ok=True)
@@ -143,12 +148,16 @@ for filename in sorted(selected_records):
 report = {
     "schema_version": 1,
     "ownership_status": "unresolved" if unresolved else "complete",
-    "non_conda_build_sources": [json.loads((output / "sfcgal-source.json").read_text())],
+    "non_conda_build_sources": [
+        json.loads((output / "gdal-source.json").read_text()),
+        json.loads((output / "sfcgal-source.json").read_text()),
+    ],
     "bundled_libraries": libraries,
     "runtime_data_package_file_counts": {
         directory: {record: count for record, count in sorted(counts.items())}
         for directory, counts in data_counts.items()
     },
+    "runtime_data_source_build_file_counts": source_build_data_counts,
     "conda_meta_records": record_summaries,
     "unresolved_files": unresolved,
 }

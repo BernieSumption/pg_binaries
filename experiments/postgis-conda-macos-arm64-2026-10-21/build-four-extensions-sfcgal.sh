@@ -30,7 +30,7 @@ mkdir -p "$output"
 output=$(cd "$output" && pwd)
 [[ $(uname -s) == Darwin && $(uname -m) == arm64 ]] || { echo "Build requires native macOS arm64" >&2; exit 1; }
 for tool in curl make python3; do command -v "$tool" >/dev/null || { echo "Missing runner tool: $tool" >&2; exit 1; }; done
-for tool in cmake geos-config gdal-config xml2-config; do test -x "$conda_prefix/bin/$tool" || { echo "Missing conda tool: $tool" >&2; exit 1; }; done
+for tool in cmake geos-config xml2-config; do test -x "$conda_prefix/bin/$tool" || { echo "Missing conda tool: $tool" >&2; exit 1; }; done
 
 core_archive="$core_archives/$core_name"
 test -s "$core_archive" && (cd "$core_archives" && shasum -a 256 -c "$core_name.sha256")
@@ -39,7 +39,7 @@ work=$(mktemp -d "${RUNNER_TEMP:-/tmp}/postgis-conda-build.XXXXXX")
 prefix_link_created=false
 cleanup() { macos_remove_core_prefix; rm -rf "$work"; }
 trap cleanup EXIT
-mkdir -p "$work/core" "$work/source" "$work/socket"
+mkdir -p "$work/core" "$work/source" "$work/gdal-source" "$work/gdal-build" "$work/socket" "$work/dependency-prefix/lib"
 tar -xzf "$core_archive" -C "$work/core"
 pgroot="$work/core/postgresql"
 prefix=$(macos_core_prefix_from_archive "$pgroot" 18.6 arm64 "$core_build_id" "$core_revision")
@@ -51,11 +51,49 @@ test "$("$pg_config" --version)" = "PostgreSQL 18.6"
 export MACOSX_DEPLOYMENT_TARGET=11.0
 export PATH="$conda_prefix/bin:$PATH"
 export PKG_CONFIG_PATH="$conda_prefix/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
-export GDAL_DATA="$conda_prefix/share/gdal"
 export PROJ_DATA="$conda_prefix/share/proj"
 export PROJ_LIB="$conda_prefix/share/proj"
-export LDFLAGS="${LDFLAGS:-} -Wl,-rpath,$conda_prefix/lib"
-export DYLD_LIBRARY_PATH="$conda_prefix/lib${DYLD_LIBRARY_PATH:+:$DYLD_LIBRARY_PATH}"
+
+gdal_sha256=5e0c388d83da2d686cc00a40272882432cdb54edff43d4af173e532844a0a0ea
+cd "$work/gdal-source"
+curl -fL --retry 3 -o gdal.tar.gz https://download.osgeo.org/gdal/3.13.3/gdal-3.13.3.tar.gz
+printf '%s  %s\n' "$gdal_sha256" gdal.tar.gz | shasum -a 256 -c -
+python3 - "$output/gdal-source.json" "$gdal_sha256" <<'PY'
+import json, pathlib, sys
+path, sha256 = pathlib.Path(sys.argv[1]), sys.argv[2]
+path.write_text(json.dumps({
+    "component": "GDAL",
+    "version": "3.13.3",
+    "source_url": "https://download.osgeo.org/gdal/3.13.3/gdal-3.13.3.tar.gz",
+    "source_sha256": sha256,
+}, indent=2, sort_keys=True) + "\n")
+PY
+tar -xzf gdal.tar.gz
+gdal_prefix="$work/gdal-prefix"
+cmake -S gdal-3.13.3 -B "$work/gdal-build" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$gdal_prefix" \
+  -DCMAKE_PREFIX_PATH="$conda_prefix" -DPROJ_ROOT="$conda_prefix" \
+  -DBUILD_SHARED_LIBS=ON -DBUILD_APPS=OFF -DGDAL_BUILD_OPTIONAL_DRIVERS=OFF \
+  -DOGR_BUILD_OPTIONAL_DRIVERS=OFF -DGDAL_ENABLE_DRIVER_PNG=ON -DGDAL_ENABLE_DRIVER_JPEG=ON \
+  -DGDAL_USE_EXTERNAL_LIBS=OFF -DGDAL_USE_INTERNAL_LIBS=ON \
+  -DGDAL_USE_PROJ=ON -DGDAL_USE_GEOS=ON 2>&1 | tee "$output/gdal-configure.log"
+cmake --build "$work/gdal-build" --parallel "$(sysctl -n hw.ncpu)" 2>&1 | tee "$output/gdal-build.log"
+cmake --install "$work/gdal-build" 2>&1 | tee "$output/gdal-install.log"
+test -x "$gdal_prefix/bin/gdal-config"
+
+for path in "$conda_prefix"/lib/*.dylib "$gdal_prefix"/lib/*.dylib; do
+  [[ -e "$path" ]] || continue
+  name=$(basename "$path")
+  if [[ "$path" == "$conda_prefix"/lib/libgdal*.dylib ]]; then continue; fi
+  if [[ -e "$work/dependency-prefix/lib/$name" ]]; then
+    cmp -s "$path" "$work/dependency-prefix/lib/$name" || { echo "dependency prefix collision: $name" >&2; exit 1; }
+  else ln -s "$path" "$work/dependency-prefix/lib/$name"; fi
+done
+export PG_MACOS_DEPENDENCY_PREFIX="$work/dependency-prefix"
+export PATH="$gdal_prefix/bin:$PATH"
+export PKG_CONFIG_PATH="$gdal_prefix/lib/pkgconfig:$conda_prefix/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
+export GDAL_DATA="$gdal_prefix/share/gdal"
+export LDFLAGS="${LDFLAGS:-} -Wl,-rpath,$gdal_prefix/lib -Wl,-rpath,$conda_prefix/lib"
+export DYLD_LIBRARY_PATH="$gdal_prefix/lib:$conda_prefix/lib${DYLD_LIBRARY_PATH:+:$DYLD_LIBRARY_PATH}"
 
 cd "$work/source"
 SFCGAL_COMMIT=137203dae01faab4a1287934f9457e925e3b4383
@@ -87,7 +125,7 @@ printf '%s  %s\n' ed8dc6679f1e06f7b113592b04cde2a7e00f1b1e681294c8ca2204058990ce
 tar -xzf postgis.tar.gz
 cd postgis-3.6.4
 ./configure --prefix="$pgroot" --with-pgconfig="$pg_config" \
-  --with-gdalconfig="$conda_prefix/bin/gdal-config" \
+  --with-gdalconfig="$gdal_prefix/bin/gdal-config" \
   --with-geosconfig="$conda_prefix/bin/geos-config" \
   --with-projdir="$conda_prefix" --with-jsondir="$conda_prefix" \
   --with-xml2config="$conda_prefix/bin/xml2-config" \
@@ -96,7 +134,7 @@ cd postgis-3.6.4
 make -j"$(sysctl -n hw.ncpu)" 2>&1 | tee "$output/build.log"
 make install 2>&1 | tee "$output/install.log"
 python3 "$repo/experiments/postgis-conda-macos-arm64-2026-10-21/record-runtime-closure.py" \
-  "$pgroot" "$conda_prefix" "$work" "$output" 2>&1 | tee "$output/runtime-closure.log"
+  "$pgroot" "$conda_prefix" "$gdal_prefix" "$work" "$output" 2>&1 | tee "$output/runtime-closure.log"
 
 chmod 700 "$work/socket"
 "$pgroot/bin/initdb" -D "$work/data" --no-sync >"$output/initdb.log" 2>&1
