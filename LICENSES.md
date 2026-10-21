@@ -119,6 +119,41 @@ This file records licence declarations for PostgreSQL, selected extensions, sepa
 - Xerces-C++ — Apache-2.0. [Source and `LICENSE`](https://github.com/apache/xerces-cpp/blob/master/LICENSE).
 - Microsoft Visual C++ runtime — human-reviewed redistributable component under Microsoft's [Visual Studio 2022 licence terms](https://visualstudio.microsoft.com/license-terms/) and [Visual C++ runtime redistribution list](https://learn.microsoft.com/en-us/visualstudio/releases/2022/redistribution#visual-c-runtime-files). The [licence policy](policies/licenses.md#microsoft-visual-c-runtime) records the approval. Microsoft does not publish its source under an open-source licence.
 
+## Windows runtime dependencies
+
+The Windows PostGIS trial archive's runtime owner report identifies these separately copied libraries. The MSYS2 package pages declare the licences for the packages used to supply them.
+
+- Abseil — Apache-2.0. [Source and `LICENSE`](https://github.com/abseil/abseil-cpp/blob/master/LICENSE); [MSYS2 package declaration](https://packages.msys2.org/package/mingw-w64-x86_64-abseil-cpp).
+- Apache Arrow and Parquet — Apache-2.0. [Source and `LICENSE.txt`](https://github.com/apache/arrow/blob/main/LICENSE.txt); [MSYS2 package declaration](https://packages.msys2.org/package/mingw-w64-x86_64-arrow).
+- Crypto++ — Boost Software License 1.0. [Source and licence declaration](https://github.com/weidai11/cryptopp/blob/master/License.txt); [MSYS2 package declaration](https://packages.msys2.org/package/mingw-w64-x86_64-crypto%2B%2B).
+- gettext runtime (`libintl`) — LGPL-2.1-or-later. [Source and `intl/COPYING.LIB`](https://github.com/autotools-mirror/gettext/blob/master/gettext-runtime/intl/COPYING.LIB); [MSYS2 package declaration](https://packages.msys2.org/package/mingw-w64-x86_64-gettext-runtime).
+- GLib — LGPL-2.1-or-later. [Source and `COPYING`](https://gitlab.gnome.org/GNOME/glib/-/blob/main/COPYING); [MSYS2 package declaration](https://packages.msys2.org/package/mingw-w64-x86_64-glib2).
+- Graphite2 — LGPL-2.1-or-later, GPL-2.0-or-later, or MPL-1.1, as offered by upstream. [Source and licence declaration](https://github.com/silnrsi/graphite/blob/master/COPYING); [MSYS2 package declaration](https://packages.msys2.org/package/mingw-w64-x86_64-graphite2).
+- HarfBuzz — MIT. [Source and `COPYING`](https://github.com/harfbuzz/harfbuzz/blob/main/COPYING); [MSYS2 package declaration](https://packages.msys2.org/package/mingw-w64-x86_64-harfbuzz).
+- Highway — Apache-2.0. [Source and `LICENSE`](https://github.com/google/highway/blob/master/LICENSE); [MSYS2 package declaration](https://packages.msys2.org/package/mingw-w64-x86_64-highway).
+- Imath — BSD-3-Clause. [Source and `LICENSE.md`](https://github.com/AcademySoftwareFoundation/Imath/blob/main/LICENSE.md); [MSYS2 package declaration](https://packages.msys2.org/package/mingw-w64-x86_64-imath).
+- Kvazaar — BSD-3-Clause. [Source and `COPYING`](https://github.com/ultravideo/kvazaar/blob/master/COPYING); [MSYS2 package declaration](https://packages.msys2.org/package/mingw-w64-x86_64-kvazaar).
+- libarchive — BSD-2-Clause. [Source and `COPYING`](https://github.com/libarchive/libarchive/blob/master/COPYING); [MSYS2 package declaration](https://packages.msys2.org/package/mingw-w64-x86_64-libarchive).
+- libb2 — CC0-1.0 or MIT. [Source and licence declarations](https://github.com/BLAKE2/libb2/tree/master); [MSYS2 package declaration](https://packages.msys2.org/package/mingw-w64-x86_64-libb2).
+- GCC OpenMP runtime (`libgomp`) — GPL-3.0-or-later WITH GCC Runtime Library Exception 3.1. [Source and licence declaration](https://gcc.gnu.org/git/?p=gcc.git;a=blob;f=COPYING.RUNTIME); [MSYS2 package declaration](https://packages.msys2.org/package/mingw-w64-x86_64-libgomp).
+- JPEG XL — BSD-3-Clause. [Source and `LICENSE`](https://github.com/libjxl/libjxl/blob/main/LICENSE); [MSYS2 package declaration](https://packages.msys2.org/package/mingw-w64-x86_64-libjxl).
+- MariaDB Connector/C — LGPL-2.1-or-later. [Source and `COPYING.LIB`](https://github.com/mariadb-corporation/mariadb-connector-c/blob/3.4/COPYING.LIB); [MSYS2 package declaration](https://packages.msys2.org/package/mingw-w64-x86_64-libmariadbclient).
+- OpenBLAS — BSD-3-Clause. [Source and `LICENSE`](https://github.com/OpenMathLib/OpenBLAS/blob/develop/LICENSE); [MSYS2 package declaration](https://packages.msys2.org/package/mingw-w64-x86_64-openblas).
+- OpenEXR — BSD-3-Clause. [Source and `LICENSE.md`](https://github.com/AcademySoftwareFoundation/openexr/blob/main/LICENSE.md); [MSYS2 package declaration](https://packages.msys2.org/package/mingw-w64-x86_64-openexr).
+- OpenH264 — BSD-2-Clause. [Source and `LICENSE`](https://github.com/cisco/openh264/blob/master/LICENSE); [MSYS2 package declaration](https://packages.msys2.org/package/mingw-w64-x86_64-openh264).
+- OpenJPH — BSD-2-Clause. [Source and `LICENSE`](https://github.com/aous72/OpenJPH/blob/master/LICENSE); [MSYS2 package declaration](https://packages.msys2.org/package/mingw-w64-x86_64-openjph).
+- rav1e — BSD-2-Clause. [Source and `LICENSE`](https://github.com/xiph/rav1e/blob/master/LICENSE); [MSYS2 package declaration](https://packages.msys2.org/package/mingw-w64-x86_64-rav1e).
+- RE2 — BSD-3-Clause. [Source and `LICENSE`](https://github.com/google/re2/blob/main/LICENSE); [MSYS2 package declaration](https://packages.msys2.org/package/mingw-w64-x86_64-re2).
+- simdjson — Apache-2.0. [Source and `LICENSE`](https://github.com/simdjson/simdjson/blob/master/LICENSE); [MSYS2 package declaration](https://packages.msys2.org/package/mingw-w64-x86_64-simdjson).
+- SVT-AV1 — BSD-3-Clause. [Source and `LICENSE.md`](https://gitlab.com/AOMediaCodec/SVT-AV1/-/blob/master/LICENSE.md); [MSYS2 package declaration](https://packages.msys2.org/package/mingw-w64-x86_64-svt-av1).
+- Thrift — Apache-2.0. [Source and `LICENSE`](https://github.com/apache/thrift/blob/master/LICENSE); [MSYS2 package declaration](https://packages.msys2.org/package/mingw-w64-x86_64-thrift).
+- utf8proc — MIT. [Source and `LICENSE.md`](https://github.com/JuliaStrings/utf8proc/blob/master/LICENSE.md); [MSYS2 package declaration](https://packages.msys2.org/package/mingw-w64-x86_64-libutf8proc).
+- MinGW-w64 winpthreads — MIT and BSD-3-Clause for the library components. [Source and `COPYING`](https://github.com/mingw-w64/mingw-w64/tree/master/mingw-w64-libraries/winpthreads); [MSYS2 package declaration](https://packages.msys2.org/package/mingw-w64-x86_64-libwinpthread).
+- libzip — BSD-3-Clause. [Source and `LICENSE`](https://github.com/nih-at/libzip/blob/main/LICENSE); [MSYS2 package declaration](https://packages.msys2.org/package/mingw-w64-x86_64-libzip).
+- nghttp3 — MIT. [Source and `COPYING`](https://github.com/ngtcp2/nghttp3/blob/main/COPYING); [MSYS2 package declaration](https://packages.msys2.org/package/mingw-w64-x86_64-nghttp3).
+- ngtcp2 — MIT. [Source and `COPYING`](https://github.com/ngtcp2/ngtcp2/blob/main/COPYING); [MSYS2 package declaration](https://packages.msys2.org/package/mingw-w64-x86_64-ngtcp2).
+- zlib-ng — zlib licence. [Source and `LICENSE.md`](https://github.com/zlib-ng/zlib-ng/blob/develop/LICENSE.md); [MSYS2 package declaration](https://packages.msys2.org/package/mingw-w64-x86_64-zlib-ng).
+
 ## Incomplete dependency inventory
 
-The [selected Linux PostGIS owner report](support/evidence/postgis-publication-39618831130/x86_64/18.6/runtime-package-owners.txt) identifies the 114 libraries bundled with that archive; their projects are listed above. Compare selected macOS and Windows archives with this list before treating it as complete across the support matrix. The [macOS conda trial report](support/evidence/postgis-conda-archive-39602429364/README.md) provides a starting point; obtain a Windows owner report from a selected build.
+The [selected Linux PostGIS owner report](support/evidence/postgis-publication-39618831130/x86_64/18.6/runtime-package-owners.txt) identifies the 114 libraries bundled with that archive; their projects are listed above. Compare selected macOS and Windows archives with this list before treating it as complete across the support matrix. The [macOS conda trial report](support/evidence/postgis-conda-archive-39602429364/README.md) and [Windows trial report](support/evidence/postgis-windows-publication-39646973668/runtime-package-owners.txt) provide starting points.
