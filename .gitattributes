@@ -4,6 +4,8 @@ support/evidence/windows-*/debug-symbols-index.json -text
 support/evidence/windows-publication-*/*.json -text
 support/evidence/pgcron-windows-publication-*/*.json -text
 support/evidence/pgcron-windows-publication-*/*.txt -text
+support/evidence/postgis-windows-publication-*/* -text
+support/evidence/postgis-windows-publication-*/*/*/* -text -diff
 support/verification/*windows-x86_64-current-*.json -text
 support/evidence/pg_jsonschema-windows-publication-*/*/* -text
 support/evidence/pgtap-windows-publication-*/*/* -text
