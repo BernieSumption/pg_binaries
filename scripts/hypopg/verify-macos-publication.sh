@@ -82,7 +82,15 @@ tar -xzf "$extension_archives/$extension_name" -C "$work/unpacked-extension"
 pgroot="$work/unpacked-core/postgresql"
 extroot="$work/unpacked-extension/hypopg"
 test -d "$pgroot" && test -d "$extroot"
-test -s "$extroot/lib/hypopg.dylib"
+modules=("$extroot/lib/hypopg.so" "$extroot/lib/hypopg.dylib")
+found_modules=()
+for module in "${modules[@]}"; do
+  [[ -s "$module" ]] && found_modules+=("$module")
+done
+if [[ ${#found_modules[@]} -ne 1 ]]; then
+  echo "Expected one HypoPG module (.so or .dylib) in $extroot/lib" >&2
+  exit 1
+fi
 
 # Follow the documented installation process: unpack each archive and copy the
 # extension payload into the core prefix, merging directories and rejecting file collisions.

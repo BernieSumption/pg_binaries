@@ -65,8 +65,16 @@ make USE_PGXS=1 PG_CONFIG="$pg_config" install DESTDIR="$work/stage"
 staged_root="$work/stage$(cd "$pgroot" && pwd -P)"
 package="$work/package"
 mkdir -p "$package/hypopg/lib" "$package/hypopg/share/extension" "$package/hypopg/LICENSES"
-test -s "$staged_root/lib/hypopg.dylib"
-cp "$staged_root/lib/hypopg.dylib" "$package/hypopg/lib/"
+modules=("$staged_root/lib/hypopg.so" "$staged_root/lib/hypopg.dylib")
+found_modules=()
+for module in "${modules[@]}"; do
+  [[ -s "$module" ]] && found_modules+=("$module")
+done
+if [[ ${#found_modules[@]} -ne 1 ]]; then
+  echo "Expected one PGXS-built HypoPG module (.so or .dylib) in $staged_root/lib" >&2
+  exit 1
+fi
+cp "${found_modules[0]}" "$package/hypopg/lib/"
 cp "$staged_root/share/extension/"* "$package/hypopg/share/extension/"
 cp LICENSE "$package/hypopg/LICENSES/HypoPG.txt"
 python3 - "$package" "$hypopg_version" "$source_url" "$source_sha256" <<'PY'

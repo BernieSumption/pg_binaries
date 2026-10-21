@@ -1,0 +1,17 @@
+{
+  "architecture": "x86_64",
+  "archives_present": {
+    "hypopg-1.4.3-postgresql-15.19-macos-x86_64.tar.gz": false,
+    "postgresql-15.19-macos-x86_64.tar.gz": true
+  },
+  "hypopg_version": "1.4.3",
+  "postgresql_version": "15.19",
+  "profile_id": "hypopg-publication-macos-x86_64-15.19",
+  "run_id": "39519243289",
+  "schema_version": 1,
+  "source_revision": "87a2c0946fa145fedd252651f0bb3fe37aa39921",
+  "steps": {
+    "archive-suite": "failure",
+    "static-analysis": "failure"
+  }
+}
