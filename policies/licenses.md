@@ -10,6 +10,10 @@ When a repository states a licence for the project and gives no separate terms f
 
 An upstream licence declaration is sufficient evidence of a project's licence even if its package omits the licence text. Record the declared licence and a link to the declaration in `LICENSES.md`; do not create a substitute licence text.
 
+## Human-reviewed alternative terms
+
+The user accepts [SQLite's public-domain blessing](https://www.sqlite.org/copyright.html) for the SQLite runtime copied into a download. The user also accepts the [Independent JPEG Group licence](https://github.com/libjpeg-turbo/libjpeg-turbo/blob/main/README.ijg) for JPEG code in copied libjpeg-turbo libraries. These are human-reviewed alternatives under the functional specification; their project declarations remain linked in [`LICENSES.md`](../LICENSES.md).
+
 ## Microsoft Visual C++ runtime
 
 The user reviewed Microsoft's [Visual Studio 2022 licence terms](https://visualstudio.microsoft.com/license-terms/) and [redistributable-file list](https://learn.microsoft.com/en-us/visualstudio/releases/2022/redistribution#visual-c-runtime-files) and determined that the Visual C++ toolset may be used for this open-source build and its listed, unmodified runtime DLLs may be redistributed with it. This is the human-reviewed alternative allowed by the functional specification. The review found no requirement to include a copy of Microsoft's licence file. The central [`LICENSES.md`](../LICENSES.md) records Microsoft and its applicable terms. Downloads link to that inventory through the `LICENCE` pointer required by the functional specification.
