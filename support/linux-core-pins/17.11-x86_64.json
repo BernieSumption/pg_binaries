@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "workflow": "selected-extension-publication.yml",
-  "run_id": 39428676075,
-  "artifact_name": "hypopg-linux-core-17.11-x86_64-39428676075",
+  "run_id": 39683501513,
+  "artifact_name": "pgaudit-linux-core-17.11-x86_64-39683501513",
   "archive_name": "postgresql-17.11-linux-x86_64.tar.gz",
-  "sha256": "e0cc5398ab09b3e422f9f1c827afb862ea3e01c7f60834b66a701157a2837eca"
+  "sha256": "a2849a53a510db255b0c1b16ef665ca25847a6c128b56cd645954c6cf0c4519c"
 }

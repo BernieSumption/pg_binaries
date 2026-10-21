@@ -10,6 +10,8 @@ The current first-release design needs no additional client-facing fields in `in
 
 The current candidate preflight already implements the selected-target, current-evidence and licence-pointer checks described in `policies/releases.md`; its 53 focused tests pass. The obsolete migration note and preflight docstring were removed. A full candidate still needs staged final archives and publication evidence for every declared target before this local gate can pass.
 
+The eight optional Linux PostgreSQL core pins now reference recent checked pgAudit core artifacts, one per selected release and architecture. Each archive passed the current source, builder-input and checksum checks before the pin was updated. Use these while the temporary Actions artifacts remain available; the resolver builds the selected core when a pin expires or no longer matches current inputs.
+
 All eight selected Linux pgAudit targets have current-profile passing records for PostgreSQL 15.19, 16.15, 17.11 and 18.6 on x86-64 and arm64. Their imported receipts, records and static reports bind each final extension and exact core archive. The final x86-64 [PostgreSQL 16.15 run 39684099905](support/evidence/pgaudit-publication-39684099905/README.md) and [15.19 run 39684116150](support/evidence/pgaudit-publication-39684116150/README.md) complete the matrix; all eight records are retained in `support/verification/`.
 
 PostgreSQL 18.6 and pgvector 0.8.7 [Linux x86-64 run 39687070484](support/evidence/linux-publication-39687070484/README.md) pass the current paired final-archive profile. The imported records bind both archive bytes; refresh the remaining selected pgvector and PostgreSQL targets.

@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "workflow": "selected-extension-publication.yml",
-  "run_id": 39439296881,
-  "artifact_name": "postgresql-linux-selected-core-15.19-x86_64-39439296881",
+  "run_id": 39684116150,
+  "artifact_name": "pgaudit-linux-core-15.19-x86_64-39684116150",
   "archive_name": "postgresql-15.19-linux-x86_64.tar.gz",
-  "sha256": "d4070da7ab37cff9e8960cded0eddd7f46e6c016edcb1417ea7a196c75d146a6"
+  "sha256": "3c0c54417212436a685243ce7c80736cf4fe14bca61c53908717254ebfb04075"
 }

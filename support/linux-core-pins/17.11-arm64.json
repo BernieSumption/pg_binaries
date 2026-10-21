@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "workflow": "selected-extension-publication.yml",
-  "run_id": 39431591871,
-  "artifact_name": "postgresql-linux-selected-core-17.11-arm64-39431591871",
+  "run_id": 39684092967,
+  "artifact_name": "pgaudit-linux-core-17.11-arm64-39684092967",
   "archive_name": "postgresql-17.11-linux-arm64.tar.gz",
-  "sha256": "789d82d1c911d7357697c2ef9ac439449dd8060cc2b92ea3ec38da3e1e8c2bd0"
+  "sha256": "6c1fe750d82629cc66ead9232d51ee0fb6088d195c21870b9d7136bd7fcf3a8e"
 }

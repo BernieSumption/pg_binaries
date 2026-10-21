@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "workflow": "selected-extension-publication.yml",
-  "run_id": 39443668085,
-  "artifact_name": "postgresql-linux-selected-core-18.6-arm64-39443668085",
+  "run_id": 39683485357,
+  "artifact_name": "pgaudit-linux-core-18.6-arm64-39683485357",
   "archive_name": "postgresql-18.6-linux-arm64.tar.gz",
-  "sha256": "a3076d786f75cb9c3d12f41d1fdd781636d1648e392ef839332506bcfbe9bea4"
+  "sha256": "9fda687478e62236307557c5d02ea51628e7f02dcf732f99482e70e040e7ae67"
 }
