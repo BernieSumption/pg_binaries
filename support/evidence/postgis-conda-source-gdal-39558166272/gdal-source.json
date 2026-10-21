@@ -1,0 +1,6 @@
+{
+  "component": "GDAL",
+  "source_sha256": "5e0c388d83da2d686cc00a40272882432cdb54edff43d4af173e532844a0a0ea",
+  "source_url": "https://download.osgeo.org/gdal/3.13.3/gdal-3.13.3.tar.gz",
+  "version": "3.13.3"
+}
