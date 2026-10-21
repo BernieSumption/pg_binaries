@@ -1,0 +1,14 @@
+{
+  "architecture": "x86_64",
+  "pg_ivm_version": "1.16",
+  "postgresql_version": "15.19",
+  "run_id": "39693461282",
+  "schema_version": 1,
+  "source_revision": "1ead7311604e4a760b5f151fad2005ae57a3c3f3",
+  "steps": {
+    "core_build": "success",
+    "pgivm_build": "success",
+    "pgivm_verify": "success"
+  },
+  "verifier_image_id": "sha256:978cbe20fcbdc35c7e779120f65f4da3c956a8d9a30ae9a000a79f519c42b963"
+}

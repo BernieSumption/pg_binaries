@@ -1,0 +1,34 @@
+{
+  "architecture": "arm64",
+  "archives": {
+    "pg_ivm-1.16-postgresql-17.11-linux-arm64.tar.gz": "91bf29056cb8b34b8ea1bf892990842fa23139f1a16bbc5c9fce58c1af52f5c6",
+    "postgresql-17.11-linux-arm64.tar.gz": "6c1fe750d82629cc66ead9232d51ee0fb6088d195c21870b9d7136bd7fcf3a8e"
+  },
+  "case_results": {
+    "pgivm-archive-suite": "passed"
+  },
+  "ci": {
+    "build_revision": "1ead7311604e4a760b5f151fad2005ae57a3c3f3",
+    "provider": "github-actions",
+    "run_id": "39693437104",
+    "run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/39693437104",
+    "source_revision": "1ead7311604e4a760b5f151fad2005ae57a3c3f3",
+    "test_revision": "1ead7311604e4a760b5f151fad2005ae57a3c3f3"
+  },
+  "clean_system": true,
+  "dependency_check_profile": "pg_ivm-runtime-v1",
+  "dependency_checks_passed": true,
+  "distribution": "Alpine Linux",
+  "distribution_version": "3.22.7",
+  "endpoint": "current",
+  "extension_archive": "pg_ivm-1.16-postgresql-17.11-linux-arm64.tar.gz",
+  "image_id": "sha256:dc8f6c72ff905be5bfe1aa128754ea3c888cfc600fd3a549a670ed2da5bd729e",
+  "kernel_release": "7.0.0-1017-azure",
+  "postgresql_version": "17.11",
+  "prerequisite_archives": [],
+  "profile_id": "pgivm-publication-linux-arm64-17.11",
+  "profile_revision": "94eee30af12bf8d1d512876c04f9d1c9897b804c853ba2ce85d30bd4b1518f4e",
+  "project": "pg_ivm",
+  "test_revision": "1ead7311604e4a760b5f151fad2005ae57a3c3f3",
+  "version": "1.16"
+}
