@@ -44,9 +44,9 @@ if not modules:
     raise SystemExit("selected PostGIS SQL files identify no native modules")
 
 environment = os.environ.copy()
-environment["PG_MACOS_DEPENDENCY_PREFIX"] = str(conda_prefix)
+environment["PG_MACOS_DEPENDENCY_PREFIX"] = os.pathsep.join((str(gdal_prefix), str(conda_prefix)))
 subprocess.run(
-    [sys.executable, str(repo / "scripts/macos/bundle.py"), str(closure_root), "arm64"],
+    [sys.executable, str(repo / "experiments/postgis-conda-macos-arm64-2026-10-21/bundle.py"), str(closure_root), "arm64"],
     check=True,
     env=environment,
 )
