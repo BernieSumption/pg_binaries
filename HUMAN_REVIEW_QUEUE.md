@@ -1,11 +1,5 @@
 # Human review queue
 
-## libcom_err licence in the Linux PostGIS closure
-
-The selected Linux PostGIS archive copies `libcom_err.so.2` from e2fsprogs. The [e2fsprogs notice](https://github.com/tytso/e2fsprogs/blob/master/NOTICE) gives the `lib/et` library MIT-style terms as an explicit exception to its GPLv2 terms for the filesystem utilities. The [library source terms](https://github.com/tytso/e2fsprogs/blob/master/lib/et/et_name.c) permit use, copying, modification and distribution, with a condition against using MIT or MIT SIPB names in advertising without permission. This is a known permissive licence, but it differs from the standard OSI-approved MIT licence. The [functional specification](specs/functional.md#maintain-a-list-of-all-licenses-and-link-to-it-in-downloads) therefore requires a human-reviewed alternative.
-
-Decision needed: May we accept the declared MIT-style terms for the copied `libcom_err` library? The bzip2 and Qhull licences have been reviewed and approved in `policies/licenses.md`. Build and verification work can continue.
-
 ## Backlog ideas
 
 From Bernie: Adding this here so that we don't forget it. Don't start work on this yet. I'd like to discuss the viability of these and specify them properly before we go ahead. If indeed we decide to go ahead at all.
