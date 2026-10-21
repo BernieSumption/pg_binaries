@@ -102,7 +102,7 @@ if [[ -z "$staged_module" || ! -s "$stage_root/$sharedir_rel/extension/address_s
 fi
 pkg="$work/package/address_standardizer"
 module_name=$(basename "$staged_module")
-mkdir -p "$pkg/$pkglib_rel" "$pkg/share/extension" "$pkg/lib" "$pkg/LICENSES"
+mkdir -p "$pkg/$pkglib_rel" "$pkg/share/extension" "$pkg/lib"
 cp "$staged_module" "$pkg/$pkglib_rel/"
 cp "$stage_root/$sharedir_rel/extension/address_standardizer"* "$pkg/share/extension/"
 cp -a "$work/pcre2/lib"/libpcre2-8*.dylib "$pkg/lib/"
@@ -115,19 +115,15 @@ pcre_dylib=$(find "$pkg/lib" -maxdepth 1 -name 'libpcre2-8*.dylib' -print -quit)
 pcre_name=$(basename "$pcre_dylib")
 test -n "$pcre_load" && test -n "$pcre_name"
 install_name_tool -change "$pcre_load" "@loader_path/$pcre_name" "$module"
-cp "$work/source/address_standardizer/COPYING" "$pkg/LICENSES/Address-Standardizer.txt"
-cp "$work/source/pcre2-$pcre_version/LICENCE.md" "$pkg/LICENSES/PCRE2.txt"
-cp "$work/source/pcre2-$pcre_version/deps/sljit/LICENSE" "$pkg/LICENSES/SLJIT.txt"
-cat > "$pkg/LICENSES/license-inventory.json" <<EOF
-{"schema_version":1,"components":[{"component":"Address Standardizer","version":"3.7.0","payload_paths":["$pkglib_rel/$module_name","share/extension"],"license_file":"Address-Standardizer.txt","license_source":"https://github.com/postgis/address_standardizer/blob/v3.7.0/COPYING","source_commit":"$expected_commit","redistribution_review":{"status":"resolved","basis":"Address Standardizer 3.7.0 uses the upstream MIT-style COPYING permission terms. The archive includes the complete copyright and permission notice. Under the repository-licence rule, those terms also cover its data files without separate terms. No source delivery is required for this binary distribution.","source_obligation":"none"}},{"component":"PCRE2","version":"$pcre_version","payload_paths":["lib"],"license_file":"PCRE2.txt","additional_license_files":["SLJIT.txt"],"license_source":"https://github.com/PCRE2Project/pcre2/blob/pcre2-$pcre_version/LICENCE.md","additional_license_sources":["https://github.com/PCRE2Project/pcre2/blob/pcre2-$pcre_version/deps/sljit/LICENSE"],"source_sha256":"$pcre_sha","redistribution_review":{"status":"resolved","basis":"PCRE2 10.48 uses BSD-3-Clause WITH PCRE2-exception; its enabled JIT includes bundled SLJIT under a separate two-clause BSD licence. The archive includes both complete licence notices, conditions and disclaimers and must not use the Cambridge or contributor names for endorsement. Neither licence requires source delivery for this binary distribution.","source_obligation":"none"}}]}
-EOF
+python3 "$repo/tools/license_pointer.py" write "$pkg" address_standardizer
 cat > "$work/package/metadata.json" <<EOF
-{"project":"Address Standardizer","version":"3.7.0","sql_names":["address_standardizer","address_standardizer_data_us"],"requires":[],"configuration_prerequisites":[],"runtime_prerequisites":[],"postgresql_version":"$pg_version","platform":"macos","architecture":"$architecture","source":{"url":"https://github.com/postgis/address_standardizer/tree/v3.7.0","commit":"$expected_commit"},"core_archive":{"basename":"$core_name","sha256":"$core_sha"},"dependencies":[{"name":"PCRE2","version":"$pcre_version","sha256":"$pcre_sha"}],"license_inventory":"address_standardizer/LICENSES/license-inventory.json"}
+{"project":"Address Standardizer","version":"3.7.0","sql_names":["address_standardizer","address_standardizer_data_us"],"requires":[],"configuration_prerequisites":[],"runtime_prerequisites":[],"postgresql_version":"$pg_version","platform":"macos","architecture":"$architecture","source":{"url":"https://github.com/postgis/address_standardizer/tree/v3.7.0","commit":"$expected_commit"},"core_archive":{"basename":"$core_name","sha256":"$core_sha"},"dependencies":[{"name":"PCRE2","version":"$pcre_version","sha256":"$pcre_sha"}]}
 EOF
 cp "$pkg/$pkglib_rel/$module_name" "$pgroot/$pkglib_rel/"
 cp -a "$pkg/share/extension/." "$pgroot/share/extension/"
 name="address-standardizer-3.7.0-postgresql-$pg_version-macos-$architecture.tar.gz"
 tar -C "$work/package" -czf "$output/$name" address_standardizer metadata.json
+python3 "$repo/tools/license_pointer.py" verify "$output/$name" address_standardizer
 cd "$output"
 shasum -a 256 "$name" > "$name.sha256"
 cat > build-evidence.txt <<EOF

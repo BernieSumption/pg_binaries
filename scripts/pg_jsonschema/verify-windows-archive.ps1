@@ -14,6 +14,12 @@ $coreName = "postgresql-$PostgreSQLVersion-windows-x86_64.tar.gz"
 $extensionName = "pg_jsonschema-0.3.4-postgresql-$PostgreSQLVersion-windows-x86_64.tar.gz"
 $coreArchive = Join-Path $CoreArchiveDirectory $coreName
 $extensionArchive = Join-Path $ExtensionArchiveDirectory $extensionName
+$repo = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
+$python = (Get-Command python -ErrorAction Stop).Source
+foreach ($entry in @(@($coreArchive, 'postgresql'), @($extensionArchive, 'pg_jsonschema'))) {
+  & $python (Join-Path $repo 'tools/license_pointer.py') verify $entry[0] $entry[1]
+  if ($LASTEXITCODE -ne 0) { throw "Licence pointer verification failed for $(Split-Path $entry[0] -Leaf)." }
+}
 foreach ($archive in @($coreArchive, $extensionArchive)) {
   if (-not (Test-Path $archive -PathType Leaf)) { throw "Required archive is missing: $archive" }
   $sidecar = ((Get-Content "$archive.sha256" -Raw) -split '\s+')[0].ToLowerInvariant()

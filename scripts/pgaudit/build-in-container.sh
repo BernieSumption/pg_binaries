@@ -56,31 +56,9 @@ test "$(sed -n "s/^default_version = '\([^']*\)'/\1/p" pgaudit.control)" = "$ver
 make USE_PGXS=1 -j 4
 make USE_PGXS=1 install DESTDIR=/work/stage
 install_root=/work/stage/opt/postgresql
-mkdir -p /work/package/pgaudit/{lib,share/extension,LICENSES}
+mkdir -p /work/package/pgaudit/{lib,share/extension}
 cp "$install_root/lib/pgaudit.so" /work/package/pgaudit/lib/
 cp "$install_root/share/extension/"* /work/package/pgaudit/share/extension/
-cat LICENSE "$pgroot/LICENSES/PostgreSQL.txt" > /work/package/pgaudit/LICENSES/pgAudit.txt
-grep -Fq 'This code is released under the PostgreSQL licence' /work/package/pgaudit/LICENSES/pgAudit.txt
-grep -Fq 'Permission to use, copy, modify, and distribute this software' /work/package/pgaudit/LICENSES/pgAudit.txt
-cat > /work/package/pgaudit/LICENSES/pgaudit-inventory.json <<EOF
-{
-  "schema_version": 1,
-  "components": [{
-    "component": "pgaudit",
-    "version": "${version}",
-    "payload_paths": ["lib/pgaudit.so", "share/extension"],
-    "license_file": "pgAudit.txt",
-    "license_source": "https://github.com/pgaudit/pgaudit/tree/${source_ref}/LICENSE",
-    "source_url": "${source_url}",
-    "source_sha256": "${source_sha256}",
-    "redistribution_review": {
-      "status": "resolved",
-      "basis": "The unmodified pgAudit ${version} LICENSE points to the PostgreSQL licence and names the PostgreSQL Global Development Group. This package retains that upstream notice with the full PostgreSQL licence text already included in the selected PostgreSQL ${pg_version} archive. The licence permits binary redistribution with the notice and terms retained and requires no source delivery.",
-      "source_obligation": "none"
-    }
-  }]
-}
-EOF
 cat > /work/package/metadata.json <<EOF
 {"project":"pgaudit","version":"${version}","sql_names":["pgaudit"],"requires":[],"configuration_prerequisites":[{"type":"postgresql_setting","name":"shared_preload_libraries","value":"pgaudit"}],"runtime_prerequisites":[],"postgresql_version":"${pg_version}","platform":"linux","architecture":"${architecture}","source":{"url":"${source_url}","sha256":"${source_sha256}"}}
 EOF
@@ -103,6 +81,7 @@ grep -F 'READ' "$log_file" | grep -F 'SELECT payload FROM public.pgaudit_probe'
 runuser -u postgres -- "$pgroot/bin/pg_ctl" -D /work/data -m fast -w stop
 trap - EXIT
 cd /work/package
+python3 /usr/local/bin/license_pointer.py write /work/package/pgaudit pgaudit
 tar -czf "/out/$archive" pgaudit metadata.json
 cd /out
 sha256sum "$archive" > "$archive.sha256"

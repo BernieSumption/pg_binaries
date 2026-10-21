@@ -10,7 +10,7 @@ case "$architecture" in
   *) echo "Unsupported Linux architecture: $architecture" >&2; exit 2 ;;
 esac
 
-mkdir -p "$root/lib/glibc" "$root/libexec" "$root/LICENSES"
+mkdir -p "$root/lib/glibc" "$root/libexec"
 for soname in "$loader" libc.so.6 libm.so.6 libpthread.so.0 libdl.so.2 \
                librt.so.1 libresolv.so.2 libnss_files.so.2 libnss_dns.so.2; do
   if [[ $soname == "$loader" ]]; then
@@ -25,11 +25,6 @@ for soname in "$loader" libc.so.6 libm.so.6 libpthread.so.0 libdl.so.2 \
   cp -L "$source" "$root/lib/glibc/$soname"
   printf 'libc6\tlib/glibc/%s\n' "$soname" >> "$runtime_map"
 done
-cp /usr/share/doc/libc6/copyright "$root/LICENSES/libc6.copyright"
-for name in GFDL-1.3 GPL-2 LGPL-2.1; do
-  cp "/usr/share/common-licenses/$name" "$root/LICENSES/libc6-$name.txt"
-done
-cp /usr/share/doc/musl/copyright "$root/LICENSES/musl.copyright"
 musl-gcc -static -O2 -g -Wl,--build-id=sha1 -o "$root/bin/.pg-launcher" /usr/local/src/pg-launcher.c
 printf 'musl\tbin/.pg-launcher\n' >> "$runtime_map"
 

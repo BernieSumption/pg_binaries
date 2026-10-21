@@ -64,14 +64,10 @@ fi
 cp -a /opt/postgresql/. /work/stage/postgresql/
 # The extension is delivered separately and must not be silently bundled.
 if [[ $core_only == 0 ]]; then
-  mkdir -p /work/stage/pgvector/lib /work/stage/pgvector/share/extension /work/stage/pgvector/LICENSES
+  mkdir -p /work/stage/pgvector/lib /work/stage/pgvector/share/extension
   mv /work/stage/postgresql/lib/vector.so /work/stage/pgvector/lib/
   mv /work/stage/postgresql/share/extension/vector* /work/stage/pgvector/share/extension/
-  cp LICENSE /work/stage/pgvector/LICENSES/pgvector.txt
 fi
-mkdir -p /work/stage/postgresql/LICENSES
-cp "/work/src/postgresql-${pg_version}/COPYRIGHT" /work/stage/postgresql/LICENSES/PostgreSQL.txt
-cp -a /usr/share/common-licenses /work/stage/postgresql/LICENSES/common-licenses
 builtins=$(python3 /usr/local/bin/discover-builtins /work/stage/postgresql)
 
 # Copy runtime libraries into the archive, then make every ELF file look for
@@ -97,31 +93,6 @@ for pass in 1 2 3; do
         if [[ -z "$package" ]]; then
           package=$(dpkg-query -S "*/$(basename "$resolved")" 2>/dev/null | head -1 | cut -d: -f1 || true)
         fi
-        if [[ -z "$package" || ! -f "/usr/share/doc/$package/copyright" ]]; then
-          echo "No package copyright found for bundled library $library ($path)" >&2
-          exit 1
-        fi
-        cp "/usr/share/doc/$package/copyright" "$root/LICENSES/${package}.copyright"
-        if [[ "$package" == libicu70 ]]; then
-          package_identity=$(dpkg-query -W -f='${Version} ${source:Package} ${source:Version}' libicu70)
-          read -r package_version source_package source_version <<< "$package_identity"
-          if [[ "$package_version" != 70.1-2 || "$source_package" != icu || "$source_version" != 70.1-2 ]]; then
-            echo "Unexpected libicu70 source identity: $package_version $source_package $source_version" >&2
-            exit 1
-          fi
-          cp /usr/local/share/pg-binaries/icu-70.1-LICENSE.txt \
-            "$root/LICENSES/libicu70-icu-70.1-LICENSE.txt"
-        elif [[ "$package" == libxml2 ]]; then
-          package_identity=$(dpkg-query -W -f='${Version} ${source:Package} ${source:Version}' libxml2)
-          read -r package_version source_package source_version <<< "$package_identity"
-          if [[ "$package_version" != 2.9.13+dfsg-1ubuntu0.14 || \
-                "$source_package" != libxml2 || "$source_version" != 2.9.13+dfsg-1ubuntu0.14 ]]; then
-            echo "Unexpected libxml2 source identity: $package_version $source_package $source_version" >&2
-            exit 1
-          fi
-          cp /usr/local/share/pg-binaries/libxml2-2.9.13-dict-notice.txt \
-            "$root/LICENSES/libxml2-2.9.13-dict-notice.txt"
-        fi
         printf '%s\t%s\n' "$package" "lib/runtime/$library" >> /work/runtime-packages.tsv
       fi
     done < <(ldd "$elf" 2>/dev/null | awk '$2 == "=>" && $3 ~ /^\// {print $1, $3}')
@@ -140,8 +111,7 @@ done < <(find "$root/bin" "$root/lib" -type f -print0)
 
 bash /usr/local/bin/bundle-glibc "$root" "$architecture" /work/runtime-packages.tsv
 
-python3 /usr/local/bin/write-linux-license-inventory \
-  "$root" "$pg_version" /work/runtime-packages.tsv
+python3 /usr/local/bin/license-pointer write "$root" postgresql
 
 cat > "$root/manifest.json" <<EOF
 {"schema_version":1,"component":"postgresql","version":"${pg_version}","postgresql_version":"${pg_version}","platform":"linux","architecture":"${architecture}","build_id":"${build_id}","source_revision":"${source_revision}","source_archive":{"url":"${pg_source_url}","sha256":"${pg_source_sha256}"},"build_configuration":"${build_configuration}","builder_image_id":"${builder_image_id}","builder_inputs":{"base_image":"ubuntu:22.04","base_image_digest":"${base_image_digest}","packages_sha256":"${builder_packages_sha256}"},"bundled_glibc_version":"$(dpkg-query -W -f='${Version}' libc6)","included_extensions":${builtins},"capabilities":{"icu":true,"libc_collations":true,"lz4":true,"zstd":true}}
@@ -151,9 +121,7 @@ if [[ $core_only == 0 ]]; then
 cat > /work/stage/metadata.json <<EOF
 {"project":"pgvector","version":"${vector_version}","sql_names":["vector"],"requires":[],"configuration_prerequisites":[],"runtime_prerequisites":[],"build_id":"${build_id}","source_revision":"${source_revision}","source_archive":{"url":"${vector_source_url}","sha256":"${vector_source_sha256}"},"build_configuration":"${build_configuration}","builder_image_id":"${builder_image_id}","platform":"linux","architecture":"${architecture}"}
 EOF
-cat > /work/stage/pgvector/LICENSES/pgvector-inventory.json <<EOF
-{"schema_version":1,"components":[{"component":"pgvector","version":"${vector_version}","payload_paths":["lib/vector.so","share/extension"],"license_file":"pgvector.txt","license_source":"${vector_source_url}","source_url":"${vector_source_url}","source_sha256":"${vector_source_sha256}","redistribution_review":{"status":"resolved","basis":"The unmodified pgvector ${vector_version} source includes its PostgreSQL-style licence, permitting binary redistribution with its notice, permission and disclaimer text retained.","source_obligation":"none"}}]}
-EOF
+python3 /usr/local/bin/license-pointer write /work/stage/pgvector pgvector
 fi
 cd /work/stage
 tar -czf "/out/$pg_archive" postgresql

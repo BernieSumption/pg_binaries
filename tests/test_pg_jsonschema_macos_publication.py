@@ -15,6 +15,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
 import emit_pg_jsonschema_macos_publication as emitter
 import import_pg_jsonschema_macos_publication as importer
 import macos_core_target_config
+from license_pointer import LICENSE_POINTER
 from pg_jsonschema_macos_target import load_target
 
 
@@ -89,12 +90,9 @@ class PublicationFixture:
             (payload / "lib").mkdir(parents=True)
             (payload / "share/extension").mkdir(parents=True)
             (payload / "LICENSES/pg_jsonschema").mkdir(parents=True)
-            (payload / "LICENSES/cargo").mkdir(parents=True)
             (payload / "lib" / emitter.MODULE_FILENAME).write_bytes(b"Mach-O fixture")
             (payload / "share/extension/pg_jsonschema.control").write_text("default_version = '0.3.4'\n")
-            (payload / "LICENSES/pg_jsonschema/LICENSE").write_text("Apache License\n")
-            (payload / "LICENSES/cargo/cargo-license-inventory.json").write_text("{}\n")
-            (payload / "LICENSES/pg_jsonschema-inventory.json").write_text("{}\n")
+            (payload / "LICENSES/pg_jsonschema/LICENCE").write_text(LICENSE_POINTER)
             (base / "metadata.json").write_text(json.dumps(metadata))
             with tarfile.open(self.extension, "w:gz") as archive:
                 archive.add(payload, arcname="pg_jsonschema")
@@ -114,7 +112,6 @@ class PublicationFixture:
             f"core_build_id={emitter.CORE_BUILD_ID}\n"
             f"core_source_revision={emitter.CORE_SOURCE_REVISION}\n"
             f"core_sha256={self.core_hash}\n")
-        (self.output / "cargo-license-inventory.json").write_text("{}\n")
 
     def emit(self, step_results=None):
         return emitter.emit(self.root, self.core, self.output, self.output,
@@ -132,6 +129,17 @@ class PgJsonschemaMacOSPublicationTests(unittest.TestCase):
     def setUp(self):
         self.fixture = PublicationFixture()
         self.addCleanup(self.fixture.close)
+
+    def test_macos_recipe_uses_central_license_pointer(self):
+        root = Path(__file__).resolve().parents[1]
+        build = (root / "scripts/pg_jsonschema/macos-publication.sh").read_text()
+        verify = (root / "scripts/pg_jsonschema/verify-macos-publication.sh").read_text()
+        self.assertIn('license_pointer.py" write', build)
+        self.assertIn('license_pointer.py" verify', build)
+        self.assertIn('license_pointer.py" verify', verify)
+        for content in (build, verify):
+            self.assertNotIn("inventory_cargo_licenses", content)
+            self.assertNotIn("component_inventory", content)
 
     def test_emits_non_eligible_archive_bound_evidence(self):
         paths = self.fixture.emit()

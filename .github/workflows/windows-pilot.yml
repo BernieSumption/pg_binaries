@@ -94,7 +94,7 @@ jobs:
         with:
           python-version: '3.12'
       - name: Check Windows build evidence helpers
-        run: python -m unittest tests/test_create_windows_symbols.py tests/test_map_vcpkg_dlls.py tests/test_prepare_postgresql_15_msvc.py tests/test_stage_windows_postgres_import_library.py tests/test_package_windows_postgresql_test_fixtures.py
+        run: python -m unittest tests/test_create_windows_symbols.py tests/test_prepare_postgresql_15_msvc.py tests/test_stage_windows_postgres_import_library.py tests/test_package_windows_postgresql_test_fixtures.py
       - name: Set up PostgreSQL build dependencies
         run: ./scripts/windows/setup-core-dependencies.ps1 -PostgreSQLVersion $env:PG_VERSION
       - name: Build and package

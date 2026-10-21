@@ -41,6 +41,10 @@ try {
       throw "Downloaded archive checksum mismatch: $([IO.Path]::GetFileName($archive))"
     }
   }
+  foreach ($entry in @(@($coreArchive, 'postgresql'), @($extensionArchive, 'hypopg'))) {
+    & $pythonExe (Join-Path $repo 'tools/license_pointer.py') verify $entry[0] $entry[1]
+    if ($LASTEXITCODE -ne 0) { throw "Licence pointer verification failed for $(Split-Path $entry[0] -Leaf)." }
+  }
   if (-not (Test-Path $pdb -PathType Leaf)) { throw 'Downloaded HypoPG PDB is missing' }
   $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio/Installer/vswhere.exe'
   if (-not (Test-Path $vswhere -PathType Leaf)) { throw 'Visual Studio vswhere.exe is missing on the verifier' }

@@ -8,5 +8,6 @@ COPY tools/select_extension_archive.py /usr/local/bin/select_extension_archive.p
 COPY tools/coverage.py /usr/local/bin/coverage.py
 COPY tools/linux_project_assembly_inventory.py /usr/local/bin/linux-project-assembly-inventory
 COPY support.json /work/support.json
+COPY tools/license_pointer.py /usr/local/bin/license_pointer.py
 RUN chmod +x /usr/local/bin/verify-hypopg-pilot
 ENTRYPOINT ["/usr/local/bin/verify-hypopg-pilot"]

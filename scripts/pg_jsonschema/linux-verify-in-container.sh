@@ -13,6 +13,7 @@ cd /core
 sha256sum -c "$core_archive.sha256"
 mkdir -p /tmp/first /tmp/moved /tmp/extension /tmp/data /tmp/socket
 tar -xzf "/core/$core_archive" -C /tmp/first
+python3 /usr/local/bin/license_pointer.py verify "/extension/$archive" pg_jsonschema
 tar -xzf "/extension/$archive" -C /tmp/extension
 useradd -m postgres
 chown -R postgres:postgres /tmp/first /tmp/moved
@@ -40,12 +41,10 @@ with tarfile.open(archive, 'r:gz') as package:
 root = pathlib.Path('/tmp/extension/pg_jsonschema')
 assert (root / 'lib/pg_jsonschema.so').is_file()
 assert (root / 'share/extension/pg_jsonschema.control').is_file()
-assert (root / 'LICENSES/cargo/cargo-license-inventory.json').is_file()
-assert (root / 'LICENSES/pg_jsonschema-inventory.json').is_file()
+assert (root / 'LICENSES/pg_jsonschema/LICENCE').read_text() == 'See https://github.com/BernieSumption/pg_binaries/blob/main/LICENSES.md\n'
 (pathlib.Path('/analysis/source-identity.txt')).write_text(
     f'pg_jsonschema_commit={commit}\n')
 PY
-python3 /usr/local/bin/check-pg-jsonschema-component-inventory "/extension/$archive"
 extroot=/tmp/extension/pg_jsonschema
 while IFS= read -r -d '' source; do
   relative=${source#"$extroot/"}

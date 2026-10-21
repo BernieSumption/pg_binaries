@@ -69,28 +69,13 @@ test -s "$sharedir/extension/address_standardizer.control"
 test -s "$sharedir/extension/address_standardizer_data_us.control"
 test -s "$sharedir/extension/address_standardizer_data_us--${extension_sql_version}.sql"
 package=/work/package/address_standardizer
-mkdir -p "$package/$pkglib_rel" "$package/share/extension" "$package/lib" "$package/LICENSES"
+mkdir -p "$package/$pkglib_rel" "$package/share/extension" "$package/lib"
 cp "$pkglibdir/address_standardizer.so" "$package/$pkglib_rel/"
 cp "$sharedir/extension/address_standardizer"* "$package/share/extension/"
 cp -a "$pgroot/lib"/libpcre2-8.so* "$package/lib/"
-cp "COPYING" "$package/LICENSES/Address-Standardizer.txt"
-cp "/work/source/pcre2-${pcre2_version}/LICENCE.md" "$package/LICENSES/PCRE2.txt"
-cp "/work/source/pcre2-${pcre2_version}/deps/sljit/LICENSE" "$package/LICENSES/SLJIT.txt"
-cp "COPYING" /out/Address-Standardizer-COPYING.txt
-cp "/work/source/pcre2-${pcre2_version}/LICENCE.md" /out/PCRE2-LICENCE.md
-cp "/work/source/pcre2-${pcre2_version}/deps/sljit/LICENSE" /out/SLJIT-LICENSE.txt
-
-cat > "$package/LICENSES/license-inventory.json" <<EOF
-{
-  "schema_version": 1,
-  "components": [
-    {"component": "Address Standardizer", "version": "${extension_version}", "payload_paths": ["${pkglib_rel}/address_standardizer.so", "share/extension"], "license_file": "Address-Standardizer.txt", "license_source": "https://github.com/postgis/address_standardizer/blob/v3.7.0/COPYING", "source_url": "https://github.com/postgis/address_standardizer/tree/v3.7.0", "source_commit": "${extension_commit}", "redistribution_review": {"status": "resolved", "basis": "Address Standardizer 3.7.0 uses the upstream MIT-style COPYING permission terms. The archive includes the complete copyright and permission notice. Under the repository-licence rule, those terms also cover its data files without separate terms. No source delivery is required for this binary distribution.", "source_obligation": "none"}},
-    {"component": "PCRE2", "version": "${pcre2_version}", "payload_paths": ["lib/libpcre2-8.so"], "license_file": "PCRE2.txt", "additional_license_files": ["SLJIT.txt"], "license_source": "https://github.com/PCRE2Project/pcre2/blob/pcre2-${pcre2_version}/LICENCE.md", "additional_license_sources": ["https://github.com/PCRE2Project/pcre2/blob/pcre2-${pcre2_version}/deps/sljit/LICENSE"], "source_url": "https://github.com/PCRE2Project/pcre2/releases/download/pcre2-${pcre2_version}/pcre2-${pcre2_version}.tar.bz2", "source_sha256": "${pcre2_sha256}", "redistribution_review": {"status": "resolved", "basis": "PCRE2 10.48 uses BSD-3-Clause WITH PCRE2-exception; its enabled JIT includes bundled SLJIT under a separate two-clause BSD licence. The archive includes both complete licence notices, conditions and disclaimers and must not use the Cambridge or contributor names for endorsement. Neither licence requires source delivery for this binary distribution.", "source_obligation": "none"}}
-  ]
-}
-EOF
+python3 /usr/local/bin/license-pointer write "$package" address_standardizer
 cat > /work/package/metadata.json <<EOF
-{"project":"Address Standardizer","version":"${extension_version}","sql_names":["address_standardizer","address_standardizer_data_us"],"requires":[],"configuration_prerequisites":[],"runtime_prerequisites":[],"postgresql_version":"${pg_version}","platform":"linux","architecture":"${architecture}","payload_paths":["address_standardizer/${pkglib_rel}/address_standardizer.so","address_standardizer/lib/libpcre2-8.so","address_standardizer/share/extension","address_standardizer/LICENSES"],"source":{"url":"https://github.com/postgis/address_standardizer/tree/v3.7.0","commit":"${extension_commit}"},"dependencies":[{"name":"PCRE2","version":"${pcre2_version}","sha256":"${pcre2_sha256}"}],"license_inventory":"address_standardizer/LICENSES/license-inventory.json"}
+{"project":"Address Standardizer","version":"${extension_version}","sql_names":["address_standardizer","address_standardizer_data_us"],"requires":[],"configuration_prerequisites":[],"runtime_prerequisites":[],"postgresql_version":"${pg_version}","platform":"linux","architecture":"${architecture}","payload_paths":["address_standardizer/${pkglib_rel}/address_standardizer.so","address_standardizer/lib/libpcre2-8.so","address_standardizer/share/extension"],"source":{"url":"https://github.com/postgis/address_standardizer/tree/v3.7.0","commit":"${extension_commit}"},"dependencies":[{"name":"PCRE2","version":"${pcre2_version}","sha256":"${pcre2_sha256}"}]}
 EOF
 cp -a "$package/$pkglib_rel/address_standardizer.so" "$pkglibdir/"
 cp -a "$package/share/extension/." "$sharedir/extension/"

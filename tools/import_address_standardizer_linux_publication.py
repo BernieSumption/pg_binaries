@@ -10,7 +10,7 @@ import shutil
 import sys
 
 import coverage
-import address_standardizer_license_inventory
+import license_pointer
 import emit_address_standardizer_linux_publication as publication
 import linux_core_resolution
 
@@ -178,7 +178,7 @@ def import_run(root, core_archives, archives, run_id):
     data_record = read_json(data_record_path)
     redistribution_status = receipt.get("redistribution_status")
     if redistribution_status == publication.REDISTRIBUTION_RESOLVED:
-        address_standardizer_license_inventory.validate_archive(archive)
+        license_pointer.verify_archive(archive, "address_standardizer")
     elif redistribution_status != publication.BLOCK:
         raise coverage.CoverageError("receipt redistribution status is unsupported")
     if (receipt.get("profile_id") != selected or receipt.get("profile_revision") != profile["profile_revision"]

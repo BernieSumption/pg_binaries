@@ -6,5 +6,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
  && rm -rf /var/lib/apt/lists/*
 COPY scripts/address_standardizer/build-in-container.sh /usr/local/bin/build-address-standardizer-pilot
 COPY scripts/address_standardizer/probe.sql /work/probe.sql
+COPY tools/license_pointer.py /usr/local/bin/license_pointer.py
 RUN chmod +x /usr/local/bin/build-address-standardizer-pilot
 ENTRYPOINT ["/usr/local/bin/build-address-standardizer-pilot"]

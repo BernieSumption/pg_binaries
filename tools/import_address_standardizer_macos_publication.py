@@ -8,7 +8,7 @@ import sys
 
 import coverage
 import extension_archive_plan
-import address_standardizer_license_inventory
+import license_pointer
 import macos_publication_evidence as evidence
 
 VERSION = "3.7.0"
@@ -142,7 +142,7 @@ def import_run(root, core_dir, archive_dir, run_id, target_path):
     data_record = _read(data_record_path)
     redistribution_status = receipt.get("redistribution_status")
     if redistribution_status == "resolved":
-        address_standardizer_license_inventory.validate_archive(extension)
+        license_pointer.verify_archive(extension, "address_standardizer")
     elif redistribution_status != BLOCK:
         raise coverage.CoverageError("receipt redistribution status is unsupported")
     outcome = "failed" if "failed" in results.values() else "skipped" if "skipped" in results.values() else "passed"

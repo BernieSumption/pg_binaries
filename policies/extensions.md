@@ -30,7 +30,7 @@ Description: [PostGIS](https://postgis.net/) adds spatial types, indexes and fun
 
 For inclusion: PostGIS is mature, maintained and offered by major PostgreSQL hosts. Spatial columns, indexes, constraints and functions are used directly in application schemas. Include all four PostGIS SQL extensions at the project level, including SFCGAL.
 
-Against inclusion: GEOS, PROJ and LibXML2 add native dependencies; raster support adds GDAL, and SFCGAL adds a substantial C++ dependency stack. Required runtime libraries and redistributable coordinate-system data must be bundled with their licences and source obligations. The Linux pilot packages the selected SQL modules and their runtime closure; it omits upstream's optional import, export and administration programs because the specified schema operations do not require them and their host interpreters or C library would break the kernel-only support claim. This pilot does not establish all-platform portability or complete redistribution evidence.
+Against inclusion: GEOS, PROJ and LibXML2 add native dependencies; raster support adds GDAL, and SFCGAL adds a substantial C++ dependency stack. Required runtime libraries and redistributable coordinate-system data must be bundled; their licence declarations are recorded in the central [licence inventory](../LICENSES.md). The Linux pilot packages the selected SQL modules and their runtime closure; it omits upstream's optional import, export and administration programs because the specified schema operations do not require them and their host interpreters or C library would break the kernel-only support claim. This pilot does not establish all-platform portability or complete redistribution evidence.
 
 Version policy: Apply the shared version support rule to releases compatible with each PostgreSQL version. Use upstream PostgreSQL compatibility information to select the release for each core.
 
@@ -44,7 +44,7 @@ Description: [PostGIS TIGER Geocoder](https://postgis.net/2026/08/PostGIS-Tiger-
 
 For inclusion: Schema DDL can use its functions and the `tiger` schema. `CREATE EXTENSION` installs the schema and empty reference tables without downloading Census data; the loader downloads data only when a user chooses to populate them. The separately released extension is PL/pgSQL-only, so its SQL files can be tested across the required OS and architecture targets without a native build for each target.
 
-Against inclusion: Actual geocoding needs US Census TIGER data loaded by the user. The archive must not bundle that dataset or claim to geocode addresses before loading it. The extension requires PostGIS and the built-in `fuzzystrmatch`; GPLv2 redistribution requires its licence and an appropriate source link or offer in the archive. SQL-only packaging still needs installation and DDL tests in the environments required by [the testing policy](testing.md).
+Against inclusion: Actual geocoding needs US Census TIGER data loaded by the user. The archive must not bundle that dataset or claim to geocode addresses before loading it. The extension requires PostGIS and the built-in `fuzzystrmatch`. SQL-only packaging still needs installation and DDL tests in the environments required by [the testing policy](testing.md).
 
 Version policy: Apply the shared version support rule to compatible releases. Treat upstream data-year majors according to the shared two-year rule; verify the selected package with its declared PostgreSQL and PostGIS prerequisites.
 
@@ -56,7 +56,7 @@ Sources: [2025.2 announcement](https://postgis.net/2026/08/PostGIS-Tiger-Geocode
 
 Description: [Address Standardizer](https://github.com/postgis/address_standardizer) provides address parsing and rule-based standardization. Its SQL extension names are `address_standardizer` and `address_standardizer_data_us`.
 
-For inclusion: Its parsing functions can appear in schema DDL, and major PostgreSQL hosts offer both SQL extensions. The upstream repository contains the USPS-derived city file used to generate `parseaddress-stcities.h` and states an MIT-style licence in `COPYING`. No separate terms were identified for that US file. Under the [repository-data licence assumption](releases.md#redistribution-review-before-publication), the city file and compiled output use the repository licence; do not investigate whether upstream had authority to license the earlier USPS source.
+For inclusion: Its parsing functions can appear in schema DDL, and major PostgreSQL hosts offer both SQL extensions. The upstream repository contains the USPS-derived city file used to generate `parseaddress-stcities.h` and states an MIT-style licence in `COPYING`. No separate terms were identified for that US file. Under the [repository-data licence assumption](licenses.md#declared-project-licences), the city file and compiled output use the repository licence; do not investigate whether upstream had authority to license the earlier USPS source.
 
 Against inclusion: The native library needs PCRE2, which must be bundled on platforms where it is not universal. Upstream tests the standalone project on Linux; macOS builds still need final-archive verification. The tagged source does not build with the tested Windows toolchains without source changes, which this project does not develop. Any newer data file with explicit separate terms needs its own redistribution review.
 

@@ -7,6 +7,7 @@ repo=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 mkdir -p "$output"; output=$(cd "$output" && pwd)
 [[ $(uname -s) == Darwin && $(uname -m) == arm64 ]] || { echo 'Verification requires fresh native macOS arm64' >&2; exit 1; }
 extension="$archives/postgis-3.6.4-postgresql-18.6-macos-arm64.tar.gz"
+python3 "$repo/tools/license_pointer.py" verify "$extension" postgis
 for archive in "$core_archive" "$extension"; do test -s "$archive"; (cd "$(dirname "$archive")" && shasum -a 256 -c "$(basename "$archive").sha256"); done
 core_sha=$(shasum -a 256 "$core_archive" | awk '{print $1}')
 ext_sha=$(shasum -a 256 "$extension" | awk '{print $1}')
@@ -18,47 +19,15 @@ mkdir -p "$work/assembled" "$work/extract" "$work/socket"
 tar -xzf "$core_archive" -C "$work/assembled"
 tar -xzf "$extension" -C "$work/extract"
 pgroot="$work/assembled/postgresql"; extroot="$work/extract/postgis"
-python3 - "$extroot" "$extension" "$core_archive" "$core_sha" "$ext_sha" "$pgroot" <<'PY'
+python3 - "$extroot" "$extension" "$core_archive" "$core_sha" "$ext_sha" <<'PY'
 import hashlib,json,pathlib,sys,tarfile
-ext,archive,core=map(pathlib.Path,sys.argv[1:4]); core_sha,ext_sha=sys.argv[4:6]; core_root=pathlib.Path(sys.argv[6])
+ext,archive,core=map(pathlib.Path,sys.argv[1:4]); core_sha,ext_sha=sys.argv[4:6]
 with tarfile.open(archive,'r:gz') as stream:
     metadata=json.load(stream.extractfile('metadata.json'))
 expected={'project':'postgis','version':'3.6.4','sql_names':['postgis','postgis_raster','postgis_sfcgal','postgis_topology'],'postgresql_version':'18.6','platform':'macos','architecture':'arm64','core_archive':{'basename':core.name,'sha256':core_sha}}
 if any(metadata.get(key)!=value for key,value in expected.items()): raise SystemExit('PostGIS archive metadata identity mismatch')
 if not metadata.get('build_id','').startswith('github-') or len(metadata.get('source_revision',''))!=40: raise SystemExit('missing PostGIS build provenance')
 if hashlib.sha256(archive.read_bytes()).hexdigest()!=ext_sha: raise SystemExit('extension archive bytes changed')
-inventory=json.loads((ext/'LICENSES/postgis-inventory.json').read_text())
-if inventory.get('schema_version')!=1 or not inventory.get('components'): raise SystemExit('missing PostGIS licence inventory')
-identities=[item.get('component') for item in inventory['components']]
-if any(not identity for identity in identities) or len(set(identities))!=len(identities): raise SystemExit('PostGIS licence component identities are missing or duplicated')
-core_inventory=json.loads((core_root/'LICENSES/inventory.json').read_text())
-for item in inventory.get('reused_core_dependencies',[]):
-    library=item.get('library'); path=core_root/'lib'/library
-    owner=next((value for value in core_inventory['components'] if library in value.get('libraries',[])),None)
-    if not path.is_file() or hashlib.sha256(path.read_bytes()).hexdigest()!=item.get('sha256') or not owner or owner.get('redistribution_review',{}).get('status')!='resolved':
-        raise SystemExit(f'invalid checked-core dependency reuse record: {library}')
-    if item.get('license_file')!='LICENSES/'+owner.get('license_file'): raise SystemExit(f'core licence reference mismatch: {library}')
-mapped=set()
-for component in inventory['components']:
-    if component.get('redistribution_review',{}).get('status')!='resolved': raise SystemExit(f"unresolved redistribution record: {component.get('component')}")
-    review=component['redistribution_review']; obligation=review.get('source_obligation')
-    if obligation not in {'none','source-links','source-offer'}: raise SystemExit(f"invalid source obligation: {component.get('component')}")
-    if obligation=='source-links':
-        links=review.get('source_links',[])
-        if not links or any(not isinstance(link,str) or not link.startswith('https://') for link in links): raise SystemExit(f"missing public source links: {component.get('component')}")
-    if obligation=='source-offer' and not (ext/component.get('source_offer_file','')).is_file(): raise SystemExit(f"missing source offer: {component.get('component')}")
-    license_file=ext/component.get('license_file','')
-    if not license_file.is_file() or not license_file.stat().st_size: raise SystemExit(f'missing licence text: {license_file}')
-    for relative in component.get('additional_license_files',[]):
-        if not (ext/relative).is_file(): raise SystemExit(f'missing additional licence record: {relative}')
-    for relative in component.get('payload_paths',[]):
-        source=ext/relative
-        if not source.exists(): raise SystemExit(f'missing mapped payload: {relative}')
-        entries=({p.relative_to(ext).as_posix() for p in source.rglob('*') if p.is_file()} if source.is_dir() else {relative})
-        if mapped.intersection(entries): raise SystemExit(f'duplicate mapped payload: {relative}')
-        mapped.update(entries)
-actual={p.relative_to(ext).as_posix() for top in ('lib','share') for p in (ext/top).rglob('*') if p.is_file()}
-if actual!=mapped: raise SystemExit(f"licence payload mapping mismatch: missing={sorted(actual-mapped)} extra={sorted(mapped-actual)}")
 for name in ('postgis','postgis_raster','postgis_sfcgal','postgis_topology'):
     if not (ext/f'share/extension/{name}.control').is_file(): raise SystemExit(f'missing {name} control')
 PY

@@ -50,7 +50,7 @@ test "$(sed -n "s/^default_version = '\\([^']*\\)'/\\1/p" pg_cron.control)" = 1.
 make PG_CONFIG="$pg_config" PG_LDFLAGS='-Wl,-rpath,@loader_path' -j "$(sysctl -n hw.ncpu)"
 make PG_CONFIG="$pg_config" install DESTDIR="$work/stage"
 staged_root="$work/stage$(cd "$pgroot" && pwd -P)"
-mkdir -p "$work/package/pg_cron"/{lib,share/extension,LICENSES}
+mkdir -p "$work/package/pg_cron"/{lib,share/extension}
 modules=()
 for module in "$staged_root/lib/pg_cron.dylib" "$staged_root/lib/pg_cron.so"; do
   [[ ! -f "$module" ]] || modules+=("$module")
@@ -62,30 +62,14 @@ fi
 module_name=${modules[0]##*/}
 cp "${modules[0]}" "$work/package/pg_cron/lib/"
 cp "$staged_root/share/extension/"pg_cron* "$work/package/pg_cron/share/extension/"
-cp LICENSE "$work/package/pg_cron/LICENSES/pg_cron.txt"
-python3 - "$work/package/pg_cron/LICENSES/pg_cron-inventory.json" "$source_url" "$source_sha256" "$module_name" <<'PY'
-import json
-import pathlib
-import sys
-path, url, digest, module = sys.argv[1:]
-value = {"schema_version": 1, "components": [{
-    "component": "pg_cron", "version": "1.6.8",
-    "payload_paths": [f"lib/{module}", "share/extension"],
-    "license_file": "pg_cron.txt",
-    "license_source": "https://github.com/citusdata/pg_cron/blob/v1.6.8/LICENSE",
-    "source_url": url, "source_sha256": digest,
-    "redistribution_review": {"status": "resolved",
-        "basis": "The unmodified pg_cron 1.6.8 source archive includes the PostgreSQL License for this project. It permits binary redistribution with its copyright notice, permission paragraph and disclaimer retained; this archive includes the complete upstream LICENSE text.",
-        "source_obligation": "none"}}]}
-pathlib.Path(path).write_text(json.dumps(value, separators=(",", ":")) + "\n")
-PY
+python3 "$repo/tools/license_pointer.py" write "$work/package/pg_cron" pg_cron
 cat > "$work/package/metadata.json" <<EOF
 {"project":"pg_cron","version":"1.6.8","sql_names":["pg_cron"],"requires":[],"configuration_prerequisites":[{"type":"postgresql_setting","name":"shared_preload_libraries","value":"pg_cron"},{"type":"postgresql_setting","name":"cron.use_background_workers","value":"on"}],"runtime_prerequisites":[],"postgresql_version":"$pg_version","platform":"macos","architecture":"$architecture","source":{"url":"$source_url","sha256":"$source_sha256"},"core_archive":{"basename":"$core_name","sha256":"$core_sha256"}}
 EOF
-grep -Fq 'Permission to use, copy, modify, and distribute this software' LICENSE
 test -s "$work/package/pg_cron/lib/$module_name"
 test -s "$work/package/pg_cron/share/extension/pg_cron.control"
 tar -C "$work/package" -czf "$output/$extension_name" pg_cron metadata.json
+python3 "$repo/tools/license_pointer.py" verify "$output/$extension_name" pg_cron
 (cd "$output" && shasum -a 256 "$extension_name" > "$extension_name.sha256" && shasum -a 256 -c "$extension_name.sha256")
 python3 "$repo/tools/check_extension_redistribution.py" "$output/$extension_name"
 echo "PASS: built pg_cron 1.6.8 archive for PostgreSQL $pg_version on macOS $architecture"

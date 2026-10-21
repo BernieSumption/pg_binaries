@@ -84,7 +84,7 @@ make PG_CONFIG="$pgroot/bin/pg_config" OPTFLAGS='-O2 -g' -j "$(sysctl -n hw.ncpu
 make PG_CONFIG="$pgroot/bin/pg_config" OPTFLAGS= install
 
 package="$work/package"
-mkdir -p "$package/pgvector/lib" "$package/pgvector/share/extension" "$package/pgvector/LICENSES"
+mkdir -p "$package/pgvector/lib" "$package/pgvector/share/extension"
 library=
 for candidate in vector.dylib vector.so; do
   if [[ -s "$pgroot/lib/$candidate" ]]; then
@@ -95,12 +95,10 @@ done
 [[ -n "$library" ]] || { echo 'No pgvector module was installed' >&2; exit 1; }
 cp "$library" "$package/pgvector/lib/"
 cp "$pgroot/share/extension/vector"* "$package/pgvector/share/extension/"
-cp LICENSE "$package/pgvector/LICENSES/pgvector.txt"
+python3 "$repo/tools/license_pointer.py" write "$package/pgvector" pgvector
 python3 "$repo/scripts/macos/bundle.py" "$package/pgvector" "$architecture"
-python3 "$repo/scripts/macos/licenses.py" "$package/pgvector" "$source_prefix/share/pg_binaries/source-dependencies.json" --component pgvector --version "$vector_version" --source-url "$source_url" --source-sha256 "$source_sha"
-mv "$package/pgvector/LICENSES/inventory.json" "$package/pgvector/LICENSES/pgvector-inventory.json"
+mkdir -p "$package/pgvector/LICENSES"
 mv "$package/pgvector/bundled-dependencies.json" "$package/pgvector/LICENSES/pgvector-bundled-dependencies.json"
-
 configuration="postgresql-${pg_version};pgvector-${vector_version};builder=native-macos;deployment-target=11.0;pgvector-optflags=-O2,-g;runtime=bundled-dylibs"
 [[ "${GITHUB_RUN_ID:-}" =~ ^[1-9][0-9]*$ && "${GITHUB_RUN_ATTEMPT:-}" =~ ^[1-9][0-9]*$ && "${GITHUB_SHA:-}" =~ ^[0-9a-fA-F]{40}$ ]] || { echo 'Current GitHub build provenance is invalid' >&2; exit 1; }
 build_id="github-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
@@ -120,6 +118,7 @@ pathlib.Path(path).write_text(json.dumps({
 PY
 archive="pgvector-${vector_version}-postgresql-${pg_version}-macos-${architecture}.tar.gz"
 tar -C "$package" -czf "$output/$archive" pgvector metadata.json
+python3 "$repo/tools/license_pointer.py" verify "$output/$archive" pgvector
 (cd "$output" && shasum -a 256 "$archive" > "$archive.sha256")
 
 symbol_staging="$work/symbol-staging"

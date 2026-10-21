@@ -10,6 +10,7 @@ cd /core
 sha256sum -c "$core_archive.sha256"
 cd /archives
 sha256sum -c "$archive.sha256"
+python3 /usr/local/bin/license_pointer.py verify "/archives/$archive" address_standardizer
 mkdir -p /tmp/first /tmp/extension /tmp/data /tmp/socket
 tar -xzf "/core/$core_archive" -C /tmp/first
 tar -xzf "$archive" -C /tmp/extension
@@ -29,13 +30,11 @@ assert metadata == {
     'configuration_prerequisites': [], 'runtime_prerequisites': [],
     'postgresql_version': sys.argv[5], 'platform': 'linux', 'architecture': sys.argv[4],
     'payload_paths': [f'address_standardizer/{module_rel}/address_standardizer.so',
-                      'address_standardizer/lib/libpcre2-8.so', 'address_standardizer/share/extension',
-                      'address_standardizer/LICENSES'],
+                      'address_standardizer/lib/libpcre2-8.so', 'address_standardizer/share/extension'],
     'source': {'url': 'https://github.com/postgis/address_standardizer/tree/v3.7.0',
                'commit': 'fa11ff53eb49b863d9ffff37f6afd5ff9299c581'},
     'dependencies': [{'name': 'PCRE2', 'version': '10.48',
                       'sha256': 'b6c68fdf6f3ac31388b50aa89ff0fc49c00c987c16e7b5146491d12003f2c8ed'}],
-    'license_inventory': 'address_standardizer/LICENSES/license-inventory.json'
 }
 assert {p.name for p in pathlib.Path('/tmp/extension').iterdir()} == {'address_standardizer', 'metadata.json'}
 assert metadata['version'] == '3.7.0' and metadata['architecture'] == sys.argv[4]
@@ -45,11 +44,6 @@ for name in metadata['sql_names']:
     assert (payload / f'share/extension/{name}.control').is_file()
 assert (payload / 'share/extension/address_standardizer_data_us--3.7.sql').is_file()
 assert (payload / 'lib/libpcre2-8.so').exists()
-inventory = json.loads((payload / 'LICENSES/license-inventory.json').read_text())
-assert inventory['schema_version'] == 1 and len(inventory['components']) == 2
-assert (payload / 'LICENSES/Address-Standardizer.txt').is_file()
-assert (payload / 'LICENSES/PCRE2.txt').is_file()
-assert (payload / 'LICENSES/SLJIT.txt').is_file()
 PY
 while IFS= read -r -d '' source; do
   relative=${source#"$extroot/"}

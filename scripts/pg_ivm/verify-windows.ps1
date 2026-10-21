@@ -10,6 +10,10 @@ Set-StrictMode -Version Latest
 if ($env:RUNNER_OS -ne 'Windows' -or -not [Environment]::Is64BitOperatingSystem) { throw 'This verifier requires a Windows x86-64 runner.' }
 $repo = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
 $python = (Get-Command python.exe -ErrorAction Stop).Source
+foreach ($entry in @(@($CoreArchive, 'postgresql'), @($ExtensionArchive, 'pg_ivm'))) {
+  & $python (Join-Path $repo 'tools/license_pointer.py') verify $entry[0] $entry[1]
+  if ($LASTEXITCODE -ne 0) { throw "Licence pointer verification failed for $(Split-Path $entry[0] -Leaf)." }
+}
 $CoreArchive = (Resolve-Path $CoreArchive).Path
 $ExtensionArchive = (Resolve-Path $ExtensionArchive).Path
 $pgVersion = $PostgreSQLVersion
@@ -51,7 +55,7 @@ try {
   $metadata = Get-Content (Join-Path $package 'metadata.json') -Raw | ConvertFrom-Json
   $coreHash = (Get-FileHash $CoreArchive -Algorithm SHA256).Hash.ToLowerInvariant()
   if ($metadata.project -cne 'pg_ivm' -or $metadata.version -cne $version -or $metadata.postgresql_version -cne $pgVersion -or $metadata.platform -cne 'windows' -or $metadata.architecture -cne $architecture -or $metadata.core_archive.basename -cne $coreName -or $metadata.core_archive.sha256 -cne $coreHash -or $metadata.source.sha256 -cne '87807d6af1974fce591715d55f75d939dffea33ea6908b413e62d3dd79b9c583') { throw 'Extension metadata does not bind the selected source and core archives.' }
-  foreach ($required in @('lib/pg_ivm.dll','share/extension/pg_ivm.control','share/extension/pg_ivm--1.0.sql','LICENSES/pg_ivm.txt','LICENSES/pg_ivm-inventory.json')) { if (-not (Test-Path (Join-Path $extensionRoot $required) -PathType Leaf)) { throw "pg_ivm archive lacks $required" } }
+  foreach ($required in @('lib/pg_ivm.dll','share/extension/pg_ivm.control','share/extension/pg_ivm--1.0.sql')) { if (-not (Test-Path (Join-Path $extensionRoot $required) -PathType Leaf)) { throw "pg_ivm archive lacks $required" } }
   foreach ($file in Get-ChildItem $extensionRoot -Recurse -File) {
     $relative = $file.FullName.Substring($extensionRoot.Length).TrimStart('\','/')
     if (Test-Path (Join-Path $pgRoot $relative)) { throw "pg_ivm payload collision: $relative" }

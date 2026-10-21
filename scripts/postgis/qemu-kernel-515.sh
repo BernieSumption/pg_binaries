@@ -133,9 +133,9 @@ fi
 sha256sum "${archive_paths[@]}" > "$evidence/archive-checksums.sha256"
 scp "${scp_args[@]}" "${transfer_paths[@]}" smoke@127.0.0.1:/tmp/
 if [[ -n $tiger_archives ]]; then
-  scp "${scp_args[@]}" /repo/scripts/tiger/verify-in-container.sh /repo/scripts/tiger/probe.sql /repo/scripts/tiger/qemu-kernel-515-guest.sh /repo/tools/check_elf_dependencies.py /repo/support.json smoke@127.0.0.1:/tmp/
+  scp "${scp_args[@]}" /repo/scripts/tiger/verify-in-container.sh /repo/scripts/tiger/probe.sql /repo/scripts/tiger/qemu-kernel-515-guest.sh /repo/tools/check_elf_dependencies.py /repo/tools/license_pointer.py /repo/support.json smoke@127.0.0.1:/tmp/
 else
-  scp "${scp_args[@]}" /repo/scripts/postgis/verify-in-container.sh /repo/scripts/postgis/probe.sql /repo/scripts/postgis/qemu-kernel-515-guest.sh /repo/tools/check_elf_dependencies.py /repo/tools/check_postgis_license_inventory.py /repo/support.json smoke@127.0.0.1:/tmp/
+  scp "${scp_args[@]}" /repo/scripts/postgis/verify-in-container.sh /repo/scripts/postgis/probe.sql /repo/scripts/postgis/qemu-kernel-515-guest.sh /repo/tools/check_elf_dependencies.py /repo/tools/license_pointer.py /repo/support.json smoke@127.0.0.1:/tmp/
 fi
 ssh "${ssh_args[@]}" smoke@127.0.0.1 "bash /tmp/qemu-kernel-515-guest.sh '$architecture' '$pg_version' '$build_version' '$postgis_archive'" | tee "$evidence/full-verifier.log"
 

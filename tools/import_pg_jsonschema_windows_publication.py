@@ -6,12 +6,9 @@ import json
 from pathlib import Path
 import shutil
 import sys
-import tarfile
 
 import coverage
-import check_pg_jsonschema_component_inventory as component_inventory
 import emit_pg_jsonschema_windows_publication as publication
-import inventory_cargo_licenses as cargo_licenses
 from windows_core_pin import PG_VERSIONS
 import windows_core_target
 
@@ -114,13 +111,7 @@ def import_run(root, core_artifact, extension_artifact, run_id,
     if digests[core_name] != identity["sha256"]:
         raise coverage.CoverageError("core archive does not match the selected Windows PostgreSQL artifact")
     publication._metadata(extension_archive, postgresql_version, identity)
-    try:
-        component_inventory.validate(extension_archive)
-        with tarfile.open(extension_archive, "r:gz") as archive:
-            cargo_licenses.check_packaged_notices(
-                archive, "pg_jsonschema/LICENSES/cargo/cargo-license-inventory.json")
-    except (OSError, tarfile.TarError, ValueError, KeyError, TypeError) as exc:
-        raise coverage.CoverageError(f"final redistribution inventories failed verification: {exc}") from exc
+    publication._verify_license_pointers(core_archive, extension_archive)
     if attempt.get("archives") != digests:
         raise coverage.CoverageError("raw attempt archive hashes differ from final archive bytes")
     if not receipt_path.is_file():

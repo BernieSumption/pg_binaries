@@ -6,6 +6,7 @@ extension_archive=${2:?usage: macos-archive-suite.sh CORE_ARCHIVE PGAUDIT_ARCHIV
 pg_version=${3:?PostgreSQL version is required}
 architecture=${4:?architecture is required}
 repo=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
+python3 "$repo/tools/license_pointer.py" verify "$extension_archive" pgaudit
 
 if [[ $(uname -s) != Darwin || $(uname -m) != "$architecture" ]]; then
   echo "Archive suite requires native macOS $architecture" >&2

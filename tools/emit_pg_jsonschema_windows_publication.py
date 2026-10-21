@@ -11,8 +11,7 @@ import sys
 import tarfile
 
 import coverage
-import check_pg_jsonschema_component_inventory as component_inventory
-import inventory_cargo_licenses as cargo_licenses
+from license_pointer import LicensePointerError, verify_archive as verify_license_pointer
 from windows_core_pin import load_identity, PG_VERSIONS
 import windows_core_target
 
@@ -60,6 +59,14 @@ def _sidecar(path, digest):
     if (len(lines) != 1 or not re.fullmatch(rf"[0-9a-fA-F]{{64}}\s+\*?{re.escape(name)}", lines[0])
             or lines[0].split()[0].lower() != digest):
         _fail(f"checksum sidecar does not match {name}")
+
+
+def _verify_license_pointers(core_archive, extension_archive):
+    for archive, component in ((core_archive, "postgresql"), (extension_archive, "pg_jsonschema")):
+        try:
+            verify_license_pointer(archive, component)
+        except LicensePointerError as exc:
+            _fail(f"{component} archive licence pointer is invalid: {exc}")
 
 
 def _json(path, label):
@@ -173,14 +180,8 @@ def emit(root, core_dir, archives, output, step_results, os_version, image_id, e
         _sidecar(archive, digests[archive.name])
     if digests[core_name] != core_identity["sha256"]:
         _fail("PostgreSQL core archive does not match the selected successful Windows build")
+    _verify_license_pointers(core_archive, extension_archive)
     _metadata(extension_archive, postgresql_version, core_identity)
-    try:
-        component_inventory.validate(extension_archive)
-        with tarfile.open(extension_archive, "r:gz") as archive:
-            cargo_licenses.check_packaged_notices(
-                archive, "pg_jsonschema/LICENSES/cargo/cargo-license-inventory.json")
-    except (OSError, tarfile.TarError, ValueError, KeyError, TypeError) as exc:
-        _fail(f"final redistribution inventories failed verification: {exc}")
     static_path, probe_path = output / "static-analysis.json", output / "probe-output.txt"
     reports = {name: sha256_file(path) for name, path in
                (("static_analysis", static_path), ("probe_output", probe_path),

@@ -89,14 +89,13 @@ make -C contrib install
 echo "PostgreSQL $pg_version installed" >&2
 
 package_dir="$work_dir/package"
-mkdir -p "$package_dir/postgresql/LICENSES"
+mkdir -p "$package_dir/postgresql"
 if [[ $build_mode == combined ]]; then
-  mkdir -p "$package_dir/pgvector/lib" "$package_dir/pgvector/share/extension" "$package_dir/pgvector/LICENSES"
+  mkdir -p "$package_dir/pgvector/lib" "$package_dir/pgvector/share/extension"
 fi
 cp -R "$install_dir"/. "$package_dir/postgresql/"
-cp "$work_dir/postgresql-${pg_version}/COPYRIGHT" "$package_dir/postgresql/LICENSES/PostgreSQL.txt"
 python3 "$script_dir/bundle.py" "$package_dir/postgresql" "$architecture"
-python3 "$script_dir/licenses.py" "$package_dir/postgresql" "$source_prefix/share/pg_binaries/source-dependencies.json" --component postgresql --version "$pg_version" --source-url "$pg_source_url" --source-sha256 "$pg_source_sha256"
+python3 "$repo/tools/license_pointer.py" write "$package_dir/postgresql" postgresql
 builtins=$(python3 "$script_dir/../../tools/discover_builtins.py" "$package_dir/postgresql")
 
 cat > "$package_dir/postgresql/manifest.json" <<EOF
@@ -137,10 +136,8 @@ if [[ -z $vector_library ]]; then
 fi
 cp "$vector_library" "$package_dir/pgvector/lib/"
 cp "$install_dir/share/extension/vector"* "$package_dir/pgvector/share/extension/"
-cp LICENSE "$package_dir/pgvector/LICENSES/pgvector.txt"
 python3 "$script_dir/bundle.py" "$package_dir/pgvector" "$architecture"
-python3 "$script_dir/licenses.py" "$package_dir/pgvector" "$source_prefix/share/pg_binaries/source-dependencies.json" --component pgvector --version "$vector_version" --source-url "$vector_source_url" --source-sha256 "$vector_source_sha256"
-mv "$package_dir/pgvector/LICENSES/inventory.json" "$package_dir/pgvector/LICENSES/pgvector-inventory.json"
+python3 "$repo/tools/license_pointer.py" write "$package_dir/pgvector" pgvector
 mv "$package_dir/pgvector/bundled-dependencies.json" "$package_dir/pgvector/LICENSES/pgvector-bundled-dependencies.json"
 echo "pgvector $vector_version packaged" >&2
 

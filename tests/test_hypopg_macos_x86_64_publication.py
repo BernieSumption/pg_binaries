@@ -1,6 +1,7 @@
 """Focused tests for Intel HypoPG macOS publication evidence."""
 
 import hashlib
+import importlib.util
 import json
 from dataclasses import replace
 from pathlib import Path
@@ -14,6 +15,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
 import emit_hypopg_macos_x86_64_publication as emitter
 import import_hypopg_macos_x86_64_publication as importer
 from test_emit_hypopg_macos_publication import fixture_target
+
+_POINTER_SPEC = importlib.util.spec_from_file_location(
+    "license_pointer", Path(__file__).resolve().parents[1] / "tools" / "license_pointer.py")
+license_pointer = importlib.util.module_from_spec(_POINTER_SPEC)
+_POINTER_SPEC.loader.exec_module(license_pointer)
 
 
 class HypoPGMacOSIntelPublicationTests(unittest.TestCase):
@@ -67,19 +73,11 @@ class HypoPGMacOSIntelPublicationTests(unittest.TestCase):
             "source": {"url": emitter.SOURCE_URL, "sha256": emitter.SOURCE_SHA256},
             "core_archive": {"basename": self.core_name, "sha256": self.core_digest},
         }
-        inventory = {"schema_version": 1, "components": [{
-            "component": "hypopg", "version": emitter.HYPOPG_VERSION,
-            "payload_paths": ["lib/hypopg.dylib"], "license_file": "HypoPG.txt",
-            "redistribution_review": {"status": "resolved", "basis": "Fixture review.",
-                                      "source_obligation": "none"},
-        }]}
         with tempfile.TemporaryDirectory() as temporary:
             package = Path(temporary) / "hypopg"
             (package / "lib").mkdir(parents=True)
-            (package / "LICENSES").mkdir()
             (package / "lib/hypopg.dylib").write_bytes(b"Intel Mach-O fixture")
-            (package / "LICENSES/HypoPG.txt").write_text("PostgreSQL License\n")
-            (package / "LICENSES/hypopg-inventory.json").write_text(json.dumps(inventory))
+            license_pointer.write_pointer(package, "hypopg")
             metadata_path = Path(temporary) / "metadata.json"
             metadata_path.write_text(json.dumps(metadata))
             with tarfile.open(self.extension, "w:gz") as archive:

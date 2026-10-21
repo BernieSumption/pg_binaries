@@ -144,7 +144,7 @@ make USE_PGXS=1 PG_CONFIG="$pg_config" install DESTDIR="$stage"
 # pgAudit's installed files into the standalone extension payload.
 staged_root="$stage$(cd "$pgroot" && pwd -P)"
 package="$work/package"
-mkdir -p "$package/pgaudit/lib" "$package/pgaudit/share/extension" "$package/pgaudit/LICENSES"
+mkdir -p "$package/pgaudit/lib" "$package/pgaudit/share/extension"
 modules=()
 for suffix in dylib so; do
   [[ ! -s "$staged_root/lib/pgaudit.$suffix" ]] || modules+=("$staged_root/lib/pgaudit.$suffix")
@@ -159,32 +159,14 @@ mkdir -p "$staged_dsyms/pgaudit/lib"
 dsymutil "$package/pgaudit/lib/$module_name" \
   -o "$staged_dsyms/pgaudit/lib/$module_name.dSYM"
 cp "$staged_root/share/extension/"pgaudit* "$package/pgaudit/share/extension/"
-cat LICENSE "$pgroot/LICENSES/PostgreSQL.txt" > "$package/pgaudit/LICENSES/pgAudit.txt"
-grep -Fq 'This code is released under the PostgreSQL licence' "$package/pgaudit/LICENSES/pgAudit.txt"
-grep -Fq 'Permission to use, copy, modify, and distribute this software' "$package/pgaudit/LICENSES/pgAudit.txt"
-cat > "$package/pgaudit/LICENSES/pgaudit-inventory.json" <<EOF
-{
-  "schema_version": 1,
-  "components": [{
-    "component": "pgaudit", "version": "$pgaudit_version",
-    "payload_paths": ["lib/$module_name", "share/extension"],
-    "license_file": "pgAudit.txt",
-    "license_source": "https://github.com/pgaudit/pgaudit/tree/$pgaudit_version/LICENSE",
-    "source_url": "$source_url", "source_sha256": "$source_sha256",
-    "redistribution_review": {
-      "status": "resolved",
-      "basis": "The unmodified pgAudit $pgaudit_version LICENSE points to the PostgreSQL licence and names the PostgreSQL Global Development Group. This package retains that upstream notice with the full PostgreSQL licence text already included in the selected PostgreSQL $pg_version archive. The licence permits binary redistribution with the notice and terms retained and requires no source delivery.",
-      "source_obligation": "none"
-    }
-  }]
-}
-EOF
+python3 "$repo/tools/license_pointer.py" write "$package/pgaudit" pgaudit
 cat > "$package/metadata.json" <<EOF
 {"project":"pgaudit","version":"$pgaudit_version","sql_names":["pgaudit"],"requires":[],"configuration_prerequisites":[{"type":"postgresql_setting","name":"shared_preload_libraries","value":"pgaudit"}],"runtime_prerequisites":[],"postgresql_version":"$pg_version","platform":"macos","architecture":"$architecture","source":{"url":"$source_url","sha256":"$source_sha256"},"core_archive":{"basename":"$core_name","sha256":"$core_sha256"}}
 EOF
 
 extension_name="pgaudit-${pgaudit_version}-postgresql-${pg_version}-macos-${architecture}.tar.gz"
 tar -C "$package" -czf "$output/$extension_name" pgaudit metadata.json
+python3 "$repo/tools/license_pointer.py" verify "$output/$extension_name" pgaudit
 cd "$output"
 shasum -a 256 "$extension_name" > "$extension_name.sha256"
 

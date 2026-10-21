@@ -28,6 +28,10 @@ $coreName = $coreIdentity.archive_name
 $extensionName = "pgtap-$version-postgresql-$pgVersion-windows-$architecture.tar.gz"
 $coreArchive = Join-Path $coreArchiveDirectory $coreName
 $extensionArchive = Join-Path $extensionArchiveDirectory $extensionName
+foreach ($entry in @(@($coreArchive, 'postgresql'), @($extensionArchive, 'pgtap'))) {
+  & python (Join-Path $repo 'tools/license_pointer.py') verify $entry[0] $entry[1]
+  if ($LASTEXITCODE -ne 0) { throw "Licence pointer verification failed for $(Split-Path $entry[0] -Leaf)." }
+}
 foreach ($path in @($coreArchive, $extensionArchive, "$coreArchive.sha256", "$extensionArchive.sha256")) {
   if (-not (Test-Path $path -PathType Leaf)) { throw "Required final archive or checksum sidecar is missing: $path" }
 }

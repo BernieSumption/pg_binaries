@@ -33,12 +33,12 @@ test "$(sed -n "s/^default_version = '\([^']*\)'/\1/p" address_standardizer_data
 make -s PG_CONFIG="$pgroot/bin/pg_config" -j2
 make -s PG_CONFIG="$pgroot/bin/pg_config" install
 
-mkdir -p /work/package/address_standardizer/{lib,share/extension,LICENSES}
+mkdir -p /work/package/address_standardizer/{lib,share/extension}
 cp "$pgroot"/lib/address_standardizer*.so /work/package/address_standardizer/lib/
 cp "$pgroot"/share/extension/address_standardizer*.control \
   "$pgroot"/share/extension/address_standardizer*.sql \
   /work/package/address_standardizer/share/extension/
-cp COPYING /work/package/address_standardizer/LICENSES/Address-Standardizer.txt
+python3 /usr/local/bin/license_pointer.py write /work/package/address_standardizer address_standardizer
 cat > /work/package/metadata.json <<EOF
 {
   "purpose": "feasibility-pilot",

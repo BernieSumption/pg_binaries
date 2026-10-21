@@ -30,30 +30,9 @@ test "$(sed -n "s/^default_version = '\([^']*\)'/\1/p" pgtap.control)" = "$versi
 make -j 4
 make install DESTDIR=/work/stage
 install_root=/work/stage/opt/postgresql
-mkdir -p /work/package/pgtap/share/extension /work/package/pgtap/share/doc/extension /work/package/pgtap/LICENSES
+mkdir -p /work/package/pgtap/share/extension /work/package/pgtap/share/doc/extension
 cp "$install_root/share/extension/"* /work/package/pgtap/share/extension/
 cp -a "$install_root/share/doc/extension/." /work/package/pgtap/share/doc/extension/
-sed -n '/^Copyright and License$/,$p' README.md | sed '1,2d' > /work/package/pgtap/LICENSES/pgTAP.txt
-grep -Fxq 'Copyright (c) 2008-2025 David E. Wheeler. Some rights reserved.' /work/package/pgtap/LICENSES/pgTAP.txt
-cat > /work/package/pgtap/LICENSES/pgtap-inventory.json <<EOF
-{
-  "schema_version": 1,
-  "components": [
-    {
-      "component": "pgtap",
-      "version": "${version}",
-      "payload_paths": ["share/extension", "share/doc/extension"],
-      "license_file": "pgTAP.txt",
-      "license_source": "https://github.com/theory/pgtap/tree/v1.3.4",
-      "redistribution_review": {
-        "status": "resolved",
-        "basis": "The pgTAP v1.3.4 source distribution applies the included permissive copyright notice to the project files and generated SQL and documentation payload. The notice permits redistribution with its attribution and disclaimer retained.",
-        "source_obligation": "none"
-      }
-    }
-  ]
-}
-EOF
 cat > /work/package/metadata.json <<EOF
 {"project":"pgtap","version":"${version}","sql_names":["pgtap"],"requires":[],"configuration_prerequisites":[{"type":"sql_extension","name":"plpgsql","value":"CREATE EXTENSION plpgsql"}],"runtime_prerequisites":[],"postgresql_version":"${pg_version}","platform":"linux","architecture":"${architecture}","source":{"url":"https://github.com/theory/pgtap/archive/refs/tags/v1.3.4.tar.gz","sha256":"d2c951afb296a001d21785611a8e966e3f8fa3f5bfbd929396a5130c0152f314"}}
 EOF
@@ -70,6 +49,7 @@ test "$(grep -Ec '^ok [1-4]( -|$)' /work/probe.out)" -eq 4
 runuser -u postgres -- "$pgroot/bin/pg_ctl" -D /work/data -m fast -w stop
 trap - EXIT
 cd /work/package
+python3 /usr/local/bin/license_pointer.py write /work/package/pgtap pgtap
 tar -czf "/out/$archive" pgtap metadata.json
 cd /out
 sha256sum "$archive" > "$archive.sha256"

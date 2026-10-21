@@ -14,6 +14,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
 
 import coverage
+from license_pointer import LICENSE_POINTER
 import emit_address_standardizer_macos_publication as emitter
 import import_address_standardizer_macos_publication as importer
 
@@ -46,6 +47,9 @@ class AddressStandardizerMacOSPublication(unittest.TestCase):
                 member.size = len(data)
                 import io
                 archive.addfile(member, io.BytesIO(data))
+                pointer = tarfile.TarInfo("address_standardizer/LICENSES/address_standardizer/LICENCE")
+                pointer.size = len(LICENSE_POINTER.encode())
+                archive.addfile(pointer, io.BytesIO(LICENSE_POINTER.encode()))
             target = work / "target.json"
             target.write_text(json.dumps({"postgresql_version": pg, "architecture": arch,
                                           "platform": platform,
@@ -77,7 +81,6 @@ class AddressStandardizerMacOSPublication(unittest.TestCase):
             with patch.dict(os.environ, env), \
                     patch.object(emitter.extension_archive_plan, "select_target"), \
                     patch.object(coverage, "verification_profile", return_value=profile), \
-                    patch.object(emitter.address_standardizer_license_inventory, "validate_archive"), \
                     patch.object(coverage, "validate_verification_record"):
                 emitter.emit(root, core_dir, archive_dir, archive_dir, target,
                              {"archive-suite": "success", "macho-closure": "success"},
@@ -89,7 +92,6 @@ class AddressStandardizerMacOSPublication(unittest.TestCase):
 
             with patch.object(importer.extension_archive_plan, "select_target"), \
                     patch.object(coverage, "verification_profile", return_value=profile), \
-                    patch.object(importer.address_standardizer_license_inventory, "validate_archive"), \
                     patch.object(coverage, "validate_verification_record"):
                 retained = importer.import_run(root, core_dir, archive_dir, run_id, target)
             self.assertTrue(any(path.endswith("address-standardizer-3.7.0-postgresql-18.6-macos-arm64-current-123456.json")

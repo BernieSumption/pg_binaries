@@ -4,8 +4,8 @@
 Passing this check is not a publication eligibility decision. It validates
 candidate structure, support coverage, retained checksums, and local staged
 archive bytes, including PostgreSQL built-in extension declarations. It does
-checks declared redistribution reviews and their archive-local evidence; it does
-not establish legal correctness, behavioral evidence, or public URL availability.
+check exact licence pointers in staged archives. It does not establish legal
+correctness, behavioral evidence, or public URL availability.
 """
 
 import argparse
@@ -26,6 +26,10 @@ _BUILTINS_SPEC = importlib.util.spec_from_file_location(
     "preflight_builtins", Path(__file__).with_name("discover_builtins.py"))
 _builtins = importlib.util.module_from_spec(_BUILTINS_SPEC)
 _BUILTINS_SPEC.loader.exec_module(_builtins)
+_POINTER_SPEC = importlib.util.spec_from_file_location(
+    "preflight_license_pointer", Path(__file__).with_name("license_pointer.py"))
+_license_pointer = importlib.util.module_from_spec(_POINTER_SPEC)
+_POINTER_SPEC.loader.exec_module(_license_pointer)
 NEW_ASSET_URL = re.compile(
     r"^https://github\.com/BernieSumption/pg_binaries/releases/download/"
     r"catalog-\d{8}-\d+/[A-Za-z0-9._+-]+\.tar\.gz$")
@@ -224,101 +228,29 @@ def _archive_builtins(path, version, platform):
 
 
 
-def _archive_redistribution(path, *, metadata_sibling=False):
-    """Check declared reviews and evidence without interpreting licence terms."""
-    def relative(value):
-        if (not isinstance(value, str) or not value or "\\" in value
-                or PurePosixPath(value).is_absolute()
-                or any(part in ("", ".", "..") for part in value.split("/"))):
-            raise PreflightError(f"invalid licence inventory path: {value!r}")
-        return value
-
+def _archive_license_pointer(path, component, *, metadata_sibling=False):
+    """Check safe project-rooted archive structure and its exact licence pointer."""
     try:
         with tarfile.open(path, "r:gz") as archive:
             members = {}
             for member in archive.getmembers():
                 name = member.name.rstrip("/")
-                relative(name)
+                if (not name or "\\" in name or PurePosixPath(name).is_absolute()
+                        or any(part in ("", ".", "..") for part in name.split("/"))):
+                    raise PreflightError(f"unsafe archive path: {member.name}")
                 if name in members:
                     raise PreflightError(f"duplicate archive member: {name}")
                 members[name] = member
-            inventories = [name for name in members
-                           if len(name.split("/")) == 3
-                           and name.split("/")[1] == "LICENSES"
-                           and name.split("/")[2] == (
-                               name.split("/")[0] + "-inventory.json" if metadata_sibling
-                               else "inventory.json")]
-            if len(inventories) != 1:
-                raise PreflightError("staged archive requires one component licence inventory")
-            inventory_path = inventories[0]
-            root = inventory_path.split("/")[0]
+            root = component
             roots = {name.split("/")[0] for name in members}
             allowed_roots = {root, "metadata.json"} if metadata_sibling else {root}
             if not roots <= allowed_roots or (metadata_sibling and "metadata.json" not in roots):
-                raise PreflightError("licence inventory must describe the archive single root")
-
-            def text_file(name):
-                member = members.get(name)
-                if member is None or not member.isfile() or member.size <= 0:
-                    raise PreflightError(f"missing non-empty licence evidence file: {name}")
-                if member.size > 8 * 1024 * 1024:
-                    raise PreflightError(f"licence evidence file exceeds 8 MiB: {name}")
-                return archive.extractfile(member).read().decode("utf-8")
-
-            inventory = json.loads(text_file(inventory_path))
-            if not isinstance(inventory, dict) or inventory.get("schema_version") != 1:
-                raise PreflightError("licence inventory schema_version must be 1")
-            components = inventory.get("components")
-            if not isinstance(components, list) or not components:
-                raise PreflightError("licence inventory requires components")
-            for entry in components:
-                if not isinstance(entry, dict) or not all(
-                        isinstance(entry.get(key), str) and entry[key].strip()
-                        for key in ("component", "version")):
-                    raise PreflightError("licence component requires component and version")
-                paths = entry.get("payload_paths")
-                if not isinstance(paths, list) or not paths:
-                    raise PreflightError("licence component requires payload_paths")
-                for payload in paths:
-                    prefix = root + "/" + relative(payload)
-                    if not any(name == prefix or name.startswith(prefix + "/") for name in members):
-                        raise PreflightError(f"missing mapped licence payload: {payload}")
-                files = entry.get("additional_license_files", [])
-                if not isinstance(files, list):
-                    raise PreflightError("additional_license_files must be a list")
-
-                def licence_file(value):
-                    name = relative(value)
-                    if not name.startswith("LICENSES/"):
-                        name = "LICENSES/" + name
-                    return text_file(root + "/" + name)
-
-                for filename in [entry.get("license_file"), *files]:
-                    licence_file(filename)
-                review = entry.get("redistribution_review")
-                if (not isinstance(review, dict) or review.get("status") != "resolved"
-                        or not isinstance(review.get("basis"), str) or not review["basis"].strip()):
-                    raise PreflightError("licence component requires resolved redistribution_review and basis")
-                obligation = review.get("source_obligation")
-                if obligation == "source-links":
-                    links = review.get("source_links")
-                    if not isinstance(links, list) or not links:
-                        raise PreflightError("source-links review requires source_links")
-                    for link in links:
-                        if not isinstance(link, str):
-                            raise PreflightError("source_links requires public HTTPS URLs")
-                        parsed = urlsplit(link)
-                        if (parsed.scheme != "https" or not parsed.hostname
-                                or parsed.username or parsed.password or any(c.isspace() for c in link)):
-                            raise PreflightError("source_links requires public HTTPS URLs")
-                elif obligation == "source-offer":
-                    licence_file(review.get("source_offer_file"))
-                elif obligation != "none":
-                    raise PreflightError("review requires source_obligation none, source-links or source-offer")
-    except (OSError, tarfile.TarError, UnicodeError, json.JSONDecodeError, ValueError) as exc:
+                raise PreflightError("archive must contain only its project root and metadata.json")
+            _license_pointer.verify_archive(path, component)
+    except (OSError, tarfile.TarError, UnicodeError, ValueError) as exc:
         if isinstance(exc, PreflightError):
             raise
-        raise PreflightError(f"cannot read staged archive licence evidence: {exc}") from exc
+        raise PreflightError(f"cannot verify staged archive licence pointer: {exc}") from exc
 
 
 def _extension_metadata(path, archive_project, version, sql_names, requires, platform,
@@ -567,14 +499,14 @@ def preflight_candidate(base_inventory, candidate, support, snapshot, staged_ass
                 path, archive_project, version,
                 support["extensions"][project]["sql_names"], project_requires, _platform,
                 postgresql_target)
-            _archive_redistribution(path, metadata_sibling=True)
+            _archive_license_pointer(path, archive_project, metadata_sibling=True)
         else:
-            _archive_redistribution(path)
+            _archive_license_pointer(path, "postgresql")
 
     return {
         "preflight_status": "passed",
         "new_asset_count": len(new_urls),
-        "redistribution_review_status": "declarations-checked",
+        "license_pointer_status": "checked",
         "postgresql_target_count": len(expected_core),
         "extension_target_count": len(expected_extensions),
     }

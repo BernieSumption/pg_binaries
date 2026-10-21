@@ -97,29 +97,18 @@ class PgCronMacOSFixture:
             "source": {"url": SOURCE_URL, "sha256": SOURCE_SHA256},
             "core_archive": {"basename": self.core_name, "sha256": self.core_digest},
         }
-        inventory = {"schema_version": 1, "components": [{
-            "component": "pg_cron", "version": self.version,
-            "payload_paths": [self.module_path, "share/extension"],
-            "license_file": "pg_cron.txt",
-            "license_source": "https://github.com/citusdata/pg_cron/blob/v1.6.8/LICENSE",
-            "source_url": SOURCE_URL, "source_sha256": SOURCE_SHA256,
-            "redistribution_review": {
-                "status": "resolved", "basis": "Fixture licence review.",
-                "source_obligation": "none",
-            },
-        }]}
         with tempfile.TemporaryDirectory() as temporary:
             package = Path(temporary) / "pg_cron"
             (package / "lib").mkdir(parents=True)
             (package / "share/extension").mkdir(parents=True)
-            (package / "LICENSES").mkdir()
+            (package / "LICENSES/pg_cron").mkdir(parents=True)
             (package / self.module_path).write_bytes(b"Mach-O fixture")
             (package / "share/extension/pg_cron.control").write_text(
                 "default_version = '1.6'\n")
             (package / "share/extension/pg_cron--1.0.sql").write_text("-- base DDL\n")
             (package / "share/extension/pg_cron--1.5--1.6.sql").write_text("-- update DDL\n")
-            (package / "LICENSES/pg_cron.txt").write_text("PostgreSQL License\n")
-            (package / "LICENSES/pg_cron-inventory.json").write_text(json.dumps(inventory))
+            (package / "LICENSES/pg_cron/LICENCE").write_text(
+                "See https://github.com/BernieSumption/pg_binaries/blob/main/LICENSES.md\n")
             metadata_path = Path(temporary) / "metadata.json"
             metadata_path.write_text(json.dumps(metadata))
             with tarfile.open(self.extension, "w:gz") as archive:
@@ -194,10 +183,7 @@ class PgCronMacOSPublicationTests(unittest.TestCase):
             record = json.loads(paths[-1].read_text())
             self.assertEqual(record["outcome"], "passed")
             with tarfile.open(fixture.extension, "r:gz") as archive:
-                inventory = json.load(archive.extractfile(
-                    "pg_cron/LICENSES/pg_cron-inventory.json"))
                 self.assertIn("pg_cron/lib/pg_cron.so", archive.getnames())
-                self.assertIn("lib/pg_cron.so", inventory["components"][0]["payload_paths"])
             report = json.loads((fixture.output / "pg-cron-macho-inspection.json").read_text())
             self.assertEqual(report["file"], "lib/pg_cron.so")
         finally:
@@ -281,7 +267,7 @@ class PgCronMacOSPublicationTests(unittest.TestCase):
         with self.assertRaisesRegex(Exception, "Mach-O inspection"):
             self.fixture.emit()
 
-    def test_rejects_extension_payload_without_licence_mapping(self):
+    def test_rejects_extension_without_license_pointer(self):
         from check_macos_extension_license_inventory import check_archive
 
         with tempfile.TemporaryDirectory() as temporary:
@@ -293,21 +279,13 @@ class PgCronMacOSPublicationTests(unittest.TestCase):
             (package / "share/extension/pg_cron.control").write_text(
                 "default_version = '1.6'\n")
             (package / "lib/pg_cron.dylib").write_bytes(b"native fixture")
-            (package / "LICENSES/pg_cron.txt").write_text("license\n")
-            inventory = {"schema_version": 1, "components": [{
-                "component": "pg_cron", "version": self.fixture.version,
-                "payload_paths": ["share/extension"], "license_file": "pg_cron.txt",
-                "redistribution_review": {"status": "resolved", "basis": "Fixture.",
-                                           "source_obligation": "none"},
-            }]}
-            (package / "LICENSES/pg_cron-inventory.json").write_text(json.dumps(inventory))
             archive_path = base / "extension.tar.gz"
             with tarfile.open(archive_path, "w:gz") as archive:
                 archive.add(package, arcname="pg_cron")
                 metadata = base / "metadata.json"
-                metadata.write_text("{}")
+                metadata.write_text(json.dumps({"project": "pg_cron"}))
                 archive.add(metadata, arcname="metadata.json")
-            with self.assertRaisesRegex(Exception, "unmapped native payload"):
+            with self.assertRaisesRegex(Exception, "LICENCE"):
                 check_archive(archive_path)
 
 

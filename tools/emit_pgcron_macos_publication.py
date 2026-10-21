@@ -207,7 +207,7 @@ def emit(root, core_dir, archives, output, step_results, os_version, image_id,
     try:
         components, native_files = check_archive(extension_archive)
     except (OSError, ValueError) as exc:
-        _fail(f"final pg_cron archive licence inventory is invalid: {exc}")
+        _fail(f"final pg_cron archive licence pointer is invalid: {exc}")
     if components != 1 or native_files != 1:
         _fail("final pg_cron archive must inventory its native payload and licence")
     module_path = _module_path(extension_archive)

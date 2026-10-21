@@ -16,6 +16,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 import check_hypopg_windows_archive as checker
 import emit_hypopg_windows_publication as publication
 import import_hypopg_windows_publication as importer
+from license_pointer import LICENSE_POINTER
 from test_create_windows_symbols import make_pe, make_pdb
 
 
@@ -65,13 +66,17 @@ class HypopgWindowsArchiveTests(unittest.TestCase):
                 info.size = len(data)
                 archive.addfile(info, io.BytesIO(data))
 
-    def _archives(self, release_eligible=False, unsafe=False, inventory=True, target=publication):
+    def _archives(self, release_eligible=False, unsafe=False, pointer=True, core_pointer=True,
+                  target=publication):
         manifest = {
             "component": "postgresql", "version": target.PG_VERSION, "postgresql_version": target.PG_VERSION,
             "platform": "windows", "architecture": "x86_64", "build_id": target.CORE_BUILD_ID,
             "source_revision": target.CORE_SOURCE_REVISION,
         }
-        self._tar(self.core, [("postgresql/manifest.json", json.dumps(manifest))])
+        core_entries = [("postgresql/manifest.json", json.dumps(manifest))]
+        if core_pointer:
+            core_entries.append(("postgresql/LICENSES/postgresql/LICENCE", LICENSE_POINTER))
+        self._tar(self.core, core_entries)
         core_hash = hashlib.sha256(self.core.read_bytes()).hexdigest()
         metadata = {
             "project": "hypopg", "version": "1.4.3", "sql_names": ["hypopg"],
@@ -87,12 +92,9 @@ class HypopgWindowsArchiveTests(unittest.TestCase):
             (f"{prefix}/lib/hypopg.dll", make_pe()),
             ("hypopg/share/extension/hypopg.control", "default_version = '1.4.3'"),
             ("hypopg/share/extension/hypopg--1.4.3.sql", "SELECT 1;"),
-            ("hypopg/LICENSES/", None),
-            ("hypopg/LICENSES/HypoPG.txt", "MIT"),
         ]
-        if inventory:
-            entries.append(("hypopg/LICENSES/hypopg-inventory.json",
-                            '{"schema_version":1,"source_files":[],"components":[{"component":"hypopg"}]}'))
+        if pointer:
+            entries.append(("hypopg/LICENSES/hypopg/LICENCE", LICENSE_POINTER))
         self._tar(self.extension, entries)
         (self.extension.parent / "hypopg.pdb").write_bytes(make_pdb())
         return core_hash
@@ -111,7 +113,7 @@ class HypopgWindowsArchiveTests(unittest.TestCase):
             report = checker.inspect(self.core, self.extension, self.root / "report.json", pe_report)
         self.assertTrue(report["passed"])
         self.assertEqual(report["native_extension_files"], ["hypopg/lib/hypopg.dll"])
-        self.assertIn("project-named-licence-inventory", report["checks"])
+        self.assertIn("core-and-component-licence-pointers", report["checks"])
         self.assertEqual(report["pe_dependency_analysis_sha256"], hashlib.sha256(pe_report.read_bytes()).hexdigest())
 
     def test_rejects_pdb_identity_mismatch(self):
@@ -148,10 +150,16 @@ class HypopgWindowsArchiveTests(unittest.TestCase):
             with self.assertRaisesRegex(Exception, "exact core and extension archives"):
                 checker.inspect(self.core, self.extension, self.root / "report.json", pe_report)
 
-    def test_rejects_missing_project_license_inventory(self):
-        core_hash = self._archives(inventory=False)
+    def test_rejects_missing_component_license_pointer(self):
+        core_hash = self._archives(pointer=False)
         with patch.object(publication, "CORE_SHA256", core_hash):
-            with self.assertRaisesRegex(Exception, "licence inventory"):
+            with self.assertRaisesRegex(Exception, "licence pointer"):
+                checker.inspect(self.core, self.extension, self.root / "report.json")
+
+    def test_rejects_missing_core_license_pointer(self):
+        core_hash = self._archives(core_pointer=False)
+        with patch.object(publication, "CORE_SHA256", core_hash):
+            with self.assertRaisesRegex(Exception, "PostgreSQL licence pointer"):
                 checker.inspect(self.core, self.extension, self.root / "report.json")
 
     def test_rejects_release_eligible_extension_metadata(self):
@@ -160,7 +168,7 @@ class HypopgWindowsArchiveTests(unittest.TestCase):
             with self.assertRaisesRegex(Exception, "metadata"):
                 checker.inspect(self.core, self.extension, self.root / "report.json")
 
-    def test_rejects_unsafe_archive_path_and_missing_inventory(self):
+    def test_rejects_unsafe_archive_path(self):
         core_hash = self._archives(unsafe=True)
         with patch.object(publication, "CORE_SHA256", core_hash):
             with self.assertRaisesRegex(Exception, "unsafe path"):
@@ -209,9 +217,9 @@ class HypopgWindowsArchiveTests(unittest.TestCase):
         self.assertTrue(attempt.is_file())
         self.assertEqual(json.loads(attempt.read_text())["run_id"], "123")
         self.assertEqual(paths, [attempt])
-        core_hash = self._archives(inventory=False)
+        core_hash = self._archives(pointer=False)
         with patch.object(publication, "CORE_SHA256", core_hash):
-            with self.assertRaisesRegex(Exception, "licence inventory"):
+            with self.assertRaisesRegex(Exception, "licence pointer"):
                 checker.inspect(self.core, self.extension, self.root / "report.json")
 
     def test_importer_persists_validated_record_to_verification_directory(self, target=publication, repo=None):

@@ -52,7 +52,7 @@ $sourceRoot = Join-Path $work 'source'
 $pgRoot = Join-Path $coreRoot 'postgresql'
 $cronRoot = Join-Path $sourceRoot "pg_cron-$cronVersion"
 $stage = Join-Path $work 'stage/pg_cron'
-New-Item -ItemType Directory -Force $coreRoot,$sourceRoot,(Join-Path $stage 'lib'),(Join-Path $stage 'share/extension'),(Join-Path $stage 'LICENSES') | Out-Null
+New-Item -ItemType Directory -Force $coreRoot,$sourceRoot,(Join-Path $stage 'lib'),(Join-Path $stage 'share/extension') | Out-Null
 try {
   & $tar -xzf $coreArchive -C $coreRoot
   if ($LASTEXITCODE -ne 0) { throw 'Could not extract the selected PostgreSQL core archive.' }
@@ -101,19 +101,14 @@ try {
     $env:LINK = $previousLink
   }
   if ((Get-FileHash $makefile -Algorithm SHA256).Hash -cne $makefileHash) { throw 'pg_cron build modified the upstream Makefile.win.' }
-  foreach ($required in @('pg_cron.dll','pg_cron.pdb','pg_cron.control','pg_cron--1.0.sql','pg_cron--1.5--1.6.sql','LICENSE')) {
+  foreach ($required in @('pg_cron.dll','pg_cron.pdb','pg_cron.control','pg_cron--1.0.sql','pg_cron--1.5--1.6.sql')) {
     if (-not (Test-Path (Join-Path $cronRoot $required) -PathType Leaf)) { throw "pg_cron build did not produce or retain $required." }
   }
   Copy-Item (Join-Path $cronRoot 'pg_cron.dll') (Join-Path $stage 'lib/pg_cron.dll')
   Copy-Item (Join-Path $cronRoot 'pg_cron.control') (Join-Path $stage 'share/extension/pg_cron.control')
   Copy-Item (Join-Path $cronRoot 'pg_cron--*.sql') (Join-Path $stage 'share/extension')
-  Copy-Item (Join-Path $cronRoot 'LICENSE') (Join-Path $stage 'LICENSES/pg_cron.txt')
-  $inventory = [ordered]@{ schema_version = 1; components = @([ordered]@{
-    component = 'pg_cron'; version = $cronVersion; payload_paths = @('lib/pg_cron.dll','share/extension'); license_file = 'pg_cron.txt'
-    license_source = 'https://github.com/citusdata/pg_cron/blob/v1.6.8/LICENSE'; source_url = $sourceUrl; source_sha256 = $sourceSha
-    redistribution_review = [ordered]@{ status = 'resolved'; basis = 'The unmodified pg_cron 1.6.8 source archive includes the PostgreSQL License for this project. It permits binary redistribution with its copyright notice, permission paragraph and disclaimer text retained.'; source_obligation = 'none' }
-  }) }
-  $inventory | ConvertTo-Json -Depth 6 | Set-Content -Encoding utf8 (Join-Path $stage 'LICENSES/pg_cron-inventory.json')
+  & $python (Join-Path $repo 'tools/license_pointer.py') write $stage pg_cron
+  if ($LASTEXITCODE -ne 0) { throw 'Could not create the pg_cron licence pointer.' }
   $metadata = [ordered]@{
     project = 'pg_cron'; version = $cronVersion; sql_names = @('pg_cron'); requires = @()
     configuration_prerequisites = @(
@@ -134,6 +129,8 @@ try {
   if (Test-Path $archivePath) { Remove-Item $archivePath -Force }
   & $tar -czf $archivePath -C $packageRoot pg_cron metadata.json
   if ($LASTEXITCODE -ne 0) { throw 'Failed to create the pg_cron Windows archive.' }
+  & $python (Join-Path $repo 'tools/license_pointer.py') verify $archivePath pg_cron
+  if ($LASTEXITCODE -ne 0) { throw 'pg_cron archive licence pointer verification failed.' }
   $archiveSha = (Get-FileHash $archivePath -Algorithm SHA256).Hash.ToLowerInvariant()
   "$archiveSha  $archiveName" | Set-Content -Encoding ascii "$archivePath.sha256"
   & $python (Join-Path $repo 'tools/create_windows_symbols.py') $coreArchive $archivePath --staged-pdbs $coreSymbolsDirectory $cronRoot --output-dir (Join-Path $OutputDirectory 'debug-symbols')

@@ -11,12 +11,12 @@ cd /extension
 sha256sum -c "$hypopg_archive.sha256"
 mkdir -p /tmp/first /tmp/moved /tmp/extension /tmp/data /tmp/socket /tmp/assembly-archives
 tar -xzf "/input/$pg_archive" -C /tmp/first
+python3 /usr/local/bin/license_pointer.py verify "/extension/$hypopg_archive" hypopg
 tar -xzf "/extension/$hypopg_archive" -C /tmp/extension
 ln -s "/extension/$hypopg_archive" "/tmp/assembly-archives/$hypopg_archive"
 pgroot=/tmp/first/postgresql
 extroot=/tmp/extension/hypopg
 test "$(/tmp/first/postgresql/bin/pg_config --version)" = "PostgreSQL $pg_version"
-test -s "$extroot/LICENSES/HypoPG.txt"
 python3 - <<'PY'
 import json
 import hashlib
@@ -63,32 +63,6 @@ if (build_inputs.get('schema_version') != 1 or build_inputs.get('sha256') != ide
         or not re.fullmatch(r'[0-9a-f]{64}', build_inputs.get('dependencies', {}).get(
             'builder_packages', {}).get('sha256', ''))):
     raise SystemExit('HypoPG build input identity is invalid or does not match this target')
-inventory = json.loads((root / 'hypopg/LICENSES/hypopg-inventory.json').read_text())
-if inventory.get('schema_version') != 1 or len(inventory.get('components', [])) != 1:
-    raise SystemExit('HypoPG licence inventory must contain one component')
-component = inventory['components'][0]
-for key, value in {
-    'component': 'hypopg',
-    'version': '1.4.3',
-    'payload_paths': ['lib/hypopg.so', 'share/extension'],
-    'license_file': 'HypoPG.txt',
-    'source_url': expected['source']['url'],
-    'source_sha256': expected['source']['sha256'],
-}.items():
-    if component.get(key) != value:
-        raise SystemExit(f'HypoPG licence inventory {key} mismatch')
-review = component.get('redistribution_review', {})
-if (review.get('status') != 'resolved' or not review.get('basis')
-        or review.get('source_obligation') != 'none'):
-    raise SystemExit('HypoPG redistribution review is incomplete')
-license_text = (root / 'hypopg/LICENSES/HypoPG.txt').read_text()
-for fragment in (
-    'Permission to use, copy, modify, and distribute this software',
-    'provided that the above copyright notice and this paragraph and',
-    'THE UNIVERSITY OF CALIFORNIA SPECIFICALLY DISCLAIMS ANY WARRANTIES',
-):
-    if fragment not in license_text:
-        raise SystemExit(f'HypoPG upstream licence text is incomplete: {fragment}')
 if {p.stem for p in (root / 'hypopg/share/extension').glob('*.control')} != {'hypopg'}:
     raise SystemExit('HypoPG payload must contain exactly the hypopg SQL extension')
 if not (root / 'hypopg/lib/hypopg.so').is_file():

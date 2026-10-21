@@ -32,11 +32,6 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --no-mod
 export PATH="/root/.cargo/bin:$pgroot/bin:$PATH"
 export PGRX_HOME=/work/pgrx
 cd /work/source
-case "$architecture" in x86_64) rust_target=x86_64-unknown-linux-gnu ;; arm64) rust_target=aarch64-unknown-linux-gnu ;; esac
-cargo metadata --locked --format-version 1 --filter-platform "$rust_target" \
-  --no-default-features --features "pg${pg_major}" > /work/cargo-metadata.json
-python3 /usr/local/bin/inventory-cargo-licenses /work/source /work/cargo-metadata.json \
-  /out/cargo-license-inventory.json
 cargo install cargo-pgrx --version 0.16.1 --locked
 cargo pgrx init "--pg${pg_major}" "$pgroot/bin/pg_config"
 cargo pgrx install --release --no-default-features --features "pg${pg_major}" --pg-config "$pgroot/bin/pg_config"
@@ -44,20 +39,13 @@ test "$(sha256sum /work/source/Cargo.lock | awk '{print $1}')" = "$lock_sha256"
 test -s "$pgroot/lib/pg_jsonschema.so"
 test -s "$pgroot/share/extension/pg_jsonschema.control"
 package=/work/package/pg_jsonschema
-mkdir -p "$package/lib" "$package/share/extension" "$package/LICENSES/pg_jsonschema" "$package/LICENSES/cargo"
+mkdir -p "$package/lib" "$package/share/extension"
 install -m 755 "$pgroot/lib/pg_jsonschema.so" "$package/lib/pg_jsonschema.so"
 install -m 644 "$pgroot/share/extension/pg_jsonschema.control" "$package/share/extension/pg_jsonschema.control"
 shopt -s nullglob
 sql_files=("$pgroot/share/extension/pg_jsonschema--"*.sql)
 (( ${#sql_files[@]} > 0 ))
 install -m 644 "${sql_files[@]}" "$package/share/extension/"
-if [[ -f /work/source/LICENSE ]]; then install -m 644 /work/source/LICENSE "$package/LICENSES/pg_jsonschema/LICENSE"; fi
-python3 /usr/local/bin/inventory-cargo-licenses /work/source /work/cargo-metadata.json \
-  /out/cargo-license-inventory.json --package-root "$package" --supplements /opt/cargo-license-supplements
-cp /out/cargo-license-inventory.json "$package/LICENSES/cargo/cargo-license-inventory.json"
-python3 /usr/local/bin/create_pg_jsonschema_component_inventory.py \
-  "$package" "$extension_version" linux pg_jsonschema.so
-cp "$package/LICENSES/pg_jsonschema-inventory.json" /out/pg_jsonschema-component-inventory.json
 python3 - "$extension_version" "$pg_version" "$architecture" "$extension_commit" "$lock_sha256" <<'PY'
 import json, pathlib, sys
 
@@ -72,10 +60,8 @@ metadata = {
 }
 pathlib.Path('/work/package/metadata.json').write_text(json.dumps(metadata, indent=2, sort_keys=True) + '\n')
 PY
+python3 /usr/local/bin/license_pointer.py write /work/package/pg_jsonschema pg_jsonschema
 tar -C /work/package -czf "/out/$output_archive" pg_jsonschema metadata.json
-python3 /usr/local/bin/inventory-cargo-licenses --check-archive "/out/$output_archive" \
-  --archive-inventory pg_jsonschema/LICENSES/cargo/cargo-license-inventory.json
-python3 /usr/local/bin/check-pg-jsonschema-component-inventory "/out/$output_archive"
 cd /out
 sha256sum "$output_archive" > "$output_archive.sha256"
 {

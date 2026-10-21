@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate an extension redistribution inventory and native Mach-O mapping."""
+"""Validate an extension licence pointer and report native Mach-O payloads."""
 
 import argparse
 import json
@@ -7,7 +7,7 @@ from pathlib import PurePosixPath
 import sys
 import tarfile
 
-from publication_preflight import PreflightError, _archive_redistribution
+from publication_preflight import PreflightError, _archive_license_pointer, _coverage
 
 
 MACHO_MAGICS = {
@@ -19,23 +19,18 @@ MACHO_MAGICS = {
 
 
 def check_archive(path):
-    _archive_redistribution(path, metadata_sibling=True)
     try:
         with tarfile.open(path, "r:gz") as archive:
             members = {member.name.rstrip("/"): member for member in archive.getmembers()}
-            inventories = [name for name in members
-                           if len(name.split("/")) == 3
-                           and name.split("/")[1] == "LICENSES"
-                           and name.split("/")[2] == name.split("/")[0] + "-inventory.json"]
-            if len(inventories) != 1:
-                raise PreflightError("extension archive requires one project-named licence inventory")
-            inventory_path = inventories[0]
-            root = inventory_path.split("/")[0]
-            inventory = json.load(archive.extractfile(members[inventory_path]))
-            mapped = set()
-            for component in inventory["components"]:
-                for value in component["payload_paths"]:
-                    mapped.add(PurePosixPath(value).as_posix().rstrip("/"))
+            metadata_member = members.get("metadata.json")
+            if metadata_member is None or not metadata_member.isfile() or metadata_member.size > 1024 * 1024:
+                raise PreflightError("extension archive requires a regular metadata.json file")
+            metadata = json.load(archive.extractfile(metadata_member))
+            if not isinstance(metadata, dict) or not isinstance(metadata.get("project"), str):
+                raise PreflightError("extension metadata requires a project")
+            component = _coverage.archive_project_name(metadata["project"])
+            root = component
+            _archive_license_pointer(path, component, metadata_sibling=True)
 
             native = set()
             for name, member in members.items():
@@ -46,17 +41,12 @@ def check_archive(path):
                     native.add(relative)
                 elif member.isfile() and archive.extractfile(member).read(4) in MACHO_MAGICS:
                     native.add(relative)
-            missing = sorted(path for path in native
-                             if not any(path == payload or path.startswith(payload + "/")
-                                        for payload in mapped))
-            if missing:
-                raise PreflightError(f"unmapped native payload: {', '.join(missing)}")
-            return len(inventory["components"]), len(native)
+            return 1, len(native)
     except (OSError, tarfile.TarError, UnicodeError, json.JSONDecodeError,
             KeyError, TypeError, ValueError) as exc:
         if isinstance(exc, PreflightError):
             raise
-        raise PreflightError(f"cannot inspect extension licence inventory: {exc}") from exc
+        raise PreflightError(f"cannot inspect extension archive: {exc}") from exc
 
 
 def main():
@@ -67,7 +57,7 @@ def main():
         components, native = check_archive(args.archive)
     except (OSError, PreflightError) as exc:
         parser.error(str(exc))
-    print(f"Checked {native} native payloads and redistribution evidence across {components} components")
+    print(f"Checked the licence pointer and {native} native payloads across {components} component")
     return 0
 
 

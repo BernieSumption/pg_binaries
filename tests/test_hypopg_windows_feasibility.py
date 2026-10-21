@@ -26,7 +26,7 @@ class HypoPGWindowsFeasibilityTests(unittest.TestCase):
         self.assertIn("Move-Item $pgRoot $moved", script)
         self.assertIn("probe.sql", script)
         self.assertIn("check_pe_dependencies.py", script)
-        self.assertIn("check_extension_redistribution.py", script)
+        self.assertIn("tools/license_pointer.py", script)
         self.assertIn(source_hash, linux_builder)
         self.assertIn("release_eligible = $false", script)
 

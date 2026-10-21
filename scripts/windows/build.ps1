@@ -128,46 +128,6 @@ foreach ($dll in $bundledRuntimeDlls) {
 }
 Copy-Item (Join-Path $bundledRuntimeSource '*.dll') (Join-Path $pgInstall 'bin')
 
-$pgLicenses = Join-Path $pgInstall 'LICENSES'
-New-Item -ItemType Directory -Force $pgLicenses | Out-Null
-Copy-Item (Join-Path $pgSource 'COPYRIGHT') (Join-Path $pgLicenses 'PostgreSQL.txt')
-$vcpkgDllMap = Join-Path $pgLicenses 'vcpkg-dll-map.json'
-python (Join-Path $repo 'tools/map_vcpkg_dlls.py') --installed-root $vcpkg --dll-directory $bundledRuntimeSource --output $vcpkgDllMap
-if ($LASTEXITCODE -ne 0) { throw 'Cannot map copied vcpkg DLLs to installed package metadata' }
-$vcpkgDllOwnership = Get-Content $vcpkgDllMap -Raw | ConvertFrom-Json
-$zstdComponents = @($vcpkgDllOwnership.components | Where-Object { $_.port -eq 'zstd' })
-if ($zstdComponents.Count -eq 0 -or @($zstdComponents | Where-Object { $_.version -ne '1.5.7' }).Count -ne 0) {
-  throw 'The reviewed zstd divsufsort notice is pinned to zstd 1.5.7'
-}
-$libxml2Components = @($vcpkgDllOwnership.components | Where-Object { $_.port -eq 'libxml2' })
-if ($libxml2Components.Count -eq 0 -or @($libxml2Components | Where-Object { $_.version -ne '2.15.3' }).Count -ne 0) {
-  throw 'The reviewed libxml2 dict.c and list.c notices are pinned to libxml2 2.15.3'
-}
-$lz4Components = @($vcpkgDllOwnership.components | Where-Object { $_.port -eq 'lz4' })
-if ($lz4Components.Count -eq 0 -or @($lz4Components | Where-Object { $_.version -ne '1.10.0' }).Count -ne 0) {
-  throw 'The reviewed LZ4 xxHash notice is pinned to lz4 1.10.0'
-}
-$dependencyLicenses = Join-Path $pgLicenses 'dependencies'
-New-Item -ItemType Directory -Force $dependencyLicenses | Out-Null
-Get-ChildItem (Join-Path $vcpkg 'share') -Directory | ForEach-Object {
-  $copyright = Join-Path $_.FullName 'copyright'
-  if (Test-Path $copyright) {
-    Copy-Item $copyright (Join-Path $dependencyLicenses "$($_.Name).txt")
-  }
-}
-Copy-Item (Join-Path $repo 'support/licences/zstd-1.5.7-divsufsort-notice.txt') `
-  (Join-Path $dependencyLicenses 'zstd-1.5.7-divsufsort.txt')
-Copy-Item (Join-Path $repo 'support/licences/libxml2-v2.15.3-dict-c-notice.txt') `
-  (Join-Path $dependencyLicenses 'libxml2-v2.15.3-dict-c.txt')
-Copy-Item (Join-Path $repo 'support/licences/libxml2-v2.15.3-list-c-notice.txt') `
-  (Join-Path $dependencyLicenses 'libxml2-v2.15.3-list-c.txt')
-Copy-Item (Join-Path $repo 'support/licences/lz4-1.10.0-xxhash-notice.txt') `
-  (Join-Path $dependencyLicenses 'lz4-1.10.0-xxhash.txt')
-$dependencyNotices = @(Get-ChildItem $dependencyLicenses -File | Sort-Object Name)
-$dependencyNoticeBundle = Join-Path $dependencyLicenses 'NOTICE-BUNDLE.txt'
-if ($dependencyNotices.Count -eq 0) { throw 'No vcpkg dependency copyright notices were installed' }
-@($dependencyNotices | ForEach-Object { "===== $($_.Name) ====="; Get-Content $_.FullName -Raw }) |
-  Set-Content -Encoding utf8 $dependencyNoticeBundle
 $builtins = @(& python (Join-Path $repo 'tools/discover_builtins.py') $pgInstall | ConvertFrom-Json)
 
 $pgManifest = [ordered]@{
@@ -227,11 +187,10 @@ if ((Get-FileHash $vectorMakefile -Algorithm SHA256).Hash -ne $vectorMakefileHas
 if (-not (Test-Path (Join-Path $vectorSource 'vector.pdb'))) {
   throw 'pgvector build produced no vector.pdb'
 }
-New-Item -ItemType Directory -Force (Join-Path $vectorPackage 'lib'), (Join-Path $vectorPackage 'share/extension'), (Join-Path $vectorPackage 'LICENSES') | Out-Null
+New-Item -ItemType Directory -Force (Join-Path $vectorPackage 'lib'), (Join-Path $vectorPackage 'share/extension') | Out-Null
 Copy-Item (Join-Path $vectorSource 'vector.dll') (Join-Path $vectorPackage 'lib/vector.dll')
 Copy-Item (Join-Path $vectorSource 'vector.control') (Join-Path $vectorPackage 'share/extension/vector.control')
 Copy-Item (Join-Path $vectorSource 'sql/vector--*.sql') (Join-Path $vectorPackage 'share/extension')
-Copy-Item (Join-Path $vectorSource 'LICENSE') (Join-Path $vectorPackage 'LICENSES/pgvector.txt')
 $vectorMetadata = [ordered]@{
   project = 'pgvector'
   version = $vectorVersion
@@ -253,64 +212,13 @@ Move-Item (Join-Path $work 'metadata.json') (Join-Path $vectorArchiveRoot 'metad
 }
 
 $runtimeScanRoot = if ($buildMode -eq 'combined') { Join-Path $vectorArchiveRoot 'pgvector' } else { $pgInstall }
-$msvcRuntimeDlls = @(& (Join-Path $PSScriptRoot 'bundle-msvc-runtime.ps1') -PostgresRoot $pgInstall -ExtensionRoot $runtimeScanRoot -NoticeTemplate (Join-Path $PSScriptRoot 'MSVC-RUNTIME.md'))
+$msvcRuntimeDlls = @(& (Join-Path $PSScriptRoot 'bundle-msvc-runtime.ps1') -PostgresRoot $pgInstall -ExtensionRoot $runtimeScanRoot)
 $pgManifest['bundled_msvc_runtime_dlls'] = $msvcRuntimeDlls
-$pgLicenseInventory = [ordered]@{
-  schema_version = 1
-  components = @(
-    [ordered]@{
-      component = 'postgresql'
-      version = $pgVersion
-      payload_paths = @('bin', 'include', 'lib', 'share')
-      license_file = 'PostgreSQL.txt'
-      redistribution_review = [ordered]@{
-        status = 'resolved'
-        basis = 'The pinned PostgreSQL source includes COPYRIGHT, which applies to the PostgreSQL distribution. Its permissive PostgreSQL licence imposes no source-delivery obligation for this distribution.'
-        source_obligation = 'none'
-      }
-    },
-    [ordered]@{
-      component = 'bundled-runtime-dependencies'
-      version = 'vcpkg-bundle'
-      payload_paths = @($bundledRuntimeDlls | ForEach-Object { "bin/$_" })
-      license_file = 'dependencies/NOTICE-BUNDLE.txt'
-      additional_license_files = @($dependencyNotices | ForEach-Object { "dependencies/$($_.Name)" })
-      redistribution_review = [ordered]@{
-        status = 'pending'
-        basis = 'The bundled DLLs are mapped to installed vcpkg package versions and matching copyright notices. Their exact upstream source provenance, applicable terms and source obligations remain under review.'
-        source_obligation = 'unknown'
-      }
-    },
-    [ordered]@{
-      component = 'Microsoft Visual C++ runtime'
-      version = (($msvcRuntimeDlls | ForEach-Object { $item = Get-Item (Join-Path $pgInstall "bin/$_"); "$($_)=$($item.VersionInfo.FileVersion)" }) -join '; ')
-      payload_paths = @($msvcRuntimeDlls | ForEach-Object { "bin/$_" })
-      license_file = 'LICENSE-Microsoft-Visual-C++-Runtime.md'
-      redistribution_review = [ordered]@{
-        status = 'resolved'
-        basis = "The user-reviewed Visual Studio 2022 licence terms and redistributable-file list permit these listed, unmodified DLLs. Exact bundled versions: $(($msvcRuntimeDlls | ForEach-Object { $item = Get-Item (Join-Path $pgInstall "bin/$_"); "$($_) $($item.VersionInfo.FileVersion)" }) -join ', '). The project runtime notice is included beside the executables and under LICENSES."
-        source_obligation = 'none'
-      }
-    }
-  )
-}
-$pgLicenseInventory | ConvertTo-Json -Depth 8 | Set-Content -Encoding utf8 (Join-Path $pgLicenses 'inventory.json')
+python (Join-Path $repo 'tools/license_pointer.py') write $pgInstall postgresql
+if ($LASTEXITCODE -ne 0) { throw 'Could not create the PostgreSQL licence pointer.' }
 if ($buildMode -eq 'combined') {
-$vectorLicenseInventory = [ordered]@{
-  schema_version = 1
-  components = @([ordered]@{
-    component = 'pgvector'
-    version = $vectorVersion
-    payload_paths = @('lib/vector.dll', 'share/extension')
-    license_file = 'pgvector.txt'
-    redistribution_review = [ordered]@{
-      status = 'resolved'
-      basis = 'The upstream pgvector source archive contains LICENSE at its root and states the applicable PostgreSQL licence for this repository. No separate terms are supplied for the packaged extension files; the repository licence is applied to them and redistribution creates no source-delivery obligation.'
-      source_obligation = 'none'
-    }
-  })
-}
-$vectorLicenseInventory | ConvertTo-Json -Depth 8 | Set-Content -Encoding utf8 (Join-Path $vectorArchiveRoot 'pgvector/LICENSES/pgvector-inventory.json')
+python (Join-Path $repo 'tools/license_pointer.py') write (Join-Path $vectorArchiveRoot 'pgvector') pgvector
+if ($LASTEXITCODE -ne 0) { throw 'Could not create the pgvector licence pointer.' }
 }
 $pgManifest | ConvertTo-Json -Depth 5 | Set-Content -Encoding utf8 (Join-Path $pgInstall 'manifest.json')
 

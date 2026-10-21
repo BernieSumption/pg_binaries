@@ -17,11 +17,6 @@ work_dir=$(mktemp -d "${RUNNER_TEMP:-/tmp}/pg-macos-dependencies.XXXXXX")
 trap 'rm -rf "$work_dir"' EXIT
 export MACOSX_DEPLOYMENT_TARGET=11.0
 jobs=$(sysctl -n hw.ncpu)
-manifest_dir="$prefix/share/pg_binaries"
-license_dir="$manifest_dir/licenses"
-mkdir -p "$license_dir"
-component_records="$work_dir/components.tsv"
-: > "$component_records"
 
 fetch_source() {
   local name=$1 url=$2 expected=$3 archive="$work_dir/$1"
@@ -67,38 +62,18 @@ snapshot_dylibs() {
   find "$prefix" -name '*.dylib' -print | sort
 }
 
-record_component() {
-  local package=$1 version=$2 url=$3 sha256=$4 archive=$5 license_suffix=$6 before=$7
-  local archive_path license_file target libraries
-  archive_path=$(tar -tf "$archive" | awk -v suffix="$license_suffix" '($0 == suffix || substr($0, length($0) - length(suffix), length(suffix) + 1) == "/" suffix) { print }' | awk 'BEGIN { FS="/" } { print NF "\t" $0 }' | sort -n -k1,1 | awk 'NR == 1 { depth=$1; path=substr($0, index($0, "\t") + 1); count=1; next } $1 == depth { count++; next } END { if (count == 1) print path }')
-  if [[ -z $archive_path ]]; then
-    echo "$package source archive must contain one top-level $license_suffix licence file" >&2
-    return 1
-  fi
-  license_file="licenses/${package}-${version}.txt"
-  target="$manifest_dir/$license_file"
-  case "$archive" in
-    *.tar.gz|*.tgz) tar -xOzf "$archive" "$archive_path" > "$target" ;;
-    *.tar.xz) tar -xOJf "$archive" "$archive_path" > "$target" ;;
-    *) echo "Unsupported licence source archive: $archive" >&2; return 2 ;;
-  esac
-  if [[ ! -s $target ]]; then
-    echo "$package licence text is missing or empty at $archive_path" >&2
-    return 1
-  fi
+check_installed_libraries() {
+  local package=$1 before=$2 libraries
   libraries=$(comm -13 "$before" <(snapshot_dylibs) | awk -F/ '{print $NF}' | sort -u | paste -sd, -)
   if [[ -z $libraries ]]; then
     echo "$package installed no dylibs in $prefix" >&2
     return 1
   fi
-  printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
-    "$package" "$version" "$libraries" "$license_file" "$archive_path" "$url" "$sha256" >> "$component_records"
 }
 
 openssl_archive=$(fetch_source openssl-3.5.8.tar.gz \
   https://github.com/openssl/openssl/releases/download/openssl-3.5.8/openssl-3.5.8.tar.gz \
   a8f84a39918ec6415ce765d9b429d313ba97b8143169c172e734b9514464f5b2)
-openssl_url=https://github.com/openssl/openssl/releases/download/openssl-3.5.8/openssl-3.5.8.tar.gz
 openssl_before="$work_dir/openssl-before.txt"
 snapshot_dylibs > "$openssl_before"
 unpack "$openssl_archive" "$work_dir/openssl" gz
@@ -108,12 +83,11 @@ case "$architecture" in
 esac
 run_build OpenSSL bash -c 'cd "$1" && ./Configure "$2" shared no-tests --prefix="$3" --openssldir="$3/ssl" --libdir=lib && make -j"$4" && make install_sw' _ \
   "$work_dir/openssl" "$openssl_target" "$prefix" "$jobs"
-record_component openssl 3.5.8 "$openssl_url" a8f84a39918ec6415ce765d9b429d313ba97b8143169c172e734b9514464f5b2 "$openssl_archive" LICENSE.txt "$openssl_before"
+check_installed_libraries openssl "$openssl_before"
 
 icu_archive=$(fetch_source icu4c-78.3-sources.tgz \
   https://github.com/unicode-org/icu/releases/download/release-78.3/icu4c-78.3-sources.tgz \
   3a2e7a47604ba702f345878308e6fefeca612ee895cf4a5f222e7955fabfe0c0)
-icu_url=https://github.com/unicode-org/icu/releases/download/release-78.3/icu4c-78.3-sources.tgz
 icu_before="$work_dir/icu-before.txt"
 snapshot_dylibs > "$icu_before"
 unpack "$icu_archive" "$work_dir/icu" gz
@@ -124,59 +98,41 @@ if [[ -z $icu_configure ]]; then
 fi
 run_build ICU bash -c 'cd "${1%/configure}" && ./configure --prefix="$2" --enable-shared --disable-static --disable-samples --disable-tests && make -j"$3" && make install' _ \
   "$icu_configure" "$prefix" "$jobs"
-record_component icu4c 78.3 "$icu_url" 3a2e7a47604ba702f345878308e6fefeca612ee895cf4a5f222e7955fabfe0c0 "$icu_archive" LICENSE "$icu_before"
+check_installed_libraries icu4c "$icu_before"
 
 lz4_archive=$(fetch_source lz4-1.10.0.tar.gz \
   https://github.com/lz4/lz4/releases/download/v1.10.0/lz4-1.10.0.tar.gz \
   537512904744b35e232912055ccf8ec66d768639ff3abe5788d90d792ec5f48b)
-lz4_url=https://github.com/lz4/lz4/releases/download/v1.10.0/lz4-1.10.0.tar.gz
 lz4_before="$work_dir/lz4-before.txt"
 snapshot_dylibs > "$lz4_before"
 unpack "$lz4_archive" "$work_dir/lz4" gz
 run_build LZ4 bash -c 'cd "$1" && make -j"$3" CC=clang && make install PREFIX="$2" CC=clang' _ \
   "$work_dir/lz4" "$prefix" "$jobs"
-record_component lz4 1.10.0 "$lz4_url" 537512904744b35e232912055ccf8ec66d768639ff3abe5788d90d792ec5f48b "$lz4_archive" lib/LICENSE "$lz4_before"
+check_installed_libraries lz4 "$lz4_before"
 
 zstd_archive=$(fetch_source zstd-1.5.7.tar.gz \
   https://github.com/facebook/zstd/releases/download/v1.5.7/zstd-1.5.7.tar.gz \
   eb33e51f49a15e023950cd7825ca74a4a2b43db8354825ac24fc1b7ee09e6fa3)
-zstd_url=https://github.com/facebook/zstd/releases/download/v1.5.7/zstd-1.5.7.tar.gz
 zstd_before="$work_dir/zstd-before.txt"
 snapshot_dylibs > "$zstd_before"
 unpack "$zstd_archive" "$work_dir/zstd" gz
 run_build Zstandard bash -c 'cd "$1" && make -j"$3" CC=clang && make install PREFIX="$2" CC=clang' _ \
   "$work_dir/zstd" "$prefix" "$jobs"
-record_component zstd 1.5.7 "$zstd_url" eb33e51f49a15e023950cd7825ca74a4a2b43db8354825ac24fc1b7ee09e6fa3 "$zstd_archive" LICENSE "$zstd_before"
+check_installed_libraries zstd "$zstd_before"
 
 xml_archive=$(fetch_source libxml2-2.15.4.tar.xz \
   https://download.gnome.org/sources/libxml2/2.15/libxml2-2.15.4.tar.xz \
   98087fd181d9070724f3fbc65c7377db03038eb92bd882374daff44940138821)
-xml_url=https://download.gnome.org/sources/libxml2/2.15/libxml2-2.15.4.tar.xz
 xml_before="$work_dir/libxml2-before.txt"
 snapshot_dylibs > "$xml_before"
 unpack "$xml_archive" "$work_dir/libxml2" xz
 run_build libxml2 bash -c 'cd "$1" && ./configure --prefix="$2" --with-iconv --without-zlib --without-lzma --without-icu --without-python --without-readline --without-history --without-docs && make -j"$3" && make install' _ \
   "$work_dir/libxml2" "$prefix" "$jobs"
-record_component libxml2 2.15.4 "$xml_url" 98087fd181d9070724f3fbc65c7377db03038eb92bd882374daff44940138821 "$xml_archive" Copyright "$xml_before"
-python3 - "$work_dir/libxml2" "$license_dir" <<'PY'
-from pathlib import Path
-import sys
-
-source, destination = map(Path, sys.argv[1:])
-for name in ("dict", "list"):
-    contents = (source / f"{name}.c").read_text()
-    if not contents.startswith("/*") or "*/" not in contents:
-        raise SystemExit(f"libxml2 {name}.c has no initial licence notice")
-    notice = contents[:contents.index("*/") + 2] + "\n"
-    if "Copyright" not in notice or "Permission to use, copy, modify, and distribute" not in notice:
-        raise SystemExit(f"libxml2 {name}.c licence notice changed")
-    (destination / f"libxml2-2.15.4-{name}.txt").write_text(notice)
-PY
+check_installed_libraries libxml2 "$xml_before"
 
 xslt_archive=$(fetch_source libxslt-1.1.45.tar.xz \
   https://download.gnome.org/sources/libxslt/1.1/libxslt-1.1.45.tar.xz \
   9acfe68419c4d06a45c550321b3212762d92f41465062ca4ea19e632ee5d216e)
-xslt_url=https://download.gnome.org/sources/libxslt/1.1/libxslt-1.1.45.tar.xz
 xslt_before="$work_dir/libxslt-before.txt"
 snapshot_dylibs > "$xslt_before"
 unpack "$xslt_archive" "$work_dir/libxslt" xz
@@ -186,32 +142,4 @@ export LDFLAGS="-L$prefix/lib${LDFLAGS:+ $LDFLAGS}"
 run_build libxslt bash -c 'cd "$1" && ./configure --prefix="$2" --without-python --without-crypto --without-plugins && make -j"$3" && make install' _ \
   "$work_dir/libxslt" "$prefix" "$jobs"
 
-record_component libxslt 1.1.45 "$xslt_url" 9acfe68419c4d06a45c550321b3212762d92f41465062ca4ea19e632ee5d216e "$xslt_archive" Copyright "$xslt_before"
-
-python3 - "$component_records" "$manifest_dir/source-dependencies.json" <<'PY'
-import json
-import pathlib
-import sys
-
-records, output = map(pathlib.Path, sys.argv[1:])
-components = []
-for line in records.read_text().splitlines():
-    package, version, libraries, license_file, license_source, source_url, source_sha256 = line.split("\t")
-    components.append({
-        "package": package,
-        "version": version,
-        "libraries": libraries.split(","),
-        "license_file": license_file,
-        "license_source": license_source,
-        "source_url": source_url,
-        "source_sha256": source_sha256,
-    })
-    if package == "libxml2" and version == "2.15.4":
-        components[-1]["additional_license_files"] = [
-            "licenses/libxml2-2.15.4-dict.txt",
-            "licenses/libxml2-2.15.4-list.txt",
-        ]
-output.write_text(json.dumps({"schema_version": 1, "components": components}, indent=2) + "\n")
-PY
-
-echo "Built pinned upstream dependencies for macOS $architecture (minimum 11.0) in $prefix"
+check_installed_libraries libxslt "$xslt_before"

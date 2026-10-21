@@ -24,6 +24,7 @@ cd /out
 sha256sum -c "$postgis_archive.sha256"
 mkdir -p /tmp/first /tmp/moved /tmp/extension /tmp/data /tmp/socket /tmp/assembly-archives
 tar -xzf "/input/$pg_archive" -C /tmp/first
+python3 /usr/local/bin/license_pointer.py verify "/out/$postgis_archive" postgis
 tar -xzf "/out/$postgis_archive" -C /tmp/extension
 ln -s "/out/$postgis_archive" "/tmp/assembly-archives/$postgis_archive"
 python3 - <<'PY'
@@ -103,7 +104,6 @@ for path in extension_dir.glob('*.sql'):
     name = path.name.split('--', 1)[0]
     assert name in allowed, f'Unselected SQL script in archive: {path.name}'
 PY
-python3 /usr/local/bin/check-postgis-license-inventory /tmp/extension/postgis
 python3 /usr/local/bin/linux-project-assembly-inventory \
   --support /work/support.json --postgresql-version "$pg_version" \
   --platform "linux-$architecture" \
@@ -118,8 +118,6 @@ python3 /usr/local/bin/stage-extension-archive \
 mv "$pgroot" /tmp/moved/postgresql
 pgroot=/tmp/moved/postgresql
 extroot=/tmp/extension/postgis
-test -s "$extroot/LICENSES/postgis/proj-data.copyright"
-test -s "$extroot/LICENSES/postgis/gdal-data.copyright"
 python3 /usr/local/bin/check-elf-dependencies "$pgroot" --architecture "$architecture" \
   --archive "/input/$pg_archive" --archive "/out/$postgis_archive" \
   --report /analysis/postgis.json

@@ -11,11 +11,11 @@ cd /extension
 sha256sum -c "$pgtap_archive.sha256"
 mkdir -p /tmp/first /tmp/moved /tmp/extension /tmp/data /tmp/socket
 tar -xzf "/input/$pg_archive" -C /tmp/first
+python3 /usr/local/bin/license_pointer.py verify "/extension/$pgtap_archive" pgtap
 tar -xzf "/extension/$pgtap_archive" -C /tmp/extension
 pgroot=/tmp/first/postgresql
 extroot=/tmp/extension/pgtap
 test "$("$pgroot/bin/pg_config" --version)" = "PostgreSQL $pg_version"
-test -s "$extroot/LICENSES/pgTAP.txt"
 python3 - <<'PY'
 import json
 import os
@@ -43,14 +43,6 @@ expected = {
 }
 if metadata != expected:
     raise SystemExit(f'pgTAP package metadata mismatch: {metadata!r}')
-inventory = json.loads((root / 'pgtap/LICENSES/pgtap-inventory.json').read_text())
-if inventory.get('schema_version') != 1 or len(inventory.get('components', [])) != 1:
-    raise SystemExit('pgTAP licence inventory must contain one component')
-component = inventory['components'][0]
-if component.get('component') != 'pgtap' or component.get('version') != '1.3.4' or component.get('license_file') != 'pgTAP.txt':
-    raise SystemExit('pgTAP licence inventory identity mismatch')
-if component.get('redistribution_review', {}).get('status') != 'resolved' or component['redistribution_review'].get('source_obligation') != 'none':
-    raise SystemExit('pgTAP licence inventory review is incomplete')
 extension_dir = root / 'pgtap/share/extension'
 if {p.stem for p in extension_dir.glob('*.control')} != {'pgtap'}:
     raise SystemExit('pgTAP package must expose exactly the upstream pgtap extension identity')

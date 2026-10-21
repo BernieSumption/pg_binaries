@@ -97,8 +97,7 @@ try {
   $payload = Join-Path $stage 'pgtap'
   $extensionDir = Join-Path $payload 'share/extension'
   $documentationDir = Join-Path $payload 'share/doc/extension'
-  $licenseDir = Join-Path $payload 'LICENSES'
-  New-Item -ItemType Directory -Force $extensionDir,$documentationDir,$licenseDir | Out-Null
+  New-Item -ItemType Directory -Force $extensionDir,$documentationDir | Out-Null
   Copy-Item (Join-Path $sourceRoot 'pgtap.control') $extensionDir
   $baseSql = @('pgtap.sql','pgtap-core.sql','pgtap-schema.sql','uninstall_pgtap.sql',
     'pgtap--1.3.4.sql','pgtap-core--1.3.4.sql','pgtap-schema--1.3.4.sql')
@@ -120,30 +119,8 @@ try {
   if (Compare-Object $expectedSqlNames $actualSqlNames) { throw 'Upstream pgTAP SQL install file set differs from the passing payload' }
   Copy-Item $installSql.FullName $extensionDir
   Copy-Item (Join-Path $sourceRoot 'doc/pgtap.mmd') $documentationDir
-  $licenseText = Get-Content (Join-Path $sourceRoot 'README.md') -Raw
-  $licenseMatch = [regex]::Match($licenseText, '(?m)^Copyright and License\r?\n[^\r\n]*\r?\n')
-  if (-not $licenseMatch.Success) { throw 'Could not extract the upstream pgTAP redistribution notice' }
-  $licenseText = $licenseText.Substring($licenseMatch.Index + $licenseMatch.Length) -replace "`r`n", "`n"
-  [IO.File]::WriteAllText((Join-Path $licenseDir 'pgTAP.txt'), $licenseText, [Text.UTF8Encoding]::new($false))
-  if (-not (Select-String -Path (Join-Path $licenseDir 'pgTAP.txt') -SimpleMatch 'Copyright (c) 2008-2025 David E. Wheeler. Some rights reserved.' -Quiet)) { throw 'Upstream pgTAP redistribution notice is unexpected' }
-  $inventory = @'
-{
-  "schema_version": 1,
-  "components": [{
-    "component": "pgtap", "version": "1.3.4",
-    "payload_paths": ["share/extension", "share/doc/extension"],
-    "license_file": "pgTAP.txt",
-    "license_source": "https://github.com/theory/pgtap/tree/v1.3.4",
-    "redistribution_review": {
-      "status": "resolved",
-      "basis": "The pgTAP v1.3.4 source distribution applies the included permissive copyright notice to the project files and generated SQL and documentation payload. The notice permits redistribution with its attribution and disclaimer retained.",
-      "source_obligation": "none"
-    }
-  }]
-}
-'@
-  $inventory = $inventory -replace "`r`n", "`n"
-  [IO.File]::WriteAllText((Join-Path $licenseDir 'pgtap-inventory.json'), ($inventory + "`n"), [Text.UTF8Encoding]::new($false))
+  python (Join-Path $repo 'tools/license_pointer.py') write $payload pgtap
+  if ($LASTEXITCODE -ne 0) { throw 'Could not create the pgTAP licence pointer.' }
 
   # The two main install scripts embed os_name(); their Windows-specific text is checked below.
   $knownPayloadHashes = @{
@@ -173,8 +150,6 @@ try {
   $knownPayloadHashes['share/extension/pgtap-schema--1.3.4.sql'] = 'c4fb7daf5b6d69e5a5db261ddfae5c68563cfafac767f9b403cea783d74f6fca'
   $knownPayloadHashes['share/extension/pgtap--unpackaged--0.91.0.sql'] = '5fa57e41b46b37ecff55c17214beb159fe2250a1ececd58f3f54c4746e06e36a'
   $knownPayloadHashes['share/extension/uninstall_pgtap.sql'] = 'c824e2e4e65f7d7021be0f169dc95e45b992c2a46528f927e7734d2b3a806650'
-  $knownPayloadHashes['LICENSES/pgTAP.txt'] = '2aa8da4a27c1cf4003064dbc5d3096700f38f84b3193137de4f662bf4b80b0e6'
-  $knownPayloadHashes['LICENSES/pgtap-inventory.json'] = 'ae338745180c70d51f209fcc24f2c79c12cff49e66d5074f88180680b554ccb6'
   # Upstream's Perl generators can write CRLF on Windows; pin those exact alternatives.
   $windowsGeneratedHashes = @{
     'share/extension/pgtap-core.sql' = '4877caff5cd5939114662163c02d85b5ed20392657581563dd6469b3a24650cf'
@@ -214,6 +189,8 @@ try {
   $packagePath = Join-Path $OutputDirectory $archiveName
   tar.exe -czf $packagePath -C $stage pgtap metadata.json
   if ($LASTEXITCODE -ne 0) { throw 'Could not create pgTAP archive' }
+  python (Join-Path $repo 'tools/license_pointer.py') verify $packagePath pgtap
+  if ($LASTEXITCODE -ne 0) { throw 'pgTAP archive licence pointer verification failed.' }
   $packageHash = (Get-FileHash $packagePath -Algorithm SHA256).Hash.ToLowerInvariant()
   [IO.File]::WriteAllText("$packagePath.sha256", "$packageHash  $archiveName`n", [Text.UTF8Encoding]::new($false))
   if ($BuildOnly) {

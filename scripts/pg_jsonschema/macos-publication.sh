@@ -107,10 +107,6 @@ grep -Fqx "$feature = [\"pgrx/$feature\", \"pgrx-tests/$feature\"]" Cargo.toml
 test -s Cargo.lock
 actual_lock_sha256=$(shasum -a 256 Cargo.lock | awk '{print $1}')
 test "$actual_lock_sha256" = "$cargo_lock_sha256"
-cargo metadata --locked --format-version 1 --filter-platform "$cargo_target" \
-  --no-default-features --features "$feature" > "$work/cargo-metadata.json"
-python3 "$repo/tools/inventory_cargo_licenses.py" "$work/source/pg_jsonschema" \
-  "$work/cargo-metadata.json" "$output/cargo-license-inventory.json"
 cargo install cargo-pgrx --version 0.16.1 --locked
 cargo pgrx init "--pg$pg_major" "$prefix/bin/pg_config"
 cargo pgrx install --release --no-default-features --features "$feature" --pg-config "$prefix/bin/pg_config"
@@ -120,21 +116,11 @@ pkglibdir=$("$prefix/bin/pg_config" --pkglibdir)
 extensiondir=$("$prefix/bin/pg_config" --sharedir)/extension
 extension_module=$(find "$pkglibdir" -maxdepth 1 -type f \( -name 'pg_jsonschema.dylib' -o -name 'pg_jsonschema.so' \) -print -quit)
 test -n "$extension_module" && test -s "$extension_module"
-mkdir -p "$work/package/pg_jsonschema/lib" "$work/package/pg_jsonschema/share/extension" \
-  "$work/package/pg_jsonschema/LICENSES/pg_jsonschema" "$work/package/pg_jsonschema/LICENSES/cargo"
+mkdir -p "$work/package/pg_jsonschema/lib" "$work/package/pg_jsonschema/share/extension"
 cp "$extension_module" "$work/package/pg_jsonschema/lib/$module_filename"
 cp "$extensiondir/pg_jsonschema.control" "$work/package/pg_jsonschema/share/extension/"
 find "$extensiondir" -maxdepth 1 -type f -name 'pg_jsonschema*.sql' -exec cp {} "$work/package/pg_jsonschema/share/extension/" \;
-cp "$work/source/pg_jsonschema/LICENSE" "$work/package/pg_jsonschema/LICENSES/pg_jsonschema/LICENSE"
-python3 "$repo/tools/inventory_cargo_licenses.py" "$work/source/pg_jsonschema" \
-  "$work/cargo-metadata.json" "$output/cargo-license-inventory.json" \
-  --package-root "$work/package/pg_jsonschema" \
-  --supplements "$repo/support/evidence/pg-jsonschema-crate-licenses-2026-10-18"
-cp "$output/cargo-license-inventory.json" \
-  "$work/package/pg_jsonschema/LICENSES/cargo/cargo-license-inventory.json"
-
-python3 "$repo/tools/create_pg_jsonschema_component_inventory.py" \
-  "$work/package/pg_jsonschema" "$extension_version" macos "$module_filename"
+python3 "$repo/tools/license_pointer.py" write "$work/package/pg_jsonschema" pg_jsonschema
 
 python3 - "$work/package" "$core_sha256" "$cargo_lock_sha256" "$pg_version" "$architecture" "$platform" "$source_url" "$extension_commit" <<'PY'
 import json
@@ -155,9 +141,7 @@ metadata = {
 (root / "metadata.json").write_text(json.dumps(metadata, indent=2, sort_keys=True) + "\n")
 PY
 tar -C "$work/package" -czf "$output/$extension_name" pg_jsonschema metadata.json
-python3 "$repo/tools/inventory_cargo_licenses.py" --check-archive "$output/$extension_name" \
-  --archive-inventory pg_jsonschema/LICENSES/cargo/cargo-license-inventory.json
-python3 "$repo/tools/check_pg_jsonschema_component_inventory.py" "$output/$extension_name"
+python3 "$repo/tools/license_pointer.py" verify "$output/$extension_name" pg_jsonschema
 (cd "$output" && shasum -a 256 "$extension_name" > "$extension_name.sha256")
 
 if [[ ${PG_JSONSCHEMA_BUILD_ONLY:-0} == 1 ]]; then
@@ -200,8 +184,7 @@ with tarfile.open(extension_archive, "r:gz") as archive:
 payload = extraction / "pg_jsonschema"
 module_filename = sys.argv[5]
 required = {f"lib/{module_filename}", "share/extension/pg_jsonschema.control",
-            "LICENSES/pg_jsonschema/LICENSE", "LICENSES/cargo/cargo-license-inventory.json",
-            "LICENSES/pg_jsonschema-inventory.json"}
+            "LICENSES/pg_jsonschema/LICENCE"}
 if not required <= {path.relative_to(payload).as_posix() for path in payload.rglob("*") if path.is_file()}:
     raise SystemExit("pg_jsonschema final archive is missing required payload files")
 core = pathlib.Path(sys.argv[3])

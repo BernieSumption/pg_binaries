@@ -202,9 +202,7 @@ for path in (root/'lib').glob('libgdal*.dylib'):
 (package/'LICENSES').mkdir(exist_ok=True)
 (package/'bundled-dependencies.json').write_text(json.dumps(dependency_map,indent=2,sort_keys=True)+'\n')
 PY
-cp "$work/source/postgis-3.6.4/COPYING" "$output/package/postgis/LICENSES/PostGIS.txt"
-cp "$work/source/gdal-3.13.3/LICENSE.TXT" "$output/package/postgis/LICENSES/GDAL.txt"
-python3 "$repo/scripts/postgis/macos-license-inventory.py" "$output/package/postgis" "$pgroot" "$brew_prefix" "$work/source/postgis.tar.gz" "$work/source/gdal.tar.gz"
+python3 "$repo/tools/license_pointer.py" write "$output/package/postgis" postgis
 mv "$output/package/postgis/bundled-dependencies.json" "$output/package/postgis/LICENSES/postgis-bundled-dependencies.json"
 python3 - "$output/package/metadata.json" "$core_name" "$core_sha" <<'PY'
 import json,pathlib,sys
@@ -213,5 +211,6 @@ p.write_text(json.dumps({'project':'postgis','version':'3.6.4','sql_names':['pos
 PY
 archive=postgis-3.6.4-postgresql-18.6-macos-arm64.tar.gz
 tar -C "$output/package" -czf "$output/$archive" postgis metadata.json
+python3 "$repo/tools/license_pointer.py" verify "$output/$archive" postgis
 (cd "$output" && shasum -a 256 "$archive" > "$archive.sha256")
 echo "PASS: built PostGIS 3.6.4 macOS arm64 archive"

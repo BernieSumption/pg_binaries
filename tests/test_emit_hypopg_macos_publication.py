@@ -1,6 +1,7 @@
 """Focused tests for final-byte HypoPG macOS publication evidence."""
 
 import hashlib
+import importlib.util
 import json
 from pathlib import Path
 import shutil
@@ -14,6 +15,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
 import emit_hypopg_macos_publication as emitter
 from hypopg_macos_target import (SOURCE_SHA256, SOURCE_URL, HypoPGMacosTarget,
                                  base_target)
+
+_POINTER_SPEC = importlib.util.spec_from_file_location(
+    "license_pointer", Path(__file__).resolve().parents[1] / "tools" / "license_pointer.py")
+license_pointer = importlib.util.module_from_spec(_POINTER_SPEC)
+_POINTER_SPEC.loader.exec_module(license_pointer)
 
 
 def fixture_target(postgresql_version="18.6", architecture="arm64"):
@@ -90,21 +96,11 @@ class HypoPGMacOSFixture:
             "source": {"url": emitter.SOURCE_URL, "sha256": emitter.SOURCE_SHA256},
             "core_archive": {"basename": self.core_name, "sha256": self.core_digest},
         }
-        inventory = {"schema_version": 1, "components": [{
-            "component": "hypopg", "version": emitter.HYPOPG_VERSION,
-            "payload_paths": ["lib/hypopg.dylib"], "license_file": "HypoPG.txt",
-            "redistribution_review": {
-                "status": "resolved", "basis": "Fixture licence review.",
-                "source_obligation": "none",
-            },
-        }]}
         with tempfile.TemporaryDirectory() as temporary:
             package = Path(temporary) / "hypopg"
             (package / "lib").mkdir(parents=True)
-            (package / "LICENSES").mkdir()
             (package / "lib/hypopg.dylib").write_bytes(b"Mach-O fixture")
-            (package / "LICENSES/HypoPG.txt").write_text("PostgreSQL License\n")
-            (package / "LICENSES/hypopg-inventory.json").write_text(json.dumps(inventory))
+            license_pointer.write_pointer(package, "hypopg")
             metadata_path = Path(temporary) / "metadata.json"
             metadata_path.write_text(json.dumps(metadata))
             with tarfile.open(self.extension, "w:gz") as archive:
@@ -171,23 +167,14 @@ class HypoPGMacOSPublicationTests(unittest.TestCase):
         self.assertEqual([path.name for path in paths], ["attempt.json"])
         self.assertFalse((self.fixture.output / "publication/current-receipt.json").exists())
 
-    def test_rejects_invalid_final_archive_inventory(self):
+    def test_rejects_invalid_final_archive_pointer(self):
         self.fixture.extension.unlink()
         package = self.fixture.output / "payload"
         (package / "hypopg/LICENSES").mkdir(parents=True)
         (package / "hypopg/lib").mkdir()
         (package / "hypopg/lib/hypopg.dylib").write_bytes(b"native")
-        (package / "hypopg/LICENSES/HypoPG.txt").write_text("license\n")
-        (package / "hypopg/LICENSES/inventory.json").write_text(json.dumps({
-            "schema_version": 1, "components": [{
-                "component": "hypopg", "version": "1.4.3",
-                "payload_paths": ["lib/hypopg.dylib"], "license_file": "HypoPG.txt",
-                "redistribution_review": {
-                    "status": "resolved", "basis": "Fixture licence review.",
-                    "source_obligation": "none",
-                },
-            }],
-        }))
+        pointer = license_pointer.write_pointer(package / "hypopg", "hypopg")
+        pointer.write_text("wrong pointer\n")
         metadata = {"project": "hypopg", "version": emitter.HYPOPG_VERSION,
                     "sql_names": ["hypopg"], "postgresql_version": emitter.PG_VERSION,
                     "platform": "macos", "architecture": "arm64",
@@ -200,10 +187,10 @@ class HypoPGMacOSPublicationTests(unittest.TestCase):
             archive.add(package / "hypopg", arcname="hypopg")
             archive.add(metadata_path, arcname="metadata.json")
         self.fixture._sidecar(self.fixture.extension)
-        with self.assertRaisesRegex(Exception, "licence inventory"):
+        with self.assertRaisesRegex(Exception, "licence pointer"):
             self.fixture.emit()
 
-    def test_rejects_native_payload_without_licence_mapping(self):
+    def test_checker_accepts_native_payload_with_exact_licence_pointer(self):
         from check_macos_extension_license_inventory import check_archive
 
         with tempfile.TemporaryDirectory() as temporary:
@@ -211,26 +198,15 @@ class HypoPGMacOSPublicationTests(unittest.TestCase):
             package = base / "hypopg"
             (package / "share/extension").mkdir(parents=True)
             (package / "lib").mkdir()
-            (package / "LICENSES").mkdir()
             (package / "share/extension/hypopg.control").write_text("default_version = '1.4.3'\n")
             (package / "lib/hypopg.dylib").write_bytes(b"native fixture")
-            (package / "LICENSES/HypoPG.txt").write_text("license\n")
-            inventory = {"schema_version": 1, "components": [{
-                "component": "hypopg", "version": "1.4.3",
-                "payload_paths": ["share/extension"], "license_file": "HypoPG.txt",
-                "redistribution_review": {
-                    "status": "resolved", "basis": "Fixture licence review.",
-                    "source_obligation": "none",
-                },
-            }]}
-            (package / "LICENSES/hypopg-inventory.json").write_text(json.dumps(inventory))
+            license_pointer.write_pointer(package, "hypopg")
             with tarfile.open(base / "extension.tar.gz", "w:gz") as archive:
                 archive.add(package, arcname="hypopg")
                 metadata = base / "metadata.json"
-                metadata.write_text("{}")
+                metadata.write_text(json.dumps({"project": "hypopg"}))
                 archive.add(metadata, arcname="metadata.json")
-            with self.assertRaisesRegex(Exception, "unmapped native payload"):
-                check_archive(base / "extension.tar.gz")
+            self.assertEqual(check_archive(base / "extension.tar.gz"), (1, 1))
 
 
 if __name__ == "__main__":

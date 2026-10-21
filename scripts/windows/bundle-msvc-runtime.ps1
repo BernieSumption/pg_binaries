@@ -1,7 +1,6 @@
 param(
   [Parameter(Mandatory = $true)][string]$PostgresRoot,
-  [Parameter(Mandatory = $true)][string]$ExtensionRoot,
-  [Parameter(Mandatory = $true)][string]$NoticeTemplate
+  [Parameter(Mandatory = $true)][string]$ExtensionRoot
 )
 
 $ErrorActionPreference = 'Stop'
@@ -39,11 +38,4 @@ do {
 
 if (-not $bundled.ContainsKey('vcruntime140.dll')) { throw 'Expected PostgreSQL to import VCRUNTIME140.dll' }
 $names = @($bundled.Values | Sort-Object)
-$notice = (Get-Content $NoticeTemplate -Raw).Replace('{{DLL_FILENAMES}}', (($names | ForEach-Object { "``$($_)``" }) -join ', '))
-if ($notice.Contains('{{DLL_FILENAMES}}')) { throw 'Visual C++ runtime notice was not rendered' }
-$noticeName = 'LICENSE-Microsoft-Visual-C++-Runtime.md'
-$notice | Set-Content -Encoding utf8 (Join-Path $bin $noticeName)
-$licenses = Join-Path $PostgresRoot 'LICENSES'
-New-Item -ItemType Directory -Force $licenses | Out-Null
-$notice | Set-Content -Encoding utf8 (Join-Path $licenses $noticeName)
 $names

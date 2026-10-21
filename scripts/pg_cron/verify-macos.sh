@@ -20,6 +20,7 @@ mkdir -p "$output"
 output=$(cd "$output" && pwd)
 test -s "$core_archives/$core_name" && test -s "$core_archives/$core_name.sha256"
 test -s "$extension_archives/$extension_name" && test -s "$extension_archives/$extension_name.sha256"
+python3 "$repo/tools/license_pointer.py" verify "$extension_archives/$extension_name" pg_cron
 (cd "$core_archives" && shasum -a 256 -c "$core_name.sha256")
 printf '%s  %s\n' "$core_sha256" "$core_name" | (cd "$core_archives" && shasum -a 256 -c -)
 (cd "$extension_archives" && shasum -a 256 -c "$extension_name.sha256")
@@ -73,7 +74,7 @@ modules = {name for name in names
            if name in {"pg_cron/lib/pg_cron.dylib", "pg_cron/lib/pg_cron.so"}}
 if len(modules) != 1:
     raise SystemExit("pg_cron archive must contain exactly one .dylib or .so module")
-required = {*modules, "pg_cron/LICENSES/pg_cron.txt",
+required = {*modules,
             "pg_cron/share/extension/pg_cron.control",
             "pg_cron/share/extension/pg_cron--1.0.sql",
             "pg_cron/share/extension/pg_cron--1.5--1.6.sql"}

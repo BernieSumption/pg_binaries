@@ -41,7 +41,7 @@ cleanup() {
   rm -rf "$work"
 }
 trap cleanup EXIT
-mkdir -p "$work/core" "$work/source" "$work/stage" "$work/package/pg_ivm"/{lib,share/extension,bin,LICENSES}
+mkdir -p "$work/core" "$work/source" "$work/stage" "$work/package/pg_ivm"/{lib,share/extension,bin}
 tar -xzf "$core_archives/$core_name" -C "$work/core"
 pgroot="$work/core/postgresql"
 test -s "$pgroot/include/server/pg_config.h" && test -s "$pgroot/lib/pgxs/src/makefiles/pgxs.mk"
@@ -82,14 +82,11 @@ native_name=$(basename "$native_module")
 cp "$native_module" "$work/package/pg_ivm/lib/"
 cp "$staged_root/share/extension/"* "$work/package/pg_ivm/share/extension/"
 cp "$staged_root/bin/pg_ivm_dump_metadata" "$work/package/pg_ivm/bin/"
-cp LICENSE "$work/package/pg_ivm/LICENSES/pg_ivm.txt"
-cat > "$work/package/pg_ivm/LICENSES/pg_ivm-inventory.json" <<EOF
-{"schema_version":1,"components":[{"component":"pg_ivm","version":"$extension_version","payload_paths":["lib/$native_name","share/extension","bin/pg_ivm_dump_metadata"],"license_file":"pg_ivm.txt","license_source":"https://github.com/sraoss/pg_ivm/blob/v1.16/LICENSE","source_url":"$source_url","source_sha256":"$source_sha256","redistribution_review":{"status":"resolved","basis":"The unmodified pg_ivm 1.16 source includes its full PostgreSQL-style licence notice, which permits binary redistribution when the notice, permission and disclaimer paragraphs are retained.","source_obligation":"none"}}]}
-EOF
-grep -Fq 'Permission to use, copy, modify, and distribute this software' LICENSE
+python3 "$repo/tools/license_pointer.py" write "$work/package/pg_ivm" pg_ivm
 cat > "$work/package/metadata.json" <<EOF
 {"project":"pg_ivm","version":"$extension_version","sql_names":["pg_ivm"],"requires":[],"configuration_prerequisites":[{"type":"postgresql_setting","name":"shared_preload_libraries","value":"pg_ivm"}],"runtime_prerequisites":[],"postgresql_version":"$pg_version","platform":"macos","architecture":"$architecture","source":{"url":"$source_url","sha256":"$source_sha256"},"core_archive":{"basename":"$core_name","sha256":"$core_sha256"}}
 EOF
 tar -C "$work/package" -czf "$output/$extension_name" pg_ivm metadata.json
+python3 "$repo/tools/license_pointer.py" verify "$output/$extension_name" pg_ivm
 (cd "$output" && shasum -a 256 "$extension_name" > "$extension_name.sha256" && shasum -a 256 -c "$extension_name.sha256")
 echo "PASS: built pg_ivm $extension_version against selected PostgreSQL $pg_version on macOS $architecture"

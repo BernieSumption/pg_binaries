@@ -15,6 +15,7 @@ cd /extension
 sha256sum -c "$extension_archive.sha256"
 mkdir -p /tmp/first /tmp/moved /tmp/extension /tmp/data /tmp/socket
 tar -xzf "/input/$pg_archive" -C /tmp/first
+python3 /usr/local/bin/license_pointer.py verify "/extension/$extension_archive" pg_cron
 tar -xzf "/extension/$extension_archive" -C /tmp/extension
 pgroot=/tmp/first/postgresql
 extroot=/tmp/extension/pg_cron
@@ -32,17 +33,6 @@ if metadata != {'project':'pg_cron','version':'1.6.8','sql_names':['pg_cron'],'r
  'platform':'linux','architecture':sys.argv[3],
  'source':{'url':sys.argv[2],'sha256':sys.argv[4]}}:
  raise SystemExit('pg_cron package metadata mismatch')
-inv=json.loads((root/'pg_cron/LICENSES/pg_cron-inventory.json').read_text())
-if inv.get('schema_version')!=1 or len(inv.get('components',[]))!=1: raise SystemExit('invalid licence inventory')
-c=inv['components'][0]
-for k,v in {'component':'pg_cron','version':'1.6.8','payload_paths':['lib/pg_cron.so','share/extension'],
-            'license_file':'pg_cron.txt','source_url':sys.argv[2],'source_sha256':sys.argv[4]}.items():
- if c.get(k)!=v: raise SystemExit(f'licence inventory {k} mismatch')
-r=c.get('redistribution_review',{})
-if r.get('status')!='resolved' or r.get('source_obligation')!='none' or not r.get('basis'): raise SystemExit('redistribution review is incomplete')
-license=(root/'pg_cron/LICENSES/pg_cron.txt').read_text()
-for text in ('Permission to use, copy, modify, and distribute this software','provided that the above copyright notice and this','CITUS DATA SPECIFICALLY DISCLAIMS ANY WARRANTIES'):
- if text not in license: raise SystemExit('upstream licence notice incomplete')
 if {p.stem for p in (root/'pg_cron/share/extension').glob('*.control')}!={'pg_cron'}: raise SystemExit('unexpected SQL extensions')
 if not (root/'pg_cron/lib/pg_cron.so').is_file(): raise SystemExit('missing pg_cron.so')
 if {p.name for p in root.iterdir()}!={'pg_cron','metadata.json'}: raise SystemExit('unexpected package archive members')

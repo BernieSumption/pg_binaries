@@ -64,7 +64,7 @@ make USE_PGXS=1 PG_CONFIG="$pg_config" install DESTDIR="$work/stage"
 
 staged_root="$work/stage$(cd "$pgroot" && pwd -P)"
 package="$work/package"
-mkdir -p "$package/hypopg/lib" "$package/hypopg/share/extension" "$package/hypopg/LICENSES"
+mkdir -p "$package/hypopg/lib" "$package/hypopg/share/extension"
 modules=("$staged_root/lib/hypopg.so" "$staged_root/lib/hypopg.dylib")
 found_modules=()
 for module in "${modules[@]}"; do
@@ -76,43 +76,16 @@ if [[ ${#found_modules[@]} -ne 1 ]]; then
 fi
 cp "${found_modules[0]}" "$package/hypopg/lib/"
 cp "$staged_root/share/extension/"* "$package/hypopg/share/extension/"
-cp LICENSE "$package/hypopg/LICENSES/HypoPG.txt"
-python3 - "$package" "$hypopg_version" "$source_url" "$source_sha256" <<'PY'
-import json
-import pathlib
-import sys
-
-package = pathlib.Path(sys.argv[1]) / "hypopg"
-payload_paths = sorted(
-    path.relative_to(package).as_posix()
-    for path in package.rglob("*")
-    if (path.is_file() or path.is_symlink()) and "LICENSES" not in path.relative_to(package).parts
-)
-inventory = {
-    "schema_version": 1,
-    "components": [{
-        "component": "hypopg", "version": sys.argv[2],
-        "payload_paths": payload_paths, "license_file": "HypoPG.txt",
-        "license_source": "https://github.com/HypoPG/hypopg/tree/1.4.3/LICENSE",
-        "source_url": sys.argv[3], "source_sha256": sys.argv[4],
-        "redistribution_review": {
-            "status": "resolved",
-            "basis": "The unmodified HypoPG 1.4.3 source archive includes this PostgreSQL License text for the project. It permits redistribution for any purpose provided the copyright notice, permission paragraph and disclaimer paragraphs remain in copies; this archive retains the complete upstream LICENSE text.",
-            "source_obligation": "none",
-        },
-    }],
-}
-(package / "LICENSES/hypopg-inventory.json").write_text(json.dumps(inventory, indent=2) + "\n")
-PY
+python3 "$repo/tools/license_pointer.py" write "$package/hypopg" hypopg
 cat > "$package/metadata.json" <<EOF
 {"project":"hypopg","version":"$hypopg_version","sql_names":["hypopg"],"requires":[],"configuration_prerequisites":[],"runtime_prerequisites":[],"postgresql_version":"$pg_version","platform":"macos","architecture":"$architecture","source":{"url":"$source_url","sha256":"$source_sha256"},"core_archive":{"basename":"$core_name","sha256":"$core_sha256"}}
 EOF
 
 tar -C "$package" -czf "$output/$extension_name" hypopg metadata.json
+python3 "$repo/tools/license_pointer.py" verify "$output/$extension_name" hypopg
 cd "$output"
 shasum -a 256 "$extension_name" > "$extension_name.sha256"
 shasum -a 256 -c "$extension_name.sha256"
-python3 "$repo/tools/check_macos_extension_license_inventory.py" "$output/$extension_name"
 if [[ ${HYPOPG_BUILD_ONLY:-false} == true ]]; then
   echo "PASS: built HypoPG $hypopg_version archive for PostgreSQL $pg_version on macOS $architecture"
   exit 0

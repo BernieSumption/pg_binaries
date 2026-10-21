@@ -70,32 +70,16 @@ make USE_PGXS=1 PG_CONFIG="$pg_config" install DESTDIR="$work/stage"
 
 staged_share="$work/stage$(cd "$pgroot/share" && pwd -P)"
 package="$work/package"
-mkdir -p "$package/pgtap/share/extension" "$package/pgtap/share/doc/extension" "$package/pgtap/LICENSES"
+mkdir -p "$package/pgtap/share/extension" "$package/pgtap/share/doc/extension"
 cp "$staged_share/extension/"* "$package/pgtap/share/extension/"
 cp -a "$staged_share/doc/extension/." "$package/pgtap/share/doc/extension/"
-sed -n '/^Copyright and License$/,$p' README.md | sed '1,2d' > "$package/pgtap/LICENSES/pgTAP.txt"
-grep -Fxq 'Copyright (c) 2008-2025 David E. Wheeler. Some rights reserved.' "$package/pgtap/LICENSES/pgTAP.txt"
-cat > "$package/pgtap/LICENSES/pgtap-inventory.json" <<EOF
-{
-  "schema_version": 1,
-  "components": [{
-    "component": "pgtap", "version": "$version",
-    "payload_paths": ["share/extension", "share/doc/extension"],
-    "license_file": "pgTAP.txt",
-    "license_source": "https://github.com/theory/pgtap/tree/v$version",
-    "redistribution_review": {
-      "status": "resolved",
-      "basis": "The pgTAP v$version source distribution applies the included permissive copyright notice to the project files and generated SQL and documentation payload. The notice permits redistribution with its attribution and disclaimer retained.",
-      "source_obligation": "none"
-    }
-  }]
-}
-EOF
+python3 "$repo/tools/license_pointer.py" write "$package/pgtap" pgtap
 cat > "$package/metadata.json" <<EOF
 {"project":"pgtap","version":"$version","sql_names":["pgtap"],"requires":[],"configuration_prerequisites":[{"type":"sql_extension","name":"plpgsql","value":"CREATE EXTENSION plpgsql"}],"runtime_prerequisites":[],"postgresql_version":"$pg_version","platform":"macos","architecture":"$architecture","source":{"url":"$source_url","sha256":"$source_sha256"},"core_archive":{"basename":"$core_name","sha256":"$core_sha256"}}
 EOF
 
 tar -C "$package" -czf "$output/$extension_name" pgtap metadata.json
+python3 "$repo/tools/license_pointer.py" verify "$output/$extension_name" pgtap
 cd "$output"
 shasum -a 256 "$extension_name" > "$extension_name.sha256"
 shasum -a 256 -c "$extension_name.sha256"
@@ -127,8 +111,6 @@ for name in required:
         raise SystemExit(f"pgTAP installed SQL file missing: {name}")
 if not (payload / "share/doc/extension/pgtap.mmd").is_file():
     raise SystemExit("pgTAP installed documentation missing")
-if not (payload / "LICENSES/pgTAP.txt").is_file() or not (payload / "LICENSES/pgtap-inventory.json").is_file():
-    raise SystemExit("pgTAP licence payload missing")
 if any(p.suffix in {".so", ".dylib", ".dll"} for p in payload.rglob("*")):
     raise SystemExit("pgTAP SQL-only payload unexpectedly contains a native library")
 PY

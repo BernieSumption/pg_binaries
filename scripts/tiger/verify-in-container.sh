@@ -18,6 +18,7 @@ cd /tiger && sha256sum -c "${tiger_archive}.sha256"
 mkdir -p /tmp/install /tmp/postgis /tmp/tiger /tmp/data /tmp/socket /tmp/assembly-archives
 tar -xzf "/core/$core_archive" -C /tmp/install
 tar -xzf "/postgis/$postgis_archive" -C /tmp/postgis
+python3 /usr/local/bin/license_pointer.py verify "/tiger/$tiger_archive" postgis_tiger_geocoder
 tar -xzf "/tiger/$tiger_archive" -C /tmp/tiger
 ln -s "/postgis/$postgis_archive" "/tmp/assembly-archives/$postgis_archive"
 ln -s "/tiger/$tiger_archive" "/tmp/assembly-archives/$tiger_archive"
@@ -42,9 +43,6 @@ assert metadata['platform'] == 'linux' and metadata['architecture'] == architect
 payload = root / 'postgis_tiger_geocoder'
 assert (payload / 'share/extension/postgis_tiger_geocoder.control').is_file()
 assert (payload / 'share/extension/postgis_tiger_geocoder--2025.2.sql').is_file()
-assert (payload / 'LICENSES/postgis_tiger_geocoder/COPYING').is_file()
-inventory = json.loads((payload / 'LICENSES/postgis_tiger_geocoder-inventory.json').read_text())
-assert inventory['components'][0]['source_sha256'] == metadata['source']['sha256']
 
 PY
 python3 /usr/local/bin/linux-project-assembly-inventory \

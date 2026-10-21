@@ -10,6 +10,7 @@ import sys
 import tarfile
 
 import coverage
+import license_pointer
 import macos_publication_evidence as evidence
 
 from pg_jsonschema_macos_target import load_target
@@ -91,9 +92,7 @@ def _metadata(path):
                             and member.name.startswith("pg_jsonschema/lib/"))
             required = {f"pg_jsonschema/{MODULE_PATH}",
                         "pg_jsonschema/share/extension/pg_jsonschema.control",
-                        "pg_jsonschema/LICENSES/pg_jsonschema/LICENSE",
-                        "pg_jsonschema/LICENSES/cargo/cargo-license-inventory.json",
-                        "pg_jsonschema/LICENSES/pg_jsonschema-inventory.json"}
+                        "pg_jsonschema/LICENSES/pg_jsonschema/LICENCE"}
             if not required <= set(names) or native != [f"pg_jsonschema/{MODULE_PATH}"]:
                 _fail("pg_jsonschema archive payload is incomplete or contains extra native code")
     except (OSError, tarfile.TarError, UnicodeError, json.JSONDecodeError) as exc:
@@ -174,6 +173,7 @@ def emit(root, core_dir, archives, output, step_results, os_version, image_id, e
     attempt_path.write_text(json.dumps(attempt, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     if not core.is_file() or not extension.is_file():
         return [attempt_path]
+    license_pointer.verify_archive(extension, "pg_jsonschema")
     digests = {core_name: sha256(core), extension_name: sha256(extension)}
     for archive in (core, extension):
         _sidecar(archive, digests[archive.name])
@@ -185,10 +185,10 @@ def emit(root, core_dir, archives, output, step_results, os_version, image_id, e
     attempt_path.write_text(json.dumps(attempt, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
     static_path, probe_path = output / "static-analysis.json", output / "probe-output.txt"
-    build_path, license_path = output / "build-evidence.txt", output / "cargo-license-inventory.json"
+    build_path = output / "build-evidence.txt"
     reports = {name: sha256(path) for name, path in {
         "static_analysis": static_path, "probe_output": probe_path,
-        "build_evidence": build_path, "cargo_license_inventory": license_path,
+        "build_evidence": build_path,
     }.items() if path.is_file()}
     if results["archive-suite"] == "passed":
         if not probe_path.is_file() or "pg_jsonschema|0.3.4" not in probe_path.read_text(encoding="utf-8"):
@@ -207,8 +207,8 @@ def emit(root, core_dir, archives, output, step_results, os_version, image_id, e
             or f"core_source_revision={CORE_SOURCE_REVISION}" not in build_text
             or f"core_sha256={CORE_SHA256}" not in build_text):
         _fail("build evidence does not identify the exact source, Cargo.lock and core archive")
-    if "static_analysis" not in reports or "cargo_license_inventory" not in reports:
-        _fail("candidate is missing static analysis or Cargo license inventory evidence")
+    if "static_analysis" not in reports or "build_evidence" not in reports:
+        _fail("candidate is missing static analysis or build evidence")
 
     ci = {"provider": "github-actions", "run_id": run_id,
           "run_url": f"{server_url.rstrip('/')}/{repository}/actions/runs/{run_id}",

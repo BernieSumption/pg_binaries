@@ -67,21 +67,13 @@ class pg_ivmMacOSFixture:
             "source": {"url": emitter.SOURCE_URL, "sha256": emitter.SOURCE_SHA256},
             "core_archive": {"basename": self.core_name, "sha256": self.core_digest},
         }
-        inventory = {"schema_version": 1, "components": [{
-            "component": "pg_ivm", "version": emitter.PGIVM_VERSION,
-            "payload_paths": ["lib/pg_ivm.dylib"], "license_file": "pg_ivm.txt",
-            "redistribution_review": {
-                "status": "resolved", "basis": "Fixture licence review.",
-                "source_obligation": "none",
-            },
-        }]}
         with tempfile.TemporaryDirectory() as temporary:
             package = Path(temporary) / "pg_ivm"
             (package / "lib").mkdir(parents=True)
-            (package / "LICENSES").mkdir()
+            (package / "LICENSES/pg_ivm").mkdir(parents=True)
             (package / "lib/pg_ivm.dylib").write_bytes(b"Mach-O fixture")
-            (package / "LICENSES/pg_ivm.txt").write_text("PostgreSQL License\n")
-            (package / "LICENSES/pg_ivm-inventory.json").write_text(json.dumps(inventory))
+            (package / "LICENSES/pg_ivm/LICENCE").write_text(
+                "See https://github.com/BernieSumption/pg_binaries/blob/main/LICENSES.md\n")
             metadata_path = Path(temporary) / "metadata.json"
             metadata_path.write_text(json.dumps(metadata))
             with tarfile.open(self.extension, "w:gz") as archive:
@@ -132,23 +124,13 @@ class pg_ivmMacOSPublicationTests(unittest.TestCase):
         self.assertEqual([path.name for path in paths], ["attempt.json"])
         self.assertFalse((self.fixture.output / "publication/current-receipt.json").exists())
 
-    def test_rejects_invalid_final_archive_inventory(self):
+    def test_rejects_final_archive_without_license_pointer(self):
         self.fixture.extension.unlink()
         package = self.fixture.output / "payload"
-        (package / "pg_ivm/LICENSES").mkdir(parents=True)
+        (package / "pg_ivm/LICENSES/pg_ivm").mkdir(parents=True)
         (package / "pg_ivm/lib").mkdir()
         (package / "pg_ivm/lib/pg_ivm.dylib").write_bytes(b"native")
-        (package / "pg_ivm/LICENSES/pg_ivm.txt").write_text("license\n")
-        (package / "pg_ivm/LICENSES/inventory.json").write_text(json.dumps({
-            "schema_version": 1, "components": [{
-                "component": "pg_ivm", "version": "1.16",
-                "payload_paths": ["lib/pg_ivm.dylib"], "license_file": "pg_ivm.txt",
-                "redistribution_review": {
-                    "status": "resolved", "basis": "Fixture licence review.",
-                    "source_obligation": "none",
-                },
-            }],
-        }))
+        (package / "pg_ivm/LICENSES/pg_ivm/LICENCE").write_text("See https://example.test\n")
         metadata = {"project": "pg_ivm", "version": emitter.PGIVM_VERSION,
                     "sql_names": ["pg_ivm"], "postgresql_version": emitter.PG_VERSION,
                     "platform": "macos", "architecture": "arm64",
@@ -161,10 +143,10 @@ class pg_ivmMacOSPublicationTests(unittest.TestCase):
             archive.add(package / "pg_ivm", arcname="pg_ivm")
             archive.add(metadata_path, arcname="metadata.json")
         self.fixture._sidecar(self.fixture.extension)
-        with self.assertRaisesRegex(Exception, "licence inventory"):
+        with self.assertRaisesRegex(Exception, "LICENCE"):
             self.fixture.emit()
 
-    def test_rejects_native_payload_without_licence_mapping(self):
+    def test_scans_native_payload_with_license_pointer(self):
         from check_macos_extension_license_inventory import check_archive
 
         with tempfile.TemporaryDirectory() as temporary:
@@ -172,26 +154,17 @@ class pg_ivmMacOSPublicationTests(unittest.TestCase):
             package = base / "pg_ivm"
             (package / "share/extension").mkdir(parents=True)
             (package / "lib").mkdir()
-            (package / "LICENSES").mkdir()
+            (package / "LICENSES/pg_ivm").mkdir(parents=True)
             (package / "share/extension/pg_ivm.control").write_text("default_version = '1.16'\n")
             (package / "lib/pg_ivm.dylib").write_bytes(b"native fixture")
-            (package / "LICENSES/pg_ivm.txt").write_text("license\n")
-            inventory = {"schema_version": 1, "components": [{
-                "component": "pg_ivm", "version": "1.16",
-                "payload_paths": ["share/extension"], "license_file": "pg_ivm.txt",
-                "redistribution_review": {
-                    "status": "resolved", "basis": "Fixture licence review.",
-                    "source_obligation": "none",
-                },
-            }]}
-            (package / "LICENSES/pg_ivm-inventory.json").write_text(json.dumps(inventory))
+            (package / "LICENSES/pg_ivm/LICENCE").write_text(
+                "See https://github.com/BernieSumption/pg_binaries/blob/main/LICENSES.md\n")
             with tarfile.open(base / "extension.tar.gz", "w:gz") as archive:
                 archive.add(package, arcname="pg_ivm")
                 metadata = base / "metadata.json"
-                metadata.write_text("{}")
+                metadata.write_text(json.dumps({"project": "pg_ivm"}))
                 archive.add(metadata, arcname="metadata.json")
-            with self.assertRaisesRegex(Exception, "unmapped native payload"):
-                check_archive(base / "extension.tar.gz")
+            self.assertEqual(check_archive(base / "extension.tar.gz"), (1, 1))
 
 
 if __name__ == "__main__":

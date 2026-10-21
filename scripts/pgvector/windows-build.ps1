@@ -45,7 +45,7 @@ $sourceRoot = Join-Path $work 'source'
 $pgRoot = Join-Path $coreRoot 'postgresql'
 $vectorRoot = Join-Path $sourceRoot "pgvector-$PgvectorVersion"
 $stage = Join-Path $work 'stage/pgvector'
-New-Item -ItemType Directory -Force $coreRoot,$sourceRoot,(Join-Path $stage 'lib'),(Join-Path $stage 'share/extension'),(Join-Path $stage 'LICENSES') | Out-Null
+New-Item -ItemType Directory -Force $coreRoot,$sourceRoot,(Join-Path $stage 'lib'),(Join-Path $stage 'share/extension') | Out-Null
 try {
   & $tar -xzf $coreArchive -C $coreRoot
   if ($LASTEXITCODE -ne 0) { throw 'Could not extract the selected PostgreSQL core archive.' }
@@ -65,7 +65,7 @@ try {
   $expectedSourceSha = (& $python (Join-Path $repo 'tools/source_archive.py') pgvector $PgvectorVersion tar.gz --field sha256 | Out-String).Trim()
   if ($LASTEXITCODE -ne 0 -or $sourceSha -cne $expectedSourceSha) { throw 'Source archive does not match the selected pgvector release identity.' }
   $members = @(& $tar -tzf $sourceArchive)
-  if ($LASTEXITCODE -ne 0 -or -not ($members | Where-Object { $_ -match "^pgvector-$([regex]::Escape($PgvectorVersion))/LICENSE$" })) { throw 'Source archive does not contain the expected pgvector release root.' }
+  if ($LASTEXITCODE -ne 0 -or -not ($members | Where-Object { $_ -match "^pgvector-$([regex]::Escape($PgvectorVersion))/Makefile.win$" })) { throw 'Source archive does not contain the expected pgvector release root.' }
   & $tar -xzf $sourceArchive -C $sourceRoot
   if ($LASTEXITCODE -ne 0) { throw 'Could not extract the selected pgvector source archive.' }
   if (-not (Test-Path (Join-Path $vectorRoot 'Makefile.win') -PathType Leaf)) { throw 'Selected pgvector source has no Makefile.win.' }
@@ -109,17 +109,8 @@ try {
   Copy-Item (Join-Path $vectorRoot 'vector.dll') (Join-Path $stage 'lib/vector.dll')
   Copy-Item (Join-Path $vectorRoot 'vector.control') (Join-Path $stage 'share/extension/vector.control')
   Copy-Item (Join-Path $vectorRoot 'sql/vector--*.sql') (Join-Path $stage 'share/extension')
-  Copy-Item (Join-Path $vectorRoot 'LICENSE') (Join-Path $stage 'LICENSES/pgvector.txt')
-  $licenseInventory = [ordered]@{
-    schema_version = 1
-    components = @([ordered]@{
-      component = 'pgvector'; version = $PgvectorVersion
-      payload_paths = @('lib/vector.dll','share/extension')
-      license_file = 'pgvector.txt'
-      redistribution_review = [ordered]@{ status = 'resolved'; basis = 'The upstream pgvector source includes its PostgreSQL-style licence, permitting binary redistribution with its notice, permission and disclaimer text retained.'; source_obligation = 'none' }
-    })
-  }
-  $licenseInventory | ConvertTo-Json -Depth 6 | Set-Content -Encoding utf8 (Join-Path $stage 'LICENSES/pgvector-inventory.json')
+  & $python (Join-Path $repo 'tools/license_pointer.py') write $stage pgvector
+  if ($LASTEXITCODE -ne 0) { throw 'Could not create the pgvector licence pointer.' }
   $metadata = [ordered]@{
     project = 'pgvector'; version = $PgvectorVersion; sql_names = @('vector')
     requires = @(); configuration_prerequisites = @(); runtime_prerequisites = @()
@@ -138,6 +129,8 @@ try {
   if (Test-Path $archivePath) { Remove-Item $archivePath -Force }
   & $tar -czf $archivePath -C $packageRoot pgvector metadata.json
   if ($LASTEXITCODE -ne 0) { throw 'Failed to create the pgvector Windows archive.' }
+  & $python (Join-Path $repo 'tools/license_pointer.py') verify $archivePath pgvector
+  if ($LASTEXITCODE -ne 0) { throw 'pgvector archive licence pointer verification failed.' }
   $archiveSha = (Get-FileHash $archivePath -Algorithm SHA256).Hash.ToLowerInvariant()
   "$archiveSha  $archiveName" | Set-Content -Encoding ascii "$archivePath.sha256"
   & $python (Join-Path $repo 'tools/create_windows_symbols.py') $coreArchive $archivePath --staged-pdbs $coreSymbolsDirectory $vectorRoot --output-dir (Join-Path $OutputDirectory 'debug-symbols')

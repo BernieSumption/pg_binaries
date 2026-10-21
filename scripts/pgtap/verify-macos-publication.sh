@@ -19,6 +19,7 @@ PY
 IFS=$'\t' read -r pg_version version architecture platform profile_id core_name core_run_id \
   core_sha256 core_build_id core_source_revision source_url source_sha256 <<< "$target_values"
 extension_name="pgtap-${version}-postgresql-${pg_version}-${platform}.tar.gz"
+python3 "$repo/tools/license_pointer.py" verify "$pgtap_archives/$extension_name" pgtap
 core_archives=$(cd "$core_archives" && pwd)
 pgtap_archives=$(cd "$pgtap_archives" && pwd)
 mkdir -p "$output"
@@ -86,11 +87,9 @@ required = {
     f"pgtap/share/extension/pgtap-schema--{version}.sql",
     f"pgtap/share/extension/pgtap--1.3.3--{version}.sql",
     "pgtap/share/doc/extension/pgtap.mmd",
-    "pgtap/LICENSES/pgTAP.txt",
-    "pgtap/LICENSES/pgtap-inventory.json",
 }
 if not required.issubset(payload):
-    raise SystemExit("pgTAP archive is missing required SQL, documentation, or licence files")
+    raise SystemExit("pgTAP archive is missing required SQL or documentation files")
 if any(pathlib.PurePosixPath(name).suffix in {".so", ".dylib", ".dll"} for name in payload):
     raise SystemExit("pgTAP SQL-only archive unexpectedly contains a native library")
 PY

@@ -129,7 +129,7 @@ def emit(root, core_dir, archives, output, step_results, os_version, image_id, e
     try:
         components, native_files = check_archive(extension_archive)
     except (OSError, ValueError) as exc:
-        _fail(f"final HypoPG archive licence inventory is invalid: {exc}")
+        _fail(f"final HypoPG archive licence pointer is invalid: {exc}")
     if components != 1 or native_files < 1:
         _fail("final HypoPG archive must inventory its native payload and licence")
     attempt["archives"] = digests

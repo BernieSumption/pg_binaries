@@ -11,6 +11,7 @@ import sys
 
 import coverage
 import linux_core_resolution
+import license_pointer
 
 EXTENSION_VERSION = "0.3.4"
 SOURCE_COMMIT = "cbe74b570d38aa0c4d42914e7a118bcb3adaee7a"
@@ -110,6 +111,7 @@ def emit(root, archives, core_archives, output, architecture, build_result,
     attempt_path.write_text(json.dumps(attempt, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     if not archive.is_file() or not core.is_file():
         return (attempt_path,)
+    license_pointer.verify_archive(archive, "pg_jsonschema")
     checksums = {archive_name: digest(archive), core_name: digest(core)}
     _sidecar(archive, checksums[archive_name])
     _sidecar(core, checksums[core_name])
@@ -125,9 +127,7 @@ def emit(root, archives, core_archives, output, architecture, build_result,
     if (f"pg_jsonschema_source_commit={SOURCE_COMMIT}" not in build_text
             or f"cargo_lock_sha256={CARGO_LOCK_SHA256}" not in build_text):
         raise coverage.CoverageError("build evidence does not identify the pinned source and Cargo.lock")
-    attempt["reports"].update({"build_evidence": digest(archives / "build-evidence.txt"),
-                               "cargo_license_inventory": digest(archives / "cargo-license-inventory.json"),
-                               "component_license_inventory": digest(archives / "pg_jsonschema-component-inventory.json")})
+    attempt["reports"]["build_evidence"] = digest(archives / "build-evidence.txt")
     probe_output = archives / "probe-output.txt"
     if probe_output.is_file():
         attempt["reports"]["probe_output"] = digest(probe_output)
@@ -138,9 +138,7 @@ def emit(root, archives, core_archives, output, architecture, build_result,
           "test_revision": source_revision}
     outcome = "failed" if "failed" in results.values() else "skipped" if "skipped" in results.values() else "passed"
     reports = {"elf_closure": digest(static_path),
-               "build_evidence": digest(archives / "build-evidence.txt"),
-               "cargo_license_inventory": digest(archives / "cargo-license-inventory.json"),
-               "component_license_inventory": digest(archives / "pg_jsonschema-component-inventory.json")}
+               "build_evidence": digest(archives / "build-evidence.txt")}
     if probe_output.is_file():
         reports["probe_output"] = digest(probe_output)
     environment = {"os": "linux", "os_version": kernel_version, "distribution": "Alpine Linux 3.22",

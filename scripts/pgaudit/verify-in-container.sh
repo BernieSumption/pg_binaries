@@ -19,11 +19,11 @@ cd /extension
 sha256sum -c "$extension_archive.sha256"
 mkdir -p /tmp/first /tmp/moved /tmp/extension /tmp/data /tmp/socket
 tar -xzf "/input/$pg_archive" -C /tmp/first
+python3 /usr/local/bin/license_pointer.py verify "/extension/$extension_archive" pgaudit
 tar -xzf "/extension/$extension_archive" -C /tmp/extension
 pgroot=/tmp/first/postgresql
 extroot=/tmp/extension/pgaudit
 test "$("$pgroot/bin/pg_config" --version)" = "PostgreSQL $pg_version"
-test -s "$extroot/LICENSES/pgAudit.txt"
 python3 - <<'PY'
 import json
 import os
@@ -47,27 +47,6 @@ expected = {
 }
 if metadata != expected:
     raise SystemExit(f'pgAudit package metadata mismatch: {metadata!r}')
-inventory = json.loads((root / 'pgaudit/LICENSES/pgaudit-inventory.json').read_text())
-if inventory.get('schema_version') != 1 or len(inventory.get('components', [])) != 1:
-    raise SystemExit('pgAudit licence inventory must contain one component')
-component = inventory['components'][0]
-for key, value in {
-    'component': 'pgaudit', 'version': expected['version'],
-    'payload_paths': ['lib/pgaudit.so', 'share/extension'],
-    'license_file': 'pgAudit.txt',
-    'source_url': expected['source']['url'],
-    'source_sha256': expected['source']['sha256'],
-}.items():
-    if component.get(key) != value:
-        raise SystemExit(f'pgAudit licence inventory {key} mismatch')
-review = component.get('redistribution_review', {})
-if review.get('status') != 'resolved' or not review.get('basis') or review.get('source_obligation') != 'none':
-    raise SystemExit('pgAudit redistribution review is incomplete')
-license_text = (root / 'pgaudit/LICENSES/pgAudit.txt').read_text()
-for fragment in ('This code is released under the PostgreSQL licence',
-                 'Permission to use, copy, modify, and distribute this software'):
-    if fragment not in license_text:
-        raise SystemExit(f'pgAudit upstream licence text is incomplete: {fragment}')
 if {p.stem for p in (root / 'pgaudit/share/extension').glob('*.control')} != {'pgaudit'}:
     raise SystemExit('pgAudit payload must contain exactly the pgaudit SQL extension')
 control = (root / 'pgaudit/share/extension/pgaudit.control').read_text()

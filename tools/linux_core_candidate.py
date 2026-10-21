@@ -20,14 +20,12 @@ CORE_INPUTS = (
     "scripts/linux/build-in-container.sh",
     "scripts/linux/bundle-glibc-in-container.sh",
     "scripts/linux/launcher.c",
-    "support/licences/icu-70.1-LICENSE.txt",
-    "support/licences/libxml2-2.9.13-dict-notice.txt",
     "tools/coverage.py",
     "tools/create_linux_symbols.py",
     "tools/discover_builtins.py",
     "tools/plan_work.py",
     "tools/source_archive.py",
-    "tools/write_linux_license_inventory.py",
+    "tools/license_pointer.py",
 )
 SHA = re.compile(r"[0-9a-f]{40}|[0-9a-f]{64}")
 CORE_CONFIGURE = "icu,lz4,zstd,openssl,libxml,libxslt,zlib,uuid-e2fs,no-readline,no-rpath"

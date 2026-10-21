@@ -19,6 +19,6 @@ sudo mv /tmp/postgresql-*.tar.gz* /input/
 sudo mv /tmp/postgis-*.tar.gz* /out/
 sudo cp /tmp/probe.sql /tmp/support.json /work/
 sudo install -m 0755 /tmp/check_elf_dependencies.py /usr/local/bin/check-elf-dependencies
-sudo install -m 0755 /tmp/check_postgis_license_inventory.py /usr/local/bin/check-postgis-license-inventory
+sudo install -m 0755 /tmp/license_pointer.py /usr/local/bin/license_pointer.py
 sudo env PG_ARCHITECTURE="$architecture" PG_VERSION="$pg_version" POSTGIS_BUILD_PG_VERSION="$build_version" POSTGIS_ARCHIVE_NAME="$postgis_archive" bash /tmp/verify-in-container.sh
 printf 'PASS: PostGIS 3.6.4 minimum-kernel archive verification\n'

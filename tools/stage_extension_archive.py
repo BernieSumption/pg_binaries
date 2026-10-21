@@ -11,6 +11,11 @@ import sys
 import tarfile
 from urllib.parse import urlparse
 
+_LICENSE_POINTER_SPEC = importlib.util.spec_from_file_location(
+    "staging_license_pointer", Path(__file__).with_name("license_pointer.py"))
+_license_pointer = importlib.util.module_from_spec(_LICENSE_POINTER_SPEC)
+_LICENSE_POINTER_SPEC.loader.exec_module(_license_pointer)
+
 class StagingError(ValueError):
     pass
 
@@ -126,15 +131,14 @@ def merge_payload(payload, prefix):
 
 
 def _check_licenses(payload, project):
-    """Require a collision-free inventory already present in the archive payload."""
+    """Require the central licence pointer in the extension payload."""
     licenses = payload / "LICENSES"
-    if not licenses.exists() and not licenses.is_symlink():
-        raise StagingError(f"extension payload is missing LICENSES/{project}-inventory.json")
     if licenses.is_symlink() or not licenses.is_dir():
-        raise StagingError("extension LICENSES path must be a directory")
-    inventory = licenses / f"{project}-inventory.json"
-    if inventory.is_symlink() or not inventory.is_file():
-        raise StagingError(f"extension payload is missing LICENSES/{project}-inventory.json")
+        raise StagingError("extension payload is missing a valid central licence pointer")
+    pointer = licenses / project / "LICENCE"
+    if (pointer.parent.is_symlink() or pointer.is_symlink() or not pointer.is_file()
+            or pointer.read_bytes() != _license_pointer.LICENSE_POINTER.encode("utf-8")):
+        raise StagingError(f"extension payload has an invalid LICENSES/{project}/LICENCE pointer")
 
 
 def select_and_stage(inventory, support, postgresql_version, platform_key,

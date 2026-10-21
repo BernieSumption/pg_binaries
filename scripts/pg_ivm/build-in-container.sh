@@ -30,14 +30,10 @@ test "$(sed -n "s/^schema = \\([^ ]*\\)/\\1/p" pg_ivm.control)" = pg_catalog
 make PG_CONFIG="$pgroot/bin/pg_config" -j 4
 make PG_CONFIG="$pgroot/bin/pg_config" install DESTDIR=/work/stage
 install_root=/work/stage/opt/postgresql
-mkdir -p /work/package/pg_ivm/{lib,share/extension,bin,LICENSES}
+mkdir -p /work/package/pg_ivm/{lib,share/extension,bin}
 cp "$install_root/lib/pg_ivm.so" /work/package/pg_ivm/lib/
 cp "$install_root/share/extension/"* /work/package/pg_ivm/share/extension/
 cp "$install_root/bin/pg_ivm_dump_metadata" /work/package/pg_ivm/bin/
-cp LICENSE /work/package/pg_ivm/LICENSES/pg_ivm.txt
-cat > /work/package/pg_ivm/LICENSES/pg_ivm-inventory.json <<EOL
-{"schema_version":1,"components":[{"component":"pg_ivm","version":"${version}","payload_paths":["lib/pg_ivm.so","share/extension","bin/pg_ivm_dump_metadata"],"license_file":"pg_ivm.txt","license_source":"https://github.com/sraoss/pg_ivm/blob/v1.16/LICENSE","source_url":"${source_url}","source_sha256":"${source_sha256}","redistribution_review":{"status":"resolved","basis":"The unmodified pg_ivm 1.16 source includes its full PostgreSQL-style licence notice, which permits binary redistribution when the notice, permission and disclaimer paragraphs are retained.","source_obligation":"none"}}]}
-EOL
 cat > /work/package/metadata.json <<EOL
 {"project":"pg_ivm","version":"${version}","sql_names":["pg_ivm"],"requires":[],"configuration_prerequisites":[{"type":"postgresql_setting","name":"shared_preload_libraries","value":"pg_ivm"}],"runtime_prerequisites":[],"postgresql_version":"${pg_version}","platform":"linux","architecture":"${architecture}","source":{"url":"${source_url}","sha256":"${source_sha256}"},"core_archive":{"basename":"${pg_archive}","sha256":"${core_sha256}"}}
 EOL
@@ -53,6 +49,7 @@ runuser -u postgres -- "$pgroot/bin/psql" -X -v ON_ERROR_STOP=1 -h /work/socket 
 runuser -u postgres -- "$pgroot/bin/pg_ctl" -D /work/data -m fast -w stop
 trap - EXIT
 cd /work/package
+python3 /usr/local/bin/license_pointer.py write /work/package/pg_ivm pg_ivm
 tar -czf "/out/$archive" pg_ivm metadata.json
 cd /out
 sha256sum "$archive" > "$archive.sha256"

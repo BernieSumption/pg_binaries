@@ -27,6 +27,7 @@ for version in "${SELECTED_COLLECTION_VERSIONS[@]}"; do
   work="/tmp/collection-${version}"
   mkdir -p "$work/first" "$work/moved" "$work/package" "$work/data" "$work/socket"
   tar -xzf "/input/$core_archive" -C "$work/first"
+  python3 /usr/local/bin/license_pointer.py verify "/extension/$archive" collection
   tar -xzf "/extension/$archive" -C "$work/package"
   pgroot="$work/first/postgresql"
   extroot="$work/package/collection"
@@ -57,24 +58,6 @@ for key, value in expected.items():
         raise SystemExit(f"metadata mismatch for {key}: {metadata.get(key)!r}")
 if metadata.get("source") != expected_source:
     raise SystemExit("source identity mismatch in package metadata")
-inv = json.loads((root / "collection/LICENSES/collection-inventory.json").read_text())
-if inv.get("schema_version") != 1 or not inv.get("components"):
-    raise SystemExit("missing license inventory")
-components = {item.get("component"): item for item in inv["components"]}
-if set(components) != {"pgcollection", "uthash"}:
-    raise SystemExit("source component inventory mismatch")
-if components["pgcollection"].get("source_sha256") != expected_source["sha256"]:
-    raise SystemExit("project source checksum mismatch in license inventory")
-if components["uthash"].get("license_sha256") != __import__("hashlib").sha256(
-    (root / "collection/LICENSES/uthash.txt").read_bytes()
-).hexdigest():
-    raise SystemExit("uthash license checksum mismatch")
-if not (root / "collection/LICENSES/pgcollection.txt").is_file():
-    raise SystemExit("missing upstream project license")
-if not (root / "collection/LICENSES/pgcollection-NOTICE.txt").is_file():
-    raise SystemExit("missing upstream NOTICE")
-if not (root / "collection/LICENSES/uthash.txt").is_file():
-    raise SystemExit("missing uthash license")
 if {path.name for path in root.iterdir()} != {"collection", "metadata.json"}:
     raise SystemExit("unexpected collection archive members")
 controls = list((root / "collection/share/extension").glob("collection.control"))

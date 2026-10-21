@@ -25,7 +25,7 @@ WORKFLOW = "postgresql-macos-selected-publication.yml"
 MAX_ZIP_BYTES = 1024 * 1024 * 1024
 CORE_INPUTS = (
     "scripts/macos/build-source-dependencies.sh", "scripts/macos/build.sh",
-    "scripts/macos/bundle.py", "scripts/macos/licenses.py",
+    "scripts/macos/bundle.py", "tools/license_pointer.py",
     "tools/create_macos_symbols.py", "tools/discover_builtins.py",
     "tools/source_archive.py", "tools/check_source_identity.py",
 )

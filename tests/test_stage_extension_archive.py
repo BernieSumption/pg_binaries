@@ -14,6 +14,7 @@ SPEC = importlib.util.spec_from_file_location(
     "stage_extension_archive", Path(__file__).resolve().parents[1] / "tools" / "stage_extension_archive.py")
 staging = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(staging)
+LICENSE_POINTER = staging._license_pointer.LICENSE_POINTER.encode("utf-8")
 INVENTORY_SPEC = importlib.util.spec_from_file_location(
     "linux_project_assembly_inventory",
     Path(__file__).resolve().parents[1] / "tools" / "linux_project_assembly_inventory.py")
@@ -59,12 +60,10 @@ class StageExtensionArchiveTests(unittest.TestCase):
                     "\"runtime_prerequisites\":[]}").encode()
         with tarfile.open(path, "w:gz") as archive:
             self.add_file(archive, "example_project/" + file_name, b"module")
-            license_root = "example_project/LICENSES"
+            pointer_path = "example_project/LICENSES/example_project/LICENCE"
             if legacy_nested_licenses:
-                license_root += "/example_project"
-            inventory_name = "inventory.json" if legacy_nested_licenses else "example_project-inventory.json"
-            self.add_file(archive, license_root + "/" + inventory_name, b'{"schema_version":1,"components":[{}]}')
-            self.add_file(archive, license_root + "/COPYING", b"licence text")
+                pointer_path = "example_project/LICENSES/LICENCE"
+            self.add_file(archive, pointer_path, LICENSE_POINTER)
             self.add_file(archive, "metadata.json", metadata)
 
     @staticmethod
@@ -128,8 +127,7 @@ class StageExtensionArchiveTests(unittest.TestCase):
         self.stage("2.1", new_prefix)
         self.assertEqual(selected["url"], self.downloads["2.0"]["url"])
         self.assertTrue((old_prefix / "lib/old.so").is_file())
-        self.assertTrue((old_prefix / "LICENSES/example_project-inventory.json").is_file())
-        self.assertEqual((old_prefix / "LICENSES/COPYING").read_bytes(), b"licence text")
+        self.assertEqual((old_prefix / "LICENSES/example_project/LICENCE").read_bytes(), LICENSE_POINTER)
         self.assertFalse((old_prefix / "lib/new.so").exists())
         self.assertTrue((new_prefix / "lib/new.so").is_file())
         self.assertFalse((new_prefix / "lib/old.so").exists())
@@ -142,23 +140,23 @@ class StageExtensionArchiveTests(unittest.TestCase):
         self.assertTrue((new_stage / "example_project/lib/new.so").is_file())
         self.assertFalse((new_stage / "example_project/lib/old.so").exists())
 
-    def test_rejects_legacy_nested_inventory_without_rewriting_payload(self):
+    def test_rejects_noncanonical_pointer_without_rewriting_payload(self):
         archive_path = self.archives / "example-2.0-linux-x86_64.tar.gz"
         self.write_archive(archive_path, "2.0", "lib/old.so", legacy_nested_licenses=True)
         download = self.downloads["2.0"]
         download["sha256"] = hashlib.sha256(archive_path.read_bytes()).hexdigest()
         prefix = self.root / "prefix"
-        with self.assertRaisesRegex(staging.StagingError, "example_project-inventory.json"):
+        with self.assertRaisesRegex(staging.StagingError, "LICENSES/example_project/LICENCE"):
             self.stage("2.0", prefix)
         self.assertFalse(prefix.exists())
 
-    def test_preserves_core_license_inventory_when_staging_extension(self):
+    def test_preserves_unrelated_inventory_when_staging_extension(self):
         prefix = self.root / "prefix"
         (prefix / "LICENSES").mkdir(parents=True)
         (prefix / "LICENSES/inventory.json").write_text("core inventory")
         self.stage("2.0", prefix)
         self.assertEqual((prefix / "LICENSES/inventory.json").read_text(), "core inventory")
-        self.assertTrue((prefix / "LICENSES/example_project-inventory.json").is_file())
+        self.assertTrue((prefix / "LICENSES/example_project/LICENCE").is_file())
 
     def test_project_staging_deduplicates_postgis_sql_names(self):
         support, inventory = self.project_fixture()
@@ -234,8 +232,7 @@ class StageExtensionArchiveTests(unittest.TestCase):
             with tarfile.open(archive_path, "w:gz") as archive:
                 for sql_name in details["sql_names"]:
                     self.add_file(archive, f"{slug}/share/extension/{sql_name}.control", b"control")
-                self.add_file(archive, f"{slug}/LICENSES/{slug}-inventory.json",
-                              b'{"schema_version":1,"components":[{}]}')
+                self.add_file(archive, f"{slug}/LICENSES/{slug}/LICENCE", LICENSE_POINTER)
                 self.add_file(archive, "metadata.json", json.dumps(metadata).encode())
             digest = hashlib.sha256(archive_path.read_bytes()).hexdigest()
             download = {
@@ -255,7 +252,7 @@ class StageExtensionArchiveTests(unittest.TestCase):
             self.add_file(archive, "example_project/lib/old.so", b"module")
             self.add_file(archive, "metadata.json", b'{"project":"example_project","version":"2.0","platform":"linux","architecture":"x86_64","sql_names":["example"],"requires":[],"configuration_prerequisites":[],"runtime_prerequisites":[]}')
         self.downloads["2.0"]["sha256"] = hashlib.sha256(archive_path.read_bytes()).hexdigest()
-        with self.assertRaisesRegex(staging.StagingError, "LICENSES/example_project-inventory.json"):
+        with self.assertRaisesRegex(staging.StagingError, "central licence pointer"):
             self.stage("2.0", self.root / "prefix")
 
     def test_rejects_archive_whose_inventory_range_excludes_selected_core(self):

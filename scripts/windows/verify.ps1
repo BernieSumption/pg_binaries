@@ -29,6 +29,12 @@ function Assert-ArchiveHash([string]$archive) {
 
 Assert-ArchiveHash $pgArchive
 if (-not $CoreOnly) { Assert-ArchiveHash $vectorArchive }
+& $python (Join-Path $repo 'tools/license_pointer.py') verify $pgArchive postgresql
+if ($LASTEXITCODE -ne 0) { throw 'PostgreSQL archive licence pointer verification failed.' }
+if (-not $CoreOnly) {
+  & $python (Join-Path $repo 'tools/license_pointer.py') verify $vectorArchive pgvector
+  if ($LASTEXITCODE -ne 0) { throw 'pgvector archive licence pointer verification failed.' }
+}
 $pgArchiveSha256 = (Get-FileHash $pgArchive -Algorithm SHA256).Hash.ToLowerInvariant()
 New-Item -ItemType Directory -Force $pgExtract, (Split-Path $moved -Parent) | Out-Null
 if (-not $CoreOnly) { New-Item -ItemType Directory -Force $vectorExtract | Out-Null }
@@ -46,8 +52,6 @@ if (-not (Test-Path $pgRoot -PathType Container) -or
     @(Get-ChildItem $pgExtract -Force | Where-Object Name -ne 'postgresql').Count -ne 0) {
   throw 'PostgreSQL archive top-level layout is invalid'
 }
-& $python (Join-Path $repo 'scripts/windows/check_vcpkg_notices.py') $pgArchive --repo $repo
-if ($LASTEXITCODE -ne 0) { throw 'Windows archive omits a reviewed version-specific vcpkg notice' }
 if (-not $CoreOnly -and (-not (Test-Path $vectorRoot -PathType Container) -or
     -not (Test-Path $metadataPath -PathType Leaf) -or
     @(Get-ChildItem $vectorExtract -Force | Where-Object { $_.Name -notin @('pgvector', 'metadata.json') }).Count -ne 0)) {
@@ -116,11 +120,6 @@ foreach ($name in @($pgManifest.bundled_msvc_runtime_dlls)) {
     throw "The declared Visual C++ runtime DLL is missing or invalid: $name"
   }
 }
-$msvcNotice = 'LICENSE-Microsoft-Visual-C++-Runtime.md'
-if (-not (Test-Path (Join-Path $pgRoot "bin/$msvcNotice") -PathType Leaf) -or
-    -not (Test-Path (Join-Path $pgRoot "LICENSES/$msvcNotice") -PathType Leaf)) {
-  throw 'The Visual C++ runtime notice is missing'
-}
 if (-not $CoreOnly) {
   if ($separateVectorBuild) {
     if ($vectorMetadata.build_id -notmatch '^[A-Za-z0-9][A-Za-z0-9._-]*$' -or
@@ -141,89 +140,6 @@ if (-not $CoreOnly) {
     }
   }
 }
-if (-not (Test-Path (Join-Path $pgRoot 'manifest.json')) -or
-    -not (Test-Path (Join-Path $pgRoot 'LICENSES/PostgreSQL.txt')) -or
-    (-not $CoreOnly -and -not (Test-Path (Join-Path $vectorRoot 'LICENSES/pgvector.txt'))) -or
-    -not (Test-Path (Join-Path $pgRoot 'LICENSES/dependencies/icu.txt'))) { throw 'A required license text is missing' }
-
-$licenseInventoryPath = Join-Path $pgRoot 'LICENSES/inventory.json'
-$vectorLicenseInventoryPath = Join-Path $vectorRoot 'LICENSES/pgvector-inventory.json'
-if (-not (Test-Path $licenseInventoryPath -PathType Leaf) -or
-    (-not $CoreOnly -and (-not (Test-Path $vectorLicenseInventoryPath -PathType Leaf) -or
-    (Test-Path (Join-Path $vectorRoot 'LICENSES/inventory.json'))))) {
-  throw 'Required licence inventories are missing or use colliding names'
-}
-$licenseInventories = @([ordered]@{ root = $pgRoot; path = $licenseInventoryPath; expected = @('postgresql', 'bundled-runtime-dependencies', 'Microsoft Visual C++ runtime') })
-if (-not $CoreOnly) { $licenseInventories += [ordered]@{ root = $vectorRoot; path = $vectorLicenseInventoryPath; expected = @('pgvector') } }
-foreach ($inventorySpec in $licenseInventories) {
-  $inventory = Get-Content $inventorySpec.path -Raw | ConvertFrom-Json
-  if ($inventory.schema_version -ne 1 -or @($inventory.components).Count -ne $inventorySpec.expected.Count) {
-    throw "Licence inventory schema or component count is invalid: $($inventorySpec.path)"
-  }
-  $actualComponents = @($inventory.components | ForEach-Object component | Sort-Object)
-  $expectedComponents = @($inventorySpec.expected | Sort-Object)
-  if (Compare-Object $actualComponents $expectedComponents) { throw "Licence inventory components differ from the packaged payload: $($inventorySpec.path)" }
-  foreach ($component in $inventory.components) {
-    if (-not $component.version -or @($component.payload_paths).Count -eq 0 -or
-        -not $component.license_file -or -not $component.redistribution_review.basis -or
-        $component.redistribution_review.status -notin @('resolved', 'pending')) {
-      throw "Licence component has incomplete identity or review: $($component.component)"
-    }
-    $licensePaths = @($component.license_file)
-    if ($null -ne $component.additional_license_files) {
-      $licensePaths += @($component.additional_license_files)
-    }
-    foreach ($licensePath in $licensePaths) {
-      $relativeLicense = $licensePath -replace '^LICENSES/', ''
-      $fullLicense = Join-Path $inventorySpec.root "LICENSES/$relativeLicense"
-      if (-not (Test-Path $fullLicense -PathType Leaf) -or (Get-Item $fullLicense).Length -eq 0) {
-        throw "Declared licence evidence is missing or empty: $licensePath"
-      }
-    }
-    foreach ($payloadPath in $component.payload_paths) {
-      if (-not (Test-Path (Join-Path $inventorySpec.root $payloadPath))) {
-        throw "Licence component payload path is missing: $payloadPath"
-      }
-    }
-  }
-}
-$coreLicenseInventory = Get-Content $licenseInventoryPath -Raw | ConvertFrom-Json
-$runtimeReview = @($coreLicenseInventory.components | Where-Object component -eq 'bundled-runtime-dependencies')[0].redistribution_review
-if ($runtimeReview.status -ne 'pending') { throw 'Windows dependency redistribution review must remain pending until package mapping and terms are established' }
-$vcpkgMapPath = Join-Path $pgRoot 'LICENSES/vcpkg-dll-map.json'
-if (-not (Test-Path $vcpkgMapPath -PathType Leaf)) { throw 'Bundled vcpkg DLL ownership map is missing' }
-$vcpkgMap = Get-Content $vcpkgMapPath -Raw | ConvertFrom-Json
-if ($vcpkgMap.schema_version -ne 1 -or @($vcpkgMap.components).Count -eq 0) {
-  throw 'Bundled vcpkg DLL ownership map is empty or invalid'
-}
-$mappedDlls = @($vcpkgMap.components | ForEach-Object dll | Sort-Object)
-$declaredDlls = @($pgManifest.bundled_runtime_dlls | Sort-Object)
-if (Compare-Object $mappedDlls $declaredDlls) { throw 'vcpkg ownership map does not cover exactly the bundled runtime DLLs' }
-foreach ($entry in $vcpkgMap.components) {
-  if ($entry.dll -notmatch '^[A-Za-z0-9._-]+\.dll$' -or
-      $entry.port -notmatch '^[A-Za-z0-9._-]+$' -or
-      -not $entry.version -or $null -eq $entry.port_version -or
-      $entry.triplet -ne 'x64-windows' -or
-      $entry.copyright_file -ne "share/$($entry.port)/copyright") {
-    throw "Invalid vcpkg ownership map entry: $($entry.dll)"
-  }
-  $dllPath = Join-Path $pgRoot "bin/$($entry.dll)"
-  $noticePath = Join-Path $pgRoot "LICENSES/dependencies/$($entry.port).txt"
-  if ((Get-FileHash $dllPath -Algorithm SHA256).Hash.ToLowerInvariant() -ne $entry.dll_sha256 -or
-      (Get-FileHash $noticePath -Algorithm SHA256).Hash.ToLowerInvariant() -ne $entry.copyright_sha256) {
-    throw "vcpkg DLL or notice bytes differ from the ownership map: $($entry.dll)"
-  }
-}
-$msvcComponent = @($coreLicenseInventory.components | Where-Object component -eq 'Microsoft Visual C++ runtime')[0]
-if ($msvcComponent.redistribution_review.status -ne 'resolved' -or
-    $msvcComponent.version -notmatch '(?i)vcruntime140\.dll=\S+') {
-  throw 'Visual C++ runtime inventory lacks the reviewed runtime and version evidence'
-}
-if (-not $CoreOnly) {
-  $vectorInventory = Get-Content $vectorLicenseInventoryPath -Raw | ConvertFrom-Json
-  if (@($vectorInventory.components)[0].redistribution_review.status -ne 'resolved') { throw 'pgvector redistribution review is unresolved' }
-}
-
 $coreEntries = @{}
 Get-ChildItem $pgRoot -Force -Recurse | ForEach-Object {
   $relative = $_.FullName.Substring($pgRoot.Length).TrimStart('\', '/')

@@ -77,13 +77,13 @@ build_one() {
   local source_dir="$work/source/${version}"
   local package="$work/package/${version}"
   local archive="collection-${version}-postgresql-${pg_version}-macos-${architecture}.tar.gz"
-  mkdir -p "$source_dir" "$package/collection/lib" "$package/collection/share/extension" "$package/collection/LICENSES"
+  mkdir -p "$source_dir" "$package/collection/lib" "$package/collection/share/extension"
   curl -fL --retry 3 -o "$work/source/$source_archive" "$source_url"
   printf '%s  %s\n' "$source_sha256" "$work/source/$source_archive" | shasum -a 256 -c -
   test "$(tar -tzf "$work/source/$source_archive" | cut -d/ -f1 | sort -u)" = "pgcollection-${version}"
   tar -xzf "$work/source/$source_archive" -C "$source_dir"
   local source_root="$source_dir/pgcollection-${version}"
-  test -f "$source_root/Makefile" && test -f "$source_root/LICENSE"
+  test -f "$source_root/Makefile"
   test -f "$source_root/collection.control.in" || test -f "$source_root/collection.control"
   test "$(sed -n 's/^EXTVERSION = //p' "$source_root/Makefile")" = "$version"
   make -C "$source_root" PG_CONFIG="$pg_config" PG_LDFLAGS='-Wl,-rpath,@loader_path' -j "$(sysctl -n hw.ncpu)"
@@ -95,17 +95,12 @@ build_one() {
   local module_name=${module_file##*/}
   cp "$module_file" "$package/collection/lib/"
   cp "$staged_root/share/extension/collection"* "$package/collection/share/extension/"
-  cp "$source_root/LICENSE" "$package/collection/LICENSES/pgcollection.txt"
-  cp "$source_root/NOTICE" "$package/collection/LICENSES/pgcollection-NOTICE.txt"
-  test -f "$source_root/include/uthash/LICENSE"
-  cp "$source_root/include/uthash/LICENSE" "$package/collection/LICENSES/uthash.txt"
-  local uthash_sha
-  uthash_sha=$(shasum -a 256 "$source_root/include/uthash/LICENSE" | awk '{print $1}')
-  python3 - "$package" "$version" "$pg_version" "$architecture" "$source_url" "$source_sha256" "$uthash_sha" "$core_name" "$core_sha256" "$module_name" <<'PY'
+  python3 "$repo/tools/license_pointer.py" write "$package/collection" collection
+  python3 - "$package" "$version" "$pg_version" "$architecture" "$source_url" "$source_sha256" "$core_name" "$core_sha256" "$module_name" <<'PY'
 import json, sys
 from pathlib import Path
 root = Path(sys.argv[1])
-version, pg_version, architecture, url, sha256, uthash_sha, core_name, core_sha256, module_name = sys.argv[2:]
+version, pg_version, architecture, url, sha256, core_name, core_sha256, module_name = sys.argv[2:]
 module_path = "lib/" + module_name
 metadata = {"project":"collection", "version":version, "sql_names":["collection"],
             "requires":[], "configuration_prerequisites":[], "runtime_prerequisites":[],
@@ -113,18 +108,10 @@ metadata = {"project":"collection", "version":version, "sql_names":["collection"
             "source":{"url":url, "sha256":sha256},
             "core_archive":{"basename":core_name, "sha256":core_sha256}}
 (root / "metadata.json").write_text(json.dumps(metadata, indent=2, sort_keys=True) + "\n")
-components = [{"component":"pgcollection", "version":version,
-    "payload_paths":[module_path,"share/extension"], "license_file":"pgcollection.txt",
-    "additional_license_files":["pgcollection-NOTICE.txt"], "license_source":url + "#LICENSE",
-    "source_url":url, "source_sha256":sha256,
-    "redistribution_review":{"status":"resolved", "basis":"The exact unmodified upstream source archive supplies the Apache-2.0 project license and NOTICE, retained in this archive.", "source_obligation":"none"}},
-    {"component":"uthash", "version":"vendored by pgcollection", "payload_paths":[module_path],
-    "license_file":"uthash.txt", "license_source":url + "#include/uthash/LICENSE", "source_url":url,
-    "source_sha256":sha256, "license_sha256":uthash_sha,
-    "redistribution_review":{"status":"resolved", "basis":"The unmodified upstream archive identifies and supplies the uthash license; its copyright, conditions and disclaimer are retained in this archive.", "source_obligation":"none"}}]
-(root / "collection/LICENSES/collection-inventory.json").write_text(json.dumps({"schema_version":1,"components":components}, indent=2, sort_keys=True) + "\n")
+
 PY
   tar -C "$package" -czf "$output/$archive" collection metadata.json
+  python3 "$repo/tools/license_pointer.py" verify "$output/$archive" collection
   (cd "$output" && shasum -a 256 "$archive" > "$archive.sha256" && shasum -a 256 -c "$archive.sha256")
   python3 - "$output/$archive" "$version" "$architecture" "$pg_version" "$core_name" "$core_sha256" <<'PY'
 import json, pathlib, sys, tarfile
@@ -135,9 +122,7 @@ with tarfile.open(archive, "r:gz") as tar:
     modules = names & {"collection/lib/collection.dylib", "collection/lib/collection.so"}
     expected_names = {"collection", "collection/lib", *modules, "collection/share",
         "collection/share/extension", *[n for n in names if n.startswith("collection/share/extension/")],
-        "collection/LICENSES", "collection/LICENSES/pgcollection.txt",
-        "collection/LICENSES/pgcollection-NOTICE.txt", "collection/LICENSES/uthash.txt",
-        "collection/LICENSES/collection-inventory.json", "metadata.json"}
+        "collection/LICENSES", "collection/LICENSES/collection/LICENCE", "metadata.json"}
     if len(modules) != 1 or names != expected_names:
         raise SystemExit("collection archive has missing or unexpected members")
     metadata = json.load(tar.extractfile("metadata.json"))

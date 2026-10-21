@@ -57,6 +57,19 @@ class SelectedLinuxWorkflowTests(unittest.TestCase):
         self.assertIn("--core-resolution", workflow)
         self.assertIn("linux_core_resolution.validate_resolution", emitter)
 
+    def test_linux_recipe_uses_central_license_pointer(self):
+        build = (ROOT / "scripts/pg_jsonschema/linux-build-in-container.sh").read_text()
+        verify = (ROOT / "scripts/pg_jsonschema/linux-verify-in-container.sh").read_text()
+        build_dockerfile = (ROOT / "scripts/pg_jsonschema/linux-build.Dockerfile").read_text()
+        verify_dockerfile = (ROOT / "scripts/pg_jsonschema/linux-verify.Dockerfile").read_text()
+        self.assertIn("license_pointer.py write", build)
+        self.assertIn("license_pointer.py verify", verify)
+        self.assertIn("tools/license_pointer.py", build_dockerfile)
+        self.assertIn("tools/license_pointer.py", verify_dockerfile)
+        for content in (build, verify, build_dockerfile, verify_dockerfile):
+            self.assertNotIn("inventory_cargo_licenses", content)
+            self.assertNotIn("component_inventory", content)
+
     def test_selected_linux_run_blocks_do_not_end_with_a_continuation(self):
         for filename in SELECTED_LINUX_WORKFLOWS:
             workflow = (ROOT / ".github/workflows" / filename).read_text(encoding="utf-8")

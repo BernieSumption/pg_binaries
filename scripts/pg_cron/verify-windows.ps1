@@ -16,6 +16,10 @@ $repo = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
 $python = (Get-Command python.exe -ErrorAction Stop).Source
 $CoreArchive = (Resolve-Path $CoreArchive).Path
 $ExtensionArchive = (Resolve-Path $ExtensionArchive).Path
+foreach ($entry in @(@($CoreArchive, 'postgresql'), @($ExtensionArchive, 'pg_cron'))) {
+  & $python (Join-Path $repo 'tools/license_pointer.py') verify $entry[0] $entry[1]
+  if ($LASTEXITCODE -ne 0) { throw "Licence pointer verification failed for $(Split-Path $entry[0] -Leaf)." }
+}
 
 $pgVersion = $PostgreSQLVersion
 $version = '1.6.8'
@@ -96,7 +100,7 @@ try {
     throw 'pg_cron metadata does not bind the checked source, core archive, and prerequisites.'
   }
   foreach ($required in @('lib/pg_cron.dll','share/extension/pg_cron.control','share/extension/pg_cron--1.0.sql',
-      'share/extension/pg_cron--1.5--1.6.sql','LICENSES/pg_cron.txt')) {
+      'share/extension/pg_cron--1.5--1.6.sql')) {
     if (-not (Test-Path (Join-Path $extensionRoot $required) -PathType Leaf)) { throw "pg_cron archive lacks $required" }
   }
   foreach ($file in Get-ChildItem $extensionRoot -Recurse -File) {

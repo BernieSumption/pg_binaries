@@ -19,6 +19,7 @@ PY
 IFS=$'\t' read -r pg_version architecture platform profile_id core_name core_run_id \
   core_sha256 core_build_id core_source_revision source_url source_sha256 <<< "$target_values"
 extension_name="hypopg-1.4.3-postgresql-${pg_version}-${platform}.tar.gz"
+python3 "$repo/tools/license_pointer.py" verify "$extension_archives/$extension_name" hypopg
 core_archives=$(cd "$core_archives" && pwd)
 extension_archives=$(cd "$extension_archives" && pwd)
 mkdir -p "$output"

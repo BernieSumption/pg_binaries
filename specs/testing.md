@@ -61,3 +61,7 @@ Prefer tests driven by intended-support metadata over a manually maintained list
 Keep routine feedback fast and avoid repeating expensive checks when the relevant archives, tests and environments have not changed. Reused results must remain applicable to what is being verified.
 
 The intention is not to require thousands of test combinations. If the requirements imply that scale, add an item to HUMAN_REVIEW_QUEUE.md proposing alternatives rather than silently reducing coverage.
+
+## Allow non-code patching of archives
+
+If we ever need to alter files that don't affect the behaviour of archives, e.g. altering documentation or license files, it is acceptable to patch the archive directly and consider the existing test evidence to support the patched copy.

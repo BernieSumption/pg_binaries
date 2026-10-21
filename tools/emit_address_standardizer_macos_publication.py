@@ -2,7 +2,7 @@
 """Emit compact archive-bound Address Standardizer macOS publication evidence."""
 import argparse, hashlib, json, os, re, sys
 from pathlib import Path
-import coverage, extension_archive_plan, address_standardizer_license_inventory
+import coverage, extension_archive_plan, license_pointer
 VERSION='3.7.0'; BLOCK='pending-dependency-provenance-and-redistribution-review'; ATTEMPT_STATUS='not-assessed-final-archive-unavailable'; REDISTRIBUTION_RESOLVED='resolved'
 CASES={'archive-suite','macho-closure'}
 def digest(p):
@@ -30,7 +30,7 @@ def emit(root,core_dir,archives,out,target,steps,os_version,image_id):
  for p in (core,ext):
   side=Path(str(p)+'.sha256').read_text().split()
   if len(side)<2 or side[0]!=hashes[p.name]: raise coverage.CoverageError(f'bad checksum sidecar for {p.name}')
- address_standardizer_license_inventory.validate_archive(ext)
+ license_pointer.verify_archive(ext,'address_standardizer')
  if not re.fullmatch(r'\d+(?:\.\d+)*',os_version) or not image_id: raise coverage.CoverageError('runner identity missing')
  attempt['archives']=hashes; (pub/'attempt.json').write_text(json.dumps(attempt,indent=2,sort_keys=True)+'\n')
  report=archives/'static-analysis.json'; probe=archives/'probe-output.txt'; reports={}

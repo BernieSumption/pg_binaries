@@ -14,5 +14,6 @@ sudo mv /tmp/postgis_tiger_geocoder-*.tar.gz* /tiger/
 sudo cp /tmp/probe.sql /repo/scripts/tiger/probe.sql
 sudo cp /tmp/support.json /repo/support.json
 sudo install -m 0755 /tmp/check_elf_dependencies.py /usr/local/bin/check-elf-dependencies
+sudo install -m 0755 /tmp/license_pointer.py /usr/local/bin/license_pointer.py
 sudo env PG_ARCHITECTURE="$architecture" bash /tmp/verify-in-container.sh
 printf 'PASS: TIGER Geocoder 2025.2 minimum-kernel archive verification\n'

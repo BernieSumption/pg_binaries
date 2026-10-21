@@ -9,9 +9,8 @@ import sys
 import tarfile
 
 import coverage
-import check_pg_jsonschema_component_inventory as component_inventory
 import emit_pg_jsonschema_windows_publication as publication
-import inventory_cargo_licenses as cargo_licenses
+from license_pointer import LicensePointerError, verify_archive as verify_license_pointer
 from windows_core_pin import PG_VERSIONS
 
 
@@ -64,6 +63,10 @@ def inspect(core_archive, extension_archive, report_path, pe_report_path=None,
             if not isinstance(core, dict) or any(core.get(key) != value for key, value in expected_manifest.items()):
                 raise coverage.CoverageError("core archive manifest differs from the pinned build")
             inspected.append("postgresql/manifest.json")
+            try:
+                verify_license_pointer(core_archive, "postgresql")
+            except LicensePointerError as exc:
+                raise coverage.CoverageError(f"PostgreSQL licence pointer is invalid: {exc}") from exc
         with tarfile.open(extension_archive, "r:gz") as archive:
             members = archive.getmembers()
             names = {m.name for m in members}
@@ -99,34 +102,16 @@ def inspect(core_archive, extension_archive, report_path, pe_report_path=None,
                 raise coverage.CoverageError("pg_jsonschema metadata does not bind the exact source and core inputs")
             if native != ["pg_jsonschema/lib/pg_jsonschema.dll"]:
                 raise coverage.CoverageError("archive must contain exactly the pg_jsonschema extension DLL")
-            inventory_names = [member.name for member in members if member.isfile()
-                               and member.name.startswith("pg_jsonschema/LICENSES/")]
-            expected_inventory = "pg_jsonschema/LICENSES/cargo/cargo-license-inventory.json"
-            expected_component_inventory = "pg_jsonschema/LICENSES/pg_jsonschema-inventory.json"
-            if (not {expected_inventory, expected_component_inventory,
-                     "pg_jsonschema/LICENSES/pg_jsonschema/LICENSE"} <= set(inventory_names)
-                    or any(name not in {expected_inventory, expected_component_inventory,
-                                        "pg_jsonschema/LICENSES/pg_jsonschema/LICENSE"}
-                           and not name.startswith("pg_jsonschema/LICENSES/cargo/") for name in inventory_names)):
-                raise coverage.CoverageError(
-                    "archive requires the project-named licence inventory and resolved component inventory")
+            try:
+                verify_license_pointer(extension_archive, "pg_jsonschema")
+            except LicensePointerError as exc:
+                raise coverage.CoverageError(f"pg_jsonschema licence pointer is invalid: {exc}") from exc
             required = {"pg_jsonschema/lib/pg_jsonschema.dll",
                         "pg_jsonschema/share/extension/pg_jsonschema.control"}
             if not required.issubset(names) or not any(
                     name.startswith("pg_jsonschema/share/extension/pg_jsonschema") and name.endswith(".sql")
                     for name in names):
                 raise coverage.CoverageError("archive is missing the DLL, control file or installation SQL")
-            inventory_member = archive.getmember(expected_inventory)
-            inventory = json.loads(archive.extractfile(inventory_member).read().decode("utf-8"))
-            if (not isinstance(inventory, dict) or inventory.get("schema_version") != 1
-                    or not isinstance(inventory.get("packages"), list) or not inventory["packages"]):
-                raise coverage.CoverageError("Cargo licence inventory is empty or malformed")
-        try:
-            with tarfile.open(extension_archive, "r:gz") as notice_archive:
-                cargo_licenses.check_packaged_notices(notice_archive, expected_inventory)
-            component_inventory.validate(extension_archive)
-        except (ValueError, KeyError, TypeError) as exc:
-            raise coverage.CoverageError(f"final redistribution inventories failed verification: {exc}") from exc
     except (OSError, tarfile.TarError, UnicodeError, json.JSONDecodeError) as exc:
         raise coverage.CoverageError(f"could not inspect final archive: {exc}") from exc
     pe_digest = None
@@ -148,8 +133,7 @@ def inspect(core_archive, extension_archive, report_path, pe_report_path=None,
         "inspected_files": sorted(inspected), "native_extension_files": sorted(native),
         "pe_dependency_analysis_sha256": pe_digest,
         "checks": ["selected-core-manifest", "safe-archive-paths", "source-and-core-metadata",
-                   "resolved-component-redistribution-review", "exact-shipped-cargo-notices",
-                   "native-extension-identity",
+                   "core-and-component-licence-pointers", "native-extension-identity",
                    "archive-bound-pe-dependency-analysis"],
         "limits": ["The PostgreSQL PE dependency checker separately inspects the relocated core plus extension DLL."],
     }

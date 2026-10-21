@@ -38,8 +38,8 @@ if $core_only; then
 else
   shasum -a 256 -c "$pg_name.sha256" "$vector_name.sha256"
 fi
-python3 "$repo/tools/check_macos_license_inventory.py" "$archives/$pg_name"
-if ! $core_only; then python3 "$repo/tools/check_macos_license_inventory.py" "$archives/$vector_name"; fi
+python3 "$repo/tools/license_pointer.py" verify "$archives/$pg_name" postgresql
+if ! $core_only; then python3 "$repo/tools/license_pointer.py" verify "$archives/$vector_name" pgvector; fi
 mkdir -p "$work/first" "$work/extension" "$work/moved" "$work/socket"
 tar -xzf "$archives/$pg_name" -C "$work/first"
 if ! $core_only; then tar -xzf "$archives/$vector_name" -C "$work/extension"; fi
@@ -95,10 +95,6 @@ if not core_only:
             raise SystemExit('separately built pgvector provenance is missing or invalid')
     elif any(vector.get(field) != value for field, value in provenance.items()):
         raise SystemExit('pgvector build provenance differs from PostgreSQL')
-    licence_inventory = extension / 'pgvector/LICENSES/pgvector-inventory.json'
-    inventory = json.loads(licence_inventory.read_text())
-    if inventory.get('schema_version') != 1 or not inventory.get('components'):
-        raise SystemExit('pgvector licence inventory missing components')
     for source in (extension / 'pgvector').rglob('*'):
         destination = core / source.relative_to(extension / 'pgvector')
         if destination.exists() or destination.is_symlink():
@@ -106,11 +102,8 @@ if not core_only:
                 continue
             raise SystemExit(f'extension payload collision: {source.relative_to(extension / "pgvector")}')
 PY
-test -s "$work/first/postgresql/LICENSES/PostgreSQL.txt"
 if ! $core_only; then
-  test -s "$work/extension/pgvector/LICENSES/pgvector.txt"
   ditto "$work/extension/pgvector" "$work/first/postgresql"
-  test -s "$work/first/postgresql/LICENSES/pgvector.txt"
 fi
 
 start_server() {

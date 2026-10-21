@@ -90,7 +90,7 @@ def import_run(root, core_artifact, extension_artifact, run_id, target_config):
     try:
         components, native_files = publication.check_archive(extension_archive)
     except (OSError, ValueError) as exc:
-        raise coverage.CoverageError(f"final archive licence inventory is invalid: {exc}") from exc
+        raise coverage.CoverageError(f"final archive licence pointer is invalid: {exc}") from exc
     if components != 1 or native_files != 1:
         raise coverage.CoverageError("final archive does not inventory one native payload and its licence")
     if attempt.get("archives") != digests:

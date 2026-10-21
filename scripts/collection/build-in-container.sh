@@ -40,29 +40,20 @@ build_one() {
   tar -xzf "/work/source/$source_archive" -C "$source_dir"
   source_root="$source_dir/pgcollection-${version}"
   test -f "$source_root/Makefile"
-  test -f "$source_root/LICENSE"
   test -f "$source_root/collection.control.in" || test -f "$source_root/collection.control"
   test "$(sed -n 's/^EXTVERSION = //p' "$source_root/Makefile")" = "$version"
   make -C "$source_root" PG_CONFIG="$pgroot/bin/pg_config" -j 4
   make -C "$source_root" PG_CONFIG="$pgroot/bin/pg_config" install DESTDIR="$stage_root"
   install_root="$stage_root/opt/postgresql"
-  mkdir -p "$package_root/collection/lib" "$package_root/collection/share/extension" "$package_root/collection/LICENSES"
+  mkdir -p "$package_root/collection/lib" "$package_root/collection/share/extension"
   test -f "$install_root/lib/collection.so"
   cp "$install_root/lib/collection.so" "$package_root/collection/lib/"
   cp "$install_root/share/extension/collection"* "$package_root/collection/share/extension/"
-  cp "$source_root/LICENSE" "$package_root/collection/LICENSES/pgcollection.txt"
-  cp "$source_root/NOTICE" "$package_root/collection/LICENSES/pgcollection-NOTICE.txt"
-  test -f "$source_root/include/uthash/LICENSE"
-  cp "$source_root/include/uthash/LICENSE" "$package_root/collection/LICENSES/uthash.txt"
-  cp "$source_root/NOTICE" "/out/pgcollection-${version}-NOTICE.txt"
-  cp "$source_root/LICENSE" "/out/pgcollection-${version}-LICENSE.txt"
-  cp "$source_root/include/uthash/LICENSE" "/out/pgcollection-${version}-uthash-LICENSE.txt"
-  uthash_sha=$(sha256sum "$source_root/include/uthash/LICENSE" | awk '{print $1}')
-  python3 - "$package_root" "$version" "$pg_version" "$architecture" "$source_url" "$sha256" "$uthash_sha" "$core_archive" "$core_sha256" <<'PY'
+  python3 - "$package_root" "$version" "$pg_version" "$architecture" "$source_url" "$sha256" "$core_archive" "$core_sha256" <<'PY'
 import json, sys
 from pathlib import Path
 root = Path(sys.argv[1])
-version, pg_version, architecture, url, sha256, uthash_sha, core_name, core_sha256 = sys.argv[2:]
+version, pg_version, architecture, url, sha256, core_name, core_sha256 = sys.argv[2:]
 metadata = {
     "project": "collection", "version": version, "sql_names": ["collection"],
     "requires": [], "configuration_prerequisites": [], "runtime_prerequisites": [],
@@ -71,34 +62,10 @@ metadata = {
     "core_archive": {"basename": core_name, "sha256": core_sha256},
 }
 (root / "metadata.json").write_text(json.dumps(metadata, indent=2, sort_keys=True) + "\n")
-components = [{
-    "component": "pgcollection", "version": version,
-    "payload_paths": ["lib/collection.so", "share/extension"],
-    "license_file": "pgcollection.txt", "additional_license_files": ["pgcollection-NOTICE.txt"],
-    "license_source": url + "#LICENSE",
-    "source_url": url, "source_sha256": sha256,
-    "redistribution_review": {
-        "status": "resolved",
-        "basis": "The exact unmodified upstream source archive supplies the Apache-2.0 project license, retained in this feasibility archive.",
-        "source_obligation": "none",
-    },
-}, {
-    "component": "uthash", "version": "vendored by pgcollection",
-    "payload_paths": ["lib/collection.so"], "license_file": "uthash.txt",
-    "license_source": url + "#include/uthash/LICENSE", "source_url": url,
-    "source_sha256": sha256, "license_sha256": uthash_sha,
-    "redistribution_review": {
-        "status": "resolved",
-        "basis": "The unmodified upstream archive identifies and supplies the uthash license; its copyright, conditions and disclaimer are retained in this archive.",
-        "source_obligation": "none",
-    },
-}]
-(root / "collection/LICENSES/collection-inventory.json").write_text(
-    json.dumps({"schema_version": 1, "components": components}, indent=2, sort_keys=True) + "\n")
 PY
+  python3 /usr/local/bin/license_pointer.py write "$package_root/collection" collection
   (cd "$package_root" && tar -czf "/out/$archive" collection metadata.json)
   (cd /out && sha256sum "$archive" > "$archive.sha256")
-  printf '%s  %s\n' "$uthash_sha" "pgcollection-${version}-uthash-LICENSE.txt" > "/out/pgcollection-${version}-uthash-LICENSE.txt.sha256"
 }
 
 # Digests were independently obtained from the exact public GitHub tag archive URLs.

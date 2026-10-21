@@ -15,6 +15,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "tools"))
 
 import coverage
+from license_pointer import LicensePointerError
 import emit_address_standardizer_linux_publication as publication
 import import_address_standardizer_linux_publication as importer
 
@@ -25,25 +26,11 @@ class AddressStandardizerLinuxPublication(unittest.TestCase):
                         "case_ids": ["archive-suite", "elf-closure"]}
 
     @staticmethod
-    def write_extension_archive(path, *, include_sljit=True):
-        inventory = {"schema_version": 1, "components": [
-            {"component": "Address Standardizer", "version": "3.7.0",
-             "payload_paths": ["lib/address_standardizer.so", "share/extension"],
-             "license_file": "Address-Standardizer.txt",
-             "redistribution_review": {"status": "resolved", "basis": "Reviewed MIT terms.",
-                                        "source_obligation": "none"}},
-            {"component": "PCRE2", "version": "10.48", "payload_paths": ["lib"],
-             "license_file": "PCRE2.txt", "additional_license_files": ["SLJIT.txt"],
-             "redistribution_review": {"status": "resolved", "basis": "Reviewed BSD terms.",
-                                        "source_obligation": "none"}},
-        ]}
-        files = {
-            "address_standardizer/LICENSES/license-inventory.json": json.dumps(inventory).encode(),
-            "address_standardizer/LICENSES/Address-Standardizer.txt": b"Address Standardizer notice\n",
-            "address_standardizer/LICENSES/PCRE2.txt": b"PCRE2 notice\n",
-        }
-        if include_sljit:
-            files["address_standardizer/LICENSES/SLJIT.txt"] = b"SLJIT notice\n"
+    def write_extension_archive(path, *, include_pointer=True):
+        files = {}
+        if include_pointer:
+            from license_pointer import LICENSE_POINTER
+            files["address_standardizer/LICENSES/address_standardizer/LICENCE"] = LICENSE_POINTER.encode()
         with tarfile.open(path, "w:gz") as archive:
             for name, content in files.items():
                 member = tarfile.TarInfo(name)
@@ -70,11 +57,7 @@ class AddressStandardizerLinuxPublication(unittest.TestCase):
         self.assertIn("--extension-version \"$ADDRESS_STANDARDIZER_VERSION\"", workflow)
         recipe = (ROOT / "scripts/address_standardizer/linux-build-in-container.sh").read_text()
         self.assertIn('Address Standardizer recipe supports 3.7.0; selected $extension_version', recipe)
-        self.assertIn('/LICENCE.md" "$package/LICENSES/PCRE2.txt"', recipe)
-        self.assertIn('/deps/sljit/LICENSE" "$package/LICENSES/SLJIT.txt"', recipe)
-        self.assertIn('additional_license_files": ["SLJIT.txt"]', recipe)
-        self.assertIn('/PCRE2-LICENCE.md', recipe)
-        self.assertIn('/SLJIT-LICENSE.txt', recipe)
+        self.assertIn("license-pointer write \"$package\" address_standardizer", recipe)
         self.assertNotIn("15.19|16.15|17.11|18.6", recipe)
         self.assertNotIn("15.19|16.15|17.11|18.6",
                          (ROOT / "scripts/address_standardizer/linux-verify-in-container.sh").read_text())
@@ -222,7 +205,7 @@ class AddressStandardizerLinuxPublication(unittest.TestCase):
                 data_installed = root / "support/verification" / f"address_standardizer_data_us-3.7.0-postgresql-{pg_version}-linux-{architecture}-current-{run_id}.json"
                 self.assertTrue(data_installed.is_file())
 
-    def test_emitter_preserves_failed_attempt_when_final_archive_lacks_reviewed_notice(self):
+    def test_emitter_preserves_failed_attempt_when_final_archive_lacks_license_pointer(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary) / "root"
             (root / "support").mkdir(parents=True)
@@ -234,7 +217,7 @@ class AddressStandardizerLinuxPublication(unittest.TestCase):
             core_dir.mkdir()
             archive = archives / "address-standardizer-3.7.0-postgresql-18.6-linux-x86_64.tar.gz"
             core = core_dir / "postgresql-18.6-linux-x86_64.tar.gz"
-            self.write_extension_archive(archive, include_sljit=False)
+            self.write_extension_archive(archive, include_pointer=False)
             core.write_bytes(b"core")
             for path in (archive, core):
                 checksum = hashlib.sha256(path.read_bytes()).hexdigest()
@@ -248,7 +231,7 @@ class AddressStandardizerLinuxPublication(unittest.TestCase):
             with patch.object(coverage, "verification_profile", return_value=self.profile), \
                     patch.object(publication.linux_core_resolution, "validate_resolution",
                                  return_value={"provenance": {"run_id": "99887766"}}):
-                with self.assertRaisesRegex(coverage.CoverageError, "SLJIT.txt"):
+                with self.assertRaisesRegex(LicensePointerError, "LICENCE"):
                     publication.emit(*args)
             attempt = json.loads((output / "attempt.json").read_text(encoding="utf-8"))
             self.assertEqual(attempt["redistribution_status"], publication.ATTEMPT_STATUS)

@@ -5,5 +5,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
  && rm -rf /var/lib/apt/lists/*
 COPY scripts/hypopg/build-in-container.sh /usr/local/bin/build-hypopg-pilot
 COPY scripts/hypopg/probe.sql /work/probe.sql
+COPY tools/license_pointer.py /usr/local/bin/license_pointer.py
 RUN chmod +x /usr/local/bin/build-hypopg-pilot
 ENTRYPOINT ["/usr/local/bin/build-hypopg-pilot"]

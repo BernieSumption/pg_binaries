@@ -146,7 +146,7 @@ PY
     fi
     git -C "$repo" diff --quiet "$source_revision" HEAD -- \
       scripts/macos/build.sh scripts/macos/build-source-dependencies.sh \
-      scripts/macos/bundle.py scripts/macos/licenses.py \
+      scripts/macos/bundle.py tools/license_pointer.py \
       tools/source_archive.py tools/discover_builtins.py \
       tools/create_macos_symbols.py || {
         echo "pinned macOS core build inputs changed" >&2

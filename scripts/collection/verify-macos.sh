@@ -59,6 +59,7 @@ PY
 
 for version in 1.1.1 2.1.3; do
   archive="collection-${version}-postgresql-${pg_version}-macos-${architecture}.tar.gz"
+  python3 "$repo/tools/license_pointer.py" verify "$archives/$archive" collection
   test -s "$archives/$archive" && test -s "$archives/$archive.sha256"
   (cd "$archives" && shasum -a 256 -c "$archive.sha256")
   python3 - "$archives/$archive" "$version" "$architecture" "$pg_version" "$core_name" "$core_sha256" <<'PY'
@@ -70,9 +71,8 @@ with tarfile.open(archive, "r:gz") as stream:
     modules = names & {"collection/lib/collection.dylib", "collection/lib/collection.so"}
     expected_names = {"collection", "collection/lib", *modules, "collection/share",
         "collection/share/extension", *[name for name in names if name.startswith("collection/share/extension/")],
-        "collection/LICENSES", "collection/LICENSES/pgcollection.txt",
-        "collection/LICENSES/pgcollection-NOTICE.txt", "collection/LICENSES/uthash.txt",
-        "collection/LICENSES/collection-inventory.json", "metadata.json"}
+        "collection/LICENSES", "collection/LICENSES/collection",
+        "collection/LICENSES/collection/LICENCE", "metadata.json"}
     if len(modules) != 1 or names != expected_names:
         raise SystemExit("collection archive has missing or unexpected members")
     metadata = json.load(stream.extractfile("metadata.json"))

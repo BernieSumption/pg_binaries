@@ -12,7 +12,7 @@ import sys
 import coverage
 import extension_archive_plan
 import linux_core_resolution
-import address_standardizer_license_inventory
+import license_pointer
 
 VERSION = "3.7.0"
 DEFAULT_PG_VERSION = "18.6"
@@ -161,7 +161,7 @@ def emit(root, archives, core_archives, output, architecture, build_result, veri
     checksums = {archive_name: digest(archive), core_name: digest(core)}
     for path in (archive, core):
         _sidecar(path, checksums[path.name])
-    address_standardizer_license_inventory.validate_archive(archive)
+    license_pointer.verify_archive(archive, "address_standardizer")
     attempt["archives"] = checksums
     attempt_path.write_text(json.dumps(attempt, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     if static_path.is_file():

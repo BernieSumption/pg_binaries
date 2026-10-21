@@ -11,6 +11,7 @@ import tarfile
 import coverage
 from hypopg_windows_symbols import verify_symbols
 import emit_hypopg_windows_publication as publication
+from license_pointer import LicensePointerError, verify_archive as verify_license_pointer
 
 
 def sha256_file(path):
@@ -59,6 +60,10 @@ def inspect(core_archive, extension_archive, report_path, pe_report_path=None, p
             if not isinstance(core, dict) or any(core.get(key) != value for key, value in expected_manifest.items()):
                 raise coverage.CoverageError("core archive manifest differs from the pinned build")
             inspected.append("postgresql/manifest.json")
+            try:
+                verify_license_pointer(core_archive, "postgresql")
+            except LicensePointerError as exc:
+                raise coverage.CoverageError(f"PostgreSQL licence pointer is invalid: {exc}") from exc
         with tarfile.open(extension_archive, "r:gz") as archive:
             members = archive.getmembers()
             names = {m.name for m in members}
@@ -93,24 +98,16 @@ def inspect(core_archive, extension_archive, report_path, pe_report_path=None, p
                 raise coverage.CoverageError("hypopg metadata does not bind the exact source and core inputs")
             if native != ["hypopg/lib/hypopg.dll"]:
                 raise coverage.CoverageError("archive must contain exactly the hypopg extension DLL")
-            inventory_names = [member.name for member in members if member.isfile()
-                               and member.name.startswith("hypopg/LICENSES/")]
-            expected_inventory = "hypopg/LICENSES/hypopg-inventory.json"
-            if (not {expected_inventory, "hypopg/LICENSES/HypoPG.txt"} <= set(inventory_names)
-                    or any(name not in {expected_inventory, "hypopg/LICENSES/HypoPG.txt"}
-                           for name in inventory_names)):
-                raise coverage.CoverageError("archive requires the project-named HypoPG licence inventory")
+            try:
+                verify_license_pointer(extension_archive, "hypopg")
+            except LicensePointerError as exc:
+                raise coverage.CoverageError(f"HypoPG licence pointer is invalid: {exc}") from exc
             required = {"hypopg/lib/hypopg.dll",
                         "hypopg/share/extension/hypopg.control"}
             if not required.issubset(names) or not any(
                     name.startswith("hypopg/share/extension/hypopg") and name.endswith(".sql")
                     for name in names):
                 raise coverage.CoverageError("archive is missing the DLL, control file or installation SQL")
-            inventory_member = archive.getmember(expected_inventory)
-            inventory = json.loads(archive.extractfile(inventory_member).read().decode("utf-8"))
-            if (not isinstance(inventory, dict) or inventory.get("schema_version") != 1
-                    or not isinstance(inventory.get("components"), list) or not inventory["components"]):
-                raise coverage.CoverageError("HypoPG licence inventory is empty or malformed")
     except (OSError, tarfile.TarError, UnicodeError, json.JSONDecodeError) as exc:
         raise coverage.CoverageError(f"could not inspect final archive: {exc}") from exc
     pe_digest = None
@@ -134,7 +131,7 @@ def inspect(core_archive, extension_archive, report_path, pe_report_path=None, p
         "inspected_files": sorted(inspected), "native_extension_files": sorted(native),
         "pe_dependency_analysis_sha256": pe_digest,
         "checks": ["current-profile-core-manifest", "safe-archive-paths", "source-and-core-metadata",
-                   "project-named-licence-inventory", "native-extension-identity",
+                   "core-and-component-licence-pointers", "native-extension-identity",
                    "archive-bound-pe-dependency-analysis", "archive-bound-pdb-identity"],
         "limits": ["The PostgreSQL PE dependency checker separately inspects the relocated core plus extension DLL."],
     }

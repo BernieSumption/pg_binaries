@@ -220,9 +220,15 @@ Each GitHub release only uploads binaries that are added or changed as a result 
 
 Include `postgres`, `initdb`, `pg_ctl`, `psql`, `pg_dump` and `pg_restore` with their support files. They must initialize UTF-8 databases, run under an ordinary user, accept connections, apply representative DDL, expose its definitions through PostgreSQL catalogues and stop cleanly.
 
-## Downloads include redistribution obligations
+## Maintain a list of all licenses and link to it in downloads
 
-Downloads must be free and public without authentication. Include applicable licence texts, notices and component/version mappings, plus any required source offers or source links. Resolve redistribution obligations before advertising a component.
+All our dependencies must either be available under an OSI-approved open source license, or a human-reviewed alternative acceptable license. Document these human-review decisions and other decisions flowing from this policy in `policies/licenses.md`. If a project is desirable to include but not released under an OSI-approved license, and an item to the human review queue.
+
+Maintain a LICENSES.md file describing the licenses used by all dependencies that we redistribute including transitive dependencies. LICENSES.md should have an entry per project we use, describing the license it uses and linking to the source code file where the license is declared. For projects that have a chain of providers, e.g. an upstream project and downstream patches maintained by someone else, link to all relevant source code. We take license declarations at face value: a project declaring a MIT license is taken as evidence that the code is appropriate to license as MIT.
+
+Each download contains a LICENCE file that links to LICENSES.md on GitHub: `https://github.com/BernieSumption/pg_binaries/blob/main/LICENSES.md`
+
+Note: many OSI licenses require that the license text / notice should be "distributed with" or "included in" the software or similar wording. We consider linking to the notices to satisfy this kind of requirement.
 
 ## Allow debugging of failures
 

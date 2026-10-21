@@ -12,7 +12,7 @@ An extension record must identify the exact PostgreSQL archive and any prerequis
 
 Test each archive with every selected PostgreSQL release it supports. When the selected minor changes, test with the new core bytes before reusing an extension archive. Historical-minor endpoints and extension-version substitution tests are not required. A known incompatibility still prevents an affected claim. Each SQL extension advertised from a project archive needs a representative case, but those cases may share a job and installation where their prerequisites permit it.
 
-Check archive component and licence mappings against the payload and the declarations required by [the release policy](releases.md#redistribution-review-before-publication). Passing structural checks does not itself establish that the redistribution review is complete.
+Verify that every staged download contains the exact central licence pointer required by [the release policy](releases.md#licence-pointer). Licence declarations and decisions are maintained centrally in `LICENSES.md` and [licenses.md](licenses.md).
 
 ## Verification environments
 

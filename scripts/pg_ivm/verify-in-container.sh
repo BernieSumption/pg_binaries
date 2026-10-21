@@ -17,6 +17,7 @@ cd /extension
 sha256sum -c "$extension_archive.sha256"
 mkdir -p /tmp/first /tmp/moved /tmp/extension /tmp/data /tmp/socket
 tar -xzf "/input/$pg_archive" -C /tmp/first
+python3 /usr/local/bin/license_pointer.py verify "/extension/$extension_archive" pg_ivm
 tar -xzf "/extension/$extension_archive" -C /tmp/extension
 pgroot=/tmp/first/postgresql
 extroot=/tmp/extension/pg_ivm
@@ -35,22 +36,11 @@ if metadata != {'project':'pg_ivm','version':'1.16','sql_names':['pg_ivm'],'requ
  raise SystemExit('pg_ivm package metadata mismatch')
 digest=metadata['source']['sha256']
 if len(digest)!=64 or any(c not in '0123456789abcdef' for c in digest): raise SystemExit('invalid source SHA-256')
-inv=json.loads((root/'pg_ivm/LICENSES/pg_ivm-inventory.json').read_text())
-if inv.get('schema_version')!=1 or len(inv.get('components',[]))!=1: raise SystemExit('invalid licence inventory')
-c=inv['components'][0]
-for k,v in {'component':'pg_ivm','version':'1.16','payload_paths':['lib/pg_ivm.so','share/extension','bin/pg_ivm_dump_metadata'],'license_file':'pg_ivm.txt','source_url':sys.argv[2],'source_sha256':digest}.items():
- if c.get(k)!=v: raise SystemExit(f'licence inventory {k} mismatch')
-r=c.get('redistribution_review',{})
-if r.get('status')!='resolved' or not r.get('basis') or r.get('source_obligation')!='none': raise SystemExit('redistribution review incomplete')
-license=(root/'pg_ivm/LICENSES/pg_ivm.txt').read_text()
-for text in ('Permission to use, copy, modify, and distribute this software','provided that the above copyright notice and this','THE AUTHORS SPECIFICALLY DISCLAIM ANY WARRANTIES'):
- if text not in license: raise SystemExit('upstream licence notice incomplete')
 if {p.stem for p in (root/'pg_ivm/share/extension').glob('*.control')}!={'pg_ivm'}: raise SystemExit('unexpected SQL extensions')
 for p in ('lib/pg_ivm.so','bin/pg_ivm_dump_metadata'):
  if not (root/'pg_ivm'/p).is_file(): raise SystemExit(f'missing {p}')
 if {p.name for p in root.iterdir()}!={'pg_ivm','metadata.json'}: raise SystemExit('unexpected package archive members')
 PY
-test -s "$extroot/LICENSES/pg_ivm.txt"
 while IFS= read -r -d '' source; do
   relative=${source#"$extroot/"}; destination="$pgroot/$relative"
   if [[ -e "$destination" || -L "$destination" ]]; then

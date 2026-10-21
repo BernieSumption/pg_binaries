@@ -35,7 +35,7 @@ fi
 postgis_archive="postgis-${postgis_version}-postgresql-${postgis_range}-linux-${architecture}.tar.gz"
 cd /input
 sha256sum -c "$pg_archive.sha256"
-mkdir -p /work/prefix /work/source /work/stage/postgis/{lib,share/extension,LICENSES/postgis} /out
+mkdir -p /work/prefix /work/source /work/stage/postgis/{lib,share/extension} /out
 tar -xzf "$pg_archive" -C /work/prefix
 mv /work/prefix/postgresql /opt/postgresql
 pgroot=/opt/postgresql
@@ -92,14 +92,9 @@ for name in allowed:
             raise SystemExit(f'Missing module library {library} for {name}')
         shutil.copy2(library, stage / 'lib' / library.name)
 PY
-cp COPYING "$stage/LICENSES/postgis/PostGIS.txt"
-cp -a /usr/share/common-licenses "$stage/LICENSES/postgis/common-licenses"
 mkdir -p "$stage/lib/runtime" "$stage/share"
-: > /work/runtime-map.tsv
 cp -a /usr/share/proj "$stage/share/proj"
 cp -a /usr/share/gdal "$stage/share/gdal"
-cp /usr/share/doc/proj-data/copyright "$stage/LICENSES/postgis/proj-data.copyright"
-cp /usr/share/doc/gdal-data/copyright "$stage/LICENSES/postgis/gdal-data.copyright"
 # Bundle the ELF dependency closure for the selected SQL modules. The
 # PostgreSQL archive supplies glibc and libpq; SFCGAL and GDAL add C++ libraries.
 for pass in 1 2 3 4; do
@@ -114,17 +109,6 @@ for pass in 1 2 3 4; do
       dest="$stage/lib/runtime/$library"
       if [[ ! -e "$dest" ]]; then
         cp -L "$path" "$dest"
-        resolved=$(readlink -f "$path")
-        package=$(dpkg-query -S "$path" "$resolved" 2>/dev/null | head -1 | cut -d: -f1 || true)
-        if [[ -z "$package" ]]; then
-          package=$(dpkg-query -S "*/$(basename "$resolved")" 2>/dev/null | head -1 | cut -d: -f1 || true)
-        fi
-        if [[ -z "$package" || ! -f "/usr/share/doc/$package/copyright" ]]; then
-          echo "No package copyright found for $library ($path)" >&2
-          exit 1
-        fi
-        cp "/usr/share/doc/$package/copyright" "$stage/LICENSES/postgis/${package}.copyright"
-        printf '%s\t%s\n' "$package" "lib/runtime/$library" >> /work/runtime-map.tsv
       fi
     done < <(ldd "$elf" 2>/dev/null | awk '$2 == "=>" && $3 ~ /^\// {print $1, $3}')
   done < <(find "$stage/lib" -type f -print0)
@@ -159,14 +143,7 @@ Path('/work/core-runtime-dependencies.json').write_text(
     json.dumps(sorted(dependencies, key=lambda item: item['soname']), indent=2) + '\n'
 )
 
-runtime_map = Path('/work/runtime-map.tsv')
-runtime_map.write_text(''.join(
-    line for line in runtime_map.read_text().splitlines(keepends=True)
-    if (stage / line.rstrip('\n').split('\t', 1)[1]).exists()
-))
 PY
-python3 /usr/local/bin/write-postgis-license-inventory \
-  "$stage" /work/runtime-map.tsv "$postgis_source_sha256"
 python3 - "$architecture" "$postgis_source_sha256" <<'PY'
 import json
 import os
@@ -213,6 +190,7 @@ runuser -u postgres -- "$pgroot/bin/psql" -X -v ON_ERROR_STOP=1 -h /work/socket 
 runuser -u postgres -- "$pgroot/bin/pg_ctl" -D /work/data -m fast -w stop
 trap - EXIT
 cd /work/stage
+python3 /usr/local/bin/license_pointer.py write /work/stage/postgis postgis
 tar -czf "/out/$postgis_archive" postgis metadata.json
 cd /out
 sha256sum "$postgis_archive" > "$postgis_archive.sha256"

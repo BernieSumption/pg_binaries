@@ -22,6 +22,10 @@ vector="pgvector-${vector_version}-postgresql-${pg_version}-linux-${architecture
 cd /out
 sha256sum -c "$pg.sha256"
 if [[ $verify_mode == full ]]; then sha256sum -c "$vector.sha256"; fi
+python3 /usr/local/bin/license_pointer.py verify "/out/$pg" postgresql
+if [[ $verify_mode == full ]]; then
+  python3 /usr/local/bin/license_pointer.py verify "/out/$vector" pgvector
+fi
 useradd -m postgres
 install -d -o postgres -g postgres /tmp/first /tmp/moved /tmp/vector
 runuser -u postgres -- tar -xzf "$pg" -C /tmp/first
@@ -52,57 +56,6 @@ assert controls and m['included_extensions'] == sorted(controls), m
 assert 'vector' not in controls, controls
 
 root = Path('/tmp/first/postgresql')
-license_dir = root / 'LICENSES'
-inventory = json.loads((license_dir / 'inventory.json').read_text())
-assert inventory['schema_version'] == 1, inventory
-components = inventory['components']
-postgresql = [entry for entry in components if entry['component'] == 'postgresql']
-assert len(postgresql) == 1, components
-postgresql = postgresql[0]
-assert postgresql['version'] == version, postgresql
-assert postgresql['payload_paths'] == ['bin', 'include', 'lib', 'libexec', 'share'], postgresql
-assert postgresql['license_file'] == 'PostgreSQL.txt', postgresql
-assert postgresql['license_source'] == f'https://ftp.postgresql.org/pub/source/v{version}/postgresql-{version}.tar.bz2', postgresql
-assert all((root / path).is_dir() for path in postgresql['payload_paths']), postgresql
-postgres_license = license_dir / postgresql['license_file']
-assert postgres_license.is_file() and postgres_license.stat().st_size > 0, postgresql
-
-runtime = [entry for entry in components if entry['component'] == 'runtime-package']
-assert runtime, components
-assert len(components) == len(runtime) + 1, components
-assert all(entry['package'] and entry['version'] for entry in runtime), runtime
-assert len({entry['package'] for entry in runtime}) == len(runtime), runtime
-glibc = next(entry for entry in runtime if entry['package'] == 'libc6')
-assert m['bundled_glibc_version'] == glibc['version'], (m, glibc)
-assert glibc['source_package'] == 'glibc' and glibc['source_version'] == glibc['version'], glibc
-assert len(glibc['source_urls']) == 3 and all(url.startswith('https://archive.ubuntu.com/ubuntu/pool/main/g/glibc/') for url in glibc['source_urls']), glibc
-for filename in glibc['additional_license_files']:
-    assert (license_dir / filename).is_file() and (license_dir / filename).stat().st_size > 0, filename
-musl = next(entry for entry in runtime if entry['package'] == 'musl')
-assert musl['source_package'] == 'musl' and musl['source_version'] == musl['version'], musl
-assert len(musl['source_urls']) == 3 and all(url.startswith('https://archive.ubuntu.com/ubuntu/pool/universe/m/musl/') for url in musl['source_urls']), musl
-mapped = []
-for entry in runtime:
-    assert entry['license_source'] == f"https://packages.ubuntu.com/jammy/{entry['package']}", entry
-    assert Path(entry['license_file']).name == entry['license_file'], entry
-    license_path = license_dir / entry['license_file']
-    assert license_path.is_file() and license_path.stat().st_size > 0, entry
-    for name in re.findall(r'/usr/share/common-licenses/([A-Za-z0-9.+-]+)',
-                           license_path.read_text(encoding='utf-8', errors='replace')):
-        common = license_dir / 'common-licenses' / name.rstrip('.,;:')
-        assert common.is_file() and common.stat().st_size > 0, common
-    assert entry['payload_paths'], entry
-    for relative in entry['payload_paths']:
-        relative_path = Path(relative)
-        assert not relative_path.is_absolute() and '..' not in relative_path.parts, (entry, relative)
-        payload = root / relative
-        assert payload.is_file() and payload.stat().st_size > 0, (entry, relative)
-        mapped.append(relative)
-actual = sorted(path.relative_to(root).as_posix()
-                for directory in ('lib/runtime', 'lib/glibc')
-                for path in (root / directory).iterdir() if path.is_file())
-actual.append('bin/.pg-launcher')
-assert sorted(mapped) == sorted(actual), {'mapped': sorted(mapped), 'actual': sorted(actual)}
 wrappers = {path.name for path in (root / 'bin').iterdir()
             if path.is_file() and not path.is_symlink() and path.name != '.pg-launcher'}
 payloads = {path.name for path in (root / 'libexec').iterdir()}
@@ -134,22 +87,11 @@ if verify_mode == 'full':
         assert re.fullmatch(r'sha256:[0-9a-f]{64}', extension_provenance['builder_image_id']), m
         assert isinstance(extension_provenance['build_configuration'], str) and extension_provenance['build_configuration'], m
         assert (extension_provenance['platform'], extension_provenance['architecture']) == ('linux', architecture), m
-    vector_root = Path('/tmp/vector/pgvector')
-    inventory = json.loads((vector_root / 'LICENSES/pgvector-inventory.json').read_text())
-    assert inventory.get('schema_version') == 1 and len(inventory.get('components', [])) == 1, inventory
-    vector = inventory['components'][0]
-    assert all(vector.get(key) == value for key, value in {
-        'component': 'pgvector', 'version': vector_version,
-        'payload_paths': ['lib/vector.so', 'share/extension'], 'license_file': 'pgvector.txt',
-        'source_url': m['source_archive']['url'], 'source_sha256': m['source_archive']['sha256'],
-    }.items()), vector
-    assert vector.get('redistribution_review', {}).get('status') == 'resolved', vector
 PY
 if [[ $verify_mode == full ]]; then
   python3 /verification/tools/check_source_identity.py --root /verification --platform linux \
     --postgresql-version "$pg_version" --pgvector-version "$vector_version" \
     --core-manifest /tmp/first/postgresql/manifest.json --vector-metadata /tmp/vector/metadata.json
-  test -s /tmp/vector/pgvector/LICENSES/pgvector.txt
 else
   python3 - "$pg_version" /tmp/first/postgresql/manifest.json <<'PYCORE'
 import json, sys
@@ -162,7 +104,6 @@ PYCORE
 fi
 pgroot=/tmp/first/postgresql
 if [[ $verify_mode == full ]]; then
-  extroot=/tmp/vector/pgvector
   python3 /usr/local/bin/linux-assembly-inventory \
     --core-archive "/out/$pg" --extension-archive "/out/$vector" \
     --postgresql-version "$pg_version" --extension-version "$vector_version" \
@@ -172,7 +113,6 @@ if [[ $verify_mode == full ]]; then
     --postgresql-version "$pg_version" --platform "linux-$architecture" \
     --project pgvector --extension-version "$vector_version" --sql-name vector \
     --archive-directory /out --prefix "$pgroot" --staging-root /tmp/extension-staging
-  test -s "$pgroot/LICENSES/pgvector.txt"
   python3 /usr/local/bin/check-elf-dependencies "$pgroot" --architecture "$architecture" \
     --archive "/out/$pg" --archive "/out/$vector" --report /analysis/core-pgvector.json
 else

@@ -4,7 +4,7 @@ Clients download a PostgreSQL archive and any required extension archives, unpac
 
 ## Archive layout
 
-Each platform and architecture has a PostgreSQL `.tar.gz` archive containing one top-level `postgresql/` directory. Its contents use PostgreSQL's normal installation layout: commands in `bin/`, shared libraries in `lib/`, and support files in `share/`, including `share/extension/` and `share/locale/` where provided. The Linux pilot keeps native executable payloads in `libexec/` and places statically linked launchers in `bin/` so commands use the bundled C library after relocation without invoking a host shell. Include all runtime libraries and other files needed by the packaged programs, along with applicable licence and notice files.
+Each platform and architecture has a PostgreSQL `.tar.gz` archive containing one top-level `postgresql/` directory. Its contents use PostgreSQL's normal installation layout: commands in `bin/`, shared libraries in `lib/`, and support files in `share/`, including `share/extension/` and `share/locale/` where provided. The Linux pilot keeps native executable payloads in `libexec/` and places statically linked launchers in `bin/` so commands use the bundled C library after relocation without invoking a host shell. Include all runtime libraries and other files needed by the packaged programs. The archive also contains `postgresql/LICENSES/postgresql/LICENCE`, which points to the central licence list.
 
 The PostgreSQL archive must include `postgresql/manifest.json` identifying its PostgreSQL version, target operating system and architecture, and included SQL extension names. The target fields must match the candidate download claim, and the included names must match the packaged `.control` files so the inventory cannot advertise a different package.
 
@@ -16,11 +16,11 @@ archive root/
 │   ├── lib/vector.so
 │   ├── share/extension/vector.control
 │   ├── share/extension/vector--<version>.sql
-│   └── LICENSES/...
+│   └── LICENSES/pgvector/LICENCE
 └── metadata.json
 ```
 
-The payload directory contains files at paths relative to the PostgreSQL installation prefix. An extension may add support data under `share/` or runtime libraries under `lib/`. Include redistribution notices for the extension and bundled dependencies in the payload directory.
+The payload directory contains files at paths relative to the PostgreSQL installation prefix. An extension may add support data under `share/` or runtime libraries under `lib/`. Its `LICENSES/<project>/LICENCE` file points to the central licence list described in [releases.md](releases.md#licence-pointer).
 
 Archives must not require installer scripts, environment setup from the build machine, or a fixed extraction path. Preserve executable file permissions for packaged programs that require them. Archive names and download URLs identify their platform, architecture, and version as described in [releases.md](releases.md).
 

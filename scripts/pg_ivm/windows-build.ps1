@@ -32,7 +32,7 @@ $coreRoot = Join-Path $work 'core'
 $sourceRoot = Join-Path $work 'source'
 $stage = Join-Path $work 'stage/pg_ivm'
 $package = Join-Path $work 'package'
-New-Item -ItemType Directory -Force $coreRoot,$sourceRoot,(Join-Path $stage 'lib'),(Join-Path $stage 'share/extension'),(Join-Path $stage 'LICENSES'),$package | Out-Null
+New-Item -ItemType Directory -Force $coreRoot,$sourceRoot,(Join-Path $stage 'lib'),(Join-Path $stage 'share/extension'),$package | Out-Null
 try {
   & $tar -xzf $coreArchive -C $coreRoot
   if ($LASTEXITCODE -ne 0) { throw 'Could not extract the selected PostgreSQL core archive.' }
@@ -81,9 +81,8 @@ try {
   if (-not (Test-Path (Join-Path $pgRoot 'lib/pg_ivm.dll') -PathType Leaf)) { throw 'Meson did not install pg_ivm.dll.' }
   Copy-Item (Join-Path $pgRoot 'lib/pg_ivm.dll') (Join-Path $stage 'lib/pg_ivm.dll')
   Copy-Item (Join-Path $pgRoot 'share/extension/pg_ivm*') (Join-Path $stage 'share/extension')
-  Copy-Item (Join-Path $source 'LICENSE') (Join-Path $stage 'LICENSES/pg_ivm.txt')
-  $inventory = [ordered]@{ schema_version=1; components=@([ordered]@{ component='pg_ivm'; version=$version; payload_paths=@('lib/pg_ivm.dll','share/extension'); license_file='pg_ivm.txt'; license_source='https://github.com/sraoss/pg_ivm/blob/v1.16/LICENSE'; source_url=$sourceUrl; source_sha256=$sourceShaExpected; redistribution_review=[ordered]@{ status='resolved'; basis='The unmodified pg_ivm 1.16 source includes the PostgreSQL License, which permits binary redistribution when its notice and disclaimer are retained.'; source_obligation='none' } }) }
-  $inventory | ConvertTo-Json -Depth 6 | Set-Content -Encoding utf8 (Join-Path $stage 'LICENSES/pg_ivm-inventory.json')
+  & $python (Join-Path $repo 'tools/license_pointer.py') write $stage pg_ivm
+  if ($LASTEXITCODE -ne 0) { throw 'Could not create the pg_ivm licence pointer.' }
   $metadata = [ordered]@{ project='pg_ivm'; version=$version; sql_names=@('pg_ivm'); requires=@(); configuration_prerequisites=@([ordered]@{ type='postgresql_setting'; name='shared_preload_libraries'; value='pg_ivm' }); runtime_prerequisites=@(); postgresql_version=$pgVersion; platform='windows'; architecture='x86_64'; source=[ordered]@{ url=$sourceUrl; sha256=$sourceShaExpected }; core_archive=[ordered]@{ basename=$coreName; sha256=$coreSha } }
   $metadata | ConvertTo-Json -Depth 6 | Set-Content -Encoding utf8 (Join-Path $package 'metadata.json')
   Move-Item $stage (Join-Path $package 'pg_ivm')
@@ -92,6 +91,8 @@ try {
   New-Item -ItemType Directory -Force $OutputDirectory | Out-Null
   & $tar -czf $archive -C $package pg_ivm metadata.json
   if ($LASTEXITCODE -ne 0) { throw 'Could not create the pg_ivm Windows archive.' }
+  & $python (Join-Path $repo 'tools/license_pointer.py') verify $archive pg_ivm
+  if ($LASTEXITCODE -ne 0) { throw 'pg_ivm archive licence pointer verification failed.' }
   $hash = (Get-FileHash $archive -Algorithm SHA256).Hash.ToLowerInvariant()
   "$hash  $name" | Set-Content -Encoding ascii "$archive.sha256"
 } finally { Remove-Item $work -Recurse -Force -ErrorAction SilentlyContinue }

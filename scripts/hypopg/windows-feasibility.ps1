@@ -158,27 +158,12 @@ try {
   if ($sharedRelative -ne 'share') { throw "Unexpected PostgreSQL sharedir archive layout: $sharedRelative" }
   $extensionPayloadDir = Join-Path $payload 'share/extension'
   $modulePayloadDir = Join-Path $payload $moduleRelative
-  New-Item -ItemType Directory -Force $modulePayloadDir,$extensionPayloadDir,(Join-Path $payload 'LICENSES') | Out-Null
+  New-Item -ItemType Directory -Force $modulePayloadDir,$extensionPayloadDir | Out-Null
   Copy-Item $dll (Join-Path $modulePayloadDir 'hypopg.dll')
   Copy-Item (Join-Path $source 'hypopg.control') (Join-Path $payload 'share/extension')
   Copy-Item (Join-Path $source 'hypopg--*.sql') (Join-Path $payload 'share/extension')
-  Copy-Item (Join-Path $source 'LICENSE') (Join-Path $payload 'LICENSES/HypoPG.txt')
-  $payloadPaths = @(Get-ChildItem $payload -Recurse -File | Where-Object { $_.FullName -notmatch '\\LICENSES\\' } |
-    ForEach-Object { $_.FullName.Substring($payload.Length).TrimStart([char[]]@([char]92, [char]47)) -replace '\\','/' } | Sort-Object)
-  $inventory = [ordered]@{
-    schema_version = 1
-    components = @(@{
-      component = 'hypopg'; version = $version; payload_paths = $payloadPaths
-      license_file = 'HypoPG.txt'; license_source = 'https://github.com/HypoPG/hypopg/tree/1.4.3/LICENSE'
-      source_url = $sourceUrl; source_sha256 = $sourceSha256
-      redistribution_review = @{
-        status = 'resolved'
-        basis = 'The unmodified HypoPG 1.4.3 source archive includes this PostgreSQL License text for the project. It permits redistribution for any purpose provided the copyright notice, permission paragraph and disclaimer paragraphs remain in copies; this archive retains the complete upstream LICENSE text.'
-        source_obligation = 'none'
-      }
-    })
-  }
-  $inventory | ConvertTo-Json -Depth 8 | Set-Content -Encoding utf8 (Join-Path $payload 'LICENSES/hypopg-inventory.json')
+  & $pythonExe (Join-Path $repo 'tools/license_pointer.py') write $payload hypopg
+  if ($LASTEXITCODE -ne 0) { throw 'Could not create the HypoPG licence pointer.' }
   $metadata = [ordered]@{
     project = 'hypopg'; version = $version; sql_names = @('hypopg'); requires = @()
     postgresql_version = $pgVersion; platform = 'windows'; architecture = $architecture
@@ -191,8 +176,8 @@ try {
   $extensionArchive = Join-Path $OutputDirectory $archiveName
   & tar.exe -czf $extensionArchive -C $stage hypopg metadata.json
   if ($LASTEXITCODE -ne 0) { throw 'Could not create the HypoPG extension archive' }
-  & $pythonExe (Join-Path $repo 'tools/check_extension_redistribution.py') $extensionArchive
-  if ($LASTEXITCODE -ne 0) { throw 'Final HypoPG archive redistribution inventory check failed' }
+  & $pythonExe (Join-Path $repo 'tools/license_pointer.py') verify $extensionArchive hypopg
+  if ($LASTEXITCODE -ne 0) { throw 'HypoPG archive licence pointer verification failed.' }
   $extensionHash = (Get-FileHash $extensionArchive -Algorithm SHA256).Hash.ToLowerInvariant()
   [IO.File]::WriteAllText("$extensionArchive.sha256", "$extensionHash  $archiveName`n", [Text.UTF8Encoding]::new($false))
 

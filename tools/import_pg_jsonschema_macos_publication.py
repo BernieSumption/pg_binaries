@@ -7,6 +7,7 @@ import sys
 
 import coverage
 import emit_pg_jsonschema_macos_publication as publication
+import license_pointer
 import macos_publication_evidence as evidence_tools
 
 MAX_FILE_BYTES = 8 * 1024 * 1024
@@ -83,8 +84,7 @@ def import_run(root, core_archives, archives, run_id, target_config=None):
     _retain(attempt_path, evidence / "attempt.json", copies)
     for name, source in (("static-analysis.json", archives / "static-analysis.json"),
                          ("probe-output.txt", archives / "probe-output.txt"),
-                         ("build-evidence.txt", archives / "build-evidence.txt"),
-                         ("cargo-license-inventory.json", archives / "cargo-license-inventory.json")):
+                         ("build-evidence.txt", archives / "build-evidence.txt")):
         if source.is_file():
             _retain(source, evidence / name, copies)
     receipt_path = publication_dir / "current-receipt.json"
@@ -103,11 +103,14 @@ def import_run(root, core_archives, archives, run_id, target_config=None):
     if attempt.get("archives") != digests:
         raise coverage.CoverageError("downloaded archive bytes differ from the raw attempt hashes")
     publication._metadata(extension)
+    try:
+        license_pointer.verify_archive(extension, "pg_jsonschema")
+    except ValueError as exc:
+        raise coverage.CoverageError(f"invalid pg_jsonschema licence pointer: {exc}") from exc
     expected_reports = {key: _digest(path) for key, path in {
         "static_analysis": archives / "static-analysis.json",
         "probe_output": archives / "probe-output.txt",
         "build_evidence": archives / "build-evidence.txt",
-        "cargo_license_inventory": archives / "cargo-license-inventory.json",
     }.items() if path.is_file()}
     if attempt.get("reports") != expected_reports:
         raise coverage.CoverageError("raw attempt report hashes differ from downloaded report bytes")
@@ -121,7 +124,7 @@ def import_run(root, core_archives, archives, run_id, target_config=None):
             raise coverage.CoverageError("failed or incomplete attempt must not contain a receipt or record")
         _copy(copies, root)
         return [str(destination.relative_to(root)) for _, destination in copies]
-    if not {"static_analysis", "build_evidence", "cargo_license_inventory"} <= set(expected_reports):
+    if not {"static_analysis", "build_evidence"} <= set(expected_reports):
         raise coverage.CoverageError("passing candidate is missing required static analysis or build evidence")
     if len(record_paths) > 1:
         raise coverage.CoverageError("expected one verification record")

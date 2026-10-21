@@ -23,6 +23,7 @@ print(v,a,c["basename"],c["sha256"])
 PY
 )"
 extension="pg_ivm-1.16-postgresql-${pg_version}-macos-${architecture}.tar.gz"
+python3 "$repo/tools/license_pointer.py" verify "$archive_dir/$extension" pg_ivm
 if [[ $(uname -s) != Darwin || $(uname -m) != "$architecture" ]]; then echo "Verification requires native macOS $architecture" >&2; exit 1; fi
 for path in "$core_dir/$core_name" "$archive_dir/$extension"; do test -s "$path" && test -s "$path.sha256"; (cd "$(dirname "$path")" && shasum -a 256 -c "$(basename "$path").sha256"); done
 printf '%s  %s\n' "$core_sha256" "$core_name" | (cd "$core_dir" && shasum -a 256 -c -)
@@ -62,7 +63,7 @@ native_count=0
 for native_module in "${native_modules[@]}"; do
   if [[ -f $native_module ]]; then test -s "$native_module"; native_count=$((native_count + 1)); fi
 done
-test "$native_count" = 1 && test -s "$extroot/LICENSES/pg_ivm.txt"
+test "$native_count" = 1
 while IFS= read -r -d '' source; do
   relative=${source#"$extroot/"}; destination="$pgroot/$relative"
   if [[ -e "$destination" || -L "$destination" ]]; then

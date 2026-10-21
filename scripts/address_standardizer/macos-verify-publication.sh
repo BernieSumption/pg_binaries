@@ -21,10 +21,12 @@ trap cleanup EXIT
 mkdir -p "$work/assembled" "$work/extract" "$work/relocated" "$work/socket"
 tar -xzf "$core_archive" -C "$work/assembled"
 tar -xzf "$extension_archive" -C "$work/extract"
-python3 - "$work/assembled/postgresql" "$work/extract/address_standardizer" "$work/extract/metadata.json" "$pg_version" "$architecture" <<'PY'
+python3 - "$repo" "$work/assembled/postgresql" "$work/extract/address_standardizer" "$work/extract/metadata.json" "$pg_version" "$architecture" <<'PY'
 import json, pathlib, sys
-core, extension, metadata = map(pathlib.Path, sys.argv[1:4])
-pg, arch = sys.argv[4:]
+repo, core, extension, metadata = map(pathlib.Path, sys.argv[1:5])
+pg, arch = sys.argv[5:]
+sys.path.insert(0, str(repo / "tools"))
+from license_pointer import LICENSE_POINTER
 meta=json.loads(metadata.read_text())
 expected=("Address Standardizer","3.7.0",pg,"macos",arch,["address_standardizer","address_standardizer_data_us"])
 actual=(meta.get("project"),meta.get("version"),meta.get("postgresql_version"),meta.get("platform"),meta.get("architecture"),meta.get("sql_names"))
@@ -34,8 +36,10 @@ for source in extension.rglob("*"):
     if destination.exists() or destination.is_symlink():
         if source.is_dir() and destination.is_dir() and not source.is_symlink() and not destination.is_symlink(): continue
         raise SystemExit(f"Address Standardizer payload collision: {source.relative_to(extension)}")
-for required in ("LICENSES/license-inventory.json", "LICENSES/Address-Standardizer.txt", "LICENSES/PCRE2.txt", "LICENSES/SLJIT.txt", "share/extension/address_standardizer.control", "share/extension/address_standardizer_data_us.control"):
+for required in ("LICENSES/address_standardizer/LICENCE", "share/extension/address_standardizer.control", "share/extension/address_standardizer_data_us.control"):
     if not (extension/required).is_file(): raise SystemExit(f"archive is missing {required}")
+if (extension/"LICENSES/address_standardizer/LICENCE").read_text(encoding="utf-8") != LICENSE_POINTER:
+    raise SystemExit("archive has an invalid Address Standardizer licence pointer")
 modules = [path for path in extension.rglob("address_standardizer.*") if path.suffix in {".dylib", ".so"}]
 if len(modules) != 1: raise SystemExit("archive must contain exactly one Address Standardizer Mach-O module")
 PY
