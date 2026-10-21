@@ -53,23 +53,96 @@ jobs:
       - uses: actions/setup-python@v5
         with: {python-version: '3.12'}
       - name: Resolve the checked PostgreSQL core artifact
+        id: core_candidate
         env:
           GH_TOKEN: ${{ github.token }}
+          PG_VERSION: ${{ needs.select.outputs.postgresql_version }}
         run: |
           $core = Join-Path $env:RUNNER_TEMP 'core'
-          $pg = '${{ needs.select.outputs.postgresql_version }}'
           New-Item -ItemType Directory -Force $core | Out-Null
-          python tools/windows_core_target.py --postgresql-version $pg --output (Join-Path $core 'base-target.json')
-          python tools/windows_core_candidate.py --selected-core --base-target (Join-Path $core 'base-target.json') --artifact-pin "support/windows-core-artifact-pins/$pg-x86_64.json" --output-directory $core
-          if ($LASTEXITCODE -ne 0) { throw 'Selected PostgreSQL core resolution failed.' }
+          python tools/windows_core_target.py --postgresql-version $env:PG_VERSION --output (Join-Path $core 'base-target.json')
+          if ($LASTEXITCODE -ne 0) { throw 'Selected PostgreSQL core target generation failed.' }
+          python tools/windows_core_candidate.py --selected-core --base-target (Join-Path $core 'base-target.json') --artifact-pin "support/windows-core-artifact-pins/$($env:PG_VERSION)-x86_64.json" --output-directory $core
+          if ($LASTEXITCODE -ne 0) { throw 'Selected PostgreSQL core candidate resolution failed.' }
           $result = Get-Content (Join-Path $core 'result.json') -Raw | ConvertFrom-Json
-          if ($result.status -ne 'checked') { throw "Core candidate is not checked: $($result.status)" }
-          Copy-Item (Join-Path $core 'result.json') (Join-Path $core 'identity.json')
+          if ($result.status -notin @('checked', 'missing', 'stale')) { throw "Unexpected core candidate status: $($result.status)" }
+          if ($result.status -eq 'checked') {
+            if (-not (Test-Path $result.archive -PathType Leaf)) { throw 'Checked core candidate archive is missing.' }
+          }
+          "status=$($result.status)" | Add-Content $env:GITHUB_OUTPUT
+      - name: Set up PostgreSQL core build dependencies
+        if: steps.core_candidate.outputs.status == 'missing' || steps.core_candidate.outputs.status == 'stale'
+        env:
+          PG_VERSION: ${{ needs.select.outputs.postgresql_version }}
+        run: ./scripts/windows/setup-core-dependencies.ps1 -PostgreSQLVersion $env:PG_VERSION
+      - name: Build selected PostgreSQL core when no current candidate is available
+        if: steps.core_candidate.outputs.status == 'missing' || steps.core_candidate.outputs.status == 'stale'
+        env:
+          PG_VERSION: ${{ needs.select.outputs.postgresql_version }}
+          BUILD_MODE: core-only
+        run: |
+          cmd.exe /d /c scripts\windows\build.cmd
+          if ($LASTEXITCODE -ne 0) { throw 'PostgreSQL core build failed.' }
+          $archiveName = "postgresql-$env:PG_VERSION-windows-x86_64.tar.gz"
+          $archive = Join-Path $env:RUNNER_TEMP "core/$archiveName"
+          Copy-Item "dist/windows/$archiveName" $archive -Force
+          Copy-Item "dist/windows/$archiveName.sha256" "$archive.sha256" -Force
+          $artifactName = "tiger-windows-selected-$env:PG_VERSION-$env:GITHUB_RUN_ID"
+          python tools/windows_core_target_config.py --base-target (Join-Path $env:RUNNER_TEMP 'core/base-target.json') --core-archive $archive --source-run-id $env:GITHUB_RUN_ID --source-run-attempt $env:GITHUB_RUN_ATTEMPT --source-artifact-name $artifactName --output (Join-Path $env:RUNNER_TEMP 'core/candidate-target.json')
+          if ($LASTEXITCODE -ne 0) { throw 'Generated core target identity validation failed.' }
+          $target = Get-Content (Join-Path $env:RUNNER_TEMP 'core/candidate-target.json') -Raw | ConvertFrom-Json
+          $identity = [ordered]@{
+            status = 'checked'
+            archive = $archive
+            sha256 = $target.sha256
+            version = $target.postgresql_version
+            postgresql_version = $target.postgresql_version
+            archive_name = $target.archive_name
+            run_id = $target.run_id
+            build_id = $target.build_id
+            source_revision = $target.source_revision
+            candidate_kind = 'local-build'
+          }
+          $identity | ConvertTo-Json -Depth 4 | Set-Content -Encoding utf8 (Join-Path $env:RUNNER_TEMP 'core/identity.json')
+      - name: Preserve checked candidate identity
+        if: steps.core_candidate.outputs.status == 'checked'
+        run: |
+          $core = Join-Path $env:RUNNER_TEMP 'core'
+          Copy-Item (Join-Path $core 'result.json') (Join-Path $core 'identity.json') -Force
+      - name: Create Windows core verification identity
+        if: always() && (steps.core_candidate.outputs.status == 'checked' || steps.core_candidate.outputs.status == 'missing' || steps.core_candidate.outputs.status == 'stale')
+        env:
+          PG_VERSION: ${{ needs.select.outputs.postgresql_version }}
+        run: |
+          $core = Join-Path $env:RUNNER_TEMP 'core'
+          $identity = Get-Content (Join-Path $core 'identity.json') -Raw | ConvertFrom-Json
+          $target = Get-Content (Join-Path $core 'candidate-target.json') -Raw | ConvertFrom-Json
+          $archiveName = "postgresql-$env:PG_VERSION-windows-x86_64.tar.gz"
+          $archive = Join-Path $core $archiveName
+          $hash = (Get-FileHash $archive -Algorithm SHA256).Hash.ToLowerInvariant()
+          $manifest = tar.exe -xOzf $archive 'postgresql/manifest.json' | ConvertFrom-Json
+          if ($LASTEXITCODE -ne 0) { throw 'Could not read selected core manifest.' }
+          if ($identity.status -ne 'checked' -or $identity.sha256 -cne $hash) { throw 'Selected core identity does not match the archive.' }
+          $verificationIdentity = [ordered]@{
+            schema_version = 1
+            postgresql_version = $env:PG_VERSION
+            platform = 'windows-x86_64'
+            architecture = 'x86_64'
+            artifact_name = $target.artifact_name
+            archive_name = $archiveName
+            run_id = [string]$manifest.build_id -replace '^github-([0-9]+)-.*$', '$1'
+            build_id = $manifest.build_id
+            source_revision = $manifest.source_revision
+            sha256 = $hash
+            profile_id = 'windows-publication-current-x86_64'
+            status = 'current-profile-core-redistribution-pending'
+          }
+          $verificationIdentity | ConvertTo-Json -Depth 4 | Set-Content -Encoding utf8 (Join-Path $core 'verification-identity.json')
       - uses: msys2/setup-msys2@v2
         with:
           msystem: MINGW64
           update: true
-          install: base-devel curl tar autoconf automake libtool bison flex diffutils
+          install: base-devel curl tar git autoconf automake libtool bison flex diffutils
           pacboy: toolchain:p cmake:p ninja:p pkgconf:p gmp:p sfcgal:p geos:p proj:p gdal:p json-c:p libxml2:p
       - name: Build the selected PostGIS prerequisite against the checked core
         shell: msys2 {0}
@@ -96,6 +169,7 @@ jobs:
             ${{ runner.temp }}/core/postgresql-${{ needs.select.outputs.postgresql_version }}-windows-x86_64.tar.gz
             ${{ runner.temp }}/core/postgresql-${{ needs.select.outputs.postgresql_version }}-windows-x86_64.tar.gz.sha256
             ${{ runner.temp }}/core/identity.json
+            ${{ runner.temp }}/core/verification-identity.json
             ${{ runner.temp }}/postgis/postgis-3.6.4-postgresql-${{ needs.select.outputs.postgresql_version }}-windows-x86_64.tar.gz
             ${{ runner.temp }}/postgis/postgis-3.6.4-postgresql-${{ needs.select.outputs.postgresql_version }}-windows-x86_64.tar.gz.sha256
             ${{ runner.temp }}/tiger/postgis_tiger_geocoder-2025.2-postgresql-${{ needs.select.outputs.postgresql_version }}-windows-x86_64.tar.gz
@@ -130,7 +204,7 @@ jobs:
             -TigerArchive (Join-Path $bundle 'tiger/postgis_tiger_geocoder-2025.2-postgresql-${{ needs.select.outputs.postgresql_version }}-windows-x86_64.tar.gz') `
             -OutputDirectory (Join-Path $env:RUNNER_TEMP 'tiger-windows-verification') `
             -PostgreSQLVersion '${{ needs.select.outputs.postgresql_version }}' `
-            -CoreIdentityPath (Join-Path $bundle 'core/identity.json')
+            -CoreIdentityPath (Join-Path $bundle 'core/verification-identity.json')
       - uses: actions/upload-artifact@v4
         if: always()
         with:
