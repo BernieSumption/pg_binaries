@@ -63,7 +63,11 @@ try {
   $pgRoot = Join-Path $first 'postgresql'
   $postgisRoot = Join-Path $postgisUnpack 'postgis'
   $tigerRoot = Join-Path $tigerUnpack 'postgis_tiger_geocoder'
-  foreach ($entry in @(@($postgisUnpack,'postgis'), @($tigerUnpack,'postgis_tiger_geocoder'))) {
+  $postgisNames = @(Get-ChildItem $postgisUnpack -Force | ForEach-Object Name | Sort-Object)
+  if ($postgisNames.Count -ne 1 -or $postgisNames[0] -cne 'postgis') {
+    throw 'Unexpected top-level content in PostGIS archive.'
+  }
+  foreach ($entry in @(@($tigerUnpack,'postgis_tiger_geocoder'))) {
     $names = @(Get-ChildItem $entry[0] -Force | ForEach-Object Name | Sort-Object)
     if ($names.Count -ne 2 -or $names -cnotcontains $entry[1] -or $names -cnotcontains 'metadata.json') {
       throw "Unexpected top-level content in $($entry[1]) archive."
@@ -84,14 +88,14 @@ try {
   }
   if ((& (Join-Path $pgRoot 'bin/pg_config.exe') --version) -cne "PostgreSQL $PostgreSQLVersion") { throw 'Core pg_config version mismatch.' }
 
-  $postgisMetadata = Get-Content (Join-Path $postgisUnpack 'metadata.json') -Raw | ConvertFrom-Json
+  $postgisMetadata = Get-Content (Join-Path $postgisRoot 'metadata.json') -Raw | ConvertFrom-Json
   $tigerMetadata = Get-Content (Join-Path $tigerUnpack 'metadata.json') -Raw | ConvertFrom-Json
   foreach ($metadata in @($postgisMetadata,$tigerMetadata)) {
     if ($metadata.postgresql_version -cne $PostgreSQLVersion -or $metadata.platform -cne 'windows' -or $metadata.architecture -cne 'x86_64') {
       throw 'Extension metadata target does not match PostgreSQL Windows x86-64.'
     }
   }
-  if ($postgisMetadata.project -cne 'postgis' -or $postgisMetadata.version -cne '3.6.4' -or
+  if ($postgisMetadata.project -cne 'PostGIS' -or $postgisMetadata.version -cne '3.6.4' -or
       $postgisMetadata.core_archive -and ($postgisMetadata.core_archive.basename -cne $coreIdentity.archive_name -or $postgisMetadata.core_archive.sha256 -cne $coreHash)) {
     throw 'PostGIS metadata does not match the expected project, version, or linked core archive.'
   }
