@@ -64,13 +64,13 @@ def emit(root, core_dir, postgis_dir, tiger_dir, output, steps, os_version, imag
     for p, component in zip(paths, ("postgresql", "postgis", "postgis_tiger_geocoder")):
         verify_archive(p, component)
     metadata_by_archive = {}
-    for path, expected, project, version, core_bound in (
-        (paths[1], "postgis", "PostGIS", POSTGIS_VERSION, True),
-        (paths[2], "postgis_tiger_geocoder", "postgis_tiger_geocoder", VERSION, False)):
+    for path, metadata_name, project, version, core_bound in (
+        (paths[1], "postgis/metadata.json", "PostGIS", POSTGIS_VERSION, True),
+        (paths[2], "metadata.json", "postgis_tiger_geocoder", VERSION, False)):
         with tarfile.open(path, "r:gz") as archive:
-            members = [m for m in archive.getmembers() if m.name == "metadata.json" and m.isfile() and m.size <= 1048576]
+            members = [m for m in archive.getmembers() if m.name == metadata_name and m.isfile() and m.size <= 1048576]
             if len(members) != 1:
-                raise coverage.CoverageError(f"{path.name} requires one bounded metadata.json")
+                raise coverage.CoverageError(f"{path.name} requires one bounded {metadata_name}")
             metadata = json.load(archive.extractfile(members[0]))
         metadata_by_archive[path.name] = metadata
         if (metadata.get("project") != project or metadata.get("version") != version
