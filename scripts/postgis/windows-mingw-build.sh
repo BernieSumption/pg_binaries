@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-output_root=${1:?usage: build-and-probe.sh OUTPUT_ROOT [POSTGRESQL_VERSION]}
+output_root=${1:?usage: windows-mingw-build.sh OUTPUT_ROOT [POSTGRESQL_VERSION]}
 pg_version=${2:-${PG_VERSION:-18.6}}
 case "$pg_version" in
   15.19|16.15|17.11|18.6) ;;
@@ -54,7 +54,7 @@ cmake --install netcdf-c-4.10.1/build
 test -f "$netcdf_root/bin/libnetcdf.dll"
 export PATH="$netcdf_root/bin:$PATH"
 mkdir -p "$diagnostic_root"
-python "$repo_root/experiments/postgis-windows-abi-trial/diagnose-imports.py" \
+python "$repo_root/scripts/postgis/windows-diagnose-imports.py" \
   --root "$netcdf_root/bin/libnetcdf.dll" \
   --search-directory "$netcdf_root/bin" \
   --search-directory /mingw64/bin \
@@ -98,6 +98,7 @@ source=source_archive.source_archive('postgresql', sys.argv[2], 'tar.gz', sys.ar
 print(source['url'], source['sha256'])
 PY
 )
+  source_sha=${source_sha%$'\r'}
   source_archive="postgresql-$pg_version.tar.gz"
   curl -fL --retry 3 -o "$source_archive" "$source_url"
   printf '%s  %s\n' "$source_sha" "$source_archive" | sha256sum -c -
@@ -146,7 +147,7 @@ for module in "${modules[@]}"; do
     printf '\n[report truncated at 1 MiB]\n' >> "$report"
   fi
 done
-if ! python "$repo_root/experiments/postgis-windows-abi-trial/diagnose-imports.py" \
+if ! python "$repo_root/scripts/postgis/windows-diagnose-imports.py" \
   --root "$pgroot/lib/postgis_raster-3.dll" \
   --search-directory "$netcdf_root/bin" \
   --search-directory "$pgroot/bin" \

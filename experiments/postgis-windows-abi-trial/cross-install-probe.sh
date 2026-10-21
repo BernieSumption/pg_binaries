@@ -8,7 +8,7 @@ output_root=$(cd "$output_root" && pwd)
 repo_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 
 # Build PostGIS with a matching MinGW PostgreSQL development installation.
-bash "$(dirname "$0")/build-and-probe.sh" "$output_root/mingw"
+bash "$repo_root/scripts/postgis/windows-mingw-build.sh" "$output_root/mingw"
 
 exec > >(tee "$output_root/cross-install.log") 2>&1
 set -x
@@ -69,7 +69,7 @@ printf '%s\n' "${modules[@]##*/}" | sort -fu > "$module_basenames"
 for module in "${modules[@]}"; do
   report="$output_root/package/$(basename "$module").json"
   resolved="$output_root/package/$(basename "$module").modules.json"
-  if ! python "$repo_root/experiments/postgis-windows-abi-trial/diagnose-imports.py" \
+  if ! python "$repo_root/scripts/postgis/windows-diagnose-imports.py" \
     --root "$module" \
     --search-directory "$selected/bin" \
     --search-directory "$selected/lib" \

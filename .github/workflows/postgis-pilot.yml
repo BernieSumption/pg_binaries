@@ -418,7 +418,7 @@ jobs:
         env:
           OUTPUT_ROOT: ${{ runner.temp }}/postgis-windows/output
         run: |
-          bash experiments/postgis-windows-abi-trial/build-and-probe.sh "$(cygpath -u "$OUTPUT_ROOT")"
+          bash scripts/postgis/windows-mingw-build.sh "$(cygpath -u "$OUTPUT_ROOT")"
       - name: Probe the MinGW-built PostGIS module in the selected PostgreSQL archive
         if: ${{ inputs.postgis_windows_selected_core_probe == true }}
         env:
@@ -564,7 +564,7 @@ jobs:
           set -euo pipefail
           root="$(cygpath -u "$RUNNER_TEMP")/postgis-import-diagnostic"
           mkdir -p "$root/reports"
-          python experiments/postgis-windows-abi-trial/diagnose-imports.py \
+          python scripts/postgis/windows-diagnose-imports.py \
             --root "$root/selected/postgresql/lib/postgis_raster-3.dll" \
             --search-directory "$root/selected/postgresql/bin" \
             --search-directory "$root/mingw/netcdf-no-ros3/bin" \

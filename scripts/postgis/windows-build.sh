@@ -5,7 +5,7 @@ core_archive=${1:?usage: windows-build.sh CORE_ARCHIVE OUTPUT_ROOT CORE_IDENTITY
 output_root=${2:?usage: windows-build.sh CORE_ARCHIVE OUTPUT_ROOT}
 core_identity=${3:?usage: windows-build.sh CORE_ARCHIVE OUTPUT_ROOT CORE_IDENTITY}
 repo_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
-trial_root="$repo_root/experiments/postgis-windows-abi-trial"
+recipe_root="$repo_root/scripts/postgis"
 pg_version=$(python - "$core_identity" "$core_archive" <<'PY'
 import json, re, sys
 from pathlib import Path
@@ -20,7 +20,7 @@ PY
 export PG_VERSION="$pg_version"
 mkdir -p "$output_root"
 output_root=$(cd "$output_root" && pwd)
-bash "$trial_root/build-and-probe.sh" "$output_root/mingw" "$pg_version"
+bash "$recipe_root/windows-mingw-build.sh" "$output_root/mingw" "$pg_version"
 
 set -x
 test "${MSYSTEM:-}" = MINGW64
@@ -53,7 +53,7 @@ printf '%s\n' "${modules[@]##*/}" | sort -fu > "$module_names"
 for module in "${modules[@]}"; do
   report="$output_root/$(basename "$module").json"
   resolved="$output_root/$(basename "$module").modules.json"
-  python "$trial_root/diagnose-imports.py" --root "$module" \
+  python "$recipe_root/windows-diagnose-imports.py" --root "$module" \
     --search-directory "$selected/bin" --search-directory "$selected/lib" \
     --search-directory "$netcdf/bin" --search-directory "$mingw/bin" \
     --search-directory "$mingw/lib" --search-directory /mingw64/bin \
