@@ -1,5 +1,13 @@
 # Human review queue
 
+## Source assets required by bundled copyleft libraries
+
+The selected Windows PostgreSQL archive bundles GNU libiconv 1.19 `iconv-2.dll` and `charset-1.dll` from pinned vcpkg, including three vcpkg source patches. The [exact-archive review](support/evidence/windows-vcpkg-redistribution-2026-10-20/README.md) leaves their redistribution status pending. [LGPL 2.1 section 4](https://www.gnu.org/licenses/old-licenses/lgpl-2.1.html) requires corresponding source when distributing the library in object-code form; for a downloadable binary, equivalent source access from the same designated place satisfies that clause. Section 6's written-offer option concerns a work linked with the library and does not clearly replace section 4's obligation for the separately bundled DLLs. A bare upstream source URL also does not establish access controlled by this project for the lifetime of its download.
+
+The [functional specification](specs/functional.md#available-downloads-are-advertised-in-inventoryjson) says each GitHub release only uploads new or changed binaries (plus `inventory.json`). A separate, versioned corresponding-source asset beside each affected binary appears to be the clearest way to meet section 4 without making every client download development-only source, but that asset is not a binary. The [release policy](policies/releases.md#redistribution-review-before-publication) currently allows `source-offer` and `source-links`; it cannot override the specification or establish that those routes suffice for this particular distribution.
+
+**Decision requested:** May releases also upload the corresponding-source assets required by binaries added or changed in that release? If yes, please amend the functional release-layout sentence to permit these ancillary source assets. The build can then stage checksum-pinned source archives, distribution patches and build material for each affected component, check that source assets are publicly downloadable before publishing the inventory, and record their exact URLs in the binary's licence inventory. If no, the current libiconv route must remain blocked while we find another compliant dependency/build choice; do not clear it with a written offer alone. This same decision may apply to Linux bundled libraries with source-delivery obligations. No release is authorized by this queue item.
+
 ## Backlog ideas
 
 From Bernie: Adding this here so that we don't forget it. Don't start work on this yet. I'd like to discuss the viability of these and specify them properly before we go ahead. If indeed we decide to go ahead at all.
