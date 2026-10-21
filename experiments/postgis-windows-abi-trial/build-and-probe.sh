@@ -63,6 +63,14 @@ for module in "${modules[@]}"; do
     printf '\n[report truncated at 1 MiB]\n' >> "$report"
   fi
 done
+if ! python "$repo_root/experiments/postgis-windows-abi-trial/diagnose-imports.py" \
+  --root "$pgroot/lib/postgis_raster-3.dll" \
+  --search-directory "$pgroot/bin" \
+  --search-directory /mingw64/bin \
+  --search-directory /usr/bin \
+  --output "$diagnostic_root/import-resolution.json"; then
+  printf 'WARNING: focused PE import diagnostic failed; continuing with extension probe.\n'
+fi
 
 work="$output_root/cluster"
 mkdir -p "$work"
