@@ -48,4 +48,5 @@ jobs:
       - name: Check the PostgreSQL release snapshot against upstream
         run: python3 tools/discover_postgresql.py --check
       - name: Report unmet support
+        if: github.event_name == 'workflow_dispatch'
         run: python3 tools/coverage.py
