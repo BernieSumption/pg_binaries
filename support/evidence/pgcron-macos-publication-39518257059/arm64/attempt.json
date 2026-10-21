@@ -1,0 +1,21 @@
+{
+  "architecture": "arm64",
+  "archives": {
+    "pg_cron-1.6.8-postgresql-17.11-macos-arm64.tar.gz": "cdf8a66dece55d8050d2d187e8bd9a8ff61a9ddff8df4a9dee374636d07117e1",
+    "postgresql-17.11-macos-arm64.tar.gz": "0db9ca0f4d0cf72fa32120aaf9a3f8e47c9dd2d97421ab2b53583af83be681b6"
+  },
+  "archives_present": {
+    "pg_cron-1.6.8-postgresql-17.11-macos-arm64.tar.gz": true,
+    "postgresql-17.11-macos-arm64.tar.gz": true
+  },
+  "pg_cron_version": "1.6.8",
+  "postgresql_version": "17.11",
+  "profile_id": "pgcron-publication-macos-arm64-17.11",
+  "run_id": "39518257059",
+  "schema_version": 1,
+  "source_revision": "3d0affae52d287e6b4aac9124dd784f9be4f3630",
+  "steps": {
+    "archive-suite": "success",
+    "static-analysis": "success"
+  }
+}

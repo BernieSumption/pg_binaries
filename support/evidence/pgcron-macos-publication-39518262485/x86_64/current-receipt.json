@@ -1,0 +1,43 @@
+{
+  "architecture": "x86_64",
+  "archives": {
+    "pg_cron-1.6.8-postgresql-16.15-macos-x86_64.tar.gz": "4f9376eb39568080352596d314d460cce2951a4a5b536df7b2a915d2eda44763",
+    "postgresql-16.15-macos-x86_64.tar.gz": "2f002022c9e5aaba8cbd1583faa2913040b1e066d49cd9012214029b055e3a67"
+  },
+  "case_results": {
+    "archive-suite": "passed",
+    "static-analysis": "passed"
+  },
+  "ci": {
+    "build_revision": "3d0affae52d287e6b4aac9124dd784f9be4f3630",
+    "provider": "github-actions",
+    "run_id": "39518262485",
+    "run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/39518262485",
+    "source_revision": "3d0affae52d287e6b4aac9124dd784f9be4f3630",
+    "test_revision": "3d0affae52d287e6b4aac9124dd784f9be4f3630"
+  },
+  "clean_system": true,
+  "dependency_check_profile": "macho-system-dependencies-v1",
+  "dependency_checks_passed": true,
+  "endpoint": "current",
+  "environment": {
+    "architecture": "x86_64",
+    "image_id": "macos15/20260824.0482.1",
+    "os": "macos",
+    "os_version": "15.7.9"
+  },
+  "extension_archive": "pg_cron-1.6.8-postgresql-16.15-macos-x86_64.tar.gz",
+  "platform": "macos-x86_64",
+  "postgresql_version": "16.15",
+  "profile_id": "pgcron-publication-macos-x86_64-16.15",
+  "profile_revision": "314410712f09f754bfa516279da8f2b8b752440aae676926c9d4de8031b9dadb",
+  "project": "pg_cron",
+  "reports": {
+    "macho_inspection": "36a217cb0f99033a35721e09567524f3860a7662eb3bcc3f3c682197208eb481",
+    "probe_output": "9d3d9b2c2006a7291b488b5beb9828a7d6e164c928350b04055fad5712180139",
+    "static_analysis": "af6d156fd5b796cb57818e39f8de41b53814915f4c8b188081f2d26e080b30cd"
+  },
+  "schema_version": 1,
+  "test_revision": "3d0affae52d287e6b4aac9124dd784f9be4f3630",
+  "version": "1.6.8"
+}

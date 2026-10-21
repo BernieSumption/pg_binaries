@@ -1,0 +1,46 @@
+{
+  "assembled_core": {
+    "archive": "postgresql-17.11-macos-arm64.tar.gz",
+    "sha256": "0db9ca0f4d0cf72fa32120aaf9a3f8e47c9dd2d97421ab2b53583af83be681b6",
+    "version": "17.11"
+  },
+  "case_results": {
+    "archive-suite": "passed",
+    "static-analysis": "passed"
+  },
+  "ci": {
+    "build_revision": "3d0affae52d287e6b4aac9124dd784f9be4f3630",
+    "provider": "github-actions",
+    "run_id": "39518257059",
+    "run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/39518257059",
+    "source_revision": "3d0affae52d287e6b4aac9124dd784f9be4f3630",
+    "test_revision": "3d0affae52d287e6b4aac9124dd784f9be4f3630"
+  },
+  "component": "pg_cron",
+  "environment": {
+    "architecture": "arm64",
+    "clean_system": true,
+    "dependency_check_profile": "macho-system-dependencies-v1",
+    "dependency_checks_passed": true,
+    "endpoint": "current",
+    "image_id": "macos15/20260907.0337.1",
+    "os": "macos",
+    "os_version": "15.7.9"
+  },
+  "outcome": "passed",
+  "platform": "macos-arm64",
+  "postgresql_version": "17.11",
+  "prerequisite_archives": [],
+  "profile_id": "pgcron-publication-macos-arm64-17.11",
+  "profile_revision": "d12b02baca4c1512d092ffe6a610617db438460777a95dbaf6f600d7a99b32e9",
+  "project": "pg_cron",
+  "schema_version": 2,
+  "scope": "publication",
+  "sha256": "cdf8a66dece55d8050d2d187e8bd9a8ff61a9ddff8df4a9dee374636d07117e1",
+  "test_cases": [
+    "archive-suite",
+    "static-analysis"
+  ],
+  "test_revision": "3d0affae52d287e6b4aac9124dd784f9be4f3630",
+  "version": "1.6.8"
+}
