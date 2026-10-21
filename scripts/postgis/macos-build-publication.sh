@@ -87,7 +87,7 @@ export PG_MACOS_DEPENDENCY_PREFIX="$gdal_prefix:$conda_prefix"
 export PATH="$gdal_prefix/bin:$PATH"
 export PKG_CONFIG_PATH="$gdal_prefix/lib/pkgconfig:$conda_prefix/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
 export GDAL_DATA="$gdal_prefix/share/gdal"
-export LDFLAGS="${LDFLAGS:-} -Wl,-rpath,$gdal_prefix/lib -Wl,-rpath,$conda_prefix/lib"
+export LDFLAGS="${LDFLAGS:-} -Wl,-headerpad_max_install_names -Wl,-rpath,$gdal_prefix/lib -Wl,-rpath,$conda_prefix/lib"
 export DYLD_LIBRARY_PATH="$gdal_prefix/lib:$conda_prefix/lib${DYLD_LIBRARY_PATH:+:$DYLD_LIBRARY_PATH}"
 
 protoc_c="$(brew --prefix protobuf-c)/bin/protoc-c"
