@@ -46,6 +46,8 @@ if (-not (Test-Path $pgRoot -PathType Container) -or
     @(Get-ChildItem $pgExtract -Force | Where-Object Name -ne 'postgresql').Count -ne 0) {
   throw 'PostgreSQL archive top-level layout is invalid'
 }
+& $python (Join-Path $repo 'scripts/windows/check_vcpkg_notices.py') $pgArchive --repo $repo
+if ($LASTEXITCODE -ne 0) { throw 'Windows archive omits a reviewed version-specific vcpkg notice' }
 if (-not $CoreOnly -and (-not (Test-Path $vectorRoot -PathType Container) -or
     -not (Test-Path $metadataPath -PathType Leaf) -or
     @(Get-ChildItem $vectorExtract -Force | Where-Object { $_.Name -notin @('pgvector', 'metadata.json') }).Count -ne 0)) {
