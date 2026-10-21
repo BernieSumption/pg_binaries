@@ -1,0 +1,54 @@
+{
+  "assembled_core": {
+    "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+    "sha256": "2b3f69fdc727a782b426a4ca108fc33070c3da4f693b80bcaffd02b66ffdcac6",
+    "version": "17.11"
+  },
+  "case_results": {
+    "archive-suite": "passed",
+    "static-analysis": "passed"
+  },
+  "ci": {
+    "build_revision": "a43a441678abee15a4b50369c74e7d6ba622706b",
+    "provider": "github-actions",
+    "run_id": "39692429576",
+    "run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/39692429576",
+    "source_revision": "a43a441678abee15a4b50369c74e7d6ba622706b",
+    "test_revision": "a43a441678abee15a4b50369c74e7d6ba622706b"
+  },
+  "component": "postgis_tiger_geocoder",
+  "environment": {
+    "architecture": "x86_64",
+    "clean_system": true,
+    "dependency_check_profile": "windows-pe-archive-relocation-v1",
+    "dependency_checks_passed": true,
+    "endpoint": "current",
+    "image_id": "win22/20261012.333.1",
+    "os": "windows",
+    "os_version": "10.0.20348"
+  },
+  "outcome": "passed",
+  "platform": "windows-x86_64",
+  "postgresql_version": "17.11",
+  "prerequisite_archives": [
+    {
+      "archive": "postgis-3.6.4-postgresql-17.11-windows-x86_64.tar.gz",
+      "project": "PostGIS",
+      "sha256": "8534699933c0222bf10d4b39c11f320c1a9e9fd979171995516feb5376417b3f",
+      "version": "3.6.4"
+    }
+  ],
+  "profile_id": "tiger-publication-windows-x86_64-17.11",
+  "profile_revision": "974a23f1dcd96b91a7c950433b40ad9000099f5812b8474e4d305c2b62d1980a",
+  "project": "PostGIS TIGER Geocoder",
+  "release_eligible": false,
+  "schema_version": 2,
+  "scope": "publication",
+  "sha256": "64a86620ce55e2fb0883ec9af7e6f81c979e44dddcefdb95066a4beb2e98c309",
+  "test_cases": [
+    "archive-suite",
+    "static-analysis"
+  ],
+  "test_revision": "a43a441678abee15a4b50369c74e7d6ba622706b",
+  "version": "2025.2"
+}
