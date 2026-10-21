@@ -18,6 +18,10 @@ on:
         description: Build PostGIS 3.6.4 with MinGW PostgreSQL 18.6, then probe it in the selected MSVC core
         required: false
         type: boolean
+      postgis_windows_relocatable_trial:
+        description: Build a non-publication PostGIS archive with its MinGW runtime closure and verify it on a fresh Windows runner
+        required: false
+        type: boolean
       postgis_conda_macos_arm64_probe:
         description: Inspect conda-forge spatial dependencies for the macOS 11 arm64 floor
         required: false
@@ -32,7 +36,7 @@ on:
         type: boolean
 jobs:
   plan:
-    if: ${{ inputs.address_standardizer_probe != true && inputs.postgis_macos_arm64_probe != true && inputs.postgis_windows_abi_probe != true && inputs.postgis_windows_selected_core_probe != true && inputs.postgis_conda_macos_arm64_probe != true && inputs.postgis_conda_macos_arm64_build_probe != true && inputs.postgis_conda_macos_arm64_sfcgal_build_probe != true }}
+    if: ${{ inputs.address_standardizer_probe != true && inputs.postgis_macos_arm64_probe != true && inputs.postgis_windows_abi_probe != true && inputs.postgis_windows_selected_core_probe != true && inputs.postgis_windows_relocatable_trial != true && inputs.postgis_conda_macos_arm64_probe != true && inputs.postgis_conda_macos_arm64_build_probe != true && inputs.postgis_conda_macos_arm64_sfcgal_build_probe != true }}
     runs-on: ubuntu-24.04
     outputs:
       project: ${{ steps.select.outputs.project }}
@@ -336,6 +340,127 @@ jobs:
             ${{ runner.temp }}/postgis-windows/output/source/*.sha256
           if-no-files-found: warn
           retention-days: 3
+
+  windows-postgis-relocatable-build:
+    if: ${{ inputs.postgis_windows_relocatable_trial == true }}
+    runs-on: windows-2022
+    timeout-minutes: 150
+    permissions:
+      actions: read
+      contents: read
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Download the selected PostgreSQL core
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $pin = python tools/windows_core_pin.py --postgresql-version 18.6 | ConvertFrom-Json
+          if ($LASTEXITCODE -ne 0) { throw 'Selected PostgreSQL core pin is invalid.' }
+          $destination = Join-Path $env:RUNNER_TEMP 'postgis-windows-trial/core'
+          New-Item -ItemType Directory -Force $destination | Out-Null
+          gh run download $pin.run_id --repo $env:GITHUB_REPOSITORY --name $pin.artifact_name --dir $destination
+          if ($LASTEXITCODE -ne 0) { throw 'Selected PostgreSQL core artifact is unavailable.' }
+          $archive = Join-Path $destination $pin.archive_name
+          if ((Get-FileHash -Algorithm SHA256 $archive).Hash.ToLowerInvariant() -ne $pin.sha256) { throw 'Selected PostgreSQL core archive digest differs from its pin.' }
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: true
+          install: >-
+            base-devel
+            curl
+            tar
+            autoconf
+            automake
+            libtool
+            bison
+            flex
+            diffutils
+          pacboy: >-
+            toolchain:p
+            cmake:p
+            ninja:p
+            pkgconf:p
+            gmp:p
+            sfcgal:p
+            geos:p
+            proj:p
+            gdal:p
+            json-c:p
+            libxml2:p
+      - name: Build PostGIS, bundle its resolved runtime DLL closure and stage trial archives
+        env:
+          OUTPUT_ROOT: ${{ runner.temp }}/postgis-windows-trial/output
+        run: |
+          core="$(cygpath -u "$RUNNER_TEMP")/postgis-windows-trial/core/postgresql-18.6-windows-x86_64.tar.gz"
+          bash experiments/postgis-windows-abi-trial/cross-install-probe.sh "$core" "$(cygpath -u "$OUTPUT_ROOT")"
+          cp "$core" "$(cygpath -u "$OUTPUT_ROOT")/postgresql-18.6-windows-x86_64.tar.gz"
+          cp "$core.sha256" "$(cygpath -u "$OUTPUT_ROOT")/postgresql-18.6-windows-x86_64.tar.gz.sha256"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: postgis-windows-relocatable-trial-${{ github.run_id }}
+          path: |
+            ${{ runner.temp }}/postgis-windows-trial/output/postgresql-18.6-windows-x86_64.tar.gz
+            ${{ runner.temp }}/postgis-windows-trial/output/postgresql-18.6-windows-x86_64.tar.gz.sha256
+            ${{ runner.temp }}/postgis-windows-trial/output/postgis-3.6.4-postgresql-18.6-windows-x86_64-trial.tar.gz
+            ${{ runner.temp }}/postgis-windows-trial/output/postgis-3.6.4-postgresql-18.6-windows-x86_64-trial.tar.gz.sha256
+            ${{ runner.temp }}/postgis-windows-trial/output/build.log
+            ${{ runner.temp }}/postgis-windows-trial/output/cross-install.log
+            ${{ runner.temp }}/postgis-windows-trial/output/package/*.json
+            ${{ runner.temp }}/postgis-windows-trial/output/selected-cluster/server.log
+          if-no-files-found: warn
+          retention-days: 3
+
+  windows-postgis-relocatable-verify:
+    needs: windows-postgis-relocatable-build
+    if: ${{ always() && inputs.postgis_windows_relocatable_trial == true }}
+    runs-on: windows-2022
+    timeout-minutes: 60
+    permissions:
+      contents: read
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download the exact trial archive bytes from the build runner
+        id: download
+        continue-on-error: true
+        uses: actions/download-artifact@v4
+        with:
+          name: postgis-windows-relocatable-trial-${{ github.run_id }}
+          path: ${{ runner.temp }}/postgis-windows-trial
+      - name: Relocate the selected core and PostGIS archive, then exercise all SQL extensions
+        if: always() && steps.download.outcome == 'success'
+        run: |
+          ./experiments/postgis-windows-abi-trial/verify-relocatable-trial.ps1 `
+            -ArchiveDirectory (Join-Path $env:RUNNER_TEMP 'postgis-windows-trial') `
+            -OutputDirectory (Join-Path $env:RUNNER_TEMP 'postgis-windows-trial/verification')
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: postgis-windows-relocatable-verification-${{ github.run_id }}
+          path: ${{ runner.temp }}/postgis-windows-trial/verification/**
+          if-no-files-found: warn
+          retention-days: 7
+      - name: Require fresh-runner SQL and relocation checks to pass
+        if: always()
+        run: |
+          if ('${{ needs.windows-postgis-relocatable-build.result }}' -ne 'success' -or '${{ steps.download.outcome }}' -ne 'success') {
+            throw 'Windows PostGIS relocatable trial build and archive transfer must pass'
+          }
+          $result = Join-Path $env:RUNNER_TEMP 'postgis-windows-trial/verification/result.json'
+          if (-not (Test-Path $result) -or (Get-Content $result -Raw | ConvertFrom-Json).outcome -ne 'passed') {
+            throw 'Fresh-runner PostGIS archive verification did not pass'
+          }
 
   linux-postgis:
     needs: plan

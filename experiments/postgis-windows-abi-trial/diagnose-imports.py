@@ -138,6 +138,7 @@ def diagnose(root: Path, directories: list[Path], objdump: str) -> dict:
         "root": str(root.resolve()),
         "search_directories": [str(path.resolve()) for path in directories],
         "scanned_modules": len(scanned),
+        "resolved_modules": [str(path) for path in sorted(scanned)],
         "unresolved_dlls": sorted(unresolved_dlls, key=lambda item: (item["importer"], item["dll"].casefold())),
         "missing_symbols": sorted(missing_symbols, key=lambda item: (item["importer"], item["dll"].casefold(), item["symbol"].casefold())),
         "findings_truncated": len(unresolved_dlls) == MAX_FINDINGS or len(missing_symbols) == MAX_FINDINGS,
@@ -151,11 +152,18 @@ def main() -> None:
     parser.add_argument("--root", required=True, type=Path)
     parser.add_argument("--search-directory", action="append", required=True, type=Path)
     parser.add_argument("--output", required=True, type=Path)
+    parser.add_argument("--modules-output", type=Path)
     parser.add_argument("--objdump", default="objdump")
     args = parser.parse_args()
     result = diagnose(args.root, args.search_directory, args.objdump)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    if args.modules_output:
+        args.modules_output.parent.mkdir(parents=True, exist_ok=True)
+        args.modules_output.write_text(
+            json.dumps(result["resolved_modules"], indent=2) + "\n",
+            encoding="utf-8",
+        )
     print(
         "PE import diagnostic: "
         f"{result['scanned_modules']} modules, "
