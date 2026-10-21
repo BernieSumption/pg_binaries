@@ -14,8 +14,58 @@ gcc -v "$output_root/compiler-test.c" -o "$output_root/compiler-test.exe"
 "$output_root/compiler-test.exe"
 source_root="$output_root/source"
 pgroot="$output_root/postgresql"
+netcdf_root="$output_root/netcdf-no-ros3"
+diagnostic_root="$output_root/dll-diagnostic"
 mkdir -p "$source_root"
 cd "$source_root"
+
+curl -fL --retry 3 -o netcdf-4.10.1.tar.gz https://github.com/Unidata/netcdf-c/archive/v4.10.1/netcdf-4.10.1.tar.gz
+printf '%s  %s\n' 33c27231c478c3b35da7c7758fbdd02da1fe407abcb16ddfe195f69d164f930d netcdf-4.10.1.tar.gz > netcdf-4.10.1.tar.gz.sha256
+sha256sum -c netcdf-4.10.1.tar.gz.sha256
+tar -xzf netcdf-4.10.1.tar.gz
+cmake -S netcdf-c-4.10.1 -B netcdf-c-4.10.1/build -G Ninja \
+  -DCMAKE_INSTALL_PREFIX="$netcdf_root" \
+  -DBUILD_SHARED_LIBS=ON \
+  -DNETCDF_ENABLE_TESTS=OFF \
+  -DNETCDF_ENABLE_HDF5=ON \
+  -DNETCDF_ENABLE_S3_AWS=OFF \
+  -DNETCDF_ENABLE_BYTERANGE=OFF
+mkdir -p "$diagnostic_root"
+grep -E '^(NETCDF_ENABLE_(BYTERANGE|HDF5|S3_AWS|TESTS)|HAS_HDF5_ROS3):' \
+  netcdf-c-4.10.1/build/CMakeCache.txt > "$diagnostic_root/netcdf-cmake-options.txt"
+for option in \
+  NETCDF_ENABLE_BYTERANGE:BOOL=OFF \
+  NETCDF_ENABLE_HDF5:BOOL=ON \
+  NETCDF_ENABLE_S3_AWS:BOOL=OFF \
+  NETCDF_ENABLE_TESTS:BOOL=OFF; do
+  grep -Fx "$option" netcdf-c-4.10.1/build/CMakeCache.txt
+done
+if grep -Eq '^HAS_HDF5_ROS3:INTERNAL=1$' netcdf-c-4.10.1/build/CMakeCache.txt; then
+  printf 'ERROR: installed HDF5 exposed ROS3 during the NetCDF trial configuration.\n' >&2
+  exit 1
+fi
+cmake --build netcdf-c-4.10.1/build --parallel 2
+cmake --install netcdf-c-4.10.1/build
+test -f "$netcdf_root/bin/libnetcdf.dll"
+export PATH="$netcdf_root/bin:$PATH"
+mkdir -p "$diagnostic_root"
+python "$repo_root/experiments/postgis-windows-abi-trial/diagnose-imports.py" \
+  --root "$netcdf_root/bin/libnetcdf.dll" \
+  --search-directory "$netcdf_root/bin" \
+  --search-directory /mingw64/bin \
+  --search-directory /usr/bin \
+  --output "$diagnostic_root/netcdf-import-resolution.json"
+python - "$diagnostic_root/netcdf-import-resolution.json" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+report = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8"))
+findings = report["missing_symbols"] + report["unresolved_dlls"] + report["objdump_errors"]
+if findings:
+    print(json.dumps(findings, indent=2))
+    raise SystemExit("NetCDF dependency resolution failed before PostgreSQL/PostGIS compilation")
+PY
 
 curl -fL --retry 3 -o postgresql-18.6.tar.bz2 https://ftp.postgresql.org/pub/source/v18.6/postgresql-18.6.tar.bz2
 printf '%s  %s\n' 555610c24d53e4316da5b7d3fc25c279d96856d5e0e23ee308c328c5fa881d9f postgresql-18.6.tar.bz2 | sha256sum -c -
@@ -38,11 +88,11 @@ make
 make install
 
 set +x
-diagnostic_root="$output_root/dll-diagnostic"
 mkdir -p "$diagnostic_root"
 modules=(
   "$pgroot/lib/postgis_raster-3.dll"
   "$pgroot/bin/postgres.exe"
+  "$netcdf_root/bin/libnetcdf.dll"
   /mingw64/bin/libgdal-*.dll
   /mingw64/bin/libgeos_c.dll
   /mingw64/bin/libproj-*.dll
@@ -65,6 +115,7 @@ for module in "${modules[@]}"; do
 done
 if ! python "$repo_root/experiments/postgis-windows-abi-trial/diagnose-imports.py" \
   --root "$pgroot/lib/postgis_raster-3.dll" \
+  --search-directory "$netcdf_root/bin" \
   --search-directory "$pgroot/bin" \
   --search-directory /mingw64/bin \
   --search-directory /usr/bin \

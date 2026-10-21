@@ -11,14 +11,16 @@ from pathlib import Path
 SYSTEM_DLLS = {
     "advapi32.dll", "bcrypt.dll", "bcryptprimitives.dll", "cfgmgr32.dll",
     "clbcatq.dll", "combase.dll", "comctl32.dll", "comdlg32.dll", "crypt32.dll",
-    "cryptbase.dll", "dnsapi.dll", "dwmapi.dll", "gdi32.dll", "gdi32full.dll",
+    "cryptbase.dll", "dbghelp.dll", "dnsapi.dll", "dwrite.dll", "dwmapi.dll",
+    "gdi32.dll", "gdi32full.dll",
     "imm32.dll", "iphlpapi.dll", "kernel32.dll", "kernelbase.dll", "mpr.dll",
     "msvcp_win.dll", "msvcrt.dll", "mswsock.dll", "netapi32.dll", "ncrypt.dll",
-    "ntdll.dll", "ole32.dll", "oleacc.dll", "oleaut32.dll", "powrprof.dll",
+    "ntdll.dll", "odbc32.dll", "odbccp32.dll", "ole32.dll", "oleacc.dll", "oleaut32.dll", "powrprof.dll",
     "profapi.dll", "psapi.dll", "rpcrt4.dll", "secur32.dll", "setupapi.dll",
     "shell32.dll", "shcore.dll", "shlwapi.dll", "uxtheme.dll", "user32.dll",
     "userenv.dll", "version.dll", "winmm.dll", "winspool.drv", "wintrust.dll",
-    "wldap32.dll", "ws2_32.dll", "wtsapi32.dll",
+    "winhttp.dll", "wininet.dll", "wldap32.dll", "ws2_32.dll", "wtsapi32.dll",
+    "xmllite.dll", "usp10.dll",
 }
 SYSTEM_PREFIXES = ("api-ms-win-", "ext-ms-win-")
 IMPORT_NAME = re.compile(r"^\s*[0-9a-fA-F]+\s+<none>\s+[0-9a-fA-F]+\s+(\S+)\s*$")

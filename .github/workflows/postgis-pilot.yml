@@ -297,6 +297,8 @@ jobs:
             diffutils
           pacboy: >-
             toolchain:p
+            cmake:p
+            ninja:p
             pkgconf:p
             gmp:p
             sfcgal:p
