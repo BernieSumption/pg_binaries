@@ -36,7 +36,14 @@ mkdir -p "$work"
 "$selected/bin/initdb.exe" -D "$work/data" --no-locale -E UTF8 -U postgres
 finish() { "$selected/bin/pg_ctl.exe" -D "$work/data" -m immediate stop || true; }
 trap finish EXIT
-"$selected/bin/pg_ctl.exe" -D "$work/data" -l "$work/server.log" -o "-p 55439 -h 127.0.0.1" start
+if ! "$selected/bin/pg_ctl.exe" -D "$work/data" -l "$work/server.log" -o "-p 55439 -h 127.0.0.1" start; then
+  if test -f "$work/server.log"; then
+    cat "$work/server.log" >&2
+  else
+    printf 'PostgreSQL server log was not created: %s/server.log\n' "$work" >&2
+  fi
+  exit 1
+fi
 "$selected/bin/createdb.exe" -h 127.0.0.1 -p 55439 postgis_probe
 "$selected/bin/psql.exe" -X -v ON_ERROR_STOP=1 -h 127.0.0.1 -p 55439 -d postgis_probe \
   -f "$repo_root/scripts/postgis/probe.sql" \
