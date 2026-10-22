@@ -27,9 +27,3 @@ An archive becomes eligible only when its final bytes satisfy the testing, insta
 For example, when discovery selects PostgreSQL 18.7 instead of 18.6, its five platform targets replace the old core targets. Re-select compatible extension releases for 18.7, build or reuse their packages, and test them with the exact new core archives. Unchanged selected downloads retain their URLs. The new inventory no longer advertises 18.6 merely because it appeared in the previous inventory.
 
 The first release must satisfy the revised full scope; no temporary Linux-only subset has been authorized. Permanent release publication still requires the user's authorization. Until then, candidate archives remain visibly unpublished and the public inventory must not contain temporary Actions URLs.
-
-## Implementation transition
-
-The current `support.json`, release snapshot and coverage selector apply the revised version rule, but some planners, verification profiles and publication checks still contain historical-minor range assumptions. The pilot scripts implement selected core/extension paths; there is no complete publication process. Candidate generation and preflight also need to allow policy-driven retirement of old inventory entries while preserving retained URLs and rejecting missing selected targets. Incremental planning from a real public inventory belongs after the first release; the first-release gate still requires complete selected-target coverage and exact archive-bound evidence.
-
-[The migration backlog](../GOAL_BACKLOG.md#version-policy-migration) names the required metadata, planner, verifier, publication and workflow updates. [Retained implementation history](../support/evidence/policy-transition-history-2026-10-17.md) records prior range and OS-endpoint experiments. Their success does not require continuing those experiments or prove current publication readiness.
