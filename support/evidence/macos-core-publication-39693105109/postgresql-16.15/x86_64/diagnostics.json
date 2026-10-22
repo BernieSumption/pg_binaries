@@ -1,0 +1,127 @@
+{
+  "architecture": "x86_64",
+  "archive_urls": null,
+  "archives": {
+    "postgresql-16.15-macos-x86_64.tar.gz": "0abbf5fec62ad26ff491aa954528caff8e22a3a400fe053563ac3f9ddb214730"
+  },
+  "build_id": "github-39693105109-1",
+  "build_ids": {
+    "postgresql": "github-39693105109-1"
+  },
+  "inspection_tool_versions": {
+    "apple_toolchain": "Xcode 16.4",
+    "otool_path": "/usr/bin/otool",
+    "postgres": "postgres (PostgreSQL) 16.15"
+  },
+  "inventory_revision": null,
+  "kernel": "24.6.0",
+  "lookup_environment": {
+    "DYLD_FALLBACK_FRAMEWORK_PATH": "",
+    "DYLD_FALLBACK_LIBRARY_PATH": "",
+    "DYLD_FRAMEWORK_PATH": "",
+    "DYLD_LIBRARY_PATH": "",
+    "PGDATA": "",
+    "PGSYSCONFDIR": ""
+  },
+  "os_version": "15.7.9",
+  "package_metadata": {
+    "postgresql": {
+      "architecture": "x86_64",
+      "build_configuration": "postgresql-16.15;mode=core-only;builder=native-macos;deployment-target=11.0;configure=icu,openssl,lz4,zstd,libxml,libxslt,zlib,uuid-e2fs-interface-apple-system,no-readline;dependencies=pinned-upstream-source;cflags=-O2,-g;runtime=bundled-dylibs",
+      "build_id": "github-39693105109-1",
+      "capabilities": [
+        "icu",
+        "libc_collations",
+        "lz4",
+        "zstd_wal"
+      ],
+      "component": "postgresql",
+      "included_extensions": [
+        "adminpack",
+        "amcheck",
+        "autoinc",
+        "bloom",
+        "btree_gin",
+        "btree_gist",
+        "citext",
+        "cube",
+        "dblink",
+        "dict_int",
+        "dict_xsyn",
+        "earthdistance",
+        "file_fdw",
+        "fuzzystrmatch",
+        "hstore",
+        "insert_username",
+        "intagg",
+        "intarray",
+        "isn",
+        "lo",
+        "ltree",
+        "moddatetime",
+        "old_snapshot",
+        "pageinspect",
+        "pg_buffercache",
+        "pg_freespacemap",
+        "pg_prewarm",
+        "pg_stat_statements",
+        "pg_surgery",
+        "pg_trgm",
+        "pg_visibility",
+        "pg_walinspect",
+        "pgcrypto",
+        "pgrowlocks",
+        "pgstattuple",
+        "plpgsql",
+        "postgres_fdw",
+        "refint",
+        "seg",
+        "sslinfo",
+        "tablefunc",
+        "tcn",
+        "tsm_system_rows",
+        "tsm_system_time",
+        "unaccent",
+        "uuid-ossp",
+        "xml2"
+      ],
+      "platform": "macos",
+      "postgresql_version": "16.15",
+      "schema_version": 1,
+      "source_archive": {
+        "sha256": "c1575341fa7bd40f5274ea465b34390f4dc64cdd0770af327005caaeb9f6b7ed",
+        "url": "https://ftp.postgresql.org/pub/source/v16.15/postgresql-16.15.tar.bz2"
+      },
+      "source_revision": "114513d5f99d1eea81fc2373afb78845d171c039",
+      "version": "16.15"
+    }
+  },
+  "platform": "macos",
+  "postgresql_failure": {
+    "client_output": "ERROR:  division by zero",
+    "command": "psql -X -v ON_ERROR_STOP=1 -c 'SELECT 1 / 0;'",
+    "exit_code": 1,
+    "finished_at_utc": "2026-10-22T00:29:31Z",
+    "kind": "server-error",
+    "server_log": "2026-10-22 00:29:31.731 UTC [8438] LOG:  starting PostgreSQL 16.15 on x86_64-apple-darwin24.6.0, compiled by Apple clang version 17.0.0 (clang-1700.0.13.5), 64-bit\n2026-10-22 00:29:31.732 UTC [8438] LOG:  listening on Unix socket \"/Users/runner/work/_temp/pg-macos-diagnostics.hUZXda/server/socket/.s.PGSQL.55439\"\n2026-10-22 00:29:31.743 UTC [8441] LOG:  database system was shut down at 2026-10-22 00:29:31 UTC\n2026-10-22 00:29:31.752 UTC [8438] LOG:  database system is ready to accept connections\n2026-10-22 00:29:31.864 UTC [8448] ERROR:  division by zero\n2026-10-22 00:29:31.864 UTC [8448] STATEMENT:  SELECT 1 / 0;\n2026-10-22 00:29:31.884 UTC [8438] LOG:  received fast shutdown request\n2026-10-22 00:29:31.885 UTC [8438] LOG:  aborting any active transactions\n2026-10-22 00:29:31.887 UTC [8438] LOG:  background worker \"logical replication launcher\" (PID 8444) exited with exit code 1\n2026-10-22 00:29:31.887 UTC [8439] LOG:  shutting down\n2026-10-22 00:29:31.888 UTC [8439] LOG:  checkpoint starting: shutdown immediate\n2026-10-22 00:29:31.892 UTC [8439] LOG:  checkpoint complete: wrote 3 buffers (0.0%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.002 s, sync=0.001 s, total=0.005 s; sync files=2, longest=0.001 s, average=0.001 s; distance=0 kB, estimate=0 kB; lsn=0/151DAA8, redo lsn=0/151DAA8\n2026-10-22 00:29:31.897 UTC [8438] LOG:  database system is shut down\n",
+    "server_log_path": "/Users/runner/work/_temp/pg-macos-diagnostics.hUZXda/server/server.log",
+    "server_start_command": "pg_ctl -D <data-directory> -o <socket-options> -l <server-log> -w start",
+    "started_at_utc": "2026-10-22T00:29:31Z",
+    "working_directory": "/Users/runner/work/_temp/archives"
+  },
+  "postgresql_version": "16.15",
+  "schema_version": 1,
+  "source_revision": "114513d5f99d1eea81fc2373afb78845d171c039",
+  "system_failure": {
+    "command": "postgres --version",
+    "executable": "/Users/runner/work/_temp/pg-macos-diagnostics.hUZXda/server/postgresql/bin/postgres",
+    "exit_code": 134,
+    "finished_at_utc": "2026-10-22T00:29:27Z",
+    "kind": "missing-bundled-dylib",
+    "loader_output": "dyld[8405]: Library not loaded: @loader_path/../lib/libzstd.1.5.7.dylib\n  Referenced from: <2409EF32-7A58-305D-98EB-1FF4A2DFE579> /Users/runner/work/_temp/pg-macos-diagnostics.hUZXda/system/postgresql/bin/postgres\n  Reason: tried: '/libzstd.1.5.7.dylib' (no such file), '/Users/runner/work/_temp/pg-macos-diagnostics.hUZXda/system/postgresql/bin/../lib/libzstd.1.5.7.dylib' (no such file), '/libzstd.1.5.7.dylib' (no such file)",
+    "missing_library": "/Users/runner/work/_temp/pg-macos-diagnostics.hUZXda/system/postgresql/lib/libzstd.1.5.7.dylib",
+    "otool_dependencies": "/Users/runner/work/_temp/pg-macos-diagnostics.hUZXda/system/postgresql/bin/postgres:\n\t@loader_path/../lib/libzstd.1.5.7.dylib (compatibility version 1.0.0, current version 1.5.7)\n\t@loader_path/../lib/liblz4.1.10.0.dylib (compatibility version 1.0.0, current version 1.10.0)\n\t@loader_path/../lib/libxml2.16.dylib (compatibility version 18.0.0, current version 18.4.0)\n\t@loader_path/../lib/libssl.3.dylib (compatibility version 3.0.0, current version 3.0.0)\n\t@loader_path/../lib/libcrypto.3.dylib (compatibility version 3.0.0, current version 3.0.0)\n\t/usr/lib/libz.1.dylib (compatibility version 1.0.0, current version 1.2.12)\n\t/usr/lib/libSystem.B.dylib (compatibility version 1.0.0, current version 1351.0.0)\n\t@loader_path/../lib/libicui18n.78.3.dylib (compatibility version 78.0.0, current version 78.3.0)\n\t@loader_path/../lib/libicuuc.78.3.dylib (compatibility version 78.0.0, current version 78.3.0)",
+    "started_at_utc": "2026-10-22T00:29:27Z",
+    "working_directory": "/Users/runner/work/_temp/archives"
+  }
+}

@@ -41,6 +41,7 @@ class pg_ivmMacOSFixture:
             destination.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(source, destination)
         shutil.copyfile("support.json", self.root / "support.json")
+        (self.root / "support").mkdir(exist_ok=True)
         shutil.copyfile("support/postgresql-releases.json", self.root / "support/postgresql-releases.json")
         registry_destination = self.root / "support/verification-profiles.json"
         registry_destination.write_text(json.dumps(registry))
