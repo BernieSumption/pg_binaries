@@ -1,0 +1,46 @@
+{
+  "assembled_core": {
+    "archive": "postgresql-16.15-macos-x86_64.tar.gz",
+    "sha256": "0abbf5fec62ad26ff491aa954528caff8e22a3a400fe053563ac3f9ddb214730",
+    "version": "16.15"
+  },
+  "case_results": {
+    "archive-suite": "passed",
+    "static-analysis": "passed"
+  },
+  "ci": {
+    "build_revision": "3dad0e742c33b0e62ab2905bb9eac2c662c6c102",
+    "provider": "github-actions",
+    "run_id": "39700464811",
+    "run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/39700464811",
+    "source_revision": "3dad0e742c33b0e62ab2905bb9eac2c662c6c102",
+    "test_revision": "3dad0e742c33b0e62ab2905bb9eac2c662c6c102"
+  },
+  "component": "hypopg",
+  "environment": {
+    "architecture": "x86_64",
+    "clean_system": true,
+    "dependency_check_profile": "macho-system-dependencies-v1",
+    "dependency_checks_passed": true,
+    "endpoint": "current",
+    "image_id": "macos15/20260824.0482.1",
+    "os": "macos",
+    "os_version": "15.7.9"
+  },
+  "outcome": "passed",
+  "platform": "macos-x86_64",
+  "postgresql_version": "16.15",
+  "prerequisite_archives": [],
+  "profile_id": "hypopg-publication-macos-x86_64-16.15",
+  "profile_revision": "8097106f64b41fe78282f4e17d9048091883e4df27511c8b927d3e7396b64902",
+  "project": "HypoPG",
+  "schema_version": 2,
+  "scope": "publication",
+  "sha256": "ca9cebf507caa6f6cb1a31e75b3cece9c4e97b423439b70a9e9e5d7ae6cc6cf0",
+  "test_cases": [
+    "archive-suite",
+    "static-analysis"
+  ],
+  "test_revision": "3dad0e742c33b0e62ab2905bb9eac2c662c6c102",
+  "version": "1.4.3"
+}
