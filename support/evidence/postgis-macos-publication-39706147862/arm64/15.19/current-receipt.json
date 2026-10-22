@@ -1,0 +1,62 @@
+{
+  "architecture": "arm64",
+  "archives": {
+    "postgis-3.6.4-postgresql-15.19-macos-arm64.tar.gz": "5d6ac84f63139641f25fcec619db249429510374c41cbcb2f79e5327427e6eff",
+    "postgresql-15.19-macos-arm64.tar.gz": "da4f14c823001d0e19666aff22f8e80c841ea790f420b510fee21016be7a5e68"
+  },
+  "build_id": "github-39706147862-1",
+  "case_results": {
+    "archive-suite": "passed",
+    "static-analysis": "passed"
+  },
+  "ci": {
+    "build_revision": "3becedea88a1d8aa7208733ea800e47f3b5e6015",
+    "provider": "github-actions",
+    "run_id": "39706147862",
+    "run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/39706147862",
+    "source_revision": "3becedea88a1d8aa7208733ea800e47f3b5e6015",
+    "test_revision": "3becedea88a1d8aa7208733ea800e47f3b5e6015"
+  },
+  "core_target": {
+    "architecture": "arm64",
+    "core_archive": {
+      "basename": "postgresql-15.19-macos-arm64.tar.gz",
+      "build_id": "github-39693130202-1",
+      "run_id": "39693130202",
+      "sha256": "da4f14c823001d0e19666aff22f8e80c841ea790f420b510fee21016be7a5e68",
+      "source_revision": "114513d5f99d1eea81fc2373afb78845d171c039"
+    },
+    "extension_version": "3.6.4",
+    "platform": "macos-arm64",
+    "postgresql_version": "15.19",
+    "profile_id": "postgis-publication-macos-arm64-15.19",
+    "project": "PostGIS",
+    "schema_version": 1
+  },
+  "endpoint": "current",
+  "environment": {
+    "architecture": "arm64",
+    "clean_system": true,
+    "dependency_check_profile": "macho-system-dependencies-v1",
+    "dependency_checks_passed": true,
+    "endpoint": "current",
+    "image_id": "macos-15-arm64/20260907.0337",
+    "os": "macos",
+    "os_version": "15.7.9"
+  },
+  "extension_archive": "postgis-3.6.4-postgresql-15.19-macos-arm64.tar.gz",
+  "platform": "macos-arm64",
+  "postgresql_version": "15.19",
+  "profile_id": "postgis-publication-macos-arm64-15.19",
+  "profile_revision": "8b85325ebde21af000127f26169091b8b9a30a39701fda66087ed2bbfbbd73f8",
+  "project": "PostGIS",
+  "reports": {
+    "postgis_verification": "34129d3cb0cd0047b12c924b43d3d0700e7bf5e50608bf4d01ec8c33ae3d65d1",
+    "probe_output": "62fbf12a868d6a40e9708fcb7e3bf9305cad111cd92930759c14550cc644b04c",
+    "raster_probe": "d3797dcbf1f5563985e21bd961c14b072917a8ef5f13c2d455ebfa7ec5a2f683",
+    "static_analysis": "2253a7ac63a116c6dfc7d8e7dc1a8abd27826a7ccda4edab6cf14c24127f96e7"
+  },
+  "schema_version": 1,
+  "test_revision": "3becedea88a1d8aa7208733ea800e47f3b5e6015",
+  "version": "3.6.4"
+}

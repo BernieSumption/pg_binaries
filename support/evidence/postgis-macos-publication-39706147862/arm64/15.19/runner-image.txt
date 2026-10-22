@@ -1,0 +1,9 @@
+postgis_macos / verify	UNKNOWN STEP	2026-10-22T03:03:13.4510670Z 24G830
+postgis_macos / verify	UNKNOWN STEP	2026-10-22T03:03:13.4511140Z ##[endgroup]
+postgis_macos / verify	UNKNOWN STEP	2026-10-22T03:03:13.4511530Z ##[group]Runner Image
+postgis_macos / verify	UNKNOWN STEP	2026-10-22T03:03:13.4512020Z Image: macos-15-arm64
+postgis_macos / verify	UNKNOWN STEP	2026-10-22T03:03:13.4512440Z Version: 20260907.0337.1
+postgis_macos / verify	UNKNOWN STEP	2026-10-22T03:03:13.4513360Z Included Software: https://github.com/actions/runner-images/blob/macos-15-arm64/20260907.0337/images/macos/macos-15-arm64-Readme.md
+postgis_macos / verify	UNKNOWN STEP	2026-10-22T03:03:13.4514410Z Image Release: https://github.com/actions/runner-images/releases/tag/macos-15-arm64%2F20260907.0337
+postgis_macos / verify	UNKNOWN STEP	2026-10-22T03:03:13.4515060Z ##[endgroup]
+postgis_macos / verify	UNKNOWN STEP	2026-10-22T03:03:13.4515870Z ##[group]GITHUB_TOKEN Permissions

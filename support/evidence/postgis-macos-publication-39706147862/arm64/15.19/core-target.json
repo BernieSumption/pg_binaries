@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "project": "PostGIS",
+  "extension_version": "3.6.4",
+  "postgresql_version": "15.19",
+  "architecture": "arm64",
+  "platform": "macos-arm64",
+  "profile_id": "postgis-publication-macos-arm64-15.19",
+  "core_archive": {
+    "basename": "postgresql-15.19-macos-arm64.tar.gz",
+    "run_id": "39693130202",
+    "sha256": "da4f14c823001d0e19666aff22f8e80c841ea790f420b510fee21016be7a5e68",
+    "build_id": "github-39693130202-1",
+    "source_revision": "114513d5f99d1eea81fc2373afb78845d171c039"
+  }
+}
