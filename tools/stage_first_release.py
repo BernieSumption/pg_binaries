@@ -114,6 +114,18 @@ def prepare_manifests(archives, verification_files, support, snapshot, tag, root
 
     sql_names_by_project = {project: details["sql_names"]
                             for project, details in support.get("extensions", {}).items()}
+    staged_extension_downloads = {}
+    for staged_asset in assets:
+        project, version, platform = staged_asset["identity"]
+        if project == "postgresql":
+            continue
+        low, high = (staged_asset["build_claim"].split("-to-", 1)
+                     if "-to-" in staged_asset["build_claim"]
+                     else (staged_asset["build_claim"], staged_asset["build_claim"]))
+        for sql_name in sql_names_by_project[project]:
+            key = (sql_name, version, low, high, platform)
+            download = {"url": staged_asset["url"], "sha256": staged_asset["sha256"]}
+            staged_extension_downloads[key] = download
     core_target_to_asset = {}
     ext_target_to_asset = {}
     target_records = {}
@@ -158,10 +170,15 @@ def prepare_manifests(archives, verification_files, support, snapshot, tag, root
                 selected_core = core_target_to_asset.get((pg_version, platform))
                 if selected_core is None:
                     continue
+                expected_prerequisites = _coverage.expected_prerequisite_archives(
+                    support, staged_extension_downloads, project, pg_version, platform)
+                if expected_prerequisites is None:
+                    continue
                 matching = [r for r in records if r.get("sha256", "").lower() == asset["sha256"]
                             and r.get("component") in sql_names and str(r.get("version")) == version
                             and r.get("platform") == platform and r.get("postgresql_version") == pg_version
-                            and r.get("assembled_core", {}).get("sha256", "").lower() == selected_core["sha256"]]
+                            and r.get("assembled_core", {}).get("sha256", "").lower() == selected_core["sha256"]
+                            and r.get("prerequisite_archives", []) == expected_prerequisites]
                 if all(any(r.get("component") == name for r in matching) for name in sql_names):
                     key = (sql_name, version, pg_version, platform)
                     prior = ext_target_to_asset.get(key)

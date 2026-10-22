@@ -179,6 +179,56 @@ class StageFirstReleaseTest(unittest.TestCase):
                             and "lacks matching current-profile SHA evidence" in item
                             for item in missing))
 
+    def test_prerequisite_sha_must_match_the_selected_staged_archive(self):
+        self.support["extensions"]["Prerequisite"] = {
+            "sql_names": ["prerequisite"], "requires": [],
+            "versions": {"1.0": {"postgresql_minimum_major": 15}},
+        }
+        self.support["extensions"]["Example"]["requires"] = ["Prerequisite"]
+        self.support["extensions"]["Example"]["requires_versions"] = {
+            "Prerequisite": {"minimum_version": "1.0"},
+        }
+        archives = []
+        bad_records = []
+        good_records = []
+        for platform in self.platforms:
+            core = self._core(platform)
+            prerequisite = self.archive_dir / f"prerequisite-1.0-postgresql-15.10-{platform}.tar.gz"
+            prerequisite.write_bytes(f"prerequisite bytes for {platform}".encode())
+            extension = self.archive_dir / f"example-1.0-postgresql-15.10-{platform}.tar.gz"
+            extension.write_bytes(f"extension bytes for {platform}".encode())
+            archives.extend([core, prerequisite, extension])
+
+            core_sha = hashlib.sha256(core.read_bytes()).hexdigest()
+            prerequisite_sha = hashlib.sha256(prerequisite.read_bytes()).hexdigest()
+            extension_sha = hashlib.sha256(extension.read_bytes()).hexdigest()
+            self._write_record(f"core-{platform}", self._record(
+                "postgresql", "15.10", "15.10", core_sha, platform))
+            self._write_record(f"prerequisite-{platform}", self._record(
+                "prerequisite", "1.0", "15.10", prerequisite_sha, platform, core_sha))
+            prereq_ref = {"project": "Prerequisite", "archive": prerequisite.name,
+                          "version": "1.0", "sha256": prerequisite_sha}
+            for sql_name in ("example", "example_extra"):
+                bad = self._record(sql_name, "1.0", "15.10", extension_sha, platform, core_sha)
+                bad["prerequisite_archives"] = [{**prereq_ref, "sha256": "0" * 64}]
+                bad_records.append((f"{sql_name}-{platform}", bad))
+                good = {**bad, "prerequisite_archives": [prereq_ref]}
+                good_records.append((f"{sql_name}-{platform}", good))
+
+        for name, record in bad_records:
+            self._write_record(name, record)
+        proposals, _staged, _missing = stage_first_release.prepare_manifests(
+            archives, [self.record_dir], self.support, self.snapshot,
+            "catalog-20261022-1", root=self.root)
+        self.assertFalse(any(item["component"] == "Example" for item in proposals))
+
+        for name, record in good_records:
+            self._write_record(name, record)
+        proposals, _staged, _missing = stage_first_release.prepare_manifests(
+            archives, [self.record_dir], self.support, self.snapshot,
+            "catalog-20261022-1", root=self.root)
+        self.assertTrue(any(item["component"] == "Example" for item in proposals))
+
     def test_exact_build_filename_limits_the_postgresql_targets_it_can_serve(self):
         self.snapshot["support_status"]["supported_majors"].append(16)
         self.snapshot["releases"].append({"version": "16.6", "release_date": "2025-10-01"})
