@@ -1,0 +1,17 @@
+{
+  "architecture": "x86_64",
+  "archive_present": true,
+  "archives": {
+    "postgresql-18.6-macos-x86_64.tar.gz": "a8ec7021f17703111b914d73616f5f4541fd5fbb19d1247fdcb50babaffbbcbc"
+  },
+  "postgresql_version": "18.6",
+  "profile_id": "postgresql-publication-macos-x86_64-18.6",
+  "run_id": "39690769094",
+  "schema_version": 1,
+  "source_revision": "3a23fa47c03648f3736f8dd7c69c8efaf6bd0461",
+  "steps": {
+    "archive-suite": "success",
+    "diagnostics": "success",
+    "symbols": "success"
+  }
+}
