@@ -99,7 +99,7 @@ class StageFirstReleaseTest(unittest.TestCase):
                 archive.addfile(member, io.BytesIO(data))
         return path
 
-    def test_groups_sql_names_and_emits_exact_staged_checksums(self):
+    def test_groups_sql_names_when_extension_filenames_sort_before_core(self):
         archives = []
         for platform in self.platforms:
             core = self._core(platform)
@@ -118,6 +118,7 @@ class StageFirstReleaseTest(unittest.TestCase):
         duplicate = duplicate_dir / extension.name
         shutil.copyfile(extension, duplicate)
         archives.append(duplicate)
+        archives.sort(key=lambda path: path.name)
 
         proposals, staged, missing = stage_first_release.prepare_manifests(
             archives, [self.record_dir], self.support, self.snapshot,
@@ -152,6 +153,30 @@ class StageFirstReleaseTest(unittest.TestCase):
         self.assertFalse(any(item["component"] == "Example" for item in proposals))
         self.assertEqual(len(staged), len(self.platforms))
         self.assertTrue(any("extension example 1.0 PostgreSQL 15.10 linux-x86_64" in item
+                            for item in missing))
+
+    def test_core_sha_mismatch_does_not_cover_the_selected_extension_target(self):
+        archives = []
+        for platform in self.platforms:
+            core = self._core(platform)
+            extension = self.archive_dir / f"example-1.0-postgresql-15.10-{platform}.tar.gz"
+            extension.write_bytes(f"staged extension bytes for {platform}".encode())
+            archives.extend([core, extension])
+            core_sha = hashlib.sha256(core.read_bytes()).hexdigest()
+            ext_sha = hashlib.sha256(extension.read_bytes()).hexdigest()
+            self._write_record(f"core-{platform}", self._record("postgresql", "15.10", "15.10", core_sha, platform))
+            for sql_name in ("example", "example_extra"):
+                self._write_record(f"{sql_name}-{platform}", self._record(
+                    sql_name, "1.0", "15.10", ext_sha, platform, "d" * 64))
+
+        proposals, staged, missing = stage_first_release.prepare_manifests(
+            archives, [self.record_dir], self.support, self.snapshot,
+            "catalog-20261022-1", root=self.root)
+
+        self.assertFalse(any(item["component"] == "Example" for item in proposals))
+        self.assertEqual(len(staged), len(self.platforms))
+        self.assertTrue(any("extension example 1.0 PostgreSQL 15.10 linux-x86_64" in item
+                            and "lacks matching current-profile SHA evidence" in item
                             for item in missing))
 
     def test_exact_build_filename_limits_the_postgresql_targets_it_can_serve(self):

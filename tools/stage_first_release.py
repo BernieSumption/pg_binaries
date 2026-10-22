@@ -121,13 +121,21 @@ def prepare_manifests(archives, verification_files, support, snapshot, tag, root
 
     for asset in assets:
         project, version, platform = asset["identity"]
+        target = (version, platform)
+        if project != "postgresql" or target not in expected_core:
+            continue
+        if target in core_target_to_asset:
+            raise StagingError(f"multiple staged PostgreSQL archives match {version} {platform}")
+        core_target_to_asset[target] = asset
+
+    for asset in assets:
+        project, version, platform = asset["identity"]
         if project == "postgresql":
             target = (version, platform)
             if target not in expected_core:
                 continue
-            if target in core_target_to_asset:
+            if core_target_to_asset[target] is not asset:
                 raise StagingError(f"multiple staged PostgreSQL archives match {version} {platform}")
-            core_target_to_asset[target] = asset
             matching = [r for r in records if r.get("sha256", "").lower() == asset["sha256"]
                         and r.get("component") == "postgresql" and str(r.get("version")) == version
                         and r.get("platform") == platform and r.get("postgresql_version") == version]
@@ -147,9 +155,13 @@ def prepare_manifests(archives, verification_files, support, snapshot, tag, root
                         <= _coverage.version_parts(pg_version, "selected PostgreSQL version")
                         <= _coverage.version_parts(build_high, "archive build range")):
                     continue
+                selected_core = core_target_to_asset.get((pg_version, platform))
+                if selected_core is None:
+                    continue
                 matching = [r for r in records if r.get("sha256", "").lower() == asset["sha256"]
                             and r.get("component") in sql_names and str(r.get("version")) == version
-                            and r.get("platform") == platform and r.get("postgresql_version") == pg_version]
+                            and r.get("platform") == platform and r.get("postgresql_version") == pg_version
+                            and r.get("assembled_core", {}).get("sha256", "").lower() == selected_core["sha256"]]
                 if all(any(r.get("component") == name for r in matching) for name in sql_names):
                     key = (sql_name, version, pg_version, platform)
                     prior = ext_target_to_asset.get(key)
