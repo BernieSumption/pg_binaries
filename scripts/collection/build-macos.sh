@@ -122,7 +122,8 @@ with tarfile.open(archive, "r:gz") as tar:
     modules = names & {"collection/lib/collection.dylib", "collection/lib/collection.so"}
     expected_names = {"collection", "collection/lib", *modules, "collection/share",
         "collection/share/extension", *[n for n in names if n.startswith("collection/share/extension/")],
-        "collection/LICENSES", "collection/LICENSES/collection/LICENCE", "metadata.json"}
+        "collection/LICENSES", "collection/LICENSES/collection",
+        "collection/LICENSES/collection/LICENCE", "metadata.json"}
     if len(modules) != 1 or names != expected_names:
         raise SystemExit("collection archive has missing or unexpected members")
     metadata = json.load(tar.extractfile("metadata.json"))
