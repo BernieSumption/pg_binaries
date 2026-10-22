@@ -1,0 +1,24 @@
+{
+  "architecture": "x86_64",
+  "archives": {
+    "pg_jsonschema-0.3.4-postgresql-17.11-windows-x86_64.tar.gz": "f26513c0de972ec19caceddc700f6f9f1efce990dceb78c971acff03caf86bf5",
+    "postgresql-17.11-windows-x86_64.tar.gz": "2b3f69fdc727a782b426a4ca108fc33070c3da4f693b80bcaffd02b66ffdcac6"
+  },
+  "archives_present": {
+    "pg_jsonschema-0.3.4-postgresql-17.11-windows-x86_64.tar.gz": true,
+    "postgresql-17.11-windows-x86_64.tar.gz": true
+  },
+  "core_identity_known": true,
+  "core_status": "current-profile-core-redistribution-pending",
+  "pg_jsonschema_version": "0.3.4",
+  "postgresql_version": "17.11",
+  "profile_id": "pg-jsonschema-publication-windows-x86_64-17.11",
+  "release_eligible": false,
+  "run_id": "39695488293",
+  "schema_version": 1,
+  "source_revision": "446f7420fdad2ac2edf329feee03574af944795a",
+  "steps": {
+    "archive-suite": "success",
+    "static-analysis": "success"
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "architecture": "x86_64",
+  "archives": {
+    "pg_jsonschema-0.3.4-postgresql-15.19-windows-x86_64.tar.gz": "62dae5e947a6343089aeed2802e1b6c940d330ea45f8c40c021bd67fa6a42eb9",
+    "postgresql-15.19-windows-x86_64.tar.gz": "22c61ca5ed86710e94b03d32fa429b3edf230671eeacda9fc07a4b4795eee792"
+  },
+  "checks": [
+    "selected-core-manifest",
+    "safe-archive-paths",
+    "source-and-core-metadata",
+    "core-and-component-licence-pointers",
+    "native-extension-identity",
+    "archive-bound-pe-dependency-analysis"
+  ],
+  "inspected_files": [
+    "metadata.json",
+    "pg_jsonschema/LICENSES/pg_jsonschema/LICENCE",
+    "pg_jsonschema/lib/pg_jsonschema.dll",
+    "pg_jsonschema/share/extension/pg_jsonschema--0.3.4.sql",
+    "pg_jsonschema/share/extension/pg_jsonschema.control",
+    "postgresql/manifest.json"
+  ],
+  "limits": [
+    "The PostgreSQL PE dependency checker separately inspects the relocated core plus extension DLL."
+  ],
+  "native_extension_files": [
+    "pg_jsonschema/lib/pg_jsonschema.dll"
+  ],
+  "passed": true,
+  "pe_dependency_analysis_sha256": "62b1af84d98b208498f7dc4afe1018490d8c941f942773dc907cf6b0eacb7170",
+  "platform": "windows",
+  "schema_version": 1
+}
