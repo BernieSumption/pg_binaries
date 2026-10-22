@@ -1,0 +1,59 @@
+{
+  "assembled_core": {
+    "archive": "postgresql-17.11-windows-x86_64.tar.gz",
+    "sha256": "2b3f69fdc727a782b426a4ca108fc33070c3da4f693b80bcaffd02b66ffdcac6",
+    "version": "17.11"
+  },
+  "case_results": {
+    "archive-suite": "passed",
+    "static-analysis": "passed"
+  },
+  "ci": {
+    "build_revision": "446f7420fdad2ac2edf329feee03574af944795a",
+    "provider": "github-actions",
+    "run_id": "39695488293",
+    "run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/39695488293",
+    "source_revision": "446f7420fdad2ac2edf329feee03574af944795a",
+    "test_revision": "446f7420fdad2ac2edf329feee03574af944795a"
+  },
+  "component": "pg_jsonschema",
+  "core_status": "current-profile-core-redistribution-pending",
+  "environment": {
+    "architecture": "x86_64",
+    "clean_system": true,
+    "dependency_check_profile": "windows-sql-archive-relocation-v1",
+    "dependency_checks_passed": true,
+    "endpoint": "current",
+    "image_id": "win22/20261012.333.1",
+    "os": "windows",
+    "os_version": "10.0.20348"
+  },
+  "noncode_patch": {
+    "kind": "metadata-only",
+    "metadata_delta": {
+      "configuration_prerequisites": [],
+      "runtime_prerequisites": []
+    },
+    "original_record_sha256": "d18c4462dc8ed336a3abd5e08f5bd43eb8deb3371dd66e9417a0a83fc8830941",
+    "original_sha256": "f26513c0de972ec19caceddc700f6f9f1efce990dceb78c971acff03caf86bf5",
+    "patched_sha256": "a9abfa21f73065093378feb358fefdc0e8280518897427652c53e225530d2544",
+    "proof": "support/evidence/metadata-repack-2026-10-22/proofs/pg_jsonschema-0.3.4-postgresql-17.11-windows-x86_64.tar.gz.proof.json"
+  },
+  "outcome": "passed",
+  "platform": "windows-x86_64",
+  "postgresql_version": "17.11",
+  "prerequisite_archives": [],
+  "profile_id": "pg-jsonschema-publication-windows-x86_64-17.11",
+  "profile_revision": "1fc0dbee2afa598c4f1b89e5d2fd5d26935fe003e9c78ffff622b725e73b2430",
+  "project": "pg_jsonschema",
+  "release_eligible": false,
+  "schema_version": 2,
+  "scope": "publication",
+  "sha256": "a9abfa21f73065093378feb358fefdc0e8280518897427652c53e225530d2544",
+  "test_cases": [
+    "archive-suite",
+    "static-analysis"
+  ],
+  "test_revision": "446f7420fdad2ac2edf329feee03574af944795a",
+  "version": "0.3.4"
+}

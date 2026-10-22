@@ -1,0 +1,160 @@
+{
+  "date": "2026-10-22",
+  "deferred": [
+    {
+      "archive": "pg_jsonschema-0.3.4-postgresql-18.6-macos-arm64.tar.gz",
+      "profile_id": "pg-jsonschema-publication-macos-arm64-18.6",
+      "reason": "verification record: test profile does not match current suite"
+    }
+  ],
+  "description": "Metadata-only correction of first-release archives with existing runtime evidence",
+  "patched": [
+    {
+      "archive": "hypopg-1.4.3-postgresql-15.19-windows-x86_64.tar.gz",
+      "original_sha256": "22b4303f7136f91e1a40a8e07589c885c7e86a99494c2d233b035a0e88f913a0",
+      "patched_sha256": "62274b5e1129fcc1fc6a42183fd2cc6f42920894777a3954312f506ddcf3e982",
+      "proof": "support/evidence/metadata-repack-2026-10-22/proofs/hypopg-1.4.3-postgresql-15.19-windows-x86_64.tar.gz.proof.json",
+      "verification_record": "support/verification/hypopg-1.4.3-postgresql-15.19-windows-x86_64-current-metadata-repack-20261022.json"
+    },
+    {
+      "archive": "hypopg-1.4.3-postgresql-16.15-windows-x86_64.tar.gz",
+      "original_sha256": "56f5d0becbb27815a8f5045a8a700779e966f8399f2a051607019f54db53795f",
+      "patched_sha256": "ef4efdecfbeecacde857ed0a6e782a6232af6c7fc7fb60983b00bc69ceba1331",
+      "proof": "support/evidence/metadata-repack-2026-10-22/proofs/hypopg-1.4.3-postgresql-16.15-windows-x86_64.tar.gz.proof.json",
+      "verification_record": "support/verification/hypopg-1.4.3-postgresql-16.15-windows-x86_64-current-metadata-repack-20261022.json"
+    },
+    {
+      "archive": "hypopg-1.4.3-postgresql-17.11-windows-x86_64.tar.gz",
+      "original_sha256": "68c6f016e8d89fe8ac9e05fc6b2fce92434abd556303400fc1b84b8ea74e1c73",
+      "patched_sha256": "be6db754c8d1487aaebb94a1225e5bae04eb1408a81b8ee8b9804fa31ff28821",
+      "proof": "support/evidence/metadata-repack-2026-10-22/proofs/hypopg-1.4.3-postgresql-17.11-windows-x86_64.tar.gz.proof.json",
+      "verification_record": "support/verification/hypopg-1.4.3-postgresql-17.11-windows-x86_64-current-metadata-repack-20261022.json"
+    },
+    {
+      "archive": "hypopg-1.4.3-postgresql-18.6-windows-x86_64.tar.gz",
+      "original_sha256": "ad45af5b15f3a91e1daaff1c23a0f1858329cf9fadc27027dcd7d67894728f18",
+      "patched_sha256": "888048231844c7953363e943fb3b95f363c886bd81f067288d603f25567be255",
+      "proof": "support/evidence/metadata-repack-2026-10-22/proofs/hypopg-1.4.3-postgresql-18.6-windows-x86_64.tar.gz.proof.json",
+      "verification_record": "support/verification/hypopg-1.4.3-postgresql-18.6-windows-x86_64-current-metadata-repack-20261022.json"
+    },
+    {
+      "archive": "pg_jsonschema-0.3.4-postgresql-15.19-windows-x86_64.tar.gz",
+      "original_sha256": "62dae5e947a6343089aeed2802e1b6c940d330ea45f8c40c021bd67fa6a42eb9",
+      "patched_sha256": "e2a53d39a9e3126adfb1133c7bba1b32ae366062ab2d292c64e0af33ce9d4f40",
+      "proof": "support/evidence/metadata-repack-2026-10-22/proofs/pg_jsonschema-0.3.4-postgresql-15.19-windows-x86_64.tar.gz.proof.json",
+      "verification_record": "support/verification/pg_jsonschema-0.3.4-postgresql-15.19-windows-x86_64-current-metadata-repack-20261022.json"
+    },
+    {
+      "archive": "pg_jsonschema-0.3.4-postgresql-16.15-windows-x86_64.tar.gz",
+      "original_sha256": "e13e5f559bde001fb5944e600bb52c5bc605653913b5e05fb139a36e462add78",
+      "patched_sha256": "83805942674b287a26f86c34a29ae7812193731cc561c0b0a4a39c846dcfc451",
+      "proof": "support/evidence/metadata-repack-2026-10-22/proofs/pg_jsonschema-0.3.4-postgresql-16.15-windows-x86_64.tar.gz.proof.json",
+      "verification_record": "support/verification/pg_jsonschema-0.3.4-postgresql-16.15-windows-x86_64-current-metadata-repack-20261022.json"
+    },
+    {
+      "archive": "pg_jsonschema-0.3.4-postgresql-17.11-windows-x86_64.tar.gz",
+      "original_sha256": "f26513c0de972ec19caceddc700f6f9f1efce990dceb78c971acff03caf86bf5",
+      "patched_sha256": "a9abfa21f73065093378feb358fefdc0e8280518897427652c53e225530d2544",
+      "proof": "support/evidence/metadata-repack-2026-10-22/proofs/pg_jsonschema-0.3.4-postgresql-17.11-windows-x86_64.tar.gz.proof.json",
+      "verification_record": "support/verification/pg_jsonschema-0.3.4-postgresql-17.11-windows-x86_64-current-metadata-repack-20261022.json"
+    },
+    {
+      "archive": "pg_jsonschema-0.3.4-postgresql-18.6-windows-x86_64.tar.gz",
+      "original_sha256": "b7645a648faa861314a29df7774015f364ca8f111865b5c00fc2885392a0e63a",
+      "patched_sha256": "1c3db4c4fed50287f14a62ff86ff0260d4fb71df14e3a09a1e95a57e1a5d607a",
+      "proof": "support/evidence/metadata-repack-2026-10-22/proofs/pg_jsonschema-0.3.4-postgresql-18.6-windows-x86_64.tar.gz.proof.json",
+      "verification_record": "support/verification/pg_jsonschema-0.3.4-postgresql-18.6-windows-x86_64-current-metadata-repack-20261022.json"
+    },
+    {
+      "archive": "pgvector-0.8.7-postgresql-15.19-linux-arm64.tar.gz",
+      "original_sha256": "21a6a577bfd4a1d0aaf44fd9fcf40c722b1a19b15c3b08e07f7d871710b43a91",
+      "patched_sha256": "5c4028fc489c6c8908764b70897e9009986b8399ca1fb62ab87dc7a94cb2a2a4",
+      "proof": "support/evidence/metadata-repack-2026-10-22/proofs/pgvector-0.8.7-postgresql-15.19-linux-arm64.tar.gz.proof.json",
+      "verification_record": "support/verification/pgvector-0.8.7-postgresql-15.19-linux-arm64-current-metadata-repack-20261022.json"
+    },
+    {
+      "archive": "pgvector-0.8.7-postgresql-16.15-linux-arm64.tar.gz",
+      "original_sha256": "6a60003c7542185eaf27b060f143e598f3a4f5e4c97e4565a80e739b234cac93",
+      "patched_sha256": "11c0f228d5b2f195ee3e65a5b0f650c393443a7893d35c0ca937ab098d9a087a",
+      "proof": "support/evidence/metadata-repack-2026-10-22/proofs/pgvector-0.8.7-postgresql-16.15-linux-arm64.tar.gz.proof.json",
+      "verification_record": "support/verification/pgvector-0.8.7-postgresql-16.15-linux-arm64-current-metadata-repack-20261022.json"
+    },
+    {
+      "archive": "pgvector-0.8.7-postgresql-17.11-linux-arm64.tar.gz",
+      "original_sha256": "aa73c1a27cbdc0bc33329eda0c4eae8a768b087f9ed98962c799de04531cebc5",
+      "patched_sha256": "179d22636d70c813dfe1b1bb2f93f1b8018d23671f8430bc27c106d1fc6c42b5",
+      "proof": "support/evidence/metadata-repack-2026-10-22/proofs/pgvector-0.8.7-postgresql-17.11-linux-arm64.tar.gz.proof.json",
+      "verification_record": "support/verification/pgvector-0.8.7-postgresql-17.11-linux-arm64-current-metadata-repack-20261022.json"
+    },
+    {
+      "archive": "pgvector-0.8.7-postgresql-18.6-linux-arm64.tar.gz",
+      "original_sha256": "e12b0689ea82b8259f9732f3dbbef72f96eebdf370bd3fa3b5b854c34649a423",
+      "patched_sha256": "b43670f55d9c029a39f94b47a7eab3a404904d3f45ad794e2eb73f22d6c12195",
+      "proof": "support/evidence/metadata-repack-2026-10-22/proofs/pgvector-0.8.7-postgresql-18.6-linux-arm64.tar.gz.proof.json",
+      "verification_record": "support/verification/pgvector-0.8.7-postgresql-18.6-linux-arm64-current-metadata-repack-20261022.json"
+    },
+    {
+      "archive": "pgvector-0.8.7-postgresql-15.19-linux-x86_64.tar.gz",
+      "original_sha256": "39fd1fe400407abdf548949deef832e676852970303ce0d8ad7ac4c89397c14c",
+      "patched_sha256": "758d621f728d05f6ef1fe642737426242f0595495740b92995a2a7afe1c6a180",
+      "proof": "support/evidence/metadata-repack-2026-10-22/proofs/pgvector-0.8.7-postgresql-15.19-linux-x86_64.tar.gz.proof.json",
+      "verification_record": "support/verification/pgvector-0.8.7-postgresql-15.19-linux-x86_64-current-metadata-repack-20261022.json"
+    },
+    {
+      "archive": "pgvector-0.8.7-postgresql-16.15-linux-x86_64.tar.gz",
+      "original_sha256": "0aa37a4533da64a569d735cc4081364debcfe9f57add8be98a6cd6184e1a5b49",
+      "patched_sha256": "446978d3bb9f34d7c61b598899eccbd370efee2162710517538948e5848db738",
+      "proof": "support/evidence/metadata-repack-2026-10-22/proofs/pgvector-0.8.7-postgresql-16.15-linux-x86_64.tar.gz.proof.json",
+      "verification_record": "support/verification/pgvector-0.8.7-postgresql-16.15-linux-x86_64-current-metadata-repack-20261022.json"
+    },
+    {
+      "archive": "pgvector-0.8.7-postgresql-17.11-linux-x86_64.tar.gz",
+      "original_sha256": "7a5ec8fa42524c59fbd2f3f72931cd3a4ee936c69d665ace9f664078c316cdaa",
+      "patched_sha256": "4f954af3efa17e5b0c117ba4e53d1de28dee6851cd2b356465ca2b2fc23ca3bc",
+      "proof": "support/evidence/metadata-repack-2026-10-22/proofs/pgvector-0.8.7-postgresql-17.11-linux-x86_64.tar.gz.proof.json",
+      "verification_record": "support/verification/pgvector-0.8.7-postgresql-17.11-linux-x86_64-current-metadata-repack-20261022.json"
+    },
+    {
+      "archive": "pgvector-0.8.7-postgresql-18.6-linux-x86_64.tar.gz",
+      "original_sha256": "3c8e39789545a93d870f0c5f49d9b0b0f705f5481209a6fc330a66d5ba2819f5",
+      "patched_sha256": "9b75ea47dc776a132420ed5c6c8a0adb4f216f47272deb76d636bdd25ecf8d1e",
+      "proof": "support/evidence/metadata-repack-2026-10-22/proofs/pgvector-0.8.7-postgresql-18.6-linux-x86_64.tar.gz.proof.json",
+      "verification_record": "support/verification/pgvector-0.8.7-postgresql-18.6-linux-x86_64-current-metadata-repack-20261022.json"
+    },
+    {
+      "archive": "pgvector-0.8.7-postgresql-18.6-macos-arm64.tar.gz",
+      "original_sha256": "643fda25201a723dba656422f2bfaff7f80219e8e4eff09f79461278622fc47b",
+      "patched_sha256": "5b6ba797c4ca1ebe75256eab875bb55be01f659f9e2ce06b618730921b711e67",
+      "proof": "support/evidence/metadata-repack-2026-10-22/proofs/pgvector-0.8.7-postgresql-18.6-macos-arm64.tar.gz.proof.json",
+      "verification_record": "support/verification/pgvector-0.8.7-postgresql-18.6-macos-arm64-current-metadata-repack-20261022.json"
+    },
+    {
+      "archive": "pgvector-0.8.7-postgresql-15.19-windows-x86_64.tar.gz",
+      "original_sha256": "af69f1bb8d016fbf261ff69904decda73d76038cbc14a142487f70d2be1e9d88",
+      "patched_sha256": "84b0d0008d3d2900ff7b4a008a91cbaba9ac4515a61d75f774e9623ad28a3917",
+      "proof": "support/evidence/metadata-repack-2026-10-22/proofs/pgvector-0.8.7-postgresql-15.19-windows-x86_64.tar.gz.proof.json",
+      "verification_record": "support/verification/pgvector-0.8.7-postgresql-15.19-windows-x86_64-current-metadata-repack-20261022.json"
+    },
+    {
+      "archive": "pgvector-0.8.7-postgresql-16.15-windows-x86_64.tar.gz",
+      "original_sha256": "6fa1857216cb83f9ddffb7894ebaf0fd3ec5562beec42c726277294bcccb7f9b",
+      "patched_sha256": "2275e48a87dfe943aa8c84e7ddcfe2322e47c27b75acc32b98d739ecc36b4ee5",
+      "proof": "support/evidence/metadata-repack-2026-10-22/proofs/pgvector-0.8.7-postgresql-16.15-windows-x86_64.tar.gz.proof.json",
+      "verification_record": "support/verification/pgvector-0.8.7-postgresql-16.15-windows-x86_64-current-metadata-repack-20261022.json"
+    },
+    {
+      "archive": "pgvector-0.8.7-postgresql-17.11-windows-x86_64.tar.gz",
+      "original_sha256": "6fbeb14c299a63a561dc0dec5e7b67e8cfbfa560421b12c26cb3ce9c015fd7ef",
+      "patched_sha256": "68d35e0bb2f9f8d2916b471018fcb7141254ae07c97853b6d156815d2279dcc5",
+      "proof": "support/evidence/metadata-repack-2026-10-22/proofs/pgvector-0.8.7-postgresql-17.11-windows-x86_64.tar.gz.proof.json",
+      "verification_record": "support/verification/pgvector-0.8.7-postgresql-17.11-windows-x86_64-current-metadata-repack-20261022.json"
+    },
+    {
+      "archive": "pgvector-0.8.7-postgresql-18.6-windows-x86_64.tar.gz",
+      "original_sha256": "fcfad76f304dd68598f1af7c732b988823b76cd547ae6e4d29b2ce3c30b3b791",
+      "patched_sha256": "095a557c0de50eda85b74f61baa333608875be364477cdee618d4205f1816b60",
+      "proof": "support/evidence/metadata-repack-2026-10-22/proofs/pgvector-0.8.7-postgresql-18.6-windows-x86_64.tar.gz.proof.json",
+      "verification_record": "support/verification/pgvector-0.8.7-postgresql-18.6-windows-x86_64-current-metadata-repack-20261022.json"
+    }
+  ]
+}

@@ -1,0 +1,59 @@
+{
+  "assembled_core": {
+    "archive": "postgresql-18.6-windows-x86_64.tar.gz",
+    "sha256": "b888406d1f2757b7679a2a1a4f1839a9716543ecff0d477237be12c462130709",
+    "version": "18.6"
+  },
+  "case_results": {
+    "archive-suite": "passed",
+    "static-analysis": "passed"
+  },
+  "ci": {
+    "build_revision": "2f51d1d5fe03ab4c5b0fa3fb2bb0bc28828bd7b1",
+    "provider": "github-actions",
+    "run_id": "39694014237",
+    "run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/39694014237",
+    "source_revision": "2f51d1d5fe03ab4c5b0fa3fb2bb0bc28828bd7b1",
+    "test_revision": "2f51d1d5fe03ab4c5b0fa3fb2bb0bc28828bd7b1"
+  },
+  "component": "hypopg",
+  "core_status": "current-profile-core-redistribution-pending",
+  "environment": {
+    "architecture": "x86_64",
+    "clean_system": true,
+    "dependency_check_profile": "windows-pe-archive-relocation-v1",
+    "dependency_checks_passed": true,
+    "endpoint": "current",
+    "image_id": "win22/20261012.333.1",
+    "os": "windows",
+    "os_version": "10.0.20348"
+  },
+  "noncode_patch": {
+    "kind": "metadata-only",
+    "metadata_delta": {
+      "configuration_prerequisites": [],
+      "runtime_prerequisites": []
+    },
+    "original_record_sha256": "90edd584cb84c824f08ff67527522ba46500a82509037363ed8817eef958b8c4",
+    "original_sha256": "ad45af5b15f3a91e1daaff1c23a0f1858329cf9fadc27027dcd7d67894728f18",
+    "patched_sha256": "888048231844c7953363e943fb3b95f363c886bd81f067288d603f25567be255",
+    "proof": "support/evidence/metadata-repack-2026-10-22/proofs/hypopg-1.4.3-postgresql-18.6-windows-x86_64.tar.gz.proof.json"
+  },
+  "outcome": "passed",
+  "platform": "windows-x86_64",
+  "postgresql_version": "18.6",
+  "prerequisite_archives": [],
+  "profile_id": "hypopg-publication-windows-x86_64-18.6",
+  "profile_revision": "859a09d3f8b64c2fb283ccb63bbdb538919232d89f40033deffc0158f8470810",
+  "project": "HypoPG",
+  "release_eligible": false,
+  "schema_version": 2,
+  "scope": "publication",
+  "sha256": "888048231844c7953363e943fb3b95f363c886bd81f067288d603f25567be255",
+  "test_cases": [
+    "archive-suite",
+    "static-analysis"
+  ],
+  "test_revision": "2f51d1d5fe03ab4c5b0fa3fb2bb0bc28828bd7b1",
+  "version": "1.4.3"
+}
