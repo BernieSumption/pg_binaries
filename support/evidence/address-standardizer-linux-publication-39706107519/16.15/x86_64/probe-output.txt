@@ -1,0 +1,236 @@
+#0 building with "default" instance using docker driver
+
+#1 [internal] load build definition from linux-verify.Dockerfile
+#1 transferring dockerfile: 572B done
+#1 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/alpine:3.22
+#2 ...
+
+#3 [auth] library/alpine:pull token for registry-1.docker.io
+#3 DONE 0.0s
+
+#2 [internal] load metadata for docker.io/library/alpine:3.22
+#2 DONE 0.8s
+
+#4 [internal] load .dockerignore
+#4 transferring context: 2B done
+#4 DONE 0.0s
+
+#5 [internal] load build context
+#5 transferring context: 19.38kB done
+#5 DONE 0.0s
+
+#6 [1/7] FROM docker.io/library/alpine:3.22@sha256:822614ea121e1d40a33655081af10ef85f0aa2ab9e61f649ceaf0c651822433c
+#6 resolve docker.io/library/alpine:3.22@sha256:822614ea121e1d40a33655081af10ef85f0aa2ab9e61f649ceaf0c651822433c done
+#6 extracting sha256:63e7e49699e8f5b93162e14c630db8294f87799bfec4376677160876bd6840dc
+#6 sha256:822614ea121e1d40a33655081af10ef85f0aa2ab9e61f649ceaf0c651822433c 9.22kB / 9.22kB done
+#6 sha256:dc92f017beea8e7f43263073d717f7bc011228c95d5312e440deb4d035bb4eec 1.02kB / 1.02kB done
+#6 sha256:24ab38714e948bd49d24d566e97c1c104b63f85c2e642685e72393b37cfb9862 611B / 611B done
+#6 sha256:63e7e49699e8f5b93162e14c630db8294f87799bfec4376677160876bd6840dc 3.79MB / 3.79MB 0.1s done
+#6 extracting sha256:63e7e49699e8f5b93162e14c630db8294f87799bfec4376677160876bd6840dc 0.1s done
+#6 DONE 0.2s
+
+#7 [2/7] RUN apk add --no-cache bash binutils coreutils grep python3 shadow util-linux
+#7 0.098 fetch https://dl-cdn.alpinelinux.org/alpine/v3.22/main/x86_64/APKINDEX.tar.gz
+#7 0.196 fetch https://dl-cdn.alpinelinux.org/alpine/v3.22/community/x86_64/APKINDEX.tar.gz
+#7 0.564 (1/66) Installing ncurses-terminfo-base (6.5_p20250503-r0)
+#7 0.577 (2/66) Installing libncursesw (6.5_p20250503-r0)
+#7 0.588 (3/66) Installing readline (8.2.13-r1)
+#7 0.598 (4/66) Installing bash (5.2.37-r0)
+#7 0.615 Executing bash-5.2.37-r0.post-install
+#7 0.619 (5/66) Installing libgcc (14.2.0-r6)
+#7 0.629 (6/66) Installing jansson (2.14.1-r0)
+#7 0.638 (7/66) Installing libstdc++ (14.2.0-r6)
+#7 0.658 (8/66) Installing zstd-libs (1.5.7-r0)
+#7 0.672 (9/66) Installing binutils (2.44-r3)
+#7 0.730 (10/66) Installing coreutils-env (9.7-r1)
+#7 0.740 (11/66) Installing coreutils-fmt (9.7-r1)
+#7 0.750 (12/66) Installing coreutils-sha512sum (9.7-r1)
+#7 0.760 (13/66) Installing acl-libs (2.3.2-r1)
+#7 0.770 (14/66) Installing libattr (2.5.2-r2)
+#7 0.780 (15/66) Installing skalibs-libs (2.14.4.0-r0)
+#7 0.792 (16/66) Installing utmps-libs (0.1.3.1-r0)
+#7 0.801 (17/66) Installing coreutils (9.7-r1)
+#7 0.825 (18/66) Installing pcre2 (10.46-r1)
+#7 0.838 (19/66) Installing grep (3.12-r0)
+#7 0.848 (20/66) Installing libexpat (2.9.0-r0)
+#7 0.858 (21/66) Installing libbz2 (1.0.8-r6)
+#7 0.867 (22/66) Installing libffi (3.4.8-r0)
+#7 0.876 (23/66) Installing gdbm (1.24-r0)
+#7 0.886 (24/66) Installing xz-libs (5.8.4-r0)
+#7 0.896 (25/66) Installing mpdecimal (4.0.1-r0)
+#7 0.906 (26/66) Installing libpanelw (6.5_p20250503-r0)
+#7 0.916 (27/66) Installing sqlite-libs (3.49.2-r1)
+#7 0.934 (28/66) Installing python3 (3.12.15-r0)
+#7 1.073 (29/66) Installing python3-pycache-pyc0 (3.12.15-r0)
+#7 1.164 (30/66) Installing pyc (3.12.15-r0)
+#7 1.164 (31/66) Installing python3-pyc (3.12.15-r0)
+#7 1.164 (32/66) Installing libmd (1.1.0-r0)
+#7 1.174 (33/66) Installing libbsd (0.12.2-r0)
+#7 1.184 (34/66) Installing linux-pam (1.7.0-r4)
+#7 1.201 (35/66) Installing shadow (4.17.3-r0)
+#7 1.219 (36/66) Installing util-linux (2.41.6-r1)
+#7 1.230 (37/66) Installing dmesg (2.41.6-r1)
+#7 1.240 (38/66) Installing setarch (2.41.6-r1)
+#7 1.249 (39/66) Installing libeconf (0.6.3-r0)
+#7 1.261 (40/66) Installing libblkid (2.41.6-r1)
+#7 1.271 (41/66) Installing libuuid (2.41.6-r1)
+#7 1.281 (42/66) Installing libfdisk (2.41.6-r1)
+#7 1.292 (43/66) Installing libmount (2.41.6-r1)
+#7 1.303 (44/66) Installing libsmartcols (2.41.6-r1)
+#7 1.314 (45/66) Installing util-linux-misc (2.41.6-r1)
+#7 1.339 (46/66) Installing runuser (2.41.6-r1)
+#7 1.349 (47/66) Installing mount (2.41.6-r1)
+#7 1.360 (48/66) Installing losetup (2.41.6-r1)
+#7 1.370 (49/66) Installing hexdump (2.41.6-r1)
+#7 1.380 (50/66) Installing uuidgen (2.41.6-r1)
+#7 1.389 (51/66) Installing blkid (2.41.6-r1)
+#7 1.399 (52/66) Installing sfdisk (2.41.6-r1)
+#7 1.409 (53/66) Installing mcookie (2.41.6-r1)
+#7 1.428 (54/66) Installing agetty (2.41.6-r1)
+#7 1.438 (55/66) Installing wipefs (2.41.6-r1)
+#7 1.448 (56/66) Installing cfdisk (2.41.6-r1)
+#7 1.458 (57/66) Installing umount (2.41.6-r1)
+#7 1.468 (58/66) Installing flock (2.41.6-r1)
+#7 1.478 (59/66) Installing lsblk (2.41.6-r1)
+#7 1.489 (60/66) Installing libcap-ng (0.8.5-r0)
+#7 1.500 (61/66) Installing setpriv (2.41.6-r1)
+#7 1.510 (62/66) Installing lscpu (2.41.6-r1)
+#7 1.520 (63/66) Installing logger (2.41.6-r1)
+#7 1.530 (64/66) Installing partx (2.41.6-r1)
+#7 1.540 (65/66) Installing fstrim (2.41.6-r1)
+#7 1.550 (66/66) Installing findmnt (2.41.6-r1)
+#7 1.561 Executing busybox-1.37.0-r20.trigger
+#7 1.567 OK: 67 MiB in 82 packages
+#7 DONE 2.0s
+
+#8 [3/7] COPY scripts/address_standardizer/linux-verify-in-container.sh /usr/local/bin/verify-address-standardizer
+#8 DONE 0.0s
+
+#9 [4/7] COPY scripts/address_standardizer/linux-probe.sql /work/probe.sql
+#9 DONE 0.0s
+
+#10 [5/7] COPY tools/check_elf_dependencies.py /usr/local/bin/check-elf-dependencies
+#10 DONE 0.0s
+
+#11 [6/7] COPY tools/license_pointer.py /usr/local/bin/license_pointer.py
+#11 DONE 0.0s
+
+#12 [7/7] RUN chmod +x /usr/local/bin/verify-address-standardizer
+#12 DONE 0.1s
+
+#13 exporting to image
+#13 exporting layers
+#13 exporting layers 0.9s done
+#13 writing image sha256:29727a8ad18bcb38051b10d3f2379c4e9a5a16ce472ffbb6c33e2222dc65f760 done
+#13 naming to docker.io/library/pg-binaries-address-standardizer-alpine-probe done
+#13 DONE 0.9s
+postgresql-16.15-linux-x86_64.tar.gz: OK
+address-standardizer-3.7.0-postgresql-16.15-linux-x86_64.tar.gz: OK
+Checked architecture and dependencies of 180 ELF files
+The files belonging to this database system will be owned by user "postgres".
+This user must also own the server process.
+
+The database cluster will be initialized with locale "C".
+The default text search configuration will be set to "english".
+
+Data page checksums are disabled.
+
+fixing permissions on existing directory /tmp/data ... ok
+creating subdirectories ... ok
+selecting dynamic shared memory implementation ... posix
+selecting default max_connections ... 100
+selecting default shared_buffers ... 128MB
+selecting default time zone ... UTC
+creating configuration files ... ok
+running bootstrap script ... ok
+performing post-bootstrap initialization ... sh: locale: not found
+2026-10-22 01:32:13.125 UTC [900] WARNING:  no usable system locales were found
+ok
+syncing data to disk ... ok
+
+initdb: warning: enabling "trust" authentication for local connections
+initdb: hint: You can change this by editing pg_hba.conf or using the option -A, or --auth-local and --auth-host, the next time you run initdb.
+waiting for server to start....2026-10-22 01:32:13.550 UTC [905] LOG:  starting PostgreSQL 16.15 on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 11.4.0-1ubuntu1~22.04.3) 11.4.0, 64-bit
+2026-10-22 01:32:13.550 UTC [905] LOG:  listening on Unix socket "/tmp/socket/.s.PGSQL.55432"
+2026-10-22 01:32:13.552 UTC [908] LOG:  database system was shut down at 2026-10-22 01:32:13 UTC
+2026-10-22 01:32:13.556 UTC [905] LOG:  database system is ready to accept connections
+ done
+server started
+ postgres_version 
+------------------
+ 16.15
+(1 row)
+
+CREATE EXTENSION
+CREATE EXTENSION
+DO
+           extname            | extversion 
+------------------------------+------------
+ address_standardizer         | 3.7
+ address_standardizer_data_us | 3.7
+(2 rows)
+
+waiting for server to shut down....2026-10-22 01:32:13.714 UTC [905] LOG:  received fast shutdown request
+2026-10-22 01:32:13.714 UTC [905] LOG:  aborting any active transactions
+2026-10-22 01:32:13.716 UTC [905] LOG:  background worker "logical replication launcher" (PID 911) exited with exit code 1
+2026-10-22 01:32:13.716 UTC [906] LOG:  shutting down
+2026-10-22 01:32:13.717 UTC [906] LOG:  checkpoint starting: shutdown immediate
+2026-10-22 01:32:13.728 UTC [906] LOG:  checkpoint complete: wrote 184 buffers (1.1%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.002 s, sync=0.009 s, total=0.012 s; sync files=68, longest=0.001 s, average=0.001 s; distance=1630 kB, estimate=1630 kB; lsn=0/167E610, redo lsn=0/167E610
+2026-10-22 01:32:13.733 UTC [905] LOG:  database system is shut down
+ done
+server stopped
+The files belonging to this database system will be owned by user "postgres".
+This user must also own the server process.
+
+The database cluster will be initialized with locale "C".
+The default text search configuration will be set to "english".
+
+Data page checksums are disabled.
+
+fixing permissions on existing directory /tmp/moved-data ... ok
+creating subdirectories ... ok
+selecting dynamic shared memory implementation ... posix
+selecting default max_connections ... 100
+selecting default shared_buffers ... 128MB
+selecting default time zone ... UTC
+creating configuration files ... ok
+running bootstrap script ... ok
+performing post-bootstrap initialization ... sh: locale: not found
+2026-10-22 01:32:14.077 UTC [925] WARNING:  no usable system locales were found
+ok
+syncing data to disk ... ok
+
+initdb: warning: enabling "trust" authentication for local connections
+initdb: hint: You can change this by editing pg_hba.conf or using the option -A, or --auth-local and --auth-host, the next time you run initdb.
+waiting for server to start....2026-10-22 01:32:14.500 UTC [930] LOG:  starting PostgreSQL 16.15 on x86_64-pc-linux-gnu, compiled by gcc (Ubuntu 11.4.0-1ubuntu1~22.04.3) 11.4.0, 64-bit
+2026-10-22 01:32:14.500 UTC [930] LOG:  listening on Unix socket "/tmp/moved-socket/.s.PGSQL.55433"
+2026-10-22 01:32:14.503 UTC [933] LOG:  database system was shut down at 2026-10-22 01:32:14 UTC
+2026-10-22 01:32:14.506 UTC [930] LOG:  database system is ready to accept connections
+ done
+server started
+ postgres_version 
+------------------
+ 16.15
+(1 row)
+
+CREATE EXTENSION
+CREATE EXTENSION
+DO
+           extname            | extversion 
+------------------------------+------------
+ address_standardizer         | 3.7
+ address_standardizer_data_us | 3.7
+(2 rows)
+
+waiting for server to shut down....2026-10-22 01:32:14.664 UTC [930] LOG:  received fast shutdown request
+2026-10-22 01:32:14.665 UTC [930] LOG:  aborting any active transactions
+2026-10-22 01:32:14.666 UTC [930] LOG:  background worker "logical replication launcher" (PID 936) exited with exit code 1
+2026-10-22 01:32:14.667 UTC [931] LOG:  shutting down
+2026-10-22 01:32:14.668 UTC [931] LOG:  checkpoint starting: shutdown immediate
+2026-10-22 01:32:14.679 UTC [931] LOG:  checkpoint complete: wrote 184 buffers (1.1%); 0 WAL file(s) added, 0 removed, 0 recycled; write=0.002 s, sync=0.009 s, total=0.012 s; sync files=68, longest=0.001 s, average=0.001 s; distance=1630 kB, estimate=1630 kB; lsn=0/167E610, redo lsn=0/167E610
+2026-10-22 01:32:14.684 UTC [930] LOG:  database system is shut down
+ done
+server stopped
+PASS: Address Standardizer 3.7.0 with PostgreSQL 16.15 on relocated Alpine 3.22
