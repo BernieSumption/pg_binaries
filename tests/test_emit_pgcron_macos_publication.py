@@ -43,6 +43,7 @@ class PgCronMacOSFixture:
             destination.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(source, destination)
         shutil.copyfile("support.json", self.root / "support.json")
+        (self.root / "support").mkdir(exist_ok=True)
         shutil.copyfile("support/postgresql-releases.json",
                         self.root / "support/postgresql-releases.json")
         shutil.copyfile(registry_path, self.root / "support/verification-profiles.json")
