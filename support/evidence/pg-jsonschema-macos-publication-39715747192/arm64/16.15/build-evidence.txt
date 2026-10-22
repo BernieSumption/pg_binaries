@@ -1,0 +1,18 @@
+pg_jsonschema_source_url=https://github.com/supabase/pg_jsonschema.git
+pg_jsonschema_source_commit=cbe74b570d38aa0c4d42914e7a118bcb3adaee7a
+profile_id=pg-jsonschema-publication-macos-arm64-16.15
+cargo_lock_sha256=ab865dc25d9eea4bf7dbfaf8fae13283e5c0bce4bca460fe10464c6716e67028
+core_run_id=39693138339
+core_build_id=github-39693138339-1
+core_source_revision=114513d5f99d1eea81fc2373afb78845d171c039
+core_sha256=ea54d3c9b2a437cd4c6edaad59c1f28ebf5cf36645ee8edc0c2d134d7e906119
+deployment_target=11.0
+macos_version=15.7.9
+architecture=arm64
+core_archive=postgresql-16.15-macos-arm64.tar.gz
+rustc 1.90.0 (1159e78c4 2025-09-14)
+cargo 1.90.0 (840b83a10 2025-07-30)
+PostgreSQL 16.15
+verification_macos_version=15.7.9
+verification_architecture=arm64
+PostgreSQL 16.15

@@ -748,6 +748,17 @@ class CoverageTests(unittest.TestCase):
             with self.assertRaisesRegex(coverage.CoverageError, "invalid reviewed equivalence"):
                 coverage.verification_profile(root, "fixture-linux")
 
+    def test_legacy_macos_analyzer_equivalence_keeps_passing_record_current(self):
+        root = Path(__file__).resolve().parents[1]
+        record_path = (root / "support" / "verification" /
+                       "pg_jsonschema-0.3.4-postgresql-16.15-macos-arm64-current-39715747192.json")
+        record = coverage.load_json(record_path)
+        support = coverage.load_json(root / "support.json")
+
+        self.assertEqual(record["outcome"], "passed")
+        self.assertTrue(record["platform"].startswith("macos-"))
+        self.assertTrue(coverage.validate_verification_record(record, support, root))
+
     @staticmethod
     def add_workflow_source_profile(root, source=".github/workflows/linux-publication.yml"):
         root = Path(root)

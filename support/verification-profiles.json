@@ -983,11 +983,820 @@
     "postgis-publication-macos-x86_64-18.6": {"scope": "publication", "platforms": ["macos-x86_64"], "case_ids": ["archive-suite", "static-analysis"], "sources": [".github/workflows/postgis-macos-selected-publication.yml","scripts/macos/core-prefix.sh","scripts/macos/static_analysis.py","scripts/postgis/macos-verify-publication.sh","scripts/postgis/probe.sql","tools/create_macos_symbols.py","tools/discover_builtins.py","tools/license_pointer.py","tools/source_archive.py"]}
   },
   "reviewed_equivalences": {
-    "postgis-publication-windows-x86_64-15.19": [
+    "address-standardizer-publication-macos-arm64-15.19": [
       {
-        "current": "e76c2918ca38fa5d5788d23d6a4696cf48bab3dc9ce142c1570bcb10987c0c14",
-        "previous": "f6c007ce19ebb1050642ea9136e51dc422f83e603cc551145a00a6e9b99cfe81",
-        "reason": "2026-10-22: the Windows PostGIS verifier and emitter now require two empty prerequisite arrays. Passing run 39708831668 tested the source archive; the retained metadata-only proof binds the staged archive SHA and confirms those arrays are the only change."
+        "current": "a4f0401b51ed7dc7353a5fa1b95ce78b8653284d2055310009e95ec5cc6facd1",
+        "previous": "82f43c56867cf284c32b89741eeb3de4f62b6509ab593cd03f38aed1502c7a10",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "a4f0401b51ed7dc7353a5fa1b95ce78b8653284d2055310009e95ec5cc6facd1",
+        "previous": "b657803033f181875d708e385ac673003a192e44954794ba56ffb07141631957",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      }
+    ],
+    "address-standardizer-publication-macos-arm64-16.15": [
+      {
+        "current": "ec7a9dbfa6c8da30414909fb9c2b79c2866cda9d497e246de133199abdc6f660",
+        "previous": "3be4beb15db50f3c1fc8c74f2a8c9413fb514f67ec031d97a52db627e264ea4d",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "ec7a9dbfa6c8da30414909fb9c2b79c2866cda9d497e246de133199abdc6f660",
+        "previous": "c38ead68f9b9f6f420ae63cd1726c52db5712ec09643916c54d2d97576bf3b9e",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      }
+    ],
+    "address-standardizer-publication-macos-arm64-17.11": [
+      {
+        "current": "5341c28f417e2f553798412d89a52e723deb64fbb77886d29bf78a7388bf4b47",
+        "previous": "bc584ce0e586b3e24e94c5bed102a75cf9aae6aa08c0f3dad4e9cac9aeb85a58",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "5341c28f417e2f553798412d89a52e723deb64fbb77886d29bf78a7388bf4b47",
+        "previous": "edbd8f9436d3973072396513a26bc44a50c6612dc37d9ffa7c4c55671e00b8fa",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      }
+    ],
+    "address-standardizer-publication-macos-arm64-18.6": [
+      {
+        "current": "e94d50cc3ddf103dd3fddefef22a937570b1d43b2f4ac85478ad8f4ea4e3bd4b",
+        "previous": "a02708b5486a64b5942b0b26943f4516aca95632763b96a8d78e6e5d74dcc79e",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "e94d50cc3ddf103dd3fddefef22a937570b1d43b2f4ac85478ad8f4ea4e3bd4b",
+        "previous": "be8d09f0315bd5dd0283f4ad43684f68afe935a8e50205a471260443797a1ca2",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      }
+    ],
+    "address-standardizer-publication-macos-x86_64-15.19": [
+      {
+        "current": "5974edaaaa67f67d93d34bd3f065e988ed2ef10ea13156e166498090d883540e",
+        "previous": "52780b28e24ecf40bb3a0be5646490eaa21bbbf3c5a389a16896b3725f53c091",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "5974edaaaa67f67d93d34bd3f065e988ed2ef10ea13156e166498090d883540e",
+        "previous": "85fea268e2301d6b202f2a9b4e5725345d32cbc47dad41c4bc4779bdf7ae2e8a",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      }
+    ],
+    "address-standardizer-publication-macos-x86_64-16.15": [
+      {
+        "current": "3bfcb6707d2d8bf75da4eda339c8764a016f3e13abfbc627378bb6d99c6adc15",
+        "previous": "b1af1a7085f084d295eeae24c7fa6f8c569b3f93e93c03b47a6c07817bbce897",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "3bfcb6707d2d8bf75da4eda339c8764a016f3e13abfbc627378bb6d99c6adc15",
+        "previous": "e90e7559b0b37078d246f0bcb977c15db9cb72e10c4181db505675b666f606b5",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      }
+    ],
+    "address-standardizer-publication-macos-x86_64-17.11": [
+      {
+        "current": "932aa1efa0904b9e40e15dfe27a8f29d28c3aecc87324d59f7ec3aab063c5ca2",
+        "previous": "3811d12b53b3d83390f6ae00d9701c1bcee63e7448bdb6ffa9a5df6b9b574ff5",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "932aa1efa0904b9e40e15dfe27a8f29d28c3aecc87324d59f7ec3aab063c5ca2",
+        "previous": "f1a23bc511cc5ec133837f6909bf1c4a23fd052f139698a4ae025776f5deed17",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      }
+    ],
+    "address-standardizer-publication-macos-x86_64-18.6": [
+      {
+        "current": "78ed5aef546191b3cf98cc36dc4cf490abcf7e413cb5c1d6d5c229d9dc8679e8",
+        "previous": "e269746fc8c61540c226091ada6ffedcdc23d8c320d2d2959e634628065e91ac",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "78ed5aef546191b3cf98cc36dc4cf490abcf7e413cb5c1d6d5c229d9dc8679e8",
+        "previous": "e3ba0fa317a154111126b0b499d1fcef7b1502d31b122fce42767535779def16",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      }
+    ],
+    "collection-publication-macos-arm64-15.19": [
+      {
+        "current": "4405918273852d00ec4914ab92ca022e9b4574670b4e821fdf64bf7cef89628e",
+        "previous": "2eee88316a0c4b11764f454e8e13933991f4080f4aff5566e60535e4de5ccc90",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "4405918273852d00ec4914ab92ca022e9b4574670b4e821fdf64bf7cef89628e",
+        "previous": "f24f8f5b68aa9ad26e9162cbe46dcd5f4c58f0b7f135a5ceb84e096ebfb6f4dd",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      }
+    ],
+    "collection-publication-macos-arm64-16.15": [
+      {
+        "current": "188426af5575873e4f5ee6b50f3cdf3bac0cc6aad65b9edead13478d23737a2d",
+        "previous": "58e6e846190316273a7f03e25f1e131b8a12176d0a093144499458c84431c94b",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "188426af5575873e4f5ee6b50f3cdf3bac0cc6aad65b9edead13478d23737a2d",
+        "previous": "c63e8900280063c47c0a0b8d56488b572a4ac3c3c1f997d9ae6d31a6fed017a2",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      }
+    ],
+    "collection-publication-macos-arm64-17.11": [
+      {
+        "current": "fc4ba39141100af68bc00897c2d43335fa18aa5ae7ee5f6ce9415b9577d5eea5",
+        "previous": "4efe1dac6f0a4baf25e523100695b42d95a1e9eccc220572524ea960ceedbfaf",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "fc4ba39141100af68bc00897c2d43335fa18aa5ae7ee5f6ce9415b9577d5eea5",
+        "previous": "a4b7445172ed065eef73ac8b310b1d0f5c8ba658df740f7fbd43c04d8bf59661",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      }
+    ],
+    "collection-publication-macos-arm64-18.6": [
+      {
+        "current": "11cfe5547e0cb563b4cb0472b0bfa676ba90af25ab7c31afc6e52c18ae7e11f8",
+        "previous": "3d75170eba74e6069a52bf11b6971b9219c5fe9d0feafb21ac69158c7b021229",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "11cfe5547e0cb563b4cb0472b0bfa676ba90af25ab7c31afc6e52c18ae7e11f8",
+        "previous": "a7eeca55e3a53c70cf0aacb3dee521ff61468bce182f653f7ee0471113047d8d",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      }
+    ],
+    "collection-publication-macos-x86_64-15.19": [
+      {
+        "current": "837718f278be964ee268c8c4aa6d9aa279b89ea2b2b1a2a0f22f7ba9d72a2b9b",
+        "previous": "288079dbab23367ecdc7bc36b629327f77259300682670773fb9d038423d1875",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "837718f278be964ee268c8c4aa6d9aa279b89ea2b2b1a2a0f22f7ba9d72a2b9b",
+        "previous": "fbc1ec4b85ce04981c3b4fe5329e182309842f7ed349a0bfe8dc1e6cfe845b89",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      }
+    ],
+    "collection-publication-macos-x86_64-16.15": [
+      {
+        "current": "428c9b2e5936afdb6c73bdeab3587fdffa15d09a615f86d5697e5e5f5be5bda9",
+        "previous": "13bece7ae1e5df1de1be43e671dd18242a97a7c54660e88ca00aa08f22a22b95",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "428c9b2e5936afdb6c73bdeab3587fdffa15d09a615f86d5697e5e5f5be5bda9",
+        "previous": "a40f4dadf827e7b05d56928e773568902e237b23661200b639b177073539c0d4",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      }
+    ],
+    "collection-publication-macos-x86_64-17.11": [
+      {
+        "current": "b11b0cab00c084db32634440f681c39c6500dc08139d746526cde56efca7e3e9",
+        "previous": "49a1d5540c59604cfd145a77ba35b2ded3ece1e36a69b9d1c4cf3fc62628b91d",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "b11b0cab00c084db32634440f681c39c6500dc08139d746526cde56efca7e3e9",
+        "previous": "eb9ce876209457bb9f1b3b78ebd6723e7ca1dd5ba12babfca2351373c72e3cbf",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      }
+    ],
+    "collection-publication-macos-x86_64-18.6": [
+      {
+        "current": "09ffedf83053c77774b4121ae92a7f173731ef2a82772f174d737e6417ff8f6d",
+        "previous": "4d3522b9260ce1140bbd6088274253509e24c552a0f3bdcf1cc36f1175b9b3ff",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "09ffedf83053c77774b4121ae92a7f173731ef2a82772f174d737e6417ff8f6d",
+        "previous": "b3187203c3c3f0a6ae4e08288ef3fac0bd28a7ea000038eed5477e16ff5c0674",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      }
+    ],
+    "hypopg-publication-macos-arm64-15.19": [
+      {
+        "current": "1a7b9a2800227b2d40205f41c12f03ea57f0c71693e74e41d232b754a2c5bdac",
+        "previous": "4023061f81bfb65d8569e18dd65b1ae0806ee4a32bca6539f1a1115f8a7cbe89",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "1a7b9a2800227b2d40205f41c12f03ea57f0c71693e74e41d232b754a2c5bdac",
+        "previous": "d008ccbf63dde746bad6ac37bcfe531b4f2373c5a68d91d5052e65dd1ee95846",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      }
+    ],
+    "hypopg-publication-macos-arm64-16.15": [
+      {
+        "current": "efa7fd96e726a88202ddff406ab233292ce03ea4875af8ac6195bba7e39f6028",
+        "previous": "49fd2f643764c2bcc99cf246eb8d8d7ff34b42f3156b50e3ce88170b089b7113",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "efa7fd96e726a88202ddff406ab233292ce03ea4875af8ac6195bba7e39f6028",
+        "previous": "cabfc71af578926f5662e4ced65a024be47eeb14811eaeb87d9fa2795c9bc15e",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      }
+    ],
+    "hypopg-publication-macos-arm64-17.11": [
+      {
+        "current": "b863514d7ece23d15741d6b2c7122ccd5064e415f5916b7f7bed0d77dd888d41",
+        "previous": "6dd9976233d76697a1a8645f4fdd66f11cda04ad471329c1fcb0257842c6cb16",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "b863514d7ece23d15741d6b2c7122ccd5064e415f5916b7f7bed0d77dd888d41",
+        "previous": "a90a27ab989a0fa78b779f2ae1493a54d2073177e74a183d26a5dba66fcddcb0",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      }
+    ],
+    "hypopg-publication-macos-arm64-18.6": [
+      {
+        "current": "6c943b6098c03fd60c2d29914b7d8059353fde1b73afa1e5abe98b3af8477b73",
+        "previous": "560d7c59ce851d9ebcc476379268a3d609416c6e22595e218d5e70f7f8b38e3c",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "6c943b6098c03fd60c2d29914b7d8059353fde1b73afa1e5abe98b3af8477b73",
+        "previous": "c40c5eb333404ea2cef4ce38d3696f2d8ad12eb7c551ab7cdb9f1af2008169c9",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      }
+    ],
+    "hypopg-publication-macos-x86_64-15.19": [
+      {
+        "current": "5e9f935bea14b9cc954518a73c5df18feede624557b7b2da14efcf8297ffd23a",
+        "previous": "bbb39b74c8c1fa37e1516df42182443187df8fbb1e24164245244077c4746623",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "5e9f935bea14b9cc954518a73c5df18feede624557b7b2da14efcf8297ffd23a",
+        "previous": "d67a4eef6648c42fb39a821184221991a3518c924e2987df50b9249c7a350f65",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      }
+    ],
+    "hypopg-publication-macos-x86_64-16.15": [
+      {
+        "current": "a14c9192598cbcaeef8ab167c4463182776bbe2f9ac7aeb582c7d42bc5abdff8",
+        "previous": "8097106f64b41fe78282f4e17d9048091883e4df27511c8b927d3e7396b64902",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "a14c9192598cbcaeef8ab167c4463182776bbe2f9ac7aeb582c7d42bc5abdff8",
+        "previous": "ce9e49dbafdf78f0cd94b46414ba718f386ecfd7d6976e81c7126266a0ee443c",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      }
+    ],
+    "hypopg-publication-macos-x86_64-17.11": [
+      {
+        "current": "29d1f38d810fcb8fb59250954983c60bb73aa4817a313e5773fa78088ab1f0b0",
+        "previous": "709f26047148e9670c19c6c507253bad263127ce0e40f966f0cbdaf0fb9e7b38",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "29d1f38d810fcb8fb59250954983c60bb73aa4817a313e5773fa78088ab1f0b0",
+        "previous": "f054b3afd71d8513a6fc29ba88e9c26f86802a62a1e92a4419527cd41732ad91",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      }
+    ],
+    "hypopg-publication-macos-x86_64-18.6": [
+      {
+        "current": "049383ee309a772b253252a583da5714a59f76ce930d23b7a7513d05e545ebb3",
+        "previous": "8ac4bb6222896c98b5d1f3099bf441ceb2177f5184e9d789a516bcebb5fa87f5",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "049383ee309a772b253252a583da5714a59f76ce930d23b7a7513d05e545ebb3",
+        "previous": "e07c59900343c291b4dc622147a8158a5d0e12120ef65e136b5a499b973ef725",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      }
+    ],
+    "macos-pilot-arm64": [
+      {
+        "current": "86414db9a604c3ebcb87911e83303729bbacee127d23d2e4dcd1e7e18443fc76",
+        "previous": "82a1f7db91c259c5c2da7c8cd3b08f21c681fd97acc40ce83d34951aa23ebb71",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "86414db9a604c3ebcb87911e83303729bbacee127d23d2e4dcd1e7e18443fc76",
+        "previous": "fb11691b6adbd45994e1ce598a8ca3612c90c3cf518fb330694253fd1826fa28",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      }
+    ],
+    "macos-pilot-x86_64": [
+      {
+        "current": "507423fe9fba8a124557e783b6a6955d03b53e2192f3c47aaeeb9e5417c2702c",
+        "previous": "389a6f645f41441b59e2876182ed8402386c783c91dd7d8091b56b21aa938ec4",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "507423fe9fba8a124557e783b6a6955d03b53e2192f3c47aaeeb9e5417c2702c",
+        "previous": "f987be67550b47141e9f91a0970ae98786fa5d9f35cd97c620b1a45704257be3",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      }
+    ],
+    "macos-publication-current-arm64": [
+      {
+        "current": "374b5269046387beb4ea8fb88eb28750c9f45679341022d1d0cdf5ae15014ec4",
+        "previous": "79c675c8570eceebb3a459088e03c01efb5114d281080eecc1eb5e9e5bf6eca9",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "374b5269046387beb4ea8fb88eb28750c9f45679341022d1d0cdf5ae15014ec4",
+        "previous": "7c89c1e63eb0e1a9e17bd27073a3d57e392d8e9c8a58372bafe2a7fb90032439",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      }
+    ],
+    "macos-publication-current-x86_64": [
+      {
+        "current": "b48c2f30e922923fd5c3373ed277fb619e8cc98cf95c130bda976cc4b3cc12a5",
+        "previous": "31683a2337f86a4c433f5d105de2a533f4f88b65a416fb404e95c26262ce18f3",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "b48c2f30e922923fd5c3373ed277fb619e8cc98cf95c130bda976cc4b3cc12a5",
+        "previous": "93ca5d09ebb4d098ac7e0b649c5970a2c3ca85a9f1c98bbf2343b4996ee53de2",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      }
+    ],
+    "pg-jsonschema-publication-macos-arm64-15.19": [
+      {
+        "current": "e592943d86cc488faf410b321cc4149fed22126e17f73f3b1ba76e1a454f509f",
+        "previous": "7b1c895c1d9f2109d48e4767892131469ef9544aab8669f39464877c05109596",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "e592943d86cc488faf410b321cc4149fed22126e17f73f3b1ba76e1a454f509f",
+        "previous": "b12fe5fddd268e142523b26529b58564081ea22673b4c940e0ce32eb58e42a96",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      }
+    ],
+    "pg-jsonschema-publication-macos-arm64-16.15": [
+      {
+        "current": "08e9f343e7fbe6d93ea957fbd84df9f19c2cf094c1fe6e1876fd02bd70b2e445",
+        "previous": "64938da07c253f3ae186cffb44c4bcf6ee661fa827518f96983ef98763b8d68f",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "08e9f343e7fbe6d93ea957fbd84df9f19c2cf094c1fe6e1876fd02bd70b2e445",
+        "previous": "e1f9c29688e0f0c5852b89694989868803ad7530b4771f2f0a042936f5c470d0",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      }
+    ],
+    "pg-jsonschema-publication-macos-arm64-17.11": [
+      {
+        "current": "910da051095b38685e925ddcd3109cdd88967d396a63f60bc4065430833af321",
+        "previous": "75da84f836ffc5a4eec1d0c6b027be6f527749fbe49b3c2f82a4fd40e39e1c25",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "910da051095b38685e925ddcd3109cdd88967d396a63f60bc4065430833af321",
+        "previous": "83266f12dc83e036c25bcb0f9201c59fd9ba19487a19d0d4d8211dd0516f18ab",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      }
+    ],
+    "pg-jsonschema-publication-macos-arm64-18.6": [
+      {
+        "current": "2187fb04df2618422eac11de6591d6eb7f3583b700b9c5649d84c6ffc21cfe36",
+        "previous": "2c45d1773984b4ca022c80fbf6a4059e40a3dc615d874fe17cad820bc15f688d",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "2187fb04df2618422eac11de6591d6eb7f3583b700b9c5649d84c6ffc21cfe36",
+        "previous": "9819b0be9a6e156e080c1451cd3b44e53309171736cf55ad05e40660754a9ce3",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      }
+    ],
+    "pg-jsonschema-publication-macos-x86_64-15.19": [
+      {
+        "current": "5c973c014ec49be13f4e1c044978aaa0d0232bceb15a09bdce035b47bf5c8c5d",
+        "previous": "3e77d302045bc1b92a6a1222501a795842c0a6cab99354603b5fbfd96e573444",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "5c973c014ec49be13f4e1c044978aaa0d0232bceb15a09bdce035b47bf5c8c5d",
+        "previous": "702c19b8571dd1c93d2e7cbffc43294646628ad78bc865b6959668229ec807f1",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      }
+    ],
+    "pg-jsonschema-publication-macos-x86_64-16.15": [
+      {
+        "current": "71be7bf39afd4ad9e461118316c7e4e1b201f309e83b5ffab67e0c2aefc03d6e",
+        "previous": "12c4eb4c493de9c315cc1b2dab600d31cc9c3217d52d8c9c479ba4e0af9b9cf6",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "71be7bf39afd4ad9e461118316c7e4e1b201f309e83b5ffab67e0c2aefc03d6e",
+        "previous": "22f2f86cd7ec90adb963bb8027cfdeab2659df5a90c0f173322554b9266eaf82",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      }
+    ],
+    "pg-jsonschema-publication-macos-x86_64-17.11": [
+      {
+        "current": "31a33cf9aa22234c5e08ef536ae5de120394b6c7fab80c72950387acd8ab4118",
+        "previous": "80bc60b750e05ad1c842094ff09aab4fe7537e57d3690017f9222286fb1b1e48",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "31a33cf9aa22234c5e08ef536ae5de120394b6c7fab80c72950387acd8ab4118",
+        "previous": "bb19c371862d23d779e3c7b01282d35bfc37cd203068390c03a39c8164977b96",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      }
+    ],
+    "pg-jsonschema-publication-macos-x86_64-18.6": [
+      {
+        "current": "974e1d86240e3d75c537aa480cead8f10ef42db4dde1214ca17f4b6eb8eda685",
+        "previous": "c76f3b73c0234f9634df3390dd800095b257d7de4586120c7992a4cc05288577",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "974e1d86240e3d75c537aa480cead8f10ef42db4dde1214ca17f4b6eb8eda685",
+        "previous": "dbfe3aa3b10ab123c0aab0b33812baac3104dd9a0cece5c91b5f9e25b409a728",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      }
+    ],
+    "pgaudit-publication-macos-arm64-15.19": [
+      {
+        "current": "4319860b95652a568aa47bf26d1343e2aa654b382fb0c02ef2c3488fd99054f8",
+        "previous": "cd157f53ea46ae65a664f30c8b8db65e04f68258db8d8d7125e9fc98d8db9a59",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "4319860b95652a568aa47bf26d1343e2aa654b382fb0c02ef2c3488fd99054f8",
+        "previous": "fd872ec3263150ee1eb71f7518958118ce6b2732d11634fa9c2fca82cfdc25ce",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      }
+    ],
+    "pgaudit-publication-macos-arm64-16.15": [
+      {
+        "current": "74c2ea1ddf6d4c3695422e8235d0ddf1081517f7ae0e74ee87da26e4c066d1ec",
+        "previous": "3535d64c025a2425beb80f8ee89b51cf9f2a28ed7ce819486cb98c7b4fa86639",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "74c2ea1ddf6d4c3695422e8235d0ddf1081517f7ae0e74ee87da26e4c066d1ec",
+        "previous": "f8b393f9648fa7ce19473aaa7c514fd4fa82920cc429200552ef7357904f649a",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      }
+    ],
+    "pgaudit-publication-macos-arm64-17.11": [
+      {
+        "current": "4cc899126da34faae04e76ad063e9787d69e2acae46149c49aec940715179d5f",
+        "previous": "6c2557bf8ced8a86523163e346d3e30728e4ba1e07ac3762e3da26732f873729",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "4cc899126da34faae04e76ad063e9787d69e2acae46149c49aec940715179d5f",
+        "previous": "e8074c6301a18b042d426383b75b047249c25a0ff2d868c8697ab15b4b435187",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      }
+    ],
+    "pgaudit-publication-macos-arm64-18.6": [
+      {
+        "current": "e669efd0808822b324c7d148773c3c12bccd72fc88e2bb61ad7048db2264e75a",
+        "previous": "6b6d409990723710b3a639361838ddf19b5256ab44be756816336e42023edad2",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "e669efd0808822b324c7d148773c3c12bccd72fc88e2bb61ad7048db2264e75a",
+        "previous": "f732c2df1120c2ae5c8d897acabf105cbeba754baf797ed32c297efc4b740f4b",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      }
+    ],
+    "pgaudit-publication-macos-x86_64-15.19": [
+      {
+        "current": "52269fa3d35dbb6ab1a6992540f35143a28d93fadb072493abe7acf0c19d51b4",
+        "previous": "91819d1de6cfcef9fac37fcb72c9d8b8e17be9a5d6d0c4de94d521f4a0d01a6b",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "52269fa3d35dbb6ab1a6992540f35143a28d93fadb072493abe7acf0c19d51b4",
+        "previous": "f491f40933787743d0a1908ad9552ce938b12b88776b5ab20680b947516029ce",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      }
+    ],
+    "pgaudit-publication-macos-x86_64-16.15": [
+      {
+        "current": "72a9d6eaccdeae185620699c7dc6f70c42c1e084ae428b9167ffb8519cb4c669",
+        "previous": "b82379b62ab55205011e6b017285390c692306adaef8ec1ac5a499bffb240729",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "72a9d6eaccdeae185620699c7dc6f70c42c1e084ae428b9167ffb8519cb4c669",
+        "previous": "f5791580cc0c18d40e0c0e5d0ec88f8bfb4a9a64fe2324b8a9c38f5d28b8e02b",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      }
+    ],
+    "pgaudit-publication-macos-x86_64-17.11": [
+      {
+        "current": "2cfb05c83cd4f01ed37e09b8a4d55b85e726747a33fa2f8d42b4c2415ba42821",
+        "previous": "3533dbf7184b442aef97d24d9ca3fbc9cc1e5a7f6ec984acfb15bae273b3ca72",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "2cfb05c83cd4f01ed37e09b8a4d55b85e726747a33fa2f8d42b4c2415ba42821",
+        "previous": "b94c84a7484ac71f3fa83bd9a23805f8d2c07523414e5d76d8e2357f54f73009",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      }
+    ],
+    "pgaudit-publication-macos-x86_64-18.6": [
+      {
+        "current": "698e27bf3cd702e158f693d3df44a1d4a9afceb44f42a05e013446c233b1ebe1",
+        "previous": "368ab29a3430fde730bf7e6f1500867ac10f7b9e6c2111c5eb232cde31695b75",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "698e27bf3cd702e158f693d3df44a1d4a9afceb44f42a05e013446c233b1ebe1",
+        "previous": "fe10ac9a00192d7f4a49ce0f04b7d9c2389e45a9ae1f4830d177242584d8b0c7",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      }
+    ],
+    "pgcron-publication-macos-arm64-15.19": [
+      {
+        "current": "e338e6fe640be8d247fe7017264c8bd19f511c1d42b5725d9ae798b278175abe",
+        "previous": "2c89a35448d3a5ac100cb3969bb868b6b04f6ef3631d363959bddf39677eb903",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "e338e6fe640be8d247fe7017264c8bd19f511c1d42b5725d9ae798b278175abe",
+        "previous": "f92f3efa8f39126c3f4efa27d0ab61885fb3064af12bb655c2f275509186f80f",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      }
+    ],
+    "pgcron-publication-macos-arm64-16.15": [
+      {
+        "current": "36cbc6ab5e5c2515437f2336269dfee177417c60cb09ac60021e29b5f65b4d05",
+        "previous": "692a6322da550fcba89d20c7c8423e6906b5c313ba2ea6b3afd2a3f89437d377",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "36cbc6ab5e5c2515437f2336269dfee177417c60cb09ac60021e29b5f65b4d05",
+        "previous": "b4ecee905c2201ef220d106bf357324f3ad26675b68bb9b1c80e79ac409c23f0",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      }
+    ],
+    "pgcron-publication-macos-arm64-17.11": [
+      {
+        "current": "739e9e5e54e55ffdd41efc737a49fa983239f5b2a820388bae8e8afdd16f6a94",
+        "previous": "7cf41d6bea00aecba261ab8157aa4d8d1bf721c47f2ae68940b7f35b699f79aa",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "739e9e5e54e55ffdd41efc737a49fa983239f5b2a820388bae8e8afdd16f6a94",
+        "previous": "967e79829445bd2cbb40571404aa65d8ab7bf6c16d30b3d71ecc5ef9696d6eb2",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      }
+    ],
+    "pgcron-publication-macos-arm64-18.6": [
+      {
+        "current": "7852b0eeebed72c6fd07fc35a3edd1c5d1ef571eee0f29e61e486bc1755d7aa1",
+        "previous": "9d2bcc8ca2d49c1ee9ccd71c78d8c2749de4a9b8f8cbae5f05682f5c569c2cd0",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "7852b0eeebed72c6fd07fc35a3edd1c5d1ef571eee0f29e61e486bc1755d7aa1",
+        "previous": "a03e32cad5d098cfb032f9da0294ddd2cf8d2ef53862e2d2d97a353aee89791f",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      }
+    ],
+    "pgcron-publication-macos-x86_64-15.19": [
+      {
+        "current": "eecc636b39e7cba3b3d8a751156bd7af71f37e917b7cdda606ae414b21b8c6b2",
+        "previous": "81a83ca6801595e57e5dd7de5ccd85f0d4cfd07c578972cbef52bb6d5a15af94",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "eecc636b39e7cba3b3d8a751156bd7af71f37e917b7cdda606ae414b21b8c6b2",
+        "previous": "e7a2d314a5f3a48f8f41b6a07fc45d4e72684e1f0fa7fb96dad45509d86eb248",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      }
+    ],
+    "pgcron-publication-macos-x86_64-16.15": [
+      {
+        "current": "028af551a7e1b4ea81ef86d4d4f1294b70c154e86358addfb59f886c5deb9483",
+        "previous": "c2e25da2eaac354845354bb9f74a2a971a1fbae00c19510c39db1e644397eed2",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "028af551a7e1b4ea81ef86d4d4f1294b70c154e86358addfb59f886c5deb9483",
+        "previous": "c68d4e2ac823579234d45d00cd4cefdfbc6fb1b85e8998388f44a748c5575793",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      }
+    ],
+    "pgcron-publication-macos-x86_64-17.11": [
+      {
+        "current": "bb7a56b3983f4afc3071f052a77bac2527a377560c2b565e701183b92222f98c",
+        "previous": "79f262d6921e2141be428ddc68adcda1925bd462db9c566f7eff07d28ff7bd43",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "bb7a56b3983f4afc3071f052a77bac2527a377560c2b565e701183b92222f98c",
+        "previous": "c9adcfa16d43fba1aff2bd889b1f6dd68e877244ac763ccaf0c24cf037b4310c",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      }
+    ],
+    "pgcron-publication-macos-x86_64-18.6": [
+      {
+        "current": "11bb460dc132e9188c428e69a2bdcd1fb632aebe2abf8a442d0378c59d6cfa24",
+        "previous": "89aacbfdbb9818fc9b084916313a7f1c48627d756ec77713902b0cb38f3fe183",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "11bb460dc132e9188c428e69a2bdcd1fb632aebe2abf8a442d0378c59d6cfa24",
+        "previous": "eb31aceb5a7f689537284fec835d7c5eedd0497ad68333d1167b47f34829b83a",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      }
+    ],
+    "pgivm-publication-macos-arm64-15.19": [
+      {
+        "current": "1317cce1472c10d29b3f7dbc234b5f278be2b63d38cf2fdaf923d1608d5a4239",
+        "previous": "96e0d51d46a85b1eb2bf8d65a0f68a71006e9b0d1e23b93a859602ec906eae80",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "1317cce1472c10d29b3f7dbc234b5f278be2b63d38cf2fdaf923d1608d5a4239",
+        "previous": "fcfa21fa6246b02fa9abff983ec164c4dcd56bad8c7bffb33767eed5658eddf1",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      }
+    ],
+    "pgivm-publication-macos-arm64-16.15": [
+      {
+        "current": "c7b19f42d0aa3ca7f798be65c73005e4ad365371d1366e3c9292c2fd194023a1",
+        "previous": "1062a79583bd78dcc0b99eac7f39f5202faed9fffca7b7bff1ee9f2b8e169268",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "c7b19f42d0aa3ca7f798be65c73005e4ad365371d1366e3c9292c2fd194023a1",
+        "previous": "557e9669999eee87b325778c0a7cd4ea6977e296f4ad8dedb4079b6ba9fad159",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      }
+    ],
+    "pgivm-publication-macos-arm64-17.11": [
+      {
+        "current": "7b74445395fb76553f6e040d62e347d1e4986480e4c8465aefc662cbdb0071ae",
+        "previous": "8354fd8ca597eb8c38a2fff18de6782cfb003306e3c80d4f64635e46958344de",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "7b74445395fb76553f6e040d62e347d1e4986480e4c8465aefc662cbdb0071ae",
+        "previous": "b3b6cf9765dfb60006b6af2af332ffed167ac3b105261b874fe697077831d64f",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      }
+    ],
+    "pgivm-publication-macos-arm64-18.6": [
+      {
+        "current": "068b33eecbe1730e736fe33f1ce46d6d29dd86ea19f8d24d523ba1efadbdd5e9",
+        "previous": "e458b11b365c8fbeef5119d03a78ace83697e87ff6f43b2abc6cdbd8e1bb118e",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "068b33eecbe1730e736fe33f1ce46d6d29dd86ea19f8d24d523ba1efadbdd5e9",
+        "previous": "efc912966a9afd019b968f3ce62f74f44701f652b8e03b77c8d1ff2dcd863c7d",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      }
+    ],
+    "pgivm-publication-macos-x86_64-15.19": [
+      {
+        "current": "48d12fb292d64b235dadc7f334c345b5dc7ad7068f3b61faa4e836a5b5ed4585",
+        "previous": "2b01054560ffed7d0ab6f249bd8e428d7bf52b4d4129f67aa2691688e1746d67",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "48d12fb292d64b235dadc7f334c345b5dc7ad7068f3b61faa4e836a5b5ed4585",
+        "previous": "f855b1a63065d7ddb7614528e086a714945ab78124f61fce2dbaa5a91b6c85e0",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      }
+    ],
+    "pgivm-publication-macos-x86_64-16.15": [
+      {
+        "current": "29c1da889966f9cb52ad181aac06759533e4efa930ee6db0a78a831cb1db2208",
+        "previous": "37f5b4cb03115d38a4a682381ce295d30bee32f1bd7062f3e5d1fd72d581a54d",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "29c1da889966f9cb52ad181aac06759533e4efa930ee6db0a78a831cb1db2208",
+        "previous": "93839bc0087a48b7222e105cefb17727c2e29e93a6c5f9557693bce1ab473282",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      }
+    ],
+    "pgivm-publication-macos-x86_64-17.11": [
+      {
+        "current": "b7389575d3c99f243c63b59965745f85ff4484d0f4a599455109ddf9d6defdcc",
+        "previous": "11f5dd20fc65d1c98637061cea5369b2226377381e11051639ac7b7ada5e3938",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "b7389575d3c99f243c63b59965745f85ff4484d0f4a599455109ddf9d6defdcc",
+        "previous": "cce77db1f89b5bc4b27b04e7969c2b045515e7b624b9998c9536733af2a80573",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      }
+    ],
+    "pgivm-publication-macos-x86_64-18.6": [
+      {
+        "current": "0fac1c02a9c3b23fc1784de5fabcec25eb330df63fc92afe95a5cb9ab85b4d5b",
+        "previous": "381ed42abdfab242949b3d107bc7601996700fb022369d00155baa3f2194dbe2",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "0fac1c02a9c3b23fc1784de5fabcec25eb330df63fc92afe95a5cb9ab85b4d5b",
+        "previous": "ed38954f6eef443bad87d4652ecf79307fd68d548e752df8161767b28cb6ced6",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      }
+    ],
+    "pgtap-publication-macos-arm64-15.19": [
+      {
+        "current": "f4ee563539ea631f256fdd7107996f81061d007c69d93708e36fc8d9b86f57f5",
+        "previous": "c1021b9b7cf3f2612c680798d0b1e32899364d6a2cdc8ad60ef8bafbca60305b",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "f4ee563539ea631f256fdd7107996f81061d007c69d93708e36fc8d9b86f57f5",
+        "previous": "db73a14e184fe93962229baf7a2b5ee84d5f31c6e9ce13d525102632a22b9348",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      }
+    ],
+    "pgtap-publication-macos-arm64-16.15": [
+      {
+        "current": "6f51494a02514b1cbfa44b4e066e078effb9b3f11dfb0bbb199bc45bd3cfcf82",
+        "previous": "94aa28a087d84c61e0044016a5d80efae0bfea5f04db45303fb57286fa004c90",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "6f51494a02514b1cbfa44b4e066e078effb9b3f11dfb0bbb199bc45bd3cfcf82",
+        "previous": "b90a37006d912d465a96312d6ddd8ffb002b3c86a62f6b15d83d07ce6617f85d",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      }
+    ],
+    "pgtap-publication-macos-arm64-17.11": [
+      {
+        "current": "2d1142dc20b3d509c27f615a37d567e70ad4e66b2865bb575772ab4be3db04ef",
+        "previous": "805c8b304a93331aa5fe268f2a286c118537d1e2d9add578a8096924aaeb3a0f",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "2d1142dc20b3d509c27f615a37d567e70ad4e66b2865bb575772ab4be3db04ef",
+        "previous": "a25b92ab2c87ff57e55f3c6ac62c2d28ce05f24ab26e6c0948d1465790e801b1",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      }
+    ],
+    "pgtap-publication-macos-arm64-18.6": [
+      {
+        "current": "d5e8cf1a4de4a7b27ff5a8e05769dfbd995f4cd14e90a73eb697b6063388c5b0",
+        "previous": "1f6f8f14d238c7eb0878cc31f944cabbe75d80580d3f7770c36986ee03e757ae",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "d5e8cf1a4de4a7b27ff5a8e05769dfbd995f4cd14e90a73eb697b6063388c5b0",
+        "previous": "a37861fe780617d6f79b7ac4c70c565a69f8caaf6c13111d4cc4fec0aa5a2602",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      }
+    ],
+    "pgtap-publication-macos-x86_64-15.19": [
+      {
+        "current": "9a4dc131a62e94f22017184984475b66d1e85b466b45e87afb88d3a42e90ff84",
+        "previous": "8bd64403b3f2c5d48ed016cd6727a2177ed4ced39e6464358c2c801fc6ad08f3",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "9a4dc131a62e94f22017184984475b66d1e85b466b45e87afb88d3a42e90ff84",
+        "previous": "e12cbf513038423a3562f2792209c03d6a908a1f7a9d094d7c5eeee3850f2d37",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      }
+    ],
+    "pgtap-publication-macos-x86_64-16.15": [
+      {
+        "current": "1bf6a7343bfb20b8e343d5dedb38dba9451b602b572f0b838301c15a08880be6",
+        "previous": "c0e3a8980a57e76ee5d29febbaed2514cc8a507039a6bdab49cd9ff99851f09a",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "1bf6a7343bfb20b8e343d5dedb38dba9451b602b572f0b838301c15a08880be6",
+        "previous": "d5d96b4bfacc9fe34339b82bb37c628cc1236fd07675d314d4a27fc2f60b58fa",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      }
+    ],
+    "pgtap-publication-macos-x86_64-17.11": [
+      {
+        "current": "ca85924de205811a56abf76eaeb3fa55dcec81930b90f984e4a44f12d3b162f8",
+        "previous": "5b87e27a3c9b90567c5829542daaf7bc77f441665adf265a4eb69a0e0514daec",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "ca85924de205811a56abf76eaeb3fa55dcec81930b90f984e4a44f12d3b162f8",
+        "previous": "638ac739ceb5deabb74c5728e5f2b402173a3b8ac16ef14e5aa3aa7f29e73e57",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      }
+    ],
+    "pgtap-publication-macos-x86_64-18.6": [
+      {
+        "current": "5412bb6483ecfb94da3408e05f2e3fd2dfb72583f15499845db5a52f8dcce20e",
+        "previous": "32d55a1efdbda474ca2ad292a954cd187dd86d13e3d92dae206a38769907f401",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "5412bb6483ecfb94da3408e05f2e3fd2dfb72583f15499845db5a52f8dcce20e",
+        "previous": "904c2f2bf92e2ede8d06d69ab78b41b40ac46a42ed2e0659a443a7b9d11eb264",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
       }
     ],
     "pgtap-publication-windows-x86_64-18.6": [
@@ -1002,6 +1811,21 @@
         "current": "8b85325ebde21af000127f26169091b8b9a30a39701fda66087ed2bbfbbd73f8",
         "previous": "25f5c129a9e01020c86d1a7ed211ed64638ab889960d33100a19885862767779",
         "reason": "2026-10-21: narrowed source list; CI revision has identical retained verifier sources and cases."
+      },
+      {
+        "current": "72eced585893d5cd04b3b8a9ea6f93ff7e98ba358315ab82542ff0972d406232",
+        "previous": "25f5c129a9e01020c86d1a7ed211ed64638ab889960d33100a19885862767779",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "72eced585893d5cd04b3b8a9ea6f93ff7e98ba358315ab82542ff0972d406232",
+        "previous": "43ffbf6401e2913e9e04188871b417c97df31cfda8166e051281582eb40ea951",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "72eced585893d5cd04b3b8a9ea6f93ff7e98ba358315ab82542ff0972d406232",
+        "previous": "8b85325ebde21af000127f26169091b8b9a30a39701fda66087ed2bbfbbd73f8",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
       }
     ],
     "postgis-publication-macos-arm64-16.15": [
@@ -1009,6 +1833,21 @@
         "current": "39460877469946c52f8c548b4273780121f634ad1a8990221f43e1e03461f318",
         "previous": "19ccfe17d510d2cf8c2ca5606d4cf26cca897fb091fcc4c09bc4f6f329c582dd",
         "reason": "2026-10-21: narrowed source list; CI revision has identical retained verifier sources and cases."
+      },
+      {
+        "current": "ab798296e404ba16ee7f4b8091b171834976b55540f1eb183fef6579c97d3695",
+        "previous": "19ccfe17d510d2cf8c2ca5606d4cf26cca897fb091fcc4c09bc4f6f329c582dd",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "ab798296e404ba16ee7f4b8091b171834976b55540f1eb183fef6579c97d3695",
+        "previous": "39460877469946c52f8c548b4273780121f634ad1a8990221f43e1e03461f318",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "ab798296e404ba16ee7f4b8091b171834976b55540f1eb183fef6579c97d3695",
+        "previous": "4fd9d8d2cdbc6d11f4acc229acf5c7fc3565b6af50c7859a99d452a0bf41944c",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
       }
     ],
     "postgis-publication-macos-arm64-17.11": [
@@ -1016,6 +1855,21 @@
         "current": "58b6b0c2e8e36720bd36e539749c4efb76d2ab8450d7d3866a7c1bcdd27ff273",
         "previous": "88f219a888fac5acf875e9ee703ac6e5571ac2461d9e9401773c79055c38e3d3",
         "reason": "2026-10-21: narrowed source list; CI revision has identical retained verifier sources and cases."
+      },
+      {
+        "current": "045fe58cbc3921efbd3c6d576dfdbe106391ccc30f4bf52e45adeabfcd9da9ad",
+        "previous": "45c9e4b58b008637761b8234e5df25f1c272b1bb582e2504b7d4b84450e4527b",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "045fe58cbc3921efbd3c6d576dfdbe106391ccc30f4bf52e45adeabfcd9da9ad",
+        "previous": "58b6b0c2e8e36720bd36e539749c4efb76d2ab8450d7d3866a7c1bcdd27ff273",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "045fe58cbc3921efbd3c6d576dfdbe106391ccc30f4bf52e45adeabfcd9da9ad",
+        "previous": "88f219a888fac5acf875e9ee703ac6e5571ac2461d9e9401773c79055c38e3d3",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
       }
     ],
     "postgis-publication-macos-arm64-18.6": [
@@ -1023,6 +1877,57 @@
         "current": "f704b4905129e476061a47599e3e25a82b3d97bc39e91d6b9151c9f79249bd9d",
         "previous": "dc7b84494b4bda3b01637534379b2045a949c5175a63969ef29cbf5b9904d640",
         "reason": "2026-10-21: narrowed source list; CI revision has identical retained verifier sources and cases."
+      },
+      {
+        "current": "7f3d17ac25772c431517d2ea99444039c708344138a3dbf659a00b6a3b23bcf2",
+        "previous": "4a8644c402b576d783b5923f6d9527bb51f6e224ccc483662b583d558ea9d791",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "7f3d17ac25772c431517d2ea99444039c708344138a3dbf659a00b6a3b23bcf2",
+        "previous": "dc7b84494b4bda3b01637534379b2045a949c5175a63969ef29cbf5b9904d640",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "7f3d17ac25772c431517d2ea99444039c708344138a3dbf659a00b6a3b23bcf2",
+        "previous": "f704b4905129e476061a47599e3e25a82b3d97bc39e91d6b9151c9f79249bd9d",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      }
+    ],
+    "postgis-publication-macos-x86_64-15.19": [
+      {
+        "current": "096988103e71fd5176b8563263129e185ddbced789e9c80f779805881918af3f",
+        "previous": "00f50bdbabb3f85079c16556fdcee73a6fd8d988d3f481a55ff537184da10356",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "096988103e71fd5176b8563263129e185ddbced789e9c80f779805881918af3f",
+        "previous": "fa1e976c3e3ff48340b3d5d9ffde2c25f288a6c7a9770aef85730b88624bbb10",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      }
+    ],
+    "postgis-publication-macos-x86_64-16.15": [
+      {
+        "current": "c98a4bf336483cc7b13a4018ee83c712c41ccf54bcf39537b634d14d612d51f9",
+        "previous": "0ad9687bc0752dca7df08982aa78a5cf40c4c94c64eb34550bbc4b2c942597c5",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "c98a4bf336483cc7b13a4018ee83c712c41ccf54bcf39537b634d14d612d51f9",
+        "previous": "db27c952df5c224deb897154e6f8668538bd673a5ca930ab131855afac9f8406",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      }
+    ],
+    "postgis-publication-macos-x86_64-17.11": [
+      {
+        "current": "8f270c7363023004e60dae8c0efbd1f314b94574f2f85d86093639e2ba57ceb1",
+        "previous": "4d822b2f90c8d4d5c1b6c9be44d8cf5ddb5def8f0d0d53df75b2b5964eadaec9",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "8f270c7363023004e60dae8c0efbd1f314b94574f2f85d86093639e2ba57ceb1",
+        "previous": "50a87159f56a45a33792a44b109bf102271e664c1fa0cbccb69f2c5654f43b1c",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
       }
     ],
     "postgis-publication-macos-x86_64-18.6": [
@@ -1030,6 +1935,28 @@
         "current": "b920d67c97a0f93f4fb769e68caba05abec11d1e85118fbbe7555463609aac67",
         "previous": "0d4102df7516733bfb6f8c08ca302c6f2b4449bf1d7a03a05d90290c1095c35b",
         "reason": "2026-10-21: narrowed source list; CI revision has identical retained verifier sources and cases."
+      },
+      {
+        "current": "2fa4fe51a8bf7b956ccf41c5c3807251eddb6cc25ba3783c3d18fdef4bb3dba5",
+        "previous": "0d4102df7516733bfb6f8c08ca302c6f2b4449bf1d7a03a05d90290c1095c35b",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "2fa4fe51a8bf7b956ccf41c5c3807251eddb6cc25ba3783c3d18fdef4bb3dba5",
+        "previous": "709193dabace93c6b20f3397daf9019c450ba1c07adbe06503619619c502bddf",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "2fa4fe51a8bf7b956ccf41c5c3807251eddb6cc25ba3783c3d18fdef4bb3dba5",
+        "previous": "b920d67c97a0f93f4fb769e68caba05abec11d1e85118fbbe7555463609aac67",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      }
+    ],
+    "postgis-publication-windows-x86_64-15.19": [
+      {
+        "current": "e76c2918ca38fa5d5788d23d6a4696cf48bab3dc9ce142c1570bcb10987c0c14",
+        "previous": "f6c007ce19ebb1050642ea9136e51dc422f83e603cc551145a00a6e9b99cfe81",
+        "reason": "2026-10-22: the Windows PostGIS verifier and emitter now require two empty prerequisite arrays. Passing run 39708831668 tested the source archive; the retained metadata-only proof binds the staged archive SHA and confirms those arrays are the only change."
       }
     ],
     "postgis-publication-windows-x86_64-16.15": [
@@ -1053,11 +1980,110 @@
         "reason": "2026-10-21: narrowed source list; CI revision has identical retained verifier sources and cases."
       }
     ],
+    "postgresql-publication-macos-arm64-15.19": [
+      {
+        "current": "c7939039a86fa11fcacf5b6c3f16343444703e4afadfbb858beb7a15e0729f37",
+        "previous": "29c80e07b3eb150a23b0fa8031c140d34d33c016b562a65a7dcc0a3de2b117e2",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "c7939039a86fa11fcacf5b6c3f16343444703e4afadfbb858beb7a15e0729f37",
+        "previous": "fbd79435d3dbc2d5535a1170c0e23d6f1c1074e8016ebfc733840b2c6bde0afd",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      }
+    ],
+    "postgresql-publication-macos-arm64-16.15": [
+      {
+        "current": "f8024ebee20d6dac93767691bff8d5a571f9ffb87cdd754dbdd76239d2e9b857",
+        "previous": "4d21827d9efc8c26902c57e7a13519b08a135d11090e6548c743a499da44c5bd",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "f8024ebee20d6dac93767691bff8d5a571f9ffb87cdd754dbdd76239d2e9b857",
+        "previous": "6891aa0102828b926ffc55bd0ca717fa1e62a33d31001f7dfd5e29227a71807c",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      }
+    ],
+    "postgresql-publication-macos-arm64-17.11": [
+      {
+        "current": "f13867e3696ac40ac6a366d4e6c35a9b60fc8890be2dcf90a68e1d3cf1e4aafb",
+        "previous": "64a64efdb87486525f70e6beabf251075ea3da3438c2e2d8e445c6279b209f06",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "f13867e3696ac40ac6a366d4e6c35a9b60fc8890be2dcf90a68e1d3cf1e4aafb",
+        "previous": "afc7aca025986d92e99c850ad2e442b6219b51d226f77d2f761b2c6babd3a00a",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      }
+    ],
     "postgresql-publication-macos-arm64-18.6": [
       {
         "current": "ef74111cc78246494da6cbb62ebb4065bca743b69b90cbe9ef7a8cde790953f2",
         "previous": "e56fedf07fdd24174bde6c2b979c9bc955edb2687c13c715c6d62dfd5d735302",
         "reason": "2026-10-21: narrowed to verification inputs; case IDs and retained source bytes are unchanged."
+      },
+      {
+        "current": "0193939709c8410d487595fb4de1d7e65fae9acc4d2b666b4472c19e18aa0f64",
+        "previous": "e4894afff5f84611964e6e851193c769663c6fc9e612e15f43266c5256772550",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "0193939709c8410d487595fb4de1d7e65fae9acc4d2b666b4472c19e18aa0f64",
+        "previous": "e56fedf07fdd24174bde6c2b979c9bc955edb2687c13c715c6d62dfd5d735302",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "0193939709c8410d487595fb4de1d7e65fae9acc4d2b666b4472c19e18aa0f64",
+        "previous": "ef74111cc78246494da6cbb62ebb4065bca743b69b90cbe9ef7a8cde790953f2",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      }
+    ],
+    "postgresql-publication-macos-x86_64-15.19": [
+      {
+        "current": "2bc09741cdc394c5845493ddd1b76f3ed73c58dd987672e07b4ea75396d6d28c",
+        "previous": "684517e1aca31a5fbd52b9ab64fd3b78183cfafabba39af1131e44ff8e00e3fe",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "2bc09741cdc394c5845493ddd1b76f3ed73c58dd987672e07b4ea75396d6d28c",
+        "previous": "ff1e1b5607cda9d1bc518c2521f91c2e7f5d96d9483f3b948134c12c66f3b7fe",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      }
+    ],
+    "postgresql-publication-macos-x86_64-16.15": [
+      {
+        "current": "6ba9e7d7bdcabda4a68d156a208776299946fe1511fb42b86280c216df88d2a3",
+        "previous": "1748b6910e6057b1f37eef579def349d3e946a0b6086a36f0e4ad33778978af7",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "6ba9e7d7bdcabda4a68d156a208776299946fe1511fb42b86280c216df88d2a3",
+        "previous": "b9ab3e183757a6b52e18f22455211b5feb995dd20d2d738c802969ec0fbf5faf",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      }
+    ],
+    "postgresql-publication-macos-x86_64-17.11": [
+      {
+        "current": "09bd52c4d10cfcf029e5ef22a662f8ffdeb3d526d2a96df7ebfd81d34b386491",
+        "previous": "2e13dc92d2d363eaec6b359b73f7504fdf4d30076b6447c9311f1ec9d0cff977",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "09bd52c4d10cfcf029e5ef22a662f8ffdeb3d526d2a96df7ebfd81d34b386491",
+        "previous": "61b393d4bfe011326f4174ab12b1d7ccdd82fd245a744cd5208ae8c870313ddc",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      }
+    ],
+    "postgresql-publication-macos-x86_64-18.6": [
+      {
+        "current": "99fd461ec1ed86b6f3a2cb2768d68d374beeb230b634b7233409876722249a7b",
+        "previous": "06a1ca7f497f2a5a8b8d84b3d1f013ecbd984cc41add68c2bbc4dc6d9f0f5130",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "99fd461ec1ed86b6f3a2cb2768d68d374beeb230b634b7233409876722249a7b",
+        "previous": "e59765d9f96d1f60b436facb07e3806aff8a7d1cffee781963a2f595c578dc15",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
       }
     ],
     "postgresql-publication-windows-x86_64-15.19": [
@@ -1081,11 +2107,86 @@
         "reason": "2026-10-21: narrowed to verification inputs; case IDs and retained source bytes are unchanged."
       }
     ],
+    "tiger-publication-macos-arm64-16.15": [
+      {
+        "current": "50f2f4193d036c79b69d6249c6ff89c3459cb90dfc560c382d9d838ea6c0a674",
+        "previous": "b7070f6e37cb9bdc785c16132db5b313bb45da42f11773cb76a4c4875e119d37",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "50f2f4193d036c79b69d6249c6ff89c3459cb90dfc560c382d9d838ea6c0a674",
+        "previous": "c976513b05e0037bdd4275c96c72fcf559c5bd3b419abe5025b573c87f3f8285",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      }
+    ],
+    "tiger-publication-macos-arm64-17.11": [
+      {
+        "current": "91fd60a59d07232f96560051c28cbeb451b12073a244f8ff1fea8f9e6faa3b68",
+        "previous": "386b40c2a70bfc6719e4db4a45c4e165a321090183a08d08febc36b1d82ba946",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "91fd60a59d07232f96560051c28cbeb451b12073a244f8ff1fea8f9e6faa3b68",
+        "previous": "8b67842519beab7eb12132f078c04d74ddccd4e511cbb6f0d6e903659c219d5d",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      }
+    ],
     "tiger-publication-macos-arm64-18.6": [
       {
         "current": "1b3edaab4befecd1434a542b3dd4337b5c11f65b6a9facd7b1b80fbb03d2a4f1",
         "previous": "a352787cc56325fba537d43a04dd9faf2e26af4838045d97f1ce32619ce13971",
         "reason": "2026-10-21: narrowed to verification inputs; case IDs and retained source bytes are unchanged."
+      },
+      {
+        "current": "4d4425ab311440d51dab8c7b7c5e2a8df12a1a67b6b59819f4b916ba69b5282f",
+        "previous": "10a6601909af3e6eb601837fc05fe7feaa425cdb942314d90d090c4f7ce7a4d1",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "4d4425ab311440d51dab8c7b7c5e2a8df12a1a67b6b59819f4b916ba69b5282f",
+        "previous": "1b3edaab4befecd1434a542b3dd4337b5c11f65b6a9facd7b1b80fbb03d2a4f1",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "4d4425ab311440d51dab8c7b7c5e2a8df12a1a67b6b59819f4b916ba69b5282f",
+        "previous": "a352787cc56325fba537d43a04dd9faf2e26af4838045d97f1ce32619ce13971",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      }
+    ],
+    "tiger-publication-macos-x86_64-16.15": [
+      {
+        "current": "55cae536f462244912ce428008cacf36244149c5d33b04b40b521593997ed3ea",
+        "previous": "194ed62c8184489523ab8ad0980425b0be4759930b327089163e609d8fba664a",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "55cae536f462244912ce428008cacf36244149c5d33b04b40b521593997ed3ea",
+        "previous": "afe76ef332bc75680704713ee9976d2172b83cbf9d86591cb235499772919347",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      }
+    ],
+    "tiger-publication-macos-x86_64-17.11": [
+      {
+        "current": "cfe2e423efc970ea979827bfab484922e46fa8503d2d6912f3acb330cb00f928",
+        "previous": "5d395097cd4aa1b8d23b7eb6274d6093328d1fa22ace97229b3f9f567ee9ebc9",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "cfe2e423efc970ea979827bfab484922e46fa8503d2d6912f3acb330cb00f928",
+        "previous": "b4a0f72b2f9c8d3d260b5778d48235137fe53bc575cc39430ec8e06b214c05a0",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      }
+    ],
+    "tiger-publication-macos-x86_64-18.6": [
+      {
+        "current": "28330d5a44f3e912a28879def96843703fe0d752deb8a323eb5af495fd31c15c",
+        "previous": "20f3fecac103d9f6e6168bf248d661213c1e6e14de97984596de25aa5e037dd8",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
+      },
+      {
+        "current": "28330d5a44f3e912a28879def96843703fe0d752deb8a323eb5af495fd31c15c",
+        "previous": "f703c3b68bad2487f0a85f88db63a0feea94f8681b98b1b9177b834a2e500cf9",
+        "reason": "2026-10-22: added LC_VERSION_MIN_MACOSX.version parsing; old passing runs already had valid LC_BUILD_VERSION.minos because missing minimum-OS metadata failed, and LC_BUILD_VERSION remains preferred."
       }
     ]
   }

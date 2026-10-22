@@ -31,7 +31,7 @@ class MacosStaticAnalysisTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "duplicate archive"):
                 analysis.archive_evidence([archive, archive])
 
-    def inspect_fixture(self, dependency="@loader_path/../lib/libpg.dylib", architecture="arm64", minos="11.0", rpath="@loader_path/../lib", dylib_id=None, link_target=None):
+    def inspect_fixture(self, dependency="@loader_path/../lib/libpg.dylib", architecture="arm64", minos="11.0", rpath="@loader_path/../lib", dylib_id=None, link_target=None, legacy_minos=False):
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
         root = Path(temporary.name)
@@ -60,7 +60,9 @@ class MacosStaticAnalysisTests(unittest.TestCase):
                 return Result(f"{path}:\n\t{linked_path} (compatibility version 1.0.0, current version 1.0.0)\n")
             if tool == "otool" and args[1] == "-l":
                 identifier = f"Load command 1\n          cmd LC_ID_DYLIB\n      cmdsize 48\n         name {dylib_id} (offset 24)\n" if path == library.resolve() and dylib_id else ""
-                return Result(f"{identifier}Load command 2\n      cmd LC_RPATH\n  cmdsize 32\n     path {rpath} (offset 12)\nLoad command 3\n      cmd LC_BUILD_VERSION\n  cmdsize 32\n platform MACOS\n    minos {minos}\n      sdk 15.0\n    ntools 0\n")
+                target_command = (f"Load command 4\n      cmd LC_VERSION_MIN_MACOSX\n  cmdsize 16\n  version {minos}\n      sdk 15.0\n" if legacy_minos else
+                                  f"Load command 3\n      cmd LC_BUILD_VERSION\n  cmdsize 32\n platform MACOS\n    minos {minos}\n      sdk 15.0\n    ntools 0\n")
+                return Result(f"{identifier}Load command 2\n      cmd LC_RPATH\n  cmdsize 32\n     path {rpath} (offset 12)\n{target_command}")
             raise AssertionError(args)
 
         with patch.object(analysis, "run", side_effect=fake_run):
@@ -79,6 +81,16 @@ class MacosStaticAnalysisTests(unittest.TestCase):
         report = self.inspect_fixture(architecture="x86_64")
         self.assertFalse(report["passed"])
         self.assertTrue(any(item["error"] == "required architecture missing" for item in report["findings"]))
+
+    def test_checks_legacy_macos_version_min_command(self):
+        report = self.inspect_fixture(minos="10.13", legacy_minos=True)
+        self.assertTrue(report["passed"], report["findings"])
+        self.assertEqual(report["inspected_files"][0]["minimum_os"], "10.13")
+
+        report = self.inspect_fixture(minos="12.0", legacy_minos=True)
+        self.assertFalse(report["passed"])
+        self.assertTrue(any(item["error"] == "minimum macOS target exceeds 11.0"
+                            for item in report["findings"]))
 
     def test_rejects_absolute_external_dependency_and_too_new_target(self):
         report = self.inspect_fixture(dependency="/opt/homebrew/lib/libpg.dylib", minos="12.0")

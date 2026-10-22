@@ -55,7 +55,10 @@ def commands(output):
             current = {"cmd": stripped[4:]}
             result.append(current)
         elif current is not None:
-            match = re.match(r"(?:path|minos|name) (.+?)(?: \(offset \d+\))?$", stripped)
+            if current["cmd"] == "LC_VERSION_MIN_MACOSX":
+                match = re.match(r"version (.+?)(?: \(offset \d+\))?$", stripped)
+            else:
+                match = re.match(r"(?:path|minos|name) (.+?)(?: \(offset \d+\))?$", stripped)
             if match:
                 current["value"] = match.group(1)
     return result
