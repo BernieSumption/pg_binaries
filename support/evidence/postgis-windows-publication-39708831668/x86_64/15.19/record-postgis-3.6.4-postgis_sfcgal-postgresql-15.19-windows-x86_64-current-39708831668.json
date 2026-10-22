@@ -1,0 +1,48 @@
+{
+  "assembled_core": {
+    "archive": "postgresql-15.19-windows-x86_64.tar.gz",
+    "sha256": "22c61ca5ed86710e94b03d32fa429b3edf230671eeacda9fc07a4b4795eee792",
+    "version": "15.19"
+  },
+  "case_results": {
+    "archive-suite": "passed",
+    "static-analysis": "passed"
+  },
+  "ci": {
+    "build_revision": "911dc45f80dc093662a8d831cdf3ead826754741",
+    "provider": "github-actions",
+    "run_id": "39708831668",
+    "run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/39708831668",
+    "source_revision": "911dc45f80dc093662a8d831cdf3ead826754741",
+    "test_revision": "911dc45f80dc093662a8d831cdf3ead826754741"
+  },
+  "component": "postgis_sfcgal",
+  "core_status": "checked",
+  "environment": {
+    "architecture": "x86_64",
+    "clean_system": true,
+    "dependency_check_profile": "windows-pe-archive-relocation-v1",
+    "dependency_checks_passed": true,
+    "endpoint": "current",
+    "image_id": "win22/20261012.333.1",
+    "os": "windows",
+    "os_version": "10.0.20348"
+  },
+  "outcome": "passed",
+  "platform": "windows-x86_64",
+  "postgresql_version": "15.19",
+  "prerequisite_archives": [],
+  "profile_id": "postgis-publication-windows-x86_64-15.19",
+  "profile_revision": "f6c007ce19ebb1050642ea9136e51dc422f83e603cc551145a00a6e9b99cfe81",
+  "project": "PostGIS",
+  "release_eligible": false,
+  "schema_version": 2,
+  "scope": "publication",
+  "sha256": "f7ecf9c25045be44e6656f8db4fa79ca66d58697b7101bd23e8ceb65318e1732",
+  "test_cases": [
+    "archive-suite",
+    "static-analysis"
+  ],
+  "test_revision": "911dc45f80dc093662a8d831cdf3ead826754741",
+  "version": "3.6.4"
+}
