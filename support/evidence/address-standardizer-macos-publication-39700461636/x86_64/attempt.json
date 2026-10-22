@@ -1,0 +1,23 @@
+{
+  "architecture": "x86_64",
+  "archives": {
+    "address-standardizer-3.7.0-postgresql-16.15-macos-x86_64.tar.gz": "9af61878e4d61c5adbdbae3fe37e5ea1d56945ca28330d482deb5043d6c4e61d",
+    "postgresql-16.15-macos-x86_64.tar.gz": "0abbf5fec62ad26ff491aa954528caff8e22a3a400fe053563ac3f9ddb214730"
+  },
+  "archives_present": {
+    "address-standardizer-3.7.0-postgresql-16.15-macos-x86_64.tar.gz": true,
+    "postgresql-16.15-macos-x86_64.tar.gz": true
+  },
+  "postgresql_version": "16.15",
+  "profile_id": "address-standardizer-publication-macos-x86_64-16.15",
+  "redistribution_status": "not-assessed-final-archive-unavailable",
+  "release_eligible": false,
+  "run_id": "39700461636",
+  "schema_version": 1,
+  "source_revision": "3dad0e742c33b0e62ab2905bb9eac2c662c6c102",
+  "steps": {
+    "archive-suite": "success",
+    "macho-closure": "success"
+  },
+  "version": "3.7.0"
+}

@@ -1,0 +1,47 @@
+{
+  "assembled_core": {
+    "archive": "postgresql-16.15-macos-arm64.tar.gz",
+    "sha256": "ea54d3c9b2a437cd4c6edaad59c1f28ebf5cf36645ee8edc0c2d134d7e906119",
+    "version": "16.15"
+  },
+  "case_results": {
+    "archive-suite": "passed",
+    "static-analysis": "passed"
+  },
+  "ci": {
+    "build_revision": "3dad0e742c33b0e62ab2905bb9eac2c662c6c102",
+    "provider": "github-actions",
+    "run_id": "39700393673",
+    "run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/39700393673",
+    "source_revision": "3dad0e742c33b0e62ab2905bb9eac2c662c6c102",
+    "test_revision": "3dad0e742c33b0e62ab2905bb9eac2c662c6c102"
+  },
+  "component": "collection",
+  "environment": {
+    "architecture": "arm64",
+    "clean_system": true,
+    "dependency_check_profile": "macho-system-dependencies-v1",
+    "dependency_checks_passed": true,
+    "endpoint": "current",
+    "image_id": "macos15/20260907.0337.1",
+    "os": "macos",
+    "os_version": "15.7.9"
+  },
+  "outcome": "passed",
+  "platform": "macos-arm64",
+  "postgresql_version": "16.15",
+  "prerequisite_archives": [],
+  "profile_id": "collection-publication-macos-arm64-16.15",
+  "profile_revision": "58e6e846190316273a7f03e25f1e131b8a12176d0a093144499458c84431c94b",
+  "project": "collection",
+  "release_eligibility": "blocked-pending-dependency-review",
+  "schema_version": 2,
+  "scope": "publication",
+  "sha256": "2087a6ea63b0a27d4192679b5504b3d808f3e35116d697d50a0cbd3490d70e95",
+  "test_cases": [
+    "archive-suite",
+    "static-analysis"
+  ],
+  "test_revision": "3dad0e742c33b0e62ab2905bb9eac2c662c6c102",
+  "version": "1.1.1"
+}

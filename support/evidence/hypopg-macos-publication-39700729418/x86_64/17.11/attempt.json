@@ -1,0 +1,21 @@
+{
+  "architecture": "x86_64",
+  "archives": {
+    "hypopg-1.4.3-postgresql-17.11-macos-x86_64.tar.gz": "eb28cfa4dda13a8769fea3987e069988b51d51cbf3af1dc5f91bf94865a390e6",
+    "postgresql-17.11-macos-x86_64.tar.gz": "fa2d311825cb31de53480468a91b331ca2f85ebf0faf845bad489f37a0bb2717"
+  },
+  "archives_present": {
+    "hypopg-1.4.3-postgresql-17.11-macos-x86_64.tar.gz": true,
+    "postgresql-17.11-macos-x86_64.tar.gz": true
+  },
+  "hypopg_version": "1.4.3",
+  "postgresql_version": "17.11",
+  "profile_id": "hypopg-publication-macos-x86_64-17.11",
+  "run_id": "39700729418",
+  "schema_version": 1,
+  "source_revision": "97c1c5da27c8e5a8122bd8b4c16d2d7ffcf596cb",
+  "steps": {
+    "archive-suite": "success",
+    "static-analysis": "success"
+  }
+}
