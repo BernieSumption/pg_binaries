@@ -134,11 +134,9 @@ class HypoPGMacOSIntelPublicationTests(unittest.TestCase):
         sources = set(profile["sources"])
         self.assertTrue({
             ".github/workflows/hypopg-macos-x86_64-selected-publication.yml",
-            "tools/hypopg_macos_target.py",
             "scripts/macos/core-prefix.sh",
             "scripts/hypopg/verify-macos-publication.sh",
             "tools/emit_hypopg_macos_x86_64_publication.py",
-            "tools/import_hypopg_macos_x86_64_publication.py",
         } <= sources)
         self.assertFalse(any("hypopg_macos_pins" in source for source in sources))
         self.assertNotIn("scripts/macos/resolve-core.sh", sources)

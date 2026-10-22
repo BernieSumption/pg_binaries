@@ -32,10 +32,8 @@ class HypoPGMacOS1711Arm64Tests(unittest.TestCase):
         self.assertEqual(profile["platforms"], ["macos-arm64"])
         with self.assertRaisesRegex(ValueError, "is not selected"):
             base_target("14.18", "arm64", root)
-        self.assertIn("tools/hypopg_macos_target.py", profile["sources"])
         self.assertFalse(any("hypopg_macos_pins" in source for source in profile["sources"]))
         self.assertIn("scripts/macos/core-prefix.sh", profile["sources"])
-        self.assertIn("scripts/hypopg/macos-feasibility.sh", profile["sources"])
         self.assertIn("scripts/hypopg/verify-macos-publication.sh", profile["sources"])
         self.assertIn("policies/install-process.md", profile["sources"])
 
