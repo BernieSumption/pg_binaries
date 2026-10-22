@@ -63,7 +63,8 @@ import json, pathlib, sys
 metadata = json.loads(pathlib.Path(sys.argv[1]).read_text())
 core, digest, pg_version, architecture, source_url, commit, lock_hash = sys.argv[2:]
 expected = {"project": "pg_jsonschema", "version": "0.3.4", "sql_names": ["pg_jsonschema"],
-            "requires": [], "postgresql_version": pg_version, "platform": "macos",
+            "requires": [], "configuration_prerequisites": [], "runtime_prerequisites": [],
+            "postgresql_version": pg_version, "platform": "macos",
             "architecture": architecture,
             "source": {"url": source_url, "commit": commit, "cargo_lock_sha256": lock_hash},
             "core_archive": {"basename": core, "sha256": digest}, "release_eligible": False,

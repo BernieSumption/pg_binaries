@@ -99,7 +99,8 @@ def _metadata(path):
         _fail(f"cannot inspect final pg_jsonschema archive: {exc}")
     expected = {
         "project": "pg_jsonschema", "version": EXTENSION_VERSION, "sql_names": ["pg_jsonschema"],
-        "requires": [], "postgresql_version": PG_VERSION, "platform": "macos",
+        "requires": [], "configuration_prerequisites": [], "runtime_prerequisites": [],
+        "postgresql_version": PG_VERSION, "platform": "macos",
         "architecture": ARCHITECTURE,
         "source": {"url": SOURCE_URL, "commit": SOURCE_COMMIT,
                    "cargo_lock_sha256": CARGO_LOCK_SHA256},

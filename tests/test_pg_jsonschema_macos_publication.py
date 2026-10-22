@@ -78,6 +78,7 @@ class PublicationFixture:
     def _archive(self):
         metadata = {"project": "pg_jsonschema", "version": emitter.EXTENSION_VERSION,
                     "sql_names": ["pg_jsonschema"], "requires": [],
+                    "configuration_prerequisites": [], "runtime_prerequisites": [],
                     "postgresql_version": emitter.PG_VERSION, "platform": "macos",
                     "architecture": emitter.ARCHITECTURE,
                     "source": {"url": emitter.SOURCE_URL, "commit": emitter.SOURCE_COMMIT,
