@@ -22,7 +22,7 @@ $work=Join-Path $env:RUNNER_TEMP 'postgis-windows-publication'
 $coreExtract=Join-Path $work core; $extensionExtract=Join-Path $work extension; $install=Join-Path $work relocated
 New-Item -ItemType Directory -Force $coreExtract,$extensionExtract,$install | Out-Null
 tar.exe -xzf $core -C $coreExtract; tar.exe -xzf $extension -C $extensionExtract
-$metadata=Get-Content (Join-Path $extensionExtract 'postgis/metadata.json') -Raw | ConvertFrom-Json
+$metadata=Get-Content (Join-Path $extensionExtract 'metadata.json') -Raw | ConvertFrom-Json
 if($metadata.project -ne 'PostGIS' -or $metadata.version -ne $version -or $metadata.postgresql_version -ne $pg -or $metadata.core_archive.sha256 -ne $coreHash){throw 'PostGIS metadata does not bind this selected core'}
 Copy-Item (Join-Path $coreExtract 'postgresql') $install -Recurse
 $pgRoot=Join-Path $install postgresql

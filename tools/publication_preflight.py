@@ -253,8 +253,8 @@ def _archive_license_pointer(path, component, *, metadata_sibling=False):
         raise PreflightError(f"cannot verify staged archive licence pointer: {exc}") from exc
 
 
-def _extension_metadata(path, archive_project, version, sql_names, requires, platform,
-                        postgresql_target):
+def _extension_metadata(path, archive_project, project, version, sql_names, requires,
+                        platform, postgresql_target):
     """Check the extension payload root and its archive-level metadata."""
     try:
         with tarfile.open(path, "r:gz") as archive:
@@ -277,7 +277,7 @@ def _extension_metadata(path, archive_project, version, sql_names, requires, pla
             metadata = json.loads(archive.extractfile(metadata_member).read().decode("utf-8"))
             if not isinstance(metadata, dict):
                 raise PreflightError("extension metadata must be a JSON object")
-            if metadata.get("project") != archive_project or metadata.get("version") != version:
+            if metadata.get("project") not in {project, archive_project} or metadata.get("version") != version:
                 raise PreflightError("extension metadata project or version does not match candidate")
             os_name, architecture = platform.split("-", 1)
             if metadata.get("platform") != os_name or metadata.get("architecture") != architecture:
@@ -496,7 +496,7 @@ def preflight_candidate(base_inventory, candidate, support, snapshot, staged_ass
                 if candidate_entry.get("requires") != project_requires:
                     raise PreflightError(f"candidate prerequisites do not match support for {project}")
             _extension_metadata(
-                path, archive_project, version,
+                path, archive_project, project, version,
                 support["extensions"][project]["sql_names"], project_requires, _platform,
                 postgresql_target)
             _archive_license_pointer(path, archive_project, metadata_sibling=True)

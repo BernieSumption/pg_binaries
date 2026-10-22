@@ -131,7 +131,8 @@ root = pathlib.Path(sys.argv[1])
 core_sha256, cargo_lock_sha256, pg_version, architecture, platform, source_url, extension_commit = sys.argv[2:]
 metadata = {
     "project": "pg_jsonschema", "version": "0.3.4", "sql_names": ["pg_jsonschema"],
-    "requires": [], "postgresql_version": pg_version, "platform": "macos", "architecture": architecture,
+    "requires": [], "configuration_prerequisites": [], "runtime_prerequisites": [],
+    "postgresql_version": pg_version, "platform": "macos", "architecture": architecture,
     "source": {"url": source_url, "commit": extension_commit,
                "cargo_lock_sha256": cargo_lock_sha256},
     "core_archive": {"basename": f"postgresql-{pg_version}-{platform}.tar.gz", "sha256": core_sha256},

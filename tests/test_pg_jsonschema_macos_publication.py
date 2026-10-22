@@ -137,6 +137,7 @@ class PgJsonschemaMacOSPublicationTests(unittest.TestCase):
         self.assertIn('license_pointer.py" write', build)
         self.assertIn('license_pointer.py" verify', build)
         self.assertIn('license_pointer.py" verify', verify)
+        self.assertIn('"requires": [], "configuration_prerequisites": [], "runtime_prerequisites": [],', build)
         for content in (build, verify):
             self.assertNotIn("inventory_cargo_licenses", content)
             self.assertNotIn("component_inventory", content)

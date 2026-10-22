@@ -30,6 +30,7 @@ class PgJsonschemaWindowsArchiveTests(unittest.TestCase):
 
     def test_windows_builder_uses_pointer_and_retains_build_identity_checks(self):
         script = Path("scripts/pg_jsonschema/windows-feasibility.ps1").read_text()
+        self.assertIn("configuration_prerequisites = @(); runtime_prerequisites = @()", script)
         self.assertIn("tools/license_pointer.py') write $payload pg_jsonschema", script)
         self.assertIn("tools/license_pointer.py') verify $extensionArchive pg_jsonschema", script)
         for obsolete in ("inventory_cargo_licenses.py", "create_pg_jsonschema_component_inventory.py",

@@ -166,6 +166,7 @@ try {
   if ($LASTEXITCODE -ne 0) { throw 'Could not create the HypoPG licence pointer.' }
   $metadata = [ordered]@{
     project = 'hypopg'; version = $version; sql_names = @('hypopg'); requires = @()
+    configuration_prerequisites = @(); runtime_prerequisites = @()
     postgresql_version = $pgVersion; platform = 'windows'; architecture = $architecture
     source = @{ url = $sourceUrl; sha256 = $sourceSha256 }
     core_archive = @{ basename = $coreArchiveName; sha256 = $coreSha256 }

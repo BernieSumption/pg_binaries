@@ -35,7 +35,7 @@ python3 /usr/local/bin/license_pointer.py write "$stage" pgvector
 core_sha=$(sha256sum "/input/$core_archive" | awk '{print $1}')
 configuration="pgvector-${vector_version};postgresql-core=${pg_version};builder=ubuntu-22.04;optflags=empty"
 cat > /work/stage/metadata.json <<EOF
-{"project":"pgvector","version":"${vector_version}","sql_names":["vector"],"requires":[],"configuration_prerequisites":[],"runtime_prerequisites":[],"build_id":"${build_id}","source_revision":"${source_revision}","source_archive":{"url":"${source_url}","sha256":"${source_sha}"},"core_archive":{"basename":"${core_archive}","sha256":"${core_sha}"},"build_configuration":"${configuration}","builder_image_id":"${builder_image_id}","builder_packages_sha256":"${builder_packages_sha}","platform":"linux","architecture":"${architecture}"}
+{"project":"pgvector","version":"${vector_version}","sql_names":["vector"],"requires":[],"configuration_prerequisites":[],"runtime_prerequisites":[],"postgresql_version":"${pg_version}","build_id":"${build_id}","source_revision":"${source_revision}","source_archive":{"url":"${source_url}","sha256":"${source_sha}"},"core_archive":{"basename":"${core_archive}","sha256":"${core_sha}"},"build_configuration":"${configuration}","builder_image_id":"${builder_image_id}","builder_packages_sha256":"${builder_packages_sha}","platform":"linux","architecture":"${architecture}"}
 EOF
 PG_MAJOR="$pg_major" python3 - /work/stage/metadata.json /out/build-input-identity.json <<'PY'
 import json

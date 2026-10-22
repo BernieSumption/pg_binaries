@@ -105,12 +105,12 @@ build_id="github-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
 revision="$GITHUB_SHA"
 core_sha=$(shasum -a 256 "$core_archive" | awk '{print $1}')
 core_name=$(basename "$core_archive")
-python3 - "$package/metadata.json" "$vector_version" "$build_id" "$revision" "$source_url" "$source_sha" "$configuration" "$architecture" "$core_name" "$core_sha" <<'PY'
+python3 - "$package/metadata.json" "$vector_version" "$build_id" "$revision" "$source_url" "$source_sha" "$configuration" "$architecture" "$pg_version" "$core_name" "$core_sha" <<'PY'
 import json, pathlib, sys
-path, version, build_id, revision, url, sha, config, arch, core_name, core_sha = sys.argv[1:]
+path, version, build_id, revision, url, sha, config, arch, pg_version, core_name, core_sha = sys.argv[1:]
 pathlib.Path(path).write_text(json.dumps({
     'project':'pgvector','version':version,'sql_names':['vector'],'requires':[],
-    'configuration_prerequisites':[],'runtime_prerequisites':[], 'build_id':build_id,
+    'configuration_prerequisites':[],'runtime_prerequisites':[], 'postgresql_version':pg_version, 'build_id':build_id,
     'source_revision':revision,'source_archive':{'url':url,'sha256':sha},
     'core_archive':{'basename':core_name,'sha256':core_sha},
     'build_configuration':config,'platform':'macos','architecture':arch,

@@ -39,6 +39,7 @@ class HypopgWindowsArchiveTests(unittest.TestCase):
         self.assertIn("-CoreIdentityPath", workflow)
         self.assertNotIn("push:", workflow)
         self.assertNotIn("steps.core_pin.outputs.run_id", workflow)
+        self.assertIn("configuration_prerequisites = @(); runtime_prerequisites = @()", script)
 
     def test_selected_target_verifies_uploaded_archives_on_a_separate_runner(self):
         workflow = Path(".github/workflows/hypopg-windows-selected-publication.yml").read_text()

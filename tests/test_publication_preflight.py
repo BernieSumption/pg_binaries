@@ -365,7 +365,7 @@ class PublicationPreflightTests(unittest.TestCase):
             contents["example_project/LICENSES/example_project/LICENCE"] = contents.pop(
                 "example_project/LICENSES/example/LICENCE")
             metadata = json.loads(contents["metadata.json"])
-            metadata["project"] = "example_project"
+            metadata["project"] = "Example Project"
             contents["metadata.json"] = json.dumps(metadata).encode()
             with tarfile.open(path, "w:gz") as archive:
                 for name, data in contents.items():
@@ -383,6 +383,12 @@ class PublicationPreflightTests(unittest.TestCase):
             new_name = old_url.rsplit("/", 1)[-1].replace("example-", "example_project-", 1)
             self._rename_new_url(old_url, new_name)
         self.assertEqual(self.check()["preflight_status"], "passed")
+
+    def test_rejects_unrelated_project_metadata(self):
+        self._rewrite_metadata(lambda metadata: metadata.update(project="different_project"))
+        with self.assertRaisesRegex(publication_preflight.PreflightError,
+                                    "extension metadata project or version"):
+            self.check()
 
     def _rewrite_metadata(self, transform):
         def rewrite(contents):

@@ -100,7 +100,7 @@ PY
 for file in "${sql[@]}"; do cp "$file" "$selected/share/extension/"; done
 for file in "${modules[@]}"; do cp "$file" "$selected/lib/"; done
 archive="$output_root/postgis-3.6.4-postgresql-$pg_version-windows-x86_64.tar.gz"
-python - "$package/metadata.json" "$core_archive" "$core_identity" <<'PY'
+python - "$output_root/package/metadata.json" "$core_archive" "$core_identity" <<'PY'
 import hashlib, json, os, re, sys
 from pathlib import Path
 metadata, core, identity_path=map(Path, sys.argv[1:])
@@ -126,6 +126,6 @@ metadata.write_text(json.dumps({
 }, indent=2, sort_keys=True)+'\n')
 PY
 python "$repo_root/tools/license_pointer.py" write "$package" postgis
-tar -czf "$archive" -C "$output_root/package" postgis
+tar -czf "$archive" -C "$output_root/package" postgis metadata.json
 python "$repo_root/tools/license_pointer.py" verify "$archive" postgis
 (cd "$output_root" && sha256sum "${archive##*/}" > "${archive##*/}.sha256")

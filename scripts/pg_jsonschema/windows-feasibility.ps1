@@ -177,6 +177,7 @@ try {
   $extensionArchive = Join-Path $OutputDirectory $archiveName
   $metadata = @{
     project = 'pg_jsonschema'; version = $extensionVersion; sql_names = @('pg_jsonschema'); requires = @()
+    configuration_prerequisites = @(); runtime_prerequisites = @()
     postgresql_version = $pgVersion; platform = 'windows'; architecture = 'x86_64'
     source = @{ url = 'https://github.com/supabase/pg_jsonschema.git'; commit = $actualCommit; cargo_lock_sha256 = $cargoLockSha256 }
     core_archive = @{ basename = $coreName; sha256 = $coreSha256 }

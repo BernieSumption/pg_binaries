@@ -22,6 +22,16 @@ def write_tar(path, members):
             archive.addfile(info, io.BytesIO(data))
 
 class SeparateLinuxPgvectorBuildInputs(unittest.TestCase):
+    def test_all_platform_builders_record_the_exact_postgresql_version(self):
+        builders = {
+            "linux": (ROOT / "scripts/pgvector/linux-build-in-container.sh").read_text(),
+            "macos": (ROOT / "scripts/pgvector/macos-build.sh").read_text(),
+            "windows": (ROOT / "scripts/pgvector/windows-build.ps1").read_text(),
+        }
+        self.assertIn('"postgresql_version":"${pg_version}"', builders["linux"])
+        self.assertIn("'postgresql_version':pg_version", builders["macos"])
+        self.assertIn("postgresql_version = $PostgreSQLVersion", builders["windows"])
+
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.directory = Path(self.temp.name)

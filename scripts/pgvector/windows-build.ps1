@@ -114,6 +114,7 @@ try {
   $metadata = [ordered]@{
     project = 'pgvector'; version = $PgvectorVersion; sql_names = @('vector')
     requires = @(); configuration_prerequisites = @(); runtime_prerequisites = @()
+    postgresql_version = $PostgreSQLVersion
     build_id = $BuildId; source_revision = $SourceRevision
     source_archive = [ordered]@{ url = $sourceIdentity; sha256 = $sourceSha }
     core_archive = [ordered]@{ basename = (Split-Path $coreArchive -Leaf); sha256 = $coreSha }
