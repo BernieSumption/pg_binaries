@@ -1,0 +1,31 @@
+{
+  "architecture": "arm64",
+  "archives": {
+    "collection-1.1.1-postgresql-18.6-macos-arm64.tar.gz": "3005235766bbeab3b043dc4138f5754dbbfa5abf235b186bd34f8b3e55b13c31",
+    "collection-2.1.3-postgresql-18.6-macos-arm64.tar.gz": "cf0a432ef7d298b17f7dfb4b0e0eded928cabe32ae5ee471d60763edc726db8f",
+    "postgresql-18.6-macos-arm64.tar.gz": "72722e604e7061b188b0683aba7c02d51f75b459c934ffcff51cba6723039123"
+  },
+  "archives_present": {
+    "collection-1.1.1-postgresql-18.6-macos-arm64.tar.gz": true,
+    "collection-2.1.3-postgresql-18.6-macos-arm64.tar.gz": true,
+    "postgresql-18.6-macos-arm64.tar.gz": true
+  },
+  "collection_versions": [
+    "1.1.1",
+    "2.1.3"
+  ],
+  "postgresql_version": "18.6",
+  "profile_id": "collection-publication-macos-arm64-18.6",
+  "release_eligibility": "blocked-pending-dependency-review",
+  "run_id": "39700396381",
+  "schema_version": 1,
+  "source_revision": "3dad0e742c33b0e62ab2905bb9eac2c662c6c102",
+  "source_sha256": {
+    "1.1.1": "ab99a969334442e4a3c77405bc9ffed0083595d18f3898d64a731353a32bec5e",
+    "2.1.3": "a6b07864e5893d3b682bb3223fd6d33015709765c9d40d415c85112358f0e3e4"
+  },
+  "steps": {
+    "archive-suite": "success",
+    "static-analysis": "success"
+  }
+}
