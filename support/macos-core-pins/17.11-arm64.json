@@ -1,8 +1,8 @@
 {
   "schema_version": 1,
   "workflow": "postgresql-macos-selected-publication.yml",
-  "run_id": 39425313739,
-  "artifact_name": "postgresql-macos-selected-17.11-arm64-build-39425313739",
+  "run_id": 39693145901,
+  "artifact_name": "postgresql-macos-selected-17.11-arm64-build-39693145901",
   "archive_name": "postgresql-17.11-macos-arm64.tar.gz",
-  "sha256": "0db9ca0f4d0cf72fa32120aaf9a3f8e47c9dd2d97421ab2b53583af83be681b6"
+  "sha256": "7cddef39ef48e320f9cf68a341371fdc8c5518265f29e84519cd73d7da9f778d"
 }
