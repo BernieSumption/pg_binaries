@@ -56,6 +56,17 @@ def archive_metadata(extension):
         return json.load(archive.extractfile(matches[0]))
 
 
+def validate_archive_metadata(metadata, pg_version, core_name, core_sha256):
+    if (metadata.get("project") != "PostGIS" or metadata.get("version") != VERSION
+            or metadata.get("postgresql_version") != pg_version or metadata.get("platform") != "windows"
+            or metadata.get("architecture") != "x86_64" or metadata.get("sql_names") != SQL_NAMES
+            or metadata.get("requires") != [] or metadata.get("configuration_prerequisites") != []
+            or metadata.get("runtime_prerequisites") != []
+            or metadata.get("core_archive") != {"basename": core_name, "sha256": core_sha256}
+            or metadata.get("release_eligible") is not False):
+        raise coverage.CoverageError("PostGIS archive metadata does not bind this selected core")
+
+
 def emit(root, core_dir, extension_dir, output, steps, os_version, image_id):
     root, core_dir, extension_dir, output = map(Path, (root, core_dir, extension_dir, output))
     pg_version = selected_version(core_dir, extension_dir)
@@ -76,13 +87,7 @@ def emit(root, core_dir, extension_dir, output, steps, os_version, image_id):
     verify_archive(core, "postgresql")
     verify_archive(extension, "postgis")
     metadata = archive_metadata(extension)
-    if (metadata.get("project") != "PostGIS" or metadata.get("version") != VERSION
-            or metadata.get("postgresql_version") != pg_version or metadata.get("platform") != "windows"
-            or metadata.get("architecture") != "x86_64" or metadata.get("sql_names") != SQL_NAMES
-            or metadata.get("requires") != []
-            or metadata.get("core_archive") != {"basename": core_name, "sha256": hashes[core_name]}
-            or metadata.get("release_eligible") is not False):
-        raise coverage.CoverageError("PostGIS archive metadata does not bind this selected core")
+    validate_archive_metadata(metadata, pg_version, core_name, hashes[core_name])
     static = json.loads((extension_dir / "static-analysis.json").read_text())
     pe_path = extension_dir / "pe-dependency-analysis.json"
     pe = json.loads(pe_path.read_text())

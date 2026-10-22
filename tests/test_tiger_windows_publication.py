@@ -53,9 +53,15 @@ class TigerWindowsPublicationTests(unittest.TestCase):
 
     def test_workflow_emits_receipt_after_relocated_archive_verification(self):
         workflow = Path(".github/workflows/tiger-windows-selected-publication.yml").read_text()
-        verifier = workflow.index("windows-verify-publication.ps1")
+        postgis_verifier = workflow.index("windows-verify-publication.ps1")
+        postgis_emitter = workflow.index("emit_postgis_windows_publication.py")
+        postgis_importer = workflow.index("import_postgis_windows_publication.py")
+        verifier = workflow.index("windows-verify-publication.ps1", postgis_verifier + 1)
         emitter_call = workflow.index("emit_tiger_windows_publication.py")
         artifact = workflow.index("${{ runner.temp }}/bundle/tiger/publication/**")
+        self.assertLess(postgis_verifier, postgis_emitter)
+        self.assertLess(postgis_emitter, postgis_importer)
+        self.assertLess(postgis_importer, verifier)
         self.assertLess(verifier, emitter_call)
         self.assertLess(emitter_call, artifact)
         self.assertIn("static-analysis.json", workflow)

@@ -163,9 +163,38 @@ jobs:
         with:
           name: tiger-windows-selected-${{ needs.select.outputs.postgresql_version }}-${{ github.run_id }}
           path: ${{ runner.temp }}/bundle
+      - name: Verify the final PostGIS archive on the fresh runner
+        id: postgis_verify
+        if: steps.download.outcome == 'success'
+        run: |
+          $bundle = Join-Path $env:RUNNER_TEMP 'bundle'
+          ./scripts/postgis/windows-verify-publication.ps1 `
+            -CoreDirectory (Join-Path $bundle 'core') `
+            -ExtensionDirectory (Join-Path $bundle 'postgis') `
+            -OutputDirectory (Join-Path $bundle 'postgis')
+      - name: Create archive-bound PostGIS records from the same-run archive
+        id: postgis_evidence
+        if: steps.postgis_verify.outcome == 'success'
+        run: |
+          $bundle = Join-Path $env:RUNNER_TEMP 'bundle'
+          $postgis = Join-Path $bundle 'postgis'
+          '{"archive-suite":"passed","static-analysis":"passed"}' | Set-Content -Encoding ascii (Join-Path $postgis 'steps.json')
+          python tools/emit_postgis_windows_publication.py `
+            --core-archives (Join-Path $bundle 'core') `
+            --archives $postgis `
+            --output (Join-Path $postgis 'publication') `
+            --steps (Join-Path $postgis 'steps.json') `
+            --os-version (Get-CimInstance Win32_OperatingSystem).Version `
+            --image-id "$env:ImageOS/$env:ImageVersion"
+          if ($LASTEXITCODE -ne 0) { throw 'Could not emit archive-bound PostGIS publication evidence.' }
+          python tools/import_postgis_windows_publication.py `
+            --core-archives (Join-Path $bundle 'core') `
+            --archives $postgis `
+            --run-id $env:GITHUB_RUN_ID
+          if ($LASTEXITCODE -ne 0) { throw 'Could not import PostGIS publication evidence.' }
       - name: Verify the transferred core, PostGIS and TIGER archives after relocation
         id: verify
-        if: steps.download.outcome == 'success'
+        if: steps.postgis_evidence.outcome == 'success'
         run: |
           $bundle = Join-Path $env:RUNNER_TEMP 'bundle'
           $evidence = Join-Path $env:RUNNER_TEMP 'tiger-windows-verification'
@@ -203,13 +232,21 @@ jobs:
           path: |
             ${{ runner.temp }}/tiger-windows-verification/**
             ${{ runner.temp }}/bundle/tiger/publication/**
+            ${{ runner.temp }}/bundle/postgis/publication/**
+            ${{ runner.temp }}/bundle/postgis/static-analysis.json
+            ${{ runner.temp }}/bundle/postgis/pe-dependency-analysis.json
+            ${{ runner.temp }}/bundle/postgis/probe-output.txt
+            ${{ runner.temp }}/bundle/postgis/initdb.log
+            ${{ runner.temp }}/bundle/postgis/server.log
             support/evidence/tiger-windows-publication-${{ github.run_id }}/**
+            support/evidence/postgis-windows-publication-${{ github.run_id }}/**
             support/verification/postgis_tiger_geocoder-2025.2-postgresql-${{ needs.select.outputs.postgresql_version }}-windows-x86_64-current-${{ github.run_id }}.json
+            support/verification/postgis-3.6.4-*-postgresql-${{ needs.select.outputs.postgresql_version }}-windows-x86_64-current-${{ github.run_id }}.json
           if-no-files-found: warn
           retention-days: 7
       - name: Require the selected Windows TIGER archive verification
         if: always()
         run: |
-          if ('${{ needs.build.result }}' -ne 'success' -or '${{ steps.download.outcome }}' -ne 'success' -or '${{ steps.verify.outcome }}' -ne 'success') {
+          if ('${{ needs.build.result }}' -ne 'success' -or '${{ steps.download.outcome }}' -ne 'success' -or '${{ steps.postgis_verify.outcome }}' -ne 'success' -or '${{ steps.postgis_evidence.outcome }}' -ne 'success' -or '${{ steps.verify.outcome }}' -ne 'success') {
             throw 'Selected Windows TIGER publication verification failed.'
           }

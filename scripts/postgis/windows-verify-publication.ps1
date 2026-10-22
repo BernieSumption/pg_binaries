@@ -23,7 +23,7 @@ $coreExtract=Join-Path $work core; $extensionExtract=Join-Path $work extension; 
 New-Item -ItemType Directory -Force $coreExtract,$extensionExtract,$install | Out-Null
 tar.exe -xzf $core -C $coreExtract; tar.exe -xzf $extension -C $extensionExtract
 $metadata=Get-Content (Join-Path $extensionExtract 'metadata.json') -Raw | ConvertFrom-Json
-if($metadata.project -ne 'PostGIS' -or $metadata.version -ne $version -or $metadata.postgresql_version -ne $pg -or $metadata.core_archive.sha256 -ne $coreHash){throw 'PostGIS metadata does not bind this selected core'}
+if($metadata.project -ne 'PostGIS' -or $metadata.version -ne $version -or $metadata.postgresql_version -ne $pg -or $metadata.core_archive.sha256 -ne $coreHash -or $metadata.configuration_prerequisites -isnot [array] -or $metadata.configuration_prerequisites.Count -ne 0 -or $metadata.runtime_prerequisites -isnot [array] -or $metadata.runtime_prerequisites.Count -ne 0){throw 'PostGIS metadata does not bind this selected core or its prerequisite fields'}
 Copy-Item (Join-Path $coreExtract 'postgresql') $install -Recurse
 $pgRoot=Join-Path $install postgresql
 Get-ChildItem (Join-Path $extensionExtract postgis) -Recurse -File | Where-Object Name -ne 'metadata.json' | ForEach-Object {

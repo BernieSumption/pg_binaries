@@ -117,6 +117,7 @@ metadata.write_text(json.dumps({
   'schema_version': 1, 'project': 'PostGIS', 'version': '3.6.4',
   'sql_names': ['postgis','postgis_raster','postgis_sfcgal','postgis_topology'],
   'requires': [],
+  'configuration_prerequisites': [], 'runtime_prerequisites': [],
   'postgresql_version': os.environ['PG_VERSION'], 'platform': 'windows', 'architecture': 'x86_64',
   'source': {'url':'https://download.osgeo.org/postgis/source/postgis-3.6.4.tar.gz',
              'sha256':'ed8dc6679f1e06f7b113592b04cde2a7e00f1b1e681294c8ca2204058990cec6'},

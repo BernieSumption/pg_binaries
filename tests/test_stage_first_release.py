@@ -133,6 +133,54 @@ class StageFirstReleaseTest(unittest.TestCase):
         for asset in staged.values():
             self.assertEqual(hashlib.sha256(Path(asset["path"]).read_bytes()).hexdigest(), asset["sha256"])
 
+    def test_staging_accepts_repacked_windows_postgis_15_evidence_under_current_profile(self):
+        repository = Path(__file__).resolve().parents[1]
+        platform = "windows-x86_64"
+        pg_version = "15.19"
+        core = self.archive_dir / f"postgresql-{pg_version}-{platform}.tar.gz"
+        included = ["plpgsql"]
+        manifest = {
+            "schema_version": 1, "component": "postgresql", "version": pg_version,
+            "postgresql_version": pg_version, "platform": "windows", "architecture": "x86_64",
+            "included_extensions": included,
+        }
+        with tarfile.open(core, "w:gz") as archive:
+            for name, data in {
+                "postgresql/share/extension/plpgsql.control": b"comment = 'builtin'\n",
+                "postgresql/manifest.json": json.dumps(manifest).encode(),
+            }.items():
+                member = tarfile.TarInfo(name)
+                member.size = len(data)
+                archive.addfile(member, io.BytesIO(data))
+        postgis = self.archive_dir / f"postgis-3.6.4-postgresql-{pg_version}-{platform}.tar.gz"
+        postgis.write_bytes(b"staged metadata-repacked PostGIS bytes")
+        core_sha = hashlib.sha256(core.read_bytes()).hexdigest()
+        postgis_sha = hashlib.sha256(postgis.read_bytes()).hexdigest()
+
+        core_record = json.loads((repository / "support/verification/postgresql-15.19-windows-x86_64-current-39695202767.json").read_text())
+        core_record["sha256"] = core_sha
+        self._write_record("core-windows", core_record)
+        postgis_components = ("postgis", "postgis_raster", "postgis_sfcgal", "postgis_topology")
+        for component in postgis_components:
+            record_path = repository / (
+                f"support/verification/postgis-3.6.4-postgresql-{pg_version}-windows-x86_64-"
+                f"{component}-current-metadata-repack-20261022.json")
+            record = json.loads(record_path.read_text())
+            record["sha256"] = postgis_sha
+            record["assembled_core"]["sha256"] = core_sha
+            self._write_record(component, record)
+
+        support = stage_first_release._coverage.load_json(repository / "support.json")
+        snapshot = stage_first_release._coverage.load_json(repository / "support/postgresql-releases.json")
+        proposals, _staged, _missing = stage_first_release.prepare_manifests(
+            [core, postgis], [self.record_dir], support, snapshot,
+            "catalog-20261022-1", root=repository)
+
+        self.assertTrue(any(item["component"] == "PostGIS" for item in proposals), _missing)
+        proposal = next(item for item in proposals if item["component"] == "PostGIS")
+        self.assertEqual(proposal["sha256"], postgis_sha)
+        self.assertEqual({record["component"] for record in proposal["verification"]}, set(postgis_components))
+
     def test_sha_mismatch_reports_the_selected_extension_target(self):
         archives = []
         for platform in self.platforms:
