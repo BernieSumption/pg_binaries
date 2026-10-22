@@ -136,6 +136,13 @@
       "verification_record": "support/verification/pgvector-0.8.7-postgresql-16.15-macos-arm64-current-metadata-repack-20261022.json"
     },
     {
+      "archive": "pgvector-0.8.7-postgresql-16.15-macos-x86_64.tar.gz",
+      "original_sha256": "044f19a90666f0743531e734b3ecdf028792d8562bd7ddb533680a643745d576",
+      "patched_sha256": "9506906d0932267734aec7f5ff5db88053357c6b639562e89963178cb3c0e420",
+      "proof": "support/evidence/metadata-repack-2026-10-22/proofs/pgvector-0.8.7-postgresql-16.15-macos-x86_64.tar.gz.proof.json",
+      "verification_record": "support/verification/pgvector-0.8.7-postgresql-16.15-macos-x86_64-current-metadata-repack-20261022.json"
+    },
+    {
       "archive": "pgvector-0.8.7-postgresql-18.6-macos-arm64.tar.gz",
       "original_sha256": "643fda25201a723dba656422f2bfaff7f80219e8e4eff09f79461278622fc47b",
       "patched_sha256": "5b6ba797c4ca1ebe75256eab875bb55be01f659f9e2ce06b618730921b711e67",
