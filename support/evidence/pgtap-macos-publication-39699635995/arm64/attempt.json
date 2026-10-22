@@ -1,0 +1,21 @@
+{
+  "architecture": "arm64",
+  "archives": {
+    "pgtap-1.3.4-postgresql-16.15-macos-arm64.tar.gz": "fa7bba74d9087276b2d1fb3f9ec4bd526fc80be5d86fe41f6174c34556def6c7",
+    "postgresql-16.15-macos-arm64.tar.gz": "ea54d3c9b2a437cd4c6edaad59c1f28ebf5cf36645ee8edc0c2d134d7e906119"
+  },
+  "archives_present": {
+    "pgtap-1.3.4-postgresql-16.15-macos-arm64.tar.gz": true,
+    "postgresql-16.15-macos-arm64.tar.gz": true
+  },
+  "pgtap_version": "1.3.4",
+  "postgresql_version": "16.15",
+  "profile_id": "pgtap-publication-macos-arm64-16.15",
+  "run_id": "39699635995",
+  "schema_version": 1,
+  "source_revision": "f84099eaf3f861df1e4ed4192d3bded324d64e4a",
+  "steps": {
+    "archive-suite": "success",
+    "static-analysis": "success"
+  }
+}
