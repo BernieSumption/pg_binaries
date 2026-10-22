@@ -15,7 +15,7 @@ class RepackError(ValueError):
 
 
 FILENAME = re.compile(
-    r"(?P<project>pgvector|hypopg|pg_jsonschema)-[^/]+-postgresql-"
+    r"(?P<project>pgvector|hypopg|pg_jsonschema|postgis)-[^/]+-postgresql-"
     r"(?P<pg>\d+\.\d+)-(?P<platform>linux|windows|macos)-"
     r"(?P<arch>x86_64|arm64)\.tar\.gz"
 )
@@ -39,6 +39,8 @@ def _identity(input_path, core_basename):
     elif project == "pg_jsonschema" and (
         match["platform"] == "windows" or (match["platform"], match["arch"]) == ("macos", "arm64")
     ):
+        additions.update(configuration_prerequisites=[], runtime_prerequisites=[])
+    elif project == "postgis" and match["platform"] == "windows":
         additions.update(configuration_prerequisites=[], runtime_prerequisites=[])
     else:
         raise RepackError("archive does not match one of the known metadata defects")

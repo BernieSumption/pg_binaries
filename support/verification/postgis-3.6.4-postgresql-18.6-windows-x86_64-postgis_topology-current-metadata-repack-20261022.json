@@ -1,0 +1,59 @@
+{
+  "assembled_core": {
+    "archive": "postgresql-18.6-windows-x86_64.tar.gz",
+    "sha256": "b888406d1f2757b7679a2a1a4f1839a9716543ecff0d477237be12c462130709",
+    "version": "18.6"
+  },
+  "case_results": {
+    "archive-suite": "passed",
+    "static-analysis": "passed"
+  },
+  "ci": {
+    "build_revision": "911dc45f80dc093662a8d831cdf3ead826754741",
+    "provider": "github-actions",
+    "run_id": "39708831012",
+    "run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/39708831012",
+    "source_revision": "911dc45f80dc093662a8d831cdf3ead826754741",
+    "test_revision": "911dc45f80dc093662a8d831cdf3ead826754741"
+  },
+  "component": "postgis_topology",
+  "core_status": "checked",
+  "environment": {
+    "architecture": "x86_64",
+    "clean_system": true,
+    "dependency_check_profile": "windows-pe-archive-relocation-v1",
+    "dependency_checks_passed": true,
+    "endpoint": "current",
+    "image_id": "win22/20261012.333.1",
+    "os": "windows",
+    "os_version": "10.0.20348"
+  },
+  "noncode_patch": {
+    "kind": "metadata-only",
+    "metadata_delta": {
+      "configuration_prerequisites": [],
+      "runtime_prerequisites": []
+    },
+    "original_record_sha256": "d56ce02c5d75ae68ed91c0948b2525ae5121dfc9aa760a25ae459013eed60915",
+    "original_sha256": "b653e4be3fe007cb4a629c75695237aa9d67e8eb9f54792685c967221844f1c6",
+    "patched_sha256": "83d7c69c89065e0eae76050f2e6c6c6da46f258e5951162f4bd9a883059f59e2",
+    "proof": "support/evidence/metadata-repack-2026-10-22/proofs/postgis-3.6.4-postgresql-18.6-windows-x86_64.tar.gz.proof.json"
+  },
+  "outcome": "passed",
+  "platform": "windows-x86_64",
+  "postgresql_version": "18.6",
+  "prerequisite_archives": [],
+  "profile_id": "postgis-publication-windows-x86_64-18.6",
+  "profile_revision": "7f7efb3f6b6bef805564ed009bcc6b1cc95a097d053d1e33de9ce2a50f2aa7ab",
+  "project": "PostGIS",
+  "release_eligible": false,
+  "schema_version": 2,
+  "scope": "publication",
+  "sha256": "83d7c69c89065e0eae76050f2e6c6c6da46f258e5951162f4bd9a883059f59e2",
+  "test_cases": [
+    "archive-suite",
+    "static-analysis"
+  ],
+  "test_revision": "911dc45f80dc093662a8d831cdf3ead826754741",
+  "version": "3.6.4"
+}

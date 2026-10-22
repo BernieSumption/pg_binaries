@@ -49,6 +49,7 @@ class MetadataRepackTests(unittest.TestCase):
             ("hypopg-1.4.3-postgresql-18.6-windows-x86_64.tar.gz", "hypopg"),
             ("pg_jsonschema-0.3.4-postgresql-18.6-windows-x86_64.tar.gz", "pg_jsonschema"),
             ("pg_jsonschema-0.3.4-postgresql-18.6-macos-arm64.tar.gz", "pg_jsonschema"),
+            ("postgis-3.6.4-postgresql-18.6-windows-x86_64.tar.gz", "postgis"),
         )
         for filename, project in cases:
             with self.subTest(filename=filename):
@@ -64,6 +65,7 @@ class MetadataRepackTests(unittest.TestCase):
             ("pgvector-0.8.7-postgresql-17.11-linux-x86_64.tar.gz", {"project": "pgvector", "postgresql_version": "16.15"}, "postgresql-17.11-linux-x86_64.tar.gz"),
             ("hypopg-1.4.3-postgresql-18.6-windows-x86_64.tar.gz", {"project": "hypopg", "runtime_prerequisites": ["conflict"]}, "postgresql-18.6-windows-x86_64.tar.gz"),
             ("hypopg-1.4.3-postgresql-18.6-linux-x86_64.tar.gz", {"project": "hypopg"}, "postgresql-18.6-linux-x86_64.tar.gz"),
+            ("postgis-3.6.4-postgresql-18.6-macos-arm64.tar.gz", {"project": "postgis"}, "postgresql-18.6-macos-arm64.tar.gz"),
         )
         for filename, metadata, core in cases:
             with self.subTest(filename=filename, metadata=metadata):
