@@ -7,8 +7,10 @@ import unittest
 
 REPO = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(REPO / "tools"))
+import coverage
 from publication_preflight import _archive_license_pointer
 from license_pointer import LICENSE_POINTER
+import emit_postgis_windows_publication as emitter
 
 
 class PostgisWindowsArchiveLayoutTests(unittest.TestCase):
@@ -32,6 +34,27 @@ class PostgisWindowsArchiveLayoutTests(unittest.TestCase):
                     member.size = len(payload)
                     archive.addfile(member, io.BytesIO(payload))
             _archive_license_pointer(archive_path, "postgis", metadata_sibling=True)
+
+    def test_publication_emitter_reads_sibling_metadata(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            archive_path = Path(temporary) / "postgis.tar.gz"
+            contents = b'{"project":"PostGIS"}'
+            with tarfile.open(archive_path, "w:gz") as archive:
+                member = tarfile.TarInfo("metadata.json")
+                member.size = len(contents)
+                archive.addfile(member, io.BytesIO(contents))
+            self.assertEqual(emitter.archive_metadata(archive_path), {"project": "PostGIS"})
+
+    def test_publication_emitter_rejects_nested_metadata(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            archive_path = Path(temporary) / "postgis.tar.gz"
+            contents = b'{"project":"PostGIS"}'
+            with tarfile.open(archive_path, "w:gz") as archive:
+                member = tarfile.TarInfo("postgis/metadata.json")
+                member.size = len(contents)
+                archive.addfile(member, io.BytesIO(contents))
+            with self.assertRaisesRegex(coverage.CoverageError, "requires one bounded metadata.json"):
+                emitter.archive_metadata(archive_path)
 
 
 if __name__ == "__main__":

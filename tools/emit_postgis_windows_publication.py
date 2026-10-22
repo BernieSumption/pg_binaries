@@ -48,6 +48,14 @@ def digest(path):
     return h.hexdigest()
 
 
+def archive_metadata(extension):
+    with tarfile.open(extension, "r:gz") as archive:
+        matches = [m for m in archive.getmembers() if m.name == "metadata.json" and m.isfile() and m.size <= 1048576]
+        if len(matches) != 1:
+            raise coverage.CoverageError("PostGIS archive requires one bounded metadata.json")
+        return json.load(archive.extractfile(matches[0]))
+
+
 def emit(root, core_dir, extension_dir, output, steps, os_version, image_id):
     root, core_dir, extension_dir, output = map(Path, (root, core_dir, extension_dir, output))
     pg_version = selected_version(core_dir, extension_dir)
@@ -67,11 +75,7 @@ def emit(root, core_dir, extension_dir, output, steps, os_version, image_id):
             raise coverage.CoverageError(f"checksum sidecar does not match {path.name}")
     verify_archive(core, "postgresql")
     verify_archive(extension, "postgis")
-    with tarfile.open(extension, "r:gz") as archive:
-        matches = [m for m in archive.getmembers() if m.name == "postgis/metadata.json" and m.isfile() and m.size <= 1048576]
-        if len(matches) != 1:
-            raise coverage.CoverageError("PostGIS archive requires one bounded postgis/metadata.json")
-        metadata = json.load(archive.extractfile(matches[0]))
+    metadata = archive_metadata(extension)
     if (metadata.get("project") != "PostGIS" or metadata.get("version") != VERSION
             or metadata.get("postgresql_version") != pg_version or metadata.get("platform") != "windows"
             or metadata.get("architecture") != "x86_64" or metadata.get("sql_names") != SQL_NAMES
