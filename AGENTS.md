@@ -1,20 +1,18 @@
-# Working instructions for spike-2
+# Working instructions for this repository
 
-This repo contains build scripts to generate a standalone set of cross-platform Postgres binaries along with a wide range of extensions.
+This repository builds standalone PostgreSQL distributions with extensions for supported platforms. A distribution consists of PostgreSQL and independently downloadable extension archives that can be installed together and verified from their final archive bytes.
 
-## Purpose and authority
+## Repository structure and authority
 
-Build a usable PostgreSQL distribution in functional slices. The current design in `design/` describes the slice being built. `SPIKE2_MILESTONES.md` records later work and open questions. The old tree under `tmp-spike-1/` and the `spike` branch are reference material; their specs, policies, queues and agent instructions have no authority on this branch.
+`design/` describes the distribution's intended behaviour and how it is built and verified. Each document covers one coherent subject and contains both product requirements and the design decisions needed to implement them. The design describes the current or imminent supported slice; it does not claim support for an unverified target. There is no separate specification and policy layer.
 
-The human reviews the first slice's design before implementation begins. Until that review, work on the branch structure and design review material only. After review, implement milestones autonomously within the agreed design. Surface a material design change for discussion before implementing it.
+`SPIKE2_MILESTONES.md` records planned capabilities, open questions and work specific to the current development sequence. Implementation code, build recipes, metadata and tests define operational details within the design. If code and design disagree, resolve the disagreement rather than silently treating either as an exception.
 
-## Design and migration
+## Editing the design
 
-Write each design rule in one authoritative place. Describe the feature as it should work in the current or imminent slice, using positive language. Keep future scope, provisional choices and open questions in the milestones file. Create a design document when a subject is needed to build or review the current slice; split it only when it has an independent purpose.
+Agents may write and revise design documents as proposals for the human to review. Before implementing a new subject or a material change to an agreed design, explain the proposed behaviour and obtain the human's agreement. Record unresolved choices in `SPIKE2_MILESTONES.md`; do not present them as settled design. Once a design is agreed, agents may implement it and resolve routine details in code and tests without another review. Keep design and implementation consistent when either changes.
 
-Treat every old requirement, decision, script and test as a candidate. For each design document under review, state its scope, inspect all old material within that scope, and report what was carried across, altered, dropped or added. Assert that every in-scope item received one of those treatments. Inspect old source before copying code and simplify it where possible. Use the old branch for a fresh inventory when a milestone begins; do not silently drop an old test kind or pending human review item.
-
-When reviewing a file with the human, identify each observation by its heading or a short quote from the relevant passage. State the file's scope and account for every old rule or test kind within it as carried across, altered or dropped; identify additions separately.
+Create a design document when its subject is needed to build or review the current slice. Split documents only when the subjects have independent purposes. Give each rule one authoritative home and link to it where another document needs the rule. Describe intended behaviour in positive terms. When reviewing a file with the human, identify observations by a section heading or a short quote from the relevant passage.
 
 ## Cost and architecture
 
@@ -26,17 +24,17 @@ Add code comments only when they convey information that is genuinely hard to in
 
 ## Building and testing
 
-Iterate locally before porting a build to GitHub Actions. Run Linux builds and tests of compiled artifacts inside Docker. Run macOS builds and compiled tests inside a disposable macOS VM. Do not install build dependencies or compile on the host. Do not use a host package manager, host compiler, `sudo` or a machine-wide installation to work around a build problem. Control the disposable VM through its API or CLI; do not control the host browser or desktop for this project. Keep generated outputs out of Git and leave unrelated local files, images and VMs intact.
+Iterate locally before porting a build to GitHub Actions. Run Linux builds and tests of compiled artifacts inside Docker. Run macOS builds and compiled tests inside a disposable macOS VM. Do not install build dependencies or compile on the host. Do not use a host package manager, host compiler, `sudo` or a machine-wide installation to work around a build problem. Control disposable VMs through their API or CLI. Keep generated outputs out of Git and leave unrelated local files, images and VMs intact.
 
-Build and test final archives for each functional slice. Verify assembled archives outside their build environment. Keep PostgreSQL and extension build commands independently runnable so an agent can rerun only a failed part.
+Build and test final archives for each supported slice. Verify assembled archives outside their build environment. Keep PostgreSQL and extension build commands independently runnable so an agent can rerun only a failed part.
 
-Use standard GitHub-hosted runners for production builds. Port to GitHub after local iteration has addressed issues the local environment can reveal. GitHub remains necessary for target architectures unavailable locally. Keep expensive workflows scoped, set reasonable job timeouts and retain only useful temporary artifacts. Space status checks rather than using rapid `gh run watch` polling. Back off on GitHub secondary rate limits even when the hourly quota remains available; continue independent work meanwhile.
+Use standard GitHub-hosted runners for production builds. Port to GitHub after local iteration has addressed issues the local environment can reveal. Keep expensive workflows scoped, set reasonable job timeouts and retain only useful temporary artifacts. Use the GitHub CLI or API to inspect runs and retrieve artifacts after runs finish. Space status checks rather than using rapid `gh run watch` polling. Back off on GitHub secondary rate limits even when the hourly quota remains available; continue independent work meanwhile.
 
 ## Repository operations
 
-Develop on `spike-2`. Keep commits reviewable. Do not push to `main`, force push, merge, delete branches, alter repository settings, publish a permanent GitHub Release or change public release assets without the human's explicit authorization. Repository instructions do not bypass sandbox or GitHub permissions. If a required operation is blocked by those controls, continue unaffected work and report the specific blocker.
+Keep commits reviewable and coordinate edits to shared files. Do not push to `main`, force push, merge, delete branches, alter repository settings, publish a permanent GitHub Release or change public release assets without the human's explicit authorization. Do not control the host browser or desktop for this project. Repository instructions do not bypass sandbox or GitHub permissions. If a required operation is blocked by those controls, continue unaffected work and report the specific blocker.
 
-Coordinate edits to shared files. Explain verified results and remaining uncertainties without treating plans or inferences as evidence.
+Explain verified results and remaining uncertainties without treating plans or inferences as evidence.
 
 ## Writing style
 

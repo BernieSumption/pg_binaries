@@ -2,7 +2,7 @@
 
 Each milestone delivers working functionality or the structure needed to build it. `design/` describes the current or imminent slice. Open questions remain here until resolved; a design document does not claim future platform support before its archives pass verification.
 
-The previous tree is preserved at `spike` commit `372a46debf49bf3e5c5ef4a23a86fde278e2344e` and in the local ignored `tmp-spike-1/` directory. At each milestone, inspect the old documents, scripts and tests relevant to that slice. For each design document presented for review, report its scope and classify every in-scope old rule or test kind as carried across, altered or dropped; identify additions. Recompute the details from the old tree rather than maintaining a second inventory.
+The previous tree is preserved at `spike` commit `372a46debf49bf3e5c5ef4a23a86fde278e2344e` and in the local ignored `tmp-spike-1/` directory. Its requirements, decisions, scripts, tests and pending human review items are candidates for the new repository, not current rules. At each milestone, inspect the old material relevant to that slice before copying code or deciding what to retain. For each design document presented for review, report its scope and classify every in-scope old rule or test kind as carried across, altered or dropped; identify additions and assert that every in-scope item has a treatment. Do not silently drop an old test kind or pending human review item. Recompute the details from the old tree rather than maintaining a second inventory.
 
 ## 1. Establish the clean branch and first-slice design
 
