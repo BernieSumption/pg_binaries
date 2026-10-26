@@ -1,3 +1,0 @@
-# pgAudit Apple Silicon feasibility attempt
-
-[Run 39078495881](https://github.com/BernieSumption/pg_binaries/actions/runs/39078495881) tested unmodified pgAudit 18.0 against the PostgreSQL 18.6 macOS arm64 core archive from successful run 39075939632 (SHA-256 `853e0eafb3570378225d2ea16247c9de31770f85df5230509885df2ca5e89d67`). The probe verified the core and source checksums and configured the pinned OpenSSL 3.5.8 source. Compilation still stopped at `openssl/ssl.h`: OpenSSL `Configure` generated its configuration headers but did not generate that public header from its template. No pgAudit archive or runtime result was produced. The [full CI log](build-log.txt) records the attempt at revision `71c78f74b67a0e8e99c58b82096b0186a99474a4`.

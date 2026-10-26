@@ -1,7 +1,0 @@
-# Selected Linux checked-core reuse
-
-[GitHub Actions run 39173701638](https://github.com/BernieSumption/pg_binaries/actions/runs/39173701638) passed at source revision `d31463ae24d7fca45cc4be3bc2db98fbedb3447f`. It selected PostgreSQL 17.11 and pgvector 0.8.7 for Linux x86-64. The candidate resolver retrieved the preceding [run 39173296141](pgvector-linux-selected-39173296141.md) archive and logged acceptance after checking the archive checksum, producer identity, unchanged core recipe and source, Ubuntu base digest and installed package inventory. It did not rebuild PostgreSQL. The job took about 94 seconds, including 32 seconds for builder setup and checked retrieval.
-
-The [independently imported core record](../verification/postgresql-17.11-linux-x86_64-current-39173701638.json) reports SHA-256 `d1ef75a08576335c36a6388b6d916d7e22c51c3a4b0ae74c50a07e1fc931c792`, exactly matching the preceding run. The [pgvector record](../verification/pgvector-0.8.7-postgresql-17.11-linux-x86_64-current-39173701638.json) binds newly built extension SHA-256 `f254261ea22d34171f9d19e744f1a2ceef7ac3d1fba9107b472b3ccf9df9688a` to that core. Both passed the current archive suite and static checks; [retained evidence](linux-publication-39173701638/postgresql-17.11/x86_64/current-steps.json) includes the receipt, static analysis, symbols and diagnostics.
-
-This proves core reuse on the selected Linux path. General planner dispatch and candidate reuse for other projects and platforms remain separate work.

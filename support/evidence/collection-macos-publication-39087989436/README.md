@@ -1,5 +1,0 @@
-# collection macOS publication attempt 39087989436
-
-[Run 39087989436](https://github.com/BernieSumption/pg_binaries/actions/runs/39087989436) on 2026-10-18 at revision `5ae8f75cc51a01ca9e7e4ecd1e0ee9865a63a36a` rebuilt both pinned releases against the selected PostgreSQL 18.6 Apple Silicon archive. Both relocated SQL suites and final-archive Mach-O checks passed. The extension archive SHA-256 values were `269dcd95aec0982ff5f86ff2dde3325afeac81d9934fc6eb0c058a8fb8e089ed` for 1.1.1 and `3b90453cb9f32a221b4e4c6b2224a0396323374fad44b4a27a12d9e2bbfe410e` for 2.1.3.
-
-Publication evidence emission then stopped because the new profile's source paths were not sorted. No receipt, record or raw attempt was emitted. The profile order and a test against the real registered profile are corrected; this run does not count as publication verification. The [artifact](https://github.com/BernieSumption/pg_binaries/actions/runs/39087989436) temporarily retains the archives, SQL output and Mach-O reports; the failure and hashes are recorded here after downloading that artifact.

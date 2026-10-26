@@ -1,5 +1,0 @@
-# pgTAP 1.3.4 Linux publication evidence
-
-[Run 39438481398](https://github.com/BernieSumption/pg_binaries/actions/runs/39438481398) passed the PostgreSQL 16.15 pgTAP x86_64 publication profile at revision `dd58c8d076020db78d4108d67197aac21555a7fe`. The [verification record](../../verification/pgtap-1.3.4-postgresql-16.15-linux-x86_64-current-39438481398.json) binds pgTAP archive SHA-256 `206bb18f523322a829f8c993da8e9e0d1bd53f2df3ea188eaa0ffa26ad085636` to core SHA-256 `8a18dedadd1b2e008ce3be3a1f6bf271f0415355f476ed3375ccb9d1697c530c`. The core was reused from passing current-profile run [39437053638](https://github.com/BernieSumption/pg_binaries/actions/runs/39437053638), not rebuilt by the pgTAP run. The existing importer validated and retained the receipt, steps, static report and archive-bound verification record.
-
-This covers the Linux x86_64 PostgreSQL 16.15 target only. The archives remain temporary Actions artifacts. Broader selected-target verification and Linux core redistribution reviews, including required source access for bundled runtimes, remain release prerequisites.

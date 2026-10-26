@@ -1,5 +1,0 @@
-# Windows publication-profile result
-
-[Run 39077749917](https://github.com/BernieSumption/pg_binaries/actions/runs/39077749917) passed the PostgreSQL 18.6 and pgvector 0.8.7 archive suite on Windows x86-64 after correcting the optional licence-list check. The importer validated two [current-profile verification records](../../verification/), final archive checksums, the [PE static report](static-analysis.json), [debug-symbol index](debug-symbols-index.json), [representative diagnostics](diagnostics.json) and [raw attempt](publication-attempt.json). The core archive SHA-256 was `2e48881e4b5c3289bc9526ee846685d62f6cfa4fff2539cb6393f36f605fcceb`; pgvector's was `8ab3e251c93ee25b5182bead9c24d8b45c52c8ffeab5547b5d1ea114f8cc6bf2`.
-
-These records establish the scoped archive/runtime profile. The vcpkg dependency inventory remains unpinned and its bundled DLLs still lack exact source and redistribution review; this run does not clear those release obligations or the pending upstream-source decision.

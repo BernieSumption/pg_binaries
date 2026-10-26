@@ -1,7 +1,0 @@
-Exception: D:\a\pg_binaries\pg_binaries\scripts\pg_jsonschema\windows-feasibility.ps1:216
-Line |
- 216 |  … DE -ne 0) { throw 'PE dependency closure check failed on the relocate …
-     |                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-     | PE dependency closure check failed on the relocated archive installation
-
-

@@ -1,9 +1,0 @@
-{
-  "run_id": "39117226735",
-  "source_revision": "abcbf20c3c3fa01e35f5512845cfac4d269e62a4",
-  "steps": {
-    "archive-suite": "success",
-    "symbols": "success",
-    "diagnostics": "success"
-  }
-}

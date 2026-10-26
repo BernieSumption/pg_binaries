@@ -1,9 +1,0 @@
-# pg_jsonschema Linux selected publication, 19 October 2026
-
-[Run 39205086270](https://github.com/BernieSumption/pg_binaries/actions/runs/39205086270) ran the generic Linux changed-profile scheduler at revision `1a10660`. It derived eight pg_jsonschema 0.3.4 targets from the support declaration and routed each through the shared selected-extension dispatcher. PostgreSQL 15.19, 16.15, 17.11 and 18.6 passed on Linux x86-64 and arm64. Every target passed the relocated Alpine archive suite and ELF closure on a fresh runner using its exact checked PostgreSQL core archive. Each core was reused from an independently verified earlier selected-target run; the target-specific `core-resolution.json` records its producer and archive SHA-256.
-
-The final artifacts were downloaded and imported with the exact `1a10660` source snapshot. All 88 retained files, including eight current-profile verification records, matched the CI copies byte-for-byte. The receipt and record for each target live under its PostgreSQL version and architecture so one scheduler run cannot overwrite another target's evidence. The passing jobs used about 44.3 elapsed runner-minutes in total: 38.9 build, 3.6 verify and about 1.8 planning/selection. The matrix was bounded to four targets at a time.
-
-This run verifies the consolidated Linux pg_jsonschema path after removing its three older publication workflows, feasibility workflow, temporary trial files and permanent core pins. The candidates remain release-ineligible pending the separately tracked redistribution work.
-
-An evidence-only push then produced [scheduler run 39206331146](https://github.com/BernieSumption/pg_binaries/actions/runs/39206331146). Its select job passed and its publication matrix was skipped, confirming that retaining these records does not rebuild unchanged targets.

@@ -1,3 +1,0 @@
-# PostgreSQL-only Linux matrix verification evidence
-
-Run [39238237680](https://github.com/BernieSumption/pg_binaries/actions/runs/39238237680) succeeded at producer commit `95da4d02ce17431f9ed2a36cf5593094c288b858` for PostgreSQL 15.19, 16.15, 17.11 and 18.6 on Linux arm64 and x86_64. All eight final-archive verifiers passed after the combined Linux publication path was removed. A detached checkout of the producer commit imported the eight artifacts with `tools/import_linux_publication_run.py`; all 88 retained evidence and record files matched the downloaded CI artifact bytes by SHA-256. The archives remain in short-lived Actions artifacts.

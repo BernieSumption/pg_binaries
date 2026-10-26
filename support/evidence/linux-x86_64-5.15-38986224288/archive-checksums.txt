@@ -1,2 +1,0 @@
-db614af9a5f5d70bf7e21bf303b8aff184504ef61247e4cf3aeb5e62659b2ed3  /archives/postgresql-18.6-linux-x86_64.tar.gz
-b133bd4521ff3a6d3dc9120f7b3fe6727fc26ad609554cec9483d9d6bdc0acaa  /archives/pgvector-0.8.7-postgresql-18.6-linux-x86_64.tar.gz

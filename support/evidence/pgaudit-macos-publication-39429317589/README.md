@@ -1,5 +1,0 @@
-# pgAudit 16.1 Apple Silicon publication-profile result
-
-[Run 39429317589](https://github.com/BernieSumption/pg_binaries/actions/runs/39429317589) passed all three PostgreSQL 16.15 and pgAudit 16.1 macOS arm64 publication cases at revision `be06562c7c7c13a7cd374e5d07be8ced9d23c631`, including final archive validation, dSYM matching and server diagnostics. The [receipt](arm64/current-receipt.json) and [verification record](../../verification/pgaudit-16.1-postgresql-16.15-macos-arm64-current-39429317589.json) bind the core SHA-256 `aae8b4e67a88cb3edc074070527dda23ea5bac09b7574403fdaa18eb1e31ab8c` and pgAudit SHA-256 `e64fb6cb10de04a4256f7653436f5aca4c88800840ddf79e0deab2e9c3a17674` to the passing results.
-
-The [static report](arm64/static-analysis.json), [symbol index](arm64/debug-symbols/index.json), [diagnostics](arm64/diagnostics.json) and [raw attempt](arm64/attempt.json) are retained. The importer checked the final archive hashes and profile provenance. The archives and dSYMs remain temporary CI artifacts.

@@ -1,5 +1,0 @@
-# pg_jsonschema Windows candidate run 39112577952
-
-GitHub Actions run [39112577952](https://github.com/BernieSumption/pg_binaries/actions/runs/39112577952) built pg_jsonschema 0.3.4 against the pinned PostgreSQL 18.6 archive. The relocated SQL probe, final archive inspection and PE dependency analysis passed. Final emission and import then rejected the pinned core verification record because its shared Windows core profile had changed after a PG15-only helper was added. The extension result still binds the exact pinned core bytes; core publication evidence is checked independently by coverage and publication preflight.
-
-The Windows pg_jsonschema emitter and importer no longer require the separate core record to be current-profile. They retain core identity, archive checksum and sidecar checks. This run's candidate profile includes those emitter/importer files, so rerun before treating its extension verification as current. The retained attempt, static report, probe output and failure excerpt identify this incomplete attempt without presenting a publication record.

@@ -1,7 +1,0 @@
-# pg_jsonschema selected macOS arm64 trial, 19 October 2026
-
-[Run 39181356759](https://github.com/BernieSumption/pg_binaries/actions/runs/39181356759) passed at revision `eea77a512e9211abc9daebe87ac3cd8b43d88f5b` for PostgreSQL 18.6 and pg_jsonschema 0.3.4 on macOS arm64. The core resolver found no applicable checked archive and built PostgreSQL in 27m13s. The extension build took 5m19s. A separate macOS runner downloaded the final archives, assembled and relocated them, ran the SQL probe, inspected Mach-O dependencies, and passed both registered verification cases in 34 seconds.
-
-The tested PostgreSQL archive SHA-256 is `ead7981afd120571fb9a48bf50c56c24b3eb03bc0032e491df05262465213104`; the extension archive SHA-256 is `e20e36b28ab42627ad4c05b118212f5f4f6f4283a384542e2ec2c51214d74aea`. The static report has no findings. The ten retained evidence and verification files were independently imported from the downloaded build and verification artifacts using the repository at the run's exact source revision; each matched the CI-uploaded file byte for byte.
-
-This result proves the selected path for one PostgreSQL release and one macOS architecture. The shared workflow, resolver and profile sources are still changing during migration, so this record becomes historical when those sources change. It does not establish release eligibility; the retained receipt lists the unresolved redistribution blockers.

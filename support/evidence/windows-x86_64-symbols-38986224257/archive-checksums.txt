@@ -1,2 +1,0 @@
-c954dbba5f1fa7d615d179faf46dfa2efbac43bd7ab572b057f81458837c2ed1  pgvector-0.8.7-postgresql-18.6-windows-x86_64.tar.gz
-aa169b1d6733e543940b4846caa2ed56a911e8ebb7eefcefc9586b103a1a864a  postgresql-18.6-windows-x86_64.tar.gz

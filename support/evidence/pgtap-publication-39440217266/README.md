@@ -1,5 +1,0 @@
-# pgTAP 1.3.4 Linux publication evidence
-
-[Run 39440217266](https://github.com/BernieSumption/pg_binaries/actions/runs/39440217266) passed the PostgreSQL 15.19 pgTAP arm64 publication profile at revision `c7da169b55fe2600007bd7d2cd185b2c38f1a310`. The [verification record](../../verification/pgtap-1.3.4-postgresql-15.19-linux-arm64-current-39440217266.json) binds pgTAP archive SHA-256 `ebd9c8fe48f81cd629b7ff8e9e780b485804e05145173c7fb08d252b8df53fae` to core SHA-256 `a44d21da0119a5e9c2fe5eb1e2be7a1675ddb10a42ab15b6f64a5ab24040995f`. The core was reused from the pinned standalone run [39439305482](https://github.com/BernieSumption/pg_binaries/actions/runs/39439305482), not rebuilt by pgTAP. The existing importer validated and retained the receipt, steps, static report and archive-bound verification record.
-
-This covers Linux arm64 PostgreSQL 15.19 only. The archives remain temporary Actions artifacts; broader selected-target verification and Linux core redistribution review remain release prerequisites.

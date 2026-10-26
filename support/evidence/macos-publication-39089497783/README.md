@@ -1,5 +1,0 @@
-# PostgreSQL 17.11 and pgvector 0.8.7 macOS Apple Silicon publication evidence
-
-[Run 39089497783](https://github.com/BernieSumption/pg_binaries/actions/runs/39089497783) passed the fresh-runner archive suite, representative failure diagnostics and debug-symbol checks at source revision `c462c8107c8ad8d6bbef4f9aee472df69a769ac6`. The final PostgreSQL archive SHA-256 is `f304096eebcd0019002d90176ff951741c7ab42a3140c351368b6b07e8f4cc9a`; pgvector's is `d72abb56eaf45d946fe2911d38579912976ad1897e18fe4d23fd87e7e3f6fe83`.
-
-The importer checked both downloaded archive sidecars, the [static report](arm64/static-analysis.json), [diagnostics](arm64/diagnostics.json) and archive-bound [PostgreSQL](../../verification/postgresql-17.11-macos-arm64-current-39089497783.json) and [pgvector](../../verification/pgvector-0.8.7-postgresql-17.11-macos-arm64-current-39089497783.json) records against the current profile. Dependency redistribution and the pending upstream-only load-path decision still govern release eligibility.

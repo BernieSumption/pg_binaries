@@ -1,5 +1,0 @@
-# pg_jsonschema source feasibility on Apple Silicon macOS
-
-[Run 39057268618](https://github.com/BernieSumption/pg_binaries/actions/runs/39057268618) built unmodified PostgreSQL 18.6 and pg_jsonschema 0.3.4 with pgrx's `pg18` feature on arm64 and x86-64 macOS 15.7.9 runners. Both jobs passed `CREATE EXTENSION` and a table constraint using `jsonb_matches_schema`. Both modules target macOS 11.0 and link to the system `libiconv` and `libSystem`; their install names point into the temporary source-build directory. The x86-64 artifact has the same source and Cargo lock hashes as the previously retained Intel evidence in [run 39056091421](../pg-jsonschema-macos-39056091421/README.md), so its artifact files are not duplicated here.
-
-The retained SQL output and Mach-O inspection came from the arm64 CI artifact; the Intel artifact was inspected and matches the retained Intel build inputs and Mach-O properties. These results establish source and SQL feasibility for PostgreSQL 18.6 on both macOS architectures. They do not verify a relocated archive, dependency closure, or publication profile. Windows and other selected PostgreSQL majors remain untested.

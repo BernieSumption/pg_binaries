@@ -1,9 +1,0 @@
-publish-candidate / Build, install and exercise pgTAP from pinned upstream source
-scripts/pgtap/windows-feasibility.ps1:28
-Pinned core archive checksum mismatch: ee0b6781299cc462ba4305ff4a318519fc61741d7b0f05988cf29030eafeedd2
-
-publish-candidate / Inspect exact core and final pgTAP archives
-Final pgTAP archive is missing
-
-ARCHIVE_RESULT: failure
-STATIC_RESULT: failure

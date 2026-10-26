@@ -1,5 +1,0 @@
-# pgTAP 1.3.4 Intel macOS feasibility
-
-[Run 39080114620](https://github.com/BernieSumption/pg_binaries/actions/runs/39080114620) passed at source revision `118cf6fe3c42896f0052128e476dcab10c06e353`. It generated the SQL-only payload from unmodified pgTAP 1.3.4 source against the pinned PostgreSQL 18.6 macOS x86-64 core, packaged and moved the core, then passed `CREATE EXTENSION` and four assertions on the relocated installation. The [probe output](probe-output.txt) records those assertions.
-
-The extension archive SHA-256 was `b0eedf44c067eccb291de5e7065c2ab89144bc8c441973eb4aa20afbceb3109d`; the core archive SHA-256 was `36a2f9297d05b88125c697a6e2f73ee61ae2b3ae9edbd95d20ed3d42ffa6e91f`. The [static report](static-analysis.json) binds both hashes and passed inspection of 132 Mach-O files. The [CI log](run-log.txt) records the source checksum check, PGXS generation and relocated probe. Binary archives remain temporary CI artifacts; this is feasibility evidence, not a publication verification record.

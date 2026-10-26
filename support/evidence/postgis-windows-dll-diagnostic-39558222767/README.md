@@ -1,7 +1,0 @@
-# Windows PostGIS raster dependency finding
-
-[Run 39558222767](https://github.com/BernieSumption/pg_binaries/actions/runs/39558222767) rebuilt unmodified PostgreSQL 18.6 and PostGIS 3.6.4 with MSYS2 MINGW64. Base `postgis` loaded, but `CREATE EXTENSION postgis_raster` failed with Windows error 127. The server log identifies `postgis_raster-3.dll` as the module it could not load. That log has SHA-256 `6410a480e817fcb4b4fc3b77d073ead69068686dea04fa6eea94892a155f248b` in the retained CI artifact `postgis-windows-abi-trial-39558222767`.
-
-The [recursive import report](import-resolution.json), SHA-256 `6b2c06cb7d9a930cd641acf9072aa35c2a609cd79513fb3346f9907cc63eb1dd`, scanned 173 reachable modules and found one missing imported procedure: `libnetcdf.dll` requests `H5Pset_fapl_ros3`, which the resolved `libhdf5-320.dll` does not export. This transitive dependency mismatch is a strong explanation for error 127; it is not evidence of an ABI failure between PostGIS and the selected MSVC PostgreSQL core, because the raster module fails against matching MinGW PostgreSQL first. The report also lists eight unresolved Windows system DLL names; they are classifier limitations and do not identify missing imported procedures.
-
-Investigate the MSYS2 NetCDF/HDF5 package pair or build options that omit the unneeded NetCDF GDAL driver while preserving raster support. Verify the next candidate with the same recursive import check and SQL probe before attempting selected-core archive packaging.

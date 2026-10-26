@@ -1,3 +1,0 @@
-# collection 1.1.1 and 2.1.3 Linux feasibility attempt
-
-[Run 39082100081](https://github.com/BernieSumption/pg_binaries/actions/runs/39082100081) built PostgreSQL 18.6 and compiled the unmodified collection 1.1.1 source on x86-64. Packaging stopped because the pilot script called the unsupported `pg_config --prefix` option after `make install DESTDIR`; the staged installation path was `/work/stage/1.1.1/opt/postgresql`. The script now uses the known `/opt/postgresql` prefix of the extracted build core. The [attempt manifest](attempt.json) retains source, core and step identities. The run did not produce extension archives or runtime results.

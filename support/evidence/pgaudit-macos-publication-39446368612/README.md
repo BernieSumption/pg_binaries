@@ -1,5 +1,0 @@
-# pgAudit 18.0 PostgreSQL 18.6 Intel macOS publication result
-
-[Run 39446368612](https://github.com/BernieSumption/pg_binaries/actions/runs/39446368612) passed the selected build and separate fresh-runner verification on macOS x86_64. The archive suite, dSYM checks and server diagnostics passed. The [verification record](../../verification/pgaudit-18.0-postgresql-18.6-macos-x86_64-current-39446368612.json) binds pgAudit SHA-256 `eb41f951fad8c24a161a8aa776ff3ee3ff23293d92f24b075d06c9a88202a4ab` to the assembled PostgreSQL core SHA-256 `e3df58edda00221a874c6b23796be6487d7a24152b523f82c7db8deff9204eb9`, matching the corrected [18.6 x86_64 core pin](../../macos-core-pins/18.6-x86_64.json).
-
-The [receipt](x86_64/current-receipt.json), raw [attempt](x86_64/attempt.json), static report, symbol index and diagnostics were imported and validated against current profile revision `beea2d04883fda0a35f39908c1aaf9f1835243869b211a1110c251406b44dfae`. The archives and dSYMs remain temporary CI artifacts.

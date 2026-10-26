@@ -1,5 +1,0 @@
-# PostgreSQL 18.6 and pgvector 0.8.7 Intel macOS publication evidence
-
-[Run 39079982747](https://github.com/BernieSumption/pg_binaries/actions/runs/39079982747) passed the current publication profile at source revision `748e1fb698ee8f87df4cf68d70670c6f8f3adde8`. Its PostgreSQL archive SHA-256 is `5ec45e48bad1439860f0143fd6f2cbc04a86cfa456beef8c5ca9040960ea3f40`; pgvector's is `2b2c3cf4667765f11dbed370d5201f3d7ca1afedfb7125d2b1ae1d1418df588e`.
-
-The fresh-runner archive suite, diagnostics and symbol checks passed. The importer validated archive sidecars, static-analysis and diagnostic reports, dSYM bindings, and the two archive-bound [PostgreSQL](../../verification/postgresql-18.6-macos-x86_64-current-39079982747.json) and [pgvector](../../verification/pgvector-0.8.7-postgresql-18.6-macos-x86_64-current-39079982747.json) records against the current profile. These results verify this exact core and extension pair on Intel macOS; other selected PostgreSQL versions and extensions remain open.

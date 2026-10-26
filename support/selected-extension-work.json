@@ -1,6 +1,0 @@
-{
-  "project": "PostGIS",
-  "version": "3.6.4",
-  "platform": "linux-arm64",
-  "postgresql_major": 17
-}

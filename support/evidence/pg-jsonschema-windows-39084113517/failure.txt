@@ -1,5 +1,0 @@
-Exception: D:\a\pg_binaries\pg_binaries\scripts\pg_jsonschema\windows-feasibility.ps1:102
-Line |
- 102 |  … .3\.4"$') { throw 'Cargo.toml version does not match pg_jsonschema 0. …
-     |                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-     | Cargo.toml version does not match pg_jsonschema 0.3.4

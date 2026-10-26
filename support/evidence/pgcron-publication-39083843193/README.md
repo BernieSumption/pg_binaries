@@ -1,3 +1,0 @@
-# pg_cron 1.6.8 Linux PostgreSQL 18.6 publication verification
-
-[Run 39083843193](https://github.com/BernieSumption/pg_binaries/actions/runs/39083843193) passed the revised pg_cron publication profile on native x86-64 and arm64 Linux runners. Each job built unmodified pg_cron 1.6.8 against its exact PostgreSQL 18.6 archive, relocated the pair into Alpine 3.22, checked ELF dependency closure, created the extension, and observed a completed scheduled background-worker job. The [x86-64](x86_64/current-receipt.json) and [arm64](arm64/current-receipt.json) receipts and imported records bind the results to the final archive hashes and current profile. This refresh supersedes the earlier pg_cron 18.6 records under the changed profile.

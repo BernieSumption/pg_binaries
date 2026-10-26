@@ -1,3 +1,0 @@
-# pg_cron 1.6.8 Linux publication verification
-
-[Run 39082453710](https://github.com/BernieSumption/pg_binaries/actions/runs/39082453710) passed on native x86-64 and arm64 standard Linux runners against PostgreSQL 18.6. Each job built unmodified pg_cron source, relocated its final archive with the exact PostgreSQL core into Alpine 3.22, checked ELF dependency closure, and verified that a scheduled command ran through a background worker. The imported [x86-64](x86_64/current-receipt.json) and [arm64](arm64/current-receipt.json) receipts and verification records bind the passing result to archive hashes and the current profile. The upstream-only status of Linux dependency packages remains a separate release-eligibility question.

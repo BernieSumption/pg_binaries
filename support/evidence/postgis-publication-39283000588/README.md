@@ -1,7 +1,0 @@
-# Selected Linux PostGIS publication run 39283000588
-
-[Run 39283000588](https://github.com/BernieSumption/pg_binaries/actions/runs/39283000588) completed successfully at source revision `509bc07b00a6c0f8a2d0d7c269f1285b6bc5fc77`. The selected PostgreSQL 18.6 and PostGIS 3.6.4 Linux x86-64 archives have SHA-256 values `ea2bee81fbd243370cc3efdaf712883df9bad354b681e0fe301ced0ea35ca11d` and `3d5e36e3c1121c1eb89ef5ad4fd9adfddb4f660f97ddda619d6837f199f1f3b6`, respectively.
-
-The fresh-runner archive suite passed. It assembles PostGIS once for its four selected SQL extension names; the retained records for `postgis`, `postgis_raster`, `postgis_sfcgal` and `postgis_topology` all report `passed`. The static-analysis report passed its inspection of 290 ELF files. The exact-producer importer validated the final archives, sidecars, core resolution, receipt, four records and static report. All eight retained files match their downloaded CI artifact copies byte-for-byte and validate against the current verification profiles.
-
-The selected artifact was `postgis-linux-selected-18.6-x86_64-39283000588` (ID `12201178962`, ZIP SHA-256 `4dcb81a39e3694e296e3a42beab1fe72f64ec39e372e8fa2ac4f2051a4126c81`). The build and core artifacts were IDs `12202053298` and `12201389314`; their ZIP SHA-256 values were `d53ba4d5c301c8f82262a6299a78adc406f2694466b206e9d8395927f252afcc` and `9b5fb3ab88483d95c1a2d2c595c0855547eab53ba84f90be888afd7f237`.

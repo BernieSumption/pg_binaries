@@ -1,6 +1,0 @@
-pg_jsonschema_source_url=https://github.com/supabase/pg_jsonschema.git
-pg_jsonschema_source_commit=cbe74b570d38aa0c4d42914e7a118bcb3adaee7a
-cargo_lock_sha256=ab865dc25d9eea4bf7dbfaf8fae13283e5c0bce4bca460fe10464c6716e67028
-rustc 1.99.1 (58cf8f9c3 2026-10-13)
-cargo 1.99.1 (5f94df478 2026-08-27)
-PostgreSQL 15.19

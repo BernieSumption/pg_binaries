@@ -1,17 +1,17 @@
-# Local build products and downloaded sources
+# The previous spike remains available locally and in the spike branch.
+tmp-spike-1/
+
+# Local tools and generated outputs.
+.codex/
 dist/
 build/
 out/
+__pycache__/
 *.tar.gz
+*.tar.bz2
 *.zip
 *.sha256
 *.log
-__pycache__/
 
-tmp-*
-
-# Build specification documents
-!specs/build/
-
-# Machine-local Codex permissions
-.codex/
+# Generated files left by the previous spike outside its tracked tree.
+experiments/

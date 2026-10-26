@@ -1,3 +1,0 @@
-# pg_jsonschema 0.3.4 Windows candidate attempt
-
-[Run 39085604762](https://github.com/BernieSumption/pg_binaries/actions/runs/39085604762) built pg_jsonschema from the pinned upstream source on Windows x86-64, then stopped before archive assembly on 2026-10-18. The new Cargo licence inventory command ran from the repository checkout, where Cargo could not find the upstream `Cargo.toml`. The [attempt](x86_64/attempt.json), [build identity](x86_64/build-identity.txt) and [failure excerpt](x86_64/failure.txt) are retained. Both publication cases failed; no extension archive or passing record was emitted. The collector now receives the upstream manifest path explicitly.

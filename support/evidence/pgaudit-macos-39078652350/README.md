@@ -1,7 +1,0 @@
-# pgAudit Apple Silicon feasibility result
-
-[Run 39078652350](https://github.com/BernieSumption/pg_binaries/actions/runs/39078652350) passed a native macOS arm64 probe at revision `acec988`. It checked the PostgreSQL 18.6 core archive from run 39075939632 (SHA-256 `853e0eafb3570378225d2ea16247c9de31770f85df5230509885df2ca5e89d67`), generated development headers from checksum-pinned OpenSSL 3.5.8 source, and compiled unmodified pgAudit 18.0 with PGXS. The emitted pgAudit archive has SHA-256 `d33bd2c7446c9e8f594347be2c8bd11aae0d3717e95bb2676b6c8f35e2eff78c` and contains its module, control, SQL, upstream licence notice and metadata. The [full CI log](build-log.txt) records source checks, build, package and runtime verification.
-
-After assembling the checked archives and moving the installation, the probe passed `CREATE EXTENSION`, DDL, an insert and a select with matching [audit log lines](audit-log-extract.txt) and [SQL output](probe-output.txt). The [Mach-O report](static-analysis.json) found no loader-closure or minimum-OS violation; `lib/pgaudit.dylib` is arm64, declares macOS 11.0 and imports only `/usr/lib/libSystem.B.dylib`. The archive itself is retained as a temporary CI artifact, not in Git.
-
-This establishes one exact core/extension combination's feasibility. It does not provide the final-byte publication receipt, diagnostics, debug-symbol or full selected-target evidence required for release.

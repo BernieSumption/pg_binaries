@@ -1,7 +1,0 @@
-# Shared selected-extension dispatch trial, 19 October 2026
-
-[Run 39194151048](https://github.com/BernieSumption/pg_binaries/actions/runs/39194151048) passed the new shared dispatcher on `spike` at source revision `546c37fc97c49c53e185dc614329e78756194484`. Its plan selected HypoPG 1.4.3 with PostgreSQL 17.11 on Linux x86-64. The dispatcher called the reusable selected workflow; that workflow retrieved a checksum-verified PostgreSQL core with matching source, run identity and builder inputs, built HypoPG, and passed final-archive relocation and SQL verification on Alpine 3.22.
-
-The Actions artifact was downloaded independently. Running the importer from the exact source revision produced four retained evidence files, each byte-for-byte equal to the corresponding CI import. The [record](../verification/hypopg-1.4.3-postgresql-17.11-linux-x86_64-current-39194151048.json) binds the extension to the exact PostgreSQL archive. The repository retains the compact [receipt and static report](hypopg-publication-39194151048/x86_64/current-receipt.json), not the temporary archive bytes.
-
-After the push registered the workflow, direct `workflow_dispatch` on `spike` succeeded. A non-retry request still scheduled the target because the planner sees retained records without a bound inventory candidate; that duplicate run was cancelled. Candidate discovery and the planner's skip decision therefore remain unfinished.

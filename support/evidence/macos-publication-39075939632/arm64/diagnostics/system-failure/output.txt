@@ -1,3 +1,0 @@
-dyld[15629]: Library not loaded: @loader_path/../lib/libzstd.1.5.7.dylib
-  Referenced from: <B89A9767-BBF0-324A-9199-33F1031199C3> /Users/runner/work/_temp/pg-macos-diagnostics.PvEM47/system/postgresql/bin/postgres
-  Reason: tried: '/libzstd.1.5.7.dylib' (no such file), '/Users/runner/work/_temp/pg-macos-diagnostics.PvEM47/system/postgresql/bin/../lib/libzstd.1.5.7.dylib' (no such file), '/libzstd.1.5.7.dylib' (no such file)

@@ -1,4 +1,0 @@
-Version: 20260819.586
-Image: macos-15
-Version: 20260824.0482.1
-Image Release: https://github.com/actions/runner-images/releases/tag/macos-15%2F20260824.0482

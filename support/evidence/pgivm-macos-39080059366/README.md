@@ -1,5 +1,0 @@
-# pg_ivm 1.16 Apple Silicon feasibility
-
-[Run 39080059366](https://github.com/BernieSumption/pg_binaries/actions/runs/39080059366) passed at source revision `23a95b9253fbc7d72f0004ed8b73b623baec75a3`. It built unmodified pg_ivm 1.16 against the pinned PostgreSQL 18.6 macOS arm64 core, packaged its module, SQL and helper, moved the core, and exercised `CREATE EXTENSION` and incremental view updates on the relocated installation. The [probe output](probe-output.txt) records the SQL results.
-
-The extension archive SHA-256 was `505c91013c7c6651b57dae13d03439b83493cc41e4603d89ea22b70c30b6ca59`; the core archive SHA-256 was `853e0eafb3570378225d2ea16247c9de31770f85df5230509885df2ca5e89d67`. The [static report](static-analysis.json) binds both final archive hashes and passed inspection of 133 Mach-O files. The [CI log](run-log.txt) records the source checksum check, build and relocated probe. The archive remains a temporary CI artifact; this is feasibility evidence, not a publication verification record.

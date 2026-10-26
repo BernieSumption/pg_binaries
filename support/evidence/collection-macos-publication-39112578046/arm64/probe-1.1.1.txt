@@ -1,7 +1,0 @@
-CREATE EXTENSION
-DO
-         outcome         
--------------------------
- collection probe passed
-(1 row)
-

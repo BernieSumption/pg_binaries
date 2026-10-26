@@ -1,5 +1,0 @@
-# collection macOS arm64 publication verification
-
-[Run 39088170098](https://github.com/BernieSumption/pg_binaries/actions/runs/39088170098) passed on 2026-10-18 for collection 1.1.1 and 2.1.3 against the selected PostgreSQL 18.6 Apple Silicon archive. The importer rehashed the final extension archives, their checksum sidecars, metadata, Mach-O reports, receipts and verification records against the exact core archive. Both relocated SQL suites passed, including persisted values and 2.1.3 sparse integer-key behavior. The final extension SHA-256 values were `0c058709a3494dee9a81a37eaabf871e27b224a207a8711912e6d97f4400c842` for 1.1.1 and `4a06181a3525c7c2aaba019f3562021b1d1438fb5a80c315b95d2b72c427070a` for 2.1.3.
-
-Two passing archive-bound current-profile records are retained under [verification](../../verification/), with the raw [attempt, receipts, SQL output and Mach-O reports](arm64/). Their `release_eligibility` remains blocked pending the shared core dependency review; passing tests do not resolve that review.

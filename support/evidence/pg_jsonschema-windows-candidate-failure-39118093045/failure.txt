@@ -1,5 +1,0 @@
-Exception: D:\a\pg_binaries\pg_binaries\scripts\pg_jsonschema\windows-feasibility.ps1:172
-Line |
- 172 |  … DE -ne 0) { throw 'Could not create the project-named Cargo licence i …
-     |                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-     | Could not create the project-named Cargo licence inventory

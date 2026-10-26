@@ -1,5 +1,0 @@
-# Windows PostGIS 18.6 verification
-
-[Run 39671358909](https://github.com/BernieSumption/pg_binaries/actions/runs/39671358909) built PostGIS 3.6.4 with PostgreSQL 18.6 for Windows x86-64. A separate runner relocated the final archives, passed SQL probes for all four PostGIS extension names, and checked PE dependencies. The [receipt](x86_64/18.6/current-receipt.json) binds the archive hashes, passing cases, and retained reports. The downloaded archive and report hashes and all four component records were checked before import.
-
-These records are historical rather than current-profile evidence. After the run, the workflow changed how it sets a fallback core identity that this pinned-core run did not use, and the PostGIS build script trimmed a Git source-tree checksum for PostgreSQL 16, which this PostgreSQL 18.6 run did not use. Both files are included in the current profile hash, so strict profile validation rejects the records. A current-profile run is still needed before this target counts toward release coverage.

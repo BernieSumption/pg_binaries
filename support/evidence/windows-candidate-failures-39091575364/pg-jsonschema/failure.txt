@@ -1,7 +1,0 @@
-Exception: D:\a\pg_binaries\pg_binaries\scripts\pg_jsonschema\windows-feasibility.ps1:55
-Line |
-  55 |  … reSha256) { throw "Pinned core archive checksum mismatch: $actualCore …
-     |                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-     | Pinned core archive checksum mismatch: ee0b6781299cc462ba4305ff4a318519fc61741d7b0f05988cf29030eafeedd2
-
-

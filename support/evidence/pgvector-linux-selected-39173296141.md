@@ -1,7 +1,0 @@
-# Selected Linux builder-input baseline
-
-[GitHub Actions run 39173296141](https://github.com/BernieSumption/pg_binaries/actions/runs/39173296141) passed at source revision `385ff76dfe6b2c0c9424c7b5bc00dc5bc003ffad`. The selected PostgreSQL 17.11 and pgvector 0.8.7 target passed archive verification in Alpine, the no-host-user-space launch and diagnostic probes. Candidate discovery rejected older core archives because their manifests lacked the newly required builder-input identity, then built a fresh core.
-
-The core manifest records Ubuntu base digest `sha256:0a9887931b0e38af2e3487ed39e29436b0535c4f3f52e57745baaf79d1898956` and installed package inventory digest `e5b948714779db8f9f3763fc5ef06d7c11f0438d94a7b890a58446d8522e54be`. The independently imported [core record](../verification/postgresql-17.11-linux-x86_64-current-39173296141.json) binds archive SHA-256 `d1ef75a08576335c36a6388b6d916d7e22c51c3a4b0ae74c50a07e1fc931c792`; the [pgvector record](../verification/pgvector-0.8.7-postgresql-17.11-linux-x86_64-current-39173296141.json) binds extension SHA-256 `b2111b8b96cafc4914cf7626aee4bf796fbb992c66b9532f989ca6486fe4a1c3` to that core. [Retained evidence](linux-publication-39173296141/postgresql-17.11/x86_64/current-steps.json) includes the exact-byte receipt, static analysis, symbols and diagnostics.
-
-The next selected run must retrieve this core and accept it only if the current source, recipe, base image and package inventory match.

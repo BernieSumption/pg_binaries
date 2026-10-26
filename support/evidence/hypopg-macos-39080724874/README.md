@@ -1,5 +1,0 @@
-# HypoPG 1.4.3 Apple Silicon feasibility with licence inventory
-
-[Run 39080724874](https://github.com/BernieSumption/pg_binaries/actions/runs/39080724874) passed the PostgreSQL 18.6 macOS arm64 source build, relocated hypothetical-index probe and Mach-O inspection after adding the resolved redistribution review to the HypoPG archive. The extension archive SHA-256 was `40efc27cc1bfc16809dd458cc538d830dc533006be0ea382edde127aaf5c68ce`; its core archive SHA-256 was `853e0eafb3570378225d2ea16247c9de31770f85df5230509885df2ca5e89d67`.
-
-The [static report](static-analysis.json) binds both hashes and passed inspection of 133 Mach-O files. The [probe output](probe-output.txt) records extension creation, hypothetical-index planning and reset; the [CI log](run-log.txt) records source/build checks. The archive-local licence inventory passed the release preflight's structural redistribution check after download. The binary archive remains a temporary CI artifact; this is feasibility evidence, not a publication verification record.

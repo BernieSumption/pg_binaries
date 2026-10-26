@@ -1,3 +1,0 @@
-# Address Standardizer macOS publication evidence
-
-[Run 39700724434](https://github.com/BernieSumption/pg_binaries/actions/runs/39700724434) passed the current PostgreSQL 17.11 macOS x86-64 final-archive profile for `address_standardizer` and `address_standardizer_data_us`. The archive suite and Mach-O dependency checks passed on a fresh macOS 15.7.9 runner. The retained record binds the extension archive (SHA-256 `a5065255ca39beda66c63ece7b2eb630dca794f69f91fb7009d29ce95c77cc8a`) to PostgreSQL core archive `postgresql-17.11-macos-x86_64.tar.gz` (SHA-256 `fa2d311825cb31de53480468a91b331ca2f85ebf0faf845bad489f37a0bb2717`).

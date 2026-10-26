@@ -1,5 +1,0 @@
-# PostGIS 3.6.4 selected macOS arm64 archive attempt
-
-[Run 39503069155](https://github.com/BernieSumption/pg_binaries/actions/runs/39503069155) on 2026-10-20 built the selected PostgreSQL 18.6 arm64 PostGIS archive and passed both archive checksum checks on a separate macOS 15 arm64 verifier runner. The verifier then stopped before static analysis or SQL because the extension package contained `bundled-dependencies.json` at the installation root, where the selected PostgreSQL core already has that file. No publication verification record passed.
-
-The package recipe now moves the extension's dependency report to `LICENSES/postgis-bundled-dependencies.json` after its licence inventory is generated. This follows the existing macOS pgvector layout and leaves the report in the archive without overwriting the core file. A fresh selected build and archive verification must pass before this target counts as covered. The failed run used source revision `8b2f6016f854e4ddaf5f60a369ee78152f8af3ff`.

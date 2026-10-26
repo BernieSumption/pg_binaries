@@ -1,5 +1,0 @@
-# pg_cron 1.6.8 macOS arm64 publication verification
-
-[Run 39088799957](https://github.com/BernieSumption/pg_binaries/actions/runs/39088799957) passed the PostgreSQL 18.6 and pg_cron 1.6.8 publication profile on macOS arm64 at revision `417a36f277932c5c53d639d008797f07403d23e9`. The [verification record](../../verification/pg_cron-1.6.8-postgresql-18.6-macos-arm64-current-39088799957.json) binds the pg_cron archive SHA-256 `3dc2d7e16d018dab7ca8aaace1db6d8b80a08f74b468ac215bfc93a609200352` to the pinned PostgreSQL archive SHA-256 `bc543b0d54a8a33b3b737eab74d7f185035f01e5c2db4eb48be049996eee4440`. The relocated scheduled-job smoke and static analysis passed.
-
-The [receipt](arm64/current-receipt.json), [attempt](arm64/attempt.json), [static analysis](arm64/static-analysis.json), [Mach-O inspection](arm64/pg-cron-macho-inspection.json) and [probe output](arm64/probe-output.txt) retain the imported run evidence. The importer checked archive sidecars and hashes, profile and source identities, report hashes, receipt and record applicability. The archives remain temporary CI artifacts.

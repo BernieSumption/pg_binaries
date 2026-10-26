@@ -1,5 +1,0 @@
-# pg_jsonschema Windows candidate attempt 39087778123
-
-[Run 39087778123](https://github.com/BernieSumption/pg_binaries/actions/runs/39087778123) passed the pinned upstream `pg_jsonschema` 0.3.4 build, relocated PostgreSQL 18.6 SQL probe, final-archive inspection and PE dependency checks on Windows x86-64. The extension archive SHA-256 is `12fd6f82de30149e050a8896ae4468135aa9d6f11b43b4c57109bc08e7339171`; the temporary core archive SHA-256 is `2e48881e4b5c3289bc9526ee846685d62f6cfa4fff2539cb6393f36f605fcceb`.
-
-The [raw attempt](x86_64/attempt.json), [receipt](x86_64/current-receipt.json), [archive-bound record](x86_64/verification-record.json), [SQL output](x86_64/probe-output.txt), [PE report](x86_64/pe-dependency-analysis.json) and [static report](x86_64/static-analysis.json) were imported by CI and retained from its uploaded artifact. This candidate is release-ineligible because it uses a temporary development core and its Rust dependency redistribution review is incomplete. The changed Windows core verification profile also makes this candidate historical; build against a fresh current-profile core.

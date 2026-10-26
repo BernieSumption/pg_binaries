@@ -1,3 +1,0 @@
-# pgTAP 1.3.4 Windows source-generation attempt
-
-[Run 39082133079](https://github.com/BernieSumption/pg_binaries/actions/runs/39082133079) generated pgTAP SQL from checksum-pinned upstream source and passed the licence-inventory comparison. It stopped at the hash list because the expected SHA-256 for `pgtap--0.97.0--0.98.0.sql` had a transcription error: the listed value had 63 hexadecimal characters. The generated file's 64-character hash matches the previously passed macOS payload; an offline comparison of all listed invariant payload hashes against that archive found no other mismatch. No extension archive or runtime result came from this run.

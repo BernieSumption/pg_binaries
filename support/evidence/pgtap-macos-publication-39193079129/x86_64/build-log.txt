@@ -1,56 +1,0 @@
-postgresql-15.19-macos-x86_64.tar.gz: OK
-postgresql-15.19-macos-x86_64.tar.gz: OK
-  % Total    % Received % Xferd  Average Speed  Time    Time    Time   Current
-                                 Dload  Upload  Total   Spent   Left   Speed
-  0      0   0      0   0      0      0      0                              0  0      0   0      0   0      0      0      0                              0  0      0   0      0   0      0      0      0                              0
-  0      0   0      0   0      0      0      0                              0100 272.3k 100 272.3k   0      0 722.7k      0                              0100 272.3k 100 272.3k   0      0 722.2k      0                              0100 272.3k 100 272.3k   0      0 721.9k      0                              0
-pgtap.tar.gz: OK
-
-GNUmake running against Postgres version 15.19, with pg_config located at /Users/runner/work/_temp/pg-macos-pilot.aNuOdV/install/postgresql/bin
-
-Makefile:181: To use pg_prove, TAP::Parser::SourceHandler::pgTAP Perl module
-Makefile:182: must be installed from CPAN. To do so, simply run:
-Makefile:183: cpan TAP::Parser::SourceHandler::pgTAP
-cp sql/pgtap--0.95.0--0.96.0.sql.in sql/pgtap--0.95.0--0.96.0.sql
-cp sql/pgtap--0.96.0--0.97.0.sql.in sql/pgtap--0.96.0--0.97.0.sql
-cp sql/pgtap--0.97.0--0.98.0.sql.in sql/pgtap--0.97.0--0.98.0.sql
-cp sql/pgtap--0.98.0--0.99.0.sql.in sql/pgtap--0.98.0--0.99.0.sql
-cp sql/pgtap--0.99.0--1.0.0.sql.in sql/pgtap--0.99.0--1.0.0.sql
-cp sql/pgtap.sql.in sql/pgtap.sql
-sed -e 's,MODULE_PATHNAME,pgtap,g' -e 's,__OS__,darwin,g' -e 's,__VERSION__,1.3,g' sql/pgtap.sql > sql/pgtap.tmp
-mv sql/pgtap.tmp sql/pgtap.sql
-'/usr/local/bin/perl' -e 'for (grep { /^CREATE /} reverse <>) { chomp; s/CREATE (OR REPLACE )?/DROP /; s/DROP (FUNCTION|VIEW|TYPE) /DROP $1 IF EXISTS /; s/ (DEFAULT|=)[ ]+[a-zA-Z0-9]+//g; print "$_;\n" }' sql/pgtap.sql > sql/uninstall_pgtap.sql
-cp sql/pgtap.sql.in sql/pgtap-static.sql.tmp
-
-*** Patching pgtap-static.sql with compat/install-9.6.patch
-patching file 'sql/pgtap-static.sql.tmp'
-
-*** Patching pgtap-static.sql with compat/install-9.4.patch
-patching file 'sql/pgtap-static.sql.tmp'
-
-*** Patching pgtap-static.sql with compat/install-9.2.patch
-patching file 'sql/pgtap-static.sql.tmp'
-
-*** Patching pgtap-static.sql with compat/install-9.1.patch
-patching file 'sql/pgtap-static.sql.tmp'
-sed -e 's#MODULE_PATHNAME#$libdir/pgtap#g' -e 's#__OS__#darwin#g' -e 's#__VERSION__#1.3#g' sql/pgtap-static.sql.tmp > sql/pgtap-static.sql
-'/usr/local/bin/perl' compat/gencore 0 sql/pgtap-static.sql > sql/pgtap-core.sql
-'/usr/local/bin/perl' compat/gencore 1 sql/pgtap-static.sql > sql/pgtap-schema.sql
-cp sql/pgtap.sql sql/pgtap--1.3.4.sql
-cp sql/pgtap-core.sql sql/pgtap-core--1.3.4.sql
-cp sql/pgtap-schema.sql sql/pgtap-schema--1.3.4.sql
-
-GNUmake running against Postgres version 15.19, with pg_config located at /Users/runner/work/_temp/pg-macos-pilot.aNuOdV/install/postgresql/bin
-
-Makefile:181: To use pg_prove, TAP::Parser::SourceHandler::pgTAP Perl module
-Makefile:182: must be installed from CPAN. To do so, simply run:
-Makefile:183: cpan TAP::Parser::SourceHandler::pgTAP
-/bin/sh /private/tmp/pgtap-macos.EAUTMb/first/postgresql/lib/pgxs/src/makefiles/../../config/install-sh -c -d '/tmp/pgtap-macos.EAUTMb/stage/private/tmp/pgtap-macos.EAUTMb/first/postgresql/share/extension'
-/bin/sh /private/tmp/pgtap-macos.EAUTMb/first/postgresql/lib/pgxs/src/makefiles/../../config/install-sh -c -d '/tmp/pgtap-macos.EAUTMb/stage/private/tmp/pgtap-macos.EAUTMb/first/postgresql/share/extension'
-/bin/sh /private/tmp/pgtap-macos.EAUTMb/first/postgresql/lib/pgxs/src/makefiles/../../config/install-sh -c -d '/tmp/pgtap-macos.EAUTMb/stage/private/tmp/pgtap-macos.EAUTMb/first/postgresql/share/doc/extension'
-/usr/bin/install -c -m 644 .//pgtap.control '/tmp/pgtap-macos.EAUTMb/stage/private/tmp/pgtap-macos.EAUTMb/first/postgresql/share/extension/'
-/usr/bin/install -c -m 644 .//sql/pgtap--0.90.0--0.91.0.sql .//sql/pgtap--0.91.0--0.92.0.sql .//sql/pgtap--0.92.0--0.93.0.sql .//sql/pgtap--0.93.0--0.94.0.sql .//sql/pgtap--0.94.0--0.95.0.sql .//sql/pgtap--0.95.0--0.96.0.sql .//sql/pgtap--0.96.0--0.97.0.sql .//sql/pgtap--0.97.0--0.98.0.sql .//sql/pgtap--0.98.0--0.99.0.sql .//sql/pgtap--0.99.0--1.0.0.sql .//sql/pgtap--1.0.0--1.1.0.sql .//sql/pgtap--1.1.0--1.2.0.sql .//sql/pgtap--1.2.0--1.3.0.sql .//sql/pgtap--1.3.0--1.3.1.sql .//sql/pgtap--1.3.1--1.3.2.sql .//sql/pgtap--1.3.2--1.3.3.sql .//sql/pgtap--1.3.3--1.3.4.sql .//sql/pgtap--1.3.4.sql .//sql/pgtap--unpackaged--0.91.0.sql .//sql/pgtap-core--1.3.4.sql .//sql/pgtap-core.sql .//sql/pgtap-schema--1.3.4.sql .//sql/pgtap-schema.sql .//sql/pgtap.sql .//sql/uninstall_pgtap.sql  '/tmp/pgtap-macos.EAUTMb/stage/private/tmp/pgtap-macos.EAUTMb/first/postgresql/share/extension/'
-/usr/bin/install -c -m 644 .//doc/pgtap.mmd '/tmp/pgtap-macos.EAUTMb/stage/private/tmp/pgtap-macos.EAUTMb/first/postgresql/share/doc/extension/'
-pgtap-1.3.4-postgresql-15.19-macos-x86_64.tar.gz: OK
-PASS: redistribution inventory and evidence in /Users/runner/work/_temp/pgtap-build/pgtap-1.3.4-postgresql-15.19-macos-x86_64.tar.gz
-PASS: pgTAP 1.3.4 archive packaged and checked for PostgreSQL 15.19 on macOS x86_64

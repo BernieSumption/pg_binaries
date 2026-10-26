@@ -1,7 +1,0 @@
-Exception: D:\a\pg_binaries\pg_binaries\scripts\pg_jsonschema\windows-feasibility.ps1:166
-Line |
- 166 |  … DE -ne 0) { throw 'Could not resolve the locked Windows Cargo package …
-     |                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-     | Could not resolve the locked Windows Cargo package inventory
-
-

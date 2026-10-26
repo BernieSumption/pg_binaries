@@ -1,5 +1,0 @@
-# pgTAP 1.3.4 macOS x86-64 publication verification
-
-[Run 39088799924](https://github.com/BernieSumption/pg_binaries/actions/runs/39088799924) passed the PostgreSQL 18.6 and pgTAP 1.3.4 publication profile on macOS x86-64 at revision `417a36f277932c5c53d639d008797f07403d23e9`. The [verification record](../../verification/pgtap-1.3.4-postgresql-18.6-macos-x86_64-current-39088799924.json) binds the pgTAP archive SHA-256 `b06f76b682c1147ccd218e3b5fd6c35704fea7afddd1aa4d1bc0d018fc6cad31` to the pinned PostgreSQL archive SHA-256 `5ec45e48bad1439860f0143fd6f2cbc04a86cfa456beef8c5ca9040960ea3f40`. Relocated installation, the pgTAP archive suite and static analysis passed.
-
-The [receipt](x86_64/current-receipt.json), [attempt](x86_64/attempt.json), [static analysis](x86_64/static-analysis.json), [probe output](x86_64/probe-output.txt) and [build log](x86_64/build-log.txt) retain the imported run evidence. The importer checked archive sidecars and hashes, profile and source identities, report hashes, receipt and record applicability. The archives remain temporary CI artifacts.

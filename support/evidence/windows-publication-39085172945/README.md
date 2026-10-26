@@ -1,5 +1,0 @@
-# Windows PostgreSQL 18.6 dependency ownership and verification
-
-[Run 39085172945](https://github.com/BernieSumption/pg_binaries/actions/runs/39085172945) passed the Windows x86-64 PostgreSQL 18.6 and pgvector 0.8.7 publication profiles on 2026-10-18. The importer checked the exact final archives, symbols, diagnostics and PE dependency report and retained two [current-profile records](../../verification/). The PostgreSQL core archive SHA-256 was `05612da63b832fd3333f7f38685f6364022c9581eb30af2244104cdf9310c335`.
-
-The [final-archive vcpkg DLL map](vcpkg-dll-map.json) attributes all 16 copied dependency DLLs to eight versioned vcpkg ports, with each DLL hash and its port copyright-file hash. The [core licence inventory](core-license-inventory.json) still marks the bundled vcpkg runtime dependencies `pending`. Mapping ownership resolves the earlier parser failure but does not establish upstream source provenance, patch status or redistribution clearance. The [static report](static-analysis.json), [symbol index](debug-symbols-index.json), [diagnostics](diagnostics.json) and [raw attempt](publication-attempt.json) remain tied to this run.

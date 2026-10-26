@@ -1,3 +1,0 @@
-# pgTAP 1.3.4 Windows source-generation attempt
-
-[Run 39082029199](https://github.com/BernieSumption/pg_binaries/actions/runs/39082029199) generated pgTAP 1.3.4 SQL from checksum-pinned upstream source on Windows. It stopped before packaging because the newly written licence inventory omitted the final newline present in the verified macOS payload. Its computed SHA-256 was `f96dd76a1d364c70683ee9fe6345b5a40bc5e50093ad687f03c10345abdc627a`; the verified payload hash with a final LF is `ae338745180c70d51f209fcc24f2c79c12cff49e66d5074f88180680b554ccb6`. The Windows script now writes the final LF and retains the expected hash check. No extension archive or runtime result came from this run.

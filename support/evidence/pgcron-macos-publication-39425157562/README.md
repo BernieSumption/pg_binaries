@@ -1,5 +1,0 @@
-# pg_cron 1.6.8 macOS arm64 PostgreSQL 17.11 publication evidence
-
-[GitHub Actions run 39425157562](https://github.com/BernieSumption/pg_binaries/actions/runs/39425157562) completed successfully at source revision `408cb35e340df85bd8664771188b20e82ab6bc64`. The selected publication build resolved the PostgreSQL 17.11 core archive from run 39420673533 and pinned its SHA-256 to `7c8522779eb2ab4e93c863bccc72865c59b60a21ef1cd507323e300413d5d568`. Fresh-runner archive and static-analysis checks passed for the final pg_cron archive, SHA-256 `652c3797d5d3e92d0bc0c898abc32ce8ba562d421372967ed7fea10f5329de17`.
-
-The [verification record](../../verification/pg_cron-1.6.8-postgresql-17.11-macos-arm64-current-39425157562.json), [receipt](arm64/current-receipt.json), [attempt](arm64/attempt.json), [static report](arm64/static-analysis.json), [Mach-O report](arm64/pg-cron-macho-inspection.json) and [probe output](arm64/probe-output.txt) bind the passing results to those archive bytes. Both archive SHA-256 values were recomputed from the downloaded run artifacts and validated by the importer. This run is the current verified record for this target at HEAD.

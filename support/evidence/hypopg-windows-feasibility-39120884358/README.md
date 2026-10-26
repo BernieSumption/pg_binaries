@@ -1,9 +1,0 @@
-# HypoPG Windows x86-64 feasibility run 39120884358
-
-[The Windows Server 2022 run](https://github.com/BernieSumption/pg_binaries/actions/runs/39120884358) passed on 2026-10-18 against the exact PostgreSQL 18.6 core archive used by the candidate workflow. It downloaded the pinned HypoPG 1.4.3 source archive (SHA-256 `498a961d88cf37057fd9e98027d06fe805c8959d51895c3d9b94c9eb4e14f706`), compiled the four C inputs selected from its upstream Makefile with `clang-cl`, and produced a 23,674-byte extension archive with SHA-256 `438526e64a1eb2e9c996308e3723659e04fd1df4742a735eb59cfb32ca3219d2`.
-
-The run installed the archive after relocating PostgreSQL, created the HypoPG extension, populated and analyzed a 100,000-row table, enabled hypothetical indexes, and verified that `EXPLAIN` selected the hypothetical btree index. It also checked architecture and imports for 144 PE files in the core and extension archives. The PE report marks the minimum Windows API floor unresolved. This is one PostgreSQL version and one Windows runner image; it does not establish coverage for other core versions, long-term Windows compatibility, or publication eligibility.
-
-The CI artifact contains the candidate archive and checksum, SQL output, PostgreSQL server log, PE dependency analysis, PDB, build transcript and build identity. The core archive SHA-256 is `8679af38bfb384cf5f287575b8be4d7946490df14e0680674645d50d3646758d`. Git retains the small diagnostic and identity files; the generated archive remains in the short-lived CI artifact and is identified here by its checksum.
-
-A follow-on archive-bound publication profile is feasible using the existing Windows pgTAP publication workflow and shared receipt, verification-record and evidence-import tools. It should add final-byte static analysis, debug-symbol checks, diagnostic cases and archive-bound records, then pin selected PostgreSQL versions individually. This feasibility run alone does not satisfy those checks.

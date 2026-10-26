@@ -1,3 +1,0 @@
-# pgTAP 1.3.4 Windows source-generation attempt
-
-[Run 39082208817](https://github.com/BernieSumption/pg_binaries/actions/runs/39082208817) generated pgTAP SQL from checksum-pinned upstream source and passed the invariant source-file checks. It stopped on `pgtap-schema.sql`: upstream's Perl generator emitted CRLF on Windows, while the previously passed macOS payload used LF. Replacing LF with CRLF in that macOS file produces the exact Windows SHA-256 observed in CI. The Windows check now accepts only the pinned LF or CRLF hashes for the five Perl-generated SQL files; other invariant files remain byte-for-byte pinned. No archive or runtime result came from this run.
