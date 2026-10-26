@@ -1,0 +1,4 @@
+Version: 20260828.587
+Image: macos-15-arm64
+Version: 20260907.0337.1
+Image Release: https://github.com/actions/runner-images/releases/tag/macos-15-arm64%2F20260907.0337

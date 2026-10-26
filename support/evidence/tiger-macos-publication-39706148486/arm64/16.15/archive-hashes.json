@@ -1,0 +1,5 @@
+{
+  "postgis-3.6.4-postgresql-16.15-macos-arm64.tar.gz": "ec515b2e2bddfd631467861c6f2cf536ad61ee797225ba873e4a65d785de2525",
+  "postgis_tiger_geocoder-2025.2-postgresql-16.15-macos-arm64.tar.gz": "63c46a217aac1046a18b53f8f1fdc943858c0a940dfce40dad95feab8312316e",
+  "postgresql-16.15-macos-arm64.tar.gz": "ea54d3c9b2a437cd4c6edaad59c1f28ebf5cf36645ee8edc0c2d134d7e906119"
+}

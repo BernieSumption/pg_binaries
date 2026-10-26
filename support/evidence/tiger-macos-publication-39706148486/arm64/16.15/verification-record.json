@@ -1,0 +1,57 @@
+{
+  "assembled_core": {
+    "archive": "postgresql-16.15-macos-arm64.tar.gz",
+    "sha256": "ea54d3c9b2a437cd4c6edaad59c1f28ebf5cf36645ee8edc0c2d134d7e906119",
+    "version": "16.15"
+  },
+  "case_results": {
+    "archive-suite": "passed",
+    "static-analysis": "passed"
+  },
+  "ci": {
+    "build_revision": "3becedea88a1d8aa7208733ea800e47f3b5e6015",
+    "provider": "github-actions",
+    "run_id": "39706148486",
+    "run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/39706148486",
+    "source_revision": "3becedea88a1d8aa7208733ea800e47f3b5e6015",
+    "test_revision": "3becedea88a1d8aa7208733ea800e47f3b5e6015"
+  },
+  "component": "postgis_tiger_geocoder",
+  "environment": {
+    "architecture": "arm64",
+    "clean_system": true,
+    "dependency_check_profile": "macho-system-dependencies-v1",
+    "dependency_checks_passed": true,
+    "endpoint": "current",
+    "image_id": "macos15/20260907.0337.1",
+    "os": "macos",
+    "os_version": "15.7.9"
+  },
+  "outcome": "passed",
+  "platform": "macos-arm64",
+  "postgresql_version": "16.15",
+  "prerequisite_archives": [
+    {
+      "archive": "postgis-3.6.4-postgresql-16.15-macos-arm64.tar.gz",
+      "project": "PostGIS",
+      "sha256": "ec515b2e2bddfd631467861c6f2cf536ad61ee797225ba873e4a65d785de2525",
+      "version": "3.6.4"
+    }
+  ],
+  "profile_id": "tiger-publication-macos-arm64-16.15",
+  "profile_revision": "c976513b05e0037bdd4275c96c72fcf559c5bd3b419abe5025b573c87f3f8285",
+  "project": "PostGIS TIGER Geocoder",
+  "reports": {
+    "probe_output": "9c400f781a3eb8e4142c5203226dd0a9a3ceee0b2f2956a24e0961a160baec36",
+    "static_analysis": "6698637c9ee5b3ced627fd0c51cb46e810dc9250d552eb8c07fcc2cdf95c0197"
+  },
+  "schema_version": 2,
+  "scope": "publication",
+  "sha256": "63c46a217aac1046a18b53f8f1fdc943858c0a940dfce40dad95feab8312316e",
+  "test_cases": [
+    "archive-suite",
+    "static-analysis"
+  ],
+  "test_revision": "3becedea88a1d8aa7208733ea800e47f3b5e6015",
+  "version": "2025.2"
+}
