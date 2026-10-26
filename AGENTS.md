@@ -2,17 +2,23 @@
 
 This repository builds standalone PostgreSQL distributions with extensions for supported platforms. A distribution consists of PostgreSQL and independently downloadable extension archives that can be installed together and verified from their final archive bytes.
 
-## Repository structure and authority
+## Specifications
 
-`design/` describes the distribution's intended behaviour and how it is built and verified. Each document covers one coherent subject and contains both product requirements and the design decisions needed to implement them. The design describes the current or imminent supported slice; it does not claim support for an unverified target. There is no separate specification and policy layer.
+`design/` describes the distribution's intended behaviour and how it is built and verified. Each document covers one coherent subject and contains both product requirements and the design decisions needed to implement them.
 
-`SPIKE2_MILESTONES.md` records planned capabilities, open questions and work specific to the current development sequence. Implementation code, build recipes, metadata and tests define operational details within the design. If code and design disagree, resolve the disagreement rather than silently treating either as an exception.
+Do not unilaterally edit designs, they should be changed only in response to a direct request in a conversation with a human. In the event that during implementation an element of the design turns out to be incorrect, add an item to the human review queue.
 
 ## Editing the design
 
-Agents may write and revise design documents as proposals for the human to review. Before implementing a new subject or a material change to an agreed design, explain the proposed behaviour and obtain the human's agreement. Record unresolved choices in `SPIKE2_MILESTONES.md`; do not present them as settled design. Once a design is agreed, agents may implement it and resolve routine details in code and tests without another review. Keep design and implementation consistent when either changes.
+Agents may propose design changes in conversation or `HUMAN_REVIEW_QUEUE.md`. Before implementing a new subject or a material change to an agreed design, explain the proposed behaviour and obtain the human's agreement. Record decisions needed for current work in `HUMAN_REVIEW_QUEUE.md`; do not present them as settled design. Once a design is agreed, agents may implement it and resolve routine details in code and tests without another review. Keep design and implementation consistent when either changes.
 
 Create a design document when its subject is needed to build or review the current slice. Split documents only when the subjects have independent purposes. Give each rule one authoritative home and link to it where another document needs the rule. Describe intended behaviour in positive terms. When reviewing a file with the human, identify observations by a section heading or a short quote from the relevant passage.
+
+## Human review queue
+
+When an agent needs a human decision about current work, add a concise item to `HUMAN_REVIEW_QUEUE.md` stating the issue, the proposed resolution and the work affected. Check the queue at the start of an interactive session and tell the human about pending items. Update or remove an item when the human resolves it.
+
+While an item is pending, the agreed design remains in force. Do not implement behaviour that conflicts with it. Continue work that does not depend on the decision. If requirements conflict or a requested change would alter the agreed design, record the issue and pause the affected work until the human decides.
 
 ## Cost and architecture
 
