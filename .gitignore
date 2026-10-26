@@ -8,6 +8,8 @@ out/
 *.log
 __pycache__/
 
+tmp-*
+
 # Build specification documents
 !specs/build/
 
