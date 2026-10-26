@@ -9,8 +9,8 @@ the `spike` branch are reference material; their specs, policies, queues and
 agent instructions have no authority on this branch.
 
 The human reviews the first slice's design before implementation begins.
-Until that review, work on the branch structure, migration inventory and
-design documents only. After review, implement milestones autonomously
+Until that review, work on the branch structure and design review material
+only. After review, implement milestones autonomously
 within the agreed design. Surface a material design change for discussion
 before implementing it.
 
@@ -22,11 +22,13 @@ future scope, provisional choices and open questions in the milestones file.
 Create a design document when a subject is needed to build or review the
 current slice; split it only when it has an independent purpose.
 
-Treat every old requirement, decision, script and test as a candidate. Use
-`MIGRATION_LEDGER.md` and `SPIKE2_TEST_INVENTORY.md` to record what is carried
-over, changed, deferred or deliberately retired. Inspect the old source before
-copying code. Simplify it where possible. Do not silently drop an old test
-kind or a pending human review item.
+Treat every old requirement, decision, script and test as a candidate. For
+each design document under review, state its scope, inspect all old material
+within that scope, and report what was carried across, altered, dropped or
+added. Assert that every in-scope item received one of those treatments.
+Inspect old source before copying code and simplify it where possible. Use
+the old branch for a fresh inventory when a milestone begins; do not silently
+drop an old test kind or pending human review item.
 
 ## Building and testing
 
