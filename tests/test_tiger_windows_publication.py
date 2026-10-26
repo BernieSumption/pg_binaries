@@ -1,7 +1,9 @@
 """Focused checks for Windows TIGER publication evidence handling."""
 
+import io
 from pathlib import Path
 import sys
+import tarfile
 import tempfile
 import unittest
 
@@ -41,6 +43,23 @@ class TigerWindowsPublicationTests(unittest.TestCase):
         report["archives"][1]["sha256"] = "0" * 64
         with self.assertRaisesRegex(coverage.CoverageError, "exact archives"):
             emitter.validate_static_report(report, names, hashes)
+
+    def test_tiger_emitter_reads_postgis_sibling_metadata(self):
+        with tempfile.TemporaryDirectory() as temp:
+            archive_path = Path(temp) / "postgis.tar.gz"
+            contents = b'{"project":"PostGIS"}'
+            with tarfile.open(archive_path, "w:gz") as archive:
+                directory = tarfile.TarInfo("postgis")
+                directory.type = tarfile.DIRTYPE
+                archive.addfile(directory)
+                member = tarfile.TarInfo("metadata.json")
+                member.size = len(contents)
+                archive.addfile(member, io.BytesIO(contents))
+            self.assertEqual(emitter.archive_metadata(archive_path, "metadata.json"), {"project": "PostGIS"})
+
+        verifier = Path("scripts/tiger/windows-verify-publication.ps1").read_text()
+        self.assertIn("$postgisNames -cnotcontains 'metadata.json'", verifier)
+        self.assertIn("Join-Path $postgisUnpack 'metadata.json'", verifier)
 
     def test_importer_rejects_non_numeric_run_id_before_reading_artifacts(self):
         with tempfile.TemporaryDirectory() as temp:

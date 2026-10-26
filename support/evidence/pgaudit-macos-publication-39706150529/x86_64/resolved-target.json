@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "profile_id": "pgaudit-publication-macos-x86_64-18.6",
+  "postgresql_version": "18.6",
+  "pgaudit_version": "18.0",
+  "architecture": "x86_64",
+  "platform": "macos-x86_64",
+  "core_archive": {
+    "basename": "postgresql-18.6-macos-x86_64.tar.gz",
+    "run_id": "39690769094",
+    "sha256": "a8ec7021f17703111b914d73616f5f4541fd5fbb19d1247fdcb50babaffbbcbc",
+    "build_id": "github-39690769094-1",
+    "source_revision": "3a23fa47c03648f3736f8dd7c69c8efaf6bd0461"
+  },
+  "source": {
+    "url": "https://github.com/pgaudit/pgaudit/archive/refs/tags/18.0.tar.gz",
+    "sha256": "988e8afeda320ebe0a3e632ef6b6bce5d3a08346c2e100a173a585c9521d1fa5"
+  }
+}

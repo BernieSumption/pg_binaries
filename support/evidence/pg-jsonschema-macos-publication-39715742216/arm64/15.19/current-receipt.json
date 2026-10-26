@@ -1,0 +1,52 @@
+{
+  "architecture": "arm64",
+  "archives": {
+    "pg_jsonschema-0.3.4-postgresql-15.19-macos-arm64.tar.gz": "4c5a5037ea6aca2743e8c2a0b5782ef88fae049a8b52c39ed35a5da9e57e9c43",
+    "postgresql-15.19-macos-arm64.tar.gz": "da4f14c823001d0e19666aff22f8e80c841ea790f420b510fee21016be7a5e68"
+  },
+  "case_results": {
+    "archive-suite": "passed",
+    "static-analysis": "passed"
+  },
+  "ci": {
+    "build_revision": "4e4ae3c1512f636811637f0d1792c5e1d76d5631",
+    "provider": "github-actions",
+    "run_id": "39715742216",
+    "run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/39715742216",
+    "source_revision": "4e4ae3c1512f636811637f0d1792c5e1d76d5631",
+    "test_revision": "4e4ae3c1512f636811637f0d1792c5e1d76d5631"
+  },
+  "clean_system": true,
+  "core_status": "current-profile-core-redistribution-pending",
+  "dependency_check_profile": "macho-system-dependencies-v1",
+  "dependency_checks_passed": true,
+  "endpoint": "current",
+  "environment": {
+    "architecture": "arm64",
+    "clean_system": true,
+    "dependency_check_profile": "macho-system-dependencies-v1",
+    "dependency_checks_passed": true,
+    "endpoint": "current",
+    "image_id": "macos15/20260907.0337.1",
+    "os": "macos",
+    "os_version": "15.7.9"
+  },
+  "extension_archive": "pg_jsonschema-0.3.4-postgresql-15.19-macos-arm64.tar.gz",
+  "platform": "macos-arm64",
+  "postgresql_version": "15.19",
+  "profile_id": "pg-jsonschema-publication-macos-arm64-15.19",
+  "profile_revision": "7b1c895c1d9f2109d48e4767892131469ef9544aab8669f39464877c05109596",
+  "project": "pg_jsonschema",
+  "release_blockers": [
+    "postgresql-core-redistribution-review-pending"
+  ],
+  "release_eligible": false,
+  "reports": {
+    "build_evidence": "15669d606b02035cb4b270bafa85c833e60d1ea0b2eb4cbaa9d18b42dfbf6e36",
+    "probe_output": "6dc11dd0522237f6a61b7c16b70e5ae1ec25217a82be4e6549194de60bcb0354",
+    "static_analysis": "670f753f6dd9ea18fb7d9d913185008b5ed71f63d5b2bf7d918909d9956f9555"
+  },
+  "schema_version": 1,
+  "test_revision": "4e4ae3c1512f636811637f0d1792c5e1d76d5631",
+  "version": "0.3.4"
+}

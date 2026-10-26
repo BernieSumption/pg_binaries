@@ -738,6 +738,8 @@ class CoverageTests(unittest.TestCase):
             registry_path.write_text(json.dumps(registry), encoding="utf-8")
             unchanged = coverage.verification_profile(root, "fixture-linux")
             self.assertIn(previous, unchanged["compatible_profile_revisions"])
+            self.assertTrue(coverage.is_compatible_profile_revision(unchanged, previous))
+            self.assertFalse(coverage.is_compatible_profile_revision(unchanged, "c" * 64))
 
             (root / "tests" / "fixture.sh").write_text("changed verifier", encoding="utf-8")
             changed = coverage.verification_profile(root, "fixture-linux")

@@ -35,7 +35,8 @@ class PublicationFixture:
         shutil.copyfile("support/verification-profiles.json", self.root / "support/verification-profiles.json")
         self.profile = {"scope": "publication", "platforms": [emitter.PLATFORM],
                         "case_ids": sorted(emitter.CASES), "sources_available": True,
-                        "profile_revision": "a" * 64}
+                        "profile_revision": "a" * 64,
+                        "compatible_profile_revisions": ["a" * 64]}
         self.profile_patch = patch.object(emitter.coverage, "verification_profile", return_value=self.profile)
         self.profile_patch.start()
         self.validation_patch = patch.object(emitter.coverage, "validate_verification_record")
@@ -161,6 +162,35 @@ class PgJsonschemaMacOSPublicationTests(unittest.TestCase):
         self.assertTrue(any(path.endswith("current-receipt.json") for path in paths))
         self.assertTrue(any(path.endswith(".sha256") for path in paths))
         self.assertTrue(list((self.fixture.root / "support/verification").glob("*.json")))
+
+    def test_importer_accepts_reviewed_revision_and_rejects_unrelated_revision(self):
+        previous = "c" * 64
+        self.fixture.profile["compatible_profile_revisions"].append(previous)
+        self.fixture.emit()
+        receipt_path = self.fixture.output / "publication/current-receipt.json"
+        record_path = next((self.fixture.output / "publication/records").glob("*.json"))
+        for path in (receipt_path, record_path):
+            data = json.loads(path.read_text())
+            data["profile_revision"] = previous
+            path.write_text(json.dumps(data, indent=2, sort_keys=True) + "\n")
+        with patch.object(importer.coverage, "verification_profile", return_value=self.fixture.profile), \
+             patch.object(importer.coverage, "validate_verification_record"):
+            importer.import_run(self.fixture.root, self.fixture.core, self.fixture.output,
+                                "12345678901", self.fixture.target_config)
+
+        other = PublicationFixture()
+        self.addCleanup(other.close)
+        other.emit()
+        for path in (other.output / "publication/current-receipt.json",
+                     next((other.output / "publication/records").glob("*.json"))):
+            data = json.loads(path.read_text())
+            data["profile_revision"] = "d" * 64
+            path.write_text(json.dumps(data, indent=2, sort_keys=True) + "\n")
+        with patch.object(importer.coverage, "verification_profile", return_value=other.profile), \
+             patch.object(importer.coverage, "validate_verification_record"), \
+             self.assertRaisesRegex(importer.coverage.CoverageError, "receipt identity"):
+            importer.import_run(other.root, other.core, other.output,
+                                "12345678901", other.target_config)
 
     def test_same_run_imports_two_postgresql_versions_without_evidence_collision(self):
         first = PublicationFixture("15.19-arm64")

@@ -84,7 +84,8 @@ try {
   $postgisRoot = Join-Path $postgisUnpack 'postgis'
   $tigerRoot = Join-Path $tigerUnpack 'postgis_tiger_geocoder'
   $postgisNames = @(Get-ChildItem $postgisUnpack -Force | ForEach-Object Name | Sort-Object)
-  if ($postgisNames.Count -ne 1 -or $postgisNames[0] -cne 'postgis') {
+  if ($postgisNames.Count -ne 2 -or $postgisNames -cnotcontains 'postgis' -or
+      $postgisNames -cnotcontains 'metadata.json') {
     throw 'Unexpected top-level content in PostGIS archive.'
   }
   $tigerNames = @(Get-ChildItem $tigerUnpack -Force | ForEach-Object Name | Sort-Object)
@@ -107,7 +108,7 @@ try {
   }
   if ((& (Join-Path $pgRoot 'bin/pg_config.exe') --version) -cne "PostgreSQL $PostgreSQLVersion") { throw 'Core pg_config version mismatch.' }
 
-  $postgisMetadata = Get-Content (Join-Path $postgisRoot 'metadata.json') -Raw | ConvertFrom-Json
+  $postgisMetadata = Get-Content (Join-Path $postgisUnpack 'metadata.json') -Raw | ConvertFrom-Json
   $tigerMetadata = Get-Content (Join-Path $tigerUnpack 'metadata.json') -Raw | ConvertFrom-Json
   foreach ($metadata in @($postgisMetadata,$tigerMetadata)) {
     if ($metadata.postgresql_version -cne $PostgreSQLVersion -or $metadata.platform -cne 'windows' -or $metadata.architecture -cne 'x86_64') {

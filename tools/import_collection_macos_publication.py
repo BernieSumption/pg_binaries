@@ -133,14 +133,14 @@ def import_run(root, core_artifact, collection_artifact, run_id, target_config=N
         expected_archives = {core_name: digests[core_name], name: digests[name]}
         ci = receipt.get("ci")
         expected = {"schema_version": 1, "profile_id": profile_id,
-                    "profile_revision": profile["profile_revision"],
                     "test_revision": attempt["source_revision"], "project": "collection",
                     "version": version, "postgresql_version": pg_version,
                     "architecture": architecture, "platform": platform,
                     "endpoint": "current", "case_results": results,
                     "archives": expected_archives, "extension_archive": name,
                     "release_eligibility": "blocked-pending-dependency-review"}
-        if any(receipt.get(key) != value for key, value in expected.items()):
+        if (any(receipt.get(key) != value for key, value in expected.items())
+                or not coverage.is_compatible_profile_revision(profile, receipt.get("profile_revision"))):
             raise coverage.CoverageError(f"collection {version} receipt identity or hashes differ from final archives")
         if (receipt.get("clean_system") is not True
                 or receipt.get("dependency_check_profile") != "macho-system-dependencies-v1"
@@ -190,6 +190,8 @@ def import_run(root, core_artifact, collection_artifact, run_id, target_config=N
                     "prerequisite_archives": [],
                     "release_eligibility": "blocked-pending-dependency-review"}
         if (any(record.get(key) != value for key, value in expected.items())
+                or record.get("profile_revision") != receipt.get("profile_revision")
+                or not coverage.is_compatible_profile_revision(profile, record.get("profile_revision"))
                 or source.name not in expected_records
                 or any(record.get("environment", {}).get(key) != receipt.get("environment", {}).get(key)
                        for key in ("os", "os_version", "architecture", "image_id"))

@@ -435,6 +435,11 @@ def verification_profile(root, profile_id, allow_missing_sources=False):
             "sources_available": sources_available}
 
 
+def is_compatible_profile_revision(profile, revision):
+    """Return whether a revision is current or explicitly reviewed equivalent."""
+    return isinstance(revision, str) and revision in profile.get("compatible_profile_revisions", [])
+
+
 def verification_records(root, support):
     records = []
     directory = root / "support" / "verification"

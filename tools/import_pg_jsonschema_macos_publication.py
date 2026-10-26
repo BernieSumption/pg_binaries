@@ -134,7 +134,7 @@ def import_run(root, core_archives, archives, run_id, target_config=None):
         receipt, record = _read(receipt_path), _read(record_paths[0])
         ci = receipt.get("ci")
         if (receipt.get("schema_version") != 1 or receipt.get("profile_id") != publication.PROFILE_ID
-                or receipt.get("profile_revision") != profile["profile_revision"]
+                or not coverage.is_compatible_profile_revision(profile, receipt.get("profile_revision"))
                 or receipt.get("test_revision") != attempt["source_revision"]
                 or receipt.get("project") != "pg_jsonschema"
                 or receipt.get("version") != publication.EXTENSION_VERSION
@@ -167,7 +167,8 @@ def import_run(root, core_archives, archives, run_id, target_config=None):
         coverage.validate_verification_record(record, coverage.load_json(root / "support.json"), root)
         expected_outcome = ("failed" if "failed" in results.values() else
                             "skipped" if "skipped" in results.values() else "passed")
-        if (record.get("profile_revision") != profile["profile_revision"]
+        if (record.get("profile_revision") != receipt.get("profile_revision")
+                or not coverage.is_compatible_profile_revision(profile, record.get("profile_revision"))
                 or record.get("profile_id") != publication.PROFILE_ID
                 or record.get("test_cases") != profile["case_ids"]
                 or record.get("case_results") != results or record.get("outcome") != expected_outcome

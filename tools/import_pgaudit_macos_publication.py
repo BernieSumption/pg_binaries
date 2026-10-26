@@ -97,7 +97,6 @@ def import_run(root, core_artifact, pgaudit_artifact, run_id, pg_version="18.6",
         ci = receipt.get("ci")
         expected = {
             "schema_version": 1, "profile_id": profile_id,
-            "profile_revision": profile["profile_revision"],
             "test_revision": attempt["source_revision"],
             "project": "pgaudit", "version": pgaudit_version,
             "postgresql_version": pg_version,
@@ -105,7 +104,8 @@ def import_run(root, core_artifact, pgaudit_artifact, run_id, pg_version="18.6",
             "endpoint": "current", "case_results": results, "archives": digests,
             "extension_archive": extension_name,
         }
-        if any(receipt.get(key) != value for key, value in expected.items()):
+        if (any(receipt.get(key) != value for key, value in expected.items())
+                or not coverage.is_compatible_profile_revision(profile, receipt.get("profile_revision"))):
             raise coverage.CoverageError("receipt identity or archive hashes differ from the raw attempt")
         if (not isinstance(ci, dict) or ci.get("provider") != "github-actions"
                 or str(ci.get("run_id")) != run_id
@@ -158,7 +158,8 @@ def import_run(root, core_artifact, pgaudit_artifact, run_id, pg_version="18.6",
             record = _read(source)
             coverage.validate_verification_record(record, support, root)
             if (record.get("profile_id") != profile_id
-                    or record.get("profile_revision") != profile["profile_revision"]
+                    or record.get("profile_revision") != receipt.get("profile_revision")
+                    or not coverage.is_compatible_profile_revision(profile, record.get("profile_revision"))
                     or record.get("case_results") != results or record.get("outcome") != outcome
                     or record.get("sha256") != digests[extension_name]
                     or record.get("assembled_core") != {

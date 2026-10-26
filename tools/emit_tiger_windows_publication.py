@@ -35,6 +35,15 @@ def validate_static_report(report, archive_names, hashes):
         raise coverage.CoverageError("static analysis report does not bind a passing x86-64 inspection to the exact archives")
 
 
+def archive_metadata(path, member_name):
+    with tarfile.open(path, "r:gz") as archive:
+        members = [m for m in archive.getmembers()
+                   if m.name == member_name and m.isfile() and m.size <= 1048576]
+        if len(members) != 1:
+            raise coverage.CoverageError(f"{path.name} requires one bounded {member_name}")
+        return json.load(archive.extractfile(members[0]))
+
+
 def emit(root, core_dir, postgis_dir, tiger_dir, output, steps, os_version, image_id):
     root, core_dir, postgis_dir, tiger_dir, output = map(Path, (root, core_dir, postgis_dir, tiger_dir, output))
     if not isinstance(steps, dict) or set(steps) != set(CASES) or any(v not in {"passed", "failed", "skipped"} for v in steps.values()):
@@ -65,13 +74,9 @@ def emit(root, core_dir, postgis_dir, tiger_dir, output, steps, os_version, imag
         verify_archive(p, component)
     metadata_by_archive = {}
     for path, metadata_name, project, version, core_bound in (
-        (paths[1], "postgis/metadata.json", "PostGIS", POSTGIS_VERSION, True),
+        (paths[1], "metadata.json", "PostGIS", POSTGIS_VERSION, True),
         (paths[2], "metadata.json", "postgis_tiger_geocoder", VERSION, False)):
-        with tarfile.open(path, "r:gz") as archive:
-            members = [m for m in archive.getmembers() if m.name == metadata_name and m.isfile() and m.size <= 1048576]
-            if len(members) != 1:
-                raise coverage.CoverageError(f"{path.name} requires one bounded {metadata_name}")
-            metadata = json.load(archive.extractfile(members[0]))
+        metadata = archive_metadata(path, metadata_name)
         metadata_by_archive[path.name] = metadata
         if (metadata.get("project") != project or metadata.get("version") != version
                 or metadata.get("postgresql_version") != pg or metadata.get("platform") != "windows"

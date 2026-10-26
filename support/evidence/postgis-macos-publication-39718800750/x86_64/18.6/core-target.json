@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "project": "PostGIS",
+  "extension_version": "3.6.4",
+  "postgresql_version": "18.6",
+  "architecture": "x86_64",
+  "platform": "macos-x86_64",
+  "profile_id": "postgis-publication-macos-x86_64-18.6",
+  "core_archive": {
+    "basename": "postgresql-18.6-macos-x86_64.tar.gz",
+    "run_id": "39690769094",
+    "sha256": "a8ec7021f17703111b914d73616f5f4541fd5fbb19d1247fdcb50babaffbbcbc",
+    "build_id": "github-39690769094-1",
+    "source_revision": "3a23fa47c03648f3736f8dd7c69c8efaf6bd0461"
+  }
+}

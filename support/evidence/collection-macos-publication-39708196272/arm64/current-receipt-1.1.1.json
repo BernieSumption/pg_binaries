@@ -1,0 +1,42 @@
+{
+  "architecture": "arm64",
+  "archives": {
+    "collection-1.1.1-postgresql-16.15-macos-arm64.tar.gz": "04063b9cb613ac0e772d0af3df47c571058f363e288c1868bffd88375e88b896",
+    "postgresql-16.15-macos-arm64.tar.gz": "ea54d3c9b2a437cd4c6edaad59c1f28ebf5cf36645ee8edc0c2d134d7e906119"
+  },
+  "case_results": {
+    "archive-suite": "passed",
+    "static-analysis": "passed"
+  },
+  "ci": {
+    "build_revision": "5a2b7ec33fb69087cc0971d9b69366821e48dcd3",
+    "provider": "github-actions",
+    "run_id": "39708196272",
+    "run_url": "https://github.com/BernieSumption/pg_binaries/actions/runs/39708196272",
+    "source_revision": "5a2b7ec33fb69087cc0971d9b69366821e48dcd3",
+    "test_revision": "5a2b7ec33fb69087cc0971d9b69366821e48dcd3"
+  },
+  "clean_system": true,
+  "dependency_check_profile": "macho-system-dependencies-v1",
+  "dependency_checks_passed": true,
+  "endpoint": "current",
+  "environment": {
+    "architecture": "arm64",
+    "image_id": "macos15/20260907.0337.1",
+    "os": "macos",
+    "os_version": "15.7.9"
+  },
+  "extension_archive": "collection-1.1.1-postgresql-16.15-macos-arm64.tar.gz",
+  "platform": "macos-arm64",
+  "postgresql_version": "16.15",
+  "profile_id": "collection-publication-macos-arm64-16.15",
+  "profile_revision": "58e6e846190316273a7f03e25f1e131b8a12176d0a093144499458c84431c94b",
+  "project": "collection",
+  "release_eligibility": "blocked-pending-dependency-review",
+  "reports": {
+    "static_analysis": "05f90ec954e7816698d6e7c7a3d49cb547041afcf4b074a1339730b4a3c01714"
+  },
+  "schema_version": 1,
+  "test_revision": "5a2b7ec33fb69087cc0971d9b69366821e48dcd3",
+  "version": "1.1.1"
+}
