@@ -8,17 +8,20 @@ This repository builds standalone PostgreSQL distributions with extensions for s
 
 Do not unilaterally edit designs, they should be changed only in response to a direct request in a conversation with a human. In the event that during implementation an element of the design turns out to be incorrect, add an item to the human review queue.
 
-## Editing the design
+## The human review queue
 
-Agents may propose design changes in conversation or `HUMAN_REVIEW_QUEUE.md`. Before implementing a new subject or a material change to an agreed design, explain the proposed behaviour and obtain the human's agreement. Record decisions needed for current work in `HUMAN_REVIEW_QUEUE.md`; do not present them as settled design. Once a design is agreed, agents may implement it and resolve routine details in code and tests without another review. Keep design and implementation consistent when either changes.
+When an agent needs to surface a decisions for a human, it should be added to `HUMAN_REVIEW_QUEUE.md`.
 
-Create a design document when its subject is needed to build or review the current slice. Split documents only when the subjects have independent purposes. Give each rule one authoritative home and link to it where another document needs the rule. Describe intended behaviour in positive terms. When reviewing a file with the human, identify observations by a section heading or a short quote from the relevant passage.
+When starting interactive sessions with humans, check HUMAN_REVIEW_QUEUE.md and notify the user if there are pending items there.
 
-## Human review queue
+Examples of things justifying requesting a human decision includes:
 
-When an agent needs a human decision about current work, add a concise item to `HUMAN_REVIEW_QUEUE.md` stating the issue, the proposed resolution and the work affected. Check the queue at the start of an interactive session and tell the human about pending items. Update or remove an item when the human resolves it.
+- It's not clear whether to include an extension or Postgres capability because some criteria argue for and others against
+- The specified requirements are causing implementation issues or other problems and the project may benefit from altered requirements
 
-While an item is pending, the agreed design remains in force. Do not implement behaviour that conflicts with it. Continue work that does not depend on the decision. If requirements conflict or a requested change would alter the agreed design, record the issue and pause the affected work until the human decides.
+While a request is in HUMAN_REVIEW_QUEUE.md, the current design remains in force. If an agent wants to proceed with a course of action that is against the specified behaviour, the appropriate response is to add a request to HUMAN_REVIEW_QUEUE.md and then stop the current work. It is always acceptable for agents to decide to stop in the face of inconsistent requirements, and never acceptable for them to implement behaviour that conflicts with a requirement.
+
+While blocked on a response in HUMAN_REVIEW_QUEUE.md, make progress on other non-dependent tasks if appropriate.
 
 ## Cost and architecture
 
@@ -28,26 +31,34 @@ Keep the architecture simple enough to understand and extend across the intended
 
 Add code comments only when they convey information that is genuinely hard to infer from the code. Trim comments that repeat the implementation.
 
-## Building and testing
-
-Iterate locally before porting a build to GitHub Actions. Run Linux builds and tests of compiled artifacts inside Docker. Run macOS builds and compiled tests inside a disposable macOS VM. Do not install build dependencies or compile on the host. Do not use a host package manager, host compiler, `sudo` or a machine-wide installation to work around a build problem. Control disposable VMs through their API or CLI. Keep generated outputs out of Git and leave unrelated local files, images and VMs intact.
-
-Build and test final archives for each supported slice. Verify assembled archives outside their build environment. Keep PostgreSQL and extension build commands independently runnable so an agent can rerun only a failed part.
-
-Use standard GitHub-hosted runners for production builds. Port to GitHub after local iteration has addressed issues the local environment can reveal. Keep expensive workflows scoped, set reasonable job timeouts and retain only useful temporary artifacts. Use the GitHub CLI or API to inspect runs and retrieve artifacts after runs finish. Space status checks rather than using rapid `gh run watch` polling. Back off on GitHub secondary rate limits even when the hourly quota remains available; continue independent work meanwhile.
-
 ## Repository operations
 
 Keep commits reviewable and coordinate edits to shared files. Do not push to `main`, force push, merge, delete branches, alter repository settings, publish a permanent GitHub Release or change public release assets without the human's explicit authorization. Do not control the host browser or desktop for this project. Repository instructions do not bypass sandbox or GitHub permissions. If a required operation is blocked by those controls, continue unaffected work and report the specific blocker.
 
-Explain verified results and remaining uncertainties without treating plans or inferences as evidence.
+## Writing guide
 
-## Writing style
+Follow these rules when creating specifications and other documents in this repository and when talking with the user.
 
-Write for a reader who knows programming and PostgreSQL but is otherwise unfamiliar with this system. Introduce the use case before the design and define project-specific terms before using them. Give each document one purpose and each rule one authoritative home. State the rule, its scope and its reason together. Use observable behaviour and put machine-actionable constraints in metadata where practical.
+The purpose of writing is to transfer a concept faithfully into the mind of a human with minimal effort on behalf of the human.
 
-Distinguish requirements, open decisions, research findings and verified results. Use **must** for requirements, **may** for allowed choices and **candidate** for unverified approaches. Name versions and environments behind compatibility claims. Cite upstream facts and test evidence; date changing observations and label inferences. Keep generated version lists out of manually maintained explanations.
+Two most important rules:
 
-Use direct verbs and headings. Keep one main point per paragraph; remove repetition, obvious qualifications and empty conclusions. Avoid rhetorical questions, invented labels, promotional language and formulaic contrasts. Write comments and interactive messages to the same standard. Read the text in order and remove any sentence that adds no requirement, reason, fact or useful example.
+1. Ensure that you understand the concept first. If you find yourself using vague or general terms then stop and clarify the concept. If you have enough requirements supplied by the user, reason through the concept to define it in sufficient detail. If the requirements are unclear, seek clarification from the user. 
+2. Always explicitly review after writing. One pass is not enough for modern LLMs to generate clear writing following these rules. Write first then explicitly review the prose against these rules and update it as required. It is OK to re-read some writing, decide that it is unclear because the concept is not well understood, and stop to ask questions instead of declaring it done.
 
-Use Markdown that reads well as plain text and avoid tables. Do not hard-wrap Markdown prose: keep each paragraph or list item on one source line and rely on the editor's soft wrapping. Use newlines for structural Markdown such as headings, blank lines, list items and code fences.
+Further guidance:
+
+- Describe the happy path in sequence, then list edge cases if necessary. LLMs are good at ingesting 20 sentences of arbitrarily ordered requirements and caveats, humans need a well defined narrative order.
+- Write as a specification describing a system, not as instructions
+- Use clear terminology that identifies the actual elements of the system, eg if we run a job on a GitHub Runner, say so, don't say eg "build device".
+- Challenge the utility of every sentence and remove ones that add no or little value.
+- Identify unclear writing yourself and proactively fix it, don't wait for the user to read it and express confusion.
+- Write for a reader who knows programming and PostgreSQL but is otherwise unfamiliar with this system.
+- Construct a series of sentences/paragraphs that brings the reader along from zero to partial to full understanding. Introduce the use case before the design and define project-specific terms before using them.
+- When referring back to a concept mentioned previously repeat the same term to establish the connection, don't invent a clever label for it and assume a reader will understand. Good: "Search the project's website for platform support status. If the project's website does not not state support do not take this as evidence of lack of support" Bad: "Search the project's website for platform support status. Do not treat upstream silence as evidence of non-support"
+- Use direct verbs and headings. Keep one main point per paragraph; remove repetition, obvious qualifications and empty conclusions.
+- By default, describe what _is_ the case, avoid "It's not X, it's Y" language unless thinking it might be X is a genuine pitfall you want to guard against.
+- Avoid rhetorical questions, invented labels or promotional language
+- Use British English eg artefact over artifact and realise over realize
+
+Use Markdown that reads well as plain text and avoid tables. Do not hard-wrap Markdown paragraphs, rely on editor soft wrapping.

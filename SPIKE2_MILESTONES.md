@@ -4,35 +4,43 @@ Each milestone delivers working functionality or the structure needed to build i
 
 The previous tree is preserved at `spike` commit `372a46debf49bf3e5c5ef4a23a86fde278e2344e` and in the local ignored `tmp-spike-1/` directory. Its requirements, decisions, scripts, tests and pending human review items are candidates for the new repository, not current rules. At each milestone, inspect the old material relevant to that slice before copying code or deciding what to retain. For each design document presented for review, report its scope and classify every in-scope old rule or test kind as carried across, altered or dropped; identify additions and assert that every in-scope item has a treatment. Do not silently drop an old test kind or pending human review item. Recompute the details from the old tree rather than maintaining a second inventory.
 
-## 1. Establish the clean branch and first-slice design
+## 1. Define the distribution for Mac ARM64 and eleven projects
 
-Create the new branch structure and agent instructions. Identify the old sources relevant to each milestone without importing them by default. Define the Mac ARM64 distribution and its build and test process in `design/`. Review their scope against `specs/functional.md`, `specs/testing.md`, the relevant `policies/` files, `support.json` and the old review queue. Stop for human review of those design documents before implementing the slice.
+Create the branch structure and agent instructions. Update `design/distribution.md` for an installation containing all eleven selected projects. Create `design/extensions.md` with inclusion criteria and one decision for each selected project. Create `design/postgresql-options.md` for the core capabilities and `design/dependency-licenses.md` for the central licence inventory and archive pointer. Expand `design/build-and-test.md` to cover the build sequence, independent extension jobs, assembly and every applicable test kind. Inspect the old functional and testing specifications, installation, extension, PostgreSQL option, licence and platform policies, `LICENSES.md`, `support.json` and the old review queue.
 
-## 2. Produce a usable Mac ARM64 installation locally
+As a separate step after drafting, review and rewrite all five design documents against the `AGENTS.md` writing style. Read each document in order, define terms before use, remove repeated rules and hard-wrapped prose, and check that its scope is clear. This step includes both existing documents and all three new documents.
 
-Use a disposable macOS VM to build the latest stable PostgreSQL release and the latest compatible release of a first extension, provisionally pgvector. Produce separate archives, install them together and verify PostgreSQL tools, representative SQL behaviour, relocation and native dependencies from final archive bytes in a clean VM. Make each build command independently rerunnable.
+Present each document for human review with its scope and an accounting of old material carried across, altered, dropped or added. Stop before build implementation until the human agrees to the first-slice design.
+
+## 2. Build PostgreSQL and eleven extension archives locally
+
+Use a disposable macOS VM to build the latest stable PostgreSQL release and the latest compatible release of each project selected in `design/extensions.md`. Populate `LICENSES.md` from the selected projects and packaged dependency closure. Produce separately installable archives and run their individual archive and SQL checks in a clean VM. Make each extension build independently rerunnable.
 
 Lume is the assumed VM manager. Trial its creation, API or CLI control, source transfer, selective rebuild, cloning, recovery and output retrieval during this milestone. Its adoption remains provisional until the human explicitly approves it. If Lume makes local iteration materially difficult, stop using it and report the evidence and a candidate alternative.
 
-Open questions: the minimum macOS version to claim, the exact PostgreSQL build options, and the first extension selection after checking current upstream compatibility.
+Open questions: the minimum macOS version to claim, the exact PostgreSQL release and build flags for its selected capabilities, and the latest compatible release of each selected project after checking current upstream compatibility.
 
-Prior work to inspect: `scripts/macos/`, the selected project's build and SQL probe, `tests/builtins/`, `tests/extensions/`, Mac archive and relocation tests, and Mac static-analysis and diagnostics tools.
+Prior work to inspect: `scripts/macos/`, all eleven selected project recipes and SQL probes, `tests/builtins/`, `tests/extensions/`, Mac archive and relocation tests, and Mac static-analysis and diagnostics tools.
 
-## 3. Exercise different extension and packaging cases on Mac ARM64
+## 3. Verify the coherent Mac ARM64 installation
 
-Add a small, varied set covering SQL-only files, a Rust build, a substantial native dependency tree and an extension prerequisite. PostGIS and TIGER are candidates for the last two cases. Expand the coherent installation test to assemble the selected set, detect file and library conflicts, and exercise all selected extensions in one PostgreSQL instance and, where possible, one backend session.
+Assemble the PostgreSQL archive and all eleven project archives using the documented extraction process. Resolve prerequisites, file and library conflicts, and required server settings. Exercise every selected SQL extension against one PostgreSQL instance and, where possible, one backend session.
 
-The human uses the installation and reviews the packaging and verification approach. Manual bug hunting begins here as an occasional practice and is repeated after material platform or packaging changes; it is not a task that finishes after one run.
+The human uses this installation and reviews its packaging and verification behaviour. Manual bug hunting begins here as an occasional practice and repeats after material platform or packaging changes.
 
-Prior work to inspect: `policies/extensions.md`, the dependency and coherent installation proposals in `HUMAN_REVIEW_QUEUE.md`, and the corresponding project recipes and probes. Keep the queue's size review and adversarial review visible for the release-candidate milestone.
+Bug hunting includes moving an installation after it has been used, to look for absolute software paths saved during extension setup or execution. Stop PostgreSQL, move the software directory, make its old location unavailable and restart from the new location. Keep the existing database and configuration unchanged, then repeat operations that could use saved paths. Recreating extensions could conceal the problem. Add a targeted regression test if this reveals a concrete failure.
+
+Bug hunting includes running the archive verification tests locally on the claimed minimum macOS version using Lume or similar VM tooling. If that version is unavailable, use the closest available version and rely on the compiler deployment target for the older-version claim. Record the version actually tested and the remaining gap. Repeat this check after material changes to platform support or packaging.
+
+Prior work to inspect: the old queue's coherent-installation proposal and the selected project recipes and probes. Keep the queue's size review and adversarial review visible for the release-candidate milestone.
 
 ## 4. Build the Mac ARM64 slice on GitHub
 
 Build PostgreSQL once in a release run. Fan out independently runnable extension jobs using that run's PostgreSQL archive. Verify final archives in a fresh environment and test their coherent installation. Record elapsed build time and peak disk use. Do not search earlier releases or runs for reusable build outputs.
 
-Open question: the exact workflow structure and artifact lifetime. Define it in a design document immediately before implementing this milestone.
+Implement the workflow sequence and selective retries defined in `design/build-and-test.md`, using ordinary retained GitHub artefacts and explicit input references.
 
-Prior work to inspect: `policies/architecture.md`, `policies/delivery-process.md`, Mac selected-publication workflows and their verification tests. The old planner and artifact reuse code are candidates for removal, not implementation templates.
+Prior work to inspect: `policies/architecture.md`, `policies/delivery-process.md`, Mac selected-publication workflows and their verification tests. The old planner and artefact reuse code are candidates for removal, not implementation templates.
 
 ## 5. Add Linux ARM64
 
@@ -44,7 +52,7 @@ Prior work to inspect: `scripts/linux/`, its Dockerfiles, ELF inspectors and Lin
 
 Build and test both Intel targets on GitHub-hosted runners. Use local ARM64 results to narrow issues, and investigate architecture-specific failures on the native runners. The distribution schema and directory structure already accommodate these targets; inventory entries appear only for verified bytes.
 
-Prior work to inspect: Intel Mac and Linux pilots, platform build scripts, architecture checks and target-specific verification cases.
+Prior work to inspect: Intel Mac and Linux pilots, platform build scripts, architecture checks and target-specific verification cases. Revisit the selected projects’ dated platform evidence in `tmp-spike-1/policies/extensions.md`, including pgrx’s tested architectures.
 
 ## 7. Prepare a thin release candidate
 
@@ -56,15 +64,17 @@ Prior work to inspect: `policies/releases.md`, `policies/licenses.md`, `policies
 
 ## 8. Expand the extension catalogue in batches
 
-Decide which old and newly researched projects belong in the distribution. Build each batch locally where possible, then on its GitHub targets, and add it to coherent installation testing. Keep the selected release for each project to the latest stable version compatible with the selected PostgreSQL release. Grow toward the roughly 100-project ambition, adjusting batch size using measured build time, disk use and porting effort.
+Decide which old and newly researched projects belong in the distribution. Add each accepted project's decision to `design/extensions.md` before building it. Build each batch locally where possible, then on its GitHub targets, and add it to coherent installation testing. Keep the selected release for each project to the latest stable version compatible with the selected PostgreSQL release. Grow toward the roughly 100-project ambition, adjusting batch size using measured build time, disk use and porting effort.
 
-Prior work to inspect: every project decision and unreviewed candidate in `policies/extensions.md`, plus its upstream source and applicable old tests.
+Prior work to inspect: every project decision, exclusion, unreviewed candidate and dated hosting-provider catalogue in `tmp-spike-1/policies/extensions.md`, plus upstream sources and applicable old tests. Those catalogue records are deferred to this milestone rather than discarded.
+
+Open question: how to build and package native libraries shared by several extension projects, or handle file path clashes. As specified, we allow duplicate files if they're byte identical. If this works, great. But independently building the same library from one recipe does not guarantee identical bytes, while archives installing different bytes at the same path violate the current installation contract. If the byte-identical requirement doesn't work, consider building shared libraries once for the affected extension jobs, packaging private copies at separate paths, or another approach. Evaluate build orchestration, independent extension downloads and whether the libraries can coexist in one PostgreSQL process. Resolve this question and update the design when catalogue expansion requires it; if the initial extension set exposes the problem, bring the decision forward.
 
 ## 9. Add Windows x86_64
 
 Implement and verify Windows archives when the platform enters release scope. Apply the package, installation and coherent-test contract to PE binaries and the Windows runtime environment.
 
-Prior work to inspect: `scripts/windows/`, PE inspectors, Windows workflows, runtime and archive tests, and Windows-specific old policy decisions.
+Prior work to inspect: `scripts/windows/`, PE inspectors, Windows workflows, runtime and archive tests, and Windows-specific old policy decisions. Revisit the evidence in `tmp-spike-1/policies/extensions.md` for Address Standardizer build failures and the collection and pgaudit support exclusions before selecting Windows targets.
 
 ## 10. Refresh releases
 
