@@ -20,13 +20,13 @@ Should the first macOS slice retain the full selected PostGIS feature set and ac
 
 Milestone 2 assumes Lume for local macOS builds, subject to human approval. The Lume 0.6.1 trial created a macOS ARM64 VM from Apple's latest restore image after a roughly 20 GB download. The VM booted, but Lume reported SSH unavailable. A separate `lume setup spike2-macos-arm64 --unattended tahoe --no-display` completed its offline patch, then failed all 60 SSH health checks and stopped the VM. The VM remains available for inspection; no build ran in it. Starting the VM headlessly also required host permission beyond the normal sandbox.
 
-The [Tart quick start](https://github.com/openai/tart/blob/main/docs/quick-start.md) documents prebuilt macOS ARM64 images with SSH credentials, CLI control and read-only directory sharing. A Tart base image would require another substantial download and a short trial, but avoids Lume's unattended setup path. Should local macOS development switch to a Tart base image, or should the build sequence use another environment? The Lume trial is paused because it does not currently provide a usable command channel.
+The [Tart quick start](https://github.com/openai/tart/blob/main/docs/quick-start.md) documents prebuilt macOS ARM64 images with SSH credentials, CLI control and read-only directory sharing. A Tart base image would require another substantial download and a short trial, but avoids Lume's unattended setup path. Should local macOS development switch to a Tart base image, or should the build sequence use another environment? Local VM iteration is a required part of milestone 2, so Spike 2 implementation is paused until a usable local VM route is agreed and tested. Successful GitHub builds do not complete that local milestone.
 
 ## Linux userspace portability
 
 The current inventory format records a minimum Linux kernel version but no minimum distribution or libc version. The distribution design requires archives to carry runtime components beyond those guaranteed by the target operating system. Spike 1 handled this by bundling glibc and a static launcher, plus relocation and empty-host tests. That is a substantial packaging system compared with the build-script scope intended for Spike 2. Docker is available locally on ARM64, but no Spike 2 Linux build has been attempted.
 
-Should the first Linux slice support a specified userspace baseline such as Ubuntu 22.04, allowing ordinary dynamically linked binaries, or retain the kernel-only claim and its libc-bundling work? A userspace baseline would change the inventory support contract and needs a design decision. Linux archive implementation is paused while independent macOS and shared verification work continues.
+Should the first Linux slice support a specified userspace baseline such as Ubuntu 22.04, allowing ordinary dynamically linked binaries, or retain the kernel-only claim and its libc-bundling work? A userspace baseline would change the inventory support contract and needs a design decision. Linux archive implementation remains paused pending that decision.
 
 ## Windows timing for the first public release
 
