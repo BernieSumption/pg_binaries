@@ -11,6 +11,7 @@ import shutil
 import subprocess
 import sys
 import tarfile
+import tempfile
 
 
 def run(arguments: list[str], environment: dict[str, str]) -> str:
@@ -53,10 +54,10 @@ def probe(installation: Path, source_archive: Path, work_parent: Path) -> list[s
     if missing:
         raise RuntimeError("missing PostgreSQL binaries: " + ", ".join(missing))
     work_parent.mkdir(parents=True, exist_ok=True)
-    from tempfile import mkdtemp
-    temporary = Path(mkdtemp(prefix="pg-builtins-", dir=work_parent))
-    data, socket, log = temporary / "data", temporary / "socket", temporary / "postgres.log"
-    socket.mkdir()
+    temporary = Path(tempfile.mkdtemp(prefix="pg-builtins-", dir=work_parent))
+    data, log = temporary / "data", temporary / "postgres.log"
+    socket_parent = Path("/tmp") if Path("/tmp").is_dir() else Path(tempfile.gettempdir())
+    socket = Path(tempfile.mkdtemp(prefix="pgb-", dir=socket_parent))
     environment = {
         "HOME": str(Path.home()),
         "PATH": f"{bin_dir}:/usr/bin:/bin:/usr/sbin:/sbin",
@@ -109,6 +110,8 @@ def probe(installation: Path, source_archive: Path, work_parent: Path) -> list[s
                 failures.append(f"could not stop built-in-test server: {error}")
         if stopped:
             shutil.rmtree(data)
+        if stopped or not (data / "postmaster.pid").exists():
+            shutil.rmtree(socket)
     return failures
 
 

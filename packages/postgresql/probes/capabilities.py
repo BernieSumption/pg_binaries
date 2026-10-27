@@ -35,8 +35,8 @@ def probe(installation: Path, work_parent: Path) -> list[str]:
     work_parent.mkdir(parents=True, exist_ok=True)
     temporary = Path(tempfile.mkdtemp(prefix="pg-capabilities-", dir=work_parent))
     data = temporary / "data"
-    socket = temporary / "socket"
-    socket.mkdir()
+    socket_parent = Path("/tmp") if Path("/tmp").is_dir() else Path(tempfile.gettempdir())
+    socket = Path(tempfile.mkdtemp(prefix="pgc-", dir=socket_parent))
     log = temporary / "postgres.log"
     environment = {
         "HOME": str(Path.home()),
@@ -106,6 +106,8 @@ def probe(installation: Path, work_parent: Path) -> list[str]:
                 stopped = True
         if stopped:
             shutil.rmtree(data)
+        if stopped or not (data / "postmaster.pid").exists():
+            shutil.rmtree(socket)
 
     return failures
 

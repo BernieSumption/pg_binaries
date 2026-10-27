@@ -59,7 +59,7 @@ pcre_source="$work/pcre2-$pcre_version"
 pcre_prefix="$work/pcre2-prefix"
 (cd "$pcre_source" && ./configure --prefix="$pcre_prefix" --enable-shared --disable-static --disable-pcre2-16 --disable-pcre2-32 --enable-jit && make -j "$(sysctl -n hw.ncpu)" && make install)
 
-build_flags=(-I"$pcre_prefix/include" '-DAS_VERSION="3.7"' -DPCRE_VERSION=2)
+build_flags=(-I"$pcre_prefix/include" '-DAS_VERSION=\"3.7\"' -DPCRE_VERSION=2)
 make -C "$source_dir" PG_CONFIG="$pg_config" PG_CPPFLAGS="${build_flags[*]}" PG_LDFLAGS="-L$pcre_prefix/lib" -j "$(sysctl -n hw.ncpu)"
 stage="$work/stage"
 make -C "$source_dir" PG_CONFIG="$pg_config" PG_CPPFLAGS="${build_flags[*]}" PG_LDFLAGS="-L$pcre_prefix/lib" DESTDIR="$stage" install

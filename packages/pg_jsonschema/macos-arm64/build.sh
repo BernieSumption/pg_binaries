@@ -20,6 +20,8 @@ output_dir=$5
 : "${MACOSX_DEPLOYMENT_TARGET:?Set the selected minimum macOS version}"
 
 pg_prefix=$(cd "$pg_prefix" && pwd)
+dependency_prefix="$(dirname "$pg_prefix")/dependencies"
+[[ -d "$dependency_prefix/lib" ]] || { echo "Missing dependency library directory: $dependency_prefix/lib" >&2; exit 1; }
 repo=$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)
 rust_selection=$(python3 - "$repo/support.json" <<'PY'
 import json
@@ -52,6 +54,7 @@ pg_config="$pg_prefix/bin/pg_config"
 }
 
 export MACOSX_DEPLOYMENT_TARGET
+export DYLD_LIBRARY_PATH="$dependency_prefix/lib${DYLD_LIBRARY_PATH:+:$DYLD_LIBRARY_PATH}"
 export PGRX_HOME="$work/pgrx"
 export PATH="$HOME/.cargo/bin:$PATH"
 rustup toolchain install "$rust_version" --profile minimal
