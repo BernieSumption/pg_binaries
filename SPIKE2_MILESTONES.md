@@ -4,9 +4,9 @@ Each milestone delivers working functionality or the structure needed to build i
 
 The previous tree is preserved at `spike` commit `372a46debf49bf3e5c5ef4a23a86fde278e2344e` and in the local ignored `tmp-spike-1/` directory. Its requirements, decisions, scripts, tests and pending human review items are candidates for the new repository, not current rules. At each milestone, inspect the old material relevant to that slice before copying code or deciding what to retain. For each design document presented for review, report its scope and classify every in-scope old rule or test kind as carried across, altered or dropped; identify additions and assert that every in-scope item has a treatment. Do not silently drop an old test kind or pending human review item. Recompute the details from the old tree rather than maintaining a second inventory.
 
-## 1. Define the distribution for Mac ARM64 and eleven upstream extension projects
+## 1. Define the distribution for Mac ARM64 and ten extension projects
 
-Create the branch structure and agent instructions. Update `design/distribution.md` for an installation containing all eleven selected upstream projects. Define the public `inventory.json` format in `design/distribution.md`. Create `design/extensions.md` with inclusion criteria and one decision for each selected upstream project and its package grouping. Create `design/postgresql-options.md` for the core capabilities and `design/dependency-licenses.md` for the central licence inventory and archive pointer. Expand `design/build-and-test.md` to cover the build sequence, independent extension jobs, assembly and every applicable test kind. Inspect the old functional and testing specifications, installation, extension, PostgreSQL option, licence and platform policies, `LICENSES.md`, `support.json` and the old review queue.
+Create the branch structure and agent instructions. Update `design/distribution.md` for an installation containing all ten selected projects. Define the public `inventory.json` format in `design/distribution.md`. Create `design/extensions.md` with inclusion criteria and one decision for each selected project and its package grouping. Create `design/postgresql-options.md` for the core capabilities and `design/dependency-licenses.md` for the central licence inventory and archive pointer. Expand `design/build-and-test.md` to cover the build sequence, independent extension jobs, assembly and every applicable test kind. Inspect the old functional and testing specifications, installation, extension, PostgreSQL option, licence and platform policies, `LICENSES.md`, `support.json` and the old review queue.
 
 As a separate step after drafting, review and rewrite all five design documents against the `AGENTS.md` writing style. Read each document in order, define terms before use, remove repeated rules and hard-wrapped prose, and check that its scope is clear. This step includes both existing documents and all three new documents.
 
@@ -18,7 +18,7 @@ Use a disposable macOS VM to build the latest stable PostgreSQL release and the 
 
 Lume is the assumed VM manager. Trial its creation, API or CLI control, source transfer, selective rebuild, cloning, recovery and output retrieval during this milestone. Its adoption remains provisional until the human explicitly approves it. If Lume makes local iteration materially difficult, stop using it and report the evidence and a candidate alternative.
 
-Open questions: the minimum macOS version to claim, the exact PostgreSQL release and build flags for its selected capabilities, and the latest compatible release of each selected project after checking current upstream compatibility.
+Open questions: the minimum macOS version to claim, the exact PostgreSQL release and build flags for its selected capabilities, and the latest compatible release of each selected project after checking the projects’ current compatibility documentation.
 
 Prior work to inspect: `scripts/macos/`, the selected package recipes and SQL probes, `tests/builtins/`, `tests/extensions/`, Mac archive and relocation tests, and Mac static-analysis and diagnostics tools.
 
@@ -66,7 +66,7 @@ Prior work to inspect: `policies/releases.md`, `policies/licenses.md`, `policies
 
 Decide which old and newly researched projects belong in the distribution. Record each accepted project's package grouping and inclusion decision in `design/extensions.md` before building it. Build each batch locally where possible, then on its GitHub targets, and add it to coherent installation testing. Keep the selected release for each project to the latest stable version compatible with the selected PostgreSQL release. Grow toward the roughly 100-project ambition, adjusting batch size using measured build time, disk use and porting effort.
 
-Prior work to inspect: every project decision, exclusion, unreviewed candidate and dated hosting-provider catalogue in `tmp-spike-1/policies/extensions.md`, plus upstream sources and applicable old tests. Those catalogue records are deferred to this milestone rather than discarded.
+Prior work to inspect: every project decision, exclusion, unreviewed candidate and dated hosting-provider catalogue in `tmp-spike-1/policies/extensions.md`, plus sources and applicable old tests. Those catalogue records are deferred to this milestone rather than discarded.
 
 Open question: how to build and package native libraries shared by several extension packages, or handle file path clashes. As specified, we allow duplicate files if they're byte identical. If this works, great. But independently building the same library from one recipe does not guarantee identical bytes, while archives installing different bytes at the same path violate the current installation contract. If the byte-identical requirement doesn't work, consider building shared libraries once for the affected extension jobs, packaging private copies at separate paths, or another approach. Evaluate build orchestration, independent extension downloads and whether the libraries can coexist in one PostgreSQL process. Resolve this question and update the design when catalogue expansion requires it; if the initial extension set exposes the problem, bring the decision forward.
 
@@ -78,4 +78,4 @@ Prior work to inspect: `scripts/windows/`, PE inspectors, Windows workflows, run
 
 ## 10. Refresh releases
 
-Refresh the selected PostgreSQL and extension releases from upstream, build fresh archives, verify the complete set and check public downloads after publication. Continue occasional manual bug hunting and design review as the distribution grows.
+Refresh the selected PostgreSQL and extension releases published by their projects, build fresh archives, verify the complete set and check public downloads after publication. Continue occasional manual bug hunting and design review as the distribution grows.

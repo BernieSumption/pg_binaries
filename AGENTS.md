@@ -2,6 +2,10 @@
 
 This repository builds standalone PostgreSQL distributions with extensions for supported platforms. A distribution consists of PostgreSQL and independently downloadable extension archives that can be installed together and verified from their final archive bytes.
 
+## Keep things simple, stop and report when things get complex
+
+The intention of this repository is that we are doing something fairly simple. There is a lot of work to do because Postgres has many extensions, but fundamentally, this is supposed to be a collection of build scripts for build Postgres extensions for different platforms and packaging them together. If anything in the design implies a difficult challenge that goes beyond straightforward creation of build scripts and test scripts, it is quite likely unintentional. Most requirements are flexible to an extent - agents should not unilaterally change them, but they can be changed by agreement if they cause issues. If an implementation agent finds itself stuck in a loop trying to get past a difficult implementation challenge, then stop and add an item to the human review queue to revisit the.
+
 ## Specifications
 
 `design/` describes the distribution's intended behaviour and how it is built and verified. Each document covers one coherent subject and contains both product requirements and the design decisions needed to implement them.
@@ -31,6 +35,12 @@ Keep the architecture simple enough to understand and extend across the intended
 
 Add code comments only when they convey information that is genuinely hard to infer from the code. Trim comments that repeat the implementation.
 
+## Code organisation
+
+Organise implementation around PostgreSQL and individual extension packages. Keep each package’s recipes, dependency declarations, probes, fixtures and platform-specific code together so someone adding or debugging a package can find its implementation in one place. A package can supply several SQL extensions. Do not scatter package-specific code across repository-wide directories organised by technical function, such as builds, tests and fixtures.
+
+Keep shared orchestration, platform support and verification machinery separate where they serve multiple packages. Use folders within those shared areas to group related responsibilities. Avoid large flat folder structures containing large numbers of unrelated files. Choose directory names and depth to make related code easy to find; no exact directory layout is prescribed.
+
 ## Repository operations
 
 Keep commits reviewable and coordinate edits to shared files. Do not push to `main`, force push, merge, delete branches, alter repository settings, publish a permanent GitHub Release or change public release assets without the human's explicit authorization. Do not control the host browser or desktop for this project. Repository instructions do not bypass sandbox or GitHub permissions. If a required operation is blocked by those controls, continue unaffected work and report the specific blocker.
@@ -55,7 +65,7 @@ Further guidance:
 - Identify unclear writing yourself and proactively fix it, don't wait for the user to read it and express confusion.
 - Write for a reader who knows programming and PostgreSQL but is otherwise unfamiliar with this system.
 - Construct a series of sentences/paragraphs that brings the reader along from zero to partial to full understanding. Introduce the use case before the design and define project-specific terms before using them.
-- When referring back to a concept mentioned previously repeat the same term to establish the connection, don't invent a clever label for it and assume a reader will understand. Good: "Search the project's website for platform support status. If the project's website does not not state support do not take this as evidence of lack of support" Bad: "Search the project's website for platform support status. Do not treat upstream silence as evidence of non-support"
+- When referring back to a concept mentioned previously repeat the same term to establish the connection, don't invent a clever label for it and assume a reader will understand. Good: "Search the project's website for platform support status. If the project's website does not not state support do not take this as evidence of lack of support" Bad: "Search the project's website for platform support status. Do not treat silence as evidence of non-support"
 - Use direct verbs and headings. Keep one main point per paragraph; remove repetition, obvious qualifications and empty conclusions.
 - By default, describe what _is_ the case, avoid "It's not X, it's Y" language unless thinking it might be X is a genuine pitfall you want to guard against.
 - Avoid rhetorical questions, invented labels or promotional language

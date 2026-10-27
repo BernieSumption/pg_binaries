@@ -1,21 +1,49 @@
-# PostgreSQL capabilities
+# PostgreSQL build options
 
-The PostgreSQL archive for each selected target supplies the server and command-line tools used to create, execute and inspect application schemas. Its build options preserve schema-visible PostgreSQL features needed by those schemas and by the selected extensions. The build uses the latest stable PostgreSQL release recorded in `support.json`.
+This document selects PostgreSQL features for creating and inspecting application schemas. The build uses the latest stable release recorded in `support.json`. Compiler optimisation, installation paths and library search paths are implementation details governed by the distribution’s packaging requirements.
 
-## Included capabilities
+The options below use PostgreSQL 18’s `configure` build system with Make.
 
-Enable ICU so schemas can define ICU collations and use them in indexes and queries. Enable LZ4 and Zstandard where the selected PostgreSQL release supports their documented compression uses. Enable zlib for compressed dumps used by `pg_dump` and `pg_restore`. Package the corresponding runtime libraries.
+## Enabled options
 
-Enable OpenSSL for TLS, `pgcrypto` and other PostgreSQL facilities supplied by that build option. Enable libxml2 for SQL/XML, and libxslt for the `xml2` module's XSL transformations. Package their required runtime libraries and support data. Verify the resulting SQL features rather than inferring them from configure flags.
+- ICU: `--with-icu`. Schemas can define ICU collations and use them in indexes and queries.
+- LZ4: `--with-lz4`. Supports table-column and WAL compression.
+- Zstandard: `--with-zstd`. Supports WAL compression and compressed dumps.
+- zlib: `--with-zlib`. Supports compressed archives used by `pg_dump` and `pg_restore`.
+- OpenSSL: `--with-ssl=openssl`. Supplies TLS and cryptographic facilities used by `pgcrypto`.
+- libxml2: `--with-libxml`. Supplies SQL/XML parsing and query operations.
+- libxslt: `--with-libxslt`. Supplies XSL transformations through the `xml2` module.
+- PL/pgSQL: supplied by the standard build. Supports schema functions and procedures.
+- `uuid-ossp` (not supported on Windows): `--with-uuid=e2fs`. Supports schemas that use UUID functions in defaults.
 
-Build contrib extensions supplied by the selected PostgreSQL source when their required options are enabled, including `fuzzystrmatch` for TIGER Geocoder. On macOS, include `uuid-ossp` for schemas that use its functions in defaults. Derive the built-in SQL extension names from control files in each final PostgreSQL archive. Record that list with the build result; publication maps those SQL names to the `postgresql` package in `inventory.json`.
+Required libraries and support data are packaged and verified as described in [build-and-test.md](build-and-test.md).
 
-## Excluded capabilities
+## Disabled options
 
-Do not enable Readline or libedit solely for interactive `psql` history. Do not add libcurl OAuth support, GSSAPI, LDAP, PAM or Bonjour integration; they add host integration or runtime dependencies without enabling the selected schema use. Do not enable PL/Perl, PL/Python or PL/Tcl because the selected extension set does not require those language runtimes. PL/pgSQL remains available. Avoid enabling optional features merely because their libraries happen to be installed in the builder.
+- Readline and libedit: `--without-readline`. Interactive command editing and history in `psql` are outside automated schema use.
+- libcurl OAuth support: `--without-libcurl`. Adds connection-authentication dependencies without enabling schema operations.
+- GSSAPI/Kerberos, LDAP, PAM and Bonjour: disable the applicable options for the target. These integrate authentication or service discovery with host infrastructure rather than enabling schema operations.
+- NUMA and io_uring: disable `libnuma` and `liburing` support where available. These are platform-specific performance integrations; io_uring also depends on Linux kernel support.
+- SELinux `sepgsql`: disable SELinux support. It requires integration with the host’s security configuration.
 
-## Build and support checks
+The exact disable switches for the grouped platform-specific options are included in the implementation review below. Optional features must not be selected by the presence of libraries on the build machine.
 
-The build targets the minimum operating-system version selected in `support.json`. On macOS, it sets a deployment target at or below that version. A feature is included only when its required runtime files can be packaged or are guaranteed by the selected operating-system version. Build scripts choose the supported option names for the selected PostgreSQL source; these capability decisions are authoritative over a particular configure or Meson flag spelling.
+## Draft decisions requiring implementation and human review
 
-The implementation records the expected built-in SQL extension set from the selected PostgreSQL source and enabled capabilities independently of the packaged output. The final-archive verifier compares that expectation with packaged control files to detect missing or unexpected extensions. It checks each included capability and built-in extension as described in [the capability tests](build-and-test.md#postgresql-capabilities-and-built-in-extensions); publication checks the SQL-name mappings for the `postgresql` package against the verified result. An option that cannot meet the selected runtime and minimum-version contract is a design issue for human review before the archive is advertised.
+### Additional procedural languages
+
+PL/Perl, PL/Python and PL/Tcl remain undecided. They support application-defined functions, but require packaging and relocating their interpreters and support files. The Spike 1 selection disabled them; it does not settle their inclusion here. Until reviewed, disable them explicitly with `--without-perl`, `--without-python` and `--without-tcl`.
+
+### Bundled extension selection
+
+Include `fuzzystrmatch` for TIGER Geocoder and `uuid-ossp` as specified above. The complete list of bundled SQL extensions to include and exclude still needs enumeration. The Spike 1 macOS and Linux recipes built the `contrib` directory as a whole, so they do not supply an explicit reviewed list.
+
+### Review of the implemented options
+
+During implementation, add an item to `HUMAN_REVIEW_QUEUE.md` with the selected PostgreSQL version, actual feature options and values for each target, the complete bundled-extension list, and any differences from this document. Check explicitly disabled options and features otherwise controlled by dependency detection. Resolve the procedural-language selection in that review and replace these draft sections with the agreed choices.
+
+## Basis for the selection
+
+These decisions carry forward the Spike 1 PostgreSQL options policy. Inspection of its macOS, Linux and Windows recipes confirms explicit ICU, LZ4, Zstandard, zlib, OpenSSL, libxml2 and libxslt selections and disabled Readline. The Windows recipe also explicitly disables the three additional procedural languages. The recipes do not explicitly disable every feature excluded by the policy, so the implementation review must check the resulting option set rather than copying the command lines unchanged.
+
+[PostgreSQL 18 configure options](https://www.postgresql.org/docs/18/install-make.html) define the build switches. The [column-compression documentation](https://www.postgresql.org/docs/18/sql-createtable.html) and [WAL settings](https://www.postgresql.org/docs/18/runtime-config-wal.html) distinguish the compression capabilities.
