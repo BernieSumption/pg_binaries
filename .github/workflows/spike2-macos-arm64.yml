@@ -6,6 +6,7 @@ name: Spike 2 macOS ARM64
     paths:
       - .github/workflows/spike2-macos-arm64.yml
       - packages/*/macos-arm64/**
+      - packages/*/probes/**
   workflow_dispatch:
     inputs:
       operation:

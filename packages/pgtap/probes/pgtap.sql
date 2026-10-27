@@ -8,15 +8,15 @@ DO $$
 DECLARE
     result text;
 BEGIN
-    result := has_table('public', 'pgtap_probe');
+    result := has_table('public'::name, 'pgtap_probe'::name);
     IF result IS NULL OR result NOT LIKE 'ok %' THEN
         RAISE EXCEPTION 'pgTAP has_table assertion failed';
     END IF;
-    result := col_type_is('public', 'pgtap_probe', 'id', 'integer');
+    result := col_type_is('public'::name, 'pgtap_probe'::name, 'id'::name, 'integer'::text);
     IF result IS NULL OR result NOT LIKE 'ok %' THEN
         RAISE EXCEPTION 'pgTAP col_type_is assertion failed';
     END IF;
-    result := col_not_null('public', 'pgtap_probe', 'payload');
+    result := col_not_null('public'::name, 'pgtap_probe'::name, 'payload'::name);
     IF result IS NULL OR result NOT LIKE 'ok %' THEN
         RAISE EXCEPTION 'pgTAP col_not_null assertion failed';
     END IF;
