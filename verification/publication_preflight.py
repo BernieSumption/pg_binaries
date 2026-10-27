@@ -17,6 +17,10 @@ from verification.inventory import InventoryError, RELEASE_BASE, make_inventory
 from verification.records import RecordError, sha256_file
 
 ROOT = Path(__file__).resolve().parents[1]
+DEPENDENCY_LICENCE_NAMES = {
+    "openssl": "OpenSSL", "icu": "ICU4C", "lz4": "LZ4", "zstd": "Zstandard",
+    "libxml2": "libxml2", "libxslt": "libxslt", "pcre2": "PCRE2",
+}
 
 
 class PreflightError(ValueError):
@@ -33,12 +37,42 @@ def _load(path: Path) -> dict[str, Any]:
     return value
 
 
-def check(inventory_path: Path, pairs: list[tuple[str, Path, Path]], support_path: Path) -> int:
+def _check_licences(support: dict[str, Any], path: Path) -> None:
+    try:
+        lines = path.read_text(encoding="utf-8").splitlines()
+    except OSError as exc:
+        raise PreflightError(f"cannot read {path}: {exc}") from exc
+    entries = {match[1] for line in lines if (match := re.match(r"^- (.+?) — ", line))}
+    projects = {"PostgreSQL"}
+    for package in support["packages"].values():
+        projects.update(source["project"] for source in package.get("sources", []))
+    dependency_keys = {
+        name for inputs in support.get("postgresql", {}).get("build_inputs", {}).values()
+        for name in inputs.get("dependencies", {})
+    }
+    # Rust and cargo-pgrx are build tools; their files are not copied into archives.
+    dependency_keys.update(
+        name for package in support["packages"].values()
+        for inputs in package.get("build_inputs", {}).values()
+        for name in inputs if name not in {"rust", "cargo_pgrx"}
+    )
+    unknown = dependency_keys - DEPENDENCY_LICENCE_NAMES.keys()
+    if unknown:
+        raise PreflightError(f"unmapped copied dependency licence entries: {sorted(unknown)}")
+    projects.update(DEPENDENCY_LICENCE_NAMES[name] for name in dependency_keys)
+    missing = projects - entries
+    if missing:
+        raise PreflightError(f"{path}: missing licence entries: {sorted(missing)}")
+
+
+def check(inventory_path: Path, pairs: list[tuple[str, Path, Path]], support_path: Path,
+          licences_path: Path | None = None) -> int:
     inventory, support = _load(inventory_path), _load(support_path)
     packages = support.get("packages")
     targets = support.get("targets")
     if not isinstance(packages, dict) or not isinstance(targets, dict):
         raise PreflightError("support.json must define packages and targets")
+    _check_licences(support, licences_path or support_path.with_name("LICENSES.md"))
     expected_components = {"postgresql", *packages}
     seen: set[str] = set()
     extension_map = inventory.get("extensions")

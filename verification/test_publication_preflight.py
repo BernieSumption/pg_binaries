@@ -25,6 +25,8 @@ class PublicationPreflightTests(unittest.TestCase):
                                          "extensions": {"vector": {"config": {"x": 1}}}}},
         }
         self.support_path.write_text(json.dumps(self.support))
+        self.licences_path = self.root / "LICENSES.md"
+        self.licences_path.write_text("# Licences\n\n- PostgreSQL — PostgreSQL License.\n- pgvector — PostgreSQL License.\n")
         self.paths = {}
         archives = {}
         components = {}
@@ -70,6 +72,20 @@ class PublicationPreflightTests(unittest.TestCase):
         count = check(self.inventory_path,
                       [("macos-arm64", self.selection_path, self.report_path)], self.support_path)
         self.assertEqual(count, 1)
+
+    def test_rejects_missing_project_licence_entry(self):
+        self.licences_path.write_text("# Licences\n\n- PostgreSQL — PostgreSQL License.\n")
+        with self.assertRaisesRegex(PreflightError, "missing licence entries.*pgvector"):
+            check(self.inventory_path,
+                  [("macos-arm64", self.selection_path, self.report_path)], self.support_path)
+
+    def test_rejects_missing_copied_dependency_licence_entry(self):
+        self.support["postgresql"]["build_inputs"] = {
+            "macos-arm64": {"dependencies": {"icu": {"version": "78.3"}}}}
+        self.support_path.write_text(json.dumps(self.support))
+        with self.assertRaisesRegex(PreflightError, "missing licence entries.*ICU4C"):
+            check(self.inventory_path,
+                  [("macos-arm64", self.selection_path, self.report_path)], self.support_path)
 
     def test_rejects_wrong_inventory_sha(self):
         self.inventory["packages"]["pgvector"]["downloads"]["macos-arm64"]["sha256"] = "0" * 64
