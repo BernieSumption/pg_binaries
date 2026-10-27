@@ -28,6 +28,10 @@ The current inventory format records a minimum Linux kernel version but no minim
 
 Should the first Linux slice support a specified userspace baseline such as Ubuntu 22.04, allowing ordinary dynamically linked binaries, or retain the kernel-only claim and its libc-bundling work? A userspace baseline would change the inventory support contract and needs a design decision. Linux archive implementation is paused while independent macOS and shared verification work continues.
 
+## Windows timing for the first public release
+
+Milestone 7 prepares a candidate from the verified Mac and Linux targets, while milestone 9 schedules Windows x86_64. The milestones leave open whether Windows must be available before the first public release. Should the first release proceed with the verified Mac and Linux targets if Windows is not ready, or wait for Windows x86_64? This decision is needed before publication, not for the current Mac and Linux implementation work.
+
 ## Deferred Spike 1 review ideas
 
 The Spike 1 queue recorded these ideas from Bernie with an explicit instruction to discuss and specify them before starting work. They remain deferred for the release-candidate review:
