@@ -185,6 +185,35 @@ jobs:
           if-no-files-found: warn
           compression-level: 0
 
+  verify-trial-extensions:
+    needs: [prepare, extensions]
+    if: always() && github.event_name == 'push' && needs.prepare.result == 'success'
+    runs-on: macos-15
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        package: ${{ fromJSON(needs.prepare.outputs.packages) }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify package archive in a fresh runner
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PACKAGE: ${{ matrix.package }}
+        run: |
+          set -euo pipefail
+          python3 build.py select-runs "$RUNNER_TEMP/selection" --run 40588015083 --run "$GITHUB_RUN_ID" --component postgresql --component "$PACKAGE"
+          postgres=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["components"]["postgresql"]["archive"])' "$RUNNER_TEMP/selection/selection.json")
+          extension=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["components"][sys.argv[2]]["archive"])' "$RUNNER_TEMP/selection/selection.json" "$PACKAGE")
+          python3 build.py runtime-check "$postgres" "$RUNNER_TEMP/package-check" --package-archive "$PACKAGE=$extension"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: spike2-macos-arm64-${{ matrix.package }}-verification
+          path: ${{ runner.temp }}/package-check/
+          if-no-files-found: warn
+          compression-level: 0
+
   verify:
     needs: [prepare, postgresql, extensions]
     if: always() && needs.prepare.result == 'success' && (inputs.operation == 'full' || inputs.operation == 'verify')
