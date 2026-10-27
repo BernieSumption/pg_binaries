@@ -7,7 +7,7 @@ import tempfile
 import unittest
 
 from verification.publication_preflight import PreflightError, check
-from verification.inventory import RELEASE_BASE
+from verification.inventory import RELEASE_BASE, make_inventory
 
 
 class PublicationPreflightTests(unittest.TestCase):
@@ -17,15 +17,21 @@ class PublicationPreflightTests(unittest.TestCase):
         self.root = Path(self.temp.name)
         self.support_path = self.root / "support.json"
         self.support = {
-            "targets": {"macos-arm64": {}},
-            "packages": {"pgvector": {"extensions": {"vector": {}}}},
+            "schema_version": 1,
+            "postgresql": {"version": "18.6", "config": {"shared_preload_libraries": ["x"]}},
+            "targets": {"macos-arm64": {"minimum_os_version": "11.0"}},
+            "packages": {"pgvector": {"sources": [{"project": "pgvector", "version": "0.8.7"}],
+                                         "config": {"setting": True},
+                                         "extensions": {"vector": {"config": {"x": 1}}}}},
         }
         self.support_path.write_text(json.dumps(self.support))
         self.paths = {}
         archives = {}
         components = {}
         for name in ("postgresql", "pgvector"):
-            path = self.root / f"{name}.tar.gz"
+            filename = (f"postgresql-18.6-macos-arm64.tar.gz" if name == "postgresql"
+                        else f"{name}-postgresql-18.6-macos-arm64.tar.gz")
+            path = self.root / filename
             with tarfile.open(path, "w:gz") as output:
                 directory = tarfile.TarInfo("postgresql")
                 directory.type = tarfile.DIRTYPE
@@ -52,13 +58,8 @@ class PublicationPreflightTests(unittest.TestCase):
         self.report_path, self.selection_path = self.root / "report.json", self.root / "selection.json"
         self.report_path.write_text(json.dumps(report))
         self.selection_path.write_text(json.dumps(selection))
-        self.inventory = {
-            "extensions": {"vector": {"package": "pgvector"}, "citext": {"package": "postgresql"}},
-            "packages": {name: {"downloads": {"macos-arm64": {
-                "url": f"{RELEASE_BASE}/candidate/{record['filename']}",
-                "sha256": record["sha256"]}}}
-                         for name, record in archives.items()},
-        }
+        self.inventory = make_inventory([self.report_path], "candidate", self.support,
+                                        today="2026-01-01", suffix="abcd1234")
         self.inventory_path = self.root / "inventory.json"
         self.save_inventory()
 
@@ -89,6 +90,28 @@ class PublicationPreflightTests(unittest.TestCase):
             f"{RELEASE_BASE}/candidate/other.tar.gz")
         self.save_inventory()
         with self.assertRaisesRegex(PreflightError, "download does not match"):
+            check(self.inventory_path,
+                  [("macos-arm64", self.selection_path, self.report_path)], self.support_path)
+
+    def test_rejects_wrong_declared_metadata(self):
+        self.inventory["extensions"]["vector"]["version"] = "wrong"
+        self.save_inventory()
+        with self.assertRaisesRegex(PreflightError, "extensions"):
+            check(self.inventory_path,
+                  [("macos-arm64", self.selection_path, self.report_path)], self.support_path)
+
+    def test_rejects_different_release_tags(self):
+        download = self.inventory["packages"]["pgvector"]["downloads"]["macos-arm64"]
+        download["url"] = download["url"].replace("/candidate/", "/other/")
+        self.save_inventory()
+        with self.assertRaisesRegex(PreflightError, "one shared release tag"):
+            check(self.inventory_path,
+                  [("macos-arm64", self.selection_path, self.report_path)], self.support_path)
+
+    def test_rejects_invalid_inventory_version(self):
+        self.inventory["inventory_version"] = "18.6-not-a-date-abcd1234"
+        self.save_inventory()
+        with self.assertRaisesRegex(PreflightError, "inventory_version"):
             check(self.inventory_path,
                   [("macos-arm64", self.selection_path, self.report_path)], self.support_path)
 

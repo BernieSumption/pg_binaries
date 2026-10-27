@@ -4,14 +4,16 @@
 from __future__ import annotations
 
 import argparse
+from datetime import date
 import json
 from pathlib import Path
+import re
 import sys
 from typing import Any
 from urllib.parse import quote
 
 from verification.archive import ArchiveError, read_archive
-from verification.inventory import RELEASE_BASE
+from verification.inventory import InventoryError, RELEASE_BASE, make_inventory
 from verification.records import RecordError, sha256_file
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -43,6 +45,7 @@ def check(inventory_path: Path, pairs: list[tuple[str, Path, Path]], support_pat
     downloads = inventory.get("packages")
     if not isinstance(extension_map, dict) or not isinstance(downloads, dict):
         raise PreflightError("inventory must define extensions and packages")
+    tags: set[str] = set()
     if set(downloads) != expected_components:
         raise PreflightError("inventory packages must match the selected components")
     for target, selection_path, report_path in pairs:
@@ -111,9 +114,35 @@ def check(inventory_path: Path, pairs: list[tuple[str, Path, Path]], support_pat
                     or len(tail) != 2 or not tail[0]
                     or tail[1] != quote(archive_path.name, safe="")):
                 raise PreflightError(f"inventory download does not match verified {component} archive on {target}")
+            tags.add(tail[0])
 
     if seen != set(targets):
         raise PreflightError(f"missing targets: {sorted(set(targets) - seen)}")
+    if len(tags) != 1:
+        raise PreflightError("inventory downloads must use one shared release tag")
+    try:
+        expected = make_inventory([report for _, _, report in pairs], next(iter(tags)), support)
+    except InventoryError as exc:
+        raise PreflightError(f"verification reports cannot produce expected inventory: {exc}") from exc
+    if set(inventory) != set(expected):
+        raise PreflightError("inventory fields do not match the defined schema")
+    inventory_version = inventory.get("inventory_version")
+    pg_version = expected["postgresql"]["version"]
+    pattern = rf"{re.escape(pg_version)}-(\d{{4}}-\d{{2}}-\d{{2}})-[0-9a-f]{{8}}"
+    match = re.fullmatch(pattern, inventory_version) if isinstance(inventory_version, str) else None
+    try:
+        if match is None:
+            raise ValueError("invalid format")
+        date.fromisoformat(match[1])
+    except ValueError as exc:
+        raise PreflightError("inventory_version does not have the required format") from exc
+    for field in ("schema_version", "os_support", "postgresql", "extensions"):
+        if inventory.get(field) != expected[field]:
+            raise PreflightError(f"inventory {field} does not match support.json and verification reports")
+    for component, expected_package in expected["packages"].items():
+        actual_package = downloads.get(component)
+        if not isinstance(actual_package, dict) or actual_package.get("config", {}) != expected_package.get("config", {}):
+            raise PreflightError(f"inventory package config does not match support.json for {component}")
     for component, record in downloads.items():
         if not isinstance(record, dict) or set(record.get("downloads", {})) != seen:
             raise PreflightError(f"inventory has extra or missing targets for {component}")
