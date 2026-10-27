@@ -38,7 +38,7 @@ def expected_extensions(source_archive: Path) -> set[str]:
 
 
 def probe(installation: Path, source_archive: Path, work_parent: Path) -> list[str]:
-    extension_dir = installation / "share/postgresql/extension"
+    extension_dir = installation / "share/extension"
     packaged = {path.name.removesuffix(".control") for path in extension_dir.glob("*.control")}
     expected = expected_extensions(source_archive)
     failures: list[str] = []

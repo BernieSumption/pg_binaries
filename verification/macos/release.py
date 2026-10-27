@@ -38,7 +38,7 @@ def git_revision() -> str:
 
 
 def builtin_controls(archive: Path) -> list[str]:
-    prefix = "postgresql/share/postgresql/extension/"
+    prefix = "postgresql/share/extension/"
     entries = read_archive(archive)
     return sorted(path.removeprefix(prefix).removesuffix(".control")
                   for path, entry in entries.items()

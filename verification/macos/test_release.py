@@ -74,8 +74,8 @@ class BuildRecordSelectionTests(unittest.TestCase):
             output.addfile(root)
             for name, payload in (
                 ("postgresql/LICENCE", b"See https://github.com/BernieSumption/pg_binaries/blob/main/LICENSES.md"),
-                ("postgresql/share/postgresql/extension/citext.control", b"comment = 'citext'\n"),
-                ("postgresql/share/postgresql/extension/hstore.control", b"comment = 'hstore'\n"),
+                ("postgresql/share/extension/citext.control", b"comment = 'citext'\n"),
+                ("postgresql/share/extension/hstore.control", b"comment = 'hstore'\n"),
             ):
                 entry = tarfile.TarInfo(name)
                 entry.size = len(payload)

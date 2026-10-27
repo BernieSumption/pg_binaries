@@ -117,7 +117,7 @@ def archive_contents(postgresql_archive: Path, package_archives: dict[str, Path]
     for package, archive_path in package_archives.items():
         package_contents = read_archive(archive_path)
         for extension in SUPPORT["packages"][package]["extensions"]:
-            path = f"postgresql/share/postgresql/extension/{extension}.control"
+            path = f"postgresql/share/extension/{extension}.control"
             entry = package_contents.get(path)
             if entry is None or entry.kind != "file":
                 raise RuntimeError(f"{package} archive lacks SQL extension control file: {path}")

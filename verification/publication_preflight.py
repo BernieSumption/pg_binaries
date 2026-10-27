@@ -95,7 +95,7 @@ def check(inventory_path: Path, pairs: list[tuple[str, Path, Path]], support_pat
                 raise PreflightError(f"{target}: invalid {component} archive: {exc}") from exc
             if actual != digest:
                 raise PreflightError(f"{target}: archive SHA-256 mismatch for {component}")
-            prefix = "postgresql/share/postgresql/extension/"
+            prefix = "postgresql/share/extension/"
             controls = {path[len(prefix):-len(".control")] for path, entry in contents.items()
                         if path.startswith(prefix) and path.endswith(".control")
                         and "/" not in path[len(prefix):] and entry.kind == "file"}

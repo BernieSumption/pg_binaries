@@ -41,7 +41,7 @@ class PublicationPreflightTests(unittest.TestCase):
                 licence.size = len(payload)
                 output.addfile(licence, io.BytesIO(payload))
                 control_name = "citext" if name == "postgresql" else "vector"
-                control = tarfile.TarInfo(f"postgresql/share/postgresql/extension/{control_name}.control")
+                control = tarfile.TarInfo(f"postgresql/share/extension/{control_name}.control")
                 control.size = 1
                 output.addfile(control, io.BytesIO(b"x"))
             digest = hashlib.sha256(path.read_bytes()).hexdigest()
