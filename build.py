@@ -84,7 +84,7 @@ def main() -> None:
 
     publication = commands.add_parser("publication-preflight", help="Check draft inventory against local verified archive bytes")
     publication.add_argument("inventory")
-    publication.add_argument("--target", action="append", required=True,
+    publication.add_argument("--target", action="append", required=True, dest="target_pairs",
                              metavar="TARGET=SELECTION.json,REPORT.json")
 
     args = parser.parse_args()
@@ -167,7 +167,7 @@ def main() -> None:
             raise SystemExit(result.returncode)
     elif args.command == "publication-preflight":
         command = [sys.executable, "-m", "verification.publication_preflight", args.inventory]
-        for target_selection in args.target:
+        for target_selection in args.target_pairs:
             command.extend(["--target", target_selection])
         result = subprocess.run(command, cwd=ROOT, check=False)
         if result.returncode:
