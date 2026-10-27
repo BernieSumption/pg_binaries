@@ -1,6 +1,6 @@
 # Building and verifying the distribution
 
-The build produces independently downloadable PostgreSQL and extension archives that users can extract into one installation. A target is an operating system and architecture selected in `support.json`. For each target, GitHub Actions builds PostgreSQL, builds the selected extensions against it, and tests the archives individually and together. PostgreSQL and every selected extension are built afresh for a new release. An agent investigates failures and retries the affected work to complete the build.
+The build produces independently downloadable PostgreSQL and extension archives that users can extract into one installation. A target is an operating system and architecture selected in `support.json`. For each target, GitHub Actions builds PostgreSQL, builds the selected extension packages against it, and tests the archives individually and together. PostgreSQL and every selected extension are built afresh for a new release. An agent investigates failures and retries the affected work to complete the build.
 
 ## Build and verification sequence on GitHub Actions
 
@@ -14,15 +14,15 @@ The PostgreSQL job installs the required compiler and dependencies, downloads th
 
 ### Extension build jobs
 
-After the PostgreSQL job uploads its artefacts, the workflow starts one build job per selected extension project. These jobs run independently in parallel. Each job downloads the PostgreSQL archive and development files, installs its extension’s compiler and dependencies, and downloads the selected extension source and verifies its checksum.
+After the PostgreSQL job uploads its artefacts, the workflow starts one build job per selected [extension package](distribution.md). These jobs run independently in parallel. Each job downloads the PostgreSQL archive and development files, installs the compiler and dependencies required by that package, and downloads its selected upstream sources and verifies their checksums.
 
-Each extension job builds against the downloaded PostgreSQL build. It collects the extension’s installation files and required runtime dependencies in a staging directory, packages them into an extension archive, and uploads the archive and build record as GitHub artefacts.
+Each extension job builds the SQL extensions belonging to its package against the downloaded PostgreSQL build. It collects their installation files and required runtime dependencies in a staging directory, packages them into an extension archive, and uploads the archive and build record as GitHub artefacts.
 
 Build recipes specify their dependencies, toolchain versions and enabled features. Inline checks confirm that the compiled files exist, control files name the intended SQL extensions, and staging directories contain the required runtime files. Recipes can run inexpensive smoke tests to help diagnose build failures.
 
 ### Verification job
 
-Once the PostgreSQL and all selected extension archives are available, one verification job downloads them onto a fresh standard GitHub-hosted runner. It installs no additional dependencies. The job tests PostgreSQL with each extension separately, PostgreSQL alone, and PostgreSQL with all selected extensions, using a fresh installation and database for each combination. [Verification job details](#verification-job-details) describes the environment, test sequence and checks.
+Once the PostgreSQL and all selected extension archives are available, one verification job downloads them onto a fresh standard GitHub-hosted runner. It installs no additional dependencies. The job tests PostgreSQL with each extension package separately, PostgreSQL alone, and PostgreSQL with all selected packages, using a fresh installation and database for each combination. [Verification job details](#verification-job-details) describes the environment, test sequence and checks.
 
 ## Failures and retries
 
@@ -38,7 +38,7 @@ If PostgreSQL needs rebuilding, for example to change a build setting, the agent
 
 ### Retry an extension build
 
-For a retry, the agent starts a workflow run that builds only the selected extension, using the selected script revision and PostgreSQL artefacts from a specified previous workflow run. The agent can therefore fix an extension recipe and build that extension again while keeping the successful PostgreSQL and other extension archives. The new job runs on a new GitHub-hosted runner, installs its compiler and dependencies, downloads the existing PostgreSQL archive and development files, and uploads the replacement extension archive.
+For a retry, the agent starts a workflow run that builds only the selected extension package, using the selected script revision and PostgreSQL artefacts from a specified previous workflow run. The agent can therefore fix a package recipe and build that package again while keeping the successful PostgreSQL and other extension archives. The new job runs on a new GitHub-hosted runner, installs its compiler and dependencies, downloads the existing PostgreSQL archive and development files, and uploads the replacement extension archive.
 
 Verification uses the current run’s archives by default. To combine builds from several runs, the agent supplies an ordered list of workflow runs, from earliest selection to latest replacement. For each component and target, the verification command selects the successful build from the last listed run that produced one. A failed build does not replace an earlier successful build. The command examines only the supplied runs; the agent does not maintain a component-to-artefact map.
 
@@ -56,9 +56,9 @@ When verification code needs correction, the agent runs the corrected checks aga
 
 The Python 3 entry point [`build.py`](../build.py) provides the build commands used by agents and GitHub Actions jobs. Its argument definitions and help describe the available commands. Python handles argument parsing and shared orchestration logic; short shell scripts can implement project build recipes, and SQL files contain tests of installed extension functionality.
 
-The agent uses this interface to start a GitHub Actions workflow run for the selected target. The workflow reads `support.json` to determine the PostgreSQL version, extension projects and source archives, then schedules the build and verification jobs as their prerequisites finish. The interface also supports starting workflow runs for selected builds or verification when completing retries.
+The agent uses this interface to start a GitHub Actions workflow run for the selected target. The workflow reads `support.json` to determine the PostgreSQL version, extension packages and source archives, then schedules the build and verification jobs as their prerequisites finish. The interface also supports starting workflow runs for selected builds or verification when completing retries.
 
-Default selections come from `support.json`, including the extension set for the selected target. Explicit selections allow an agent to build one extension, choose existing PostgreSQL artefacts, or verify archives selected from an ordered list of workflow runs. Preparation, PostgreSQL compilation, extension compilation, packaging, installation assembly and verification are independently callable operations, so an agent can compose a custom sequence without writing orchestration code. Commands report the files they produce and their success or failure status.
+Default selections come from `support.json`, including the extension set for the selected target. Explicit selections allow an agent to build one extension package, choose existing PostgreSQL artefacts, or verify archives selected from an ordered list of workflow runs. Preparation, PostgreSQL compilation, extension compilation, packaging, installation assembly and verification are independently callable operations, so an agent can compose a custom sequence without writing orchestration code. Commands report the files they produce and their success or failure status.
 
 GitHub Actions workflows schedule jobs and transfer artefacts. Build commands perform the work within each job and resolve the archive selections supplied for retries. The agent diagnoses failures and chooses which commands or workflows to run again.
 
@@ -76,7 +76,7 @@ GitHub Actions workflows use scoped targets and reasonable job timeouts. Agents 
 
 ### Source layout
 
-`scripts/postgresql/` contains PostgreSQL build recipes, `scripts/extensions/<project>/` contains project recipes and probes, `scripts/platform/<os>/` provides environment setup and native dependency inspection, and `scripts/verify/` implements shared archive and runtime checks. Test fixtures and executable assertions define the concrete cases within the coverage below.
+`scripts/postgresql/` contains PostgreSQL build recipes, `scripts/extensions/<package>/` contains package recipes and extension probes, `scripts/platform/<os>/` provides environment setup and native dependency inspection, and `scripts/verify/` implements shared archive and runtime checks. Test fixtures and executable assertions define the concrete cases within the coverage below.
 
 ## Verification job details
 
@@ -88,7 +88,7 @@ Runtime tests run on the operating-system version supplied by the selected GitHu
 
 The job downloads the selected archives and build records once. It tests the following combinations in sequence:
 
-- For each selected extension project, PostgreSQL plus that extension and its declared extension prerequisites. For example, TIGER Geocoder is tested with PostgreSQL and PostGIS. Unrelated extensions are absent so they cannot supply a missing dependency.
+- For each selected extension package, PostgreSQL plus that package alone. The tests create and exercise every SQL extension supplied by the package, including its prerequisites. This checks that package grouping includes all required SQL extensions beyond PostgreSQL’s built-ins.
 - PostgreSQL without any separately downloaded extensions. Its built-in extensions remain part of the PostgreSQL archive.
 - PostgreSQL with every selected extension, to detect file, library and runtime conflicts between extensions.
 
@@ -104,7 +104,7 @@ These checks catch missing or misplaced files, unsafe extraction paths and confl
 
 The verifier also checks overlapping paths before combining archives. Shared files are allowed when they meet the distribution’s overlap rules; incompatible copies fail the check. This catches cases where installing one extension would overwrite a library needed by another.
 
-The test installer follows the documented extraction process without extra file copying, loader repairs or dependency installation. This checks that users can install the archives by following the same instructions.
+The test installer performs only the extraction defined in [distribution.md](distribution.md#download-units-and-installation). It executes no package code, hooks or SQL and makes no configuration changes. The runtime tests subsequently create databases, start PostgreSQL and exercise SQL extensions as described below.
 
 ### Static analysis of executables and libraries
 
@@ -127,7 +127,7 @@ In the PostgreSQL-only installation, the test creates a table containing a known
 
 These checks catch build options accidentally disabled and runtime libraries or support files omitted from the PostgreSQL archive. Each capability selected in [postgresql-options.md](postgresql-options.md) receives a small test that uses it. Examples include a TLS connection, an ICU collation, a compressed dump and restore, and an XML transformation. The cases exercise the selected dependencies with simple expected results.
 
-The verifier compares the expected built-in extension names with those found in the archive, then creates each extension and runs a small operation that loads its packaged code or data. This detects missing installation files and modules that cannot load. The verified list supplies the built-in extension names published in `inventory.json`.
+The verifier compares the expected built-in extension names with those found in the archive, then creates each extension and runs a small operation that loads its packaged code or data. This detects missing installation files and modules that cannot load. These names map to the `postgresql` package in `inventory.json`.
 
 ### Extension probes
 
@@ -135,9 +135,9 @@ A probe is a small test that confirms an extension’s packaged code and data ca
 
 Some libraries and data files are located only when a feature is used. Recipes identify these dependencies, and the runtime tests exercise the features that load them. For example, a spatial operation can expose a missing coordinate-system data file that library inspection would not find.
 
-The cases target plausible packaging failures: missing libraries, omitted data files, incorrect module paths or required configuration that has not been documented. Projects with several modules need cases that load each module. Background work has a bounded wait so a worker that fails to start produces a test failure. Tests use only the external data or services included in the documented package scope.
+The cases target plausible packaging failures: missing libraries, omitted data files, incorrect module paths or required configuration that has not been documented. Packages with several modules need cases that load each module. Background work has a bounded wait so a worker that fails to start produces a test failure. Tests use only the external data or services included in the documented package scope.
 
-The implementation defines the operations and expected results. The same probes run with the extension installed individually and with the complete extension set. Changes to packaged modules or dependencies include review of whether the probes exercise them.
+The implementation defines the operations and expected results. The same probes run with the extension’s package installed alone alongside PostgreSQL and with the complete extension set. Changes to packaged modules or dependencies include review of whether the probes exercise them.
 
 ### Coherent extension behaviour
 
@@ -155,6 +155,6 @@ The test harness also retains server logs and failing command output from ordina
 
 ### Public downloads
 
-Automated publication checks confirm that download metadata identifies the archives that passed verification. Publication uploads those PostgreSQL and extension archives to GitHub Releases, checks that their download URLs are anonymously accessible, and then advertises them through `inventory.json`.
+Automated publication checks confirm that download metadata identifies the archives that passed verification and that SQL extension names map to the packages that supplied them on each target. Publication uploads those PostgreSQL and extension archives to GitHub Releases, checks that their download URLs are anonymously accessible, and then advertises them through `inventory.json`.
 
 A final anonymous download of the public inventory and every referenced archive checks that users can retrieve the tested files and that their checksums match. Publication requires human authorization under the repository instructions.
