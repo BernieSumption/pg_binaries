@@ -32,7 +32,7 @@ The active implementation goal covers milestones 2–7 in `SPIKE2_MILESTONES.md`
 
 ## Mac Intel pilot
 
-Package-local Intel recipes now cover PostgreSQL and its six pinned dependencies, plus pgvector, HypoPG, collection, pg_ivm, pgAudit and pgTAP. They adapt the working ARM recipes to the native Intel host and archive names. Shared macOS static and runtime checks accept `macos-x86_64`; the PostgreSQL-only hosted pilot uses the standard `macos-15-intel` runner. Syntax and existing verification unit checks pass, but no Intel archive has been built or verified yet. Address Standardizer, pg_jsonschema and PostGIS Intel recipes remain absent.
+Package-local Intel recipes now cover PostgreSQL and its six pinned dependencies, plus pgvector, HypoPG, collection, pg_ivm, pgAudit and pgTAP. They adapt the working ARM recipes to the native Intel host and archive names. Shared macOS static and runtime checks accept `macos-x86_64`; [PostgreSQL pilot 40594802451](https://github.com/BernieSumption/pg_binaries/actions/runs/40594802451) is running on the standard `macos-15-intel` runner. Syntax and existing verification unit checks pass, but no Intel archive has been verified yet. Address Standardizer and pg_jsonschema Intel recipes and build-input selections are prepared locally and will be added after the pilot result; PostGIS remains pending the scope review.
 
 ## Next work
 

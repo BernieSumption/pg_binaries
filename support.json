@@ -129,6 +129,13 @@
             "url": "https://github.com/PCRE2Project/pcre2/releases/download/pcre2-10.48/pcre2-10.48.tar.bz2",
             "sha256": "b6c68fdf6f3ac31388b50aa89ff0fc49c00c987c16e7b5146491d12003f2c8ed"
           }
+        },
+        "macos-x86_64": {
+          "pcre2": {
+            "version": "10.48",
+            "url": "https://github.com/PCRE2Project/pcre2/releases/download/pcre2-10.48/pcre2-10.48.tar.bz2",
+            "sha256": "b6c68fdf6f3ac31388b50aa89ff0fc49c00c987c16e7b5146491d12003f2c8ed"
+          }
         }
       },
       "extensions": {
@@ -189,7 +196,8 @@
         "sha256": "3bfddb105d71df10078f935a5ac1328660a1a2fe290f2342c2b4a142d4f47d91"
       }],
       "build_inputs": {
-        "macos-arm64": { "rust": "1.90.0", "cargo_pgrx": "0.16.1" }
+        "macos-arm64": { "rust": "1.90.0", "cargo_pgrx": "0.16.1" },
+        "macos-x86_64": { "rust": "1.90.0", "cargo_pgrx": "0.16.1" }
       },
       "extensions": { "pg_jsonschema": {} }
     }

@@ -39,7 +39,7 @@ class BuildRecordSelectionTests(unittest.TestCase):
             self.records[name]["postgresql_archive"] = {
                 "sha256": self.records["postgresql"]["archive"]["sha256"]}
 
-    def invoke(self, checks=None, origin_runs=False) -> int:
+    def invoke(self, checks=None, origin_runs=False, machine="arm64") -> int:
         for name, record in self.records.items():
             path = self.root / f"{name}.json"
             path.write_text(json.dumps(record), encoding="utf-8")
@@ -49,7 +49,7 @@ class BuildRecordSelectionTests(unittest.TestCase):
                 self.args.extend(["--origin-run", f"{name}={index}"])
         with patch.object(sys, "argv", self.args), \
              patch.object(release.platform, "system", return_value="Darwin"), \
-             patch.object(release.platform, "machine", return_value="arm64"), \
+             patch.object(release.platform, "machine", return_value=machine), \
              patch.object(release, "builtin_controls", return_value=["citext"]), \
              patch.object(release, "verify") as verify:
             verify.return_value = checks if checks is not None else [
@@ -65,6 +65,16 @@ class BuildRecordSelectionTests(unittest.TestCase):
         self.assertEqual(len(report["combinations"]), len(self.names) + 1)
         self.assertEqual(report["combinations"][0]["checks"][0]["outcome"], "passed")
         self.assertEqual(report["postgresql_builtin_extensions"], ["citext"])
+
+    def test_intel_target_uses_intel_build_inputs(self) -> None:
+        support = json.loads((release.ROOT / "support.json").read_text(encoding="utf-8"))
+        self.args.extend(["--target", "macos-x86_64"])
+        for name, record in self.records.items():
+            record["target"] = "macos-x86_64"
+            record["sources"], record["build_inputs"] = selected_inputs(support, "macos-x86_64", name)
+        self.assertEqual(self.invoke(machine="x86_64"), 0)
+        report = json.loads((self.root / "report/verification-report.json").read_text(encoding="utf-8"))
+        self.assertEqual(report["target"], "macos-x86_64")
 
     def test_reads_builtin_controls_from_postgresql_archive(self) -> None:
         archive = self.root / "builtins.tar.gz"
