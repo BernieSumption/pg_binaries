@@ -123,7 +123,8 @@ def archive_contents(postgresql_archive: Path, package_archives: dict[str, Path]
                 raise RuntimeError(f"{package} archive lacks SQL extension control file: {path}")
 
 
-def verify(postgresql_archive: Path, package_archives: dict[str, Path], output: Path) -> list[dict[str, str | None]]:
+def verify(postgresql_archive: Path, package_archives: dict[str, Path], output: Path,
+           target: str = "macos-arm64") -> list[dict[str, str | None]]:
     results: list[dict[str, str | None]] = []
     archives = [postgresql_archive, *package_archives.values()]
     safe, _ = check(results, "archive safety and overlap", lambda: validate_archives(archives))
@@ -154,7 +155,7 @@ def verify(postgresql_archive: Path, package_archives: dict[str, Path], output: 
 
     installation = installation_parent / "postgresql"
     def inspect() -> None:
-        _, static_failures = inspect_macho(installation, "macos-arm64")
+        _, static_failures = inspect_macho(installation, target)
         if static_failures:
             raise RuntimeError(f"native library inspection found {static_failures} issue(s)")
     check(results, "native libraries", inspect)
@@ -273,6 +274,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("postgresql_archive", type=Path)
     parser.add_argument("output_parent", type=Path)
+    parser.add_argument("--target", choices=("macos-arm64", "macos-x86_64"), default="macos-arm64")
     parser.add_argument("--package-archive", action="append", default=[], metavar="PACKAGE=ARCHIVE",
                         help="repeat for each extension package to test together")
     arguments = parser.parse_args()
@@ -284,7 +286,7 @@ def main() -> None:
         package_archives[name] = Path(filename)
     label = "all" if len(package_archives) > 1 else next(iter(package_archives), "postgresql")
     output = arguments.output_parent / f"verify-{label}-{uuid.uuid4().hex[:8]}"
-    results = verify(arguments.postgresql_archive, package_archives, output)
+    results = verify(arguments.postgresql_archive, package_archives, output, arguments.target)
     output.mkdir(parents=True, exist_ok=True)
     (output / "checks.json").write_text(json.dumps(results, indent=2) + "\n", encoding="utf-8")
     print(output)

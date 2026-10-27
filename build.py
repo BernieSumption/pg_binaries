@@ -130,14 +130,16 @@ def main() -> None:
         if result.returncode:
             raise SystemExit(result.returncode)
     elif args.command == "runtime-check":
-        command = [sys.executable, "-m", "verification.macos.runtime", args.postgresql_archive, args.output_parent]
+        command = [sys.executable, "-m", "verification.macos.runtime", args.postgresql_archive, args.output_parent,
+                   "--target", target]
         for package_archive in args.package_archive:
             command.extend(["--package-archive", package_archive])
         result = subprocess.run(command, cwd=ROOT, check=False)
         if result.returncode:
             raise SystemExit(result.returncode)
     elif args.command == "release-check":
-        command = [sys.executable, "-m", "verification.macos.release", args.postgresql_archive, args.output_dir]
+        command = [sys.executable, "-m", "verification.macos.release", args.postgresql_archive, args.output_dir,
+                   "--target", target]
         for package_archive in args.package_archive:
             command.extend(["--package-archive", package_archive])
         for build_record in args.build_record:

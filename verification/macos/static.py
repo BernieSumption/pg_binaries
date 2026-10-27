@@ -156,7 +156,7 @@ def inspect(installation: Path, target: str) -> tuple[int, int]:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("installation", type=Path, help="extracted postgresql/ directory")
-    parser.add_argument("target", choices=("macos-arm64",))
+    parser.add_argument("target", choices=("macos-arm64", "macos-x86_64"))
     arguments = parser.parse_args()
     if not arguments.installation.is_dir():
         parser.error(f"installation directory does not exist: {arguments.installation}")

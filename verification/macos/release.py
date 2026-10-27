@@ -50,6 +50,7 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("postgresql_archive", type=Path)
     parser.add_argument("output", type=Path, help="directory for report and per-combination logs")
+    parser.add_argument("--target", choices=("macos-arm64", "macos-x86_64"), default=TARGET)
     parser.add_argument("--package-archive", action="append", default=[], metavar="PACKAGE=PATH",
                         help="selected package archive; repeat once for each package")
     parser.add_argument("--build-record", action="append", default=[], metavar="COMPONENT=PATH",
@@ -57,8 +58,10 @@ def main() -> int:
     parser.add_argument("--origin-run", action="append", default=[], metavar="COMPONENT=RUN_ID",
                         help="workflow run that produced a selected archive; repeat for each component")
     arguments = parser.parse_args()
-    if platform.system() != "Darwin" or platform.machine() != "arm64":
-        parser.error("macOS ARM64 verification must run on a macOS ARM64 host")
+    target = arguments.target
+    required_arch = target.removeprefix("macos-")
+    if platform.system() != "Darwin" or platform.machine() != required_arch:
+        parser.error(f"{target} verification must run on a macOS {required_arch} host")
 
     support = json.loads((ROOT / "support.json").read_text(encoding="utf-8"))
     expected = set(support["packages"])
@@ -110,14 +113,14 @@ def main() -> int:
             parser.error(f"{name} build record lacks a valid schema version or Git revision")
         if name != "postgresql" and not isinstance(record.get("postgresql_archive"), dict):
             parser.error(f"{name} build record lacks its PostgreSQL archive")
-        if (record.get("component") != name or record.get("target") != TARGET
+        if (record.get("component") != name or record.get("target") != target
                 or record.get("archive", {}).get("sha256") != archive_hashes[name]
                 or record.get("archive", {}).get("filename") != archives[name].name):
             parser.error(f"{name} build record does not identify its selected archive")
         if name != "postgresql" and record.get("postgresql_archive", {}).get("sha256") != archive_hashes["postgresql"]:
             parser.error(f"{name} was built against a different PostgreSQL archive")
         try:
-            sources, build_inputs = selected_inputs(support, TARGET, name)
+            sources, build_inputs = selected_inputs(support, target, name)
         except RecordError as error:
             parser.error(str(error))
         if record.get("sources") != sources or record.get("build_inputs") != build_inputs:
@@ -129,7 +132,7 @@ def main() -> int:
 
     report = {
         "schema_version": 1,
-        "target": TARGET,
+        "target": target,
         "macos_version": platform.mac_ver()[0] or platform.release(),
         "verification_git_revision": git_revision(),
         "archives": {
@@ -150,7 +153,7 @@ def main() -> int:
         log = arguments.output / f"{index:02d}-{label}.log"
         entry = {"name": label, "outcome": "passed", "reason": None, "log": log.name, "checks": []}
         try:
-            checks = verify(arguments.postgresql_archive, selected, arguments.output / f"{index:02d}-{label}")
+            checks = verify(arguments.postgresql_archive, selected, arguments.output / f"{index:02d}-{label}", target)
             entry["checks"] = checks
             failed = [item for item in checks if item["outcome"] in ("failed", "not_run")]
             if failed:
