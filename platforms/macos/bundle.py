@@ -52,6 +52,20 @@ def inside(path, parent):
         return False
 
 
+def prefix_library(name, prefix):
+    if not name or pathlib.PurePosixPath(name).name != name:
+        return None
+    for directory in ("lib", "lib64"):
+        candidate = prefix / directory / name
+        try:
+            resolved = candidate.resolve(strict=True)
+        except (OSError, RuntimeError):
+            continue
+        if resolved.is_file() and inside(resolved, prefix):
+            return resolved
+    return None
+
+
 def main(argv=None):
     argv = sys.argv[1:] if argv is None else argv
     if len(argv) != 2:
@@ -83,6 +97,11 @@ def main(argv=None):
             if pathlib.PurePosixPath(name).name != name:
                 raise SystemExit(f"unsupported @rpath dependency: {binary}: {dep}")
             candidates = [libdir / name, prefix / "lib" / name, prefix / "lib64" / name]
+        elif not dep.startswith("/"):
+            source = prefix_library(dep, prefix)
+            if source is not None:
+                return source
+            raise SystemExit(f"unsupported Mach-O dependency: {binary}: {dep}")
         elif dep.startswith("/"):
             path = pathlib.Path(dep)
             if inside(path, root) and path.is_file():
