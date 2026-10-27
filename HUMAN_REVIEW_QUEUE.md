@@ -34,7 +34,7 @@ Milestone 7 prepares a candidate from the verified Mac and Linux targets, while 
 
 ## Deferred Spike 1 review ideas
 
-The Spike 1 queue recorded these ideas from Bernie with an explicit instruction to discuss and specify them before starting work. They remain deferred for the release-candidate review:
+The Spike 1 queue recorded these ideas from Bernie with an explicit instruction to discuss and specify them before starting work. The size and correctness reviews remain deferred for the release-candidate review; bug hunting belongs to the later human-driven milestone 7.5:
 
 - Review archive size and its main contributors before expanding the extension catalogue. Possible changes to compiler options, enabled features or compression need a separate decision.
 - Ask an Astra agent for an adversarial review of the implementation and tests to find specific and systematic correctness issues.

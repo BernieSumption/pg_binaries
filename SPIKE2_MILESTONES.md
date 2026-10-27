@@ -26,12 +26,6 @@ Prior work to inspect: `scripts/macos/`, the selected package recipes and SQL pr
 
 Assemble the PostgreSQL archive and all the selected extension packages using the documented extraction process. Resolve prerequisites, file and library conflicts, and required server settings. Exercise every selected SQL extension against one PostgreSQL instance and, where possible, one backend session.
 
-The human uses this installation and reviews its packaging and verification behaviour. Manual bug hunting begins here as an occasional practice and repeats after material platform or packaging changes.
-
-Bug hunting includes moving an installation after it has been used, to look for absolute software paths saved during extension setup or execution. Stop PostgreSQL, move the software directory, make its old location unavailable and restart from the new location. Keep the existing database and configuration unchanged, then repeat operations that could use saved paths. Recreating extensions could conceal the problem. Add a targeted regression test if this reveals a concrete failure.
-
-Bug hunting includes running the archive verification tests locally on the claimed minimum macOS version using Lume or similar VM tooling. If that version is unavailable, use the closest available version and rely on the compiler deployment target for the older-version claim. Record the version actually tested and the remaining gap. Repeat this check after material changes to platform support or packaging.
-
 Prior work to inspect: the old queue's coherent-installation proposal and the selected project recipes and probes. Keep the queue's size review and adversarial review visible for the release-candidate milestone.
 
 ## 4. Build the Mac ARM64 slice on GitHub
@@ -56,11 +50,17 @@ Prior work to inspect: Intel Mac and Linux pilots, platform build scripts, archi
 
 ## 7. Prepare a thin release candidate
 
-Assemble and test the complete selected extension set on every platform in the candidate. Review licence coverage, diagnostics, archive size, download metadata and client installation. Generate an inventory from verified assets and dry-run publication. Decide whether this slice is suitable for a public release. Publication requires separate human authorization.
+Assemble and test the complete selected extension set on every platform in the candidate. Review licence coverage, diagnostics, archive size, download metadata and client installation. Generate an inventory from verified assets and dry-run publication. Decide whether this slice is suitable for a public release. Publication requires separate human authorisation.
 
 Open question: whether Windows is required before the first public release.
 
 Prior work to inspect: `policies/releases.md`, `policies/licenses.md`, `policies/debugging.md`, `LICENSES.md`, publication tests, and the old queue's size and adversarial-review ideas. Recheck the applicability of each old test kind before calling the candidate verified.
+
+## 7.5. Human-driven bug hunting
+
+After milestone 7, the human uses a coherent installation and reviews its packaging and verification behaviour. The scope and timing of exploratory bug hunting are specified with the human when this milestone begins. This is separate from the automated build and verification work in milestones 2–7; the current implementation goal stops at milestone 7.
+
+Candidate activities to discuss include moving an installation after it has been used, then restarting with its existing database and configuration to find saved absolute software paths. Another candidate is running archive verification locally on the claimed minimum macOS version, or the closest available version, and recording the version tested and any gap. If exploratory work reveals a concrete failure, add a targeted regression test. Discuss whether to repeat these activities after material platform, packaging or release changes.
 
 ## 8. Expand the extension catalogue in batches
 
@@ -78,4 +78,4 @@ Prior work to inspect: `scripts/windows/`, PE inspectors, Windows workflows, run
 
 ## 10. Refresh releases
 
-Refresh the selected PostgreSQL and extension releases published by their projects, build fresh archives, verify the complete set and check public downloads after publication. Continue occasional manual bug hunting and design review as the distribution grows.
+Refresh the selected PostgreSQL and extension releases published by their projects, build fresh archives, verify the complete set and check public downloads after publication. Continue design review as the distribution grows.
