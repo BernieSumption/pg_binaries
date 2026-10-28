@@ -17,7 +17,7 @@ curl -fsSL "$source_url" -o "$work/source.tar.gz"; echo "$source_sha  $work/sour
 [[ $(tar -tzf "$work/source.tar.gz" | sed -n '1s,/.*,,p') == "pg_jsonschema-$version" ]]
 tar -xzf "$work/source.tar.gz" -C "$work"; src="$work/pg_jsonschema-$version"
 [[ -s "$src/Cargo.lock" && $(sed -n 's/^version = "\([^"]*\)"/\1/p' "$src/Cargo.toml" | head -n1) == "$version" ]]
-export CARGO_HOME="$work/cargo" RUSTUP_HOME="$work/rustup" PGRX_HOME="$work/pgrx"
+export CARGO_HOME=${CARGO_HOME:-$work/cargo} RUSTUP_HOME=${RUSTUP_HOME:-$work/rustup} PGRX_HOME=${PGRX_HOME:-$work/pgrx}
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y --profile minimal --default-toolchain "$rust_version"
 export PATH="$CARGO_HOME/bin:$PATH"
 cargo install cargo-pgrx --version "$pgrx_version" --locked

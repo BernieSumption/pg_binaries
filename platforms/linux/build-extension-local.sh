@@ -17,28 +17,18 @@ repo=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 development_archive=$(cd "$(dirname "$development_archive")" && pwd)/$(basename "$development_archive")
 mkdir -p "$output_directory"
 output_directory=$(cd "$output_directory" && pwd)
+version=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["postgresql"]["version"])' "$repo/support.json")
+archive="$package-postgresql-$version-linux-arm64.tar.gz"
 
-if [[ $package == postgis ]]; then
-  docker build --platform linux/arm64 -f "$repo/packages/postgis/linux-arm64/Dockerfile" \
-    -t pg-binaries-postgis-linux-arm64 "$repo/packages/postgis/linux-arm64" >/dev/null
-  image=pg-binaries-postgis-linux-arm64
-else
-  docker build --platform linux/arm64 -f "$repo/packages/postgresql/linux-arm64/Dockerfile" \
-    -t pg-binaries-postgresql-linux-arm64 "$repo" >/dev/null
-  image=pg-binaries-postgresql-linux-arm64
-  if [[ $package == pg_jsonschema ]]; then
-    docker build --platform linux/arm64 -f "$repo/packages/pg_jsonschema/linux-arm64/Dockerfile" \
-      -t pg-binaries-pg-jsonschema-linux-arm64 "$repo/packages/pg_jsonschema/linux-arm64" >/dev/null
-    image=pg-binaries-pg-jsonschema-linux-arm64
-  fi
-fi
-
-docker run --rm --platform linux/arm64 --entrypoint bash \
-  -v "$repo:/repo:ro" -v "$development_archive:/input/development.tar.gz:ro" \
-  -v "$output_directory:/out" -w /repo "$image" -c '
-    set -euo pipefail
-    mkdir -p /work/development
-    tar -xzf /input/development.tar.gz -C /work/development
-    mv /work/development/postgresql /opt/postgresql
-    python3 build.py --target linux-arm64 extension-build "$1" /opt/postgresql /out
-  ' _ "$package"
+container=$(bash "$repo/platforms/linux/dev-container.sh")
+docker exec "$container" mkdir -p /work/input /work/output
+docker cp "$development_archive" "$container:/work/input/development.tar.gz"
+docker exec "$container" rm -f "/work/output/$archive" "/work/output/$archive.sha256"
+docker exec -e CARGO_HOME=/work/cargo -e RUSTUP_HOME=/work/rustup -e PGRX_HOME=/work/pgrx "$container" bash -c '
+  set -euo pipefail
+  rm -rf /opt/postgresql
+  tar -xzf /work/input/development.tar.gz -C /opt
+  python3 build.py --target linux-arm64 extension-build "$1" /opt/postgresql /work/output
+' _ "$package"
+docker cp "$container:/work/output/$archive" "$output_directory/$archive"
+docker cp "$container:/work/output/$archive.sha256" "$output_directory/$archive.sha256"

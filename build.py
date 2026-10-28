@@ -106,17 +106,9 @@ def main() -> None:
         run_recipe(postgres_recipe / "package.sh", [args.install_prefix, args.dependency_prefix, args.output_dir], target)
     elif args.command == "extension-build":
         package = SUPPORT["packages"][args.package]
-        sources = package["sources"]
-        if args.package == "postgis":
-            arguments = [item for source in sources for item in
-                         (source["url"], source["sha256"], source["version"])]
-            arguments.extend((args.postgresql_prefix, args.output_dir))
-        elif len(sources) == 1:
-            source = sources[0]
-            arguments = [source["url"], source["sha256"], source["version"],
-                         args.postgresql_prefix, args.output_dir]
-        else:
-            raise SystemExit(f"{args.package} needs a package recipe for its {len(sources)} sources")
+        arguments = [item for source in package["sources"] for item in
+                     (source["url"], source["sha256"], source["version"])]
+        arguments.extend((args.postgresql_prefix, args.output_dir))
         run_recipe(
             ROOT / "packages" / args.package / target / "build.sh",
             arguments,
