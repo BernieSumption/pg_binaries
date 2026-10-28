@@ -2,9 +2,9 @@
 
 ## Tart guest command channel during local builds
 
-Tart 2.41.1 booted the macOS 26.6.2 build VM and completed the local PostgreSQL dependency, PostgreSQL and six extension-package builds. After those builds, an Address Standardizer build command and a harmless `/usr/bin/true` command both failed before execution with `GRPC.GRPCConnectionPoolError`, reporting that the Tart Guest Agent could not be reached. The VM remained running, SSH worked, and the guest-agent processes were present. One normal VM stop and restart restored `tart exec`; the six completed archives survived. The cause of the connection failure is unknown.
+Tart 2.41.1 booted the macOS 26.6.2 build VM and completed the local PostgreSQL dependency, PostgreSQL and six extension-package builds. After those builds, an Address Standardizer build command and a harmless `/usr/bin/true` command both failed before execution with `GRPC.GRPCConnectionPoolError`, reporting that the Tart Guest Agent could not be reached. The VM remained running, SSH worked, and the guest-agent processes were present. Stopping and restarting only that Tart VM once restored `tart exec`; the six completed archives survived. The host computer was not restarted, and there is no evidence that it needs a restart. The cause of the connection failure is unknown.
 
-The current design uses Tart's guest agent for build commands. Should a restart be accepted as routine recovery for this failure, should command execution change to SSH, or should the VM route be reconsidered? Until that decision, Address Standardizer, pg_jsonschema and other work requiring the Tart command channel are blocked. The agent will not substitute SSH for builds or repeatedly restart the VM to hide the failure.
+The current design uses Tart's guest agent for build commands. Should stopping and restarting the Tart VM be accepted as routine recovery for this failure, should command execution change to SSH, or should the VM route be reconsidered? Until that decision, Address Standardizer, pg_jsonschema and other work requiring the Tart command channel are blocked. The agent will not substitute SSH for builds or repeatedly restart the VM to hide the failure.
 
 ## Linux userspace portability
 
