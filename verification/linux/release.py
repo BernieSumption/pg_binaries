@@ -21,6 +21,8 @@ from verification.records import RecordError, selected_inputs
 
 
 TARGET = "linux-arm64"
+TARGETS = ("linux-arm64", "linux-x86_64")
+MACHINES = {"linux-arm64": ("aarch64", "arm64"), "linux-x86_64": ("x86_64", "amd64")}
 
 
 def sha256(path: Path) -> str:
@@ -60,7 +62,7 @@ def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("postgresql_archive", type=Path)
     parser.add_argument("output", type=Path, help="directory for report and per-combination logs")
-    parser.add_argument("--target", choices=("linux-arm64",), default=TARGET)
+    parser.add_argument("--target", choices=TARGETS, default=TARGET)
     parser.add_argument("--package-archive", action="append", default=[], metavar="PACKAGE=PATH",
                         help="selected package archive; repeat once for each package")
     parser.add_argument("--build-record", action="append", default=[], metavar="COMPONENT=PATH",
@@ -69,8 +71,8 @@ def main(argv=None) -> int:
                         help="workflow run that produced a selected archive; repeat for each component")
     arguments = parser.parse_args(argv)
     target = arguments.target
-    if platform.system() != "Linux" or platform.machine() not in ("aarch64", "arm64"):
-        parser.error(f"{target} verification must run on a Linux ARM64 host")
+    if platform.system() != "Linux" or platform.machine().lower() not in MACHINES[target]:
+        parser.error(f"{target} verification must run on a matching Linux host")
 
     support = json.loads((ROOT / "support.json").read_text(encoding="utf-8"))
     expected = set(support["packages"])

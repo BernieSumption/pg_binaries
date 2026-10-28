@@ -15,7 +15,8 @@ class LinuxReleaseTests(unittest.TestCase):
         support = json.loads((release.ROOT / "support.json").read_text(encoding="utf-8"))
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            postgresql = root / "postgresql-linux-arm64.tar.gz"
+            target = "linux-arm64"
+            postgresql = root / f"postgresql-{target}.tar.gz"
             with tarfile.open(postgresql, "w:gz") as archive:
                 control = root / "vector.control"
                 control.write_text("comment = 'fixture'\n", encoding="utf-8")
@@ -29,12 +30,12 @@ class LinuxReleaseTests(unittest.TestCase):
                 if component != "postgresql":
                     archive_path.write_bytes(f"archive:{component}".encode())
                     packages[component] = archive_path
-                sources, build_inputs = selected_inputs(support, "linux-arm64", component)
+                sources, build_inputs = selected_inputs(support, target, component)
                 digest = hashlib.sha256(archive_path.read_bytes()).hexdigest()
                 record = {
                     "schema_version": 1,
                     "component": component,
-                    "target": "linux-arm64",
+                    "target": target,
                     "git_revision": "0" * 40,
                     "sources": sources,
                     "build_inputs": build_inputs,
