@@ -69,8 +69,15 @@ case "${1:-}" in
 esac
 EOF
 chmod +x "$work/tools/xml2-config"
+cat > "$work/tools/xsltproc" <<'EOF'
+#!/usr/bin/env bash
+unset DYLD_LIBRARY_PATH
+exec /usr/bin/xsltproc "$@"
+EOF
+chmod +x "$work/tools/xsltproc"
 
 export PATH="$work/tools:$deps/bin:$PATH"
+export XSLTPROC="$work/tools/xsltproc"
 export PKG_CONFIG_PATH="$deps/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
 export PROJ_DATA="$deps/share/proj" PROJ_LIB="$deps/share/proj" GDAL_DATA="$deps/share/gdal"
 export DYLD_LIBRARY_PATH="$deps/lib:$pg/lib${DYLD_LIBRARY_PATH:+:$DYLD_LIBRARY_PATH}"
