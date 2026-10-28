@@ -1,12 +1,12 @@
 # Human review queue
 
-## PostGIS package scope for the first macOS slice
+## PostGIS scope may require disproportionate packaging work
 
-The current design selects `postgis`, `postgis_raster`, `postgis_sfcgal`, `postgis_topology` and the standalone TIGER Geocoder in one independently downloadable PostGIS package. The archive must carry its runtime libraries and data, and files shared with the PostgreSQL archive must be byte-identical.
+The current design requires one independently downloadable PostGIS archive containing `postgis`, `postgis_raster`, `postgis_sfcgal`, `postgis_topology` and the standalone TIGER Geocoder. That archive must carry the runtime libraries and data needed by all five SQL extensions. Raster support requires GDAL; SFCGAL support adds a substantial C++ dependency tree. The PostGIS archive must also install alongside PostgreSQL without conflicting files.
 
-The Spike 1 macOS recipe built GDAL and SFCGAL from source, used a Conda dependency environment for GEOS, PROJ and other libraries, and used dedicated runtime-closure and archive-assembly tools to handle libraries also present in PostgreSQL. The selected PostGIS 3.6.4 release can disable its bundled Address Standardizer and TIGER Geocoder, so those duplicate SQL files are straightforward to avoid. Its GDAL and SFCGAL dependency closure and potential native-library overlaps still appear to require substantial packaging work. No Spike 2 PostGIS build has yet been attempted, so a conflicting archive has not been demonstrated.
+Spike 1 built GDAL and SFCGAL from source, used Conda for GEOS, PROJ and other dependencies, and needed separate tools to collect runtime libraries and assemble the archive. Recreating that machinery for Spike 2 appears to be substantially more work than the intended collection of build scripts. This is a concern about likely implementation cost, not a demonstrated failure: no Spike 2 PostGIS build or archive-overlap check has been attempted. The known duplicate Address Standardizer and TIGER Geocoder SQL files can be excluded from the PostGIS source build.
 
-Should the first macOS slice retain the full selected PostGIS feature set and accept this packaging work, or should `postgis_raster` and `postgis_sfcgal` be deferred so the first package supplies base PostGIS, topology and TIGER Geocoder? Another simpler package scope or dependency approach is also possible. A changed scope requires a design update. Until then, the full selection remains in force and PostGIS implementation is paused while PostgreSQL and the other extension packages proceed.
+Is raster and SFCGAL support essential in the first slice? If so, keep the current design and attempt the full build, reviewing any concrete packaging difficulty that arises. If not, defer `postgis_raster` and `postgis_sfcgal` so the first package contains base PostGIS, topology and TIGER Geocoder. A smaller scope requires a design change. PostGIS implementation is paused for this decision because importing Spike 1's packaging machinery without review could defeat Spike 2's simpler design.
 
 ## Tart guest command channel during local builds
 
