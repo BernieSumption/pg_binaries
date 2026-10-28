@@ -10,21 +10,27 @@ development_archive=$2
 output_directory=$3
 repo=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 [[ -f $development_archive ]] || { echo "Missing development archive: $development_archive" >&2; exit 1; }
-[[ -f $repo/packages/$package/linux-arm64/build.sh && $package != postgis ]] || {
-  echo "No single-source Linux ARM64 recipe for $package" >&2
+[[ -f $repo/packages/$package/linux-arm64/build.sh ]] || {
+  echo "No Linux ARM64 recipe for $package" >&2
   exit 1
 }
 development_archive=$(cd "$(dirname "$development_archive")" && pwd)/$(basename "$development_archive")
 mkdir -p "$output_directory"
 output_directory=$(cd "$output_directory" && pwd)
 
-docker build --platform linux/arm64 -f "$repo/packages/postgresql/linux-arm64/Dockerfile" \
-  -t pg-binaries-postgresql-linux-arm64 "$repo" >/dev/null
-image=pg-binaries-postgresql-linux-arm64
-if [[ $package == pg_jsonschema ]]; then
-  docker build --platform linux/arm64 -f "$repo/packages/pg_jsonschema/linux-arm64/Dockerfile" \
-    -t pg-binaries-pg-jsonschema-linux-arm64 "$repo/packages/pg_jsonschema/linux-arm64" >/dev/null
-  image=pg-binaries-pg-jsonschema-linux-arm64
+if [[ $package == postgis ]]; then
+  docker build --platform linux/arm64 -f "$repo/packages/postgis/linux-arm64/Dockerfile" \
+    -t pg-binaries-postgis-linux-arm64 "$repo/packages/postgis/linux-arm64" >/dev/null
+  image=pg-binaries-postgis-linux-arm64
+else
+  docker build --platform linux/arm64 -f "$repo/packages/postgresql/linux-arm64/Dockerfile" \
+    -t pg-binaries-postgresql-linux-arm64 "$repo" >/dev/null
+  image=pg-binaries-postgresql-linux-arm64
+  if [[ $package == pg_jsonschema ]]; then
+    docker build --platform linux/arm64 -f "$repo/packages/pg_jsonschema/linux-arm64/Dockerfile" \
+      -t pg-binaries-pg-jsonschema-linux-arm64 "$repo/packages/pg_jsonschema/linux-arm64" >/dev/null
+    image=pg-binaries-pg-jsonschema-linux-arm64
+  fi
 fi
 
 docker run --rm --platform linux/arm64 --entrypoint bash \

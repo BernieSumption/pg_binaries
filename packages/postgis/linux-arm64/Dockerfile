@@ -7,6 +7,3 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libicu-dev liblz4-dev libzstd-dev libssl-dev libxslt1-dev \
     zlib1g-dev libreadline-dev uuid-dev python3 \
  && rm -rf /var/lib/apt/lists/*
-COPY build-in-container.sh /usr/local/bin/build-postgis
-RUN chmod +x /usr/local/bin/build-postgis
-ENTRYPOINT ["/usr/local/bin/build-postgis"]
