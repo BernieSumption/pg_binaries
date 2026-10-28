@@ -121,8 +121,10 @@ jobs:
           if [[ "$OPERATION" == retry-extension ]]; then run_id="$POSTGRESQL_RUN"; fi
           python3 build.py --target macos-x86_64 select-runs "$RUNNER_TEMP/postgresql-selection" --run "$run_id" --component postgresql
           development=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["components"]["postgresql"]["development_archive"])' "$RUNNER_TEMP/postgresql-selection/selection.json")
+          postgres=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["components"]["postgresql"]["archive"])' "$RUNNER_TEMP/postgresql-selection/selection.json")
           mkdir -p /private/tmp/spike2
           tar -xzf "$development" -C /private/tmp/spike2
+          tar -xzf "$postgres" -C /private/tmp/spike2 postgresql/lib
           test -x /private/tmp/spike2/postgresql/bin/pg_config
           test -d /private/tmp/spike2/dependencies/lib
       - name: Build extension package
