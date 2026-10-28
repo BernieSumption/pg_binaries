@@ -119,6 +119,17 @@
             "url": "https://gitlab.com/SFCGAL/SFCGAL/-/archive/137203dae01faab4a1287934f9457e925e3b4383/SFCGAL-137203dae01faab4a1287934f9457e925e3b4383.tar.gz",
             "sha256": "426abf9ac0de764a6098abe89c9dc84aa59273d0c5ff90819ed49a9c21f1c21f"
           }
+        },
+        "macos-x86_64": {
+          "micromamba": "2.10.0",
+          "micromamba_sha256": "17b20c4271d65c030a5c86788f5ca86eb575187209f626edabdb8c6a875c6838",
+          "conda_lock_sha256": "8adc233d843101a10f6fdb325e2ae51be934c83e9e9599da607091420f736d0d",
+          "sfcgal": {
+            "version": "2.3.0",
+            "commit": "137203dae01faab4a1287934f9457e925e3b4383",
+            "url": "https://gitlab.com/SFCGAL/SFCGAL/-/archive/137203dae01faab4a1287934f9457e925e3b4383/SFCGAL-137203dae01faab4a1287934f9457e925e3b4383.tar.gz",
+            "sha256": "426abf9ac0de764a6098abe89c9dc84aa59273d0c5ff90819ed49a9c21f1c21f"
+          }
         }
       },
       "config": { "environment_paths": { "PROJ_DATA": "share/proj", "GDAL_DATA": "share/gdal" } },
