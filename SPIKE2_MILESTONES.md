@@ -16,7 +16,7 @@ Present each document for human review with its scope and an accounting of old m
 
 Use a disposable macOS VM to build the latest stable PostgreSQL release and the latest compatible release of each project selected in `design/extensions.md`. Populate `LICENSES.md` from the selected projects and packaged dependency closure. Produce separately installable archives and run their individual archive and SQL checks in a clean VM. Make each extension build independently rerunnable.
 
-Tart supplies the disposable macOS VM. Its CLI and guest agent provide headless command execution; a read-only share transfers source into the guest, and SSH retrieves build outputs. Trial selective rebuild, cloning and recovery during this milestone. If the local loop fails materially, stop dependent build work and record the evidence in the human review queue.
+Lume supplies the disposable macOS VM. Its CLI starts the VM without a viewer, and SSH runs build commands and transfers source and output files. Trial selective rebuild, cloning and recovery during this milestone. If the local loop fails materially, stop dependent build work and record the evidence in the human review queue.
 
 Open questions: the minimum macOS version to claim, the exact PostgreSQL release and build flags for its selected capabilities, and the latest compatible release of each selected project after checking the projects’ current compatibility documentation.
 
@@ -28,19 +28,19 @@ Assemble the PostgreSQL archive and all the selected extension packages using th
 
 Prior work to inspect: the old queue's coherent-installation proposal and the selected project recipes and probes. Keep the queue's size review and adversarial review visible for the release-candidate milestone.
 
-## 4. Build the Mac ARM64 slice on GitHub
+## 4. Build and verify Linux ARM64 locally
 
-Build PostgreSQL once in a release run. Fan out independently runnable extension jobs using that run's PostgreSQL archive. Verify final archives in a fresh environment and test their coherent installation. Record elapsed build time and peak disk use. Do not search earlier releases or runs for reusable build outputs.
-
-Implement the workflow sequence and selective retries defined in `design/build-and-test.md`, using ordinary retained GitHub artefacts and explicit input references.
-
-Prior work to inspect: `policies/architecture.md`, `policies/delivery-process.md`, Mac selected-publication workflows and their verification tests. The old planner and artefact reuse code are candidates for removal, not implementation templates.
-
-## 5. Add Linux ARM64
-
-Iterate in local Docker, then run the same slice on a standard GitHub ARM64 runner. Build platform-specific archives and verify the assembled release in an isolated Linux environment. Reuse the package contract and SQL probes where they apply; adapt runtime dependency and relocation checks to ELF.
+Use local Docker containers or Lume VMs to build PostgreSQL and every selected extension package for Linux ARM64. Produce separately installable archives and verify each package and the complete installation in a clean local environment. Reuse the package contract and SQL probes where they apply; adapt runtime dependency and relocation checks to ELF. Resolve local build and verification failures before moving either ARM64 target to GitHub.
 
 Prior work to inspect: `scripts/linux/`, its Dockerfiles, ELF inspectors and Linux build, archive, isolation and SQL tests.
+
+## 5. Build the Mac and Linux ARM64 slices on GitHub
+
+Build PostgreSQL once per target in a release run. Fan out independently runnable extension jobs using that target's PostgreSQL archive. Verify final archives in a fresh environment and test their coherent installation. Record elapsed build time and peak disk use. Do not search earlier releases or runs for reusable build outputs.
+
+Implement the workflow sequence and selective retries defined in `design/build-and-test.md`, using ordinary retained GitHub artefacts and explicit input references. Start this milestone only after both ARM64 targets pass their local build and verification work.
+
+Prior work to inspect: `policies/architecture.md`, `policies/delivery-process.md`, Mac and Linux selected-publication workflows and their verification tests. The old planner and artefact reuse code are candidates for removal, not implementation templates.
 
 ## 6. Add Mac and Linux x86_64
 
