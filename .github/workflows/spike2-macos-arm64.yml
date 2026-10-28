@@ -1,12 +1,6 @@
 name: Spike 2 macOS ARM64
 
 "on":
-  push:
-    branches: [spike-2]
-    paths:
-      - .github/workflows/spike2-macos-arm64.yml
-      - packages/*/macos-arm64/**
-      - packages/*/probes/**
   workflow_dispatch:
     inputs:
       operation:
@@ -49,10 +43,11 @@ jobs:
           python3 - <<'PY'
           import json
           import os
+          from pathlib import Path
 
-          with open("support.json", encoding="utf-8") as source:
-              packages = list(json.load(source)["packages"])
-          operation = os.environ["OPERATION"] or "trial-extension"
+          support = json.loads(Path("support.json").read_text(encoding="utf-8"))
+          packages = list(support["packages"])
+          operation = os.environ["OPERATION"]
           if operation == "retry-extension":
               package = os.environ["PACKAGE"]
               if package not in packages or not os.environ["POSTGRESQL_RUN"].isdigit():
@@ -62,11 +57,7 @@ jobs:
               runs = [item.strip() for item in os.environ["RUNS"].split(",")]
               if not runs or any(not item.isdigit() for item in runs):
                   raise SystemExit("verify needs ordered, comma-separated run IDs")
-              packages = [packages[0]]
-          elif operation == "postgresql-only":
               packages = []
-          elif operation == "trial-extension":
-              packages = [package for package in packages if package != "postgis"]
           elif operation != "full":
               raise SystemExit(f"unknown operation: {operation}")
           with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
@@ -74,9 +65,9 @@ jobs:
           PY
 
   postgresql:
-    if: github.event_name == 'workflow_dispatch' && inputs.operation == 'full'
+    if: inputs.operation == 'full'
     runs-on: macos-15
-    timeout-minutes: 180
+    timeout-minutes: 240
     steps:
       - uses: actions/checkout@v4
       - name: Build and package PostgreSQL
@@ -94,7 +85,7 @@ jobs:
           python3 build.py archive-check "$archive"
           python3 build.py build-record postgresql "$archive" "$RUNNER_TEMP/output/record.json" --revision "$GITHUB_SHA" --development-archive "$development"
           SH
-          python3 -m verification.measure "$RUNNER_TEMP/output/metrics.json" -- bash "$RUNNER_TEMP/postgresql-build.sh"
+          python3 -m verification.measure --disk-path / "$RUNNER_TEMP/output/metrics.json" -- bash "$RUNNER_TEMP/postgresql-build.sh"
       - uses: actions/upload-artifact@v4
         with:
           name: spike2-macos-arm64-postgresql
@@ -110,9 +101,9 @@ jobs:
 
   extensions:
     needs: [prepare, postgresql]
-    if: always() && needs.prepare.result == 'success' && (inputs.operation == 'retry-extension' || (github.event_name == 'push' && needs.postgresql.result == 'skipped') || (inputs.operation == 'full' && needs.postgresql.result == 'success'))
+    if: always() && needs.prepare.result == 'success' && (needs.postgresql.result == 'success' || inputs.operation == 'retry-extension')
     runs-on: macos-15
-    timeout-minutes: 180
+    timeout-minutes: 240
     strategy:
       fail-fast: false
       matrix:
@@ -128,7 +119,6 @@ jobs:
           set -euo pipefail
           run_id="$GITHUB_RUN_ID"
           if [[ "$OPERATION" == retry-extension ]]; then run_id="$POSTGRESQL_RUN"; fi
-          if [[ "$GITHUB_EVENT_NAME" == push ]]; then run_id="40588015083"; fi
           python3 build.py select-runs "$RUNNER_TEMP/postgresql-selection" --run "$run_id" --component postgresql
           development=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["components"]["postgresql"]["development_archive"])' "$RUNNER_TEMP/postgresql-selection/selection.json")
           mkdir -p /private/tmp/spike2
@@ -150,7 +140,7 @@ jobs:
           python3 build.py archive-check "$postgres" "$archive"
           python3 build.py build-record "$PACKAGE" "$archive" "$RUNNER_TEMP/output/record.json" --revision "$GITHUB_SHA" --postgresql-archive "$postgres"
           SH
-          python3 -m verification.measure "$RUNNER_TEMP/output/metrics.json" -- bash "$RUNNER_TEMP/extension-build.sh"
+          python3 -m verification.measure --disk-path / "$RUNNER_TEMP/output/metrics.json" -- bash "$RUNNER_TEMP/extension-build.sh"
       - uses: actions/upload-artifact@v4
         with:
           name: spike2-macos-arm64-${{ matrix.package }}
@@ -164,112 +154,14 @@ jobs:
           path: ${{ runner.temp }}/output/metrics.json
           if-no-files-found: warn
 
-  verify-postgresql:
-    if: github.event_name == 'push'
-    runs-on: macos-15
-    timeout-minutes: 120
-    steps:
-      - uses: actions/checkout@v4
-      - name: Verify PostgreSQL archive in a fresh runner
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          python3 build.py select-runs "$RUNNER_TEMP/postgresql-selection" --run 40588015083 --component postgresql
-          archive=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["components"]["postgresql"]["archive"])' "$RUNNER_TEMP/postgresql-selection/selection.json")
-          python3 build.py runtime-check "$archive" "$RUNNER_TEMP/postgresql-check"
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: spike2-macos-arm64-postgresql-verification
-          path: ${{ runner.temp }}/postgresql-check/
-          if-no-files-found: warn
-          compression-level: 0
-
-  verify-trial-extensions:
-    needs: [prepare, extensions]
-    if: always() && github.event_name == 'push' && needs.prepare.result == 'success'
-    runs-on: macos-15
-    timeout-minutes: 120
-    strategy:
-      fail-fast: false
-      matrix:
-        package: ${{ fromJSON(needs.prepare.outputs.packages) }}
-    steps:
-      - uses: actions/checkout@v4
-      - name: Verify package archive in a fresh runner
-        env:
-          GH_TOKEN: ${{ github.token }}
-          PACKAGE: ${{ matrix.package }}
-        run: |
-          set -euo pipefail
-          python3 build.py select-runs "$RUNNER_TEMP/selection" --run 40588015083 --run "$GITHUB_RUN_ID" --component postgresql --component "$PACKAGE"
-          postgres=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["components"]["postgresql"]["archive"])' "$RUNNER_TEMP/selection/selection.json")
-          extension=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["components"][sys.argv[2]]["archive"])' "$RUNNER_TEMP/selection/selection.json" "$PACKAGE")
-          python3 build.py runtime-check "$postgres" "$RUNNER_TEMP/package-check" --package-archive "$PACKAGE=$extension"
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: spike2-macos-arm64-${{ matrix.package }}-verification
-          path: ${{ runner.temp }}/package-check/
-          if-no-files-found: warn
-          compression-level: 0
-
-  verify-trial-combination:
-    needs: [prepare, extensions]
-    if: always() && github.event_name == 'push' && needs.prepare.result == 'success'
-    runs-on: macos-15
-    timeout-minutes: 120
-    steps:
-      - uses: actions/checkout@v4
-      - name: Verify trial packages together in a fresh runner
-        env:
-          GH_TOKEN: ${{ github.token }}
-          PACKAGES: ${{ needs.prepare.outputs.packages }}
-        run: |
-          python3 - <<'PY'
-          import json
-          import os
-          from pathlib import Path
-          import subprocess
-          import sys
-
-          packages = json.loads(os.environ["PACKAGES"])
-          temporary = Path(os.environ["RUNNER_TEMP"])
-          selected = temporary / "selected"
-          command = [sys.executable, "build.py", "select-runs", str(selected),
-                     "--run", "40588015083", "--run", os.environ["GITHUB_RUN_ID"],
-                     "--component", "postgresql"]
-          for package in packages:
-              command.extend(["--component", package])
-          subprocess.run(command, check=True)
-
-          manifest = json.loads((selected / "selection.json").read_text(encoding="utf-8"))
-          components = manifest["components"]
-          command = [sys.executable, "build.py", "runtime-check",
-                     components["postgresql"]["archive"], str(temporary / "coherent-check")]
-          for package in packages:
-              command.extend(["--package-archive", f"{package}={components[package]['archive']}"])
-          subprocess.run(command, check=True)
-          PY
-      - uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: spike2-macos-arm64-coherent-verification
-          path: |
-            ${{ runner.temp }}/selected/selection.json
-            ${{ runner.temp }}/coherent-check/
-          if-no-files-found: warn
-          compression-level: 0
-
   verify:
     needs: [prepare, postgresql, extensions]
     if: always() && needs.prepare.result == 'success' && (inputs.operation == 'full' || inputs.operation == 'verify')
     runs-on: macos-15
-    timeout-minutes: 120
+    timeout-minutes: 180
     steps:
       - uses: actions/checkout@v4
-      - name: Verify selected archives
+      - name: Verify selected archives in a fresh runner
         env:
           GH_TOKEN: ${{ github.token }}
           OPERATION: ${{ inputs.operation }}

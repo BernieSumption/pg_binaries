@@ -13,6 +13,12 @@ ROOT = Path(__file__).resolve().parent
 SUPPORT = json.loads((ROOT / "support.json").read_text(encoding="utf-8"))
 
 
+def release_module(target: str) -> str:
+    if target.startswith("linux-"):
+        return "verification.linux.release"
+    return "verification.macos.release"
+
+
 def run_recipe(path: Path, arguments: list[str], target: str) -> None:
     if not path.is_file():
         raise SystemExit(f"No {target} recipe: {path.relative_to(ROOT)}")
@@ -64,7 +70,7 @@ def main() -> None:
     runtime_check.add_argument("output_parent")
     runtime_check.add_argument("--package-archive", action="append", default=[], metavar="PACKAGE=ARCHIVE")
 
-    release_check = commands.add_parser("release-check", help="Verify every macOS archive combination")
+    release_check = commands.add_parser("release-check", help="Verify selected archives in every required combination")
     release_check.add_argument("postgresql_archive")
     release_check.add_argument("output_dir")
     release_check.add_argument("--package-archive", action="append", default=[], metavar="PACKAGE=ARCHIVE")
@@ -139,7 +145,7 @@ def main() -> None:
         if result.returncode:
             raise SystemExit(result.returncode)
     elif args.command == "release-check":
-        command = [sys.executable, "-m", "verification.macos.release", args.postgresql_archive, args.output_dir,
+        command = [sys.executable, "-m", release_module(target), args.postgresql_archive, args.output_dir,
                    "--target", target]
         for package_archive in args.package_archive:
             command.extend(["--package-archive", package_archive])
