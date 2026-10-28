@@ -1,6 +1,6 @@
 # Spike 2 implementation status
 
-The local macOS and Linux ARM64 builds and clean checks for milestones 2–4 have passed. The current goal completes the hosted ARM64 builds in milestone 5 and both Intel targets in milestone 6, then stops before the human review in milestone 6.5. Lume supplies macOS development VMs; a retained Linux ARM64 container supplies a mutable local development environment. Hosted jobs use the same native package build commands. Earlier hosted results remain useful evidence but do not replace the complete selected-package checks.
+The local macOS and Linux ARM64 builds and clean checks for milestones 2–4 have passed. Linux ARM64 has also passed the complete hosted milestone 5 build and verification; macOS ARM64 is still building PostGIS. The current goal completes the hosted ARM64 builds in milestone 5 and both Intel targets in milestone 6, then stops before the human review in milestone 6.5. Lume supplies macOS development VMs; a retained Linux ARM64 container supplies a mutable local development environment. Hosted jobs use the same native package build commands. Earlier hosted results remain useful evidence but do not replace the complete selected-package checks.
 
 ## Current slice: local macOS ARM64 build
 
@@ -38,6 +38,7 @@ The local macOS and Linux ARM64 builds and clean checks for milestones 2–4 hav
 
 ## Earlier hosted results and later work
 
+- [Linux ARM64 build 40739100486](https://github.com/BernieSumption/pg_binaries/actions/runs/40739100486) built PostgreSQL and all nine selected package archives with build records and measurements. Its first combined check found a HypoPG probe assumption about the table schema; every individual package and PostgreSQL-only check passed. The corrected probe passed locally against those exact archives and in [fresh hosted verification 40741569455](https://github.com/BernieSumption/pg_binaries/actions/runs/40741569455). [HypoPG retry 40742017702](https://github.com/BernieSumption/pg_binaries/actions/runs/40742017702) and [ordered-run verification 40742371985](https://github.com/BernieSumption/pg_binaries/actions/runs/40742371985) also passed. The first hosted Linux attempt exposed permissive PostgreSQL archive modes that differed from extension modes; PostgreSQL packaging now normalises shared directory and licence-pointer modes.
 - Milestone 5 has two macOS GitHub Actions workflows, explicit run selection and retry support, build records, archive verification and build measurements. Eight extension packages and PostgreSQL passed hosted macOS ARM64 checks together. That earlier hosted run did not include PostGIS; the selected full set has not passed this milestone.
 - Milestone 6 has macOS Intel PostgreSQL and eight extension recipes, plus hosted build and coherent verification results described below. PostGIS and both Linux x86_64 builds remain undone.
 - Milestone 7 has an unpublished inventory generator and publication preflight with passing synthetic tests. No complete release candidate or publication dry run exists.
