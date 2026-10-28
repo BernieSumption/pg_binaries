@@ -4,7 +4,7 @@ No pending decision blocks the current local builds.
 
 ## Proposed local Lume iteration overview
 
-Proposed design text: Create a clean Lume macOS VM with a working compiler, then clone it while stopped into a build VM and a clean verification VM. Start each VM headlessly in the background, wait for SSH readiness, run build commands over SSH, and transfer source and final archives with `scp`. Keep iterative build files under the guest user's home directory. Verify final archive bytes in the clean clone. Gracefully stop or delete only project-specific VMs. Linux uses Docker or Lume with the same separation between building and clean verification. GitHub builds follow passing local checks for both ARM64 targets.
+Proposed design text: A retained, stopped Lume base VM contains macOS, Xcode Command Line Tools and `pkg-config`. It contains no PostgreSQL or extension build outputs. Local macOS iteration uses a build clone for compilation and a separate clean clone to verify the final archive bytes. The clones start without a viewer; SSH runs build and verification commands, and `scp` transfers source and archives. Build files live under the guest user's home directory so they survive a graceful shutdown. Project clones can be stopped or deleted after use. Linux uses local Docker containers or Lume VMs with separate build and clean verification environments. GitHub builds begin after both ARM64 targets pass locally.
 
 This sequence has been checked on Lume 0.6.1 with a macOS 26.6.2 ARM64 guest: C compilation, detached boot and log path, SSH, key-based `scp`, cloning, clean-VM isolation, home-directory persistence after shutdown, and deletion of a throwaway VM. This Lume version has no `lume cp` command.
 

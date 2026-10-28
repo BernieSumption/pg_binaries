@@ -5,7 +5,7 @@ prefix_arg=${1:?usage: build-dependencies.sh <output-prefix>}
 repo_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)
 support_file="$repo_root/support.json"
 
-for command in python3 curl make clang tar; do
+for command in python3 curl make clang tar pkg-config; do
   if ! command -v "$command" >/dev/null 2>&1; then
     echo "Required command not found: $command" >&2
     exit 1
@@ -74,11 +74,14 @@ while IFS=$'\t' read -r name version url expected; do
       ;;
     lz4|zstd)
       (cd "$source" && make -j"$jobs" CC=clang && make install PREFIX="$prefix" CC=clang)
+      library="$prefix/lib/lib$name.1.dylib"
+      install_name_tool -id "$library" "$prefix/lib/$(readlink "$library")"
       ;;
     libxml2)
       (cd "$source" && ./configure --prefix="$prefix" --with-iconv --without-zlib --without-lzma --without-icu --without-python --without-readline --without-history --without-docs && make -j"$jobs" && make install)
       ;;
     libxslt)
+      export PATH="$prefix/bin:$PATH"
       export PKG_CONFIG_PATH="$prefix/lib/pkgconfig${PKG_CONFIG_PATH:+:$PKG_CONFIG_PATH}"
       export CPPFLAGS="-I$prefix/include${CPPFLAGS:+ $CPPFLAGS}"
       export LDFLAGS="-L$prefix/lib${LDFLAGS:+ $LDFLAGS}"

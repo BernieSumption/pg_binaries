@@ -53,4 +53,7 @@ make -j "$(sysctl -n hw.ncpu)"
 make -C contrib -j "$(sysctl -n hw.ncpu)"
 make install
 make -C contrib install
+# Extension build tools run installed PostgreSQL through child processes that lose DYLD_LIBRARY_PATH.
+repo_root=$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)
+python3 "$repo_root/platforms/macos/bundle.py" "$install_prefix" "$dependency_prefix"
 "$install_prefix/bin/pg_config" --version
