@@ -76,7 +76,7 @@ Agents develop recipes locally before porting them to GitHub Actions. The same b
 
 The local build VM or container retains installed toolchains, compiled files and packaged archives so an agent can rerun a failed command. A local source cache can retain downloads whose checksums match `support.json`. Local verification copies final archives into a separate clean test environment. Generated files stay outside Git, and unrelated local files, images, containers and VMs remain intact.
 
-Lume supplies the macOS VM interface for command execution, file transfer, cloning, recovery and file retrieval through an API or CLI. Its evaluation and approval are tracked in [the milestones](../SPIKE2_MILESTONES.md).
+Tart supplies the macOS VM interface. Its CLI starts a headless VM and executes commands through the guest agent. The host shares repository source read-only, copies it into the guest for builds, and retrieves final archives over SSH. A stopped VM can be cloned to preserve a build state or recover from a failed iteration.
 
 Adding or updating a project includes the dependency and licence review in [dependency-licenses.md](dependency-licenses.md#dependency-review-during-development).
 

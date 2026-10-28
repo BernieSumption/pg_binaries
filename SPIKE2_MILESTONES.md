@@ -16,7 +16,7 @@ Present each document for human review with its scope and an accounting of old m
 
 Use a disposable macOS VM to build the latest stable PostgreSQL release and the latest compatible release of each project selected in `design/extensions.md`. Populate `LICENSES.md` from the selected projects and packaged dependency closure. Produce separately installable archives and run their individual archive and SQL checks in a clean VM. Make each extension build independently rerunnable.
 
-Lume is the assumed VM manager. Trial its creation, API or CLI control, source transfer, selective rebuild, cloning, recovery and output retrieval during this milestone. Its adoption remains provisional until the human explicitly approves it. If Lume makes local iteration materially difficult, stop using it and report the evidence and a candidate alternative.
+Tart supplies the disposable macOS VM. Its CLI and guest agent provide headless command execution; a read-only share transfers source into the guest, and SSH retrieves build outputs. Trial selective rebuild, cloning and recovery during this milestone. If the local loop fails materially, stop dependent build work and record the evidence in the human review queue.
 
 Open questions: the minimum macOS version to claim, the exact PostgreSQL release and build flags for its selected capabilities, and the latest compatible release of each selected project after checking the projects’ current compatibility documentation.
 
