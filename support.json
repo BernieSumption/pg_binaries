@@ -123,7 +123,7 @@
         "macos-x86_64": {
           "micromamba": "2.10.0",
           "micromamba_sha256": "17b20c4271d65c030a5c86788f5ca86eb575187209f626edabdb8c6a875c6838",
-          "conda_lock_sha256": "8adc233d843101a10f6fdb325e2ae51be934c83e9e9599da607091420f736d0d",
+          "conda_lock_sha256": "731b45468976f1f01eeb529d60e2178f6d25b574b162d54249bf8866eeb6754c",
           "sfcgal": {
             "version": "2.3.0",
             "commit": "137203dae01faab4a1287934f9457e925e3b4383",
