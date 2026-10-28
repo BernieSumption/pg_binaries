@@ -1,13 +1,5 @@
 # Human review queue
 
-## PostGIS scope may require disproportionate packaging work
-
-The current design requires one independently downloadable PostGIS archive containing `postgis`, `postgis_raster`, `postgis_sfcgal`, `postgis_topology` and the standalone TIGER Geocoder. That archive must carry the runtime libraries and data needed by all five SQL extensions. Raster support requires GDAL; SFCGAL support adds a substantial C++ dependency tree. The PostGIS archive must also install alongside PostgreSQL without conflicting files.
-
-Spike 1 built GDAL and SFCGAL from source, used Conda for GEOS, PROJ and other dependencies, and needed separate tools to collect runtime libraries and assemble the archive. Recreating that machinery for Spike 2 appears to be substantially more work than the intended collection of build scripts. This is a concern about likely implementation cost, not a demonstrated failure: no Spike 2 PostGIS build or archive-overlap check has been attempted. The known duplicate Address Standardizer and TIGER Geocoder SQL files can be excluded from the PostGIS source build.
-
-Is raster and SFCGAL support essential in the first slice? If so, keep the current design and attempt the full build, reviewing any concrete packaging difficulty that arises. If not, defer `postgis_raster` and `postgis_sfcgal` so the first package contains base PostGIS, topology and TIGER Geocoder. A smaller scope requires a design change. PostGIS implementation is paused for this decision because importing Spike 1's packaging machinery without review could defeat Spike 2's simpler design.
-
 ## Tart guest command channel during local builds
 
 Tart 2.41.1 booted the macOS 26.6.2 build VM and completed the local PostgreSQL dependency, PostgreSQL and six extension-package builds. After those builds, an Address Standardizer build command and a harmless `/usr/bin/true` command both failed before execution with `GRPC.GRPCConnectionPoolError`, reporting that the Tart Guest Agent could not be reached. The VM remained running, SSH worked, and the guest-agent processes were present. One normal VM stop and restart restored `tart exec`; the six completed archives survived. The cause of the connection failure is unknown.
