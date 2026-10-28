@@ -18,13 +18,61 @@ This file identifies the declared terms for PostgreSQL, the selected extension p
 
 ## PostgreSQL build dependencies
 
-- OpenSSL — Apache-2.0. [Source and `LICENSE.txt`](https://github.com/openssl/openssl/blob/openssl-3.5.8/LICENSE.txt).
-- ICU4C — Unicode License v3. [Source and `LICENSE`](https://github.com/unicode-org/icu/blob/release-78.3/LICENSE).
-- LZ4 — BSD-2-Clause. [Source and `lib/LICENSE`](https://github.com/lz4/lz4/blob/v1.10.0/lib/LICENSE).
-- Zstandard — BSD-3-Clause for the bundled library. [Source and `LICENSE`](https://github.com/facebook/zstd/blob/v1.5.7/LICENSE).
-- libxml2 — terms declared in its `Copyright` file. [Source and `Copyright`](https://gitlab.gnome.org/GNOME/libxml2/-/blob/master/Copyright).
+- OpenSSL — Apache-2.0. [Source and `LICENSE.txt`](https://github.com/openssl/openssl/blob/openssl-3.5.8/LICENSE.txt); [Conda-forge package](https://anaconda.org/conda-forge/openssl).
+- ICU4C — Unicode License v3. [Source and `LICENSE`](https://github.com/unicode-org/icu/blob/release-78.3/LICENSE); [Conda-forge package](https://anaconda.org/conda-forge/icu).
+- LZ4 — BSD-2-Clause. [Source and `lib/LICENSE`](https://github.com/lz4/lz4/blob/v1.10.0/lib/LICENSE); [Conda-forge package](https://anaconda.org/conda-forge/lz4-c).
+- Zstandard — BSD-3-Clause for the bundled library. [Source and `LICENSE`](https://github.com/facebook/zstd/blob/v1.5.7/LICENSE); [Conda-forge package](https://anaconda.org/conda-forge/zstd).
+- libxml2 — terms declared in its `Copyright` file. [Source and `Copyright`](https://gitlab.gnome.org/GNOME/libxml2/-/blob/master/Copyright); [Conda-forge package](https://anaconda.org/conda-forge/libxml2-16).
 - libxslt — terms declared in its `Copyright` file. [Source and `Copyright`](https://gitlab.gnome.org/GNOME/libxslt/-/blob/master/Copyright).
 
 ## Extension build dependencies
 
-- PCRE2 — BSD-3-Clause with the PCRE2 exception. [Source and `LICENCE.md`](https://github.com/PCRE2Project/pcre2/blob/pcre2-10.48/LICENCE.md).
+- PCRE2 — BSD-3-Clause with the PCRE2 exception. [Source and `LICENCE.md`](https://github.com/PCRE2Project/pcre2/blob/pcre2-10.48/LICENCE.md); [Conda-forge package](https://anaconda.org/conda-forge/pcre2).
+
+## PostGIS runtime dependencies
+
+The PostGIS archive includes libraries and data from the projects below. Each linked conda-forge record declares its licence and links to the project source. The exact binary packages are selected in [the macOS ARM64 lock file](packages/postgis/macos-arm64/conda-lock.txt).
+
+- Blosc — BSD-3-Clause. [Conda-forge record](https://anaconda.org/conda-forge/blosc).
+- bzip2 — bzip2 licence, approved for the bundled library. [Source and licence](https://gitlab.com/bzip2/bzip2/-/blob/bzip2-1.0.8/LICENSE); [Conda-forge record](https://anaconda.org/conda-forge/bzip2).
+- FreeXL — MPL-1.1. [Conda-forge record](https://anaconda.org/conda-forge/freexl).
+- GDAL — MIT. [Conda-forge record](https://anaconda.org/conda-forge/libgdal-core).
+- GEOS — LGPL-2.1-only. [Conda-forge record](https://anaconda.org/conda-forge/geos).
+- giflib — MIT. [Conda-forge record](https://anaconda.org/conda-forge/giflib).
+- GMP — GPL-2.0-or-later OR LGPL-3.0-or-later. [Conda-forge record](https://anaconda.org/conda-forge/gmp).
+- json-c — MIT. [Conda-forge record](https://anaconda.org/conda-forge/json-c).
+- Kerberos 5 — MIT. [Conda-forge record](https://anaconda.org/conda-forge/krb5).
+- LERC — Apache-2.0. [Conda-forge record](https://anaconda.org/conda-forge/lerc).
+- libarchive — BSD-2-Clause. [Conda-forge record](https://anaconda.org/conda-forge/libarchive).
+- Boost — BSL-1.0. [Conda-forge record](https://anaconda.org/conda-forge/libboost).
+- Brotli — MIT. [Conda-forge records](https://anaconda.org/conda-forge/libbrotlicommon) for its common, decoder and encoder libraries.
+- curl — curl licence. [Conda-forge record](https://anaconda.org/conda-forge/libcurl).
+- LLVM libc++ and OpenMP — Apache-2.0 WITH LLVM-exception. [libc++](https://anaconda.org/conda-forge/libcxx) and [OpenMP](https://anaconda.org/conda-forge/llvm-openmp) conda-forge records.
+- libdeflate — MIT. [Conda-forge record](https://anaconda.org/conda-forge/libdeflate).
+- Expat — MIT. [Conda-forge record](https://anaconda.org/conda-forge/libexpat).
+- Highway — Apache-2.0 OR BSD-3-Clause. [Conda-forge record](https://anaconda.org/conda-forge/libhwy).
+- GNU libiconv — LGPL-2.1-only. [Conda-forge record](https://anaconda.org/conda-forge/libiconv).
+- libjpeg-turbo — Independent JPEG Group licence and BSD-3-Clause and Zlib; its IJG terms are approved for the bundled library. [Source and IJG licence](https://github.com/libjpeg-turbo/libjpeg-turbo/blob/main/README.ijg); [Conda-forge record](https://anaconda.org/conda-forge/libjpeg-turbo).
+- JPEG XL — BSD-3-Clause. [Conda-forge record](https://anaconda.org/conda-forge/libjxl).
+- libkml — BSD-3-Clause. [Conda-forge record](https://anaconda.org/conda-forge/libkml).
+- xz/liblzma — 0BSD. [Conda-forge record](https://anaconda.org/conda-forge/liblzma).
+- nghttp2 — MIT. [Conda-forge record](https://anaconda.org/conda-forge/libnghttp2).
+- libpng — zlib-acknowledgement. [Conda-forge record](https://anaconda.org/conda-forge/libpng).
+- libpsl — MIT. [Conda-forge record](https://anaconda.org/conda-forge/libpsl).
+- librttopo — GPL-2.0-or-later. [Conda-forge record](https://anaconda.org/conda-forge/librttopo).
+- libspatialite — MPL-1.1. [Conda-forge record](https://anaconda.org/conda-forge/libspatialite).
+- SQLite — public-domain blessing, approved for the bundled runtime. [Source and declaration](https://www.sqlite.org/copyright.html); [Conda-forge record](https://anaconda.org/conda-forge/libsqlite).
+- libssh2 — BSD-3-Clause. [Conda-forge record](https://anaconda.org/conda-forge/libssh2).
+- libtiff — HPND. [Conda-forge record](https://anaconda.org/conda-forge/libtiff).
+- libwebp — BSD-3-Clause. [Conda-forge record](https://anaconda.org/conda-forge/libwebp-base).
+- zlib — Zlib. [Conda-forge record](https://anaconda.org/conda-forge/libzlib).
+- LZO — GPL-2.0-or-later. [Conda-forge record](https://anaconda.org/conda-forge/lzo).
+- minizip — Zlib. [Conda-forge record](https://anaconda.org/conda-forge/minizip).
+- MPFR — LGPL-3.0-only. [Conda-forge record](https://anaconda.org/conda-forge/mpfr).
+- muparser — MIT. [Conda-forge record](https://anaconda.org/conda-forge/muparser).
+- PROJ — MIT. [Conda-forge record](https://anaconda.org/conda-forge/proj).
+- protobuf-c — BSD-3-Clause. [Conda-forge record](https://anaconda.org/conda-forge/protobuf-c).
+- SFCGAL — LGPL-2.0-or-later upstream; this build uses CGAL and is distributed under GPL-3.0-or-later. [Pinned source](https://gitlab.com/SFCGAL/SFCGAL/-/tree/137203dae01faab4a1287934f9457e925e3b4383) and [licence explanation](https://www.osgeo.org/projects/sfcgal/).
+- Snappy — BSD-3-Clause. [Conda-forge record](https://anaconda.org/conda-forge/snappy).
+- uriparser — BSD-3-Clause. [Conda-forge record](https://anaconda.org/conda-forge/uriparser).
+- Xerces-C — Apache-2.0. [Conda-forge record](https://anaconda.org/conda-forge/xerces-c).

@@ -106,6 +106,19 @@
           "sha256": "c33cfbfb40785db8754a36be66060e8d023773e7e1be8fb8a622bb3c48db9f54"
         }
       ],
+      "build_inputs": {
+        "macos-arm64": {
+          "micromamba": "2.10.0",
+          "micromamba_sha256": "acef4eaab19ec2174ad5a449e5aad981ca326270db819502ff096a92fc31caa6",
+          "conda_lock_sha256": "a71089a550e38b67c189a2ba32a2a270697800bb929dc58649eb0a184c1c0fe3",
+          "sfcgal": {
+            "version": "2.3.0",
+            "commit": "137203dae01faab4a1287934f9457e925e3b4383",
+            "url": "https://gitlab.com/SFCGAL/SFCGAL/-/archive/137203dae01faab4a1287934f9457e925e3b4383/SFCGAL-137203dae01faab4a1287934f9457e925e3b4383.tar.gz",
+            "sha256": "426abf9ac0de764a6098abe89c9dc84aa59273d0c5ff90819ed49a9c21f1c21f"
+          }
+        }
+      },
       "config": { "environment_paths": { "PROJ_DATA": "share/proj", "GDAL_DATA": "share/gdal" } },
       "extensions": {
         "postgis": {},

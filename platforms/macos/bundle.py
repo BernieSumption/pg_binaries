@@ -35,6 +35,21 @@ def dependencies(path):
     return found
 
 
+def rpaths(path):
+    result = run("otool", "-l", str(path))
+    if result.returncode:
+        raise SystemExit(f"otool could not inspect load paths: {path}")
+    command = None
+    found = []
+    for line in result.stdout.splitlines():
+        line = line.strip()
+        if line.startswith("cmd "):
+            command = line[4:]
+        elif command == "LC_RPATH" and line.startswith("path "):
+            found.append(line.split()[1])
+    return found
+
+
 def files(root):
     return (path for path in root.rglob("*")
             if path.is_file() and not path.is_symlink() and path.suffix != ".a")
@@ -68,13 +83,18 @@ def prefix_library(name, prefix):
 
 def main(argv=None):
     argv = sys.argv[1:] if argv is None else argv
-    if len(argv) != 2:
-        raise SystemExit("usage: bundle.py STAGED_POSTGRESQL_ROOT DEPENDENCY_PREFIX")
+    if len(argv) not in (2, 3):
+        raise SystemExit("usage: bundle.py STAGED_POSTGRESQL_ROOT DEPENDENCY_PREFIX [PRIVATE_LIB_DIRECTORY]")
     root = pathlib.Path(argv[0]).resolve()
     prefix = pathlib.Path(argv[1]).resolve()
     if not root.is_dir() or not prefix.is_dir():
         raise SystemExit("staged root and dependency prefix must be directories")
     libdir = root / "lib"
+    if len(argv) == 3:
+        private = argv[2]
+        if not private or pathlib.PurePosixPath(private).name != private or private in (".", ".."):
+            raise SystemExit("private library directory must be one name")
+        libdir /= private
     libdir.mkdir(parents=True, exist_ok=True)
     origins = {}
 
@@ -176,6 +196,11 @@ def main(argv=None):
                 if result.returncode:
                     raise SystemExit(result.stderr.strip() or f"install_name_tool failed: {binary}")
                 changed = True
+        for search_path in rpaths(binary):
+            result = run("install_name_tool", "-delete_rpath", search_path, str(binary))
+            if result.returncode:
+                raise SystemExit(result.stderr.strip() or f"install_name_tool failed: {binary}")
+            changed = True
         if changed:
             result = run("codesign", "--force", "--sign", "-", str(binary))
             if result.returncode:
