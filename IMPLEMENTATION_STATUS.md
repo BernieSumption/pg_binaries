@@ -1,6 +1,6 @@
 # Spike 2 implementation status
 
-The active implementation goal covers milestones 2–7 in `SPIKE2_MILESTONES.md` and stops before the human-driven bug hunting in milestone 7.5. Milestone 2 uses local iteration inside a disposable macOS VM; Tart now supplies that VM. No further GitHub builds will run until the local dependencies and recipes have been fully developed. Existing GitHub results do not satisfy the local milestone. The current design remains the authority for build behaviour. Publication requires separate human authorisation.
+The active implementation goal covers milestones 2–7 in `SPIKE2_MILESTONES.md` and stops before the human-driven bug hunting in milestone 7.5. Milestone 2 uses local iteration inside a disposable macOS VM; Tart now supplies that VM. A Tart guest-agent failure is queued for human review and blocks further VM build commands. No further GitHub builds will run until the local dependencies and recipes have been fully developed. Existing GitHub results do not satisfy the local milestone. The current design remains the authority for build behaviour. Publication requires separate human authorisation.
 
 ## Current slice: local macOS ARM64 build
 
@@ -32,6 +32,7 @@ The active implementation goal covers milestones 2–7 in `SPIKE2_MILESTONES.md`
 - Lume 0.6.1 created the disposable VM `spike2-macos-arm64`, but unattended setup could not make SSH available. Its separate offline setup completed the disk patch and then failed 60 SSH health checks. The VM is stopped and preserved; no build ran in it. Lume's documented SSH workflow is suitable in principle, but the cause of this VM's failure is unknown.
 - Tart 2.41.1 cloned a prebuilt macOS 26.6.2 ARM64 image. Its headless guest accepted commands, read-only source sharing, a source copy into its workspace, an output file retrieved over SSH, a repeated C compile, cloning and restart. A recently compiled `work` directory was missing after one immediate stop; files explicitly synced before the next stop survived. The six PostgreSQL dependencies built locally and survived a restart.
 - PostgreSQL 18.6 compiled in Tart and produced a runtime archive with SHA-256 `d852683631929bfba0483bb80bd40cf63ce0ad2483a89c50b94afc5e5465181c` and a development archive with SHA-256 `cee1401f173bafe38424c7a5fb29a7cd1b935bea03295a1c891b18350c026cd5`. A separate clean Tart clone had no build-dependency prefix; the runtime archive passed all 13 named PostgreSQL-only checks there, including native libraries, startup, SQL, built-ins, TLS, diagnostics and cleanup.
+- pgvector, HypoPG, collection, pg_ivm, pgAudit and pgTAP built independently in the local Tart VM against that PostgreSQL installation. Each runtime archive passed the archive checker and survived a VM restart. Address Standardizer and pg_jsonschema did not start because Tart's guest-agent command channel became unreachable; the human review queue records the failure and the decision needed before continuing dependent builds.
 - Docker is available for local Linux ARM64 work. The Linux design currently names only a kernel minimum; Spike 1's libc-bundling and launcher machinery would be substantial to carry forward. The human review queue asks whether to use a distribution userspace baseline instead. Linux archive implementation is paused pending that decision.
 
 ## Mac Intel pilot
@@ -42,4 +43,4 @@ Package-local Intel recipes now cover PostgreSQL and its six pinned dependencies
 
 ## Next work
 
-Build and test each selected Mac ARM64 extension package locally against the Tart-built PostgreSQL archive, following milestone 2 before advancing the remaining milestones. PostGIS scope remains in the human review queue, so its package work is paused. The Linux userspace decision is also pending. Stop this implementation goal at milestone 7; specify human-driven bug hunting with the human at milestone 7.5.
+Resolve the queued Tart guest-agent failure before resuming local extension builds. Then run individual clean-VM checks for the locally built packages and complete the remaining selected Mac ARM64 packages under milestone 2. PostGIS scope and Linux userspace decisions remain in the human review queue. Stop this implementation goal at milestone 7; specify human-driven bug hunting with the human at milestone 7.5.

@@ -16,6 +16,12 @@ The Spike 1 macOS recipe built GDAL and SFCGAL from source, used a Conda depende
 
 Should the first macOS slice retain the full selected PostGIS feature set and accept this packaging work, or should `postgis_raster` and `postgis_sfcgal` be deferred so the first package supplies base PostGIS, topology and TIGER Geocoder? Another simpler package scope or dependency approach is also possible. A changed scope requires a design update. Until then, the full selection remains in force and PostGIS implementation is paused while PostgreSQL and the other extension packages proceed.
 
+## Tart guest command channel during local builds
+
+Tart 2.41.1 booted the macOS 26.6.2 build VM and completed the local PostgreSQL dependency, PostgreSQL and six extension-package builds. After those builds, an Address Standardizer build command and a harmless `/usr/bin/true` command both failed before execution with `GRPC.GRPCConnectionPoolError`, reporting that the Tart Guest Agent could not be reached. The VM remained running, SSH worked, and the guest-agent processes were present. One normal VM stop and restart restored `tart exec`; the six completed archives survived. The cause of the connection failure is unknown.
+
+The current design uses Tart's guest agent for build commands. Should a restart be accepted as routine recovery for this failure, should command execution change to SSH, or should the VM route be reconsidered? Until that decision, Address Standardizer, pg_jsonschema and other work requiring the Tart command channel are blocked. The agent will not substitute SSH for builds or repeatedly restart the VM to hide the failure.
+
 ## Linux userspace portability
 
 The current inventory format records a minimum Linux kernel version but no minimum distribution or libc version. The distribution design requires archives to carry runtime components beyond those guaranteed by the target operating system. Spike 1 handled this by bundling glibc and a static launcher, plus relocation and empty-host tests. That is a substantial packaging system compared with the build-script scope intended for Spike 2. Docker is available locally on ARM64, but no Spike 2 Linux build has been attempted.
