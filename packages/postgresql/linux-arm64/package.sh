@@ -53,6 +53,7 @@ while IFS= read -r -d '' elf; do
   esac
 done < <(find "$root/libexec" -type f -print0; find "$root/lib" -path "$root/lib/glibc" -prune -o -type f -print0)
 printf '%s\n' 'See https://github.com/BernieSumption/pg_binaries/blob/main/LICENSES.md' > "$root/LICENCE"
+find "$root" -type d -exec chmod 755 {} +
 tar -C "$work/stage" -czf "$output_dir/postgresql-$version-linux-arm64.tar.gz" postgresql
 sha256sum "$output_dir/postgresql-$version-linux-arm64.tar.gz" > "$output_dir/postgresql-$version-linux-arm64.tar.gz.sha256"
 tar -C "$work/stage/development" -czf "$output_dir/postgresql-development-$version-linux-arm64.tar.gz" postgresql
