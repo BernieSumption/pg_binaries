@@ -17,7 +17,7 @@ BEGIN
   END IF;
 
   IF (SELECT count(*) FROM hypopg_list_indexes
-      WHERE schema_name = 'public' AND table_name = 'hypo_probe' AND am_name = 'btree') <> 1 THEN
+      WHERE indexrelid = created_index AND table_name = 'hypo_probe' AND am_name = 'btree') <> 1 THEN
     RAISE EXCEPTION 'expected one hypothetical btree index on hypo_probe';
   END IF;
 
