@@ -25,25 +25,18 @@ Required libraries and support data are packaged and verified as described in [b
 - GSSAPI/Kerberos, LDAP, PAM and Bonjour: disable the applicable options for the target. These integrate authentication or service discovery with host infrastructure rather than enabling schema operations.
 - NUMA and io_uring: disable `libnuma` and `liburing` support where available. These are platform-specific performance integrations; io_uring also depends on Linux kernel support.
 - SELinux `sepgsql`: disable SELinux support. It requires integration with the host’s security configuration.
+- PL/Perl, PL/Python and PL/Tcl: disable them explicitly with `--without-perl`, `--without-python` and `--without-tcl`. They support application-defined functions, but packaging and relocating their interpreters and support files would add work beyond the selected PL/pgSQL capability.
 
-The exact disable switches for the grouped platform-specific options are included in the implementation review below. Optional features must not be selected by the presence of libraries on the build machine.
+On macOS, the grouped disable switches are `--without-gssapi`, `--without-ldap`, `--without-pam`, `--without-bonjour`, `--without-libnuma`, `--without-liburing` and `--without-selinux`. Use the applicable switches on other targets. Optional features must not be selected by the presence of libraries on the build machine.
 
-## Draft decisions requiring implementation and human review
+## Bundled SQL extensions
 
-### Additional procedural languages
+Build and package every PostgreSQL `contrib` SQL extension available under the selected options. This includes `fuzzystrmatch`, which TIGER Geocoder requires, and `uuid-ossp` on targets where its selected UUID support is available. PL/pgSQL is supplied by the standard build. Building the full available set keeps the recipe and extension inventory simple; each bundled extension is checked from the final PostgreSQL archive.
 
-PL/Perl, PL/Python and PL/Tcl remain undecided. They support application-defined functions, but require packaging and relocating their interpreters and support files. The Spike 1 selection disabled them; it does not settle their inclusion here. Until reviewed, disable them explicitly with `--without-perl`, `--without-python` and `--without-tcl`.
-
-### Bundled extension selection
-
-Include `fuzzystrmatch` for TIGER Geocoder and `uuid-ossp` as specified above. The complete list of bundled SQL extensions to include and exclude still needs enumeration. The Spike 1 macOS and Linux recipes built the `contrib` directory as a whole, so they do not supply an explicit reviewed list.
-
-### Review of the implemented options
-
-During implementation, add an item to `HUMAN_REVIEW_QUEUE.md` with the selected PostgreSQL version, actual feature options and values for each target, the complete bundled-extension list, and any differences from this document. Check explicitly disabled options and features otherwise controlled by dependency detection. Resolve the procedural-language selection in that review and replace these draft sections with the agreed choices.
+The PostgreSQL 18.6 macOS ARM64 and Intel archives each contain these 46 SQL extensions, including PL/pgSQL: amcheck, autoinc, bloom, btree_gin, btree_gist, citext, cube, dblink, dict_int, dict_xsyn, earthdistance, file_fdw, fuzzystrmatch, hstore, insert_username, intagg, intarray, isn, lo, ltree, moddatetime, pageinspect, pg_buffercache, pg_freespacemap, pg_logicalinspect, pg_prewarm, pg_stat_statements, pg_surgery, pg_trgm, pg_visibility, pg_walinspect, pgcrypto, pgrowlocks, pgstattuple, plpgsql, postgres_fdw, refint, seg, sslinfo, tablefunc, tcn, tsm_system_rows, tsm_system_time, unaccent, uuid-ossp and xml2. The available set is determined from the selected PostgreSQL source and build options for each target; verification compares that set with the packaged controls and exercises each extension.
 
 ## Basis for the selection
 
-These decisions carry forward the Spike 1 PostgreSQL options policy. Inspection of its macOS, Linux and Windows recipes confirms explicit ICU, LZ4, Zstandard, zlib, OpenSSL, libxml2 and libxslt selections and disabled Readline. The Windows recipe also explicitly disables the three additional procedural languages. The recipes do not explicitly disable every feature excluded by the policy, so the implementation review must check the resulting option set rather than copying the command lines unchanged.
+The enabled libraries supply the selected schema and database capabilities. The disabled host integrations and additional procedural languages avoid runtime dependencies outside the distribution's intended use. The current macOS recipes use these explicit options and build the available `contrib` set; Linux and Windows recipes must apply the same capability decisions with the options available on their targets.
 
 [PostgreSQL 18 configure options](https://www.postgresql.org/docs/18/install-make.html) define the build switches. The [column-compression documentation](https://www.postgresql.org/docs/18/sql-createtable.html) and [WAL settings](https://www.postgresql.org/docs/18/runtime-config-wal.html) distinguish the compression capabilities.
