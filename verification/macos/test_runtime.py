@@ -2,7 +2,7 @@ from pathlib import Path
 import tempfile
 import unittest
 
-from verification.macos.runtime import clean_disposable, verify
+from verification.runtime import clean_disposable, verify
 
 
 class RuntimeChecksTests(unittest.TestCase):

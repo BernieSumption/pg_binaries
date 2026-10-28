@@ -17,8 +17,9 @@ def run_recipe(path: Path, arguments: list[str], target: str) -> None:
     if not path.is_file():
         raise SystemExit(f"No {target} recipe: {path.relative_to(ROOT)}")
     environment = os.environ.copy()
-    environment["MACOSX_DEPLOYMENT_TARGET"] = SUPPORT["targets"][target]["minimum_os_version"]
-    environment["COPYFILE_DISABLE"] = "1"
+    if target.startswith("macos-"):
+        environment["MACOSX_DEPLOYMENT_TARGET"] = SUPPORT["targets"][target]["minimum_os_version"]
+        environment["COPYFILE_DISABLE"] = "1"
     result = subprocess.run(["bash", str(path), *arguments], env=environment, check=False)
     if result.returncode:
         raise SystemExit(result.returncode)
@@ -138,7 +139,7 @@ def main() -> None:
         if result.returncode:
             raise SystemExit(result.returncode)
     elif args.command == "runtime-check":
-        command = [sys.executable, "-m", "verification.macos.runtime", args.postgresql_archive, args.output_parent,
+        command = [sys.executable, "-m", "verification.runtime", args.postgresql_archive, args.output_parent,
                    "--target", target]
         for package_archive in args.package_archive:
             command.extend(["--package-archive", package_archive])

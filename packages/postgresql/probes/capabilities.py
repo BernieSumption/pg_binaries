@@ -49,7 +49,7 @@ def probe(installation: Path, work_parent: Path) -> list[str]:
     started = False
     stopped = False
     try:
-        require_command([str(binaries["initdb"]), "-D", str(data), "--no-sync"], environment=environment)
+        require_command([str(binaries["initdb"]), "-D", str(data), "--no-sync", "--encoding=UTF8"], environment=environment)
         with (data / "postgresql.conf").open("a", encoding="utf-8") as config:
             config.write(f"\nunix_socket_directories = '{socket}'\nlisten_addresses = ''\nssl = off\n")
         require_command([str(binaries["pg_ctl"]), "-D", str(data), "-l", str(log), "-w", "start"], environment=environment)

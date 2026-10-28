@@ -67,7 +67,7 @@ def probe(installation: Path, source_archive: Path, work_parent: Path) -> list[s
     started = False
     stopped = False
     try:
-        run([str(binaries["initdb"]), "-D", str(data), "--no-sync"], environment)
+        run([str(binaries["initdb"]), "-D", str(data), "--no-sync", "--encoding=UTF8"], environment)
         with (data / "postgresql.conf").open("a", encoding="utf-8") as config:
             config.write(f"\nunix_socket_directories = '{socket}'\nlisten_addresses = ''\n"
                          "shared_preload_libraries = 'pg_stat_statements'\nwal_level = logical\n")

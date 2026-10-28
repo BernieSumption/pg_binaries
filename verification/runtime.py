@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Smoke-test extracted PostgreSQL and selected extension packages in a clean VM."""
+"""Smoke-test extracted PostgreSQL and selected extension packages in a clean environment."""
 
 from __future__ import annotations
 
@@ -20,10 +20,11 @@ from verification.archive import read_archive, validate_archives
 from packages.postgresql.probes.builtins import probe as probe_builtins
 from packages.postgresql.probes.capabilities import probe as probe_capabilities
 from verification.macos.static import inspect as inspect_macho
+from verification.linux.static import inspect as inspect_elf
 from packages.postgresql.probes.tls import probe as probe_tls
 
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[1]
 SUPPORT = json.loads((ROOT / "support.json").read_text(encoding="utf-8"))
 
 
@@ -112,7 +113,7 @@ def archive_contents(postgresql_archive: Path, package_archives: dict[str, Path]
     for executable in ("initdb", "pg_ctl", "psql", "pg_dump", "pg_restore"):
         path = f"postgresql/bin/{executable}"
         entry = contents.get(path)
-        if entry is None or entry.kind != "file" or not entry.mode & 0o111:
+        if entry is None or entry.kind not in ("file", "hardlink") or not entry.mode & 0o111:
             raise RuntimeError(f"missing or non-executable PostgreSQL tool in archive: {path}")
     for package, archive_path in package_archives.items():
         package_contents = read_archive(archive_path)
@@ -155,7 +156,8 @@ def verify(postgresql_archive: Path, package_archives: dict[str, Path], output: 
 
     installation = installation_parent / "postgresql"
     def inspect() -> None:
-        _, static_failures = inspect_macho(installation, target)
+        inspector = inspect_elf if target.startswith("linux-") else inspect_macho
+        _, static_failures = inspector(installation, target)
         if static_failures:
             raise RuntimeError(f"native library inspection found {static_failures} issue(s)")
     check(results, "native libraries", inspect)
@@ -189,7 +191,7 @@ def verify(postgresql_archive: Path, package_archives: dict[str, Path], output: 
     try:
         if configured:
             def start() -> None:
-                run([str(bin_dir / "initdb"), "-D", str(database), "--no-sync"], environment)
+                run([str(bin_dir / "initdb"), "-D", str(database), "--no-sync", "--encoding=UTF8"], environment)
                 with (database / "postgresql.conf").open("a", encoding="utf-8") as settings:
                     settings.write(f"\nunix_socket_directories = '{socket}'\nlisten_addresses = ''\n")
                     if preloads:
@@ -274,7 +276,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("postgresql_archive", type=Path)
     parser.add_argument("output_parent", type=Path)
-    parser.add_argument("--target", choices=("macos-arm64", "macos-x86_64"), default="macos-arm64")
+    parser.add_argument("--target", choices=SUPPORT["targets"], default="macos-arm64")
     parser.add_argument("--package-archive", action="append", default=[], metavar="PACKAGE=ARCHIVE",
                         help="repeat for each extension package to test together")
     arguments = parser.parse_args()

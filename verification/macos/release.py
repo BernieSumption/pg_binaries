@@ -15,7 +15,7 @@ import sys
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
-from verification.macos.runtime import verify
+from verification.runtime import verify
 from verification.archive import read_archive
 from verification.records import RecordError, selected_inputs
 

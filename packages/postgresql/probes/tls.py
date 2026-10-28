@@ -62,7 +62,7 @@ def probe(installation: Path, work_parent: Path) -> None:
         for key in certs.glob("*.key"):
             key.chmod(0o600)
 
-        run([str(binaries["initdb"]), "-D", str(data), "--no-sync", "--username", user], environment)
+        run([str(binaries["initdb"]), "-D", str(data), "--no-sync", "--encoding=UTF8", "--username", user], environment)
         (data / "pg_hba.conf").write_text(
             "local all all trust\n"
             f"hostssl all all 127.0.0.1/32 cert\n",
