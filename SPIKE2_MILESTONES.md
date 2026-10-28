@@ -58,7 +58,7 @@ Prior work to inspect: `policies/releases.md`, `policies/licenses.md`, `policies
 
 ## 7.5. Human-driven bug hunting
 
-After milestone 7, the human uses a coherent installation and reviews its packaging and verification behaviour. The scope and timing of exploratory bug hunting are specified with the human when this milestone begins. This is separate from the automated build and verification work in milestones 2–7; the current implementation goal stops at milestone 7.
+After milestone 7, the human uses a coherent installation and reviews its packaging and verification behaviour. The scope and timing of exploratory bug hunting are specified with the human when this milestone begins. This is separate from the automated build and verification work in earlier milestones.
 
 Candidate activities to discuss include moving an installation after it has been used, then restarting with its existing database and configuration to find saved absolute software paths. Another candidate is running archive verification locally on the claimed minimum macOS version, or the closest available version, and recording the version tested and any gap. If exploratory work reveals a concrete failure, add a targeted regression test. Discuss whether to repeat these activities after material platform, packaging or release changes.
 
