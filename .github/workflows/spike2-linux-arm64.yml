@@ -76,15 +76,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install PostgreSQL build dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends \
-            build-essential bison flex curl ca-certificates file patchelf pkg-config \
-            libicu-dev liblz4-dev libzstd-dev libssl-dev libxml2-dev libxslt1-dev \
-            zlib1g-dev uuid-dev python3 musl-tools binutils \
-            libgeos-dev libproj-dev proj-data libgdal-dev gdal-data libjson-c-dev \
-            libsfcgal-dev libprotobuf-c-dev protobuf-c-compiler libreadline-dev \
-            libclang-dev
+        run: python3 build.py --target linux-arm64 prepare-dependencies postgresql
       - name: Build and package PostgreSQL
         run: |
           set -euo pipefail
@@ -128,15 +120,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install extension build dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y --no-install-recommends \
-            build-essential bison flex curl ca-certificates file patchelf pkg-config \
-            libicu-dev liblz4-dev libzstd-dev libssl-dev libxml2-dev libxslt1-dev \
-            zlib1g-dev uuid-dev python3 musl-tools binutils \
-            libgeos-dev libproj-dev proj-data libgdal-dev gdal-data libjson-c-dev \
-            libsfcgal-dev libprotobuf-c-dev protobuf-c-compiler libreadline-dev \
-            libclang-dev
+        env:
+          PACKAGE: ${{ matrix.package }}
+        run: python3 build.py --target linux-arm64 prepare-dependencies "$PACKAGE"
       - name: Select PostgreSQL build
         env:
           GH_TOKEN: ${{ github.token }}

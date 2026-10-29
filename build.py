@@ -36,6 +36,9 @@ def main() -> None:
     parser.add_argument("--target", default="macos-arm64", choices=SUPPORT["targets"])
     commands = parser.add_subparsers(dest="command", required=True)
 
+    prepare = commands.add_parser("prepare-dependencies", help="Prepare system build dependencies for one package")
+    prepare.add_argument("component", choices=["postgresql", *SUPPORT["packages"]])
+
     dependencies = commands.add_parser("postgresql-dependencies", help="Build PostgreSQL's pinned dependencies")
     dependencies.add_argument("prefix")
 
@@ -97,27 +100,35 @@ def main() -> None:
     args = parser.parse_args()
     target = args.target
     postgres = SUPPORT["postgresql"]
-    postgres_recipe = ROOT / "packages" / "postgresql" / target
+    postgres_recipe = ROOT / "packages" / "postgresql" / "build.sh"
+    target_parts = target.split("-", 1)
 
-    if args.command == "postgresql-dependencies":
-        run_recipe(postgres_recipe / "build-dependencies.sh", [args.prefix], target)
+    if args.command == "prepare-dependencies":
+        if target.startswith("linux-"):
+            result = subprocess.run([sys.executable, str(ROOT / "platforms/linux/prepare_dependencies.py"), args.component], check=False)
+            if result.returncode:
+                raise SystemExit(result.returncode)
+        else:
+            run_recipe(ROOT / "platforms/macos/prepare-dependencies.sh", [args.component], target)
+    elif args.command == "postgresql-dependencies":
+        run_recipe(postgres_recipe, [*target_parts, "dependencies", args.prefix], target)
     elif args.command == "postgresql-build":
         source = postgres["source"]
         run_recipe(
-            postgres_recipe / "build.sh",
-            [source["url"], source["sha256"], postgres["version"], args.dependency_prefix, args.build_dir, args.install_prefix],
+            postgres_recipe,
+            [*target_parts, "build", source["url"], source["sha256"], postgres["version"], args.dependency_prefix, args.build_dir, args.install_prefix],
             target,
         )
     elif args.command == "postgresql-package":
-        run_recipe(postgres_recipe / "package.sh", [args.install_prefix, args.dependency_prefix, args.output_dir], target)
+        run_recipe(postgres_recipe, [*target_parts, "package", args.install_prefix, args.dependency_prefix, args.output_dir], target)
     elif args.command == "extension-build":
         package = SUPPORT["packages"][args.package]
         arguments = [item for source in package["sources"] for item in
                      (source["url"], source["sha256"], source["version"])]
         arguments.extend((args.postgresql_prefix, args.output_dir))
         run_recipe(
-            ROOT / "packages" / args.package / target / "build.sh",
-            arguments,
+            ROOT / "packages" / args.package / "build.sh",
+            [*target.split("-", 1), *arguments],
             target,
         )
     elif args.command == "archive-check":

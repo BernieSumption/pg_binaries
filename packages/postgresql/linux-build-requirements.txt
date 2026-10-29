@@ -1,0 +1,1 @@
+bison flex libicu-dev liblz4-dev libzstd-dev libssl-dev libxml2-dev libxslt1-dev zlib1g-dev uuid-dev musl-tools

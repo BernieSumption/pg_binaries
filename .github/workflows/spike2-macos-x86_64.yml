@@ -70,6 +70,8 @@ jobs:
     timeout-minutes: 240
     steps:
       - uses: actions/checkout@v4
+      - name: Check PostgreSQL build tools
+        run: python3 build.py --target macos-x86_64 prepare-dependencies postgresql
       - name: Build and package PostgreSQL
         run: |
           set -euo pipefail
@@ -110,6 +112,10 @@ jobs:
         package: ${{ fromJSON(needs.prepare.outputs.packages) }}
     steps:
       - uses: actions/checkout@v4
+      - name: Check extension build tools
+        env:
+          PACKAGE: ${{ matrix.package }}
+        run: python3 build.py --target macos-x86_64 prepare-dependencies "$PACKAGE"
       - name: Select PostgreSQL build
         env:
           GH_TOKEN: ${{ github.token }}

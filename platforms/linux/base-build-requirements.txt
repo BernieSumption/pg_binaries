@@ -1,0 +1,1 @@
+build-essential curl ca-certificates file patchelf pkg-config python3 binutils

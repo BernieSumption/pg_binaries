@@ -19,17 +19,7 @@ cp -a "$pg_prefix"/. "$work/stage/development/postgresql/"
 rm -rf "$root/include" "$root/lib/pgxs" "$root/bin/pg_config"
 find "$root/lib" -maxdepth 1 -name '*.a' -delete
 mkdir -p "$root/lib/runtime" "$root/lib/glibc" "$root/libexec"
-for pass in 1 2 3; do
-  while IFS= read -r -d '' elf; do
-    file -b "$elf" | grep -q ELF || continue
-    while read -r name path; do
-      [[ -f $path ]] || continue
-      case "$name" in linux-vdso*|ld-linux*|libc.so*|libm.so*|libpthread.so*|libdl.so*|librt.so*|libresolv.so*|libnss_*) continue ;; esac
-      [[ $path == "$pg_prefix"/lib/* || $path == "$root"/lib/* ]] && continue
-      [[ -e $root/lib/runtime/$name ]] || cp -L "$path" "$root/lib/runtime/$name"
-    done < <(ldd "$elf" 2>/dev/null | awk '$2 == "=>" && $3 ~ /^\// {print $1, $3}')
-  done < <(find "$root/bin" "$root/lib" -type f -print0)
-done
+bash "$repo/platforms/linux/bundle-runtime.sh" "$root" "$root/lib/runtime" "$pg_prefix" CORE
 for soname in ld-linux-x86-64.so.2 libc.so.6 libm.so.6 libpthread.so.0 libdl.so.2 librt.so.1 libresolv.so.2 libnss_files.so.2 libnss_dns.so.2; do
   source=/lib/x86_64-linux-gnu/$soname
   [[ $soname == ld-linux-x86-64.so.2 ]] && source=/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2

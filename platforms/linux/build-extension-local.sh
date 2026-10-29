@@ -10,7 +10,7 @@ development_archive=$2
 output_directory=$3
 repo=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
 [[ -f $development_archive ]] || { echo "Missing development archive: $development_archive" >&2; exit 1; }
-[[ -f $repo/packages/$package/linux-arm64/build.sh ]] || {
+[[ -f $repo/packages/$package/build.sh ]] || {
   echo "No Linux ARM64 recipe for $package" >&2
   exit 1
 }
