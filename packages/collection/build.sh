@@ -7,15 +7,18 @@ pg_prefix="$workspace/postgresql"
 pg_config="$pg_prefix/bin/pg_config"
 stage="$workspace/build/stage"
 payload="$workspace/payload"
+make_options=("PG_CONFIG=$pg_config")
 
 if [[ $os == macos ]]; then
   jobs=$(sysctl -n hw.ncpu)
+  # Upstream appends ELF linker flags unless this is set on the command line.
+  make_options+=("PG_LDFLAGS=${PG_LDFLAGS:-}")
 else
   jobs=$(nproc)
 fi
 
-make -C "$source_dir" PG_CONFIG="$pg_config" -j "$jobs"
-make -C "$source_dir" PG_CONFIG="$pg_config" DESTDIR="$stage" install
+make -C "$source_dir" "${make_options[@]}" -j "$jobs"
+make -C "$source_dir" "${make_options[@]}" DESTDIR="$stage" install
 
 sharedir=$("$pg_config" --sharedir)
 share_rel=${sharedir#"$pg_prefix"/}
