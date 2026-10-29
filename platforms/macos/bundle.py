@@ -21,6 +21,13 @@ def is_system(path):
 
 
 def dependencies(path):
+    with path.open("rb") as source:
+        magic = source.read(4)
+    if magic not in (b"\xfe\xed\xfa\xce", b"\xce\xfa\xed\xfe",
+                     b"\xfe\xed\xfa\xcf", b"\xcf\xfa\xed\xfe",
+                     b"\xca\xfe\xba\xbe", b"\xbe\xba\xfe\xca",
+                     b"\xca\xfe\xba\xbf", b"\xbf\xba\xfe\xca"):
+        return None
     if run("lipo", "-archs", str(path)).returncode:
         return None
     result = run("otool", "-L", str(path))
@@ -231,7 +238,7 @@ def main(argv=None):
                 changed = True
         if binary.suffix == ".dylib":
             current_id = run("otool", "-D", str(binary))
-            expected_id = "@rpath/" + binary.name
+            expected_id = "@rpath/" + os.path.relpath(binary, root / "lib")
             id_lines = current_id.stdout.splitlines()
             if current_id.returncode or not id_lines or id_lines[-1].strip() != expected_id:
                 result = run("install_name_tool", "-id", expected_id, str(binary))

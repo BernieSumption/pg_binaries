@@ -28,6 +28,18 @@ def _copy(source, destination):
     shutil.copytree(source, destination, symlinks=True)
 
 
+def _copy_dependency_development(source, destination):
+    destination.mkdir()
+    for name in ("include", "lib", "lib64"):
+        if (source / name).is_dir():
+            _copy(source / name, destination / name)
+    helpers = list((source / "bin").glob("*-config"))
+    if helpers:
+        (destination / "bin").mkdir()
+        for helper in helpers:
+            shutil.copy2(helper, destination / "bin" / helper.name)
+
+
 def _archive(prefix, destination):
     with tarfile.open(destination, "w:gz", format=tarfile.PAX_FORMAT) as archive:
         archive.add(prefix, arcname="postgresql")
@@ -92,7 +104,7 @@ def package_postgresql(workspace, target, output_dir):
         _copy(install, development)
     shutil.copy2(install / "bin/pg_config", development / "bin/pg_config.bin")
     if dependencies.is_dir():
-        _copy(dependencies, development / "dependencies")
+        _copy_dependency_development(dependencies, development / "dependencies")
     (development / PATHS_FILE).write_text(json.dumps({
         "postgresql": str(install), "dependencies": str(dependencies),
         "runtime_archive": runtime_archive,

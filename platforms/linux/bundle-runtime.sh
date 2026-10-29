@@ -9,7 +9,8 @@ mkdir -p "$destination"
 while :; do
   copied=0
   while IFS= read -r -d '' binary; do
-    file -b "$binary" | grep -q ELF || continue
+    LC_ALL=C IFS= read -r -n4 magic < "$binary" || continue
+    [[ $magic == $'\x7fELF' ]] || continue
     while read -r name path; do
       case "$name" in
         linux-vdso*|ld-linux*|libc.so*|libm.so*|libpthread.so*|libdl.so*|librt.so*|libresolv.so*|libnss_*) continue ;;

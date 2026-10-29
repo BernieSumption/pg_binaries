@@ -54,7 +54,7 @@ def main() -> None:
     extension_build.add_argument("package", choices=PACKAGES)
     extension_build.add_argument("development_archive", help="PostgreSQL development archive or extracted installation")
     extension_build.add_argument("output_dir")
-    extension_build.add_argument("--workspace", help="Empty directory for this build; defaults to a new directory alongside output_dir")
+    extension_build.add_argument("--workspace", help="Empty directory without whitespace in its path; defaults to a new directory under /tmp")
     extension_build.add_argument("--source-cache", help="Verified download cache outside the workspace")
 
     archive_check = commands.add_parser("archive-check", help="Validate archive contents and overlaps")
@@ -113,6 +113,8 @@ def main() -> None:
         from build_support.metadata import load_package
         from build_support.sources import prepare_sources
         workspace = Path(args.workspace).resolve()
+        if any(character.isspace() for character in str(workspace)):
+            parser.error("PostgreSQL build workspaces must have paths without whitespace")
         cache = Path(args.source_cache).expanduser().resolve() if args.source_cache else Path.home() / ".cache/pg_binaries/sources"
         if workspace == cache or workspace in cache.parents:
             parser.error("source cache must be outside the workspace")

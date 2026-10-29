@@ -1,5 +1,6 @@
 from pathlib import Path
 import json
+import shutil
 import tempfile
 import unittest
 from unittest.mock import patch
@@ -9,6 +10,14 @@ from build_support.sources import sha256
 
 
 class ExtensionWorkspaceTests(unittest.TestCase):
+    def test_whitespace_workspace_is_rejected_before_source_preparation(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            with patch("build_support.extensions.prepare_sources") as prepare:
+                with self.assertRaisesRegex(ValueError, "without whitespace"):
+                    prepare_workspace(root / "build with spaces", root / "development", {}, root / "cache")
+                prepare.assert_not_called()
+
     def test_default_workspace_is_not_uploaded_with_output(self):
         with tempfile.TemporaryDirectory() as temporary:
             output = Path(temporary) / "output"
@@ -17,6 +26,7 @@ class ExtensionWorkspaceTests(unittest.TestCase):
             runtime = {"filename": "postgresql-18.6-linux-arm64.tar.gz", "sha256": "a" * 64}
 
             def prepare(workspace, *args):
+                self.addCleanup(shutil.rmtree, workspace)
                 share = workspace / "postgresql/share"
                 share.mkdir(parents=True)
                 (share / "pg_build_paths.json").write_text(json.dumps({"runtime_archive": runtime}))

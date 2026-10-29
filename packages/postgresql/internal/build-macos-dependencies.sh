@@ -4,6 +4,7 @@ arch=$1 workspace=$2
 prefix="$workspace/build/dependencies"
 jobs=$(sysctl -n hw.ncpu)
 mkdir -p "$prefix"
+export LDFLAGS="-Wl,-headerpad_max_install_names${LDFLAGS:+ $LDFLAGS}"
 
 for name in openssl icu lz4 zstd libxml2 libxslt; do
   source_dir="$workspace/sources/$name"

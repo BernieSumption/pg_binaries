@@ -4,10 +4,26 @@ import subprocess
 import tempfile
 import unittest
 
-from build_support.postgresql import PATHS_FILE, prepare_development
+from build_support.postgresql import PATHS_FILE, _copy_dependency_development, prepare_development
 
 
 class DevelopmentTests(unittest.TestCase):
+    def test_dependency_development_files_exclude_build_tools(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve()
+            source = root / "dependencies"
+            for name in ("include", "lib/pkgconfig", "bin", "share/doc"):
+                (source / name).mkdir(parents=True, exist_ok=True)
+            for name in ("include/example.h", "lib/libexample.dylib", "lib/pkgconfig/example.pc", "bin/xml2-config", "bin/makeconv", "share/doc/readme"):
+                (source / name).write_text(name)
+            destination = root / "development"
+            _copy_dependency_development(source, destination)
+            self.assertTrue((destination / "include/example.h").is_file())
+            self.assertTrue((destination / "lib/pkgconfig/example.pc").is_file())
+            self.assertTrue((destination / "bin/xml2-config").is_file())
+            self.assertFalse((destination / "bin/makeconv").exists())
+            self.assertFalse((destination / "share").exists())
+
     def test_rejects_copy_inside_its_own_source(self):
         with tempfile.TemporaryDirectory() as temporary:
             source = Path(temporary).resolve()

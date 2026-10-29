@@ -14,6 +14,8 @@ def prepare_workspace(workspace, development, metadata, cache):
     from build_support.postgresql import prepare_development
 
     workspace = workspace.resolve()
+    if any(character.isspace() for character in str(workspace)):
+        raise ValueError("PostgreSQL build workspaces must have paths without whitespace")
     development = development.resolve()
     cache = cache.resolve()
     if workspace == cache or workspace in cache.parents:
@@ -44,7 +46,7 @@ def build_extension(package, target, development, output, workspace=None, cache=
     output = Path(output).resolve()
     if workspace is None:
         output.mkdir(parents=True, exist_ok=True)
-        workspace = Path(tempfile.mkdtemp(prefix=f"{package}-", dir=output.parent))
+        workspace = Path(tempfile.mkdtemp(prefix=f"{package}-", dir="/tmp"))
     else:
         workspace = Path(workspace).resolve()
     cache = Path(cache).expanduser() if cache else Path.home() / ".cache/pg_binaries/sources"
@@ -58,6 +60,7 @@ def build_extension(package, target, development, output, workspace=None, cache=
         support = json.loads((ROOT / "support.json").read_text())
         environment["MACOSX_DEPLOYMENT_TARGET"] = support["targets"][target]["minimum_os_version"]
         environment["COPYFILE_DISABLE"] = "1"
+        environment["PG_LDFLAGS"] = "-Wl,-headerpad_max_install_names " + environment.get("PG_LDFLAGS", "")
     subprocess.run(["bash", str(ROOT / "packages" / package / "build.sh"), os_name,
                     architecture, str(workspace)], check=True, env=environment, cwd=ROOT)
     version = subprocess.check_output([str(workspace / "postgresql/bin/pg_config"), "--version"],

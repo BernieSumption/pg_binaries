@@ -4,7 +4,7 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from platforms.macos.bundle import main, prefix_library
+from platforms.macos.bundle import dependencies, main, prefix_library
 
 
 class PrefixLibraryTests(unittest.TestCase):
@@ -31,6 +31,23 @@ class PrefixLibraryTests(unittest.TestCase):
 
 
 class BundleTests(unittest.TestCase):
+    def test_text_files_do_not_launch_native_inspection_tools(self):
+        with tempfile.TemporaryDirectory() as directory:
+            header = Path(directory) / "example.h"
+            header.write_text("#include <stdio.h>\n")
+            with patch("platforms.macos.bundle.run") as run:
+                self.assertIsNone(dependencies(header))
+                run.assert_not_called()
+
+    def test_thin_and_universal_headers_still_receive_native_inspection(self):
+        for magic in (b"\xcf\xfa\xed\xfe", b"\xca\xfe\xba\xbe"):
+            with self.subTest(magic=magic), tempfile.TemporaryDirectory() as directory:
+                binary = Path(directory) / "example"
+                binary.write_bytes(magic)
+                with patch("platforms.macos.bundle.run", return_value=SimpleNamespace(returncode=1)) as run:
+                    self.assertIsNone(dependencies(binary))
+                    run.assert_called_once_with("lipo", "-archs", str(binary))
+
     def test_conflicting_absolute_dependencies_are_rejected(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory).resolve()

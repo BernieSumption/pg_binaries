@@ -54,7 +54,7 @@ build.sh OS ARCH WORKSPACE
 
 - `OS`: `linux` or `macos`.
 - `ARCH`: `arm64` or `x86_64`.
-- `WORKSPACE`: an absolute path to this build's prepared workspace.
+- `WORKSPACE`: an absolute path without whitespace to this build's prepared workspace. Upstream PostgreSQL build files require this; the final installation can be moved to a path containing spaces.
 
 ```text
 WORKSPACE/

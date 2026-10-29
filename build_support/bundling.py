@@ -13,6 +13,30 @@ ROOT = Path(__file__).resolve().parents[1]
 LICENCE = "See https://github.com/BernieSumption/pg_binaries/blob/main/LICENSES.md\n"
 
 
+def _namespace_linux_libraries(payload, directory, package):
+    renamed = {}
+    for library in directory.iterdir():
+        if not library.is_file():
+            continue
+        name = f"{package}-{library.name}"
+        renamed[library.name] = name
+        destination = library.with_name(name)
+        library.rename(destination)
+        subprocess.run(["patchelf", "--set-soname", name, str(destination)], check=True)
+    if not renamed:
+        return
+    for binary in payload.rglob("*"):
+        if not binary.is_file() or binary.is_symlink():
+            continue
+        with binary.open("rb") as stream:
+            if stream.read(4) != b"\x7fELF":
+                continue
+        needed = subprocess.check_output(["patchelf", "--print-needed", str(binary)], text=True).splitlines()
+        for dependency in needed:
+            if dependency in renamed:
+                subprocess.run(["patchelf", "--replace-needed", dependency, renamed[dependency], str(binary)], check=True)
+
+
 def finish_extension(workspace: Path, target: str, output_dir: Path,
                      package: str, postgres_version: str) -> Path:
     workspace = workspace.resolve()
@@ -20,20 +44,24 @@ def finish_extension(workspace: Path, target: str, output_dir: Path,
     postgres = workspace / "postgresql"
     dependencies = workspace / "build/dependencies"
     dependencies.mkdir(parents=True, exist_ok=True)
+    private_name = f"{package}-deps"
+    private_libraries = payload / "lib" / private_name
     if target.startswith("linux-"):
         environment = os.environ.copy()
-        paths = [payload / "lib", payload / "lib/runtime", dependencies / "lib",
+        paths = [payload / "lib", private_libraries, dependencies / "lib",
                  dependencies / "lib64", postgres / "lib", postgres / "lib/runtime"]
         environment["LD_LIBRARY_PATH"] = ":".join(map(str, paths)) + (
             ":" + environment["LD_LIBRARY_PATH"] if environment.get("LD_LIBRARY_PATH") else "")
         subprocess.run(["bash", str(ROOT / "platforms/linux/bundle-runtime.sh"),
-                        str(payload), str(payload / "lib/runtime"), str(postgres), "EXTENSION"],
+                        str(payload), str(private_libraries), str(postgres), "EXTENSION"],
                        env=environment, check=True)
+        private_libraries.mkdir(parents=True, exist_ok=True)
+        _namespace_linux_libraries(payload, private_libraries, package)
         subprocess.run(["bash", str(ROOT / "platforms/linux/relocate-runtime.sh"),
-                        str(payload), "EXTENSION"], check=True)
+                        str(payload), "EXTENSION", private_name], check=True)
     elif target.startswith("macos-"):
         subprocess.run([sys.executable, str(ROOT / "platforms/macos/bundle.py"),
-                        str(payload), str(dependencies), "--postgresql-prefix", str(postgres)], check=True)
+                        str(payload), str(dependencies), private_name, "--postgresql-prefix", str(postgres)], check=True)
     else:
         raise ValueError(f"unsupported target: {target}")
 
