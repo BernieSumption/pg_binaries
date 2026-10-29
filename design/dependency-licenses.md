@@ -1,6 +1,6 @@
 # Dependency licences
 
-PostgreSQL and extension archives contain code, native libraries and sometimes data from several projects. Recipients find their declared terms through one source-controlled `LICENSES.md`, linked from every download. Any license listed as open source by OSI, FSF or Debian is automatically accepted; other licenses need a human decision so add an item to the human review queue requesting approval.
+PostgreSQL and extension archives contain code, native libraries and sometimes data from several projects. Recipients find their declared terms through one source-controlled `LICENSES.md`, linked from every download. Any license listed as open source by OSI, FSF or Debian is automatically accepted; any license that is pure "MIT style" ie concerned only with declaring copyright and disclaiming warranty, and allows redistribution provided that the license is accepted and included with the distribution (as stated elsewhere, we consider our link to LICENSES.md to constitute distributing the license with the software), is also automatically accepted; other licenses need a human decision so add an item to the human review queue requesting approval.
 
 ## Central licence inventory
 
