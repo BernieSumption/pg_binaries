@@ -1,6 +1,12 @@
 # Spike 2 implementation status
 
-The local macOS and Linux ARM64 builds and clean checks for milestones 2–4 have passed. Both ARM64 targets have passed the complete hosted milestone 5 build and verification. Both x86_64 targets have passed the complete hosted milestone 6 build and verification. This goal stops before the human review in milestone 6.5. Lume supplies macOS development VMs; a retained Linux ARM64 container supplies a mutable local development environment. Hosted jobs use the same native package build commands.
+Milestones 2–6 have passed across Mac and Linux ARM64 and x86_64. Lume supplies macOS development VMs; a retained Linux ARM64 container supplies a mutable local development environment. Hosted jobs use the same native package build commands.
+
+## Build-script refactor
+
+`build.py prepare-dependencies` installs each Linux package's declared build tools on GitHub runners and checks the basic macOS tools. Every extension package has one build entry point that receives its operating system and architecture. PostgreSQL also has one entry point for dependency builds, compilation and packaging. Shared source fetching and archive helpers remove repeated recipe code; Linux PostgreSQL and PostGIS use the same runtime-library collection and ELF relocation helpers. `packages/README.md` defines these interfaces and where package dependencies belong. The review queue proposes one retained development environment per active agent, subject to a concurrency measurement.
+
+[Linux ARM64 run 40868794924](https://github.com/BernieSumption/pg_binaries/actions/runs/40868794924), [Linux x86_64 run 40868792904](https://github.com/BernieSumption/pg_binaries/actions/runs/40868792904), [Mac ARM64 run 40867033756](https://github.com/BernieSumption/pg_binaries/actions/runs/40867033756) and [Mac Intel run 40867030143](https://github.com/BernieSumption/pg_binaries/actions/runs/40867030143) each built PostgreSQL and every selected package, then passed fresh-runner checks of the individual archives and complete installation.
 
 ## Current slice: local macOS ARM64 build
 
