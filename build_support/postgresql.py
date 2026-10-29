@@ -79,13 +79,17 @@ def package_postgresql(workspace, target, output_dir):
     output_dir.mkdir(parents=True, exist_ok=True)
     runtime_archive = _archive(payload, output_dir / f"postgresql-{version}-{target}.tar.gz")
 
-    # Start from the runnable payload so tools invoked by extension builds use
-    # the same bundled libraries and Linux loader as the published server.
-    _copy(payload, development)
-    _copy(install / "include", development / "include")
-    _copy(install / "lib/pgxs", development / "lib/pgxs")
-    for path in (install / "lib").glob("*.a"):
-        shutil.copy2(path, development / "lib" / path.name)
+    if os_name == "linux":
+        # Preserve the private Linux loader used by installed tools.
+        _copy(payload, development)
+        _copy(install / "include", development / "include")
+        _copy(install / "lib/pgxs", development / "lib/pgxs")
+        for path in (install / "lib").glob("*.a"):
+            shutil.copy2(path, development / "lib" / path.name)
+    else:
+        # Bundle the development tree once, so dependency collision checks
+        # compare original libraries rather than patched and unpatched copies.
+        _copy(install, development)
     shutil.copy2(install / "bin/pg_config", development / "bin/pg_config.bin")
     if dependencies.is_dir():
         _copy(dependencies, development / "dependencies")
