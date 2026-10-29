@@ -10,6 +10,7 @@ from unittest.mock import patch
 
 from verification.macos import release
 from verification.records import selected_inputs
+from build_support.metadata import load_selection, packages as package_metadata
 
 
 class BuildRecordSelectionTests(unittest.TestCase):
@@ -17,8 +18,8 @@ class BuildRecordSelectionTests(unittest.TestCase):
         self.temporary = tempfile.TemporaryDirectory()
         self.addCleanup(self.temporary.cleanup)
         self.root = Path(self.temporary.name)
-        support = json.loads((release.ROOT / "support.json").read_text(encoding="utf-8"))
-        self.names = ["postgresql", *support["packages"]]
+        support = load_selection(release.ROOT / "support.json")
+        self.names = ["postgresql", *package_metadata()]
         self.args = ["release.py", str(self.root / "postgresql.tar.gz"), str(self.root / "report")]
         self.records = {}
         for name in self.names:
@@ -32,6 +33,7 @@ class BuildRecordSelectionTests(unittest.TestCase):
                 "target": release.TARGET,
                 "git_revision": "0" * 40,
                 "archive": {"filename": archive.name, "sha256": release.sha256(archive)},
+                "postgresql_version": "18.6",
             }
             record["sources"], record["build_inputs"] = selected_inputs(support, release.TARGET, name)
             self.records[name] = record
@@ -52,8 +54,16 @@ class BuildRecordSelectionTests(unittest.TestCase):
              patch.object(release.platform, "machine", return_value=machine), \
              patch.object(release, "builtin_controls", return_value=["citext"]), \
              patch.object(release, "verify") as verify:
-            verify.return_value = checks if checks is not None else [
-                {"name": "archive safety and overlap", "outcome": "passed", "reason": None}]
+            def fake_verify(postgresql, selected, output, target):
+                base = checks if checks is not None else [
+                    {"name": "archive safety and overlap", "outcome": "passed", "reason": None}]
+                if any(item["outcome"] in ("failed", "not_run") for item in base):
+                    return base
+                versions = {name: "test-sql-version" for package in selected
+                            for name in package_metadata()[package]["extensions"]}
+                return [*base, {"name": "PostgreSQL version", "outcome": "passed", "reason": None, "version": "18.6"},
+                        {"name": "SQL probes", "outcome": "passed", "reason": None, "extension_versions": versions}]
+            verify.side_effect = fake_verify
             with redirect_stdout(io.StringIO()), redirect_stderr(io.StringIO()):
                 result = release.main()
             self.assertEqual(verify.call_count, len(self.names) + 1)
@@ -65,9 +75,11 @@ class BuildRecordSelectionTests(unittest.TestCase):
         self.assertEqual(len(report["combinations"]), len(self.names) + 1)
         self.assertEqual(report["combinations"][0]["checks"][0]["outcome"], "passed")
         self.assertEqual(report["postgresql_builtin_extensions"], ["citext"])
+        self.assertEqual(report["postgresql_version"], "18.6")
+        self.assertEqual(report["extension_versions"]["vector"], "test-sql-version")
 
     def test_intel_target_uses_intel_build_inputs(self) -> None:
-        support = json.loads((release.ROOT / "support.json").read_text(encoding="utf-8"))
+        support = load_selection(release.ROOT / "support.json")
         self.args.extend(["--target", "macos-x86_64"])
         for name, record in self.records.items():
             record["target"] = "macos-x86_64"
@@ -98,6 +110,19 @@ class BuildRecordSelectionTests(unittest.TestCase):
             self.invoke()
         self.assertEqual(error.exception.code, 2)
         self.assertFalse((self.root / "report").exists())
+
+    def test_rejects_different_development_archive_with_same_runtime(self) -> None:
+        self.records["postgresql"]["development_archive"] = {"sha256": "a" * 64}
+        self.records[self.names[1]]["postgresql_development_archive"] = {"sha256": "b" * 64}
+        with self.assertRaises(SystemExit) as error:
+            self.invoke()
+        self.assertEqual(error.exception.code, 2)
+        self.assertFalse((self.root / "report").exists())
+
+    def test_accepts_matching_development_archive(self) -> None:
+        self.records["postgresql"]["development_archive"] = {"sha256": "a" * 64}
+        self.records[self.names[1]]["postgresql_development_archive"] = {"sha256": "a" * 64}
+        self.assertEqual(self.invoke(), 0)
 
     def test_rejects_stale_build_inputs(self) -> None:
         self.records["postgresql"]["build_inputs"] = {}

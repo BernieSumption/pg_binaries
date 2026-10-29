@@ -1,15 +1,108 @@
-# Package layout and build contract
+# Building an extension package
 
-Each directory named in `support.json` represents one package. The `shared/` directory contains build helpers. An extension package may supply more than one SQL extension. Its `probes/` directory has one `<extension>.sql` probe for each SQL extension it supplies.
+## Package layout
 
-Each extension package has one `build.sh` entry point. `build.py extension-build` passes the operating system, architecture, each selected source's URL, SHA-256 and version in `support.json` order, then the PostgreSQL development prefix and output directory. Packages with the same recipe on both architectures keep one script per operating system; packages with material architecture differences can delegate to target-specific scripts. The recipe verifies its sources and writes one independently installable archive containing a top-level `postgresql/` directory and a `LICENCE` pointer. The build entry point does not create a VM or container.
+A package is one downloadable archive supplying one or more SQL extensions. The build harness (`build.py` and its shared tooling) discovers packages from `packages/<package>/build.json`, using the folder name as the package name.
 
-`build.py prepare-dependencies` prepares system build tools for one component before compilation on a GitHub runner. Linux package requirements live in each package's `linux-build-requirements.txt`; common Linux tools live in `platforms/linux/base-build-requirements.txt`. macOS checks for basic compiler and archive tools. Selected source dependencies and versions remain in `support.json` and package-local lock files or dependency recipes. The preparation command is also available locally, but a retained development environment may contain tools for many packages.
+```text
+packages/<package>/
+  build.json              Sources, dependencies and expected SQL extensions
+  build.sh                Build entry point
+  probes/<extension>.sql  Tests run by the verifier
+  internal/               Helpers, patches, lock files and other build-script details
+```
 
-PostgreSQL is the core package. Its `build.sh` entry point takes the operating system, architecture and operation, then delegates to target recipes for compilation, packaging and pinned dependency builds. `build.py` supplies the same target to this entry point for all three operations.
+The first three entries have the public contracts described below. `internal/` contains files used only by the build script. Additional public entries require discussion and an agreed contract specifying their format and how the harness uses them.
 
-Packages may add files required by their builds, such as dependency recipes or lock files. `build.py` passes selected sources through the same interface for every package and has no package-specific branches. Shared tools under `platforms/linux/` manage the local Linux development environment. Package recipes own their compilation options and file selection. `packages/shared/fetch.sh` downloads and checks selected sources; `packages/shared/archive.sh` writes the common licence pointer, normalises shared directory permissions and creates an archive and checksum.
+## Package metadata
 
-Linux PostgreSQL and PostGIS packaging use `platforms/linux/bundle-runtime.sh` to copy the runtime library closure. The helper compares any existing copy before accepting it, then scans newly copied libraries for further dependencies. `platforms/linux/relocate-runtime.sh` sets relative ELF library paths after the package has arranged its files.
+`build.json` uses JSON; the comments below document its fields. Fields are required unless marked optional.
 
-Agents may edit this README when changing the contract, but must update the affected packages and `build.py` in the same change. Package-specific interfaces are not allowed unless this README explains why they are required.
+```jsonc
+{
+  // Source packages required by the build. The harness downloads, verifies and
+  // extracts them into WORKSPACE/sources/<id>/. Ids match [a-z][a-z0-9_]*.
+  // A single enclosing directory is removed; internal subdirectories are preserved.
+  "sources": {
+    "<id>": {
+      "project": "Example Project", // Must match the project's entry in LICENSES.md.
+      "url": "https://...", // Archive download URL e.g. .tar.gz or .tar.bz2 file.
+      "sha256": "<64 hex digits>" // Expected archive checksum.
+    }
+  },
+  // Every SQL extension expected in the package. Names are extension SQL names.
+  "extensions": {
+    "<name>": {
+      // Optional, extension-level config for inventory.json as specified in ../design/distribution.md
+      "config": {}
+    }
+  },
+  // Optional, package-level config for inventory.json as specified in ../design/distribution.md
+  "config": {},
+  // Optional. Additional APT packages installed on Linux before build.sh runs
+  "linux_apt_packages": ["<apt-package>"]
+}
+```
+
+## Build script
+
+The harness invokes `packages/<package>/build.sh`:
+
+```text
+build.sh OS ARCH WORKSPACE
+```
+
+- `OS`: `linux` or `macos`.
+- `ARCH`: `arm64` or `x86_64`.
+- `WORKSPACE`: an absolute path to this build's prepared workspace.
+
+```text
+WORKSPACE/
+  sources/<id>/     Prepared source trees
+  postgresql/       PostgreSQL development installation - can be modified if required
+  build/            Intermediate build files
+    dependencies/   Installation prefix for private dependencies
+      lib/          Private dependency libraries
+      lib64/        Where used by the dependency's build system
+  payload/          Selected runtime files
+```
+
+On Mac the harness sets `MACOSX_DEPLOYMENT_TARGET` to the minimum supported macOS version. Build scripts use `WORKSPACE/postgresql/bin/pg_config`. They may install into this private PostgreSQL copy or stage installation beneath `build/` using `DESTDIR`.
+
+The build script copies the files needed to use the extension into `payload/`, including libraries, control files, SQL files and required data. `payload/<path>` installs as `postgresql/<path>`. Build tools, headers and sources stay out of the payload.
+
+The build script does not need to concern itself with portability of the payload folder. The harness copies required libraries from the build environment into `payload/`, then patches executables and libraries to find them using paths relative to their own location. This allows the installation directory to be moved. Libraries supplied by PostgreSQL or guaranteed by the operating system are reused. The harness handles any required signing.
+
+The build script installs private dependencies under `WORKSPACE/build/dependencies/`. The build harness resolves library references using the build environment and this prefix's `lib/` and `lib64/` directories, copying only required libraries into `payload/`.
+
+The build script includes runtime data and dynamically loaded libraries that binary inspection cannot discover, such as PostGIS's PROJ/GDAL data. The harness adds the licence pointer and creates the archive and checksum, following the [distribution layout and overlap rules](../design/distribution.md#archive-format-and-installation).
+
+Each build has its own workspace. Before each invocation, the harness provides unmodified source trees, a fresh writable PostgreSQL copy, and empty `build/` and `payload/` directories. The workspace remains available until bundling finishes.
+
+### Designing the build script
+
+Use a single build script that calls the upstream build system with any options needed for the selected OS and architecture. Where platforms need only small differences, use conditionals around the platform-specific code.
+
+If two platforms are sufficiently different that it is more elegant to maintain two separate build scripts, create e.g. internal/build-mac.sh and delegate to it.
+
+Build scripts may check package-specific assumptions but should assume that the harness has fulfilled the contract, e.g. populating the right source directories and using valid OS and ARCH values.
+
+## Probes
+
+Every declared extension has a `probes/<extension>.sql` file that exercises representative behaviour and fails on a wrong result.
+
+Build scripts should not verify the build output. Verification runs later in the build pipeline, including the SQL probes.
+
+Before the probe file executes, `CREATE EXTENSION <sql-name> CASCADE` will already have been executed. The probe file should be a basic smoke test checking a bit of actual functionality and raising an exception on error. Assume that the extension is either fully working or completely broken, don't build a test suite for it.
+
+Example probe for pgvector:
+
+```sql
+DO $$
+BEGIN
+    IF ('[1,2]'::vector <-> '[4,6]'::vector) IS DISTINCT FROM 5 THEN
+        RAISE EXCEPTION 'Unexpected vector distance';
+    END IF;
+END;
+$$;
+```

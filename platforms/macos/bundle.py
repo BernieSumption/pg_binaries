@@ -82,7 +82,14 @@ def prefix_library(name, prefix):
 
 
 def main(argv=None):
-    argv = sys.argv[1:] if argv is None else argv
+    argv = list(sys.argv[1:] if argv is None else argv)
+    postgres = None
+    if "--postgresql-prefix" in argv:
+        index = argv.index("--postgresql-prefix")
+        if index + 1 >= len(argv):
+            raise SystemExit("--postgresql-prefix requires a path")
+        postgres = pathlib.Path(argv[index + 1]).resolve()
+        del argv[index:index + 2]
     if len(argv) not in (2, 3):
         raise SystemExit("usage: bundle.py STAGED_POSTGRESQL_ROOT DEPENDENCY_PREFIX [PRIVATE_LIB_DIRECTORY]")
     root = pathlib.Path(argv[0]).resolve()
@@ -98,16 +105,36 @@ def main(argv=None):
     libdir.mkdir(parents=True, exist_ok=True)
     origins = {}
 
+    def postgres_library(name):
+        if postgres is None or pathlib.PurePosixPath(name).name != name:
+            return None
+        for directory in ("lib", "lib/runtime"):
+            path = postgres / directory / name
+            if path.is_file() and inside(path, postgres / "lib"):
+                return path.resolve()
+        return None
+
+    def reused(source):
+        return postgres is not None and inside(source, postgres / "lib")
+
+    def final_path(source):
+        if reused(source):
+            return root / source.relative_to(postgres)
+        return source if inside(source, root) else libdir / source.name
+
     def resolve(dep, binary):
         if dep.startswith("@loader_path/"):
             relative = dep.removeprefix("@loader_path/")
             candidate = (binary.parent / relative).resolve()
             if inside(candidate, root) and candidate.is_file():
                 return candidate
+            supplied = postgres_library(pathlib.PurePosixPath(relative).name)
+            if supplied is not None:
+                return supplied
             original = origins.get(binary)
             if original is not None:
                 candidate = (original.parent / relative).resolve()
-                if inside(candidate, prefix) and candidate.is_file():
+                if candidate.is_file():
                     return candidate
             return None
         if dep.startswith("@executable_path/"):
@@ -117,8 +144,16 @@ def main(argv=None):
             if pathlib.PurePosixPath(name).name != name:
                 raise SystemExit(f"unsupported @rpath dependency: {binary}: {dep}")
             candidates = [libdir / name, prefix / "lib" / name, prefix / "lib64" / name]
+            for search_path in rpaths(binary):
+                if search_path.startswith("@loader_path/"):
+                    candidates.append(binary.parent / search_path.removeprefix("@loader_path/") / name)
+                elif search_path.startswith("/"):
+                    candidates.append(pathlib.Path(search_path) / name)
         elif not dep.startswith("/"):
             source = prefix_library(dep, prefix)
+            if source is not None:
+                return source
+            source = postgres_library(dep)
             if source is not None:
                 return source
             raise SystemExit(f"unsupported Mach-O dependency: {binary}: {dep}")
@@ -126,18 +161,25 @@ def main(argv=None):
             path = pathlib.Path(dep)
             if inside(path, root) and path.is_file():
                 return path.resolve()
-            candidates = [libdir / path.name, path]
+            candidates = [path, libdir / path.name]
             # Installed dependency prefixes can relocate files under a different
             # absolute build path, so also resolve by basename in the explicit prefix.
             candidates.extend((prefix / "lib" / path.name, prefix / "lib64" / path.name))
         else:
             raise SystemExit(f"unsupported Mach-O dependency: {binary}: {dep}")
+        supplied = postgres_library(pathlib.PurePosixPath(dep).name)
+        if supplied is not None:
+            # Prefer an actual dependency-prefix match to a same-named PG library.
+            # An explicit reference into PG always reuses PG's copy.
+            if dep.startswith("/") and postgres is not None and inside(pathlib.Path(dep), postgres):
+                return supplied
+            candidates.append(supplied)
         for candidate in candidates:
             try:
                 resolved = candidate.resolve(strict=True)
             except (OSError, RuntimeError):
                 continue
-            if resolved.is_file() and (inside(resolved, prefix) or inside(resolved, root)):
+            if resolved.is_file():
                 return resolved
         return None
 
@@ -154,7 +196,7 @@ def main(argv=None):
                 source = resolve(dep, binary)
                 if source is None:
                     raise SystemExit(f"unresolved Mach-O dependency: {binary}: {dep}")
-                if inside(source, root):
+                if inside(source, root) or reused(source):
                     continue
                 target = libdir / source.name
                 if target.exists():
@@ -178,8 +220,8 @@ def main(argv=None):
             source = resolve(dep, binary)
             if source is None:
                 raise SystemExit(f"unresolved Mach-O dependency: {binary}: {dep}")
-            target = source if inside(source, root) else libdir / source.name
-            if not target.is_file():
+            target = final_path(source)
+            if not reused(source) and not target.is_file():
                 raise SystemExit(f"missing bundled dependency: {binary}: {dep}")
             replacement = "@loader_path/" + os.path.relpath(target, binary.parent)
             if dep != replacement:
@@ -216,6 +258,10 @@ def main(argv=None):
             if not dep.startswith("@loader_path/"):
                 raise SystemExit(f"non-relative dependency remains: {binary}: {dep}")
             target = (binary.parent / dep.removeprefix("@loader_path/")).resolve()
+            if postgres is not None and inside(target, root):
+                supplied = postgres / target.relative_to(root)
+                if inside(supplied, postgres / "lib") and supplied.is_file():
+                    continue
             if not inside(target, root) or not target.is_file():
                 raise SystemExit(f"unresolved bundled dependency remains: {binary}: {dep}")
 

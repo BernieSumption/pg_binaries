@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Write build records from support.json and the produced archive bytes."""
+"""Write build records from package inputs and the produced archive bytes."""
 
 from __future__ import annotations
 
@@ -10,6 +10,10 @@ import re
 import sys
 from pathlib import Path
 from typing import Any, Optional
+
+ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+from build_support.metadata import load_selection
 
 
 class RecordError(ValueError):
@@ -27,40 +31,22 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
-def _source_list(value: Any) -> list[dict[str, str]]:
-    """Find selected downloadable sources in a support.json subtree."""
-    found: list[dict[str, str]] = []
-
-    def visit(node: Any) -> None:
-        if isinstance(node, dict):
-            if isinstance(node.get("url"), str) and isinstance(node.get("sha256"), str):
-                item = {key: node[key] for key in ("project", "version", "url", "sha256")
-                        if isinstance(node.get(key), str)}
-                found.append(item)
-                return
-            for child in node.values():
-                visit(child)
-        elif isinstance(node, list):
-            for child in node:
-                visit(child)
-
-    visit(value)
-    return found
-
-
 def selected_inputs(support: dict[str, Any], target: str,
-                    component: str) -> tuple[list[dict[str, str]], dict[str, Any]]:
+                    component: str, root: Path = ROOT) -> tuple[list[dict[str, str]], dict[str, Any]]:
     if target not in support.get("targets", {}):
         raise RecordError(f"unsupported target: {target}")
     selection = (support.get("postgresql") if component == "postgresql"
                  else support.get("packages", {}).get(component))
     if not isinstance(selection, dict):
         raise RecordError(f"unknown component: {component}")
-    build_inputs = selection.get("build_inputs", {}).get(target, {})
-    source_tree = ({"source": selection.get("source", {}), "build_inputs": build_inputs}
-                   if component == "postgresql" else
-                   {"sources": selection.get("sources", []), "build_inputs": build_inputs})
-    sources = _source_list(source_tree)
+    package_dir = root / "packages" / component
+    input_paths = [package_dir / "build.json", package_dir / "build.sh"]
+    input_paths.extend(path for path in (package_dir / "internal").rglob("*")
+                       if path.is_file() and "__pycache__" not in path.parts
+                       and path.suffix not in (".pyc", ".pyo") and path.name != ".DS_Store")
+    build_inputs = {"files": {str(path.relative_to(package_dir)): sha256_file(path)
+                             for path in sorted(input_paths)}}
+    sources = [{"id": name, **source} for name, source in sorted(selection.get("sources", {}).items())]
     if not sources:
         raise RecordError(f"no selected downloadable sources found for {component} on {target}")
     return sources, build_inputs
@@ -71,7 +57,7 @@ def make_record(support_path: Path, target: str, component: str,
                 postgresql_archive: Optional[Path] = None,
                 development_archive: Optional[Path] = None) -> dict[str, Any]:
     try:
-        support = json.loads(support_path.read_text(encoding="utf-8"))
+        support = load_selection(support_path)
     except (OSError, json.JSONDecodeError) as exc:
         raise RecordError(f"cannot read support file {support_path}: {exc}") from exc
 
@@ -86,23 +72,49 @@ def make_record(support_path: Path, target: str, component: str,
             raise RecordError("extension records require --postgresql-archive")
         if development_archive is not None:
             raise RecordError("extension records do not take --development-archive")
-    sources, build_inputs = selected_inputs(support, target, component)
+    sources, build_inputs = selected_inputs(support, target, component, support_path.parent)
+    manifest_name = "postgresql-build.json" if component == "postgresql" else "extension-build.json"
+    manifest_path = archive_path.parent / manifest_name
+    try:
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        raise RecordError(f"cannot read build output manifest {manifest_path}: {exc}") from exc
+    version = manifest.get("version") if component == "postgresql" else manifest.get("postgresql_version")
+    if not isinstance(version, str) or not re.fullmatch(r"[0-9][a-zA-Z0-9._-]*", version):
+        raise RecordError("build output manifest has no valid PostgreSQL version")
+    if manifest.get("archive") != {"filename": archive_path.name, "sha256": sha256_file(archive_path)}:
+        raise RecordError("build output manifest does not match produced archive")
 
     record: dict[str, Any] = {
         "schema_version": 1,
         "component": component,
         "target": target,
         "git_revision": revision.strip(),
+        "postgresql_version": version,
         "sources": sources,
         "build_inputs": build_inputs,
         "archive": {"filename": archive_path.name, "sha256": sha256_file(archive_path)},
     }
     if postgresql_archive is not None:
+        expected_postgresql = {"filename": postgresql_archive.name, "sha256": sha256_file(postgresql_archive)}
+        if manifest.get("postgresql_archive") != expected_postgresql:
+            raise RecordError("PostgreSQL archive does not match the development installation used for compilation")
         record["postgresql_archive"] = {
             "filename": postgresql_archive.name,
             "sha256": sha256_file(postgresql_archive),
         }
+        development_input = manifest.get("postgresql_development_archive")
+        if development_input is not None:
+            if (not isinstance(development_input, dict) or not isinstance(development_input.get("filename"), str)
+                    or Path(development_input["filename"]).name != development_input["filename"]
+                    or not isinstance(development_input.get("sha256"), str)
+                    or not re.fullmatch(r"[0-9a-f]{64}", development_input["sha256"])):
+                raise RecordError("invalid development archive compilation input")
+            record["postgresql_development_archive"] = development_input
     if development_archive is not None:
+        if manifest.get("development_archive") != {"filename": development_archive.name,
+                                                   "sha256": sha256_file(development_archive)}:
+            raise RecordError("build output manifest does not match development archive")
         record["development_archive"] = {
             "filename": development_archive.name,
             "sha256": sha256_file(development_archive),
@@ -115,7 +127,7 @@ def main(argv: Optional[list[str]] = None) -> int:
     parser.add_argument("--support", type=Path, default=Path(__file__).resolve().parents[1] / "support.json")
     parser.add_argument("--target", required=True)
     parser.add_argument("--component", required=True,
-                        help="postgresql or a package key from support.json")
+                        help="postgresql or a discovered extension package")
     parser.add_argument("--revision", required=True, help="Git commit revision")
     parser.add_argument("--archive", required=True, type=Path,
                         help="produced .tar.gz archive")

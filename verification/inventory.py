@@ -44,9 +44,7 @@ def make_inventory(reports: list[Path], tag: str, support: dict[str, Any], *,
         raise InventoryError("support.json has no packages or targets map")
 
     postgresql = support.get("postgresql", {})
-    pg_version = postgresql.get("version")
-    if not isinstance(pg_version, str) or not pg_version:
-        raise InventoryError("support.json has no PostgreSQL version")
+    pg_version = None
 
     os_support: dict[str, dict[str, str]] = {}
     package_downloads: dict[str, dict[str, dict[str, str]]] = {
@@ -58,6 +56,12 @@ def make_inventory(reports: list[Path], tag: str, support: dict[str, Any], *,
 
     for report_path in reports:
         report = _load(report_path)
+        verified_version = report.get("postgresql_version")
+        if not isinstance(verified_version, str) or not re.fullmatch(r"[0-9][a-zA-Z0-9._-]*", verified_version):
+            raise InventoryError(f"{report_path}: missing verified PostgreSQL version")
+        if pg_version is not None and pg_version != verified_version:
+            raise InventoryError("PostgreSQL versions differ between targets")
+        pg_version = verified_version
         target = report.get("target")
         if not isinstance(target, str) or target not in targets_cfg:
             raise InventoryError(f"{report_path}: unsupported target {target!r}")
@@ -114,14 +118,9 @@ def make_inventory(reports: list[Path], tag: str, support: dict[str, Any], *,
 
         for package_name, package in packages_cfg.items():
             for name, details in package.get("extensions", {}).items():
-                sources = package.get("sources", [])
-                source_project = details.get("source_project")
-                candidates = [s for s in sources if not source_project or s.get("project") == source_project]
-                if not candidates or (source_project and len(candidates) != 1):
-                    raise InventoryError(f"support.json has no source {source_project!r} for {name}")
-                version = candidates[0].get("version")
+                version = report.get("extension_versions", {}).get(name)
                 if not isinstance(version, str) or not version:
-                    raise InventoryError(f"support.json has no release version for {name}")
+                    raise InventoryError(f"{report_path}: missing verified SQL version for {name}")
                 entry: dict[str, Any] = {"package": package_name, "version": version}
                 if details.get("config"):
                     entry["config"] = details["config"]
@@ -169,7 +168,8 @@ def main(argv: list[str] | None = None) -> int:
     try:
         if args.output.exists():
             raise InventoryError(f"output already exists: {args.output}")
-        inventory = make_inventory(args.reports, args.tag, _load(args.support))
+        from build_support.metadata import load_selection
+        inventory = make_inventory(args.reports, args.tag, load_selection(args.support))
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(json.dumps(inventory, indent=2) + "\n", encoding="utf-8")
     except (InventoryError, OSError) as error:

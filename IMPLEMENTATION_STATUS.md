@@ -1,14 +1,16 @@
 # Spike 2 implementation status
 
-Milestones 2–6 have passed across Mac and Linux ARM64 and x86_64. Lume supplies macOS development VMs; a retained Linux ARM64 container supplies a mutable local development environment. Hosted jobs use the same native package build commands.
+Milestones 2–6 passed across Mac and Linux ARM64 and x86_64 before the package-contract refactor below. Lume supplies macOS development VMs; retained Linux containers supply mutable local development environments. Hosted jobs use the same package build commands.
 
 ## Build-script refactor
 
-`build.py prepare-dependencies` installs each Linux package's declared build tools on GitHub runners and checks the basic macOS tools. Every extension package has one build entry point that receives its operating system and architecture. PostgreSQL also has one entry point for dependency builds, compilation and packaging. Shared source fetching and archive helpers remove repeated recipe code; Linux PostgreSQL and PostGIS use the same runtime-library collection and ELF relocation helpers. `packages/README.md` defines these interfaces and where package dependencies belong. The review queue proposes one retained development environment per active agent, subject to a concurrency measurement.
+Package-local `build.json` files declare verified sources, Linux dependencies, expected SQL extensions and configuration. Build scripts receive `OS ARCH WORKSPACE`; the harness prepares clean sources and a private PostgreSQL development installation, then bundles libraries, relocates binaries and creates archives. PostgreSQL produces runtime and development archives from one compilation. Verification derives PostgreSQL and SQL extension versions from the final software. Build records bind extension outputs to their PostgreSQL runtime and development inputs. `packages/README.md` and `packages/postgresql/README.md` document the contracts.
+
+Validation of this refactor is in progress. A fresh Linux ARM64 PostgreSQL build produced both archives; every extension package built against its relocated development installation and passed an individual clean-container runtime check. A final coherent run using the completed provenance metadata is still required. Fresh macOS ARM64 and emulated Linux x86_64 builds are running. The hosted results below describe earlier implementations and do not validate the current refactor.
 
 [Linux ARM64 run 40868794924](https://github.com/BernieSumption/pg_binaries/actions/runs/40868794924), [Linux x86_64 run 40868792904](https://github.com/BernieSumption/pg_binaries/actions/runs/40868792904), [Mac ARM64 run 40867033756](https://github.com/BernieSumption/pg_binaries/actions/runs/40867033756) and [Mac Intel run 40867030143](https://github.com/BernieSumption/pg_binaries/actions/runs/40867030143) each built PostgreSQL and every selected package, then passed fresh-runner checks of the individual archives and complete installation.
 
-## Current slice: local macOS ARM64 build
+## Earlier local macOS ARM64 builds
 
 - The full selected PostGIS package remains in scope. GDAL, SFCGAL, runtime-library packaging and archive-overlap checks are ordinary build and packaging work. Its macOS ARM64 archive now passes individual and coherent local verification.
 - `support.json` selects PostgreSQL 18.6, nine extension packages containing the ten selected projects, and macOS ARM64 and Intel with provisional minimum macOS versions of 11.0. The SHA-256 values for PostgreSQL and all ten project source archives match downloaded bytes. PostgreSQL's six source-built dependencies are pinned for both Mac targets.
@@ -59,4 +61,4 @@ Package-local Intel recipes cover PostgreSQL and its six pinned dependencies, pl
 
 ## Next work
 
-Milestone 6 is complete. The next step is the human review in milestone 6.5, outside this goal. No licence item remains in the review queue.
+Complete validation of the package-contract refactor on the available targets, including PostgreSQL alone, each extension package and the complete installation. The review queue retains the separate decision about development environments and concurrency limits. No licence item remains in the review queue.

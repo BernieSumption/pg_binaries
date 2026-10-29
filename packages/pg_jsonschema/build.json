@@ -1,0 +1,15 @@
+{
+  "sources": {
+    "pg_jsonschema": {
+      "project": "pg_jsonschema",
+      "url": "https://github.com/supabase/pg_jsonschema/archive/refs/tags/v0.3.4.tar.gz",
+      "sha256": "3bfddb105d71df10078f935a5ac1328660a1a2fe290f2342c2b4a142d4f47d91"
+    }
+  },
+  "extensions": {
+    "pg_jsonschema": {}
+  },
+  "linux_apt_packages": [
+    "libclang-dev"
+  ]
+}

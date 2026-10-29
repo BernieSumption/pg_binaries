@@ -4,7 +4,7 @@ The build produces independently downloadable PostgreSQL and extension archives 
 
 ## Build selection
 
-`support.json` records exact PostgreSQL and extension releases, source URLs and checksums, selected targets, package grouping, supplied SQL names, build inputs, extension prerequisites and required PostgreSQL settings.
+`support.json` records selected targets and their minimum supported operating-system versions. Each package's `build.json` records its source URLs and checksums, Linux dependencies and configuration. Extension packages also declare their expected SQL extension names. The build harness discovers packages from these files. PostgreSQL and SQL extension versions come from the built archives and are recorded during verification.
 
 Each target records its minimum supported OS version. Build options and allowed system dependencies are chosen to support that version. On macOS, the deployment target is set at or below it. Required libraries and support data are packaged unless the selected OS version guarantees them. A capability that cannot meet these requirements is referred for human review before publication.
 
@@ -18,7 +18,7 @@ Build jobs upload the PostgreSQL and extension archives as GitHub artefacts. The
 
 Build scripts translate the capabilities in [postgresql-options.md](postgresql-options.md) into the options accepted by the selected PostgreSQL release. Optional capabilities are selected explicitly rather than enabled because a library happens to be installed on the runner.
 
-The PostgreSQL job installs the required compiler and dependencies, downloads the PostgreSQL source archive recorded in `support.json`, verifies its checksum, and builds and packages PostgreSQL. It uploads the PostgreSQL archive and the development files needed to compile extensions, including headers, libraries and build tools. The development files need not be included in the PostgreSQL archive downloaded by users.
+The PostgreSQL job installs the required compiler and dependencies. The build harness downloads the source archives declared in `packages/postgresql/build.json`, verifies their checksums, and prepares source trees. One PostgreSQL compilation supplies a runtime archive and a self-contained development archive with the headers, libraries and build tools needed by extension builds. The development archive can be copied into each extension's private workspace.
 
 ### Extension build jobs
 
@@ -26,7 +26,7 @@ After the PostgreSQL job uploads its artefacts, the workflow starts one build jo
 
 Each extension job builds the SQL extensions belonging to its package against the downloaded PostgreSQL build. It collects their installation files and required runtime dependencies in a staging directory, packages them into an extension archive, and uploads the archive and build record as GitHub artefacts.
 
-Build recipes specify their dependencies, toolchain versions and enabled features. Inline checks confirm that the compiled files exist, control files name the intended SQL extensions, and staging directories contain the required runtime files. Recipes can run inexpensive smoke tests to help diagnose build failures.
+Build scripts specify their toolchain versions and enabled features, then populate `payload/` with the files needed to use their extensions. The build harness bundles required native libraries, patches relative library paths, signs where required, and creates the archive and checksum. Build scripts may check package-specific input assumptions; output verification and SQL probes run in the verification stage.
 
 ### Verification job
 
@@ -36,7 +36,7 @@ Once the PostgreSQL and all selected extension archives are available, one verif
 
 ### Continue independent work
 
-A failed job does not cancel independent jobs or remove a component or target from `support.json`. The workflow reports which jobs passed, failed or could not run because a required archive or test result was unavailable. The agent uses the GitHub CLI or API to inspect failed jobs and retrieve their logs.
+A failed job does not cancel independent jobs or remove a selected package or target. The workflow reports which jobs passed, failed or could not run because a required archive or test result was unavailable. The agent uses the GitHub CLI or API to inspect failed jobs and retrieve their logs.
 
 A source checksum mismatch stops the affected build. The agent investigates the source selection and download before changing a recorded checksum.
 
@@ -64,9 +64,9 @@ When verification code needs correction, the agent runs the corrected checks aga
 
 The Python 3 entry point [`build.py`](../build.py) provides the build commands used by agents and GitHub Actions jobs. Its argument definitions and help describe the available commands. Python handles argument parsing and shared orchestration logic; short shell scripts can implement project build recipes, and SQL files contain tests of installed extension functionality.
 
-The agent uses this interface to start a GitHub Actions workflow run for the selected target. The workflow reads `support.json` to determine the PostgreSQL version, extension packages and source archives, then schedules the build and verification jobs as their prerequisites finish. The interface also supports starting workflow runs for selected builds or verification when completing retries.
+GitHub Actions workflows discover extension packages through the shared metadata reader, then schedule build and verification jobs as their prerequisites finish. Agents start full builds, selected package retries or verification through the workflow's dispatch inputs.
 
-Default selections come from `support.json`, including the extension set for the selected target. Explicit selections allow an agent to build one extension package, choose existing PostgreSQL artefacts, or verify archives selected from an ordered list of workflow runs. Preparation, PostgreSQL compilation, extension compilation, packaging, installation assembly and verification are independently callable operations, so an agent can compose a custom sequence without writing orchestration code. Commands report the files they produce and their success or failure status.
+Targets come from `support.json`; extension packages come from `packages/*/build.json`. Explicit selections allow an agent to build one extension package, choose existing PostgreSQL artefacts, or verify archives selected from an ordered list of workflow runs. Dependency preparation, PostgreSQL compilation and packaging, extension builds and verification are independently callable operations. Commands report their outputs and success or failure status.
 
 GitHub Actions workflows schedule jobs and transfer artefacts. Build commands perform the work within each job and resolve the archive selections supplied for retries. The agent diagnoses failures and chooses which commands or workflows to run again.
 

@@ -13,7 +13,6 @@ while :; do
     while read -r name path; do
       case "$name" in
         linux-vdso*|ld-linux*|libc.so*|libm.so*|libpthread.so*|libdl.so*|librt.so*|libresolv.so*|libnss_*) continue ;;
-        libpq.so*) [[ $kind == EXTENSION ]] && continue ;;
       esac
       [[ -e $root/lib/$name ]] && continue
       [[ ! -f $path && -e $destination/$name ]] && continue
@@ -26,7 +25,9 @@ while :; do
         cp -L "$path" "$target"
         copied=$((copied + 1))
       fi
-    done < <(ldd "$binary" 2>/dev/null | awk '$2 == "=>" {print $1, $3}')
-  done < <(find "$root/bin" "$root/lib" -type f -print0 2>/dev/null)
+    done < <(ldd "$binary" 2>/dev/null | sed -n -E \
+      -e 's/^[[:space:]]*([^[:space:]]+)[[:space:]]+=>[[:space:]]+(.*)[[:space:]]+\(0x[0-9a-fA-F]+\)$/\1 \2/p' \
+      -e 's/^[[:space:]]*([^[:space:]]+)[[:space:]]+=>[[:space:]]+not found$/\1 NOT_FOUND/p')
+  done < <(find "$root" -type f -print0)
   (( copied > 0 )) || break
 done

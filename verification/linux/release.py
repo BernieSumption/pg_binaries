@@ -15,7 +15,8 @@ import sys
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
-from verification.runtime import verify
+from verification.runtime import record_versions, verify
+from build_support.metadata import load_selection, packages as package_metadata
 from verification.archive import read_archive
 from verification.records import RecordError, selected_inputs
 
@@ -74,8 +75,9 @@ def main(argv=None) -> int:
     if platform.system() != "Linux" or platform.machine().lower() not in MACHINES[target]:
         parser.error(f"{target} verification must run on a matching Linux host")
 
-    support = json.loads((ROOT / "support.json").read_text(encoding="utf-8"))
-    expected = set(support["packages"])
+    support = load_selection(ROOT / "support.json")
+    metadata = package_metadata()
+    expected = set(metadata)
 
     packages: dict[str, Path] = {}
     for item in arguments.package_archive:
@@ -84,8 +86,8 @@ def main(argv=None) -> int:
             parser.error(f"invalid or duplicate --package-archive value: {item!r}")
         packages[name] = Path(filename)
     if set(packages) != expected:
-        parser.error(f"package archives do not match support.json: missing={sorted(expected - set(packages))}")
-    packages = {name: packages[name] for name in support["packages"]}
+        parser.error(f"package archives do not match package declarations: missing={sorted(expected - set(packages))}")
+    packages = {name: packages[name] for name in metadata}
 
     archives = {"postgresql": arguments.postgresql_archive, **packages}
     missing = [f"{name}: {path}" for name, path in archives.items() if not path.is_file()]
@@ -137,6 +139,14 @@ def main(argv=None) -> int:
         if record.get("sources") != sources or record.get("build_inputs") != build_inputs:
             parser.error(f"{name} build record uses different selected sources or build inputs")
         records[name] = record
+    for name, record in records.items():
+        if name != "postgresql" and "postgresql_development_archive" in record:
+            development_input = record["postgresql_development_archive"]
+            if (not isinstance(development_input, dict)
+                    or not isinstance(development_input.get("sha256"), str)
+                    or not re.fullmatch(r"[0-9a-f]{64}", development_input["sha256"])
+                    or development_input.get("sha256") != records["postgresql"].get("development_archive", {}).get("sha256")):
+                parser.error(f"{name} was built against a different PostgreSQL development archive")
     if arguments.output.exists():
         parser.error(f"output directory already exists: {arguments.output}")
     arguments.output.mkdir(parents=True)
@@ -154,6 +164,8 @@ def main(argv=None) -> int:
         },
         "build_records": {name: record for name, record in records.items()},
         "postgresql_builtin_extensions": [],
+        "postgresql_version": None,
+        "extension_versions": {},
         "combinations": [],
     }
 
@@ -170,6 +182,9 @@ def main(argv=None) -> int:
             if failed:
                 entry["outcome"] = "failed"
                 entry["reason"] = f"{len(failed)} required check(s) failed or could not run"
+            else:
+                expected_extensions = {name for package in selected for name in metadata[package]["extensions"]}
+                record_versions(report, checks, expected_extensions, records["postgresql"].get("postgresql_version"))
             log.write_text(json.dumps(checks, indent=2) + "\n", encoding="utf-8")
         except Exception as error:
             entry["outcome"] = "failed"

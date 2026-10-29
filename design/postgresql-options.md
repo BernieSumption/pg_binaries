@@ -1,6 +1,6 @@
 # PostgreSQL build options
 
-This document selects PostgreSQL features for creating and inspecting application schemas. The build uses the latest stable release recorded in `support.json`. Compiler optimisation, installation paths and library search paths are implementation details governed by the distribution’s packaging requirements.
+This document selects PostgreSQL features for creating and inspecting application schemas. The build uses the latest stable release selected by the source URL and checksum in `packages/postgresql/build.json`. Compiler optimisation, installation paths and library search paths are implementation details governed by the distribution’s packaging requirements.
 
 The options below use PostgreSQL 18’s `configure` build system with Make.
 

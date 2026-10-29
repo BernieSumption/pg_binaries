@@ -34,7 +34,9 @@ class RunSelectionTests(unittest.TestCase):
             for component in selected:
                 destination = root / "downloads" / component
                 destination.mkdir(parents=True)
-                archive = destination / artifacts.archive_name(target, component)
+                filename = (f"postgresql-18.6-{target}.tar.gz" if component == "postgresql"
+                            else f"{component}-postgresql-18.6-{target}.tar.gz")
+                archive = destination / filename
                 archive.write_bytes(component.encode("ascii"))
                 record = {
                     "schema_version": 1,
@@ -42,6 +44,7 @@ class RunSelectionTests(unittest.TestCase):
                     "target": target,
                     "git_revision": "0" * 40,
                     "archive": {"filename": archive.name, "sha256": artifacts.sha256(archive)},
+                    "postgresql_version": "18.6",
                 }
                 record["sources"], record["build_inputs"] = selected_inputs(
                     artifacts.SUPPORT, target, component)
@@ -55,13 +58,20 @@ class RunSelectionTests(unittest.TestCase):
                 (destination / "record.json").write_text(json.dumps(record), encoding="utf-8")
             with self.assertRaisesRegex(artifacts.SelectionError, "different PostgreSQL archive"):
                 artifacts.inspect_downloads(selected, target, root)
-            postgres_archive = root / "downloads/postgresql" / artifacts.archive_name(target, "postgresql")
+            postgres_archive = root / "downloads/postgresql/postgresql-18.6-macos-arm64.tar.gz"
             record_path = root / "downloads/pgvector/record.json"
             record = json.loads(record_path.read_text(encoding="utf-8"))
             record["postgresql_archive"]["sha256"] = artifacts.sha256(postgres_archive)
             record_path.write_text(json.dumps(record), encoding="utf-8")
             manifest = artifacts.inspect_downloads(selected, target, root)
             self.assertEqual(manifest["components"]["pgvector"]["origin_run"], 11)
+            record["postgresql_development_archive"] = {"sha256": "0" * 64}
+            record_path.write_text(json.dumps(record), encoding="utf-8")
+            with self.assertRaisesRegex(artifacts.SelectionError, "different PostgreSQL development archive"):
+                artifacts.inspect_downloads(selected, target, root)
+            record["postgresql_development_archive"]["sha256"] = manifest["components"]["postgresql"]["development_sha256"]
+            record_path.write_text(json.dumps(record), encoding="utf-8")
+            self.assertEqual(artifacts.inspect_downloads(selected, target, root)["components"]["pgvector"]["origin_run"], 11)
             record["sources"][0]["sha256"] = "0" * 64
             record_path.write_text(json.dumps(record), encoding="utf-8")
             with self.assertRaisesRegex(artifacts.SelectionError, "different selected sources"):

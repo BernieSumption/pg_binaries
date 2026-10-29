@@ -13,23 +13,16 @@ class InventoryDraftTests(unittest.TestCase):
         self.root = Path(self.tmp.name)
         self.support = {
             "targets": {"macos-arm64": {"minimum_os_version": "11.0"}},
-            "postgresql": {"version": "18.6"},
+            "postgresql": {},
             "packages": {
                 "postgis": {
-                    "sources": [
-                        {"project": "PostGIS", "version": "3.6.4"},
-                        {"project": "PostGIS TIGER Geocoder", "version": "2025.2"},
-                    ],
                     "config": {"environment_paths": {"PROJ_DATA": "share/proj"}},
                     "extensions": {
                         "postgis": {},
-                        "postgis_tiger_geocoder": {
-                            "source_project": "PostGIS TIGER Geocoder",
-                        },
+                        "postgis_tiger_geocoder": {},
                     },
                 },
                 "pgaudit": {
-                    "sources": [{"project": "pgAudit", "version": "18.0"}],
                     "extensions": {"pgaudit": {"config": {"shared_preload_libraries": ["pgaudit"]}}},
                 },
             },
@@ -41,6 +34,8 @@ class InventoryDraftTests(unittest.TestCase):
         default_outcomes.extend((("postgresql-only", "passed"), ("all-packages", "passed")))
         report = {
             "target": target,
+            "postgresql_version": "18.6",
+            "extension_versions": {"postgis": "3.6.4", "postgis_tiger_geocoder": "2025.2", "pgaudit": "18.0"},
             "archives": {
                 "postgresql": {"filename": "postgresql-18.6-macos-arm64.tar.gz", "sha256": "a" * 64},
                 "postgis": {"filename": "postgis-postgresql-18.6-macos-arm64.tar.gz", "sha256": "b" * 64},
@@ -99,6 +94,26 @@ class InventoryDraftTests(unittest.TestCase):
         self.support["targets"]["linux-arm64"] = {"minimum_os_version": "5.15"}
         with self.assertRaisesRegex(InventoryError, "missing verified targets"):
             make_inventory([self.report()], "tag", self.support)
+
+    def test_rejects_different_postgresql_versions_between_targets(self):
+        self.support["targets"]["macos-x86_64"] = {"minimum_os_version": "11.0"}
+        first, second = self.report(), self.report("macos-x86_64")
+        data = json.loads(second.read_text())
+        data["postgresql_version"] = "18.7"
+        second.write_text(json.dumps(data))
+        with self.assertRaisesRegex(InventoryError, "PostgreSQL versions differ"):
+            make_inventory([first, second], "tag", self.support)
+
+    def test_rejects_different_sql_versions_between_targets(self):
+        self.support["targets"]["macos-x86_64"] = {"minimum_os_version": "11.0"}
+        first, second = self.report(), self.report("macos-x86_64")
+        data = json.loads(second.read_text())
+        for archive in data["archives"].values():
+            archive["filename"] = archive["filename"].replace("arm64", "x86_64")
+        data["extension_versions"]["postgis"] = "different-sql-version"
+        second.write_text(json.dumps(data))
+        with self.assertRaisesRegex(InventoryError, "conflicting inventory mapping"):
+            make_inventory([first, second], "tag", self.support)
 
     def test_builtin_target_restriction_matches_verified_archives(self):
         self.support["targets"]["macos-x86_64"] = {"minimum_os_version": "11.0"}

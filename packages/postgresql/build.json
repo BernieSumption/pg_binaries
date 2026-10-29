@@ -1,0 +1,52 @@
+{
+  "sources": {
+    "postgresql": {
+      "project": "PostgreSQL",
+      "url": "https://ftp.postgresql.org/pub/source/v18.6/postgresql-18.6.tar.gz",
+      "sha256": "983ee554ec53dbeb9b70797bef9fcf4e67e117e7e48ca1463cc80b3ff8e8ff3f"
+    },
+    "openssl": {
+      "project": "OpenSSL",
+      "url": "https://github.com/openssl/openssl/releases/download/openssl-3.5.8/openssl-3.5.8.tar.gz",
+      "sha256": "a8f84a39918ec6415ce765d9b429d313ba97b8143169c172e734b9514464f5b2"
+    },
+    "icu": {
+      "project": "ICU4C",
+      "url": "https://github.com/unicode-org/icu/releases/download/release-78.3/icu4c-78.3-sources.tgz",
+      "sha256": "3a2e7a47604ba702f345878308e6fefeca612ee895cf4a5f222e7955fabfe0c0"
+    },
+    "lz4": {
+      "project": "LZ4",
+      "url": "https://github.com/lz4/lz4/releases/download/v1.10.0/lz4-1.10.0.tar.gz",
+      "sha256": "537512904744b35e232912055ccf8ec66d768639ff3abe5788d90d792ec5f48b"
+    },
+    "zstd": {
+      "project": "Zstandard",
+      "url": "https://github.com/facebook/zstd/releases/download/v1.5.7/zstd-1.5.7.tar.gz",
+      "sha256": "eb33e51f49a15e023950cd7825ca74a4a2b43db8354825ac24fc1b7ee09e6fa3"
+    },
+    "libxml2": {
+      "project": "libxml2",
+      "url": "https://download.gnome.org/sources/libxml2/2.15/libxml2-2.15.4.tar.xz",
+      "sha256": "98087fd181d9070724f3fbc65c7377db03038eb92bd882374daff44940138821"
+    },
+    "libxslt": {
+      "project": "libxslt",
+      "url": "https://download.gnome.org/sources/libxslt/1.1/libxslt-1.1.45.tar.xz",
+      "sha256": "9acfe68419c4d06a45c550321b3212762d92f41465062ca4ea19e632ee5d216e"
+    }
+  },
+  "linux_apt_packages": [
+    "bison",
+    "flex",
+    "libicu-dev",
+    "liblz4-dev",
+    "libzstd-dev",
+    "libssl-dev",
+    "libxml2-dev",
+    "libxslt1-dev",
+    "zlib1g-dev",
+    "uuid-dev",
+    "musl-tools"
+  ]
+}

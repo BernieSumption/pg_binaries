@@ -13,10 +13,11 @@ import sys
 from typing import Any
 
 from verification.records import RecordError, selected_inputs
+from build_support.metadata import load_selection
 
 
 ROOT = Path(__file__).resolve().parents[1]
-SUPPORT = json.loads((ROOT / "support.json").read_text(encoding="utf-8"))
+SUPPORT = load_selection()
 
 
 class SelectionError(ValueError):
@@ -73,25 +74,25 @@ def download(run_id: int, name: str, directory: Path) -> None:
         raise SelectionError(f"cannot download {name} from run {run_id}: {result.stderr.strip()}")
 
 
-def archive_name(target: str, component: str) -> str:
-    version = SUPPORT["postgresql"]["version"]
-    if component == "postgresql":
-        return f"postgresql-{version}-{target}.tar.gz"
-    return f"{component}-postgresql-{version}-{target}.tar.gz"
+def recorded_archive(directory, record, field="archive"):
+    filename = record.get(field, {}).get("filename")
+    if not isinstance(filename, str) or not filename or Path(filename).name != filename:
+        raise SelectionError(f"invalid recorded {field} filename")
+    return directory / filename
 
 
 def inspect_downloads(selected: dict[str, int], target: str, output: Path) -> dict[str, Any]:
     manifest: dict[str, Any] = {"target": target, "runs": [], "components": {}}
     for component, run_id in selected.items():
         directory = output / "downloads" / component
-        archive = directory / archive_name(target, component)
         record_path = directory / "record.json"
-        if not archive.is_file() or not record_path.is_file():
-            raise SelectionError(f"{component} artefact lacks its archive or record.json")
         try:
             record = json.loads(record_path.read_text(encoding="utf-8"))
         except (OSError, ValueError) as error:
             raise SelectionError(f"cannot read {component} record: {error}") from error
+        archive = recorded_archive(directory, record)
+        if not archive.is_file():
+            raise SelectionError(f"{component} artefact lacks its recorded archive")
         digest = sha256(archive)
         if (record.get("component") != component or record.get("target") != target
                 or record.get("archive", {}).get("filename") != archive.name
@@ -108,7 +109,7 @@ def inspect_downloads(selected: dict[str, int], target: str, output: Path) -> di
         if record.get("sources") != sources or record.get("build_inputs") != build_inputs:
             raise SelectionError(f"{component} build record uses different selected sources or build inputs")
         if component == "postgresql":
-            development = directory / f"postgresql-development-{SUPPORT['postgresql']['version']}-{target}.tar.gz"
+            development = recorded_archive(directory, record, "development_archive")
             if not development.is_file():
                 raise SelectionError("PostgreSQL artefact lacks its development archive")
             if (record.get("development_archive", {}).get("filename") != development.name
@@ -132,6 +133,11 @@ def inspect_downloads(selected: dict[str, int], target: str, output: Path) -> di
             record = json.loads(record_path.read_text(encoding="utf-8"))
             if record.get("postgresql_archive", {}).get("sha256") != postgres["sha256"]:
                 raise SelectionError(f"{component} was built against a different PostgreSQL archive")
+            if "postgresql_development_archive" in record:
+                development_input = record["postgresql_development_archive"]
+                if (not isinstance(development_input, dict)
+                        or development_input.get("sha256") != postgres["development_sha256"]):
+                    raise SelectionError(f"{component} was built against a different PostgreSQL development archive")
     return manifest
 
 

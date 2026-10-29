@@ -1,4 +1,5 @@
 import unittest
+from pathlib import Path
 from unittest.mock import patch
 
 from build import ROOT, main, release_module
@@ -10,25 +11,18 @@ class ReleaseDispatchTests(unittest.TestCase):
         self.assertEqual(release_module("macos-arm64"), "verification.macos.release")
         self.assertEqual(release_module("macos-x86_64"), "verification.macos.release")
 
-    def test_each_extension_target_uses_one_package_entry_point(self) -> None:
+    def test_each_extension_target_uses_shared_preparation(self) -> None:
         for target in ("macos-arm64", "macos-x86_64", "linux-arm64", "linux-x86_64"):
             with self.subTest(target=target), patch("sys.argv", ["build.py", "--target", target,
-                    "extension-build", "pgvector", "/pg", "/out"]), patch("build.run_recipe") as recipe:
+                    "extension-build", "pgvector", "/development.tar.gz", "/out"]), patch("build_support.extensions.build_extension") as build:
                 main()
-                path, arguments, selected = recipe.call_args.args
-                self.assertEqual(path, ROOT / "packages/pgvector/build.sh")
-                self.assertEqual(arguments[:2], target.split("-", 1))
-                self.assertEqual(arguments[-2:], ["/pg", "/out"])
-                self.assertEqual(selected, target)
+                build.assert_called_once_with("pgvector", target, "/development.tar.gz", "/out", None, None)
 
     def test_postgresql_uses_one_entry_point(self) -> None:
         with patch("sys.argv", ["build.py", "--target", "linux-arm64",
-                "postgresql-package", "/pg", "/deps", "/out"]), patch("build.run_recipe") as recipe:
+                "postgresql-package", "/workspace", "/out"]), patch("build_support.postgresql.package_postgresql", return_value={}) as package:
             main()
-            path, arguments, selected = recipe.call_args.args
-            self.assertEqual(path, ROOT / "packages/postgresql/build.sh")
-            self.assertEqual(arguments, ["linux", "arm64", "package", "/pg", "/deps", "/out"])
-            self.assertEqual(selected, "linux-arm64")
+            package.assert_called_once_with(Path("/workspace"), "linux-arm64", Path("/out"))
 
 
 if __name__ == "__main__":

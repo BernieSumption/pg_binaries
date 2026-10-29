@@ -8,9 +8,12 @@ from pathlib import Path
 import subprocess
 import sys
 
+from build_support.metadata import packages
+
 
 ROOT = Path(__file__).resolve().parent
 SUPPORT = json.loads((ROOT / "support.json").read_text(encoding="utf-8"))
+PACKAGES = packages()
 
 
 def release_module(target: str) -> str:
@@ -37,31 +40,28 @@ def main() -> None:
     commands = parser.add_subparsers(dest="command", required=True)
 
     prepare = commands.add_parser("prepare-dependencies", help="Prepare system build dependencies for one package")
-    prepare.add_argument("component", choices=["postgresql", *SUPPORT["packages"]])
-
-    dependencies = commands.add_parser("postgresql-dependencies", help="Build PostgreSQL's pinned dependencies")
-    dependencies.add_argument("prefix")
+    prepare.add_argument("component", choices=["postgresql", *PACKAGES])
 
     postgres_build = commands.add_parser("postgresql-build", help="Compile and install PostgreSQL")
-    postgres_build.add_argument("dependency_prefix")
-    postgres_build.add_argument("build_dir")
-    postgres_build.add_argument("install_prefix")
+    postgres_build.add_argument("workspace", help="Empty directory for the PostgreSQL build")
+    postgres_build.add_argument("--source-cache", help="Verified download cache outside the workspace")
 
     postgres_package = commands.add_parser("postgresql-package", help="Create PostgreSQL runtime and development archives")
-    postgres_package.add_argument("install_prefix")
-    postgres_package.add_argument("dependency_prefix")
+    postgres_package.add_argument("workspace")
     postgres_package.add_argument("output_dir")
 
     extension_build = commands.add_parser("extension-build", help="Build one extension package")
-    extension_build.add_argument("package", choices=SUPPORT["packages"])
-    extension_build.add_argument("postgresql_prefix")
+    extension_build.add_argument("package", choices=PACKAGES)
+    extension_build.add_argument("development_archive", help="PostgreSQL development archive or extracted installation")
     extension_build.add_argument("output_dir")
+    extension_build.add_argument("--workspace", help="Empty directory for this build; defaults to a new directory alongside output_dir")
+    extension_build.add_argument("--source-cache", help="Verified download cache outside the workspace")
 
     archive_check = commands.add_parser("archive-check", help="Validate archive contents and overlaps")
     archive_check.add_argument("archives", nargs="+")
 
     record = commands.add_parser("build-record", help="Record a produced archive and its selected inputs")
-    record.add_argument("component", choices=["postgresql", *SUPPORT["packages"]])
+    record.add_argument("component", choices=["postgresql", *PACKAGES])
     record.add_argument("archive")
     record.add_argument("output")
     record.add_argument("--revision", required=True)
@@ -84,7 +84,7 @@ def main() -> None:
     select_runs.add_argument("output_dir")
     select_runs.add_argument("--run", action="append", required=True, type=int, dest="runs",
                              help="workflow run ID, in selection order")
-    select_runs.add_argument("--component", action="append", choices=["postgresql", *SUPPORT["packages"]])
+    select_runs.add_argument("--component", action="append", choices=["postgresql", *PACKAGES])
     select_runs.add_argument("--verify", action="store_true", help="run the complete release check")
 
     inventory = commands.add_parser("inventory-draft", help="Draft inventory.json from complete verification reports")
@@ -99,7 +99,6 @@ def main() -> None:
 
     args = parser.parse_args()
     target = args.target
-    postgres = SUPPORT["postgresql"]
     postgres_recipe = ROOT / "packages" / "postgresql" / "build.sh"
     target_parts = target.split("-", 1)
 
@@ -110,27 +109,27 @@ def main() -> None:
                 raise SystemExit(result.returncode)
         else:
             run_recipe(ROOT / "platforms/macos/prepare-dependencies.sh", [args.component], target)
-    elif args.command == "postgresql-dependencies":
-        run_recipe(postgres_recipe, [*target_parts, "dependencies", args.prefix], target)
     elif args.command == "postgresql-build":
-        source = postgres["source"]
-        run_recipe(
-            postgres_recipe,
-            [*target_parts, "build", source["url"], source["sha256"], postgres["version"], args.dependency_prefix, args.build_dir, args.install_prefix],
-            target,
-        )
+        from build_support.metadata import load_package
+        from build_support.sources import prepare_sources
+        workspace = Path(args.workspace).resolve()
+        cache = Path(args.source_cache).expanduser().resolve() if args.source_cache else Path.home() / ".cache/pg_binaries/sources"
+        if workspace == cache or workspace in cache.parents:
+            parser.error("source cache must be outside the workspace")
+        workspace.mkdir(parents=True, exist_ok=True)
+        if any(workspace.iterdir()):
+            parser.error("PostgreSQL workspace must be empty")
+        prepare_sources(load_package("postgresql")["sources"], workspace / "sources", cache)
+        (workspace / "build").mkdir()
+        (workspace / "payload").mkdir()
+        run_recipe(postgres_recipe, [*target_parts, str(workspace)], target)
     elif args.command == "postgresql-package":
-        run_recipe(postgres_recipe, [*target_parts, "package", args.install_prefix, args.dependency_prefix, args.output_dir], target)
+        from build_support.postgresql import package_postgresql
+        print(json.dumps(package_postgresql(Path(args.workspace).resolve(), target, Path(args.output_dir).resolve())))
     elif args.command == "extension-build":
-        package = SUPPORT["packages"][args.package]
-        arguments = [item for source in package["sources"] for item in
-                     (source["url"], source["sha256"], source["version"])]
-        arguments.extend((args.postgresql_prefix, args.output_dir))
-        run_recipe(
-            ROOT / "packages" / args.package / "build.sh",
-            [*target.split("-", 1), *arguments],
-            target,
-        )
+        from build_support.extensions import build_extension
+        print(build_extension(args.package, target, args.development_archive, args.output_dir,
+                              args.workspace, args.source_cache))
     elif args.command == "archive-check":
         result = subprocess.run([sys.executable, str(ROOT / "verification" / "archive.py"), *args.archives], check=False)
         if result.returncode:

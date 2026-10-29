@@ -104,7 +104,7 @@ The `packages` map is keyed by package name. Optional package `config` supplies 
 
 ### SQL extensions
 
-The `extensions` map is keyed by the SQL name used in `CREATE EXTENSION`. Each entry’s `package` identifies the package supplying its files. Its `version` records the selected release, rather than the SQL extension’s internal version. Built-in extensions omit `version` because they are supplied with PostgreSQL.
+The `extensions` map is keyed by the SQL name used in `CREATE EXTENSION`. Each entry’s `package` identifies the package supplying its files. Its `version` is the SQL extension version reported by PostgreSQL after creation from the verified archive. Built-in extensions omit `version` because they are supplied with PostgreSQL.
 
 Optional extension `config` supplies the [PostgreSQL startup settings](#postgresql-startup-settings).
 

@@ -1,0 +1,18 @@
+{
+  "sources": {
+    "pg_ivm": {
+      "project": "pg_ivm",
+      "url": "https://github.com/sraoss/pg_ivm/archive/refs/tags/v1.17.tar.gz",
+      "sha256": "4a9616814b2bb6eaacebba5ce1d6c8cc83d7d6a41e13d54a47f386cba91e7245"
+    }
+  },
+  "extensions": {
+    "pg_ivm": {
+      "config": {
+        "shared_preload_libraries": [
+          "pg_ivm"
+        ]
+      }
+    }
+  }
+}

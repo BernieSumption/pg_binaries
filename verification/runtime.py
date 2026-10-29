@@ -17,6 +17,7 @@ import urllib.request
 import uuid
 
 from verification.archive import read_archive, validate_archives
+from build_support.metadata import load_package, packages as package_metadata
 from packages.postgresql.probes.builtins import probe as probe_builtins
 from packages.postgresql.probes.capabilities import probe as probe_capabilities
 from verification.macos.static import inspect as inspect_macho
@@ -26,6 +27,29 @@ from packages.postgresql.probes.tls import probe as probe_tls
 
 ROOT = Path(__file__).resolve().parents[1]
 SUPPORT = json.loads((ROOT / "support.json").read_text(encoding="utf-8"))
+PACKAGES = package_metadata()
+
+
+def record_versions(report: dict, checks: list[dict], expected_extensions: set[str], expected_postgres: str) -> None:
+    postgres_checks = [item for item in checks if item["name"] == "PostgreSQL version" and item["outcome"] == "passed"]
+    if len(postgres_checks) != 1 or postgres_checks[0].get("version") != expected_postgres:
+        raise RuntimeError("packaged PostgreSQL version does not match its build record")
+    version = postgres_checks[0]["version"]
+    if report["postgresql_version"] not in (None, version):
+        raise RuntimeError("PostgreSQL version differs between verification combinations")
+    versions = {}
+    for item in checks:
+        if item["name"] == "SQL probes" and item["outcome"] == "passed":
+            versions.update(item.get("extension_versions", {}))
+    if set(versions) != expected_extensions:
+        raise RuntimeError("verified SQL extension versions do not match the selected extensions")
+    for name, value in versions.items():
+        if not isinstance(value, str) or not value:
+            raise RuntimeError(f"invalid verified SQL extension version for {name}")
+        if name in report["extension_versions"] and report["extension_versions"][name] != value:
+            raise RuntimeError(f"SQL extension version differs between combinations: {name}")
+    report["postgresql_version"] = version
+    report["extension_versions"].update(versions)
 
 
 def check(results: list[dict[str, str | None]], name: str,
@@ -83,7 +107,7 @@ def configuration(packages: list[str]) -> tuple[list[str], dict[str, str]]:
     preloads: set[str] = set()
     paths: dict[str, str] = {}
     for name in packages:
-        package = SUPPORT["packages"][name]
+        package = PACKAGES[name]
         configs = [package.get("config", {})]
         configs.extend(extension.get("config", {}) for extension in package["extensions"].values())
         for config in configs:
@@ -96,7 +120,7 @@ def configuration(packages: list[str]) -> tuple[list[str], dict[str, str]]:
 
 
 def selected_postgresql_source(output: Path) -> Path:
-    source = SUPPORT["postgresql"]["source"]
+    source = load_package("postgresql")["sources"]["postgresql"]
     destination = output / "postgresql-source.tar.gz"
     digest = hashlib.sha256()
     with urllib.request.urlopen(source["url"], timeout=120) as response, destination.open("wb") as archive:
@@ -117,11 +141,14 @@ def archive_contents(postgresql_archive: Path, package_archives: dict[str, Path]
             raise RuntimeError(f"missing or non-executable PostgreSQL tool in archive: {path}")
     for package, archive_path in package_archives.items():
         package_contents = read_archive(archive_path)
-        for extension in SUPPORT["packages"][package]["extensions"]:
-            path = f"postgresql/share/extension/{extension}.control"
-            entry = package_contents.get(path)
-            if entry is None or entry.kind != "file":
-                raise RuntimeError(f"{package} archive lacks SQL extension control file: {path}")
+        expected = set(PACKAGES[package]["extensions"])
+        prefix = "postgresql/share/extension/"
+        actual = {path.removeprefix(prefix).removesuffix(".control")
+                  for path, entry in package_contents.items()
+                  if path.startswith(prefix) and path.endswith(".control")
+                  and "/" not in path[len(prefix):] and entry.kind == "file"}
+        if actual != expected:
+            raise RuntimeError(f"{package} SQL extensions differ: missing={sorted(expected - actual)}, unexpected={sorted(actual - expected)}")
 
 
 def verify(postgresql_archive: Path, package_archives: dict[str, Path], output: Path,
@@ -130,7 +157,7 @@ def verify(postgresql_archive: Path, package_archives: dict[str, Path], output: 
     archives = [postgresql_archive, *package_archives.values()]
     safe, _ = check(results, "archive safety and overlap", lambda: validate_archives(archives))
     if not safe:
-        for name in ("archive contents", "extraction", "native libraries", "configuration",
+        for name in ("archive contents", "extraction", "native libraries", "PostgreSQL version", "configuration",
                      "database startup", "SQL probes", "failed-operation diagnostics",
                      "PostgreSQL capabilities", "PostgreSQL built-ins", "TLS and sslinfo"):
             skipped(results, name, "archive safety check failed")
@@ -147,7 +174,7 @@ def verify(postgresql_archive: Path, package_archives: dict[str, Path], output: 
                 archive.extractall(installation_parent)
     extracted, _ = check(results, "extraction", extract)
     if not extracted:
-        for name in ("native libraries", "configuration", "database startup", "SQL probes",
+        for name in ("native libraries", "PostgreSQL version", "configuration", "database startup", "SQL probes",
                      "failed-operation diagnostics", "PostgreSQL capabilities",
                      "PostgreSQL built-ins", "TLS and sslinfo"):
             skipped(results, name, "extraction failed")
@@ -175,6 +202,16 @@ def verify(postgresql_archive: Path, package_archives: dict[str, Path], output: 
     }
     if "TMPDIR" in os.environ:
         environment["TMPDIR"] = os.environ["TMPDIR"]
+
+    def postgres_version() -> str:
+        version = run([str(bin_dir / "postgres"), "--version"], environment).strip()
+        match = re.fullmatch(r"postgres \(PostgreSQL\) ([0-9][A-Za-z0-9._-]*)", version)
+        if not match:
+            raise RuntimeError(f"unexpected packaged PostgreSQL version: {version!r}")
+        return match.group(1)
+    version_ok, version = check(results, "PostgreSQL version", postgres_version)
+    if version_ok:
+        results[-1]["version"] = version
 
     selected = list(package_archives)
     def configure() -> list[str]:
@@ -205,9 +242,9 @@ def verify(postgresql_archive: Path, package_archives: dict[str, Path], output: 
             skipped(results, "SQL probes", "database startup did not succeed")
             skipped(results, "failed-operation diagnostics", "database startup did not succeed")
         elif selected:
-            def extension_probes() -> None:
-                extension_probe_session(selected, output, psql, environment, log)
-            check(results, "SQL probes", extension_probes)
+            probes_ok, versions = check(results, "SQL probes", lambda: extension_probe_session(selected, output, psql, environment, log))
+            if probes_ok:
+                results[-1]["extension_versions"] = versions
             check(results, "failed-operation diagnostics", lambda: check_failure_diagnostics(psql, environment))
         else:
             check(results, "SQL probes", lambda: dump_restore_probe(output, bin_dir, psql, environment))
@@ -237,12 +274,12 @@ def verify(postgresql_archive: Path, package_archives: dict[str, Path], output: 
 
 
 def extension_probe_session(selected: list[str], output: Path, psql: list[str],
-                            environment: dict[str, str], log: Path) -> None:
+                            environment: dict[str, str], log: Path) -> dict[str, str]:
     probe_script = output / "extension-probes.sql"
     with probe_script.open("w", encoding="utf-8") as script:
         script.write("\\set ON_ERROR_STOP on\n")
         for package in selected:
-            for extension in SUPPORT["packages"][package]["extensions"]:
+            for extension in PACKAGES[package]["extensions"]:
                 if not re.fullmatch(r"[a-z][a-z0-9_]*", extension):
                     raise RuntimeError(f"invalid SQL extension name: {extension}")
                 probe = ROOT / "packages" / package / "probes" / f"{extension}.sql"
@@ -257,6 +294,13 @@ def extension_probe_session(selected: list[str], output: Path, psql: list[str],
         for operation in ("CREATE TABLE", "INSERT", "SELECT"):
             if not any("AUDIT: SESSION" in line and operation in line for line in audit_log.splitlines()):
                 raise RuntimeError(f"pgAudit server log lacks {operation} audit record")
+    expected = {name for package in selected for name in PACKAGES[package]["extensions"]}
+    names = ",".join(f"'{name}'" for name in sorted(expected))
+    query = f"SELECT json_object_agg(extname, extversion)::text FROM pg_extension WHERE extname IN ({names})"
+    versions = json.loads(run([*psql, "-tA", "-c", query], environment))
+    if not isinstance(versions, dict) or set(versions) != expected or any(not isinstance(value, str) or not value for value in versions.values()):
+        raise RuntimeError(f"installed SQL extension versions do not match declared extensions: {versions!r}")
+    return versions
 
 
 def dump_restore_probe(output: Path, bin_dir: Path, psql: list[str],
@@ -283,7 +327,7 @@ def main() -> None:
     package_archives: dict[str, Path] = {}
     for selection in arguments.package_archive:
         name, separator, filename = selection.partition("=")
-        if not separator or name not in SUPPORT["packages"] or not filename or name in package_archives:
+        if not separator or name not in PACKAGES or not filename or name in package_archives:
             parser.error(f"invalid or duplicate package archive: {selection}")
         package_archives[name] = Path(filename)
     label = "all" if len(package_archives) > 1 else next(iter(package_archives), "postgresql")

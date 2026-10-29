@@ -1,0 +1,45 @@
+{
+  "sources": {
+    "postgis": {
+      "project": "PostGIS",
+      "url": "https://download.osgeo.org/postgis/source/postgis-3.6.4.tar.gz",
+      "sha256": "ed8dc6679f1e06f7b113592b04cde2a7e00f1b1e681294c8ca2204058990cec6"
+    },
+    "tiger_geocoder": {
+      "project": "PostGIS TIGER Geocoder",
+      "url": "https://download.osgeo.org/postgis/source/postgis_tiger_geocoder/postgis_tiger_geocoder-2025.2.tar.gz",
+      "sha256": "c33cfbfb40785db8754a36be66060e8d023773e7e1be8fb8a622bb3c48db9f54"
+    },
+    "sfcgal": {
+      "project": "SFCGAL",
+      "url": "https://gitlab.com/SFCGAL/SFCGAL/-/archive/137203dae01faab4a1287934f9457e925e3b4383/SFCGAL-137203dae01faab4a1287934f9457e925e3b4383.tar.gz",
+      "sha256": "426abf9ac0de764a6098abe89c9dc84aa59273d0c5ff90819ed49a9c21f1c21f"
+    }
+  },
+  "extensions": {
+    "postgis": {},
+    "postgis_raster": {},
+    "postgis_sfcgal": {},
+    "postgis_topology": {},
+    "postgis_tiger_geocoder": {}
+  },
+  "config": {
+    "environment_paths": {
+      "PROJ_DATA": "share/proj",
+      "GDAL_DATA": "share/gdal"
+    }
+  },
+  "linux_apt_packages": [
+    "libgeos-dev",
+    "libproj-dev",
+    "proj-data",
+    "libgdal-dev",
+    "gdal-data",
+    "libjson-c-dev",
+    "libsfcgal-dev",
+    "libprotobuf-c-dev",
+    "protobuf-c-compiler",
+    "libxml2-dev",
+    "libxslt1-dev"
+  ]
+}

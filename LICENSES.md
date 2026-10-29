@@ -34,7 +34,7 @@ This file identifies the declared terms for PostgreSQL, the selected extension p
 
 ## PostGIS runtime dependencies
 
-The PostGIS archives include libraries and data from the projects below. Conda-forge records document the macOS ARM64 packages in [the lock file](packages/postgis/macos-arm64/conda-lock.txt); Ubuntu Jammy package links document the Linux ARM64 provider packages and their copyright declarations.
+The PostGIS archives include libraries and data from the projects below. Conda-forge records document the macOS ARM64 packages in [the lock file](packages/postgis/internal/macos-arm64/conda-lock.txt); Ubuntu Jammy package links document the Linux ARM64 provider packages and their copyright declarations.
 
 - Blosc — BSD-3-Clause. [Conda-forge record](https://anaconda.org/conda-forge/blosc); [Ubuntu Jammy package](https://packages.ubuntu.com/jammy/libblosc1).
 - bzip2 — bzip2 licence, approved for the bundled library. [Source and licence](https://gitlab.com/bzip2/bzip2/-/blob/bzip2-1.0.8/LICENSE); [Conda-forge record](https://anaconda.org/conda-forge/bzip2); [Ubuntu Jammy package](https://packages.ubuntu.com/jammy/libbz2-1.0).

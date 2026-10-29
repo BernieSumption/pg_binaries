@@ -5,19 +5,20 @@ import argparse
 import os
 from pathlib import Path
 import subprocess
+import sys
 
 
 ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT))
+
+from build_support.metadata import load_package
 
 
 def requirements(component: str) -> list[str]:
-    package = ROOT / "packages" / component / "linux-build-requirements.txt"
-    if not package.is_file():
-        raise ValueError(f"Missing Linux requirements for {component}")
-    names = []
-    for path in (ROOT / "platforms/linux/base-build-requirements.txt", package):
-        for line in path.read_text(encoding="utf-8").splitlines():
-            names.extend(line.split("#", 1)[0].split())
+    names = list(load_package(component).get("linux_apt_packages", []))
+    path = ROOT / "platforms/linux/base-build-requirements.txt"
+    for line in path.read_text(encoding="utf-8").splitlines():
+        names.extend(line.split("#", 1)[0].split())
     return sorted(set(names))
 
 

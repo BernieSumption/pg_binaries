@@ -1,0 +1,18 @@
+{
+  "sources": {
+    "address_standardizer": {
+      "project": "Address Standardizer",
+      "url": "https://github.com/postgis/address_standardizer/archive/refs/tags/v3.7.0.tar.gz",
+      "sha256": "21f07be08747200efa71e275de079c35ba45acdc9aee0b17ed7879459d42ea43"
+    },
+    "pcre2": {
+      "project": "PCRE2",
+      "url": "https://github.com/PCRE2Project/pcre2/releases/download/pcre2-10.48/pcre2-10.48.tar.bz2",
+      "sha256": "b6c68fdf6f3ac31388b50aa89ff0fc49c00c987c16e7b5146491d12003f2c8ed"
+    }
+  },
+  "extensions": {
+    "address_standardizer": {},
+    "address_standardizer_data_us": {}
+  }
+}

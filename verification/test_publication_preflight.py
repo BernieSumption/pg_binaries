@@ -8,6 +8,7 @@ import unittest
 
 from verification.publication_preflight import PreflightError, check
 from verification.inventory import RELEASE_BASE, make_inventory
+from build_support.metadata import load_selection
 
 
 class PublicationPreflightTests(unittest.TestCase):
@@ -16,15 +17,18 @@ class PublicationPreflightTests(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
         self.support_path = self.root / "support.json"
-        self.support = {
-            "schema_version": 1,
-            "postgresql": {"version": "18.6", "config": {"shared_preload_libraries": ["x"]}},
-            "targets": {"macos-arm64": {"minimum_os_version": "11.0"}},
-            "packages": {"pgvector": {"sources": [{"project": "pgvector", "version": "0.8.7"}],
-                                         "config": {"setting": True},
-                                         "extensions": {"vector": {"config": {"x": 1}}}}},
-        }
-        self.support_path.write_text(json.dumps(self.support))
+        self.support_path.write_text(json.dumps({"targets": {"macos-arm64": {"minimum_os_version": "11.0"}}}))
+        for package, project in (("postgresql", "PostgreSQL"), ("pgvector", "pgvector")):
+            folder = self.root / "packages" / package
+            folder.mkdir(parents=True)
+            metadata = {"sources": {package: {"project": project, "url": "https://example.com/source.tar.gz", "sha256": "a" * 64}}}
+            if package == "pgvector":
+                metadata["extensions"] = {"vector": {}}
+                (folder / "probes").mkdir()
+                (folder / "probes/vector.sql").write_text("SELECT 1;")
+            (folder / "build.json").write_text(json.dumps(metadata))
+            (folder / "build.sh").write_text("#!/bin/sh\n")
+        self.support = load_selection(self.support_path)
         self.licences_path = self.root / "LICENSES.md"
         self.licences_path.write_text("# Licences\n\n- PostgreSQL — PostgreSQL License.\n- pgvector — PostgreSQL License.\n")
         self.paths = {}
@@ -53,6 +57,7 @@ class PublicationPreflightTests(unittest.TestCase):
                                 "origin_run": archives[name]["origin_run"]}
         self.paths = {name: self.root / f"{name}.tar.gz" for name in archives}
         report = {"target": "macos-arm64", "archives": archives,
+                  "postgresql_version": "18.6", "extension_versions": {"vector": "0.8.7"},
                   "combinations": [{"name": name, "outcome": "passed"}
                                    for name in ("postgresql-only", "pgvector", "all-packages")],
                   "postgresql_builtin_extensions": ["citext"]}
@@ -80,9 +85,10 @@ class PublicationPreflightTests(unittest.TestCase):
                   [("macos-arm64", self.selection_path, self.report_path)], self.support_path)
 
     def test_rejects_missing_copied_dependency_licence_entry(self):
-        self.support["postgresql"]["build_inputs"] = {
-            "macos-arm64": {"dependencies": {"icu": {"version": "78.3"}}}}
-        self.support_path.write_text(json.dumps(self.support))
+        path = self.root / "packages/postgresql/build.json"
+        metadata = json.loads(path.read_text())
+        metadata["sources"]["icu"] = {"project": "ICU4C", "url": "https://example.com/icu.tar.gz", "sha256": "b" * 64}
+        path.write_text(json.dumps(metadata))
         with self.assertRaisesRegex(PreflightError, "missing licence entries.*ICU4C"):
             check(self.inventory_path,
                   [("macos-arm64", self.selection_path, self.report_path)], self.support_path)

@@ -1,1 +1,0 @@
-libgeos-dev libproj-dev proj-data libgdal-dev gdal-data libjson-c-dev libsfcgal-dev libprotobuf-c-dev protobuf-c-compiler libxml2-dev libxslt1-dev

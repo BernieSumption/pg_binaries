@@ -46,10 +46,9 @@ jobs:
           python3 - <<'PY'
           import json
           import os
-          from pathlib import Path
+          from build_support.metadata import packages as discover_packages
 
-          support = json.loads(Path("support.json").read_text(encoding="utf-8"))
-          packages = list(support["packages"])
+          packages = list(discover_packages())
           operation = os.environ["OPERATION"] or "bootstrap"
           if operation == "retry-extension":
               package = os.environ["PACKAGE"]
@@ -81,16 +80,12 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p "$RUNNER_TEMP/output"
-          sudo mkdir -p /opt/postgresql
-          sudo chown "$USER":"$(id -gn)" /opt/postgresql
           cat > "$RUNNER_TEMP/postgresql-build.sh" <<'SH'
           set -euo pipefail
-          mkdir -p "$RUNNER_TEMP/dependencies"
-          python3 build.py --target linux-x86_64 postgresql-build "$RUNNER_TEMP/dependencies" "$RUNNER_TEMP/build" /opt/postgresql
-          python3 build.py --target linux-x86_64 postgresql-package /opt/postgresql "$RUNNER_TEMP/dependencies" "$RUNNER_TEMP/output"
-          version=$(python3 -c 'import json; print(json.load(open("support.json"))["postgresql"]["version"])')
-          archive="$RUNNER_TEMP/output/postgresql-$version-linux-x86_64.tar.gz"
-          development="$RUNNER_TEMP/output/postgresql-development-$version-linux-x86_64.tar.gz"
+          python3 build.py --target linux-x86_64 postgresql-build "$RUNNER_TEMP/postgresql-workspace"
+          python3 build.py --target linux-x86_64 postgresql-package "$RUNNER_TEMP/postgresql-workspace" "$RUNNER_TEMP/output"
+          archive="$RUNNER_TEMP/output/$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["archive"]["filename"])' "$RUNNER_TEMP/output/postgresql-build.json")"
+          development="$RUNNER_TEMP/output/$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["development_archive"]["filename"])' "$RUNNER_TEMP/output/postgresql-build.json")"
           python3 build.py --target linux-x86_64 archive-check "$archive"
           python3 build.py --target linux-x86_64 build-record postgresql "$archive" "$RUNNER_TEMP/output/record.json" --revision "$GITHUB_SHA" --development-archive "$development"
           SH
@@ -133,13 +128,6 @@ jobs:
           run_id="$GITHUB_RUN_ID"
           if [[ "$OPERATION" == retry-extension ]]; then run_id="$POSTGRESQL_RUN"; fi
           python3 build.py --target linux-x86_64 select-runs "$RUNNER_TEMP/postgresql-selection" --run "$run_id" --component postgresql
-          development=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["components"]["postgresql"]["development_archive"])' "$RUNNER_TEMP/postgresql-selection/selection.json")
-          mkdir -p "$RUNNER_TEMP/development"
-          tar -xzf "$development" -C "$RUNNER_TEMP/development"
-          sudo mkdir -p /opt/postgresql
-          sudo cp -a "$RUNNER_TEMP/development/postgresql/." /opt/postgresql/
-          sudo chown -R "$USER":"$(id -gn)" /opt/postgresql
-          test -x /opt/postgresql/bin/pg_config
       - name: Build extension package
         env:
           PACKAGE: ${{ matrix.package }}
@@ -148,9 +136,9 @@ jobs:
           mkdir -p "$RUNNER_TEMP/output"
           cat > "$RUNNER_TEMP/extension-build.sh" <<'SH'
           set -euo pipefail
-          python3 build.py --target linux-x86_64 extension-build "$PACKAGE" /opt/postgresql "$RUNNER_TEMP/output"
-          version=$(python3 -c 'import json; print(json.load(open("support.json"))["postgresql"]["version"])')
-          archive="$RUNNER_TEMP/output/$PACKAGE-postgresql-$version-linux-x86_64.tar.gz"
+          development=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["components"]["postgresql"]["development_archive"])' "$RUNNER_TEMP/postgresql-selection/selection.json")
+          python3 build.py --target linux-x86_64 extension-build "$PACKAGE" "$development" "$RUNNER_TEMP/output"
+          archive="$RUNNER_TEMP/output/$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["archive"]["filename"])' "$RUNNER_TEMP/output/extension-build.json")"
           postgres=$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["components"]["postgresql"]["archive"])' "$RUNNER_TEMP/postgresql-selection/selection.json")
           python3 build.py --target linux-x86_64 archive-check "$postgres" "$archive"
           python3 build.py --target linux-x86_64 build-record "$PACKAGE" "$archive" "$RUNNER_TEMP/output/record.json" --revision "$GITHUB_SHA" --postgresql-archive "$postgres"

@@ -15,12 +15,9 @@ from urllib.parse import quote
 from verification.archive import ArchiveError, read_archive
 from verification.inventory import InventoryError, RELEASE_BASE, make_inventory
 from verification.records import RecordError, sha256_file
+from build_support.metadata import MetadataError, load_selection
 
 ROOT = Path(__file__).resolve().parents[1]
-DEPENDENCY_LICENCE_NAMES = {
-    "openssl": "OpenSSL", "icu": "ICU4C", "lz4": "LZ4", "zstd": "Zstandard",
-    "libxml2": "libxml2", "libxslt": "libxslt", "pcre2": "PCRE2",
-}
 
 
 class PreflightError(ValueError):
@@ -43,23 +40,8 @@ def _check_licences(support: dict[str, Any], path: Path) -> None:
     except OSError as exc:
         raise PreflightError(f"cannot read {path}: {exc}") from exc
     entries = {match[1] for line in lines if (match := re.match(r"^- (.+?) — ", line))}
-    projects = {"PostgreSQL"}
-    for package in support["packages"].values():
-        projects.update(source["project"] for source in package.get("sources", []))
-    dependency_keys = {
-        name for inputs in support.get("postgresql", {}).get("build_inputs", {}).values()
-        for name in inputs.get("dependencies", {})
-    }
-    # Rust and cargo-pgrx are build tools; their files are not copied into archives.
-    dependency_keys.update(
-        name for package in support["packages"].values()
-        for inputs in package.get("build_inputs", {}).values()
-        for name in inputs if name not in {"rust", "cargo_pgrx"}
-    )
-    unknown = dependency_keys - DEPENDENCY_LICENCE_NAMES.keys()
-    if unknown:
-        raise PreflightError(f"unmapped copied dependency licence entries: {sorted(unknown)}")
-    projects.update(DEPENDENCY_LICENCE_NAMES[name] for name in dependency_keys)
+    projects = {source["project"] for package in [support["postgresql"], *support["packages"].values()]
+                for source in package["sources"].values()}
     missing = projects - entries
     if missing:
         raise PreflightError(f"{path}: missing licence entries: {sorted(missing)}")
@@ -67,11 +49,15 @@ def _check_licences(support: dict[str, Any], path: Path) -> None:
 
 def check(inventory_path: Path, pairs: list[tuple[str, Path, Path]], support_path: Path,
           licences_path: Path | None = None) -> int:
-    inventory, support = _load(inventory_path), _load(support_path)
+    inventory = _load(inventory_path)
+    try:
+        support = load_selection(support_path)
+    except (MetadataError, OSError, ValueError, KeyError) as exc:
+        raise PreflightError(f"cannot load build selection: {exc}") from exc
     packages = support.get("packages")
     targets = support.get("targets")
     if not isinstance(packages, dict) or not isinstance(targets, dict):
-        raise PreflightError("support.json must define packages and targets")
+        raise PreflightError("build selection must define packages and targets")
     _check_licences(support, licences_path or support_path.with_name("LICENSES.md"))
     expected_components = {"postgresql", *packages}
     seen: set[str] = set()
@@ -172,11 +158,11 @@ def check(inventory_path: Path, pairs: list[tuple[str, Path, Path]], support_pat
         raise PreflightError("inventory_version does not have the required format") from exc
     for field in ("schema_version", "os_support", "postgresql", "extensions"):
         if inventory.get(field) != expected[field]:
-            raise PreflightError(f"inventory {field} does not match support.json and verification reports")
+            raise PreflightError(f"inventory {field} does not match package metadata and verification reports")
     for component, expected_package in expected["packages"].items():
         actual_package = downloads.get(component)
         if not isinstance(actual_package, dict) or actual_package.get("config", {}) != expected_package.get("config", {}):
-            raise PreflightError(f"inventory package config does not match support.json for {component}")
+            raise PreflightError(f"inventory package config does not match package metadata for {component}")
     for component, record in downloads.items():
         if not isinstance(record, dict) or set(record.get("downloads", {})) != seen:
             raise PreflightError(f"inventory has extra or missing targets for {component}")
