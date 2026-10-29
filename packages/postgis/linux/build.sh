@@ -85,10 +85,7 @@ for directory in ('proj', 'gdal'):
 PY
 
 bash "$repo/platforms/linux/bundle-runtime.sh" "$stage" "$stage/lib/postgis-deps" "$pg" EXTENSION
-while IFS= read -r -d '' elf; do
-  file -b "$elf" | grep -q ELF || continue
-  case "$elf" in */postgis-deps/*) patchelf --set-rpath '$ORIGIN' "$elf" ;; *) patchelf --set-rpath '$ORIGIN:$ORIGIN/postgis-deps' "$elf" ;; esac
-done < <(find "$stage/lib" -type f -print0)
+bash "$repo/platforms/linux/relocate-runtime.sh" "$stage" POSTGIS
 
 archive="postgis-postgresql-${pg_version}-$target.tar.gz"
 bash "$(dirname "${BASH_SOURCE[0]}")/../../shared/archive.sh" "$work/payload" "$output_dir/$archive"

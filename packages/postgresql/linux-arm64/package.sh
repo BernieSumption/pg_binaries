@@ -34,14 +34,7 @@ for executable in "$root"/bin/*; do
   mv "$executable" "$root/libexec/$name"
   ln "$root/bin/.pg-launcher" "$executable"
 done
-while IFS= read -r -d '' elf; do
-  file -b "$elf" | grep -q ELF || continue
-  case "$elf" in
-    "$root/libexec/"*) patchelf --set-rpath '$ORIGIN/../lib:$ORIGIN/../lib/runtime:$ORIGIN/../lib/glibc' "$elf" ;;
-    "$root/lib/runtime/"*) patchelf --set-rpath '$ORIGIN:$ORIGIN/../glibc' "$elf" ;;
-    *) rel=$(realpath --relative-to="$(dirname "$elf")" "$root/lib"); patchelf --set-rpath "\$ORIGIN/$rel:\$ORIGIN/$rel/runtime:\$ORIGIN/$rel/glibc" "$elf" ;;
-  esac
-done < <(find "$root/libexec" -type f -print0; find "$root/lib" -path "$root/lib/glibc" -prune -o -type f -print0)
+bash "$repo/platforms/linux/relocate-runtime.sh" "$root" CORE
 printf '%s\n' 'See https://github.com/BernieSumption/pg_binaries/blob/main/LICENSES.md' > "$root/LICENCE"
 find "$root" -type d -exec chmod 755 {} +
 chmod 644 "$root/LICENCE"

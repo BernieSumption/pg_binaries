@@ -10,6 +10,6 @@ PostgreSQL is the core package. Its `build.sh` entry point takes the operating s
 
 Packages may add files required by their builds, such as dependency recipes or lock files. `build.py` passes selected sources through the same interface for every package and has no package-specific branches. Shared tools under `platforms/linux/` manage the local Linux development environment. Package recipes own their compilation options and file selection. `packages/shared/fetch.sh` downloads and checks selected sources; `packages/shared/archive.sh` writes the common licence pointer, normalises shared directory permissions and creates an archive and checksum.
 
-Linux PostgreSQL and PostGIS packaging use `platforms/linux/bundle-runtime.sh` to copy the runtime library closure. The helper compares any existing copy before accepting it, then scans newly copied libraries for further dependencies. Package recipes set their own relative ELF library paths after copying.
+Linux PostgreSQL and PostGIS packaging use `platforms/linux/bundle-runtime.sh` to copy the runtime library closure. The helper compares any existing copy before accepting it, then scans newly copied libraries for further dependencies. `platforms/linux/relocate-runtime.sh` sets relative ELF library paths after the package has arranged its files.
 
 Agents may edit this README when changing the contract, but must update the affected packages and `build.py` in the same change. Package-specific interfaces are not allowed unless this README explains why they are required.
