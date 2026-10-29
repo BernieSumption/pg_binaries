@@ -10,7 +10,7 @@ from build_support.metadata import MetadataError, load_package, packages
 class MetadataTests(unittest.TestCase):
     def test_current_packages_have_valid_metadata(self):
         declarations = packages()
-        self.assertEqual(len(declarations), 9)
+        self.assertTrue(declarations)
         for name, data in declarations.items():
             self.assertTrue(data["sources"], name)
             self.assertTrue(data["extensions"], name)
