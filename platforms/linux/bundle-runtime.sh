@@ -15,6 +15,8 @@ while :; do
         linux-vdso*|ld-linux*|libc.so*|libm.so*|libpthread.so*|libdl.so*|librt.so*|libresolv.so*|libnss_*) continue ;;
         libpq.so*) [[ $kind == EXTENSION ]] && continue ;;
       esac
+      [[ -e $root/lib/$name ]] && continue
+      [[ ! -f $path && -e $destination/$name ]] && continue
       [[ -f $path ]] || { echo "Unresolved runtime dependency $name for $binary" >&2; exit 1; }
       case "$path" in "$pg_prefix"/lib/*|"$root"/lib/*) continue ;; esac
       target="$destination/$name"
