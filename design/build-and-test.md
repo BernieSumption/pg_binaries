@@ -72,15 +72,17 @@ GitHub Actions workflows schedule jobs and transfer artefacts. Build commands pe
 
 ### Local iteration
 
-Agents develop recipes locally before porting them to GitHub Actions. The same build and verification commands run inside disposable macOS VMs, Linux Docker containers or Linux VMs. The host computer controls the VM or container and transfers source files and build archives. Compilation, dependency installation and tests that execute compiled artefacts take place inside the VM or container. Host package managers and `sudo` are not used to work around build problems.
+Agents develop build recipes locally before running them on GitHub Actions. The local loop aims to produce a plausible archive and resolve build failures quickly. An agent may run inexpensive smoke checks to diagnose a recipe.
 
-The local build VM or container retains installed toolchains, compiled files and packaged archives so an agent can rerun a failed command. A local source cache can retain downloads whose checksums match `support.json`. Local verification copies final archives into a separate clean test environment. Generated files stay outside Git, and unrelated local files, images, containers and VMs remain intact.
+macOS development runs in a Lume VM. Linux development runs in a Docker container or Lume VM. The host starts and stops the environment and transfers source files and archives. Compilation, dependency installation and execution of built software happen inside that environment, without installing build dependencies on the host.
 
-Lume supplies the macOS VM interface. Its CLI starts a headless VM, and SSH executes commands and transfers source and build archives. A stopped VM can be cloned to preserve a build state or recover from a failed iteration.
+Agents may install tools and libraries and otherwise change the development environment as their work requires. Reuse an environment across packages when that saves setup time. It may contain dependencies for many packages. If agents genuinely need incompatible changes or concurrent builds that would interfere with one another, create another VM or container when needed to enable parallel work.
+
+A Lume development VM retains installed tools and build files across stops and starts. Agents use its headless start, SSH and file transfer facilities for the build loop. Linux containers may likewise retain installed tools and use persistent storage when that makes repeated builds cheaper.
+
+The same package build commands run locally and in GitHub Actions jobs. GitHub jobs prepare their runner environments before invoking those commands. Local development can continue after GitHub builds begin; a failure found on a hosted runner is fixed in the shared recipe or runner setup and checked again where it occurred. Archive verification uses a separate clean environment as described below.
 
 Adding or updating a project includes the dependency and licence review in [dependency-licenses.md](dependency-licenses.md#dependency-review-during-development).
-
-GitHub Actions workflows use scoped targets and reasonable job timeouts. Agents space status checks, download build archives and test results after jobs finish, and back off on secondary rate limits while continuing independent work.
 
 ## Verification job details
 

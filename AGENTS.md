@@ -2,10 +2,6 @@
 
 This repository builds standalone PostgreSQL distributions with extensions for supported platforms. A distribution consists of PostgreSQL and independently downloadable extension archives that can be installed together and verified from their final archive bytes.
 
-## Keep things simple, stop and report when things get complex
-
-The intention of this repository is that we are doing something fairly simple. There is a lot of work to do because Postgres has many extensions, but fundamentally, this is supposed to be a collection of build scripts for build Postgres extensions for different platforms and packaging them together. If anything in the design implies a difficult challenge that goes beyond straightforward creation of build scripts and test scripts, it is quite likely unintentional. Most requirements are flexible to an extent - agents should not unilaterally change them, but they can be changed by agreement if they cause issues. If an implementation agent finds itself stuck in a loop trying to get past a difficult implementation challenge, then stop and add an item to the human review queue to revisit the.
-
 ## Specifications
 
 `design/` describes the distribution's intended behaviour and how it is built and verified. Each document covers one coherent subject and contains both product requirements and the design decisions needed to implement them.

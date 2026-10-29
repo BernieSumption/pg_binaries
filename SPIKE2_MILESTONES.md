@@ -18,8 +18,6 @@ Use a disposable macOS VM to build the latest stable PostgreSQL release and the 
 
 Lume supplies the disposable macOS VM. Its CLI starts the VM without a viewer, and SSH runs build commands and transfers source and output files. Trial selective rebuild, cloning and recovery during this milestone. If the local loop fails materially, stop dependent build work and record the evidence in the human review queue.
 
-Open questions: the minimum macOS version to claim, the exact PostgreSQL release and build flags for its selected capabilities, and the latest compatible release of each selected project after checking the projects’ current compatibility documentation.
-
 Prior work to inspect: `scripts/macos/`, the selected package recipes and SQL probes, `tests/builtins/`, `tests/extensions/`, Mac archive and relocation tests, and Mac static-analysis and diagnostics tools.
 
 ## 3. Verify the coherent Mac ARM64 installation
@@ -48,6 +46,20 @@ Build and test both Intel targets on GitHub-hosted runners. Use local ARM64 resu
 
 Prior work to inspect: Intel Mac and Linux pilots, platform build scripts, architecture checks and target-specific verification cases. Revisit the selected projects’ dated platform evidence in `tmp-spike-1/policies/extensions.md`, including pgrx’s tested architectures.
 
+## 6.5 Review structure of build scripts
+
+In cooperation with human, look at build scripts, see if we need to deduplicate or add structure over how dependencies are fetched and how compilation works. How much abstraction is the right amount?
+
+Specifically to review:
+
+1. should packages declare dependenncies that are installed/checked centrally rather than each script being respnsible for fetching its own deps?
+2. should we parameterise both os (linux/mac) as well as arch in the build scripts?
+3. Do scripts have any fully common setup that can be pulled out?
+4. How are we handling the relocation of library dependencies and is/should this be abstracted?
+5. I'm told that Postgres needs a shim to load a bundled libc then delegate to the real binary, because Postgres expects an absolute path to libc. Fine if that's the best way but is static linking an alternative, or is there a way to get relative paths in more simply?
+6. Should we do Windows now before we add the remaining 100 extensions? Assume that we can find a product that gives as good local iteration DX as Lume.
+7. Open question: how to build and package native libraries shared by several extension packages, or handle file path clashes. As specified, we allow duplicate files if they're byte identical. If this works, great. But independently building the same library from one recipe does not guarantee identical bytes, while archives installing different bytes at the same path violate the current installation contract. If the byte-identical requirement doesn't work, consider building shared libraries once for the affected extension jobs, packaging private copies at separate paths, or another approach. Evaluate build orchestration, independent extension downloads and whether the libraries can coexist in one PostgreSQL process. Resolve this question and update the design when catalogue expansion requires it; if the initial extension set exposes the problem, bring the decision forward.
+
 ## 7. Prepare a thin release candidate
 
 Assemble and test the complete selected extension set on every platform in the candidate. Review licence coverage, diagnostics, archive size, download metadata and client installation. Generate an inventory from verified assets and dry-run publication. Decide whether this slice is suitable for a public release. Publication requires separate human authorisation.
@@ -67,8 +79,6 @@ Candidate activities to discuss include moving an installation after it has been
 Decide which old and newly researched projects belong in the distribution. Record each accepted project's package grouping and inclusion decision in `design/extensions.md` before building it. Build each batch locally where possible, then on its GitHub targets, and add it to coherent installation testing. Keep the selected release for each project to the latest stable version compatible with the selected PostgreSQL release. Grow toward the roughly 100-project ambition, adjusting batch size using measured build time, disk use and porting effort.
 
 Prior work to inspect: every project decision, exclusion, unreviewed candidate and dated hosting-provider catalogue in `tmp-spike-1/policies/extensions.md`, plus sources and applicable old tests. Those catalogue records are deferred to this milestone rather than discarded.
-
-Open question: how to build and package native libraries shared by several extension packages, or handle file path clashes. As specified, we allow duplicate files if they're byte identical. If this works, great. But independently building the same library from one recipe does not guarantee identical bytes, while archives installing different bytes at the same path violate the current installation contract. If the byte-identical requirement doesn't work, consider building shared libraries once for the affected extension jobs, packaging private copies at separate paths, or another approach. Evaluate build orchestration, independent extension downloads and whether the libraries can coexist in one PostgreSQL process. Resolve this question and update the design when catalogue expansion requires it; if the initial extension set exposes the problem, bring the decision forward.
 
 ## 9. Add Windows x86_64
 
