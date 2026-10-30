@@ -109,7 +109,7 @@ def make_inventory(reports: list[Path], tag: str, support: dict[str, Any], *,
 
         builtins = report.get("postgresql_builtin_extensions")
         if (not isinstance(builtins, list) or not builtins
-                or any(not isinstance(name, str) or not re.fullmatch(r"[a-z][a-z0-9_]*", name)
+                or any(not isinstance(name, str) or not re.fullmatch(r"[a-z][a-z0-9_-]*", name)
                        for name in builtins)
                 or len(builtins) != len(set(builtins))):
             raise InventoryError(f"{report_path}: invalid PostgreSQL built-in extension list")

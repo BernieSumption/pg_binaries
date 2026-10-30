@@ -43,7 +43,7 @@ class InventoryDraftTests(unittest.TestCase):
             },
             "combinations": [{"name": n, "outcome": o} for n, o in (
                 outcomes if outcomes is not None else default_outcomes)],
-            "postgresql_builtin_extensions": builtins if builtins is not None else ["citext", "hstore"],
+            "postgresql_builtin_extensions": builtins if builtins is not None else ["citext", "hstore", "uuid-ossp"],
         }
         path = self.root / name
         path.write_text(json.dumps(report), encoding="utf-8")
@@ -56,6 +56,7 @@ class InventoryDraftTests(unittest.TestCase):
         self.assertEqual(result["inventory_version"], "18.6-2026-10-27-0123abcd")
         self.assertEqual(result["os_support"], {"macos": {"minimum_version": "11.0"}})
         self.assertEqual(result["extensions"]["citext"], {"package": "postgresql"})
+        self.assertEqual(result["extensions"]["uuid-ossp"], {"package": "postgresql"})
         self.assertEqual(result["extensions"]["postgis"]["version"], "3.6.4")
         self.assertEqual(result["extensions"]["postgis_tiger_geocoder"]["version"], "2025.2")
         self.assertEqual(result["extensions"]["pgaudit"]["config"], {"shared_preload_libraries": ["pgaudit"]})
