@@ -21,6 +21,21 @@ else
   configure_options+=(--disable-rpath)
 fi
 
+if [[ $os == linux ]]; then
+  # The backend exports incompatible lo_read/lo_write C APIs. Bind libpq's own calls locally;
+  # GDAL uses these unique aliases. Mach-O's named library bindings need no aliases.
+  exports_file="$source_dir/src/interfaces/libpq/exports.txt"
+  next_ordinal=$(awk '$2 ~ /^[0-9]+$/ && $2 > maximum { maximum = $2 } END { print maximum + 1 }' "$exports_file")
+  printf '%s %s\n' pg_binaries_libpq_lo_read "$next_ordinal" \
+    pg_binaries_libpq_lo_write "$((next_ordinal + 1))" >> "$exports_file"
+  cat >> "$source_dir/src/interfaces/libpq/Makefile" <<'EOF'
+
+override LDFLAGS_SL += -Wl,-Bsymbolic-functions \
+  -Wl,--defsym=pg_binaries_libpq_lo_read=lo_read \
+  -Wl,--defsym=pg_binaries_libpq_lo_write=lo_write
+EOF
+fi
+
 cd "$workspace/build/postgresql"
 "$source_dir/configure" "${configure_options[@]}" \
   --with-icu --with-lz4 --with-zstd --with-zlib --with-ssl=openssl \
