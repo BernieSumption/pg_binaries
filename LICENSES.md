@@ -1,6 +1,6 @@
 # Licences
 
-This file identifies the declared terms for PostgreSQL, the selected extension projects and dependencies copied into the distribution. Source archives and checksums for the selected project releases are recorded in `support.json`. Dependencies added to packaged archives are added here when their recipes are implemented.
+This file identifies the declared terms for PostgreSQL, the selected extension projects and dependencies copied into the distribution. Source archives and checksums are recorded in each package's `build.json`. Build tools listed separately below are not included in the downloads.
 
 ## PostgreSQL and extension projects
 
@@ -15,6 +15,10 @@ This file identifies the declared terms for PostgreSQL, the selected extension p
 - pgAudit — PostgreSQL licence. [Source and `LICENSE`](https://github.com/pgaudit/pgaudit/blob/18.0/LICENSE).
 - pgTAP — PostgreSQL-style permissive terms. [Source and licence declaration](https://github.com/theory/pgtap/blob/v1.3.4/README.md#copyright-and-license).
 - pg_jsonschema — Apache-2.0. [Source and `LICENSE`](https://github.com/supabase/pg_jsonschema/blob/v0.3.4/LICENSE).
+
+## Build tools
+
+- PatchELF — GPL-3.0-or-later. Used to prepare Linux PostGIS libraries; the tool is not redistributed. [Source and licence declaration](https://github.com/NixOS/patchelf/blob/0.18.0/README.md).
 
 ## PostgreSQL build dependencies
 
