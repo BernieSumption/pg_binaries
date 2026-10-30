@@ -47,10 +47,12 @@ cd "$workspace/sources/postgis"
   --with-projdir="$deps" --with-jsondir="$deps" --with-xml2config="$tools/xml2-config" \
   --with-sfcgal="$deps/bin/sfcgal-config" --with-raster --with-protobufdir="$deps" \
   --without-address-standardizer --without-tiger
-make -j"$(sysctl -n hw.ncpu)"
+# PGXS puts these flags before PostgreSQL's inherited system-library paths.
+pg_ldflags="-L$deps/lib${PG_LDFLAGS:+ $PG_LDFLAGS}"
+make PG_LDFLAGS="$pg_ldflags" -j"$(sysctl -n hw.ncpu)"
 stage="$work/stage"
-make install DESTDIR="$stage"
-make -C "$workspace/sources/tiger_geocoder" PG_CONFIG="$pg/bin/pg_config"
-make -C "$workspace/sources/tiger_geocoder" PG_CONFIG="$pg/bin/pg_config" DESTDIR="$stage" install
+make PG_LDFLAGS="$pg_ldflags" install DESTDIR="$stage"
+make -C "$workspace/sources/tiger_geocoder" PG_CONFIG="$pg/bin/pg_config" PG_LDFLAGS="$pg_ldflags"
+make -C "$workspace/sources/tiger_geocoder" PG_CONFIG="$pg/bin/pg_config" PG_LDFLAGS="$pg_ldflags" DESTDIR="$stage" install
 
 python3 "$internal/collect.py" "$stage" "$pg" "$workspace/payload" "$deps/share" .dylib
