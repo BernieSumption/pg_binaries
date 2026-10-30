@@ -14,7 +14,7 @@ from urllib.parse import quote
 
 from verification.archive import ArchiveError, read_archive
 from verification.inventory import InventoryError, RELEASE_BASE, make_inventory
-from verification.records import RecordError, sha256_file
+from verification.records import RecordError, selected_inputs, sha256_file
 from build_support.metadata import MetadataError, load_selection
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -86,6 +86,12 @@ def check(inventory_path: Path, pairs: list[tuple[str, Path, Path]], support_pat
             raise PreflightError(f"{report_path}: archive records must include every component")
         if not isinstance(selected, dict) or set(selected) != expected_components:
             raise PreflightError(f"{selection_path}: selection must include every component")
+        build_records = report.get("build_records")
+        if not isinstance(build_records, dict) or set(build_records) != expected_components:
+            raise PreflightError(f"{report_path}: build records must include every component")
+        pg_version = report.get("postgresql_version")
+        if not isinstance(pg_version, str) or not pg_version:
+            raise PreflightError(f"{report_path}: missing verified PostgreSQL version")
         builtin_names = report.get("postgresql_builtin_extensions")
         if (not isinstance(builtin_names, list) or not builtin_names
                 or any(not isinstance(name, str) for name in builtin_names)
@@ -101,6 +107,30 @@ def check(inventory_path: Path, pairs: list[tuple[str, Path, Path]], support_pat
             record, item = archives[component], selected[component]
             if not isinstance(record, dict) or not isinstance(item, dict):
                 raise PreflightError(f"{target}: invalid archive selection for {component}")
+            build_record = build_records[component]
+            if (not isinstance(build_record, dict)
+                    or build_record.get("component") != component or build_record.get("target") != target
+                    or build_record.get("postgresql_version") != pg_version
+                    or build_record.get("archive") != {"filename": record.get("filename"), "sha256": record.get("sha256")}):
+                raise PreflightError(f"{target}: build record does not match verified {component} archive and PostgreSQL version")
+            try:
+                sources, inputs = selected_inputs(support, target, component, root=support_path.parent)
+            except RecordError as exc:
+                raise PreflightError(f"{target}: cannot inspect current {component} build inputs: {exc}") from exc
+            if build_record.get("sources") != sources or build_record.get("build_inputs") != inputs:
+                raise PreflightError(f"{target}: {component} build record differs from current sources or build inputs")
+            if component != "postgresql":
+                pg_record = build_records["postgresql"]
+                if not isinstance(pg_record, dict) or build_record.get("postgresql_archive") != pg_record.get("archive"):
+                    raise PreflightError(f"{target}: {component} was built against a different PostgreSQL archive")
+                if "postgresql_development_archive" in build_record:
+                    development = build_record["postgresql_development_archive"]
+                    expected_development = pg_record.get("development_archive")
+                    if (not isinstance(development, dict) or not isinstance(expected_development, dict)
+                            or not isinstance(development.get("sha256"), str)
+                            or not re.fullmatch(r"[0-9a-f]{64}", development["sha256"])
+                            or development["sha256"] != expected_development.get("sha256")):
+                        raise PreflightError(f"{target}: {component} was built against a different PostgreSQL development archive")
             digest, path_value = record.get("sha256"), item.get("archive")
             archive_path = Path(path_value) if isinstance(path_value, str) else Path()
             if (not isinstance(digest, str) or item.get("sha256") != digest
