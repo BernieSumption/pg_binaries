@@ -6,7 +6,7 @@ The Linux compatibility proposal below needs human review before adoption. Candi
 
 The remaining decisions are which local environments to use, whether each active build agent gets its own environment, and practical concurrency limits. Separate workspaces isolate build files, but agents sharing a container or VM can still interfere through changes to installed system dependencies.
 
-Milestone 6.6's Parallels research will inform these decisions, including whether to retain Docker and Lume for some platforms. Limits need evidence about host memory pressure and useful build throughput with concurrent agents.
+The Parallels assessment in `IMPLEMENTATION_STATUS.md` recommends a Pro trial starting with Windows 11 ARM. Whether to adopt it for Linux and Mac, retain Docker or Lume, and allocate one environment per agent remains undecided. The proposed experiment measures host memory pressure and useful build throughput before setting concurrency limits.
 
 ## Compiled dependency caching
 
@@ -24,6 +24,6 @@ The new verifier found a pre-existing conflict beyond PCRE2: the PostgreSQL back
 
 The candidate keeps libpq's internal calls local, adds `pg_binaries_libpq_lo_read` and `pg_binaries_libpq_lo_write` as aliases for its client functions, and changes GDAL's two undefined imports to those aliases. Both original public APIs remain exported; the aliases have the original client functions' addresses. The PostgreSQL loader and GDAL's features remain unchanged. Only a private GDAL copy is patched, using pinned PatchELF 0.18.0 built from a declared source archive.
 
-The candidate is implemented on the review branch in commits `105de9ca` and `bdeb4ae7`. Fresh Linux ARM64 and x86_64 PostgreSQL and PostGIS individual checks pass, including symbol isolation and SQL probes; complete-installation validation is still in progress. Original failures and prototype evidence are retained under `out/milestone-6.6/verification-first/`.
+The candidate is implemented on the review branch in commits `105de9ca` and `bdeb4ae7`. Both Linux targets pass PostgreSQL alone, each of nine extension packages and the complete installation. Fresh backend processes also pass the Address Standardizer/PostGIS load orders in both directions: loader traces confirm GDAL's aliases bind to libpq, and SQL probes and a backend large-object round trip succeed. Original failures and prototype evidence are retained under `out/milestone-6.6/verification-first/`; final reports and load-order evidence are under each Linux target in `out/milestone-6.6/`.
 
-Please decide whether to adopt this compatibility fix. It avoids rebuilding GDAL from source or changing existing public function names, but adds two Linux-specific aliases, a pinned build tool and a GDAL import rewrite to maintain. The static PCRE2 policy and fix are independent. Without this candidate, the new verifier continues to reject the existing Linux libpq/GDAL combination. Candidate validation does not constitute approval.
+Please decide whether to adopt this compatibility fix. It avoids rebuilding GDAL from source or changing existing public function names, but adds two Linux-specific aliases, a pinned build tool and a GDAL import rewrite to maintain. Another dependency loaded into the backend and importing these client functions would need the same treatment. The static PCRE2 policy and fix are independent. Without this candidate, the new verifier continues to reject the existing Linux libpq/GDAL combination. Candidate validation does not constitute approval.

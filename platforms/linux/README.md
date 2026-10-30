@@ -8,4 +8,4 @@ Each invocation creates a separate build directory under `/work`. Installed tool
 
 `docker stop pg-binaries-linux-arm64-dev` retains installed tools and files; `docker rm pg-binaries-linux-arm64-dev` removes the container, while the host-mounted workspace remains.
 
-The separate `verification/linux/run-local.sh` command checks final archives in a clean, disposable container.
+The separate `verification/linux/run-local.sh` command checks final archives in a clean, disposable container. Verification keeps its installation, database and Unix sockets on writable storage inside the container, then copies completed reports to the host. Host-mounted socket directories fail PostgreSQL's permission changes on the current Docker setup.
