@@ -67,11 +67,15 @@ WORKSPACE/
   payload/          Selected runtime files
 ```
 
-On Mac the harness sets `MACOSX_DEPLOYMENT_TARGET` to the minimum supported macOS version and supplies `PG_LDFLAGS` for PGXS builds to reserve space for later library-path changes. Build scripts preserve these settings when adding their own build flags. Prebuilt runtime libraries meet the same minimum macOS version.
+On Mac the harness sets `MACOSX_DEPLOYMENT_TARGET` to the minimum supported macOS version and supplies linker options in `PG_LDFLAGS` to reserve space for later library-path changes. Standard PGXS builds use these settings without extra arguments. Build scripts leave `MACOSX_DEPLOYMENT_TARGET` unchanged and retain the supplied `PG_LDFLAGS` when adding their own linker options. For build systems that do not interpret these environment variables, build scripts pass the equivalent compiler and linker options explicitly. Any prebuilt runtime libraries included by the build script must support the supplied minimum macOS version.
 
-Build scripts use `WORKSPACE/postgresql/bin/pg_config`. They may install into this private PostgreSQL copy or stage installation beneath `build/` using `DESTDIR`, which prepends a staging directory to each installation path.
+Build scripts use `WORKSPACE/postgresql/bin/pg_config`. They may install into this private PostgreSQL copy or use `build/` for build output.
 
 The build script copies the files needed to use the extension into `payload/`, including libraries, control files, SQL files and required data. `payload/<path>` installs as `postgresql/<path>`. Build tools, headers and sources stay out of the payload.
+
+Build scripts should default to statically linking package-private dependency libraries into extension modules and hiding the dependency symbols from other modules. PostgreSQL's extension entry points remain exported. This is because two extensions requiring different versions of the same library can lead to runtime issues. Later stages of the build pipeline validate that dependencies do not cause symbol-binding conflicts when extensions are loaded together. Using static linking reduces the chance of such a conflict.
+
+Dynamic linking is used where static linking creates substantial build, plugin or licence constraints. The reason is recorded with the package's build implementation. libc and compiler support libraries retain their platform-specific linkage.
 
 The harness copies required libraries from the build environment into `payload/`, then patches executables and libraries to find them using paths relative to their own location. This allows the installation directory to be moved. Libraries supplied by PostgreSQL or guaranteed by the operating system are reused. The harness handles any required signing.
 

@@ -4,12 +4,12 @@ No pending decision blocks the current local builds.
 
 ## Local build environments for concurrent agents
 
-Linux currently reuses one retained development container with a broad set of installed dependencies. Builds now use separate workspaces and private PostgreSQL installations. macOS uses retained Lume build VMs and a separate clean verification VM. Package dependency preparation is callable per component on GitHub runners and locally. Agents sharing an environment can still interfere through changes to installed system tools and dependencies.
+The remaining decisions are which local environments to use, whether each active build agent gets its own environment, and practical concurrency limits. Separate workspaces isolate build files, but agents sharing a container or VM can still interfere through changes to installed system dependencies.
 
-The proposed default is one development environment per active build agent. On Linux, each agent creates a container from the prepared image. On macOS, each agent clones the Lume base VM, then prepares the dependencies for the packages it builds. The agent retains installed tools and download/compiler caches across iterations; each build starts with a clean workspace. A separate clean environment verifies final archive bytes. This isolates changes to the build environment without repeating dependency installation on every attempt.
+Milestone 6.6's Parallels research will inform these decisions, including whether to retain Docker and Lume for some platforms. Limits need evidence about host memory pressure and useful build throughput with concurrent agents.
 
-Measured cold builds on native Intel, including packaging, took 26 minutes for PostgreSQL and 33 minutes for PostGIS. The clean-workspace contract also causes private dependencies to be rebuilt on each invocation. Please consider caching compiled dependency installations outside workspaces and copying them into fresh builds, with reuse tied to their source and build settings. This could shorten iteration while preserving the workspace contract.
+## Compiled dependency caching
 
-Build records fingerprint the package's private files, so changing an Intel lock file also invalidates records for the package's other targets. Please weigh that conservative check against the complexity of declaring which private inputs each target uses.
+Whether to add compiled dependency caching remains undecided. Fresh workspaces currently rebuild source-built private dependencies. Dependency preparation needs separate timing before choosing a cache scope; the recorded whole-build timings do not establish the likely saving.
 
-Please review this default and set a practical limit on concurrent Lume VMs and containers after measuring clone or container startup, dependency preparation, a repeated build and host memory use with two builds running. The existing shared Linux container remains useful for serial work until this decision is made. This decision does not block the Mac and Linux script refactor.
+If the measurements justify caching, its first scope and build-harness contract need agreement. Package-specific relocation requirements and reliable invalidation affect the cost. This decision does not block milestone 6.6.

@@ -25,7 +25,7 @@ While blocked on a response in HUMAN_REVIEW_QUEUE.md, make progress on other non
 
 ## Cost and architecture
 
-Optimize for low development cost, then speed. Delegate bounded tasks to agents suited to their difficulty. Run independent tasks in parallel only when their results will not cause one another to be redone.
+Optimise for low development cost, then speed. Delegate bounded tasks to agents suited to their difficulty. The system is designed to make extension build-script iteration manageable by Luna. Default to Luna for building extensions, diagnosing build errors and making package-local fixes. Provide the relevant build-harness commands and contract so each sub-agent does not need to rediscover them. Use a stronger model when the task requires broader design judgement or Luna cannot make progress. The expectation is that Luna will be able to handle 80% or more of build iteration. Record whether each delegated extension build-script task was completed by Luna or required upgrading to Sol. If Luna frequently struggles with tasks that it is intended to be capable of, add an item to the human review queue so that we can investigate whether architectural changes would make the system more suitable to cheaper models. Apply some basic statistical reasoning before adding a queue item - failure on multiple highly correlated tasks eg different platforms of the same extension, or very small sample sizes do not qualify. Run independent tasks in parallel only when their results will not cause one another to be redone.
 
 Keep the architecture simple enough to understand and extend across the intended build targets. Do not build a framework merely to avoid a small amount of repetition. During long tasks, revisit whether implementation cost is justified by the benefit. Simplify within the agreed scope or surface a material change for human review before proceeding.
 
@@ -41,7 +41,7 @@ Keep shared orchestration, platform support and verification machinery separate 
 
 Keep commits reviewable and coordinate edits to shared files. Do not push to `main`, force push, merge, delete branches, alter repository settings, publish a permanent GitHub Release or change public release assets without the human's explicit authorization. Do not control the host browser or desktop for this project. Repository instructions do not bypass sandbox or GitHub permissions. If a required operation is blocked by those controls, continue unaffected work and report the specific blocker.
 
-## Writing guide
+## Writing style guide
 
 Follow these rules when creating specifications and other documents in this repository and when talking with the user.
 

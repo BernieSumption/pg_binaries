@@ -27,6 +27,7 @@ if [[ ! -x "$tool_prefix/bin/cargo-pgrx" ]]; then
 fi
 export PATH="$tool_prefix/bin:$PATH"
 
+cp "$(dirname "${BASH_SOURCE[0]}")/internal/build.rs" "$source_dir/build.rs"
 pg_version=$("$pg_config" --version)
 pg_major=${pg_version#PostgreSQL }
 pg_feature="pg${pg_major%%.*}"
