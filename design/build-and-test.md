@@ -129,6 +129,12 @@ Examples of checks include:
 - Minimum OS version where supported
 - Use only of allowed system libraries
 
+### Dependency symbol isolation
+
+The verifier examines the PostgreSQL backend, its loadable modules and their native dependencies together. It reports competing library identities and symbol bindings that can make a consumer call another dependency implementation. The check uses final archive bytes and accounts for ELF symbol versions and relocations, expected PostgreSQL entry points, compiler ABI metadata and Mach-O named library bindings. Renaming dependency files alone does not establish isolation.
+
+The report identifies affected packages, libraries, consumers and symbols. A required failure or unavailable inspection fails release verification and blocks inventory generation and publication preflight. Exceptions identify the examined binaries and the reason their overlap is safe. Libraries loaded by application code and computed symbol lookups still require representative runtime probes.
+
 ### PostgreSQL lifecycle and schema operations
 
 These checks establish that the packaged command-line tools work with the installed server and its bundled libraries. For each installation, the test harness uses packaged `initdb` to create a database cluster, `pg_ctl` to start and stop PostgreSQL, and `psql` to run SQL, all as an ordinary user.

@@ -74,6 +74,19 @@ class DependencySymbolsTests(unittest.TestCase):
         self.add("lib/address.so", exports=["Pg_magic_func"], hidden=PCRE)
         self.assertEqual(self.run_inspect()["conflicts"], [])
 
+    def test_libpq_local_calls_alone_do_not_protect_gdal_client_imports(self):
+        public = ["lo_read", "lo_write"]
+        aliases = ["pg_binaries_libpq_lo_read", "pg_binaries_libpq_lo_write"]
+        self.add("bin/postgres", exports=public)
+        self.add("lib/postgis.so", exports=["Pg_magic_func"], needed=["gdal.so"])
+        self.add("lib/gdal.so", imports=public, needed=["libpq.so"])
+        self.add("lib/libpq.so", exports=[*public, *aliases], references=public)
+        self.assertEqual(self.run_inspect()["conflicts"][0]["symbols"], public)
+        self.add("lib/libpq.so", exports=[*public, *aliases])
+        self.assertEqual(self.run_inspect()["conflicts"][0]["symbols"], public)
+        self.add("lib/gdal.so", imports=aliases, needed=["libpq.so"])
+        self.assertEqual(self.run_inspect()["conflicts"], [])
+
     def test_postgres_entrypoints_weak_cpp_and_unique_symbols_are_safe(self):
         self.add("bin/postgres")
         for name in ("one", "two"):
@@ -127,7 +140,6 @@ class DependencySymbolsTests(unittest.TestCase):
 
     def test_lapack_exception_requires_exact_bytes_and_records_reason(self):
         self.add("bin/postgres")
-        # The exception also requires the audited package-private archive paths.
         binaries = {self.root / "bin/postgres": Binary(self.root / "bin/postgres")}
         first = self.root / "lib/postgis-deps/postgis-libblas.so.3"
         second = self.root / "lib/postgis-deps/postgis-liblapack.so.3"

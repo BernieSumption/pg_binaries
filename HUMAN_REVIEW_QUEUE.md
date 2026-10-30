@@ -1,6 +1,6 @@
 # Human review queue
 
-No pending decision blocks the current local builds.
+The Linux compatibility proposal below needs human review before adoption. Candidate builds can be tested while the decision is pending.
 
 ## Local build environments for concurrent agents
 
@@ -13,3 +13,17 @@ Milestone 6.6's Parallels research will inform these decisions, including whethe
 Whether to add compiled dependency caching remains undecided. Fresh workspaces currently rebuild source-built private dependencies. Dependency preparation needs separate timing before choosing a cache scope; the recorded whole-build timings do not establish the likely saving.
 
 If the measurements justify caching, its first scope and build-harness contract need agreement. Package-specific relocation requirements and reliable invalidation affect the cost. This decision does not block milestone 6.6.
+
+One proposal is for the harness to own the cache and prepare `build/dependencies/` before the extension build. A package would expose a separate dependency-build step with no cache logic. The harness would key successful dependency installations by their sources, dependency-build instructions, target, toolchain and settings, restoring a cached installation or running that step on a miss. Local environments would retain the cache directory; GitHub workflows would restore and save that same directory between runs. The package would use the same contract in both environments. Cached installations would still need to work at the new workspace path.
+
+A smaller alternative is compiler caching configured by the harness, reusing object compilation while retaining configuration and installation steps. The choice between these approaches, or deferring both, remains open. No caching implementation is authorised as part of milestone 6.6.
+
+## Proposed Linux libpq and GDAL symbol-binding fix
+
+The new verifier found a pre-existing conflict beyond PCRE2: the PostgreSQL backend and libpq export different `lo_read` and `lo_write` functions with incompatible signatures. Actual ARM64 loader traces showed libpq's calls binding to the backend functions. GDAL also imports the client functions, so fixing libpq's internal calls alone is insufficient.
+
+The candidate keeps libpq's internal calls local, adds `pg_binaries_libpq_lo_read` and `pg_binaries_libpq_lo_write` as aliases for its client functions, and changes GDAL's two undefined imports to those aliases. Both original public APIs remain exported; the aliases have the original client functions' addresses. The PostgreSQL loader and GDAL's features remain unchanged. Only a private GDAL copy is patched, using pinned PatchELF 0.18.0 built from a declared source archive.
+
+The candidate is implemented on the review branch in commits `105de9ca` and `bdeb4ae7`. Fresh Linux ARM64 and x86_64 PostgreSQL and PostGIS individual checks pass, including symbol isolation and SQL probes; complete-installation validation is still in progress. Original failures and prototype evidence are retained under `out/milestone-6.6/verification-first/`.
+
+Please decide whether to adopt this compatibility fix. It avoids rebuilding GDAL from source or changing existing public function names, but adds two Linux-specific aliases, a pinned build tool and a GDAL import rewrite to maintain. The static PCRE2 policy and fix are independent. Without this candidate, the new verifier continues to reject the existing Linux libpq/GDAL combination. Candidate validation does not constitute approval.
