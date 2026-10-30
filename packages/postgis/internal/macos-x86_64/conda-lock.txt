@@ -10,7 +10,7 @@ https://conda.anaconda.org/conda-forge/osx-64/giflib-6.1.3-had63097_2.conda#8f2a
 https://conda.anaconda.org/conda-forge/osx-64/libjpeg-turbo-3.2.1-hd115831_0.conda#15e93de716b1d53948a68f0d12b2171c
 https://conda.anaconda.org/conda-forge/osx-64/libdeflate-1.25-h7ad9622_1.conda#371a45a962d740d8191d46dd225e23df
 https://conda.anaconda.org/conda-forge/osx-64/libwebp-base-1.6.0-hb276fe9_1.conda#abc3595bd7aab5df201b76ecef123583
-https://conda.anaconda.org/conda-forge/osx-64/json-c-0.18-had63097_2.conda#806becdede500d492db3c343db4f825e
+https://conda.anaconda.org/conda-forge/osx-64/json-c-0.18-had63097_1.conda#7c6cee99a20664fa457e82180c19c9b3
 https://conda.anaconda.org/conda-forge/osx-64/ncurses-6.6-hcc0dc9a_1.conda#88a79390f87c8f3334b9999a892e78d4
 https://conda.anaconda.org/conda-forge/osx-64/libuv-1.52.1-ha3d0635_1.conda#17b0d6c818992264752f1a720be711fc
 https://conda.anaconda.org/conda-forge/osx-64/rhash-1.4.6-ha1e9b39_2.conda#773d8a5db899e5db9591c49d93ff8300
