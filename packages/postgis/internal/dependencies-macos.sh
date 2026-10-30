@@ -21,6 +21,8 @@ tar -xjf "$work/micromamba.tar.bz2" -C "$work" bin/micromamba
 export MAMBA_ROOT_PREFIX="$work/mamba-root"
 "$work/bin/micromamba" create --yes --prefix "$prefix" --file "$internal/macos-$arch/conda-lock.txt"
 
+# Keep SFCGAL with the locked shared geospatial libraries. Converting the full
+# dependency stack to static builds would also require preserving GDAL's drivers.
 "$prefix/bin/cmake" -S "$workspace/sources/sfcgal" -B "$work/sfcgal-build" \
   -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$prefix" -DCMAKE_PREFIX_PATH="$prefix" \
   -DCMAKE_INSTALL_RPATH="$prefix/lib" -DCMAKE_OSX_DEPLOYMENT_TARGET="$MACOSX_DEPLOYMENT_TARGET" \

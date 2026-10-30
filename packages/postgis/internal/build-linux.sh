@@ -8,6 +8,8 @@ stage="$workspace/build/stage"
 export PATH="$pg/bin:$PATH"
 export PROJ_DATA=/usr/share/proj PROJ_LIB=/usr/share/proj GDAL_DATA=/usr/share/gdal
 
+# Use the distro's shared geospatial libraries. Static linking would require
+# rebuilding their dependencies and preserving GDAL's driver configuration.
 cd "$workspace/sources/postgis"
 ./configure --prefix="$pg" --with-pgconfig="$pg/bin/pg_config" \
   --with-gdalconfig=/usr/bin/gdal-config --with-geosconfig=/usr/bin/geos-config \
