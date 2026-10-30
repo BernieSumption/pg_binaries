@@ -15,6 +15,9 @@ from urllib.parse import quote
 
 ROOT = Path(__file__).resolve().parents[1]
 SUPPORT_PATH = ROOT / "support.json"
+DEPENDENCY_CHECK = "dependency symbol isolation"
+
+
 RELEASE_BASE = "https://github.com/BernieSumption/pg_binaries/releases/download"
 
 
@@ -78,6 +81,11 @@ def make_inventory(reports: list[Path], tag: str, support: dict[str, Any], *,
                 or any(item.get("outcome") != "passed"
                        for item in combinations)):
             raise InventoryError(f"{report_path}: every required verification combination must pass")
+        for combination in combinations:
+            checks = combination.get("checks")
+            matches = [item for item in checks if isinstance(item, dict) and item.get("name") == DEPENDENCY_CHECK] if isinstance(checks, list) else []
+            if len(matches) != 1 or matches[0].get("outcome") != "passed":
+                raise InventoryError(f"{report_path}: {combination['name']} requires a passed {DEPENDENCY_CHECK} check")
         archives = report.get("archives")
         expected = {"postgresql", *package_names}
         if not isinstance(archives, dict) or set(archives) != expected:

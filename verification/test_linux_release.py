@@ -65,7 +65,7 @@ class LinuxReleaseTests(unittest.TestCase):
             def fake_verify(postgres, selected, output, target):
                 versions = {name: "test-sql-version" for package in selected
                             for name in package_metadata()[package]["extensions"]}
-                return [{"name": "PostgreSQL version", "outcome": "passed", "reason": None, "version": "18.6"},
+                return [{"name": "dependency symbol isolation", "outcome": "passed"}, {"name": "PostgreSQL version", "outcome": "passed", "reason": None, "version": "18.6"},
                         {"name": "SQL probes", "outcome": "passed", "reason": None, "extension_versions": versions}]
 
             with mock.patch.object(release.platform, "system", return_value="Linux"), \

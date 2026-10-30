@@ -56,7 +56,8 @@ class BuildRecordSelectionTests(unittest.TestCase):
              patch.object(release, "verify") as verify:
             def fake_verify(postgresql, selected, output, target):
                 base = checks if checks is not None else [
-                    {"name": "archive safety and overlap", "outcome": "passed", "reason": None}]
+                    {"name": "archive safety and overlap", "outcome": "passed", "reason": None},
+                    {"name": "dependency symbol isolation", "outcome": "passed", "reason": None}]
                 if any(item["outcome"] in ("failed", "not_run") for item in base):
                     return base
                 versions = {name: "test-sql-version" for package in selected
@@ -157,8 +158,14 @@ class BuildRecordSelectionTests(unittest.TestCase):
         report = json.loads((self.root / "report/verification-report.json").read_text(encoding="utf-8"))
         self.assertEqual(report["combinations"][0]["outcome"], "failed")
 
+    def test_missing_dependency_symbol_check_fails_release(self):
+        self.assertEqual(self.invoke(checks=[]), 1)
+        report = json.loads((self.root / "report/verification-report.json").read_text())
+        self.assertIn("dependency symbol isolation", report["combinations"][0]["reason"])
+
     def test_inapplicable_check_does_not_fail_release(self) -> None:
-        checks = [{"name": "PostgreSQL built-ins", "outcome": "not_applicable",
+        checks = [{"name": "dependency symbol isolation", "outcome": "passed"},
+                  {"name": "PostgreSQL built-ins", "outcome": "not_applicable",
                    "reason": "covered by the PostgreSQL-only combination"}]
         self.assertEqual(self.invoke(checks), 0)
 

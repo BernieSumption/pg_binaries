@@ -16,6 +16,7 @@ ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
 from verification.runtime import record_versions, verify
+from verification.dependency_symbols import CHECK_NAME
 from build_support.metadata import load_selection, packages as package_metadata
 from verification.archive import read_archive
 from verification.records import RecordError, selected_inputs
@@ -183,10 +184,15 @@ def main(argv=None) -> int:
                 entry["outcome"] = "failed"
                 entry["reason"] = f"{len(failed)} required check(s) failed or could not run"
             else:
+                isolation = [item for item in checks if item.get("name") == CHECK_NAME]
+                if len(isolation) != 1 or isolation[0].get("outcome") != "passed":
+                    raise RuntimeError(f"required {CHECK_NAME} check did not pass")
                 expected_extensions = {name for package in selected for name in metadata[package]["extensions"]}
                 record_versions(report, checks, expected_extensions, records["postgresql"].get("postgresql_version"))
             log.write_text(json.dumps(checks, indent=2) + "\n", encoding="utf-8")
         except Exception as error:
+            if not any(item.get("name") == CHECK_NAME for item in entry["checks"]):
+                entry["checks"].append({"name": CHECK_NAME, "outcome": "not_run", "reason": str(error)})
             entry["outcome"] = "failed"
             entry["reason"] = str(error)
             log.write_text(f"{type(error).__name__}: {error}\n", encoding="utf-8")

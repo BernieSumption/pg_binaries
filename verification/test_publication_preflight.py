@@ -66,7 +66,7 @@ class PublicationPreflightTests(unittest.TestCase):
         report = {"target": "macos-arm64", "archives": archives,
                   "build_records": build_records,
                   "postgresql_version": "18.6", "extension_versions": {"vector": "0.8.7"},
-                  "combinations": [{"name": name, "outcome": "passed"}
+                  "combinations": [{"name": name, "outcome": "passed", "checks": [{"name": "dependency symbol isolation", "outcome": "passed"}]}
                                    for name in ("postgresql-only", "pgvector", "all-packages")],
                   "postgresql_builtin_extensions": ["citext"]}
         selection = {"target": "macos-arm64", "components": components}
@@ -80,6 +80,13 @@ class PublicationPreflightTests(unittest.TestCase):
 
     def save_inventory(self):
         self.inventory_path.write_text(json.dumps(self.inventory))
+
+    def test_rejects_old_report_without_dependency_symbol_check(self):
+        report = json.loads(self.report_path.read_text())
+        del report["combinations"][0]["checks"]
+        self.report_path.write_text(json.dumps(report))
+        with self.assertRaisesRegex(PreflightError, "dependency symbol isolation"):
+            check(self.inventory_path, [("macos-arm64", self.selection_path, self.report_path)], self.support_path)
 
     def test_passes_complete_local_preflight(self):
         count = check(self.inventory_path,

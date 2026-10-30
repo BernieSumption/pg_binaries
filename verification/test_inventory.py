@@ -41,7 +41,7 @@ class InventoryDraftTests(unittest.TestCase):
                 "postgis": {"filename": "postgis-postgresql-18.6-macos-arm64.tar.gz", "sha256": "b" * 64},
                 "pgaudit": {"filename": "pgaudit-postgresql-18.6-macos-arm64.tar.gz", "sha256": "c" * 64},
             },
-            "combinations": [{"name": n, "outcome": o} for n, o in (
+            "combinations": [{"name": n, "outcome": o, "checks": [{"name": "dependency symbol isolation", "outcome": "passed"}]} for n, o in (
                 outcomes if outcomes is not None else default_outcomes)],
             "postgresql_builtin_extensions": builtins if builtins is not None else ["citext", "hstore", "uuid-ossp"],
         }
@@ -64,6 +64,16 @@ class InventoryDraftTests(unittest.TestCase):
         download = result["packages"]["postgresql"]["downloads"]["macos-arm64"]
         self.assertEqual(download["url"], "https://github.com/BernieSumption/pg_binaries/releases/download/v18.6/postgresql-18.6-macos-arm64.tar.gz")
         self.assertEqual(download["sha256"], "a" * 64)
+
+    def test_requires_dependency_symbol_check_in_every_combination(self):
+        for outcome in (None, "failed", "not_run", "not_applicable"):
+            path = self.report()
+            report = json.loads(path.read_text())
+            report["combinations"][-1]["checks"] = ([] if outcome is None else
+                [{"name": "dependency symbol isolation", "outcome": outcome}])
+            path.write_text(json.dumps(report))
+            with self.subTest(outcome=outcome), self.assertRaisesRegex(InventoryError, "dependency symbol isolation"):
+                make_inventory([path], "tag", self.support)
 
     def test_requires_every_combination_to_pass(self):
         with self.assertRaisesRegex(InventoryError, "every required verification combination"):

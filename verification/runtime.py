@@ -17,6 +17,7 @@ import urllib.request
 import uuid
 
 from verification.archive import read_archive, validate_archives
+from verification.dependency_symbols import CHECK_NAME, IsolationError, require_isolation
 from build_support.metadata import load_package, packages as package_metadata
 from packages.postgresql.probes.builtins import probe as probe_builtins
 from packages.postgresql.probes.capabilities import probe as probe_capabilities
@@ -58,6 +59,8 @@ def check(results: list[dict[str, str | None]], name: str,
         value = operation()
     except Exception as error:
         results.append({"name": name, "outcome": "failed", "reason": str(error)})
+        if isinstance(error, IsolationError):
+            results[-1]["details"] = error.details
         return False, None
     results.append({"name": name, "outcome": "passed", "reason": None})
     return True, value
@@ -157,7 +160,7 @@ def verify(postgresql_archive: Path, package_archives: dict[str, Path], output: 
     archives = [postgresql_archive, *package_archives.values()]
     safe, _ = check(results, "archive safety and overlap", lambda: validate_archives(archives))
     if not safe:
-        for name in ("archive contents", "extraction", "native libraries", "PostgreSQL version", "configuration",
+        for name in ("archive contents", "extraction", "native libraries", CHECK_NAME, "PostgreSQL version", "configuration",
                      "database startup", "SQL probes", "failed-operation diagnostics",
                      "PostgreSQL capabilities", "PostgreSQL built-ins", "TLS and sslinfo"):
             skipped(results, name, "archive safety check failed")
@@ -174,7 +177,7 @@ def verify(postgresql_archive: Path, package_archives: dict[str, Path], output: 
                 archive.extractall(installation_parent)
     extracted, _ = check(results, "extraction", extract)
     if not extracted:
-        for name in ("native libraries", "PostgreSQL version", "configuration", "database startup", "SQL probes",
+        for name in ("native libraries", CHECK_NAME, "PostgreSQL version", "configuration", "database startup", "SQL probes",
                      "failed-operation diagnostics", "PostgreSQL capabilities",
                      "PostgreSQL built-ins", "TLS and sslinfo"):
             skipped(results, name, "extraction failed")
@@ -188,6 +191,14 @@ def verify(postgresql_archive: Path, package_archives: dict[str, Path], output: 
         if static_failures:
             raise RuntimeError(f"native library inspection found {static_failures} issue(s)")
     check(results, "native libraries", inspect)
+    owners: dict[str, list[str]] = {}
+    for package, archive_path in {"postgresql": postgresql_archive, **package_archives}.items():
+        for path in read_archive(archive_path):
+            if path.startswith("postgresql/"):
+                owners.setdefault(path[len("postgresql/"):], []).append(package)
+    isolated, details = check(results, CHECK_NAME, lambda: require_isolation(installation, target, owners))
+    if isolated:
+        results[-1]["details"] = details
     database = output / "database"
     socket = output / "socket"
     socket.mkdir()

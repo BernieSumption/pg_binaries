@@ -13,7 +13,7 @@ from typing import Any
 from urllib.parse import quote
 
 from verification.archive import ArchiveError, read_archive
-from verification.inventory import InventoryError, RELEASE_BASE, make_inventory
+from verification.inventory import InventoryError, RELEASE_BASE, DEPENDENCY_CHECK, make_inventory
 from verification.records import RecordError, selected_inputs, sha256_file
 from build_support.metadata import MetadataError, load_selection
 
@@ -81,6 +81,11 @@ def check(inventory_path: Path, pairs: list[tuple[str, Path, Path]], support_pat
                 or len(combos) != len(expected_combos)
                 or any(not isinstance(c, dict) or c.get("outcome") != "passed" for c in combos)):
             raise PreflightError(f"{report_path}: every verification combination must pass")
+        for combination in combos:
+            checks = combination.get("checks")
+            matches = [item for item in checks if isinstance(item, dict) and item.get("name") == DEPENDENCY_CHECK] if isinstance(checks, list) else []
+            if len(matches) != 1 or matches[0].get("outcome") != "passed":
+                raise PreflightError(f"{report_path}: {combination['name']} requires a passed {DEPENDENCY_CHECK} check")
         archives, selected = report.get("archives"), selection.get("components")
         if not isinstance(archives, dict) or set(archives) != expected_components:
             raise PreflightError(f"{report_path}: archive records must include every component")

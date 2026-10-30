@@ -46,7 +46,17 @@ class RuntimeChecksTests(unittest.TestCase):
             checks = verify(archive, {}, output)
             self.assertEqual(checks[0]["outcome"], "failed")
             self.assertEqual(checks[1]["outcome"], "not_run")
+            self.assertEqual(next(item for item in checks if item["name"] == "dependency symbol isolation")["outcome"], "not_run")
             self.assertFalse(output.exists())
+
+    def test_extraction_failure_records_dependency_check_not_run(self):
+        with tempfile.TemporaryDirectory() as directory:
+            with patch("verification.runtime.validate_archives"), patch("verification.runtime.archive_contents"), \
+                    patch("verification.runtime.tarfile.open", side_effect=RuntimeError("extraction failed")):
+                checks = verify(Path("archive.tar.gz"), {}, Path(directory) / "output")
+        dependency = next(item for item in checks if item["name"] == "dependency symbol isolation")
+        self.assertEqual(dependency["outcome"], "not_run")
+        self.assertEqual(dependency["reason"], "extraction failed")
 
     def test_cleanup_removes_disposable_installation_and_database(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
