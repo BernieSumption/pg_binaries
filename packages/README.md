@@ -67,13 +67,15 @@ WORKSPACE/
   payload/          Selected runtime files
 ```
 
-On Mac the harness sets `MACOSX_DEPLOYMENT_TARGET` to the minimum supported macOS version. Build scripts use `WORKSPACE/postgresql/bin/pg_config`. They may install into this private PostgreSQL copy or stage installation beneath `build/` using `DESTDIR`.
+On Mac the harness sets `MACOSX_DEPLOYMENT_TARGET` to the minimum supported macOS version and supplies `PG_LDFLAGS` for PGXS builds to reserve space for later library-path changes. Build scripts preserve these settings when adding their own build flags. Prebuilt runtime libraries meet the same minimum macOS version.
+
+Build scripts use `WORKSPACE/postgresql/bin/pg_config`. They may install into this private PostgreSQL copy or stage installation beneath `build/` using `DESTDIR`, which prepends a staging directory to each installation path.
 
 The build script copies the files needed to use the extension into `payload/`, including libraries, control files, SQL files and required data. `payload/<path>` installs as `postgresql/<path>`. Build tools, headers and sources stay out of the payload.
 
 The harness copies required libraries from the build environment into `payload/`, then patches executables and libraries to find them using paths relative to their own location. This allows the installation directory to be moved. Libraries supplied by PostgreSQL or guaranteed by the operating system are reused. The harness handles any required signing.
 
-The build script installs private dependencies under `WORKSPACE/build/dependencies/`. The build harness resolves library references using the build environment and this prefix's `lib/` and `lib64/` directories, copying only required libraries into `payload/`.
+The build script installs private dependencies under `WORKSPACE/build/dependencies/`. PGXS builds put private `-L` options first in command-line `PG_LDFLAGS`, retaining the harness flags, so private libraries precede inherited system paths. The build harness resolves library references using the build environment and this prefix's `lib/` and `lib64/` directories, copying only required libraries into `payload/`.
 
 The build script includes runtime data and dynamically loaded libraries that binary inspection cannot discover, such as PostGIS's PROJ/GDAL data. The harness adds the licence pointer and creates the archive and checksum, following the [distribution layout and overlap rules](../design/distribution.md#archive-format-and-installation).
 
