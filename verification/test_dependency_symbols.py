@@ -94,6 +94,13 @@ class DependencySymbolsTests(unittest.TestCase):
                      weak=["_ZNSt6vectorIiSaIiEED1Ev"])
         self.assertEqual(self.run_inspect()["conflicts"], [])
 
+    def test_sql_entrypoints_with_direct_c_calls_are_not_exempt(self):
+        self.add("bin/postgres")
+        for name in ("one", "two"):
+            self.add(f"lib/{name}.so", exports=["Pg_magic_func", "pg_finfo_same_sql", "same_sql"],
+                     references=["same_sql"])
+        self.assertEqual(self.run_inspect()["conflicts"][0]["symbols"], ["same_sql"])
+
     def test_shared_dependency_reached_from_multiple_modules_is_one_provider(self):
         self.add("bin/postgres")
         for name in ("one", "two"):

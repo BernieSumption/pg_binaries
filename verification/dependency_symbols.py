@@ -175,7 +175,12 @@ def conflicts(binaries: dict[Path, Binary], roots: list[Path], root: Path,
     providers: dict[str, list[Path]] = defaultdict(list)
     for path in sorted(loaded):
         binary = binaries[path]
-        for symbol in binary.exports - entrypoints(binary):
+        pg_entrypoints = entrypoints(binary)
+        for symbol in binary.exports:
+            if symbol in pg_entrypoints and not any(
+                    symbol in binaries[other].imports or symbol in binaries[other].relocations
+                    for other in loaded):
+                continue
             # ELF linker-generated boundaries are per-object bookkeeping, not dependency APIs.
             if linux and symbol in {"_init", "_fini", "__bss_start", "__bss_start__", "__bss_end__", "_bss_end__", "_edata", "_end", "__end__"}:
                 continue
