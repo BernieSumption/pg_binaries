@@ -119,7 +119,7 @@ class WindowsDevelopmentTests(unittest.TestCase):
                 (install / directory).mkdir(parents=True)
             for name in ('bin/pg_config.exe', 'bin/postgres.exe', 'include/postgres.h', 'share/extension/plpgsql.control', 'lib/postgres.lib', 'lib/plpgsql.dll'):
                 (install / name).write_bytes(name.encode())
-            with patch('build_support.postgresql.built_version', return_value='18.6'), patch('build_support.postgresql._bundle_windows'), patch('build_support.postgresql._write_windows_pg_config_wrapper'):
+            with patch('build_support.postgresql.built_version', return_value='18.6'), patch('build_support.postgresql._bundle_windows'), patch('build_support.postgresql._write_windows_pg_config_wrapper'), patch('build_support.postgresql._check_windows_pg_config_paths'):
                 record = package_postgresql(root, 'windows-x86_64', root / 'dist')
             with tarfile.open(root / 'dist' / record['archive']['filename']) as archive:
                 names = archive.getnames()
@@ -130,3 +130,14 @@ class WindowsDevelopmentTests(unittest.TestCase):
                 names = archive.getnames()
                 self.assertIn('postgresql/bin/pg_config.bin.exe', names)
                 self.assertIn('postgresql/lib/postgres.lib', names)
+
+
+class WindowsPgConfigContractTests(unittest.TestCase):
+    def test_path_query_accepts_crlf_and_rejects_observed_extra_blank_line(self):
+        from unittest.mock import patch
+        from build_support.postgresql import _check_windows_pg_config_paths
+        with patch('build_support.postgresql.subprocess.check_output', return_value=b"C:/sdk/include/server\r\n"):
+            _check_windows_pg_config_paths(Path('sdk'))
+        with patch('build_support.postgresql.subprocess.check_output', return_value=b"C:/sdk/include/server\r\r\n"):
+            with self.assertRaisesRegex(ValueError, 'exactly one non-empty path'):
+                _check_windows_pg_config_paths(Path('sdk'))

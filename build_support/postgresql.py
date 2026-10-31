@@ -123,6 +123,7 @@ def package_postgresql(workspace, target, output_dir):
         subprocess.run(["python3", str(ROOT / "platforms/macos/bundle.py"), str(development), str(dependencies)], check=True)
     elif os_name == "windows":
         _bundle_windows(development, dependencies)
+        _check_windows_pg_config_paths(development)
     else:
         subprocess.run(["patchelf", "--set-rpath", "$ORIGIN/../lib:$ORIGIN/../lib/runtime", str(development / "bin/pg_config.bin")], check=True)
     _normalise_permissions(development)
@@ -142,6 +143,14 @@ def _bundle_windows(prefix, dependencies):
     if not redist or not Path(redist).is_dir():
         raise ValueError("PG_WINDOWS_REDIST must name the official Visual Studio x64 CRT directory")
     bundle(prefix, [dependencies / "bin", Path(redist)])
+
+
+def _check_windows_pg_config_paths(prefix):
+    for option in ("--includedir-server", "--includedir", "--libdir", "--pkglibdir", "--sharedir"):
+        output = subprocess.check_output([str(prefix / "bin/pg_config.exe"), option])
+        lines = output.decode("utf-8").splitlines()
+        if len(lines) != 1 or not lines[0]:
+            raise ValueError(f"pg_config {option} must return exactly one non-empty path: {output!r}")
 
 
 def _write_windows_pg_config_wrapper(prefix):

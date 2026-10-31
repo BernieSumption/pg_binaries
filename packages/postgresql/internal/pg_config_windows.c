@@ -1,5 +1,7 @@
 #include <windows.h>
 #include <stdio.h>
+#include <fcntl.h>
+#include <io.h>
 #include <stdlib.h>
 #include <string.h>
 #include <wchar.h>
@@ -77,6 +79,8 @@ int wmain(int argc, wchar_t **argv)
     /* Meson configuration strings can contain native separators as well. */
     updated = replace(output, ORIGINAL_DEPENDENCIES_NATIVE, dependencies); free(output); output = updated;
     updated = replace(output, ORIGINAL_POSTGRESQL_NATIVE, current); free(output);
+    /* The captured upstream output already contains Windows CRLF sequences. */
+    if (_setmode(_fileno(stdout), _O_BINARY) == -1) return 1;
     fputs(updated, stdout); free(updated);
     return (int)code;
 }
