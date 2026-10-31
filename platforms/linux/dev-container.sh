@@ -17,7 +17,7 @@ work=$(cd "$work" && pwd)
 
 if ! docker container inspect "$name" >/dev/null 2>&1; then
   docker build --platform "$platform" -f "$repo/platforms/linux/Dockerfile.build" -t "$image" "$repo" >/dev/null
-  docker create --name "$name" --platform "$platform" \
+  docker create --init --name "$name" --platform "$platform" \
     -v "$repo:/repo:ro" -v "$work:/work" -w /repo "$image" sleep infinity >/dev/null
 fi
 if [[ $(docker inspect --format '{{.State.Running}}' "$name") != true ]]; then

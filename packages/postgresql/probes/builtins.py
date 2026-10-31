@@ -90,7 +90,7 @@ def probe(installation: Path, source_archive: Path, work_parent: Path) -> list[s
                 failures.append(f"{name}: {error}")
         # unaccent's dictionary data is opened on use, so exercise a packaged data file.
         try:
-            value = run([*psql, "-c", "SELECT unaccent('Hôtel')"], environment)
+            value = run([*psql, "-c", r"SELECT unaccent(U&'H\00F4tel')"], environment)
             if value != "Hotel":
                 failures.append(f"unaccent data probe returned {value!r}, expected 'Hotel'")
         except RuntimeError as error:
