@@ -76,16 +76,18 @@ Two measured starts reached SSH readiness in 9.74 and 10.39 seconds. A 54,071,92
 These scripts run inside Windows, from its local repository checkout. They are undergoing native GitHub validation; the local Parallels guest has not reached this stage.
 
 ```powershell
-./platforms/windows/bootstrap.ps1
-./platforms/windows/build-postgresql-local.ps1 `
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File platforms/windows/bootstrap.ps1
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File platforms/windows/build-postgresql-local.ps1 `
   -Workspace C:/pg-work/postgresql -OutputDirectory C:/pg-output/postgresql
-./platforms/windows/build-extension-local.ps1 `
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File platforms/windows/build-extension-local.ps1 `
   -Package pgvector `
   -DevelopmentArchive C:/pg-output/postgresql/postgresql-development-18.6-windows-x86_64.tar.gz `
   -Workspace C:/pg-work/agent-1/pgvector -OutputDirectory C:/pg-output/pgvector
 ```
 
 Bootstrap prepares tools under `C:/pg-binaries-tools` by default; `PG_WINDOWS_TOOLS` selects that root for subsequent scripts. PostGIS additionally uses `bootstrap.ps1 -Package postgis` to prepare MSYS2. The PostgreSQL build needs an empty workspace and produces separate runtime and development archives. Extension builds reuse their named workspace and cache sources beneath the tools root. The archive filename comes from `postgresql-build.json` in the PostgreSQL output directory; the example uses the current selected version.
+
+Windows verification extracts archives with Python's `data` filter so directories inherit normal Windows permissions. Python 3.13's unfiltered extraction creates protected directory permissions that prevent PostgreSQL's restricted child process from loading DLLs, producing `0xc0000135` even when all required DLLs are present. The controlled trial reproduced the failure with identical archive bytes and paths. [Python directory permissions](https://docs.python.org/3.13/library/os.html#os.mkdir), [PostgreSQL restricted processes](https://github.com/postgres/postgres/blob/REL_18_6/src/common/restricted_token.c).
 
 The hosted trial lives in `.github/workflows/local-iteration-windows.yml`. Its `core`, `small`, `postgis`, `rust` and `all` phases retain diagnostics and final archives. The automatic test-branch run selects `small`, covering PostgreSQL and seven extension packages.
 

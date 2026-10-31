@@ -187,7 +187,11 @@ def verify(postgresql_archive: Path, package_archives: dict[str, Path], output: 
     def extract() -> None:
         for archive_path in archives:
             with tarfile.open(archive_path, "r:gz") as archive:
-                archive.extractall(installation_parent)
+                if target.startswith("windows-"):
+                    # Preserve inherited ACLs for PostgreSQL's restricted child processes.
+                    archive.extractall(installation_parent, filter="data")
+                else:
+                    archive.extractall(installation_parent)
     extracted, _ = check(results, "extraction", extract)
     if not extracted:
         for name in ("native libraries", CHECK_NAME, "PostgreSQL version", "configuration", "database startup", "SQL probes",

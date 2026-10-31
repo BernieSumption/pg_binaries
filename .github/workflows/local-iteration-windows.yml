@@ -54,6 +54,13 @@ jobs:
       - name: Bootstrap native build tools
         run: |
           New-Item -ItemType Directory -Force "$env:PG_ITERATION/logs","$env:PG_ITERATION/output","$env:PG_ITERATION/reports" | Out-Null
+          $machine = Get-CimInstance Win32_ComputerSystem
+          [ordered]@{
+            logical_processors = [Environment]::ProcessorCount
+            physical_memory_bytes = [long]$machine.TotalPhysicalMemory
+            windows_version = [Environment]::OSVersion.Version.ToString()
+            process_architecture = $env:PROCESSOR_ARCHITECTURE
+          } | ConvertTo-Json | Set-Content "$env:PG_ITERATION/output/machine.json"
           Start-Transcript -Path "$env:PG_ITERATION/logs/bootstrap.log"
           try {
             # Git for Windows also supplies Perl when it is absent from the runner PATH.
@@ -168,6 +175,7 @@ jobs:
           }
           $summary = @()
           foreach ($package in $selected) {
+            $packageClock = [Diagnostics.Stopwatch]::StartNew()
             Start-Transcript -Path "$env:PG_ITERATION/logs/$package.log"
             try {
               if ($package -eq 'postgis') { & ./platforms/windows/bootstrap.ps1 -Tools $env:PG_WINDOWS_TOOLS -Package postgis }
@@ -178,11 +186,12 @@ jobs:
               if ($LASTEXITCODE) { throw "$package build record failed" }
               & $python build.py --target windows-x86_64 runtime-check $archive "$env:PG_ITERATION/reports/$package" --package-archive "$package=$packageArchive"
               if ($LASTEXITCODE) { throw "$package runtime checkpoint failed" }
-              $summary += [pscustomobject]@{ package = $package; outcome = 'passed'; reason = $null }
+              $summary += [pscustomobject]@{ package = $package; outcome = 'passed'; reason = $null; elapsed_seconds_including_verification = $packageClock.Elapsed.TotalSeconds }
             } catch {
               Write-Host "FAILED ${package}: $_"
-              $summary += [pscustomobject]@{ package = $package; outcome = 'failed'; reason = $_.ToString() }
+              $summary += [pscustomobject]@{ package = $package; outcome = 'failed'; reason = $_.ToString(); elapsed_seconds_including_verification = $packageClock.Elapsed.TotalSeconds }
             } finally {
+              $packageClock.Stop()
               Stop-Transcript
               ConvertTo-Json -InputObject @($summary) -Depth 5 | Set-Content "$env:PG_ITERATION/output/package-summary.json"
             }
