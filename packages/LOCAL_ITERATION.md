@@ -79,7 +79,7 @@ Lume and Parallels both document a limit of two concurrent macOS guests on Apple
 
 ### Windows commands
 
-These scripts run inside Windows, from its local repository checkout. They are undergoing native GitHub validation; the local Parallels guest has not reached this stage.
+These scripts run inside Windows, from its local repository checkout. Native GitHub trials have passed PostgreSQL and eight extension packages; PostGIS remains under investigation. The local Parallels guest has not reached this stage.
 
 ```powershell
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File platforms/windows/bootstrap.ps1
@@ -95,7 +95,7 @@ Bootstrap prepares tools under `C:/pg-binaries-tools` by default; `PG_WINDOWS_TO
 
 Windows verification extracts archives with Python's `data` filter so directories inherit normal Windows permissions. Python 3.13's unfiltered extraction creates protected directory permissions that prevent PostgreSQL's restricted child process from loading DLLs, producing `0xc0000135` even when all required DLLs are present. The controlled trial reproduced the failure with identical archive bytes and paths. Probe scratch folders also inherit Windows permissions; Linux and macOS retain private temporary directories. [Python directory permissions](https://docs.python.org/3.13/library/os.html#os.mkdir), [PostgreSQL restricted processes](https://github.com/postgres/postgres/blob/REL_18_6/src/common/restricted_token.c).
 
-The hosted trial lives in `.github/workflows/local-iteration-windows.yml`. Its `core`, `small`, `postgis`, `rust` and `all` phases retain diagnostics and final archives. Manual dispatch selects the phase; `small` covers PostgreSQL and seven extension packages. Completed PostgreSQL archives and their build record are retained before runtime verification, so a later checker failure does not lose the SDK. Extension builds still require the runtime checkpoint to pass.
+The hosted trial lives in `.github/workflows/local-iteration-windows.yml`. Its phases are `core`, `small`, `postgis`, `rust`, `all`, `package` and `bootstrap-postgis`. Manual dispatch selects the phase; `small` covers PostgreSQL and seven extension packages. Completed PostgreSQL archives and their build record are retained before runtime verification, so a later checker failure does not lose the SDK. Extension builds still require the runtime checkpoint to pass.
 
 A manual run can supply `postgresql_run` to reuse that run's recorded PostgreSQL runtime and development archives; selection checks current build inputs and archive hashes, and the checkpoint still runs runtime verification. This requires the component artefact `spike2-windows-x86_64-postgresql`; the first two trial runs predate that artefact and cannot be selected.
 
@@ -146,7 +146,7 @@ The PostGIS trial found that retaining dependencies alone did not make its own b
 
 Applying that fix in the Mac VM took 50.34 seconds for the first build after the script change and 30.02 seconds for an unchanged repeat, versus the earlier 48.71-second warm baseline. The dependency key and SFCGAL library checksum and modification time stayed unchanged. The warm archive passed clean-VM runtime and SQL verification. Only the Mac build script was transferred into the earlier isolated source snapshot; this measures iteration rather than current release-candidate consistency.
 
-The Mac archives passed SQL probes together in a separate clean VM: 201 Mach-O files checked, no findings, 29.22 seconds for the final verification run. These results establish that retained dependency state helps iteration; they do not yet compare Parallels against Docker or Lume. Windows extension validation and local macOS x86_64 trials remain incomplete.
+The Mac archives passed SQL probes together in a separate clean VM: 201 Mach-O files checked, no findings, 29.22 seconds for the final verification run. These results establish that retained dependency state helps iteration; they do not yet compare Parallels against Docker or Lume. PostGIS validation on Windows and local macOS x86_64 trials remain incomplete.
 
 On native Windows GitHub runners, six small packages passed first and repeat builds with stable workspace keys and SQL verification. Their repeat builds took 10.00–14.68 seconds. Address Standardizer subsequently passed in 40.40 seconds initially and 13.73 seconds on repeat, including both supplied SQL probes and unchanged workspace keys. pg_jsonschema took 585.19 seconds initially and 33.33 seconds on repeat, including first-time Rust and cargo-pgrx preparation in the initial build. Its archive and combined SQL verification passed. These results prove Windows cache reuse; they do not measure local Windows translation. PostGIS remains under investigation.
 
