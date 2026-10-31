@@ -68,4 +68,5 @@ jobs:
             ${{ runner.temp }}/windows-runtime-diagnostic/raw-initdb-probes/
             ${{ runner.temp }}/windows-runtime-diagnostic/runtime-check/
             ${{ runner.temp }}/windows-runtime-diagnostic/runtime-check-exit-code.txt
-
+            !${{ runner.temp }}/windows-runtime-diagnostic/raw-initdb-probes/extracted distribution with spaces/**
+            !${{ runner.temp }}/windows-runtime-diagnostic/raw-initdb-probes/probe data with spaces/**

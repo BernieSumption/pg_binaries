@@ -17,7 +17,7 @@ import tarfile
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
-from packages.postgresql.probes.environment import clean_environment
+from packages.postgresql.probes.environment import clean_environment, connection
 
 
 def decode(value: str | bytes | None) -> str:
@@ -134,6 +134,11 @@ def diagnose(archive_path: Path, record_path: Path, output: Path) -> dict:
         command = [str(binary), "-D", str(data), "--no-sync", "--encoding=UTF8", "--debug"]
         result["diagnostics"].append(run_probe(
             f"distribution_only_path:initdb_{stdin_name}", command, environment, stdin=stdin))
+    runtime_environment, _ = connection(bin_dir, output / "unused-socket", windows=True)
+    for name, environment in (("clean", environments["distribution_only_path"]),
+                              ("runtime_connection", runtime_environment)):
+        command = [str(binary), "-D", str(data_root / name), "--no-sync", "--encoding=UTF8"]
+        result["diagnostics"].append(run_probe(f"{name}:initdb_without_debug", command, environment))
     application_errors(output, os.environ.copy())
     result["windows_error_mode_before"] = previous_error_mode
     result["initdb_binary"] = str(binary)

@@ -9,10 +9,23 @@ from unittest.mock import patch
 
 from packages.postgresql.probes.environment import clean_environment, connection
 from packages.postgresql.probes.builtins import expected_extensions
-from verification.runtime import archive_contents, run
+from verification.runtime import archive_contents, main, run
 
 
 class WindowsEnvironmentTests(unittest.TestCase):
+    def test_runtime_cli_prints_failure_without_requiring_report_download(self):
+        findings = [{"name": "database startup", "outcome": "failed", "reason": "exit 0xc0000135"}]
+        with tempfile.TemporaryDirectory() as temporary:
+            with patch("sys.argv", ["runtime", "postgresql.tar.gz", temporary, "--target", "windows-x86_64"]), \
+                    patch("verification.runtime.verify", return_value=findings), \
+                    patch("sys.stdout", new=io.StringIO()), \
+                    patch("sys.stderr", new=io.StringIO()) as stderr:
+                with self.assertRaises(SystemExit) as stopped:
+                    main()
+            self.assertEqual(stopped.exception.code, 1)
+            self.assertIn("database startup: exit 0xc0000135", stderr.getvalue())
+            self.assertEqual(len(list(Path(temporary).glob("*/checks.json"))), 1)
+
     def test_silent_native_failure_reports_windows_status(self):
         failure = subprocess.CompletedProcess(["initdb.exe"], 0xc0000135, stdout="", stderr="")
         with patch("verification.runtime.subprocess.run", return_value=failure):

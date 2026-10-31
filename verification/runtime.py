@@ -11,6 +11,7 @@ from pathlib import Path
 import re
 import shutil
 import subprocess
+import sys
 import tarfile
 from typing import Any, Callable
 import urllib.request
@@ -367,6 +368,9 @@ def main() -> None:
     output.mkdir(parents=True, exist_ok=True)
     (output / "checks.json").write_text(json.dumps(results, indent=2) + "\n", encoding="utf-8")
     print(output)
+    for item in results:
+        if item["outcome"] == "failed":
+            print(f"{item['name']}: {item['reason']}", file=sys.stderr)
     if any(item["outcome"] in ("failed", "not_run") for item in results):
         raise SystemExit(1)
 
