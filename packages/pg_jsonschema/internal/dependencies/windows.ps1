@@ -109,7 +109,9 @@ function Initialize-PgJsonschemaWindowsToolchain([string]$Workspace, [hashtable]
     Set-PgJsonschemaWindowsEnvironment $Workspace $Pins | Out-Null
 
     $pgVersion = (& $PgConfig '--version').Trim()
-    if ($LASTEXITCODE -ne 0 -or $pgVersion -notmatch '^PostgreSQL\s+(\d+)') { throw "Could not determine PostgreSQL major version from pg_config: $pgVersion" }
-    & $rustup 'run' $rustVersion 'cargo' 'pgrx' 'init' "--pg$($Matches[1])" $PgConfig
+    $versionMatch = [regex]::Match($pgVersion, '^PostgreSQL\s+(\d+)')
+    if ($LASTEXITCODE -ne 0 -or -not $versionMatch.Success) { throw "Could not determine PostgreSQL major version from pg_config: $pgVersion" }
+    $pgFeature = "pg$($versionMatch.Groups[1].Value)"
+    & $rustup 'run' $rustVersion 'cargo' 'pgrx' 'init' "--$pgFeature" $PgConfig
     if ($LASTEXITCODE -ne 0) { throw 'cargo pgrx init failed for the supplied PostgreSQL SDK' }
 }

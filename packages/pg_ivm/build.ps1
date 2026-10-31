@@ -47,13 +47,15 @@ $mesonFile = Join-Path $source 'meson.build'
 $mesonText = [IO.File]::ReadAllText($mesonFile)
 $modulePath = ([IO.Path]::GetFullPath($moduleDefinition) -replace '\\', '/')
 if ($modulePath.Contains("'")) { throw 'pg_ivm module definition path cannot contain a single quote' }
-$targetAnchor = '    install: true,'
-$targetReplacement = "    link_args: ['/DEF:$modulePath'],`n$targetAnchor"
-if (-not $mesonText.Contains($targetReplacement)) {
-    if ([regex]::Matches($mesonText, [regex]::Escape($targetAnchor)).Count -ne 1) {
+$targetPattern = '(?m)^([ \t]*)install[ \t]*:[ \t]*true[ \t]*,'
+$moduleLinkArgument = "link_args: ['/DEF:$modulePath'],"
+if (-not $mesonText.Contains($moduleLinkArgument)) {
+    if ([regex]::Matches($mesonText, $targetPattern).Count -ne 1) {
         throw 'Could not find the expected pg_ivm Meson shared-module target'
     }
-    $mesonText = $mesonText.Replace($targetAnchor, $targetReplacement)
+    $newline = if ($mesonText.Contains("`r`n")) { "`r`n" } else { "`n" }
+    $targetReplacement = "`$1$moduleLinkArgument$newline`$0"
+    $mesonText = [regex]::Replace($mesonText, $targetPattern, $targetReplacement)
     [IO.File]::WriteAllText($mesonFile, $mesonText, [Text.UTF8Encoding]::new($false))
 }
 $env:PATH = "$(Join-Path $pgRoot 'bin');$env:PATH"
