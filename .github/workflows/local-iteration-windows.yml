@@ -11,8 +11,13 @@ name: Local iteration Windows validation
         default: small
         type: choice
         options: [core, small, postgis, rust, all]
+      postgresql_run:
+        description: Reuse PostgreSQL archives from an existing workflow run
+        required: false
+        type: string
 
 permissions:
+  actions: read
   contents: read
 
 jobs:
@@ -26,9 +31,21 @@ jobs:
       PG_WINDOWS_TOOLS: C:\pg-binaries-tools
       PG_ITERATION: C:\pg-iteration
       PG_PHASE: ${{ inputs.phase || 'small' }}
+      PG_POSTGRESQL_RUN: ${{ inputs.postgresql_run || '' }}
       PG_BUILD_JOBS: '2'
     steps:
       - uses: actions/checkout@v4
+
+      - name: Validate PostgreSQL workflow run input
+        run: |
+          if (-not [string]::IsNullOrWhiteSpace($env:PG_POSTGRESQL_RUN)) {
+            [long]$runId = 0
+            if ($env:PG_POSTGRESQL_RUN -notmatch '^[0-9]+$' -or
+                -not [long]::TryParse($env:PG_POSTGRESQL_RUN, [ref]$runId) -or
+                $runId -le 0) {
+              throw 'postgresql_run must be a positive numeric GitHub Actions run ID.'
+            }
+          }
 
       - name: Check developer environment
         run: |
@@ -58,6 +75,16 @@ jobs:
             & ./platforms/windows/bootstrap.ps1 -Tools $env:PG_WINDOWS_TOOLS
           } finally { Stop-Transcript }
 
+      - name: Select PostgreSQL build from existing run
+        if: github.event_name == 'workflow_dispatch' && inputs.postgresql_run != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $python = Join-Path $env:PG_WINDOWS_TOOLS 'python/python.exe'
+          $selection = Join-Path $env:PG_ITERATION 'postgresql-selection'
+          & $python build.py --target windows-x86_64 select-runs $selection --run $env:PG_POSTGRESQL_RUN --component postgresql
+          if ($LASTEXITCODE) { throw 'PostgreSQL run selection failed' }
+
       - name: Build and verify PostgreSQL checkpoint
         id: core
         run: |
@@ -65,17 +92,62 @@ jobs:
           try {
             . ./platforms/windows/environment.ps1
             $python = Join-Path $env:PG_WINDOWS_TOOLS 'python/python.exe'
-            & ./platforms/windows/build-postgresql-local.ps1 -Workspace "$env:PG_ITERATION/workspaces/postgresql" -OutputDirectory "$env:PG_ITERATION/output/postgresql" -SourceCache "$env:PG_ITERATION/sources"
-            $build = Get-Content "$env:PG_ITERATION/output/postgresql/postgresql-build.json" -Raw | ConvertFrom-Json
-            $archive = Join-Path "$env:PG_ITERATION/output/postgresql" $build.archive.filename
-            $development = Join-Path "$env:PG_ITERATION/output/postgresql" $build.development_archive.filename
+            $postgresqlOutput = Join-Path $env:PG_ITERATION 'output/postgresql'
+            New-Item -ItemType Directory -Force $postgresqlOutput | Out-Null
+            if (-not [string]::IsNullOrWhiteSpace($env:PG_POSTGRESQL_RUN)) {
+              $selectionPath = Join-Path $env:PG_ITERATION 'postgresql-selection/selection.json'
+              $selection = Get-Content $selectionPath -Raw | ConvertFrom-Json
+              $component = $selection.components.postgresql
+              $recordPath = $component.build_record
+              $record = Get-Content $recordPath -Raw | ConvertFrom-Json
+              if ($record.component -ne 'postgresql' -or $record.target -ne 'windows-x86_64' -or
+                  -not $record.development_archive) {
+                throw 'Selected PostgreSQL run has an invalid build record.'
+              }
+              $archive = Join-Path $postgresqlOutput $record.archive.filename
+              $development = Join-Path $postgresqlOutput $record.development_archive.filename
+              Copy-Item -LiteralPath $component.archive -Destination $archive -Force
+              Copy-Item -LiteralPath $component.development_archive -Destination $development -Force
+              Copy-Item -LiteralPath $recordPath -Destination (Join-Path $postgresqlOutput 'record.json') -Force
+              foreach ($sidecar in @(
+                @{ source = "$($component.archive).sha256"; destination = "$archive.sha256" },
+                @{ source = "$($component.development_archive).sha256"; destination = "$development.sha256" }
+              )) {
+                if (Test-Path -LiteralPath $sidecar.source) {
+                  Copy-Item -LiteralPath $sidecar.source -Destination $sidecar.destination -Force
+                }
+              }
+              $manifest = [ordered]@{
+                version = $record.postgresql_version
+                archive = $record.archive
+                development_archive = $record.development_archive
+              }
+              ConvertTo-Json -InputObject $manifest -Depth 5 | Set-Content -Encoding UTF8 (Join-Path $postgresqlOutput 'postgresql-build.json')
+            } else {
+              & ./platforms/windows/build-postgresql-local.ps1 -Workspace "$env:PG_ITERATION/workspaces/postgresql" -OutputDirectory $postgresqlOutput -SourceCache "$env:PG_ITERATION/sources"
+              if ($LASTEXITCODE) { throw 'PostgreSQL build failed' }
+            }
+            $build = Get-Content (Join-Path $postgresqlOutput 'postgresql-build.json') -Raw | ConvertFrom-Json
+            $archive = Join-Path $postgresqlOutput $build.archive.filename
+            $development = Join-Path $postgresqlOutput $build.development_archive.filename
             & $python build.py --target windows-x86_64 archive-check $archive
             if ($LASTEXITCODE) { throw 'PostgreSQL archive check failed' }
-            & $python build.py --target windows-x86_64 build-record postgresql $archive "$env:PG_ITERATION/output/postgresql/record.json" --revision $env:GITHUB_SHA --development-archive $development
-            if ($LASTEXITCODE) { throw 'PostgreSQL build record failed' }
+            if ([string]::IsNullOrWhiteSpace($env:PG_POSTGRESQL_RUN)) {
+              & $python build.py --target windows-x86_64 build-record postgresql $archive (Join-Path $postgresqlOutput 'record.json') --revision $env:GITHUB_SHA --development-archive $development
+              if ($LASTEXITCODE) { throw 'PostgreSQL build record failed' }
+            }
             & $python build.py --target windows-x86_64 runtime-check $archive "$env:PG_ITERATION/reports/postgresql"
             if ($LASTEXITCODE) { throw 'PostgreSQL runtime checkpoint failed' }
           } finally { Stop-Transcript }
+
+      - uses: actions/upload-artifact@v4
+        if: always() && steps.core.outcome == 'success'
+        with:
+          name: spike2-windows-x86_64-postgresql
+          path: C:/pg-iteration/output/postgresql/
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7
 
       - name: Build and verify selected extensions sequentially
         id: packages
@@ -154,7 +226,8 @@ jobs:
           retention-days: 7
           if-no-files-found: warn
           path: |
-            C:/pg-iteration/output/
+            C:/pg-iteration/output/**
+            !C:/pg-iteration/output/postgresql/**
             C:/pg-iteration/reports/
             C:/pg-iteration/logs/
             C:/pg-iteration/workspaces/**/config.log

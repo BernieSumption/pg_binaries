@@ -87,7 +87,11 @@ These scripts run inside Windows, from its local repository checkout. They are u
 
 Bootstrap prepares tools under `C:/pg-binaries-tools` by default; `PG_WINDOWS_TOOLS` selects that root for subsequent scripts. PostGIS additionally uses `bootstrap.ps1 -Package postgis` to prepare MSYS2. The PostgreSQL build needs an empty workspace and produces separate runtime and development archives. Extension builds reuse their named workspace and cache sources beneath the tools root. The archive filename comes from `postgresql-build.json` in the PostgreSQL output directory; the example uses the current selected version.
 
-The hosted trial lives in `.github/workflows/local-iteration-windows.yml`. Its `core`, `small`, `postgis`, `rust` and `all` phases retain diagnostics and final archives. The automatic test-branch run selects `small`, covering PostgreSQL and seven extension packages. A native x64 hosted success does not establish that Windows ARM can build and run the same software through x64 translation.
+The hosted trial lives in `.github/workflows/local-iteration-windows.yml`. Its `core`, `small`, `postgis`, `rust` and `all` phases retain diagnostics and final archives. The automatic test-branch run selects `small`, covering PostgreSQL and seven extension packages.
+
+A manual run can supply `postgresql_run` to reuse that run's recorded PostgreSQL runtime and development archives; selection checks current build inputs and archive hashes, and the checkpoint still runs runtime verification. This requires the component artefact `spike2-windows-x86_64-postgresql`; the first two trial runs predate that artefact and cannot be selected.
+
+A native x64 hosted success does not establish that Windows ARM can build and run the same software through x64 translation.
 
 ## Persistent build state
 
