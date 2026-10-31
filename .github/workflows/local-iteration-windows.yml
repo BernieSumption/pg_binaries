@@ -1,8 +1,6 @@
 name: Local iteration Windows validation
 
 "on":
-  push:
-    branches: [agent/local-iteration-windows]
   workflow_dispatch:
     inputs:
       phase:
@@ -92,7 +90,7 @@ jobs:
           & $python build.py --target windows-x86_64 select-runs $selection --run $env:PG_POSTGRESQL_RUN --component postgresql
           if ($LASTEXITCODE) { throw 'PostgreSQL run selection failed' }
 
-      - name: Build and verify PostgreSQL checkpoint
+      - name: Build PostgreSQL archives
         id: core
         run: |
           Start-Transcript -Path "$env:PG_ITERATION/logs/postgresql.log"
@@ -143,8 +141,6 @@ jobs:
               & $python build.py --target windows-x86_64 build-record postgresql $archive (Join-Path $postgresqlOutput 'record.json') --revision $env:GITHUB_SHA --development-archive $development
               if ($LASTEXITCODE) { throw 'PostgreSQL build record failed' }
             }
-            & $python build.py --target windows-x86_64 runtime-check $archive "$env:PG_ITERATION/reports/postgresql"
-            if ($LASTEXITCODE) { throw 'PostgreSQL runtime checkpoint failed' }
           } finally { Stop-Transcript }
 
       - uses: actions/upload-artifact@v4
@@ -155,6 +151,18 @@ jobs:
           if-no-files-found: error
           compression-level: 0
           retention-days: 7
+
+      - name: Verify PostgreSQL runtime checkpoint
+        run: |
+          Start-Transcript -Path "$env:PG_ITERATION/logs/postgresql-runtime.log"
+          try {
+            . ./platforms/windows/environment.ps1
+            $python = Join-Path $env:PG_WINDOWS_TOOLS 'python/python.exe'
+            $build = Get-Content "$env:PG_ITERATION/output/postgresql/postgresql-build.json" -Raw | ConvertFrom-Json
+            $archive = Join-Path "$env:PG_ITERATION/output/postgresql" $build.archive.filename
+            & $python build.py --target windows-x86_64 runtime-check $archive "$env:PG_ITERATION/reports/postgresql"
+            if ($LASTEXITCODE) { throw 'PostgreSQL runtime checkpoint failed' }
+          } finally { Stop-Transcript }
 
       - name: Build and verify selected extensions sequentially
         id: packages
