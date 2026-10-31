@@ -75,7 +75,7 @@ function Initialize-PgJsonschemaWindowsToolchain([string]$Workspace, [hashtable]
         $installerUrl = 'https://static.rust-lang.org/rustup/dist/x86_64-pc-windows-msvc/rustup-init.exe'
         $temporaryInstaller = "$installer.download"
         Invoke-WebRequest -Uri $installerUrl -OutFile $temporaryInstaller
-        $checksum = (Invoke-WebRequest -Uri "$installerUrl.sha256").Content.Trim() -split '\s+' | Select-Object -First 1
+        $checksum = (Invoke-WebRequest -UseBasicParsing -Uri "$installerUrl.sha256").Content.Trim() -split '\s+' | Select-Object -First 1
         if ($checksum -notmatch '^[0-9a-fA-F]{64}$' -or
             (Get-FileHash $temporaryInstaller -Algorithm SHA256).Hash -ine $checksum) {
             Remove-Item $temporaryInstaller -Force -ErrorAction SilentlyContinue
