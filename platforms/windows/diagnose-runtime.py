@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import base64
 import ctypes
 import hashlib
 import json
@@ -85,7 +86,72 @@ def application_errors(output: Path, environment: dict[str, str]) -> None:
     (output / "application-errors-initdb.txt").write_text(text, encoding="utf-8")
 
 
-def diagnose(archive_path: Path, record_path: Path, output: Path) -> dict:
+
+def extraction_acl(paths: list[Path]) -> dict:
+    powershell = Path(os.environ.get("SystemRoot", r"C:\Windows")) / "System32/WindowsPowerShell/v1.0/powershell.exe"
+    literals = ",".join("'" + str(path).replace("'", "''") + "'" for path in paths)
+    script = ("@(" + literals + ") | ForEach-Object { $acl = Get-Acl -LiteralPath $_; "
+              "[pscustomobject]@{ Path = $_; Owner = $acl.Owner; Sddl = $acl.Sddl } } | ConvertTo-Json -Depth 4")
+    encoded = base64.b64encode(script.encode("utf-16-le")).decode("ascii")
+    process = subprocess.run([str(powershell), "-NoProfile", "-NonInteractive", "-EncodedCommand", encoded],
+                             capture_output=True, text=True, encoding="utf-8", errors="replace", check=False)
+    return {"returncode": process.returncode, "stdout": process.stdout, "stderr": process.stderr}
+
+
+def startup_matrix(archive_path: Path, output: Path, result: dict) -> dict:
+    if os.name != "nt":
+        raise RuntimeError("the loader matrix requires a native Windows runner")
+    kernel = ctypes.windll.kernel32
+    initial_mode = int(kernel.GetErrorMode())
+    suppressed_mode = 0x8003
+    # Match the shared verifier's directory names and reuse exactly the same paths.
+    case_root = output.parent / "runtime-check" / "verify-postgresql-00000000"
+    extraction = case_root / "installation with spaces"
+    binary = extraction / "postgresql/bin/initdb.exe"
+    reference_fingerprint = None
+    result["matrix"] = []
+    result["windows_error_mode_before"] = initial_mode
+    try:
+        for filter_name in ("fully_trusted", "data"):
+            for mode_name, mode in (("original", initial_mode), ("suppressed", suppressed_mode)):
+                if case_root.exists():
+                    shutil.rmtree(case_root)
+                extraction.mkdir(parents=True)
+                with tarfile.open(archive_path, "r:gz") as package:
+                    package.extractall(extraction, filter=filter_name)
+                fingerprint = hashlib.sha256()
+                for path in sorted(extraction.rglob("*")):
+                    if path.is_file():
+                        fingerprint.update(path.relative_to(extraction).as_posix().encode())
+                        fingerprint.update(hashlib.sha256(path.read_bytes()).digest())
+                fingerprint = fingerprint.hexdigest()
+                if reference_fingerprint is None:
+                    reference_fingerprint = fingerprint
+                environment, _ = connection(binary.parent, case_root / "socket", windows=True)
+                item = {"extraction_filter": filter_name, "windows_error_mode": mode,
+                        "error_mode_name": mode_name, "binary": str(binary),
+                        "data": str(case_root / "database"), "cwd": str(ROOT),
+                        "extracted_files_fingerprint": fingerprint,
+                        "extracted_files_match_first_case": fingerprint == reference_fingerprint,
+                        "acl": extraction_acl([case_root, extraction, binary.parent.parent,
+                                               binary.parent, binary, binary.parent / "vcruntime140.dll"])}
+                kernel.SetErrorMode(mode)
+                item["probes"] = [run_probe(f"{filter_name}:{mode_name}:version", [str(binary), "--version"], environment),
+                                  run_probe(f"{filter_name}:{mode_name}:initdb", [str(binary), "-D", str(case_root / "database"),
+                                            "--no-sync", "--encoding=UTF8"], environment)]
+                item["acl_after"] = extraction_acl([path for path in (case_root, extraction, binary.parent.parent,
+                                                                      binary.parent, binary, case_root / "database") if path.exists()])
+                result["matrix"].append(item)
+                (output / "diagnostics.json").write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
+                if any(probe.get("timed_out") for probe in item["probes"]):
+                    raise RuntimeError("a matrix subprocess timed out; its installation is retained")
+    finally:
+        kernel.SetErrorMode(initial_mode)
+    shutil.rmtree(case_root)
+    return result
+
+
+def diagnose(archive_path: Path, record_path: Path, output: Path, *, matrix_only: bool = False) -> dict:
     output.mkdir(parents=True, exist_ok=True)
     record = json.loads(record_path.read_text(encoding="utf-8"))
     expected = record["archive"]["sha256"].lower()
@@ -103,6 +169,9 @@ def diagnose(archive_path: Path, record_path: Path, output: Path) -> dict:
     }
     if actual != expected:
         raise RuntimeError(f"archive SHA-256 {actual} differs from record {expected}")
+
+    if matrix_only:
+        return startup_matrix(archive_path, output, result)
 
     previous_error_mode = suppress_windows_error_dialogs()
     extraction = output / "extracted distribution with spaces"
@@ -157,15 +226,17 @@ def main() -> None:
     parser.add_argument("--archive", required=True, type=Path)
     parser.add_argument("--record", required=True, type=Path)
     parser.add_argument("--output", required=True, type=Path)
+    parser.add_argument("--matrix-only", action="store_true", help="isolate extraction ACLs and process error mode at identical verifier paths")
     arguments = parser.parse_args()
     try:
-        result = diagnose(arguments.archive, arguments.record, arguments.output)
+        result = diagnose(arguments.archive, arguments.record, arguments.output, matrix_only=arguments.matrix_only)
     except Exception as error:
         arguments.output.mkdir(parents=True, exist_ok=True)
         (arguments.output / "diagnostic-error.txt").write_text(
             f"{type(error).__name__}: {error}\n", encoding="utf-8")
         raise
-    for item in result["diagnostics"]:
+    probes = result["diagnostics"] + [probe for case in result.get("matrix", []) for probe in case["probes"]]
+    for item in probes:
         print(f"{item['name']}: returncode={item.get('returncode')} "
               f"hex={item.get('returncode_hex')} timed_out={item.get('timed_out', False)}")
 
