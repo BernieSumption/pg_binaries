@@ -102,6 +102,26 @@ if ($disabledMacroCount -eq 1 -and $portableParseMacroCount -eq 0) {
 } elseif ($disabledMacroCount -ne 0 -or $portableParseMacroCount -ne 1) {
     throw 'Pinned Address Standardizer parseaddress-api.c debug macro no longer matches the expected Windows compatibility patch'
 }
+$hashPath = Join-Path $source 'src/hash.c'
+$hashText = [IO.File]::ReadAllText($hashPath)
+$originalHashText = $hashText
+$inlineDefinitions = @(
+    @{ Name = 'hash_set'; Old = '(?m)^inline (?=void\r?\nhash_set\()'; New = '(?m)^void\r?\nhash_set\(' }
+    @{ Name = 'hash_get'; Old = '(?m)^inline (?=void \*\r?\nhash_get\()'; New = '(?m)^void \*\r?\nhash_get\(' }
+    @{ Name = 'hash_has'; Old = '(?m)^inline (?=int\r?\nhash_has\()'; New = '(?m)^int\r?\nhash_has\(' }
+)
+foreach ($definition in $inlineDefinitions) {
+    $inlineCount = [regex]::Matches($hashText, $definition.Old).Count
+    $externalCount = [regex]::Matches($hashText, $definition.New).Count
+    if ($inlineCount -eq 1 -and $externalCount -eq 0) {
+        $hashText = [regex]::Replace($hashText, $definition.Old, '')
+    } elseif ($inlineCount -ne 0 -or $externalCount -ne 1) {
+        throw "Pinned Address Standardizer hash definition for $($definition.Name) does not match the expected Windows compatibility patch"
+    }
+}
+if ($hashText -cne $originalHashText) {
+    [IO.File]::WriteAllText($hashPath, $hashText, [Text.UTF8Encoding]::new($false))
+}
 $entryPoints = @{
     'address_parser.c' = @('parse_address','strip_explicit_country')
     'address_standardizer.c' = @('debug_standardize_address','standardize_address','standardize_address1')
