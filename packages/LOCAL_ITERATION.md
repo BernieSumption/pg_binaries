@@ -24,7 +24,7 @@ For each route, the experiment record includes host and guest versions, CPU/RAM 
 
 The recommendation distinguishes routes that were tested successfully, tested with poor results, blocked before a useful trial, and not yet attempted. Qualitative evidence about reliability and agent effort accompanies timings. Retaining Docker or Lume alongside Parallels requires evidence of a useful advantage, rather than familiarity alone.
 
-A headless Ubuntu ARM64 cloud-image trial under Lume passed native and Rosetta-translated extension builds, clean SQL verification and cache reuse after restart. Its measured x86 build times were close to Docker Desktop's. Until Parallels can be tested, retain Docker Desktop for Linux: Lume offers a viable way to consolidate VM management, but its setup required more troubleshooting and demonstrated no clear build-speed advantage.
+A headless Ubuntu ARM64 cloud-image trial under Lume passed native and Rosetta-translated extension builds, clean SQL verification and cache reuse after restart. Its measured x86 build times were close to Docker Desktop's. Docker Desktop remains the Linux route: Lume offers a viable way to consolidate VM management, but its setup required more troubleshooting and demonstrated no clear build-speed advantage.
 
 UTM 4.7.5 is also installed, with metadata for an ARM64 Windows guest allocated 8 GiB RAM. Its CLI help worked, but version and inventory queries returned `OSStatus error -1712`; both exited with status zero despite the errors. Guest control and build performance could not be tested. No UTM desktop control or VM changes were attempted. Standalone QEMU system executables were absent from `PATH`.
 
@@ -108,9 +108,13 @@ VMware Fusion 26.0.1 is installed. Its Windows ARM VM is at `/Users/berniesumpti
 
 The installation ISO is `/Users/berniesumption/Virtual Machines.localized/VMWIsoImages/Windows11_26100.4349_Professional_en-gb_arm64.iso`. The human installed Windows and VMware Tools through their normal installers. The VM currently has two CPUs and 4 GiB RAM. After restart, authenticated `vmrun` commands, PowerShell execution and file transfer in both directions passed. The account belongs to the Administrators group, but commands launched through `vmrun` have a non-elevated token; administrator approval is needed for the initial Visual Studio installation.
 
-Python 3.13.3 x64 installed per user at `C:/pg-binaries-tools/python` without elevation. Its download took 7.45 seconds, installation 17.42 seconds, and installation of the pinned Meson, Ninja, CMake and pkgconf packages 19.45 seconds. A 3,998-byte script transferred into the guest in 0.468 seconds; result and log transfers back took 0.407 and 0.457 seconds. These prove basic command access and x64 execution, not extension-build performance.
+Python 3.13.3 x64 installed per user at `C:/pg-binaries-tools/python` without elevation. Its PE machine value is `0x8664` and `sysconfig.get_platform()` returns `win-amd64`; `platform.machine()` still reports the guest's ARM64 architecture.
+
+The Python download took 7.45 seconds, installation 17.42 seconds, and installation of the pinned Meson, Ninja, CMake and pkgconf packages 19.45 seconds. A 3,998-byte script transferred into the guest in 0.468 seconds; result and log transfers back took 0.407 and 0.457 seconds. These prove basic command access and x64 execution, not extension-build performance.
 
 The cached x64 PostgreSQL runtime and development archives transferred through `vmrun` in 16.74 seconds for 29,494,388 bytes and 42.72 seconds for 77,227,675 bytes, with matching SHA-256 checksums. Keep those inputs at `C:/pg-inputs` rather than copying them on each edit. A local diagnostic confirmed AMD64 PE binaries, created a database, started PostgreSQL, executed SQL and shut it down. Database creation took 2.92 seconds, startup 0.61 seconds and the SQL query 0.51 seconds. This was a translation smoke check, not the complete archive verifier.
+
+The source snapshot at `C:/pg-src` is revision `ca032de8`; extraction and the Windows x86_64 build-command help passed. All 20 unique selected source archives were checksum-verified in 65.37 seconds. They are retained at the helper's default `C:/pg-binaries-tools/sources`. New host edits require transferring the changed files into the guest checkout before running the build.
 
 The signed Microsoft Visual Studio 2022 Build Tools installer is prepared at `C:/pg-binaries-tools/bootstrap/vs_BuildTools.exe`. The required components are `Microsoft.VisualStudio.Workload.VCTools` with its recommended components and `Microsoft.VisualStudio.Component.VC.Llvm.Clang`. The normal installer requires administrator approval; no UAC or security-policy changes are part of this process.
 
@@ -216,6 +220,18 @@ PowerShell 7.4.2 syntax-check processes in an amd64 container repeatedly crashed
 A fresh ARM64 container took 0.61 seconds to provision from the existing Docker image and cached APT layer, with no manual steps. Its initially empty source cache was populated during an Address Standardizer build taking 13.60 seconds. Repeat and post-restart builds took 3.39 and 3.42 seconds. This measures another agent joining an established installation, rather than fresh-machine setup.
 
 Recreating that trial container against its retained host work directory preserved the complete cache manifest. A subsequent build took 3.43 seconds and passed archive checks; the PCRE2 library's checksum, modification time and dependency key were unchanged. The retained work directory occupied 268 MiB. New development containers use Docker's `--init`: stopping the trial then took 0.08 seconds with SIGTERM, compared with 3.12 seconds and a forced kill without it. Existing containers retain their creation settings.
+
+A new agent can also receive a copy of prepared work. An APFS clone of the stopped trial's work directory took 0.52 seconds; provisioning a separate four-CPU container took 0.58 seconds. Its first build took 3.48 seconds and repeat 3.45 seconds, with unchanged dependency keys, PCRE2 checksum and modification time. Clean SQL verification passed. The combined copy, provision and first build took 4.58 seconds. This proves reuse for Address Standardizer, not a cold-machine setup or a dependency-heavy workload.
+
+The source container must be stopped with no workspace lock. Copy its work directory into a new agent-owned directory, mount that directory at the same `/work` path, and use the normal helper. On this Mac, the tested copy was:
+
+```sh
+mkdir -p out/local-environments/pg-binaries-linux-arm64-cache-clone-trial
+cp -cR out/local-environments/pg-binaries-linux-arm64-iteration-trial/. \
+  out/local-environments/pg-binaries-linux-arm64-cache-clone-trial/
+```
+
+`PG_BINARIES_LINUX_WORK` selects the copied directory when creating the new named container. Its normal cache-key checks still apply. APFS shares unchanged file extents; reported directory sizes do not measure unique disk consumption. Both trial containers were confirmed stopped afterwards.
 
 ### Concurrent builds
 
