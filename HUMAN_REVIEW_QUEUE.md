@@ -12,7 +12,7 @@ Docker and Lume build, cache and concurrency trials are recorded in [packages/LO
 
 The remaining question is whether compiled dependency caching on GitHub is worth its implementation and maintenance cost once local iteration works. Local persistent workspaces now retain successful dependency installations through a harness-owned dependency phase; the implementation and measurements are recorded in `packages/LOCAL_ITERATION.md`.
 
-The local measurements show substantial savings: macOS PostGIS fell from 417 seconds with a fresh dependency installation to 49 seconds on repeat, and pg_jsonschema's corrected repeat build takes about 8.5 seconds. These measurements establish the benefit of local reuse, but do not measure how often developers will need GitHub rebuilds after local iteration is established.
+The local measurements show substantial savings: macOS PostGIS took 417 seconds with a fresh dependency installation, 49 seconds on repeat, then 30 seconds after fixing repeated configuration. pg_jsonschema's corrected repeat build takes about 8.5 seconds. These measurements establish the benefit of local reuse, but do not measure how often developers will need GitHub rebuilds after local iteration is established.
 
 A possible GitHub implementation would restore and save dependency installations using the same dependency phase and input keys. Packages would remain unaware of the storage backend. Hosted jobs would need stable workspace paths or relocatable cached installations, along with cache-size and restore-time measurements. Compiler caching is a smaller alternative where dependency prefixes are difficult to reuse.
 

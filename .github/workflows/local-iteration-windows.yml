@@ -13,6 +13,11 @@ name: Local iteration Windows validation
         description: Reuse PostgreSQL archives from an existing workflow run
         required: false
         type: string
+      repeat_builds:
+        description: Measure an identical second build in each retained workspace
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   actions: read
@@ -30,6 +35,7 @@ jobs:
       PG_ITERATION: C:\pg-iteration
       PG_PHASE: ${{ inputs.phase || 'small' }}
       PG_POSTGRESQL_RUN: ${{ inputs.postgresql_run || '' }}
+      PG_REPEAT_BUILDS: ${{ inputs.repeat_builds && 'true' || 'false' }}
       PG_BUILD_JOBS: '2'
     steps:
       - uses: actions/checkout@v4
@@ -184,20 +190,34 @@ jobs:
           $summary = @()
           foreach ($package in $selected) {
             $packageClock = [Diagnostics.Stopwatch]::StartNew()
+            $firstBuildSeconds = $null
+            $repeatBuildSeconds = $null
+            $workspaceKeysUnchanged = $null
             Start-Transcript -Path "$env:PG_ITERATION/logs/$package.log"
             try {
               if ($package -eq 'postgis') { & ./platforms/windows/bootstrap.ps1 -Tools $env:PG_WINDOWS_TOOLS -Package postgis }
+              $buildClock = [Diagnostics.Stopwatch]::StartNew()
               & ./platforms/windows/build-extension-local.ps1 -Package $package -DevelopmentArchive $development -Workspace "$env:PG_ITERATION/workspaces/$package" -OutputDirectory "$env:PG_ITERATION/output/$package" -SourceCache "$env:PG_ITERATION/sources"
+              $firstBuildSeconds = $buildClock.Elapsed.TotalSeconds
+              if ($env:PG_REPEAT_BUILDS -eq 'true') {
+                $marker = "$env:PG_ITERATION/workspaces/$package/.pg-binaries-extension-workspace.json"
+                $before = (Get-FileHash -LiteralPath $marker -Algorithm SHA256).Hash
+                $buildClock.Restart()
+                & ./platforms/windows/build-extension-local.ps1 -Package $package -DevelopmentArchive $development -Workspace "$env:PG_ITERATION/workspaces/$package" -OutputDirectory "$env:PG_ITERATION/output/$package" -SourceCache "$env:PG_ITERATION/sources"
+                $repeatBuildSeconds = $buildClock.Elapsed.TotalSeconds
+                $workspaceKeysUnchanged = $before -eq (Get-FileHash -LiteralPath $marker -Algorithm SHA256).Hash
+                if (-not $workspaceKeysUnchanged) { throw "$package workspace keys changed during an identical repeat" }
+              }
               $extension = Get-Content "$env:PG_ITERATION/output/$package/extension-build.json" -Raw | ConvertFrom-Json
               $packageArchive = Join-Path "$env:PG_ITERATION/output/$package" $extension.archive.filename
               & $python build.py --target windows-x86_64 build-record $package $packageArchive "$env:PG_ITERATION/output/$package/record.json" --revision $env:GITHUB_SHA --postgresql-archive $archive
               if ($LASTEXITCODE) { throw "$package build record failed" }
               & $python build.py --target windows-x86_64 runtime-check $archive "$env:PG_ITERATION/reports/$package" --package-archive "$package=$packageArchive"
               if ($LASTEXITCODE) { throw "$package runtime checkpoint failed" }
-              $summary += [pscustomobject]@{ package = $package; outcome = 'passed'; reason = $null; elapsed_seconds_including_verification = $packageClock.Elapsed.TotalSeconds }
+              $summary += [pscustomobject]@{ package = $package; outcome = 'passed'; reason = $null; first_build_seconds = $firstBuildSeconds; repeat_build_seconds = $repeatBuildSeconds; workspace_keys_unchanged = $workspaceKeysUnchanged; elapsed_seconds_including_verification = $packageClock.Elapsed.TotalSeconds }
             } catch {
               Write-Host "FAILED ${package}: $_"
-              $summary += [pscustomobject]@{ package = $package; outcome = 'failed'; reason = $_.ToString(); elapsed_seconds_including_verification = $packageClock.Elapsed.TotalSeconds }
+              $summary += [pscustomobject]@{ package = $package; outcome = 'failed'; reason = $_.ToString(); first_build_seconds = $firstBuildSeconds; repeat_build_seconds = $repeatBuildSeconds; workspace_keys_unchanged = $workspaceKeysUnchanged; elapsed_seconds_including_verification = $packageClock.Elapsed.TotalSeconds }
             } finally {
               $packageClock.Stop()
               Stop-Transcript

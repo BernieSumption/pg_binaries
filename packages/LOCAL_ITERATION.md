@@ -95,6 +95,8 @@ The hosted trial lives in `.github/workflows/local-iteration-windows.yml`. Its `
 
 A manual run can supply `postgresql_run` to reuse that run's recorded PostgreSQL runtime and development archives; selection checks current build inputs and archive hashes, and the checkpoint still runs runtime verification. This requires the component artefact `spike2-windows-x86_64-postgresql`; the first two trial runs predate that artefact and cannot be selected.
 
+The optional `repeat_builds` input runs each selected extension build twice in the same workspace. `package-summary.json` records first and repeat build times separately from the total including verification, and checks that the recorded workspace keys remain unchanged. The first build can use installed tools and download caches; its timing is not necessarily a cold-machine measurement.
+
 A native x64 hosted success does not establish that Windows ARM can build and run the same software through x64 translation.
 
 ## Persistent build state
@@ -132,7 +134,9 @@ These measurements used verified source-download caches. “Cold” means a new 
 - Lume macOS ARM64, four vCPUs and 8 GiB RAM: Address Standardizer took 19.61 seconds cold, 3.22 warm and 7.01 after the edit. PostGIS took 417.41, 48.71 and 51.61 seconds respectively. PostGIS used an existing conda package-download cache but prepared a fresh installed environment and SFCGAL build.
 - In the same Mac VM, pg_jsonschema took 68.72 seconds with an empty Cargo target directory, 8.45 warm and 9.54 after the edit. Rust and the Cargo registry were already installed. Before fixing repeated pgrx initialisation and identical-file rewrites, warm iterations took about 45 seconds. A small SQL-generation helper still recompiles each time.
 
-The PostGIS trial found that retaining dependencies alone did not make its own build incremental: configuration rewrote a shared header and `make` treated the revision header as phony. An unchanged repeat took 161.18 seconds and recompiled 344 C files. The Linux build script now retains successful configuration within the harness-managed source tree and uses upstream's `--without-phony-revision` option. Input changes still refresh that source tree. Installation, staging and archive production account for the remaining warm-build time.
+The PostGIS trial found that retaining dependencies alone did not make its own build incremental: configuration rewrote a shared header and `make` treated the revision header as phony. An unchanged Linux x86 repeat took 161.18 seconds and recompiled 344 C files. The Linux and Mac build scripts now retain successful configuration within the harness-managed source tree and use upstream's `--without-phony-revision` option. Input changes still refresh that source tree. Installation, staging and archive production account for the remaining warm-build time.
+
+Applying that fix in the Mac VM took 50.34 seconds for the first build after the script change and 30.02 seconds for an unchanged repeat, versus the earlier 48.71-second warm baseline. The dependency key and SFCGAL library checksum and modification time stayed unchanged. The warm archive passed clean-VM runtime and SQL verification. Only the Mac build script was transferred into the earlier isolated source snapshot; this measures iteration rather than current release-candidate consistency.
 
 The Mac archives passed SQL probes together in a separate clean VM: 201 Mach-O files checked, no findings, 29.22 seconds for the final verification run. These results establish that retained dependency state helps iteration; they do not yet compare Parallels against Docker or Lume. Windows extension validation and local macOS x86_64 trials remain incomplete.
 

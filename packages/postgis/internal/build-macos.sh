@@ -41,11 +41,15 @@ export CPPFLAGS="-I$deps/include${CPPFLAGS:+ $CPPFLAGS}"
 export LDFLAGS="-Wl,-headerpad_max_install_names -Wl,-rpath,$deps/lib -L$deps/lib -Wl,-rpath,$pg/lib -L$pg/lib${LDFLAGS:+ $LDFLAGS}"
 
 cd "$workspace/sources/postgis"
-./configure --prefix="$pg" --with-pgconfig="$pg/bin/pg_config" \
-  --with-gdalconfig="$deps/bin/gdal-config" --with-geosconfig="$deps/bin/geos-config" \
-  --with-projdir="$deps" --with-jsondir="$deps" --with-xml2config="$tools/xml2-config" \
-  --with-sfcgal="$deps/bin/sfcgal-config" --with-raster --with-protobufdir="$deps" \
-  --without-address-standardizer --without-tiger
+if [[ ! -f config.status || ! -f GNUmakefile || ! -f postgis_config.h ]]; then
+  # The harness refreshes source trees when build inputs or configuration change.
+  ./configure --prefix="$pg" --with-pgconfig="$pg/bin/pg_config" \
+    --with-gdalconfig="$deps/bin/gdal-config" --with-geosconfig="$deps/bin/geos-config" \
+    --with-projdir="$deps" --with-jsondir="$deps" --with-xml2config="$tools/xml2-config" \
+    --with-sfcgal="$deps/bin/sfcgal-config" --with-raster --with-protobufdir="$deps" \
+    --without-phony-revision \
+    --without-address-standardizer --without-tiger
+fi
 # PGXS puts these flags before PostgreSQL's inherited system-library paths.
 pg_ldflags="-L$deps/lib${PG_LDFLAGS:+ $PG_LDFLAGS}"
 make PG_LDFLAGS="$pg_ldflags" -j"$(sysctl -n hw.ncpu)"
