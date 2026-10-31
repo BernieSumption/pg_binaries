@@ -153,7 +153,7 @@ if ($Package -eq 'postgis') {
     $repo = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
     $packages = @(Get-Content (Join-Path $repo 'packages/postgis/internal/dependencies/windows-packages.txt') | Where-Object { $_ })
     Write-Stage 'Query required MSYS2 packages' 'started'
-    & (Join-Path $msys 'usr/bin/pacman.exe') -Q @packages *> $null
+    & $bash @('--login', '-c', ('pacman -Q ' + ($packages -join ' ') + ' >/dev/null 2>&1'))
     $packagesMissing = $LASTEXITCODE -ne 0
     if ($packagesMissing) {
         Write-Stage 'Query required MSYS2 packages' 'completed; installation required'
