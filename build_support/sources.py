@@ -3,10 +3,11 @@
 import hashlib
 import os
 from pathlib import Path, PurePosixPath
-import shutil
 import subprocess
 import tarfile
 import tempfile
+
+from build_support.cleanup import remove_tree
 
 
 def sha256(path):
@@ -70,7 +71,7 @@ def extract(archive, destination):
                 if path.is_symlink() and not _inside(path.resolve(), root):
                     raise ValueError(f"source link escapes normalised tree: {path}")
     except Exception:
-        shutil.rmtree(destination)
+        remove_tree(destination)
         raise
 
 

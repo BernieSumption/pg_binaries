@@ -3,10 +3,10 @@
 import os
 import json
 from pathlib import Path
-import shutil
 import subprocess
 import tempfile
 
+from build_support.cleanup import remove_tree
 from build_support.metadata import ROOT, load_package
 from build_support.sources import extract, prepare_sources, sha256
 from build_support.iteration import (WorkspaceLock, development_identity,
@@ -47,7 +47,7 @@ def _prepare_postgresql(development, workspace):
     from build_support.postgresql import prepare_development
 
     destination = workspace / "postgresql"
-    shutil.rmtree(destination, ignore_errors=True)
+    remove_tree(destination, missing_ok=True)
     if development.is_dir():
         prepare_development(development, destination)
     else:
@@ -109,7 +109,7 @@ def build_extension(package, target, development, output, workspace=None, cache=
             prepare_reused_workspace(workspace, package, target, keys)
             for source_id in metadata["sources"]:
                 if not (workspace / "sources" / source_id).is_dir():
-                    shutil.rmtree(workspace / "sources")
+                    remove_tree(workspace / "sources")
                     prepare_sources(metadata["sources"], workspace / "sources", cache)
                     break
             _prepare_postgresql(development, workspace)

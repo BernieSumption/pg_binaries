@@ -7,6 +7,8 @@ from pathlib import Path
 import shutil
 import subprocess
 
+from build_support.cleanup import remove_tree
+
 
 MARKER = ".pg-binaries-extension-workspace.json"
 LOCK = ".pg-binaries-extension-workspace.lock"
@@ -183,13 +185,13 @@ def prepare_reused_workspace(workspace, package, target, keys):
 
     old = marker
     if old.get("source_key") != keys["source_key"] or old.get("context_key") != keys["context_key"]:
-        shutil.rmtree(workspace / "sources", ignore_errors=True)
-        shutil.rmtree(workspace / "build", ignore_errors=True)
+        remove_tree(workspace / "sources", missing_ok=True)
+        remove_tree(workspace / "build", missing_ok=True)
     elif old.get("dependency_success_key") != keys["dependency_key"]:
-        shutil.rmtree(workspace / "sources", ignore_errors=True)
-        shutil.rmtree(workspace / "build", ignore_errors=True)
+        remove_tree(workspace / "sources", missing_ok=True)
+        remove_tree(workspace / "build", missing_ok=True)
     elif old.get("main_key") != keys["main_key"]:
-        shutil.rmtree(workspace / "sources", ignore_errors=True)
+        remove_tree(workspace / "sources", missing_ok=True)
         build = workspace / "build"
         if build.exists():
             retained = {"target", "pgrx"}
@@ -197,12 +199,12 @@ def prepare_reused_workspace(workspace, package, target, keys):
                 retained.add("dependencies")
             for child in build.iterdir():
                 if child.name not in retained:
-                    shutil.rmtree(child) if child.is_dir() else child.unlink()
+                    remove_tree(child) if child.is_dir() else child.unlink()
     (workspace / "sources").mkdir(exist_ok=True)
     (workspace / "build").mkdir(exist_ok=True)
-    shutil.rmtree(workspace / "payload", ignore_errors=True)
+    remove_tree(workspace / "payload", missing_ok=True)
     (workspace / "payload").mkdir()
-    shutil.rmtree(workspace / "build/stage", ignore_errors=True)
+    remove_tree(workspace / "build/stage", missing_ok=True)
     marker["source_key"] = keys["source_key"]
     marker["context_key"] = keys["context_key"]
     marker["main_key"] = keys["main_key"]
