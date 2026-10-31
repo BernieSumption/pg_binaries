@@ -12,7 +12,7 @@ The environment comparison is in progress. The established routes are:
 - Linux x86_64: an amd64 Docker container runs through Rosetta inside Docker Desktop's ARM Linux VM. Both builds and final-archive verification have passed through this route.
 - macOS ARM64: Lume development and clean verification VMs have passed the complete package set.
 - macOS x86_64: native GitHub Intel runners have passed the complete package set. A viable local route still needs investigation.
-- Windows x86_64: VMware Fusion runs a Windows 11 ARM guest. VMware Tools provides authenticated commands and file transfer; x64 Python runs successfully. Compiler setup and extension builds remain to be proved locally.
+- Windows x86_64: VMware Fusion runs a Windows 11 ARM guest headlessly. Seven extension packages have built locally and passed their combined SQL probes. Dependency caching is proved for Address Standardizer; Rust and PostGIS trials remain to be completed.
 
 The current work uses Docker for Linux, Lume for Mac and Fusion for Windows. The comparison includes startup, source transfer, dependency preparation, compilation, packaging and verification, rather than compiler speed alone. Parallels trials were blocked before guest startup; their results do not establish its build performance.
 
@@ -114,19 +114,48 @@ The Python download took 7.45 seconds, installation 17.42 seconds, and installat
 
 The cached x64 PostgreSQL runtime and development archives transferred through `vmrun` in 16.74 seconds for 29,494,388 bytes and 42.72 seconds for 77,227,675 bytes, with matching SHA-256 checksums. Keep those inputs at `C:/pg-inputs` rather than copying them on each edit. A local diagnostic confirmed AMD64 PE binaries, created a database, started PostgreSQL, executed SQL and shut it down. Database creation took 2.92 seconds, startup 0.61 seconds and the SQL query 0.51 seconds. This was a translation smoke check, not the complete archive verifier.
 
-The source snapshot at `C:/pg-src` is revision `ca032de8`; extraction and the Windows x86_64 build-command help passed. All 20 unique selected source archives were checksum-verified in 65.37 seconds. They are retained at the helper's default `C:/pg-binaries-tools/sources`. New host edits require transferring the changed files into the guest checkout before running the build.
+The source at `C:/pg-src` started from revision `ca032de8`; subsequent build and verifier edits were transferred individually. All 20 unique selected source archives were checksum-verified in 65.37 seconds. They are retained at the helper's default `C:/pg-binaries-tools/sources`. New host edits require transferring the changed files into the guest checkout before running the build.
 
-The signed Microsoft Visual Studio 2022 Build Tools installer is prepared at `C:/pg-binaries-tools/bootstrap/vs_BuildTools.exe`. The required components are `Microsoft.VisualStudio.Workload.VCTools` with its recommended components and `Microsoft.VisualStudio.Component.VC.Llvm.Clang`. The normal installer requires administrator approval; no UAC or security-policy changes are part of this process.
+Visual Studio 2022 Build Tools is the command-line toolchain, without the Visual Studio editor. Setup explicitly selects `Microsoft.VisualStudio.Component.VC.Tools.x86.x64`, `Microsoft.VisualStudio.Component.Windows11SDK.26100` and `Microsoft.VisualStudio.Component.VC.Llvm.Clang` with `Microsoft.VisualStudio.Workload.VCTools`. The first interactive installation completed with the workload and Clang but omitted the compiler and SDK headers/libraries; selecting the workload alone did not provide a usable build environment. The normal installer requires administrator approval; no UAC or security-policy changes are part of this process.
 
-The Windows desktop shortcut **Set up C++ build tools** opens that interactive installer with the components selected through `C:/pg-binaries-tools/bootstrap/build-tools.vsconfig`. The human approves its normal administrator and licence prompts, then installs the selected components.
+The Windows desktop shortcut **Set up C++ build tools** opens the installed Visual Studio Installer in modify mode, explicitly adding the x64 compiler and Windows 11 SDK. The component list is also retained in `C:/pg-binaries-tools/bootstrap/build-tools.vsconfig`. The human completed that installation. A standalone check found the compiler, linker, librarian, NMake, dumpbin, resource compiler and manifest tool, then compiled, linked and ran an AMD64 executable using the ARM64-hosted compiler. Interactive launches omit `--norestart`, which requires quiet or passive mode.
 
-Git is not installed yet. Its verified ARM installer is `C:/Users/Public/Git-2.56.0.4-arm64.exe`. The x64 unattended attempt remained idle before installation; a single ARM retry with documented unattended flags exited with initialisation failure code 1 before creating a log or destination. The cause is unconfirmed. Complete a normal interactive installation before continuing dependent builds; preserve its error if it fails. These setup failures do not establish Git or Fusion build performance.
+Git installed successfully through its normal ARM installer at `C:/Users/Public/Git-2.56.0.4-arm64.exe`; the executable is `C:/Program Files/Git/cmd/git.exe`. The earlier unattended attempts failed before installation, with the cause unconfirmed. The interactive choices were bundled OpenSSH, Windows Secure Channel for HTTPS, no automatic line-ending conversion, MinTTY, Git Credential Manager and file-system caching. The repository's `.gitattributes` controls line endings.
 
-Fusion's CLI is `/Applications/VMware Fusion.app/Contents/Library/vmrun`. Computer-use permissions are recorded in [AGENTS.md](../AGENTS.md#repository-operations). The computer-use connection currently fails with a native-pipe startup error, so GUI installation steps still require the human.
+Fusion's CLI is `/Applications/VMware Fusion.app/Contents/Library/vmrun`. Computer-use permissions are recorded in [AGENTS.md](../AGENTS.md#repository-operations). After restarting Codex, computer use could read Fusion's window and capture the Windows desktop. Its first connection and screenshot calls took several minutes; later screenshots returned in about 1.5 seconds. Prefer CLI commands for repeatable builds. Administrator approval remains a human step.
+
+#### Preserve the Windows baseline
+
+Before package builds or dependency installation, shut Windows down cleanly, copy the complete VM bundle and create a named snapshot. The established baseline is `toolchain-ready-2026-10-31`. Its separate backup is `/Users/berniesumption/Documents/local-dev/vmware-vms/Windows 11 toolchain-ready backup.vmwarevm`; keep that copy powered off.
+
+The measured shutdown took 9.11 seconds. An APFS copy-on-write copy of the 37.47 GB logical bundle took 0.04 seconds; its file lists and sizes matched, and VM configuration and NVRAM hashes matched. Snapshot creation took 0.30 seconds and Fusion listed the new snapshot. The copy shares physical disk blocks until either copy changes, and resides on the same disk; it protects the baseline from development changes, not disk loss.
+
+Normal iterations use the original VM and retain package workspaces and caches. Snapshots are checkpoints before substantial environment changes, not a reset between builds. Before reverting, copy source changes, results and logs back to the host. Additional agent or clean verification VMs can be prepared from the baseline when needed; simultaneous Windows VM operation remains unmeasured.
+
+Fusion starts this development VM headlessly with `vmrun -T fusion -vp password start VMX nogui`, where `VMX` is the path above. VMware Tools provides guest commands and file transfer without a console window. A fresh headless boot supported successful extension builds.
 
 #### Build and verification commands
 
-These scripts run inside Windows, from its local repository checkout. Local extension compilation awaits Visual Studio Build Tools installation.
+From the Mac host, a guest build starts directly through VMware Tools:
+
+```sh
+fusion_cli='/Applications/VMware Fusion.app/Contents/Library/vmrun'
+windows_vmx='/Users/berniesumption/Documents/local-dev/vmware-vms/Windows 11 64-bit Arm.vmwarevm/Windows 11 64-bit Arm.vmx'
+"$fusion_cli" -T fusion -vp password -gu 'Bernie Sumption' -gp password \
+  runProgramInGuest "$windows_vmx" \
+  'C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe' \
+  -NoProfile -NonInteractive -ExecutionPolicy Bypass \
+  -File 'C:\pg-src\platforms\windows\build-extension-local.ps1' \
+  -Package pgvector \
+  -DevelopmentArchive 'C:\pg-inputs\postgresql-development-18.6-windows-x86_64.tar.gz' \
+  -Workspace 'C:\pg-work\pgvector' -OutputDirectory 'C:\pg-output\pgvector'
+```
+
+`copyFileFromHostToGuest VMX HOST_FILE GUEST_FILE` and `copyFileFromGuestToHost VMX GUEST_FILE HOST_FILE` use the same authentication options. VMware file-transfer commands require backslashes in guest paths. A diagnostic guest script writes logs and JSON to known files, then the host copies them back; `runProgramInGuest` returns the exit status rather than streaming program output.
+
+These scripts run inside Windows, from its local repository checkout. The local pgvector build passed in 17.92 seconds, then 7.78 seconds in the same workspace with unchanged source, context and main input keys. Address Standardizer took 31.28 seconds initially and 10.18 seconds on repeat; its PCRE2 library hash and modification time and dependency success key remained unchanged. No PCRE2 configuration, compilation or installation ran on repeat.
+
+Collection, HypoPG, pg_ivm, pgAudit and pgTAP also built twice locally, with repeat calls taking 11.3–14.4 seconds including VMware command overhead. pgTAP uses Git's bundled Perl when Perl is absent from `PATH`, so this build needs no separate Perl installation. The seven-package combination passed native-library inspection, SQL probes, shutdown and cleanup in 33.12 seconds. These runs used the existing verified PostgreSQL SDK from GitHub, two guest CPUs and 4 GiB RAM; they do not measure a local PostgreSQL compilation or a clean-machine build.
 
 ```powershell
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File platforms/windows/bootstrap.ps1
@@ -140,7 +169,11 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File platforms/windows/build-
 
 Bootstrap prepares tools under `C:/pg-binaries-tools` by default; `PG_WINDOWS_TOOLS` selects that root for subsequent scripts. PostGIS additionally uses `bootstrap.ps1 -Package postgis` to prepare MSYS2. The PostgreSQL build needs an empty workspace and produces separate runtime and development archives. Extension builds reuse their named workspace and cache sources beneath the tools root. The archive filename comes from `postgresql-build.json` in the PostgreSQL output directory; the example uses the current selected version.
 
-A fresh native PostGIS tool-bootstrap trial passed in 5 minutes 16 seconds. Installing its 196 MSYS2 packages took 3 minutes 30 seconds, downloaded 429.55 MiB and occupied about 3 GiB. A retained local environment avoids repeating that installation; this measurement excludes PostGIS compilation.
+A PostGIS tool-bootstrap trial on a fresh native Windows GitHub runner passed in 5 minutes 16 seconds. Installing its 196 MSYS2 packages took 3 minutes 30 seconds, downloaded 429.55 MiB and occupied about 3 GiB. A retained local environment avoids repeating that installation; this hosted measurement excludes PostGIS compilation and does not measure Fusion performance.
+
+The local PostgreSQL-only verifier passed all 15 checks, including capabilities, built-in extensions and mutual TLS, in 108.35 seconds during a concurrent Rust build. This used the existing runtime archive, not a locally compiled PostgreSQL. Windows ARM's `XtaCache` translation service briefly held a DLL after PostgreSQL shutdown; two cleanup attempts failed and the third succeeded after about one second. Cleanup retries Windows permission errors for up to five seconds and still fails if the lock persists. The service is left running.
+
+The shared CLI wrappers preserve native stderr and determine success from the exit code. This matters in Windows PowerShell 5: redirected native stderr can otherwise become a terminating `NativeCommandError`, hiding the underlying error or rejecting informational Rust output. A diagnostic confirmed that stderr with exit zero succeeds and exit seven still fails. For a stale workspace lock, confirm its recorded PID has exited in the guest, then remove only the lock file; retain the workspace and caches.
 
 Windows verification extracts archives with Python's `data` filter so directories inherit normal Windows permissions. Python 3.13's unfiltered extraction creates protected directory permissions that prevent PostgreSQL's restricted child process from loading DLLs, producing `0xc0000135` even when all required DLLs are present. The controlled trial reproduced the failure with identical archive bytes and paths. Probe scratch folders also inherit Windows permissions; Linux and macOS retain private temporary directories. [Python directory permissions](https://docs.python.org/3.13/library/os.html#os.mkdir), [PostgreSQL restricted processes](https://github.com/postgres/postgres/blob/REL_18_6/src/common/restricted_token.c).
 
