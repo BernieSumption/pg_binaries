@@ -4,8 +4,10 @@ import json
 import os
 from pathlib import Path
 import re
+import shlex
 import shutil
 import subprocess
+import sys
 import tarfile
 
 from build_support.sources import sha256
@@ -169,7 +171,7 @@ def _write_windows_pg_config_wrapper(prefix):
                         "/Fe:" + str(prefix / "bin/pg_config.exe"), "/Fo:" + str(build / "pg_config.obj")], check=True, cwd=build)
 
 
-def _write_pg_config_wrapper(prefix):
+def _write_pg_config_wrapper(prefix, sdk_replacements=()):
     if (prefix / "bin/pg_config.bin.exe").is_file():
         _write_windows_pg_config_wrapper(prefix)
         return
@@ -184,14 +186,32 @@ prefix = Path(__file__).resolve().parents[1]
 original = json.loads((prefix / "share/pg_build_paths.json").read_text())
 result = subprocess.run([str(prefix / "bin/pg_config.bin"), *sys.argv[1:]], stdout=subprocess.PIPE)
 output = result.stdout.decode()
+for before, after in SDK_REPLACEMENTS:
+    output = output.replace(before, after)
 for key, destination in (("dependencies", prefix / "dependencies"), ("postgresql", prefix)):
     output = output.replace(original[key], str(destination))
 sys.stdout.write(output)
 sys.exit(result.returncode)
 '''
+    text = text.replace("SDK_REPLACEMENTS", repr(sdk_replacements))
     if not wrapper.is_file() or wrapper.read_text() != text:
         wrapper.write_text(text)
     wrapper.chmod(0o755)
+
+
+def _macos_sdk_replacements(prefix):
+    if sys.platform != "darwin" or not (prefix / "lib/pgxs/src/Makefile.global").is_file():
+        return ()
+    flags = shlex.split(subprocess.check_output([str(prefix / "bin/pg_config.bin"), "--cppflags"], text=True))
+    if "-isysroot" not in flags:
+        return ()
+    producer_sdk = flags[flags.index("-isysroot") + 1]
+    if Path(producer_sdk).is_dir():
+        return ()
+    local_sdk = subprocess.check_output(["xcrun", "--show-sdk-path"], text=True).strip()
+    if not Path(local_sdk).is_dir():
+        raise ValueError(f"macOS SDK is unavailable: {local_sdk}")
+    return ((producer_sdk, local_sdk),)
 
 
 def prepare_development(source_prefix, destination):
@@ -199,6 +219,7 @@ def prepare_development(source_prefix, destination):
     if source_prefix == destination or source_prefix in destination.parents or destination in source_prefix.parents:
         raise ValueError("development input and private copy must not overlap")
     original = json.loads((source_prefix / PATHS_FILE).read_text())
+    sdk_replacements = _macos_sdk_replacements(source_prefix)
     _copy(source_prefix, destination)
     replacements = ((str(source_prefix / "dependencies"), str(destination / "dependencies")),
                     (original["dependencies"], str(destination / "dependencies")),
@@ -206,6 +227,7 @@ def prepare_development(source_prefix, destination):
                     (original["postgresql"], str(destination)))
     replacements = tuple(variant for before, after in replacements
                          for variant in ((before, after), (before.replace("\\", "/"), after.replace("\\", "/"))))
+    replacements += sdk_replacements
     for path in destination.rglob("*"):
         if not path.is_file() or path.is_symlink() or path == destination / PATHS_FILE:
             continue
@@ -221,4 +243,4 @@ def prepare_development(source_prefix, destination):
         if updated != text:
             path.write_text(updated)
     if not (destination / "bin/pg_config.bin.exe").is_file():
-        _write_pg_config_wrapper(destination)
+        _write_pg_config_wrapper(destination, sdk_replacements)

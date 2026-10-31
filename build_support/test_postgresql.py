@@ -8,6 +8,37 @@ from build_support.postgresql import PATHS_FILE, _copy_dependency_development, _
 
 
 class DevelopmentTests(unittest.TestCase):
+    def test_private_copy_rebinds_missing_producer_macos_sdk(self):
+        from unittest.mock import patch
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve()
+            source, sdk = root / "source", root / "local-sdk"
+            sdk.mkdir()
+            (source / "bin").mkdir(parents=True)
+            (source / "share").mkdir()
+            (source / "lib/pgxs/src").mkdir(parents=True)
+            (source / PATHS_FILE).write_text(json.dumps({"postgresql": "/old/postgresql", "dependencies": "/old/dependencies"}))
+            producer_sdk = str(root / "absent-producer-sdk")
+            binary = source / "bin/pg_config.bin"
+            binary.write_text(f"#!/bin/sh\nprintf '%s\\n' '-isysroot {producer_sdk}'\n")
+            binary.chmod(0o755)
+            makefile = source / "lib/pgxs/src/Makefile.global"
+            makefile.write_text(f"PG_SYSROOT = {producer_sdk}\n")
+            real_check_output = subprocess.check_output
+
+            def output(command, **kwargs):
+                if command == ["xcrun", "--show-sdk-path"]:
+                    return str(sdk) + "\n"
+                return real_check_output(command, **kwargs)
+
+            with patch('build_support.postgresql.sys.platform', 'darwin'), patch('build_support.postgresql.subprocess.check_output', side_effect=output):
+                for index, prefix in enumerate((source, root / "copy-0")):
+                    destination = root / f"copy-{index}"
+                    prepare_development(prefix, destination)
+                    self.assertEqual((destination / "lib/pgxs/src/Makefile.global").read_text(), f"PG_SYSROOT = {sdk}\n")
+                    self.assertEqual(real_check_output([str(destination / "bin/pg_config"), "--cppflags"], text=True).strip(), f"-isysroot {sdk}")
+            self.assertIn(producer_sdk, makefile.read_text())
+
     def test_unchanged_pg_config_wrapper_preserves_cargo_input_mtime(self):
         with tempfile.TemporaryDirectory() as temporary:
             prefix = Path(temporary)
