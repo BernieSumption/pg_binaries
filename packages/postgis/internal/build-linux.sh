@@ -11,11 +11,15 @@ export PROJ_DATA=/usr/share/proj PROJ_LIB=/usr/share/proj GDAL_DATA=/usr/share/g
 # Use the distro's shared geospatial libraries. Static linking would require
 # rebuilding their dependencies and preserving GDAL's driver configuration.
 cd "$workspace/sources/postgis"
-./configure --prefix="$pg" --with-pgconfig="$pg/bin/pg_config" \
-  --with-gdalconfig=/usr/bin/gdal-config --with-geosconfig=/usr/bin/geos-config \
-  --with-projdir=/usr --with-jsondir=/usr --with-raster \
-  --with-sfcgal=/usr/bin/sfcgal-config --with-protobufdir=/usr \
-  --without-address-standardizer --without-tiger
+if [[ ! -f config.status || ! -f GNUmakefile || ! -f postgis_config.h ]]; then
+  # The harness refreshes source trees when build inputs or configuration change.
+  ./configure --prefix="$pg" --with-pgconfig="$pg/bin/pg_config" \
+    --with-gdalconfig=/usr/bin/gdal-config --with-geosconfig=/usr/bin/geos-config \
+    --with-projdir=/usr --with-jsondir=/usr --with-raster \
+    --with-sfcgal=/usr/bin/sfcgal-config --with-protobufdir=/usr \
+    --without-phony-revision \
+    --without-address-standardizer --without-tiger
+fi
 make -j"$(nproc)"
 make install DESTDIR="$stage"
 make -C "$workspace/sources/tiger_geocoder" PG_CONFIG="$pg/bin/pg_config"
