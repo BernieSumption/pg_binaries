@@ -274,4 +274,7 @@ def main(argv=None):
 
 
 if __name__ == "__main__":
+    # Native Mach-O tools can inspect and patch x86 files without translation.
+    if sys.platform == "darwin" and run("/usr/sbin/sysctl", "-in", "sysctl.proc_translated").stdout.strip() == "1":
+        os.execv("/usr/bin/arch", ["arch", "-arm64", "/usr/bin/python3", str(pathlib.Path(__file__).resolve()), *sys.argv[1:]])
     main()
