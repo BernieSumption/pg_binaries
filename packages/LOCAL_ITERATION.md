@@ -12,7 +12,7 @@ The environment comparison is in progress. The established routes are:
 - Linux x86_64: an amd64 Docker container runs through Rosetta inside Docker Desktop's ARM Linux VM. Both builds and final-archive verification have passed through this route.
 - macOS ARM64: Lume development and clean verification VMs have passed the complete package set.
 - macOS x86_64: native GitHub Intel runners have passed the complete package set. A viable local route still needs investigation.
-- Windows x86_64: VMware Fusion runs a Windows 11 ARM guest headlessly. Seven extension packages have built locally and passed their combined SQL probes. Dependency caching is proved for Address Standardizer; Rust and PostGIS trials remain to be completed.
+- Windows x86_64: VMware Fusion runs a Windows 11 ARM guest headlessly. Eight extension packages have built locally and passed their combined SQL probes. Dependency caching is proved for Address Standardizer and pg_jsonschema; PostGIS remains to be completed.
 
 The current work uses Docker for Linux, Lume for Mac and Fusion for Windows. The comparison includes startup, source transfer, dependency preparation, compilation, packaging and verification, rather than compiler speed alone. Parallels trials were blocked before guest startup; their results do not establish its build performance.
 
@@ -156,6 +156,8 @@ windows_vmx='/Users/berniesumption/Documents/local-dev/vmware-vms/Windows 11 64-
 These scripts run inside Windows, from its local repository checkout. The local pgvector build passed in 17.92 seconds, then 7.78 seconds in the same workspace with unchanged source, context and main input keys. Address Standardizer took 31.28 seconds initially and 10.18 seconds on repeat; its PCRE2 library hash and modification time and dependency success key remained unchanged. No PCRE2 configuration, compilation or installation ran on repeat.
 
 Collection, HypoPG, pg_ivm, pgAudit and pgTAP also built twice locally, with repeat calls taking 11.3–14.4 seconds including VMware command overhead. pgTAP uses Git's bundled Perl when Perl is absent from `PATH`, so this build needs no separate Perl installation. The seven-package combination passed native-library inspection, SQL probes, shutdown and cleanup in 33.12 seconds. These runs used the existing verified PostgreSQL SDK from GitHub, two guest CPUs and 4 GiB RAM; they do not measure a local PostgreSQL compilation or a clean-machine build.
+
+Pg_jsonschema's first setup attempt took 494.56 seconds and populated the scoped Rust and cargo-pgrx caches before the PowerShell logging failure below. After fixing the wrapper and recovering its stale workspace lock, the first successful build took 389.07 seconds and the repeat took 28.47 seconds, with `CARGO_BUILD_JOBS=2`. The successful first build was therefore not cold. The repeat retained its dependency success key, toolchain, registry and compiled-library cache. Pg_jsonschema alone passed runtime verification in 24.38 seconds; all eight completed packages passed together in 25.55 seconds, inspecting 101 binaries and running probes for nine SQL extensions.
 
 ```powershell
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File platforms/windows/bootstrap.ps1

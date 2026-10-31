@@ -4,7 +4,7 @@
 
 The user selected Fusion for Windows, retaining Docker for Linux and Lume for Mac. The remaining environment decision is whether each active agent gets its own environment, with practical concurrency limits. Separate workspaces isolate build files, but agents sharing a container or VM can still interfere through installed system dependencies.
 
-Fusion's toolchain baseline is preserved as both a separate VM copy and a named snapshot. Headless builds, seven-package SQL verification and PostgreSQL's complete runtime checks have passed. The remaining Windows environment question is useful concurrency and whether agents should use separate VMs or coordinated workspaces in one VM. Details and evidence are in [packages/LOCAL_ITERATION.md](packages/LOCAL_ITERATION.md#fusion-local-setup).
+Fusion's toolchain baseline is preserved as both a separate VM copy and a named snapshot. Headless builds, eight-package SQL verification and PostgreSQL's complete runtime checks have passed. The remaining Windows environment question is useful concurrency and whether agents should use separate VMs or coordinated workspaces in one VM. Details and evidence are in [packages/LOCAL_ITERATION.md](packages/LOCAL_ITERATION.md#fusion-local-setup).
 
 Local macOS x86 translation is still waiting for the human's Rosetta licence decision. The two-guest macOS limit makes separate workspaces in a shared development VM a practical candidate while retaining a clean verifier. Linux container and Mac workspace concurrency trials are recorded in the local iteration guide; Windows concurrency remains unmeasured. The guide distinguishes successful trials from routes blocked before testing.
 
