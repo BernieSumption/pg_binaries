@@ -133,6 +133,12 @@ These measurements used verified source-download caches. “Cold” means a new 
 
 The Mac archives passed SQL probes together in a separate clean VM: 201 Mach-O files checked, no findings, 29.22 seconds for the final verification run. These results establish that retained dependency state helps iteration; they do not yet compare Parallels against Docker or Lume. Native Windows and local macOS x86_64 trials remain outstanding.
 
+### Starting another Linux agent
+
+A fresh ARM64 container took 0.61 seconds to provision from the existing Docker image and cached APT layer, with no manual steps. Its initially empty source cache was populated during an Address Standardizer build taking 13.60 seconds. Repeat and post-restart builds took 3.39 and 3.42 seconds. This measures another agent joining an established installation, rather than fresh-machine setup.
+
+Recreating that trial container against its retained host work directory preserved the complete cache manifest. A subsequent build took 3.43 seconds and passed archive checks; the PCRE2 library's checksum, modification time and dependency key were unchanged. The retained work directory occupied 268 MiB. New development containers use Docker's `--init`: stopping the trial then took 0.08 seconds with SIGTERM, compared with 3.12 seconds and a forced kill without it. Existing containers retain their creation settings.
+
 ### Concurrent builds
 
 One Linux ARM64 trial built HypoPG and pgvector in separate workspaces. Serial execution took 6.57 seconds using 16 allocated CPUs; two concurrent containers with eight CPUs each took 4.35 seconds, about 34% less wall time. Both scenarios passed archive checks. The serial container peaked at 528 MiB; the concurrent containers peaked individually at 299 and 252 MiB. Their peaks were not necessarily simultaneous and exclude the Docker VM's overhead.
@@ -149,13 +155,17 @@ The provisional recommendation is to defer a separate hosted compiled-dependency
 
 The expensive remaining case is rebuilding a changed dependency-heavy package. A previous native Intel macOS run spent 1,945 seconds in the PostGIS job and 1,077 seconds in pg_jsonschema; the complete run took 4,559 seconds. Those are whole-job timings from an earlier revision, including setup and downloads, rather than measured dependency-compilation savings. Local repeat-build results suggest useful savings are possible, but do not establish hosted cache transfer cost or expected hit rate.
 
-During the Windows CLI trial, GitHub exposed step states while the job ran but withheld the full job log until completion. The first bootstrap failure took 109 seconds overall to report. The retry passed bootstrap in 121 seconds, then remained in the PostgreSQL checkpoint beyond 30 minutes. That checkpoint includes dependency builds, compilation, packaging and runtime checks; its total must not be reported as PostgreSQL compilation time without the completed log.
+During the Windows CLI trial, GitHub exposed step states while the job ran but withheld the full job log until completion. The first bootstrap failure took 109 seconds overall to report. The retry passed bootstrap in 121 seconds and spent 30 minutes 7 seconds building and checking PostgreSQL archives before runtime verification failed. A later fresh runner produced the runtime and development archives in 18 minutes 24 seconds. These timings include dependency preparation, compilation and packaging; they are not compiler-only measurements or a controlled comparison.
+
+Reusing those PostgreSQL archives took six seconds for selection and three seconds for staging and input checks in one subsequent run. The runtime checkpoint still ran. This avoided another PostgreSQL build while diagnosing Windows verification problems, although each hosted retry still needed runner startup and tool preparation. Local Windows iteration must be measured before deciding whether that remaining delay warrants a compiled-dependency cache.
 
 If hosted iteration remains necessary, PostGIS is the first candidate for a measured cache experiment. The dependency phase gives the harness a reusable boundary without adding cache logic to individual build scripts. Hosted reuse would still need a stable installation path or verified relocation, complete invalidation and a timed cache restore. No hosted compiled-dependency cache is currently configured.
 
 ## Initial Parallels setup
 
 The existing `Windows 11` VM has its downloaded installation ISO and unattended setup image ready. Starting it, creating a Linux VM and listing snapshots have each failed with “available only in Parallels Desktop for Mac Pro or Business Edition.” Activation needs resolving before command-line provisioning can be evaluated. Computer use briefly connected after permission approval, but subsequent attempts failed with a native-pipe startup error. These are setup blockers, not performance results.
+
+Separate macOS and full-x86 Linux guest-creation attempts returned the same edition error. The latter used the vendor's documented `prlctl create NAME -d ubuntu --cpu-type x86` command. No comparison guest was created. Parallels documents a one-vCPU, 8 GiB limit for full-x86 emulation; its actual project performance remains unmeasured. [Full-x86 guest setup and limitations](https://kb.parallels.com/en/130217).
 
 Routine lifecycle and guest work use `prlctl`; computer use is authorised for Parallels and its Windows guests when a command-line operation is unavailable. Other Mac applications and the host browser remain outside that authorisation.
 
