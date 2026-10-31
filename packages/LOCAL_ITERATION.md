@@ -24,7 +24,7 @@ For each route, the experiment record includes host and guest versions, CPU/RAM 
 
 The recommendation distinguishes routes that were tested successfully, tested with poor results, blocked before a useful trial, and not yet attempted. Qualitative evidence about reliability and agent effort accompanies timings. Retaining Docker or Lume alongside Parallels requires evidence of a useful advantage, rather than familiarity alone.
 
-A headless Ubuntu ARM64 cloud-image trial under Lume reached SSH without an interactive installer. Growing its disk, installing Docker and registering Lume's Rosetta share also succeeded; an amd64 container executed successfully. Comparable extension builds are still being measured. This route therefore has a working unattended setup, but no build-performance verdict yet.
+A headless Ubuntu ARM64 cloud-image trial under Lume passed native and Rosetta-translated extension builds, clean SQL verification and cache reuse after restart. Its measured x86 build times were close to Docker Desktop's. Until Parallels can be tested, retain Docker Desktop for Linux: Lume offers a viable way to consolidate VM management, but its setup required more troubleshooting and demonstrated no clear build-speed advantage.
 
 UTM 4.7.5 is also installed, with metadata for an ARM64 Windows guest allocated 8 GiB RAM. Its CLI help worked, but version and inventory queries returned `OSStatus error -1712`; both exited with status zero despite the errors. Guest control and build performance could not be tested. No UTM desktop control or VM changes were attempted. VMware Fusion is not installed, and standalone QEMU system executables were absent from `PATH`.
 
@@ -76,6 +76,25 @@ The clean guest can be shut down through its enabled SSH service with `sudo shut
 Two measured starts reached SSH readiness in 9.74 and 10.39 seconds. A 54,071,920-byte PostgreSQL development archive transferred from host to guest in 0.264 seconds with matching SHA-256; the host file was already warm in the filesystem cache. Graceful shutdown took 11.23 seconds from supplying the sudo credential to confirmed stopped state. These are retained-VM timings, excluding initial macOS installation and guest setup.
 
 Lume and Parallels both document a limit of two concurrent macOS guests on Apple Silicon. Budget two across both products: a separate allowance for each has not been demonstrated. Two Lume guests have run together; a mixed-product trial has not run. This makes a shared development VM with separate workspaces more practical than one Mac VM per agent while retaining a clean verification VM. The limit does not apply to Linux or Windows guests. [Lume](https://cua.ai/docs/lume), [Parallels](https://kb.parallels.com/en/128867).
+
+### Lume Linux alternative
+
+The trial guest `pg-binaries-lume-linux-arm64-trial` uses four vCPUs, 8 GiB RAM and a 32 GiB sparse disk. Ubuntu's cloud image and a NoCloud seed provided unattended SSH setup. Installing Docker took about 72 seconds. Building the ARM development image took 329 seconds; the successful x86 image build took 148 seconds after installing Buildx and enabling `DOCKER_BUILDKIT=1`. These are preparation costs, separate from extension timings.
+
+Address Standardizer took 7.39 seconds initially and 2.18 on repeat for ARM, and 53.09 and 7.23 seconds through x86 Rosetta. An x86 repeat after a guest restart took 7.13 seconds with the same PCRE2 checksum. PostGIS took 182.33 seconds initially and 72.57 on repeat, with its source downloads measured separately at 15.65 seconds and system geospatial libraries already installed. All three target/package combinations passed clean runtime and SQL verification. These are individual trials on the same host with different guest allocations and cache conditions, rather than a controlled performance comparison.
+
+Two setup failures required recovery. Docker's legacy builder labelled the x86 image ARM64; installing Ubuntu's Buildx package resolved this. A Lume restart left two processes using the same VM identity and network address, making SSH reach the wrong disk. Recovery identified the processes by their actual backing disks, stopped the original-disk process and confirmed its exit. A later stop/restart verified process exit, the intended disk, SSH access and retained caches. During the duplicate-process failure, `lume get` incorrectly reported the running guest as stopped.
+
+The retained trial starts from the host repository with:
+
+```sh
+lume run pg-binaries-lume-linux-arm64-trial \
+  --storage "$PWD/out/local-environments/pg-binaries-lume-linux-arm64-trial" \
+  --disk-path "$PWD/out/local-iteration/lume-linux/ubuntu-arm64-32g.raw" \
+  --display none --vnc disabled --detach
+```
+
+SSH uses account `ubuntu`, the existing project key and `out/local-environments/pg-binaries-lume-linux-arm64-trial/known_hosts`. The copied host fingerprint and key were checked after the trial. The observed address was `192.168.64.11`; rediscover it after restart. The guest runs the same Linux helpers with `PG_BINARIES_LINUX_WORK=/home/ubuntu/pg-work`, keeping outputs in `/home/ubuntu/pg-output`. Docker access must preserve the normal user ID when invoking the clean verifier; running that helper as root makes its container-user creation fail. Trial commands, failures and cache evidence are in `out/local-iteration/lume-linux/trial.md`.
 
 ### Windows commands
 
