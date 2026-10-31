@@ -78,6 +78,30 @@ if ($legacyMacroCount -eq 1 -and $portableMacroCount -eq 0) {
 } elseif ($legacyMacroCount -ne 0 -or $portableMacroCount -ne 1) {
     throw 'Pinned Address Standardizer debug macro no longer matches the expected Windows compatibility patch'
 }
+$pagcApiPath = Join-Path $source 'src/pagc_api.h'
+$pagcApiText = [IO.File]::ReadAllText($pagcApiPath)
+$legacyDisabledMacro = '#define DBG(format, arg...) do { ; } while (0)'
+$portableDisabledMacro = '#define DBG(...) do { ; } while (0)'
+$legacyDisabledCount = [regex]::Matches($pagcApiText, [regex]::Escape($legacyDisabledMacro)).Count
+$portableDisabledCount = [regex]::Matches($pagcApiText, [regex]::Escape($portableDisabledMacro)).Count
+if ($legacyDisabledCount -eq 1 -and $portableDisabledCount -eq 0) {
+    $pagcApiText = $pagcApiText.Replace($legacyDisabledMacro, $portableDisabledMacro)
+    [IO.File]::WriteAllText($pagcApiPath, $pagcApiText, [Text.UTF8Encoding]::new($false))
+} elseif ($legacyDisabledCount -ne 0 -or $portableDisabledCount -ne 1) {
+    throw 'Pinned Address Standardizer pagc_api.h debug macro no longer matches the expected Windows compatibility patch'
+}
+$parseApiPath = Join-Path $source 'src/parseaddress-api.c'
+$parseApiText = [IO.File]::ReadAllText($parseApiPath)
+$disabledMacroPattern = '(?m)(#else\r?\n#define DBG)\(format, arg\.\.\.\)(?=[ \t]*\\)'
+$disabledMacroCount = [regex]::Matches($parseApiText, $disabledMacroPattern).Count
+$portableMacroPattern = '(?m)#else\r?\n#define DBG\(\.\.\.\)(?=[ \t]*\\)'
+$portableParseMacroCount = [regex]::Matches($parseApiText, $portableMacroPattern).Count
+if ($disabledMacroCount -eq 1 -and $portableParseMacroCount -eq 0) {
+    $parseApiText = [regex]::Replace($parseApiText, $disabledMacroPattern, '$1(...)')
+    [IO.File]::WriteAllText($parseApiPath, $parseApiText, [Text.UTF8Encoding]::new($false))
+} elseif ($disabledMacroCount -ne 0 -or $portableParseMacroCount -ne 1) {
+    throw 'Pinned Address Standardizer parseaddress-api.c debug macro no longer matches the expected Windows compatibility patch'
+}
 $entryPoints = @{
     'address_parser.c' = @('parse_address','strip_explicit_country')
     'address_standardizer.c' = @('debug_standardize_address','standardize_address','standardize_address1')
