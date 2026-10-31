@@ -136,7 +136,7 @@ if ($Package -eq 'postgis') {
         if ((Get-FileHash $archive -Algorithm SHA256).Hash.ToLowerInvariant() -ne 'ea2f31a0b6ade63914ce441ffb022f0f6aa96982bfefa2326460a26d5fb01322') { throw 'MSYS2 archive checksum mismatch' }
         Write-Stage 'Verify MSYS2 base archive checksum' 'completed'
         Write-Stage 'Extract MSYS2 base archive' 'started'
-        Run tar.exe @('-xJf', $archive, '-C', $Tools)
+        Run $python @('-c', "import subprocess, sys; subprocess.run([sys.executable, '-m', 'tarfile', '--extract', sys.argv[1], sys.argv[2], '--filter', 'data'], check=True, timeout=300)", $archive, $Tools)
         Write-Stage 'Extract MSYS2 base archive' 'completed'
         Write-Stage 'Initialise MSYS2 login shell' 'started'
         Run $bash @('--login', '-c', 'true')
