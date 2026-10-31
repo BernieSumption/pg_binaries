@@ -149,6 +149,7 @@ windows_template='/Users/berniesumption/Documents/local-dev/vmware-vms/Windows 1
 windows_agent='/Users/berniesumption/Documents/local-dev/vmware-vms/Windows 11 agent-2.vmwarevm'
 cp -cRp "$windows_template" "$windows_agent"
 printf '%s\n' password | vmcli VMTemplate Deploy -p "$windows_agent/baseline.vmtx"
+windows_vmx="$windows_agent/baseline.vmx"
 ```
 
 The measured APFS copy took 0.006 seconds and deployment 0.016 seconds. First startup generated distinct VM identifiers and a distinct MAC address. The deployed VM compiled and ran an x64 executable, accepted authenticated guest commands and fetched an HTTPS page with normal certificate checks while the development VM remained running. The older `vmrun clone ... full` failed on this encrypted VM, so the tested route uses `vmcli` templates.
@@ -156,7 +157,7 @@ The measured APFS copy took 0.006 seconds and deployment 0.016 seconds. First st
 Headless startup from an agent command uses a separate process session and file output. Otherwise the command runner can stop the VM engine when its process group is cleaned up. This host command starts a deployed VM without opening its console:
 
 ```sh
-python3 - "$windows_agent/baseline.vmx" <<'PY'
+python3 - "$windows_vmx" <<'PY'
 import subprocess, sys
 with open('/private/tmp/pg-binaries-vm-start.log', 'ab') as log:
     launcher = subprocess.Popen(
@@ -177,10 +178,31 @@ Two small builds in separate workspaces within the existing two-CPU, 4 GiB VM to
 
 #### Build and verification commands
 
-From the Mac host, a guest build starts directly through VMware Tools:
+The host checkout is the source of truth. An idle, newly deployed agent VM receives the committed source before building; its workspaces and caches stay outside `C:/pg-src`:
 
 ```sh
-windows_vmx='/Users/berniesumption/Documents/local-dev/vmware-vms/Windows 11 64-bit Arm.vmwarevm/Windows 11 64-bit Arm.vmx'
+git archive --format=tar -o /private/tmp/pg-binaries-source.tar HEAD
+vmrun -T fusion -vp password -gu 'Bernie Sumption' -gp password \
+  copyFileFromHostToGuest "$windows_vmx" \
+  /private/tmp/pg-binaries-source.tar 'C:\Users\Public\pg-binaries-source.tar'
+vmrun -T fusion -vp password -gu 'Bernie Sumption' -gp password \
+  runProgramInGuest "$windows_vmx" \
+  'C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe' \
+  -NoProfile -NonInteractive -ExecutionPolicy Bypass -Command \
+  '$ErrorActionPreference="Stop"; if(Test-Path C:/pg-src){Remove-Item -Recurse -Force C:/pg-src}; & C:/pg-binaries-tools/python/python.exe -m tarfile -e C:/Users/Public/pg-binaries-source.tar C:/pg-src; exit $LASTEXITCODE'
+```
+
+During iteration, an edited build script can be transferred before the next build without committing it:
+
+```sh
+vmrun -T fusion -vp password -gu 'Bernie Sumption' -gp password \
+  copyFileFromHostToGuest "$windows_vmx" \
+  "$PWD/packages/pgvector/build.ps1" 'C:\pg-src\packages\pgvector\build.ps1'
+```
+
+The committed-source refresh replaces the guest checkout, including deleted files. Guest-only edits are copied back first. The selected `windows_vmx` remains the deployed agent VM for transfers and builds:
+
+```sh
 vmrun -T fusion -vp password -gu 'Bernie Sumption' -gp password \
   runProgramInGuest "$windows_vmx" \
   'C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe' \
@@ -196,6 +218,27 @@ vmrun -T fusion -vp password -gu 'Bernie Sumption' -gp password \
 
 Both local build helpers accept an optional `-LogPath`. It records build output, including native stderr, in a guest file that can be copied back while a build runs or after it finishes. Reusing a log path replaces the previous log. VMware's command exit status still reports failure; writing a log does not suppress it.
 
+The prepared PostGIS workspace was built with `MAKEFLAGS=-j2`. Its short-lived guest PowerShell process uses the same setting on repeat; other packages use their own fresh process so GNU Make flags do not reach NMake:
+
+```powershell
+$env:MAKEFLAGS = '-j2'
+$env:PG_BUILD_JOBS = '2'
+& C:/pg-src/platforms/windows/build-extension-local.ps1 `
+  -Package postgis -DevelopmentArchive C:/pg-inputs/postgresql-development-18.6-windows-x86_64.tar.gz `
+  -Workspace C:/pg-work/postgis -OutputDirectory C:/pg-output/postgis `
+  -LogPath C:/pg-work/logs/postgis.log
+```
+
+`PG_BUILD_JOBS` controls PostGIS parallelism. Two workers completed the original dependency build in a 4 GiB guest; four workers nearly filled an 8 GiB guest during SFCGAL compilation. Changing the parallel worker count preserves the cache, while changing recorded build flags such as `MAKEFLAGS` invalidates it.
+
+After a build, a smoke check uses the matching PostgreSQL runtime archive. This guest command can diagnose an iteration; final archive checks run in the separate verification VM after copying the source and archives there:
+
+```powershell
+& C:/pg-binaries-tools/python/python.exe C:/pg-src/build.py --target windows-x86_64 runtime-check `
+  C:/pg-inputs/postgresql-18.6-windows-x86_64.tar.gz C:/pg-work/verify-pgvector `
+  --package-archive pgvector=C:/pg-output/pgvector/pgvector-postgresql-18.6-windows-x86_64.tar.gz
+```
+
 These scripts run inside Windows, from its local repository checkout. The local pgvector build passed in 17.92 seconds, then 7.78 seconds in the same workspace with unchanged source, context and main input keys. Address Standardizer took 31.28 seconds initially and 10.18 seconds on repeat; its PCRE2 library hash and modification time and dependency success key remained unchanged. No PCRE2 configuration, compilation or installation ran on repeat.
 
 Collection, HypoPG, pg_ivm, pgAudit and pgTAP also built twice locally, with repeat calls taking 11.3–14.4 seconds including VMware command overhead. pgTAP uses Git's bundled Perl when Perl is absent from `PATH`, so this build needs no separate Perl installation. The seven-package combination passed native-library inspection, SQL probes, shutdown and cleanup in 33.12 seconds. These runs used the existing verified PostgreSQL SDK from GitHub, two guest CPUs and 4 GiB RAM; they do not measure a local PostgreSQL compilation or a clean-machine build.
@@ -210,8 +253,9 @@ A fresh PostgreSQL build through the standard local helper took 437.61 seconds, 
 
 The locally compiled PostgreSQL passed all 15 runtime checks in 94.83 seconds. A separate VM then passed PostgreSQL alone in 83.49 seconds and with all nine locally built extension archives in 64.96 seconds. Those extensions were compiled against the earlier verified SDK; this establishes runtime compatibility, not a newly bound release candidate. The new SDK is separately retained at `C:/pg-inputs/local-core/postgresql-development-18.6-windows-x86_64.tar.gz` in the prepared agent trial. Switching an existing workspace to that SDK correctly invalidates its build state; the earlier SDK remains untouched.
 
+To build PostgreSQL and start a fresh extension workspace against its SDK, the guest commands are:
+
 ```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File platforms/windows/bootstrap.ps1
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File platforms/windows/build-postgresql-local.ps1 `
   -Workspace C:/pg-work/postgresql -OutputDirectory C:/pg-output/postgresql
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File platforms/windows/build-extension-local.ps1 `
@@ -220,7 +264,11 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File platforms/windows/build-
   -Workspace C:/pg-work/agent-1/pgvector -OutputDirectory C:/pg-output/pgvector
 ```
 
-Bootstrap prepares tools under `C:/pg-binaries-tools` by default; `PG_WINDOWS_TOOLS` selects that root for subsequent scripts. PostGIS additionally uses `bootstrap.ps1 -Package postgis` to prepare MSYS2. The PostgreSQL build needs an empty workspace and produces separate runtime and development archives. Extension builds reuse their named workspace and cache sources beneath the tools root. The archive filename comes from `postgresql-build.json` in the PostgreSQL output directory; the example uses the current selected version.
+These commands use the newly produced SDK, while the earlier host command uses the SDK retained with the prepared extension workspace. Each workspace keeps its selected SDK unchanged until that input is deliberately updated.
+
+`bootstrap.ps1` prepares a new tool installation under `C:/pg-binaries-tools`; `PG_WINDOWS_TOOLS` selects that root for subsequent scripts. Its `-Package postgis` option also prepares MSYS2. The PostgreSQL build needs an empty workspace and produces separate runtime and development archives. Extension builds reuse their named workspace and cache sources beneath the tools root. The archive filename comes from `postgresql-build.json` in the PostgreSQL output directory; the example uses the current selected version.
+
+Vcpkg's binary archives remain in `%LOCALAPPDATA%\vcpkg\archives`. Its downloaded and extracted tools remain beneath `%VCPKG_INSTALLATION_ROOT%\downloads`; the native Perl fallback uses `tools\perl\5.42.2.1\perl\bin\perl.exe` there. Retaining both caches lets a fresh PostgreSQL workspace restore dependencies and reuse native Perl.
 
 A PostGIS tool-bootstrap trial on a fresh native Windows GitHub runner passed in 5 minutes 16 seconds. Installing its 196 MSYS2 packages took 3 minutes 30 seconds, downloaded 429.55 MiB and occupied about 3 GiB. A retained local environment avoids repeating that installation; this hosted measurement excludes PostGIS compilation and does not measure Fusion performance.
 
