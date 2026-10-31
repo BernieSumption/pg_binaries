@@ -15,12 +15,14 @@ import tempfile
 
 try:
     from .environment import executable, clean_environment, connection
+    from .process import run as run_process
 except ImportError:
     from environment import executable, clean_environment, connection
+    from process import run as run_process
 
 
 def run(arguments: list[str], *, environment: dict[str, str] | None = None) -> subprocess.CompletedProcess[str]:
-    return subprocess.run(arguments, capture_output=True, text=True, check=False, env=environment)
+    return run_process(arguments, capture_output=True, text=True, check=False, env=environment)
 
 
 def require_command(arguments: list[str], *, environment: dict[str, str] | None = None) -> str:

@@ -26,6 +26,7 @@ from verification.macos.static import inspect as inspect_macho
 from verification.linux.static import inspect as inspect_elf
 from packages.postgresql.probes.tls import probe as probe_tls
 from packages.postgresql.probes.environment import executable, connection
+from packages.postgresql.probes.process import run as run_process
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -90,7 +91,7 @@ def clean_disposable(output: Path, installation_parent: Path, database: Path,
 
 
 def run(args: list[str], environment: dict[str, str]) -> str:
-    result = subprocess.run(args, env=environment, text=True, capture_output=True, check=False)
+    result = run_process(args, env=environment, text=True, capture_output=True, check=False)
     if result.returncode:
         status = str(result.returncode)
         if result.returncode > 255 or result.returncode < -255:

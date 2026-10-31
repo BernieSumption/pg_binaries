@@ -9,7 +9,6 @@ import os
 from pathlib import Path
 import shutil
 import socket
-import subprocess
 import sys
 import tempfile
 import tarfile
@@ -17,12 +16,14 @@ import tarfile
 
 try:
     from .environment import executable, clean_environment, connection
+    from .process import run as run_process
 except ImportError:
     from environment import executable, clean_environment, connection
+    from process import run as run_process
 
 
 def run(arguments: list[str], environment: dict[str, str]) -> str:
-    result = subprocess.run(arguments, capture_output=True, text=True, check=False, env=environment)
+    result = run_process(arguments, capture_output=True, text=True, check=False, env=environment)
     if result.returncode:
         detail = "\n".join(part for part in (result.stdout.strip(), result.stderr.strip()) if part)
         raise RuntimeError(f"{' '.join(arguments)} failed" + (f":\n{detail}" if detail else ""))
@@ -124,7 +125,7 @@ def probe(installation: Path, work_parent: Path, source_archive: Path | None = N
              str(port), "-U", user, "-d", "postgres", "-c", statement], client_environment)
     finally:
         if started:
-            stop = subprocess.run([str(binaries["pg_ctl"]), "-D", str(data), "-m", "fast", "-w", "stop"],
+            stop = run_process([str(binaries["pg_ctl"]), "-D", str(data), "-m", "fast", "-w", "stop"],
                                   capture_output=True, text=True, check=False, env=environment)
             if stop.returncode:
                 stopped = False

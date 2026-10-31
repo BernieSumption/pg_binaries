@@ -8,7 +8,6 @@ import getpass
 import os
 from pathlib import Path
 import shutil
-import subprocess
 import sys
 import tarfile
 import tempfile
@@ -16,12 +15,14 @@ import tempfile
 
 try:
     from .environment import executable, clean_environment, connection
+    from .process import run as run_process
 except ImportError:
     from environment import executable, clean_environment, connection
+    from process import run as run_process
 
 
 def run(arguments: list[str], environment: dict[str, str]) -> str:
-    result = subprocess.run(arguments, capture_output=True, text=True, check=False, env=environment)
+    result = run_process(arguments, capture_output=True, text=True, check=False, env=environment)
     if result.returncode:
         raise RuntimeError(f"{' '.join(arguments)} failed: {result.stderr.strip()}")
     return result.stdout.strip()

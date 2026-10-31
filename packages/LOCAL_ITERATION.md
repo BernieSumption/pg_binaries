@@ -24,6 +24,8 @@ For each route, the experiment record includes host and guest versions, CPU/RAM 
 
 The recommendation distinguishes routes that were tested successfully, tested with poor results, blocked before a useful trial, and not yet attempted. Qualitative evidence about reliability and agent effort accompanies timings. Retaining Docker or Lume alongside Parallels requires evidence of a useful advantage, rather than familiarity alone.
 
+UTM 4.7.5 is also installed, with metadata for an ARM64 Windows guest allocated 8 GiB RAM. Its CLI help worked, but version and inventory queries returned `OSStatus error -1712`; both exited with status zero despite the errors. Guest control and build performance could not be tested. No UTM desktop control or VM changes were attempted. VMware Fusion is not installed, and standalone QEMU system executables were absent from `PATH`.
+
 ## Development loop
 
 Agents develop build scripts locally before running them on GitHub Actions. A local iteration produces an archive and resolves build failures quickly; inexpensive smoke checks can help diagnose a failure. GitHub jobs run the same package build commands after preparing their runner environments. A failure found on GitHub is fixed in the shared build script or runner setup and checked again where it occurred.

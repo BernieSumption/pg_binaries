@@ -45,14 +45,13 @@ jobs:
           python ./platforms/windows/diagnose-runtime.py --archive $archive --record $record --output $diagnostics --pg-ctl-only
 
       - name: Run current runtime verification on saved archive
-        if: false
         run: |
           . ./platforms/windows/environment.ps1
           $base = Join-Path $env:RUNNER_TEMP 'windows-runtime-diagnostic'
           $artifact = Join-Path $base 'original-artifact/output/postgresql'
           $archive = Join-Path $artifact 'postgresql-18.6-windows-x86_64.tar.gz'
           $reports = Join-Path $base 'runtime-check'
-          python ./build.py --target windows-x86_64 runtime-check $archive $reports
+          python -m verification.measure "$base/runtime-metrics.json" -- python -c "import subprocess, sys; result = subprocess.run([sys.executable, 'build.py', '--target', 'windows-x86_64', 'runtime-check', sys.argv[1], sys.argv[2]], timeout=600); sys.exit(result.returncode)" $archive $reports
           $runtimeExit = $LASTEXITCODE
           Set-Content -Path (Join-Path $base 'runtime-check-exit-code.txt') -Value $runtimeExit
           if ($runtimeExit) { Write-Host "Runtime verification returned $runtimeExit; its checks and diagnostics are retained." }
@@ -69,5 +68,6 @@ jobs:
             ${{ runner.temp }}/windows-runtime-diagnostic/raw-initdb-probes/
             ${{ runner.temp }}/windows-runtime-diagnostic/runtime-check/
             ${{ runner.temp }}/windows-runtime-diagnostic/runtime-check-exit-code.txt
+            ${{ runner.temp }}/windows-runtime-diagnostic/runtime-metrics.json
             !${{ runner.temp }}/windows-runtime-diagnostic/raw-initdb-probes/extracted distribution with spaces/**
             !${{ runner.temp }}/windows-runtime-diagnostic/raw-initdb-probes/probe data with spaces/**
