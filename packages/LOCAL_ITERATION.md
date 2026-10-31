@@ -85,6 +85,8 @@ Address Standardizer took 7.39 seconds initially and 2.18 on repeat for ARM, and
 
 Two setup failures required recovery. Docker's legacy builder labelled the x86 image ARM64; installing Ubuntu's Buildx package resolved this. A Lume restart left two processes using the same VM identity and network address, making SSH reach the wrong disk. Recovery identified the processes by their actual backing disks, stopped the original-disk process and confirmed its exit. A later stop/restart verified process exit, the intended disk, SSH access and retained caches. During the duplicate-process failure, `lume get` incorrectly reported the running guest as stopped.
 
+The trial guest is now stopped with its disk and caches retained. Guest shutdown through `sudo -n /sbin/shutdown -h now` took 4.31 seconds to confirmed exit of both VM processes. SSH returned 255 as the connection closed; checking the processes established that shutdown succeeded.
+
 The retained trial starts from the host repository with:
 
 ```sh
@@ -120,7 +122,7 @@ A manual run can supply `postgresql_run` to reuse that run's recorded PostgreSQL
 
 The optional `repeat_builds` input runs each selected extension build twice in the same workspace. `package-summary.json` records first and repeat build times separately from the total including verification, and checks that the recorded workspace keys remain unchanged. The first build can use installed tools and download caches; its timing is not necessarily a cold-machine measurement.
 
-The `package` phase accepts one package name through the `package` input. The separate `bootstrap-postgis` phase diagnoses tool preparation without building PostgreSQL or extensions. Bootstrap logs timestamp each external operation; downloads have a five-minute timeout. The focused diagnostic located a stall in MSYS2 archive extraction after download and checksum verification completed; extraction did not finish before its 20-minute job limit. The earlier two-hour PostGIS failure therefore cannot establish a need for compiled-dependency caching.
+The `package` phase accepts one package name through the `package` input. The separate `bootstrap-postgis` phase diagnoses tool preparation without building PostgreSQL or extensions. Bootstrap logs timestamp each external operation; downloads and MSYS2 extraction have five-minute timeouts. Ambient `tar.exe` stalled extracting MSYS2 beyond the 20-minute diagnostic limit; replacing it with the prepared Python toolchain extracted the same verified archive in 28 seconds. The earlier two-hour PostGIS failure therefore cannot establish a need for compiled-dependency caching.
 
 Build records use forward-slash paths and checkout files use LF line endings on every host. A cross-host SDK audit found that Windows path separators and Git's CRLF conversion otherwise made identical source revisions appear different. Fresh Windows SDK run `41175933237` passed the native record tests and PostgreSQL runtime checkpoint with this correction. Earlier records remain historical evidence and are not rewritten to bypass current input checks.
 
