@@ -12,6 +12,8 @@ build.sh OS ARCH WORKSPACE
 
 The script compiles PostgreSQL and its selected built-in extensions into `WORKSPACE/postgresql/`. On macOS it first builds private dependencies under `WORKSPACE/build/dependencies/`. The harness supplies `MACOSX_DEPLOYMENT_TARGET`.
 
+On Windows, the script selects native Windows Perl and explicitly configures Meson for x64. A package-local patch lets Meson build and run PostgreSQL's timezone compiler when target binaries run locally, including through Windows ARM's x64 translation. The patch rejects unexpected upstream source rather than silently applying to a changed build system.
+
 The harness reads the PostgreSQL version from the installed `pg_config`. It copies the installation into `WORKSPACE/payload/`, removes development-only files, bundles required libraries and makes the runtime installation relocatable. Linux retains its bundled loader and launcher; macOS rewrites library references and signs the resulting binaries; Windows places required DLLs beside the executables.
 
 `WORKSPACE/development/` contains the same runnable installation plus headers, PGXS, static libraries and `pg_config`. Private dependency development files are included under `dependencies/`. The development archive contains one enclosing `postgresql/` directory, as does the runtime archive.

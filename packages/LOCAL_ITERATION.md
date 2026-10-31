@@ -11,8 +11,8 @@ The environment comparison is in progress. The established routes are:
 - Linux ARM64: the retained Docker development container runs ARM binaries directly.
 - Linux x86_64: an amd64 Docker container runs through Rosetta inside Docker Desktop's ARM Linux VM. Both builds and final-archive verification have passed through this route.
 - macOS ARM64: Lume development and clean verification VMs have passed the complete package set.
-- macOS x86_64: native GitHub Intel runners have passed the complete package set. A viable local route still needs investigation.
-- Windows x86_64: VMware Fusion runs a Windows 11 ARM guest headlessly. All nine extension packages have built locally and passed their combined SQL probes. Dependency caching is proved for Address Standardizer, pg_jsonschema and PostGIS. Compiling PostgreSQL locally remains in progress.
+- macOS x86_64: native GitHub Intel runners have passed the complete package set. The local Rosetta trial awaits permission for Lume CLI/SSH access and acceptance of Apple's Rosetta licence.
+- Windows x86_64: VMware Fusion runs a Windows 11 ARM guest headlessly. PostgreSQL and all nine extension packages have built locally and passed runtime checks. Dependency caching is proved for Address Standardizer, pg_jsonschema and PostGIS; preparing the final reusable agent template remains in progress.
 
 The current work uses Docker for Linux, Lume for Mac and Fusion for Windows. The comparison includes startup, source transfer, dependency preparation, compilation, packaging and verification, rather than compiler speed alone. Parallels trials were blocked before guest startup; their results do not establish its build performance.
 
@@ -122,6 +122,10 @@ The Windows desktop shortcut **Set up C++ build tools** opens the installed Visu
 
 Git installed successfully through its normal ARM installer at `C:/Users/Public/Git-2.56.0.4-arm64.exe`; the executable is `C:/Program Files/Git/cmd/git.exe`. The earlier unattended attempts failed before installation, with the cause unconfirmed. The interactive choices were bundled OpenSSH, Windows Secure Channel for HTTPS, no automatic line-ending conversion, MinTTY, Git Credential Manager and file-system caching. The repository's `.gitattributes` controls line endings.
 
+The shared environment selects the native compiler host from Windows's reported CPU architecture, while always targeting x64. Process environment variables and .NET's architecture property can report x64 under translation. They previously made a Python-launched build select different Visual Studio paths from a directly launched build, changing the cache key. The environment now also normalises Visual Studio's MSBuild host path; both launch routes produce identical cache inputs.
+
+One four-CPU, 8 GiB comparison built Address Standardizer in 31.53 seconds with native ARM64-hosted MSVC and 38.50 seconds with translated x64-hosted MSVC. Repeats took 14.59 and 15.29 seconds. Each retained its own PCRE2 library and key. This single pair favours using the native compiler host but does not establish a general speed ratio. Older workspaces built with the other compiler host invalidate once when switching.
+
 Fusion's `vmrun` and `vmcli` commands are on the Mac host's `PATH`. Computer-use permissions are recorded in [AGENTS.md](../AGENTS.md#repository-operations). After restarting Codex, computer use could read Fusion's window and capture the Windows desktop. Its first connection and screenshot calls took several minutes; later screenshots returned in about 1.5 seconds. Prefer CLI commands for repeatable builds. Administrator approval remains a human step.
 
 Fusion commands on this host require `exec_command` with `sandbox_permissions="require_escalated"`. A restricted call can report the generic error `vmrun was unable to start`; confirm access through the normal approval mechanism before diagnosing the Fusion service or restarting it.
@@ -167,6 +171,8 @@ The detached launch returned in 0.63–0.79 seconds; the first trial reached wor
 
 A newly deployed agent VM received a 258 KB source archive in 0.13 seconds and built HypoPG without installing additional tools. Its first build took 27.35 seconds and its repeat 17.79 seconds; runtime verification passed. The template therefore provides a working starting point, though dependency-heavy packages still need their additional tools and caches.
 
+A second template at `/Users/berniesumption/Documents/local-dev/vmware-vms/Windows 11 prepared template/prepared.vmtx` contains the installed Rust/MSYS2 tools and extension workspaces. Preserving it required a 6.97-second shutdown, a 0.046-second APFS copy and 35.25 seconds to create the template. Its first cache-reuse experiment exposed inconsistent MSVC host selection between direct PowerShell launches and launches through x64 Python. The shared environment now produces matching cache inputs, and an Address Standardizer build retained PCRE2 when switching launch routes. Older translated-host workspaces still need a one-time migration to the native compiler host; PostGIS is undergoing that migration before a replacement template is prepared.
+
 Two small builds in separate workspaces within the existing two-CPU, 4 GiB VM took 29.76 seconds serially and 20.47 seconds concurrently, with unchanged cache keys. Each concurrent build took longer individually. These are one isolated pair, not a general concurrency limit; available-memory measurements were before/after samples rather than peaks. Throughput across separate VMs remains unmeasured.
 
 #### Build and verification commands
@@ -200,6 +206,10 @@ PostGIS's first attempt took about 50 minutes, including its private PostgreSQL 
 
 The optimised archive passed in a separate VM without MSYS2 or the installed build dependencies: PostGIS alone took 92.42 seconds and all nine packages together took 62.33 seconds, including probes for 14 SQL extensions. That VM also passed PostgreSQL's 15 checks and each of the other eight package combinations. These are local runtime checks using the earlier verified PostgreSQL archive, rather than a release-candidate record audit.
 
+A fresh PostgreSQL build through the standard local helper took 437.61 seconds, including source preparation, configuration, compilation and both archives. Its 12 vcpkg dependencies restored from the local binary cache in 2.7 seconds; Ninja reported 287.59 seconds. This is a warm dependency-cache build, not a cold installation. The earlier dependency compilation took about 37 minutes before the architecture-detection failure; completed vcpkg packages survived subsequent retries.
+
+The locally compiled PostgreSQL passed all 15 runtime checks in 94.83 seconds. A separate VM then passed PostgreSQL alone in 83.49 seconds and with all nine locally built extension archives in 64.96 seconds. Those extensions were compiled against the earlier verified SDK; this establishes runtime compatibility, not a newly bound release candidate. The new SDK is separately retained at `C:/pg-inputs/local-core/postgresql-development-18.6-windows-x86_64.tar.gz` in the prepared agent trial. Switching an existing workspace to that SDK correctly invalidates its build state; the earlier SDK remains untouched.
+
 ```powershell
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File platforms/windows/bootstrap.ps1
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File platforms/windows/build-postgresql-local.ps1 `
@@ -215,6 +225,8 @@ Bootstrap prepares tools under `C:/pg-binaries-tools` by default; `PG_WINDOWS_TO
 A PostGIS tool-bootstrap trial on a fresh native Windows GitHub runner passed in 5 minutes 16 seconds. Installing its 196 MSYS2 packages took 3 minutes 30 seconds, downloaded 429.55 MiB and occupied about 3 GiB. A retained local environment avoids repeating that installation; this hosted measurement excludes PostGIS compilation and does not measure Fusion performance.
 
 Local Fusion preparation first failed after 286.16 seconds when two MSYS2 mirrors reset connections. The retry requested 179.42 MiB rather than 429.73 MiB because downloads remained cached, and succeeded in 421.64 seconds. A repeat setup took 10.12 seconds without downloading or installing packages. The prepared MSYS2 tree contained 282 package entries and 3.98 GB of files. This used Git's bundled Perl in the bootstrap process; it does not establish that Perl's suitability for a native PostgreSQL compilation.
+
+PostgreSQL requires native Windows Perl: Git's MSYS Perl rewrites MSVC options such as `/nologo` into filesystem paths and fails when generating exports. Bootstrap checks for native Perl before accepting an installed interpreter. The PostgreSQL build explicitly selects native Perl, using an installed interpreter or the pinned vcpkg portable Strawberry cache; pgTAP can still use Git's Perl for its SQL generator.
 
 The local PostgreSQL-only verifier passed all 15 checks, including capabilities, built-in extensions and mutual TLS, in 108.35 seconds during a concurrent Rust build. This used the existing runtime archive, not a locally compiled PostgreSQL. Windows ARM's `XtaCache` translation service briefly held a DLL after PostgreSQL shutdown; two cleanup attempts failed and the third succeeded after about one second. Cleanup retries Windows permission errors for up to five seconds and still fails if the lock persists. The service is left running.
 

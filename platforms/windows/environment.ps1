@@ -3,12 +3,14 @@ if (-not $env:PG_WINDOWS_TOOLS) { $env:PG_WINDOWS_TOOLS = Join-Path $env:SystemD
 $vcpkgCommit = (Get-Content (Join-Path $PSScriptRoot '../../packages/postgresql/internal/vcpkg-commit.txt') -Raw).Trim()
 if ($vcpkgCommit -notmatch '^[0-9a-f]{40}$') { throw 'Invalid PostgreSQL vcpkg commit pin' }
 $env:VCPKG_INSTALLATION_ROOT = Join-Path $env:PG_WINDOWS_TOOLS "vcpkg-$vcpkgCommit"
-if (-not (Get-Command cl.exe -ErrorAction SilentlyContinue) -or $env:VSCMD_ARG_TGT_ARCH -ne 'x64') {
+# WMI reports ARM64 as 12 even when the launching process reports x64.
+$nativeArchitecture = (Get-CimInstance Win32_Processor -Property Architecture | Select-Object -First 1).Architecture
+$hostArch = if ($nativeArchitecture -eq 12) { 'arm64' } else { 'x64' }
+if (-not (Get-Command cl.exe -ErrorAction SilentlyContinue) -or $env:VSCMD_ARG_TGT_ARCH -ne 'x64' -or $env:VSCMD_ARG_HOST_ARCH -ne $hostArch) {
     $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio/Installer/vswhere.exe'
     if (-not (Test-Path $vswhere)) { throw 'Visual Studio Installer is missing; run bootstrap.ps1' }
     $vs = & $vswhere -latest -version '[17.0,18.0)' -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
     if (-not $vs) { throw 'Visual Studio C++ Build Tools missing; run bootstrap.ps1' }
-    $hostArch = if ($env:PROCESSOR_ARCHITECTURE -eq 'ARM64' -or $env:PROCESSOR_ARCHITEW6432 -eq 'ARM64') { 'arm64' } else { 'x64' }
     $devcmd = Join-Path $vs 'Common7/Tools/VsDevCmd.bat'
     $environmentScript = Join-Path ([IO.Path]::GetTempPath()) ("pg-vsdevcmd-{0}-{1}.cmd" -f $PID, [guid]::NewGuid().ToString('N'))
     try {
@@ -38,6 +40,10 @@ $toolPaths = @(
 $seenPaths = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
 $pathEntries = [Collections.Generic.List[string]]::new()
 foreach ($entry in @($toolPaths + ($env:PATH -split ';'))) {
+    # VsDevCmd otherwise chooses MSBuild from the launching process's architecture.
+    if ($entry -match '^(.*[\\/]+MSBuild[\\/]+Current[\\/]+Bin[\\/]+)(?:amd64|arm64)[\\/]*$') {
+        $entry = $matches[1] + $(if ($hostArch -eq 'arm64') { 'arm64' } else { 'amd64' })
+    }
     $pathKey = $entry.Replace('\', '/').TrimEnd('/')
     if ($seenPaths.Add($pathKey)) { $pathEntries.Add($entry) }
 }

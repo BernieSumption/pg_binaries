@@ -41,6 +41,10 @@ Run $python @('-m', 'pip', 'install', '--disable-pip-version-check', 'meson==1.7
 Write-Stage 'Install pinned Python build tools' 'completed'
 Write-Stage 'Check Perl availability' 'started'
 $perlAvailable = [bool](Get-Command perl.exe -ErrorAction SilentlyContinue)
+if ($perlAvailable) {
+    $perlPlatform = & perl.exe -e 'print $^O'
+    $perlAvailable = $LASTEXITCODE -eq 0 -and $perlPlatform -eq 'MSWin32'
+}
 Write-Stage 'Check Perl availability' 'completed'
 if (-not $perlAvailable) {
     Write-Stage 'Install Strawberry Perl' 'started'
