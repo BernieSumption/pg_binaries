@@ -91,7 +91,10 @@ def clean_disposable(output: Path, installation_parent: Path, database: Path,
 def run(args: list[str], environment: dict[str, str]) -> str:
     result = subprocess.run(args, env=environment, text=True, capture_output=True, check=False)
     if result.returncode:
-        raise RuntimeError(f"{' '.join(args)} failed:\n{result.stdout}{result.stderr}")
+        status = str(result.returncode)
+        if result.returncode > 255 or result.returncode < -255:
+            status += f" (0x{result.returncode & 0xffffffff:08x})"
+        raise RuntimeError(f"{' '.join(args)} failed with exit {status}:\n{result.stdout}{result.stderr}")
     return result.stdout
 
 

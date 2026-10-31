@@ -116,7 +116,7 @@ The optional `build-dependencies.sh` or `build-dependencies.ps1` entry point pre
 
 The harness rejects simultaneous use of a workspace. A crash can leave `.pg-binaries-extension-workspace.lock`; its error names the owning PID. Remove the lock only after confirming that process has exited. Fresh-workspace builds remain available by omitting `--reuse-workspace`.
 
-Upgrading the harness's cache-key definition can invalidate existing workspaces. During these trials, adding empty Windows environment fields changed a Mac workspace's context fingerprint and cleared its compiled dependencies. The sources, compiler, SDK and dependency script were unchanged. Recovery and subsequent identical-input reuse are being measured separately from the original cold/warm results.
+Upgrading the harness's cache-key definition can invalidate existing workspaces. During these trials, adding empty Windows environment fields changed a Mac workspace's context fingerprint and cleared its compiled dependencies. The sources, compiler, SDK and dependency script were unchanged. Recovery took 208 seconds using the retained package-download cache; the next identical run skipped dependencies and took 47 seconds. This was a one-time harness upgrade, separate from the original cold/warm results.
 
 ## Measured iteration time
 
@@ -135,6 +135,8 @@ One Linux ARM64 trial built HypoPG and pgvector in separate workspaces. Serial e
 
 This demonstrates useful two-package concurrency for small native builds. It does not establish a safe limit for PostGIS, Rust or whole VMs. Docker's VM had 16 CPUs and about 47 GiB available, with no per-container memory limit; actual CPU affinity constrained concurrent jobs even though the guest CPU-count query still reported 16.
 
+In the four-vCPU, 8 GiB Mac VM, warm PostGIS and pg_jsonschema builds took 51.88 seconds serially and 49.54 seconds together in separate workspaces. Both succeeded and retained their dependency keys; their archives passed checks together with PostgreSQL. Guest memory pressure reported 79% free before and after, with no swap. The single trial's 2.34-second difference does not establish a reliable throughput improvement. It shows that these two warm builds can share a VM without needing separate environments. The trial used the earlier isolated Mac recipe snapshot, excluding subsequent Windows metadata and helper additions.
+
 The x86_64 clean-verification helper passed the Address Standardizer SQL checks in 39.77 seconds, including a cached verifier-image build and container setup. The development container remained stopped afterwards and retained its cache.
 
 ## GitHub dependency caching
@@ -142,6 +144,8 @@ The x86_64 clean-verification helper passed the Address Standardizer SQL checks 
 The provisional recommendation is to defer a separate hosted compiled-dependency cache until local Windows and macOS x86_64 iteration have been assessed. The current workflows can retry one extension using an existing PostgreSQL archive, and archive selection can reuse unchanged packages. This already avoids rebuilding the whole distribution for one package edit.
 
 The expensive remaining case is rebuilding a changed dependency-heavy package. A previous native Intel macOS run spent 1,945 seconds in the PostGIS job and 1,077 seconds in pg_jsonschema; the complete run took 4,559 seconds. Those are whole-job timings from an earlier revision, including setup and downloads, rather than measured dependency-compilation savings. Local repeat-build results suggest useful savings are possible, but do not establish hosted cache transfer cost or expected hit rate.
+
+During the Windows CLI trial, GitHub exposed step states while the job ran but withheld the full job log until completion. The first bootstrap failure took 109 seconds overall to report. The retry passed bootstrap in 121 seconds, then remained in the PostgreSQL checkpoint beyond 30 minutes. That checkpoint includes dependency builds, compilation, packaging and runtime checks; its total must not be reported as PostgreSQL compilation time without the completed log.
 
 If hosted iteration remains necessary, PostGIS is the first candidate for a measured cache experiment. The dependency phase gives the harness a reusable boundary without adding cache logic to individual build scripts. Hosted reuse would still need a stable installation path or verified relocation, complete invalidation and a timed cache restore. No hosted compiled-dependency cache is currently configured.
 

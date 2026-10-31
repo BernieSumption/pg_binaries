@@ -1,0 +1,71 @@
+name: Windows native runtime diagnostic
+
+on:
+  push:
+    branches: [agent/windows-runtime-diagnostic]
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  diagnose:
+    if: github.ref == 'refs/heads/agent/windows-runtime-diagnostic'
+    runs-on: windows-2022
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: powershell
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Download PostgreSQL checkpoint artefact
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-x86_64-small-41157868710-1
+          repository: BernieSumption/pg_binaries
+          run-id: 41157868710
+          github-token: ${{ github.token }}
+          path: ${{ runner.temp }}/windows-runtime-diagnostic/original-artifact
+
+      - name: Probe saved PostgreSQL archive bytes
+        continue-on-error: true
+        run: |
+          . ./platforms/windows/environment.ps1
+          $base = Join-Path $env:RUNNER_TEMP 'windows-runtime-diagnostic'
+          $artifact = Join-Path $base 'original-artifact/output/postgresql'
+          $archive = Join-Path $artifact 'postgresql-18.6-windows-x86_64.tar.gz'
+          $record = Join-Path $artifact 'record.json'
+          $diagnostics = Join-Path $base 'raw-initdb-probes'
+          python ./platforms/windows/diagnose-runtime.py --archive $archive --record $record --output $diagnostics
+
+      - name: Run current runtime verification on saved archive
+        run: |
+          . ./platforms/windows/environment.ps1
+          $base = Join-Path $env:RUNNER_TEMP 'windows-runtime-diagnostic'
+          $artifact = Join-Path $base 'original-artifact/output/postgresql'
+          $archive = Join-Path $artifact 'postgresql-18.6-windows-x86_64.tar.gz'
+          $reports = Join-Path $base 'runtime-check'
+          python ./build.py --target windows-x86_64 runtime-check $archive $reports
+          $runtimeExit = $LASTEXITCODE
+          Set-Content -Path (Join-Path $base 'runtime-check-exit-code.txt') -Value $runtimeExit
+          if ($runtimeExit) { Write-Host "Runtime verification returned $runtimeExit; its checks and diagnostics are retained." }
+
+      - name: Upload runtime diagnostic evidence
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: windows-x86_64-runtime-diagnostic-${{ github.run_id }}-${{ github.run_attempt }}
+          compression-level: 0
+          retention-days: 7
+          if-no-files-found: warn
+          path: |
+            ${{ runner.temp }}/windows-runtime-diagnostic/raw-initdb-probes/
+            ${{ runner.temp }}/windows-runtime-diagnostic/runtime-check/
+            ${{ runner.temp }}/windows-runtime-diagnostic/runtime-check-exit-code.txt
+

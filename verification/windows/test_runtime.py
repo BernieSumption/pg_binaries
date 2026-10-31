@@ -1,5 +1,6 @@
 import io
 import os
+import subprocess
 from pathlib import Path
 import tarfile
 import tempfile
@@ -8,10 +9,16 @@ from unittest.mock import patch
 
 from packages.postgresql.probes.environment import clean_environment, connection
 from packages.postgresql.probes.builtins import expected_extensions
-from verification.runtime import archive_contents
+from verification.runtime import archive_contents, run
 
 
 class WindowsEnvironmentTests(unittest.TestCase):
+    def test_silent_native_failure_reports_windows_status(self):
+        failure = subprocess.CompletedProcess(["initdb.exe"], 0xc0000135, stdout="", stderr="")
+        with patch("verification.runtime.subprocess.run", return_value=failure):
+            with self.assertRaisesRegex(RuntimeError, "0xc0000135"):
+                run(["initdb.exe"], {})
+
     def test_environment_excludes_builders_path_and_retains_windows_process_support(self):
         with patch.dict(os.environ, {'PATH': 'C:/developer/bin', 'SystemRoot': 'C:/Windows', 'TEMP': 'C:/Temp'}, clear=True):
             environment = clean_environment(Path('C:/distribution/bin'), windows=True)
