@@ -12,9 +12,9 @@ The environment comparison is in progress. The established routes are:
 - Linux x86_64: an amd64 Docker container runs through Rosetta inside Docker Desktop's ARM Linux VM. Both builds and final-archive verification have passed through this route.
 - macOS ARM64: Lume development and clean verification VMs have passed the complete package set.
 - macOS x86_64: native GitHub Intel runners have passed the complete package set. A viable local route still needs investigation.
-- Windows x86_64: the Windows 11 ARM download has completed, but the Parallels VM has not started. ARM-hosted MSVC can target x64; running the resulting programs through Windows translation still needs to be demonstrated for this project.
+- Windows x86_64: VMware Fusion runs a Windows 11 ARM guest. VMware Tools provides authenticated commands and file transfer; x64 Python runs successfully. Compiler setup and extension builds remain to be proved locally.
 
-Parallels will replace an established route only after equivalent builds and verification work and the measured turnaround or simpler operation justify the change. The comparison includes startup, source transfer, dependency preparation, compilation, packaging and verification, rather than compiler speed alone.
+The current work uses Docker for Linux, Lume for Mac and Fusion for Windows. The comparison includes startup, source transfer, dependency preparation, compilation, packaging and verification, rather than compiler speed alone. Parallels trials were blocked before guest startup; their results do not establish its build performance.
 
 ## Comparing the routes
 
@@ -26,11 +26,13 @@ The recommendation distinguishes routes that were tested successfully, tested wi
 
 A headless Ubuntu ARM64 cloud-image trial under Lume passed native and Rosetta-translated extension builds, clean SQL verification and cache reuse after restart. Its measured x86 build times were close to Docker Desktop's. Until Parallels can be tested, retain Docker Desktop for Linux: Lume offers a viable way to consolidate VM management, but its setup required more troubleshooting and demonstrated no clear build-speed advantage.
 
-UTM 4.7.5 is also installed, with metadata for an ARM64 Windows guest allocated 8 GiB RAM. Its CLI help worked, but version and inventory queries returned `OSStatus error -1712`; both exited with status zero despite the errors. Guest control and build performance could not be tested. No UTM desktop control or VM changes were attempted. VMware Fusion is not installed, and standalone QEMU system executables were absent from `PATH`.
+UTM 4.7.5 is also installed, with metadata for an ARM64 Windows guest allocated 8 GiB RAM. Its CLI help worked, but version and inventory queries returned `OSStatus error -1712`; both exited with status zero despite the errors. Guest control and build performance could not be tested. No UTM desktop control or VM changes were attempted. Standalone QEMU system executables were absent from `PATH`.
 
 ## Development loop
 
-Agents develop build scripts locally before running them on GitHub Actions. A local iteration produces an archive and resolves build failures quickly; inexpensive smoke checks can help diagnose a failure. GitHub jobs run the same package build commands after preparing their runner environments. A failure found on GitHub is fixed in the shared build script or runner setup and checked again where it occurred.
+Agents develop and debug build scripts locally before running GitHub builds for that target. If the local environment is unavailable or blocked, dependent work stops and the blocker is reported. Using GitHub as a substitute development environment requires explicit human approval.
+
+A local iteration produces an archive and resolves build failures quickly; inexpensive smoke checks can help diagnose a failure. GitHub jobs validate builds already demonstrated locally, using the same package build commands after preparing their runner environments.
 
 A development environment retains its installed tools and files across stops and starts. Agents may install tools and libraries as needed. Separate workspaces isolate build files; changes to system dependencies in a shared VM or container still require coordination. Another environment is appropriate when concurrent work needs incompatible system changes. The measured environment comparison will determine the default allocation and concurrency limits.
 
@@ -100,7 +102,27 @@ SSH uses account `ubuntu`, the existing project key and `out/local-environments/
 
 ### Windows commands
 
-These scripts run inside Windows, from its local repository checkout. Native GitHub trials have passed PostgreSQL and eight extension packages; PostGIS remains under investigation. The local Parallels guest has not reached this stage.
+#### Fusion local setup
+
+VMware Fusion 26.0.1 is installed. Its Windows ARM VM is at `/Users/berniesumption/Documents/local-dev/vmware-vms/Windows 11 64-bit Arm.vmwarevm/Windows 11 64-bit Arm.vmx`. The user chose `password` as this development VM's TPM/encryption password. Its local Windows account is `Bernie Sumption`, also with password `password`.
+
+The installation ISO is `/Users/berniesumption/Virtual Machines.localized/VMWIsoImages/Windows11_26100.4349_Professional_en-gb_arm64.iso`. The human installed Windows and VMware Tools through their normal installers. The VM currently has two CPUs and 4 GiB RAM. After restart, authenticated `vmrun` commands, PowerShell execution and file transfer in both directions passed. The account belongs to the Administrators group, but commands launched through `vmrun` have a non-elevated token; administrator approval is needed for the initial Visual Studio installation.
+
+Python 3.13.3 x64 installed per user at `C:/pg-binaries-tools/python` without elevation. Its download took 7.45 seconds, installation 17.42 seconds, and installation of the pinned Meson, Ninja, CMake and pkgconf packages 19.45 seconds. A 3,998-byte script transferred into the guest in 0.468 seconds; result and log transfers back took 0.407 and 0.457 seconds. These prove basic command access and x64 execution, not extension-build performance.
+
+The cached x64 PostgreSQL runtime and development archives transferred through `vmrun` in 16.74 seconds for 29,494,388 bytes and 42.72 seconds for 77,227,675 bytes, with matching SHA-256 checksums. Keep those inputs at `C:/pg-inputs` rather than copying them on each edit. A local diagnostic confirmed AMD64 PE binaries, created a database, started PostgreSQL, executed SQL and shut it down. Database creation took 2.92 seconds, startup 0.61 seconds and the SQL query 0.51 seconds. This was a translation smoke check, not the complete archive verifier.
+
+The signed Microsoft Visual Studio 2022 Build Tools installer is prepared at `C:/pg-binaries-tools/bootstrap/vs_BuildTools.exe`. The required components are `Microsoft.VisualStudio.Workload.VCTools` with its recommended components and `Microsoft.VisualStudio.Component.VC.Llvm.Clang`. The normal installer requires administrator approval; no UAC or security-policy changes are part of this process.
+
+The Windows desktop shortcut **Set up C++ build tools** opens that interactive installer with the components selected through `C:/pg-binaries-tools/bootstrap/build-tools.vsconfig`. The human approves its normal administrator and licence prompts, then installs the selected components.
+
+Git is not installed yet. Its verified ARM installer is `C:/Users/Public/Git-2.56.0.4-arm64.exe`. The x64 unattended attempt remained idle before installation; a single ARM retry with documented unattended flags exited with initialisation failure code 1 before creating a log or destination. The cause is unconfirmed. Complete a normal interactive installation before continuing dependent builds; preserve its error if it fails. These setup failures do not establish Git or Fusion build performance.
+
+Fusion's CLI is `/Applications/VMware Fusion.app/Contents/Library/vmrun`. Computer-use permissions are recorded in [AGENTS.md](../AGENTS.md#repository-operations). The computer-use connection currently fails with a native-pipe startup error, so GUI installation steps still require the human.
+
+#### Build and verification commands
+
+These scripts run inside Windows, from its local repository checkout. Local extension compilation awaits Visual Studio Build Tools installation.
 
 ```powershell
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File platforms/windows/bootstrap.ps1
@@ -117,6 +139,8 @@ Bootstrap prepares tools under `C:/pg-binaries-tools` by default; `PG_WINDOWS_TO
 A fresh native PostGIS tool-bootstrap trial passed in 5 minutes 16 seconds. Installing its 196 MSYS2 packages took 3 minutes 30 seconds, downloaded 429.55 MiB and occupied about 3 GiB. A retained local environment avoids repeating that installation; this measurement excludes PostGIS compilation.
 
 Windows verification extracts archives with Python's `data` filter so directories inherit normal Windows permissions. Python 3.13's unfiltered extraction creates protected directory permissions that prevent PostgreSQL's restricted child process from loading DLLs, producing `0xc0000135` even when all required DLLs are present. The controlled trial reproduced the failure with identical archive bytes and paths. Probe scratch folders also inherit Windows permissions; Linux and macOS retain private temporary directories. [Python directory permissions](https://docs.python.org/3.13/library/os.html#os.mkdir), [PostgreSQL restricted processes](https://github.com/postgres/postgres/blob/REL_18_6/src/common/restricted_token.c).
+
+#### Hosted validation after local proof
 
 The hosted trial lives in `.github/workflows/local-iteration-windows.yml`. Its phases are `core`, `small`, `postgis`, `rust`, `all`, `package` and `bootstrap-postgis`. Manual dispatch selects the phase; `small` covers PostgreSQL and seven extension packages. Completed PostgreSQL archives and their build record are retained before runtime verification, so a later checker failure does not lose the SDK. Extension builds still require the runtime checkpoint to pass.
 
@@ -225,7 +249,7 @@ The existing `Windows 11` VM has its downloaded installation ISO and unattended 
 
 Separate macOS and full-x86 Linux guest-creation attempts returned the same edition error. The latter used the vendor's documented `prlctl create NAME -d ubuntu --cpu-type x86` command. No comparison guest was created. Parallels documents a one-vCPU, 8 GiB limit for full-x86 emulation; its actual project performance remains unmeasured. [Full-x86 guest setup and limitations](https://kb.parallels.com/en/130217).
 
-Routine lifecycle and guest work use `prlctl`; computer use is authorised for Parallels and its Windows guests when a command-line operation is unavailable. Other Mac applications and the host browser remain outside that authorisation.
+Routine lifecycle and guest work use command-line tools and APIs. Computer-use permissions are recorded in [AGENTS.md](../AGENTS.md#repository-operations).
 
 The command-line client is `/Applications/Parallels Desktop.app/Contents/MacOS/prlctl`. In this agent's sandbox, service queries require an approved execution outside the sandbox. A sandbox-only “Unable to connect to Parallels Service” error does not establish that Parallels needs restarting.
 
