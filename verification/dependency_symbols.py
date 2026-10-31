@@ -1,4 +1,4 @@
-"""Find competing dependency symbols in the PostgreSQL backend's loadable closure."""
+"""Find competing dependency symbols supplied by different extension packages."""
 from __future__ import annotations
 
 import argparse
@@ -173,7 +173,13 @@ def conflicts(binaries: dict[Path, Binary], roots: list[Path], root: Path,
                 if dependency is not None:
                     pending.append(dependency)
     providers: dict[str, list[Path]] = defaultdict(list)
+    packages: dict[Path, set[str]] = {}
     for path in sorted(loaded):
+        relative = str(path.relative_to(root))
+        if not owners.get(relative):
+            raise RuntimeError(f"no archive package ownership for {relative}")
+        supplied_by = set(owners[relative])
+        packages[path] = set() if "postgresql" in supplied_by else supplied_by
         binary = binaries[path]
         pg_entrypoints = entrypoints(binary)
         for symbol in binary.exports:
@@ -193,6 +199,9 @@ def conflicts(binaries: dict[Path, Binary], roots: list[Path], root: Path,
                 continue
             providers[symbol].append(path)
     pairs: dict[tuple[Path, Path], list[str]] = defaultdict(list)
+    def between_extensions(first: Path, second: Path) -> bool:
+        return any(left != right for left in packages[first] for right in packages[second])
+
     exceptions = []
     fingerprints: dict[Path, str] = {}
     def fingerprint(path: Path) -> str:
@@ -211,6 +220,8 @@ def conflicts(binaries: dict[Path, Binary], roots: list[Path], root: Path,
     for symbol, paths in providers.items():
         for index, first in enumerate(paths):
             for second in paths[index + 1:]:
+                if not between_extensions(first, second):
+                    continue
                 if linux:
                     if not any(symbol in binaries[path].imports or symbol in binaries[path].relocations for path in loaded):
                         continue
@@ -250,7 +261,7 @@ def conflicts(binaries: dict[Path, Binary], roots: list[Path], root: Path,
         for identity, paths in named.items():
             for index, first in enumerate(paths):
                 for second in paths[index + 1:]:
-                    if fingerprint(first) != fingerprint(second):
+                    if between_extensions(first, second) and fingerprint(first) != fingerprint(second):
                         identities[first, second] = identity
                         pairs.setdefault((first, second), [])
     findings = []
@@ -264,13 +275,17 @@ def conflicts(binaries: dict[Path, Binary], roots: list[Path], root: Path,
         findings.append({"libraries": libraries, "symbols": sorted(symbols), "competing_identity": identities.get((first, second)),
                          "references": {symbol: [str(path.relative_to(root)) for path in sorted(loaded)
                                               if symbol in binaries[path].imports or symbol in binaries[path].relocations] for symbol in sorted(symbols)}})
-    return {"inspected_binaries": len(loaded), "backend_roots": [str(path.relative_to(root)) for path in roots],
+    return {"scope": "between extension packages; PostgreSQL-supplied files are excluded",
+            "inspected_binaries": len(loaded), "backend_roots": [str(path.relative_to(root)) for path in roots],
             "conflicts": findings, "exceptions": exceptions,
             "limitations": ["ELF symbol discovery covers dynamic imports and relocations; computed dlsym names and libraries loaded by application code require runtime probes."] if linux else
                            ["Mach-O system-library implementations are supplied by macOS; flat and dynamic-lookup references are checked against bundled providers."]}
 
 
-def inspect(installation: Path, target: str, owners: dict[str, list[str]] | None = None) -> dict:
+def inspect(installation: Path, target: str, owners: dict[str, list[str]]) -> dict:
+    if target.startswith("windows-"):
+        from verification.windows.dependency_symbols import inspect as inspect_windows
+        return inspect_windows(installation, target, owners)
     root = installation.resolve()
     linux = target.startswith("linux-")
     binaries = {}
@@ -285,10 +300,10 @@ def inspect(installation: Path, target: str, owners: dict[str, list[str]] | None
     # Every native object in lib/postgresql is a possible backend LOAD target, including helpers without magic.
     modules.extend(path for path in binaries if path.is_relative_to(root / "lib/postgresql"))
     roots = [server, *sorted(set(modules) - {server})]
-    return conflicts(binaries, roots, root, linux, owners or {})
+    return conflicts(binaries, roots, root, linux, owners)
 
 
-def require_isolation(installation: Path, target: str, owners: dict[str, list[str]] | None = None) -> dict:
+def require_isolation(installation: Path, target: str, owners: dict[str, list[str]]) -> dict:
     result = inspect(installation, target, owners)
     if result["conflicts"]:
         raise IsolationError(result)
@@ -299,9 +314,11 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("installation", type=Path)
     parser.add_argument("target")
+    parser.add_argument("--owners", type=Path, required=True,
+                        help="JSON map from installation-relative file paths to supplying archive package names")
     args = parser.parse_args()
     try:
-        result = inspect(args.installation, args.target)
+        result = inspect(args.installation, args.target, json.loads(args.owners.read_text()))
         print(json.dumps(result, indent=2))
         return bool(result["conflicts"])
     except (OSError, RuntimeError) as error:

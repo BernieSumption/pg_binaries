@@ -17,11 +17,13 @@ class DependencySymbolsTests(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name).resolve()
         self.outputs = {}
+        self.owners = {}
 
-    def add(self, name, exports=(), imports=(), needed=(), weak=(), hidden=(), references=()):
+    def add(self, name, exports=(), imports=(), needed=(), weak=(), hidden=(), references=(), package=None):
         path = self.root / name
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_bytes(b"\x7fELF")
+        self.owners[name] = [package or ("postgresql" if name in ("bin/postgres", "libexec/postgres", "lib/libpq.so") else path.stem)]
         rows = []
         for symbols, binding, visibility, section in ((exports, "GLOBAL", "DEFAULT", "12"),
                                                       (imports, "GLOBAL", "DEFAULT", "UND"),
@@ -38,7 +40,7 @@ class DependencySymbolsTests(unittest.TestCase):
 
     def run_inspect(self):
         with patch("verification.dependency_symbols.command", side_effect=lambda *args: self.outputs[args]):
-            return inspect(self.root, "linux-arm64", {"lib/address.so": ["address_standardizer"], "lib/postgis.so": ["postgis"]})
+            return inspect(self.root, "linux-arm64", self.owners)
 
     def test_real_pcre_exports_are_found_despite_renaming_and_cli_excluded(self):
         self.add("libexec/postgres", exports=["PostgreSQL_API"])
@@ -74,16 +76,16 @@ class DependencySymbolsTests(unittest.TestCase):
         self.add("lib/address.so", exports=["Pg_magic_func"], hidden=PCRE)
         self.assertEqual(self.run_inspect()["conflicts"], [])
 
-    def test_libpq_local_calls_alone_do_not_protect_gdal_client_imports(self):
+    def test_server_libpq_overlap_is_outside_extension_conflict_scope(self):
         public = ["lo_read", "lo_write"]
         aliases = ["pg_binaries_libpq_lo_read", "pg_binaries_libpq_lo_write"]
         self.add("bin/postgres", exports=public)
         self.add("lib/postgis.so", exports=["Pg_magic_func"], needed=["gdal.so"])
         self.add("lib/gdal.so", imports=public, needed=["libpq.so"])
         self.add("lib/libpq.so", exports=[*public, *aliases], references=public)
-        self.assertEqual(self.run_inspect()["conflicts"][0]["symbols"], public)
+        self.assertEqual(self.run_inspect()["conflicts"], [])
         self.add("lib/libpq.so", exports=[*public, *aliases])
-        self.assertEqual(self.run_inspect()["conflicts"][0]["symbols"], public)
+        self.assertEqual(self.run_inspect()["conflicts"], [])
         self.add("lib/gdal.so", imports=aliases, needed=["libpq.so"])
         self.assertEqual(self.run_inspect()["conflicts"], [])
 
@@ -137,7 +139,7 @@ class DependencySymbolsTests(unittest.TestCase):
             self.run_inspect()
         with patch("verification.dependency_symbols.subprocess.run", side_effect=FileNotFoundError("readelf")):
             with self.assertRaises(FileNotFoundError):
-                require_isolation(self.root, "linux-arm64")
+                require_isolation(self.root, "linux-arm64", self.owners)
 
     def test_copy_relocation_is_dependency_storage_not_a_competing_provider(self):
         server = self.add("bin/postgres", exports=["stdout"], needed=["libc.so.6"])
@@ -158,11 +160,13 @@ class DependencySymbolsTests(unittest.TestCase):
         hashes = {b"blas": "5595f2a1fe7de99f5961271fbdefb335ed82c7ead64c0cdd3990730ab5c411fa",
                   b"lapack": "4c66375ac8f1f01c8a179cba8e7a605eecc57b93691e7300ff20212e1f05d911"}
         with patch("verification.dependency_symbols.hashlib.sha256", side_effect=lambda value: SimpleNamespace(hexdigest=lambda: hashes[value])):
-            result = conflicts(binaries, list(binaries), self.root, True, {})
+            result = conflicts(binaries, list(binaries), self.root, True,
+                               {str(path.relative_to(self.root)): [str(path.name)] for path in binaries})
         self.assertEqual(result["conflicts"], [])
         self.assertEqual({item["symbol"] for item in result["exceptions"]}, {"lsame_", "xerbla_"})
         self.assertIn("lapack 3.10.0-2ubuntu1", result["exceptions"][0]["reason"])
-        self.assertTrue(conflicts(binaries, list(binaries), self.root, True, {})["conflicts"])
+        self.assertTrue(conflicts(binaries, list(binaries), self.root, True,
+                                  {str(path.relative_to(self.root)): [str(path.name)] for path in binaries})["conflicts"])
 
     def test_unused_duplicates_and_cpp_abi_metadata_do_not_fail(self):
         self.add("bin/postgres")
@@ -178,10 +182,40 @@ class DependencySymbolsTests(unittest.TestCase):
         one, two = self.root / "one", self.root / "two"
         binaries = {server: Binary(server, dependencies=[]), one: Binary(one, exports={"pcre2_compile_8"}),
                     two: Binary(two, exports={"pcre2_compile_8"})}
-        result = conflicts(binaries, [server, one, two], self.root, False, {})
+        owners = {"postgres": ["postgresql"], "one": ["one"], "two": ["two"]}
+        result = conflicts(binaries, [server, one, two], self.root, False, owners)
         self.assertEqual(result["conflicts"], [])
         binaries[server].flat_imports.add("pcre2_compile_8")
-        self.assertEqual(conflicts(binaries, [server, one, two], self.root, False, {})["conflicts"][0]["symbols"], ["pcre2_compile_8"])
+        self.assertEqual(conflicts(binaries, [server, one, two], self.root, False, owners)["conflicts"][0]["symbols"], ["pcre2_compile_8"])
+
+    def test_same_extension_package_is_outside_scope_for_symbols_and_identity(self):
+        self.add("bin/postgres")
+        self.add("lib/module.so", exports=["Pg_magic_func"], needed=["one.so", "two.so"], package="postgis")
+        for name in ("one", "two"):
+            path = self.add(f"lib/{name}.so", exports=["private_api"], references=["private_api"], package="postgis")
+            path.write_bytes(b"\x7fELF" + name.encode())
+            self.outputs["readelf", "-dW", str(path)] += "\n 0x000000000000000e (SONAME) Library soname: [private.so]"
+        self.assertEqual(self.run_inspect()["conflicts"], [])
+        self.owners["lib/two.so"] = ["another_extension"]
+        finding = self.run_inspect()["conflicts"][0]
+        self.assertEqual(finding["symbols"], ["private_api"])
+        self.assertEqual(finding["competing_identity"], "private.so")
+
+    def test_postgresql_library_does_not_mask_conflicts_between_extensions(self):
+        self.add("bin/postgres", exports=["lo_read"])
+        self.add("lib/libpq.so", exports=["lo_read"])
+        for name in ("one", "two"):
+            self.add(f"lib/{name}.so", exports=["Pg_magic_func", "lo_read"],
+                     imports=["lo_read"], needed=["libpq.so"])
+        findings = self.run_inspect()["conflicts"]
+        self.assertEqual(len(findings), 1)
+        self.assertEqual({x["path"] for x in findings[0]["libraries"]}, {"lib/one.so", "lib/two.so"})
+
+    def test_missing_archive_ownership_fails_closed(self):
+        self.add("bin/postgres")
+        self.owners.clear()
+        with self.assertRaisesRegex(RuntimeError, "no archive package ownership"):
+            self.run_inspect()
 
     def test_macho_parser_retains_only_dynamic_lookup_as_global_binding(self):
         path = self.root / "module.so"
