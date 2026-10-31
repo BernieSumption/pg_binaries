@@ -12,7 +12,7 @@ The environment comparison is in progress. The established routes are:
 - Linux x86_64: an amd64 Docker container runs through Rosetta inside Docker Desktop's ARM Linux VM. Both builds and final-archive verification have passed through this route.
 - macOS ARM64: Lume development and clean verification VMs have passed the complete package set.
 - macOS x86_64: native GitHub Intel runners have passed the complete package set. A viable local route still needs investigation.
-- Windows x86_64: VMware Fusion runs a Windows 11 ARM guest headlessly. Eight extension packages have built locally and passed their combined SQL probes. Dependency caching is proved for Address Standardizer and pg_jsonschema; PostGIS remains to be completed.
+- Windows x86_64: VMware Fusion runs a Windows 11 ARM guest headlessly. All nine extension packages have built locally and passed their combined SQL probes. Dependency caching is proved for Address Standardizer, pg_jsonschema and PostGIS. Compiling PostgreSQL locally remains in progress.
 
 The current work uses Docker for Linux, Lume for Mac and Fusion for Windows. The comparison includes startup, source transfer, dependency preparation, compilation, packaging and verification, rather than compiler speed alone. Parallels trials were blocked before guest startup; their results do not establish its build performance.
 
@@ -122,7 +122,9 @@ The Windows desktop shortcut **Set up C++ build tools** opens the installed Visu
 
 Git installed successfully through its normal ARM installer at `C:/Users/Public/Git-2.56.0.4-arm64.exe`; the executable is `C:/Program Files/Git/cmd/git.exe`. The earlier unattended attempts failed before installation, with the cause unconfirmed. The interactive choices were bundled OpenSSH, Windows Secure Channel for HTTPS, no automatic line-ending conversion, MinTTY, Git Credential Manager and file-system caching. The repository's `.gitattributes` controls line endings.
 
-Fusion's CLI is `/Applications/VMware Fusion.app/Contents/Library/vmrun`. Computer-use permissions are recorded in [AGENTS.md](../AGENTS.md#repository-operations). After restarting Codex, computer use could read Fusion's window and capture the Windows desktop. Its first connection and screenshot calls took several minutes; later screenshots returned in about 1.5 seconds. Prefer CLI commands for repeatable builds. Administrator approval remains a human step.
+Fusion's `vmrun` and `vmcli` commands are on the Mac host's `PATH`. Computer-use permissions are recorded in [AGENTS.md](../AGENTS.md#repository-operations). After restarting Codex, computer use could read Fusion's window and capture the Windows desktop. Its first connection and screenshot calls took several minutes; later screenshots returned in about 1.5 seconds. Prefer CLI commands for repeatable builds. Administrator approval remains a human step.
+
+Fusion commands on this host require `exec_command` with `sandbox_permissions="require_escalated"`. A restricted call can report the generic error `vmrun was unable to start`; confirm access through the normal approval mechanism before diagnosing the Fusion service or restarting it.
 
 #### Preserve the Windows baseline
 
@@ -130,34 +132,71 @@ Before package builds or dependency installation, shut Windows down cleanly, cop
 
 The measured shutdown took 9.11 seconds. An APFS copy-on-write copy of the 37.47 GB logical bundle took 0.04 seconds; its file lists and sizes matched, and VM configuration and NVRAM hashes matched. Snapshot creation took 0.30 seconds and Fusion listed the new snapshot. The copy shares physical disk blocks until either copy changes, and resides on the same disk; it protects the baseline from development changes, not disk loss.
 
-Normal iterations use the original VM and retain package workspaces and caches. Snapshots are checkpoints before substantial environment changes, not a reset between builds. Before reverting, copy source changes, results and logs back to the host. Additional agent or clean verification VMs can be prepared from the baseline when needed; simultaneous Windows VM operation remains unmeasured.
+Normal iterations retain package workspaces and caches. Snapshots are checkpoints before substantial environment changes, not a reset between builds. Before reverting, copy source changes, results and logs back to the host.
 
-Fusion starts this development VM headlessly with `vmrun -T fusion -vp password start VMX nogui`, where `VMX` is the path above. VMware Tools provides guest commands and file transfer without a console window. A fresh headless boot supported successful extension builds.
+#### Create another agent VM
+
+The reusable toolchain template is `/Users/berniesumption/Documents/local-dev/vmware-vms/Windows 11 toolchain template/baseline.vmtx`. It contains the baseline tools and source downloads; it predates the later Rust and PostGIS installations. Creating it from a stopped, disposable baseline copy with `vmcli VMTemplate Create -p TEMPLATE.vmtx -n NAME SOURCE.vmx` took 22.32 seconds. The command reads the existing encryption password from standard input.
+
+An agent gets an independent VM by copying the complete template directory to a new destination and deploying its `.vmtx` file. The destination must not already exist:
+
+```sh
+windows_template='/Users/berniesumption/Documents/local-dev/vmware-vms/Windows 11 toolchain template'
+windows_agent='/Users/berniesumption/Documents/local-dev/vmware-vms/Windows 11 agent-2.vmwarevm'
+cp -cRp "$windows_template" "$windows_agent"
+printf '%s\n' password | vmcli VMTemplate Deploy -p "$windows_agent/baseline.vmtx"
+```
+
+The measured APFS copy took 0.006 seconds and deployment 0.016 seconds. First startup generated distinct VM identifiers and a distinct MAC address. The deployed VM compiled and ran an x64 executable, accepted authenticated guest commands and fetched an HTTPS page with normal certificate checks while the development VM remained running. The older `vmrun clone ... full` failed on this encrypted VM, so the tested route uses `vmcli` templates.
+
+Headless startup from an agent command uses a separate process session and file output. Otherwise the command runner can stop the VM engine when its process group is cleaned up. This host command starts a deployed VM without opening its console:
+
+```sh
+python3 - "$windows_agent/baseline.vmx" <<'PY'
+import subprocess, sys
+with open('/private/tmp/pg-binaries-vm-start.log', 'ab') as log:
+    launcher = subprocess.Popen(
+        ['vmrun', '-T', 'fusion', '-vp', 'password', 'start', sys.argv[1], 'nogui'],
+        start_new_session=True, stdin=subprocess.DEVNULL,
+        stdout=log, stderr=subprocess.STDOUT)
+    launcher.wait(timeout=30)
+PY
+```
+
+The detached launch returned in 0.63–0.79 seconds; the first trial reached working VMware Tools after about 14 seconds. Confirm readiness with an authenticated guest command: `checkToolsState` sometimes returned `installed` even when commands worked. Copy current repository changes into `C:/pg-src` before building. `vmrun -T fusion -vp password stop VMX soft` shuts down through VMware Tools; measured trial shutdowns took about six seconds. The preserved baseline backup's configuration and NVRAM hashes still match.
+
+A newly deployed agent VM received a 258 KB source archive in 0.13 seconds and built HypoPG without installing additional tools. Its first build took 27.35 seconds and its repeat 17.79 seconds; runtime verification passed. The template therefore provides a working starting point, though dependency-heavy packages still need their additional tools and caches.
+
+Two small builds in separate workspaces within the existing two-CPU, 4 GiB VM took 29.76 seconds serially and 20.47 seconds concurrently, with unchanged cache keys. Each concurrent build took longer individually. These are one isolated pair, not a general concurrency limit; available-memory measurements were before/after samples rather than peaks. Throughput across separate VMs remains unmeasured.
 
 #### Build and verification commands
 
 From the Mac host, a guest build starts directly through VMware Tools:
 
 ```sh
-fusion_cli='/Applications/VMware Fusion.app/Contents/Library/vmrun'
 windows_vmx='/Users/berniesumption/Documents/local-dev/vmware-vms/Windows 11 64-bit Arm.vmwarevm/Windows 11 64-bit Arm.vmx'
-"$fusion_cli" -T fusion -vp password -gu 'Bernie Sumption' -gp password \
+vmrun -T fusion -vp password -gu 'Bernie Sumption' -gp password \
   runProgramInGuest "$windows_vmx" \
   'C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe' \
   -NoProfile -NonInteractive -ExecutionPolicy Bypass \
   -File 'C:\pg-src\platforms\windows\build-extension-local.ps1' \
   -Package pgvector \
   -DevelopmentArchive 'C:\pg-inputs\postgresql-development-18.6-windows-x86_64.tar.gz' \
-  -Workspace 'C:\pg-work\pgvector' -OutputDirectory 'C:\pg-output\pgvector'
+  -Workspace 'C:\pg-work\pgvector' -OutputDirectory 'C:\pg-output\pgvector' \
+  -LogPath 'C:\pg-work\logs\pgvector.log'
 ```
 
 `copyFileFromHostToGuest VMX HOST_FILE GUEST_FILE` and `copyFileFromGuestToHost VMX GUEST_FILE HOST_FILE` use the same authentication options. VMware file-transfer commands require backslashes in guest paths. A diagnostic guest script writes logs and JSON to known files, then the host copies them back; `runProgramInGuest` returns the exit status rather than streaming program output.
+
+Both local build helpers accept an optional `-LogPath`. It records build output, including native stderr, in a guest file that can be copied back while a build runs or after it finishes. Reusing a log path replaces the previous log. VMware's command exit status still reports failure; writing a log does not suppress it.
 
 These scripts run inside Windows, from its local repository checkout. The local pgvector build passed in 17.92 seconds, then 7.78 seconds in the same workspace with unchanged source, context and main input keys. Address Standardizer took 31.28 seconds initially and 10.18 seconds on repeat; its PCRE2 library hash and modification time and dependency success key remained unchanged. No PCRE2 configuration, compilation or installation ran on repeat.
 
 Collection, HypoPG, pg_ivm, pgAudit and pgTAP also built twice locally, with repeat calls taking 11.3–14.4 seconds including VMware command overhead. pgTAP uses Git's bundled Perl when Perl is absent from `PATH`, so this build needs no separate Perl installation. The seven-package combination passed native-library inspection, SQL probes, shutdown and cleanup in 33.12 seconds. These runs used the existing verified PostgreSQL SDK from GitHub, two guest CPUs and 4 GiB RAM; they do not measure a local PostgreSQL compilation or a clean-machine build.
 
 Pg_jsonschema's first setup attempt took 494.56 seconds and populated the scoped Rust and cargo-pgrx caches before the PowerShell logging failure below. After fixing the wrapper and recovering its stale workspace lock, the first successful build took 389.07 seconds and the repeat took 28.47 seconds, with `CARGO_BUILD_JOBS=2`. The successful first build was therefore not cold. The repeat retained its dependency success key, toolchain, registry and compiled-library cache. Pg_jsonschema alone passed runtime verification in 24.38 seconds; all eight completed packages passed together in 25.55 seconds, inspecting 101 binaries and running probes for nine SQL extensions.
+
+PostGIS's first attempt took about 50 minutes, including its private PostgreSQL compatibility build and SFCGAL, before failing during protobuf generation. Using `protoc` directly fixed that failure. Successful edit and repeat builds then took 553.20 and 544.07 seconds, retaining all 2,246 dependency files and the dependency success key. The repeat still configured and recompiled 82 C files; avoiding that work is being investigated. PostGIS alone passed runtime checks in 157.41 seconds; all nine packages passed together in 83.19 seconds, including probes for 14 SQL extensions. These verification runs overlapped compilation and are not controlled speed comparisons.
 
 ```powershell
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File platforms/windows/bootstrap.ps1
@@ -173,9 +212,13 @@ Bootstrap prepares tools under `C:/pg-binaries-tools` by default; `PG_WINDOWS_TO
 
 A PostGIS tool-bootstrap trial on a fresh native Windows GitHub runner passed in 5 minutes 16 seconds. Installing its 196 MSYS2 packages took 3 minutes 30 seconds, downloaded 429.55 MiB and occupied about 3 GiB. A retained local environment avoids repeating that installation; this hosted measurement excludes PostGIS compilation and does not measure Fusion performance.
 
+Local Fusion preparation first failed after 286.16 seconds when two MSYS2 mirrors reset connections. The retry requested 179.42 MiB rather than 429.73 MiB because downloads remained cached, and succeeded in 421.64 seconds. A repeat setup took 10.12 seconds without downloading or installing packages. The prepared MSYS2 tree contained 282 package entries and 3.98 GB of files. This used Git's bundled Perl in the bootstrap process; it does not establish that Perl's suitability for a native PostgreSQL compilation.
+
 The local PostgreSQL-only verifier passed all 15 checks, including capabilities, built-in extensions and mutual TLS, in 108.35 seconds during a concurrent Rust build. This used the existing runtime archive, not a locally compiled PostgreSQL. Windows ARM's `XtaCache` translation service briefly held a DLL after PostgreSQL shutdown; two cleanup attempts failed and the third succeeded after about one second. Cleanup retries Windows permission errors for up to five seconds and still fails if the lock persists. The service is left running.
 
 The shared CLI wrappers preserve native stderr and determine success from the exit code. This matters in Windows PowerShell 5: redirected native stderr can otherwise become a terminating `NativeCommandError`, hiding the underlying error or rejecting informational Rust output. A diagnostic confirmed that stderr with exit zero succeeds and exit seven still fails. For a stale workspace lock, confirm its recorded PID has exited in the guest, then remove only the lock file; retain the workspace and caches.
+
+Some Windows source archives contain read-only files. Workspace invalidation removes that attribute only from regular files inside the disposable tree before retrying deletion. Other permission errors remain failures; cache invalidation must not leave a partially deleted source tree behind.
 
 Windows verification extracts archives with Python's `data` filter so directories inherit normal Windows permissions. Python 3.13's unfiltered extraction creates protected directory permissions that prevent PostgreSQL's restricted child process from loading DLLs, producing `0xc0000135` even when all required DLLs are present. The controlled trial reproduced the failure with identical archive bytes and paths. Probe scratch folders also inherit Windows permissions; Linux and macOS retain private temporary directories. [Python directory permissions](https://docs.python.org/3.13/library/os.html#os.mkdir), [PostgreSQL restricted processes](https://github.com/postgres/postgres/blob/REL_18_6/src/common/restricted_token.c).
 
@@ -244,9 +287,9 @@ The PostGIS trial found that retaining dependencies alone did not make its own b
 
 Applying that fix in the Mac VM took 50.34 seconds for the first build after the script change and 30.02 seconds for an unchanged repeat, versus the earlier 48.71-second warm baseline. The dependency key and SFCGAL library checksum and modification time stayed unchanged. The warm archive passed clean-VM runtime and SQL verification. Only the Mac build script was transferred into the earlier isolated source snapshot; this measures iteration rather than current release-candidate consistency.
 
-The Mac archives passed SQL probes together in a separate clean VM: 201 Mach-O files checked, no findings, 29.22 seconds for the final verification run. These results establish that retained dependency state helps iteration; they do not yet compare Parallels against Docker or Lume. PostGIS validation on Windows and local macOS x86_64 trials remain incomplete.
+The Mac archives passed SQL probes together in a separate clean VM: 201 Mach-O files checked, no findings, 29.22 seconds for the final verification run. These results establish that retained dependency state helps iteration. Parallels could not be measured because of its activation gate, and local macOS x86_64 translation still needs licence approval.
 
-On native Windows GitHub runners, six small packages passed first and repeat builds with stable workspace keys and SQL verification. Their repeat builds took 10.00–14.68 seconds. Address Standardizer subsequently passed in 40.40 seconds initially and 13.73 seconds on repeat, including both supplied SQL probes and unchanged workspace keys. pg_jsonschema took 585.19 seconds initially and 33.33 seconds on repeat, including first-time Rust and cargo-pgrx preparation in the initial build. Its archive and combined SQL verification passed. These results prove Windows cache reuse; they do not measure local Windows translation. PostGIS remains under investigation.
+Earlier native Windows GitHub trials provide historical comparison: six small packages repeated in 10.00–14.68 seconds, Address Standardizer took 40.40 seconds initially and 13.73 on repeat, and pg_jsonschema took 585.19 and 33.33 seconds. Rust and cargo-pgrx setup was included in the first Rust build. Workspace keys and SQL checks passed. These uncontrolled hosted measurements use different allocations and revisions from the local Fusion trials.
 
 PowerShell 7.4.2 syntax-check processes in an amd64 container repeatedly crashed with a Rosetta assertion after reporting successful parses; isolated checks also passed. These checks do not establish compatibility with Windows PowerShell 5.1, which runs the native Windows trials. The measured Linux C builds did not encounter this translation failure.
 
@@ -284,13 +327,13 @@ The x86_64 clean-verification helper passed the Address Standardizer SQL checks 
 
 ## GitHub dependency caching
 
-The provisional recommendation is to defer a separate hosted compiled-dependency cache until local Windows and macOS x86_64 iteration have been assessed. The current workflows can retry one extension using an existing PostgreSQL archive, and archive selection can reuse unchanged packages. This already avoids rebuilding the whole distribution for one package edit.
+The recommendation is to defer a separate hosted compiled-dependency cache. All nine Windows extension packages now build locally, and Linux and Mac ARM builds already have retained local state. The current workflows can retry one extension using an existing PostgreSQL archive, and archive selection can reuse unchanged packages. Those mechanisms address the usual iteration loop without adding a remote cache backend. Local Mac x86 translation remains a licence-dependent gap; repeated hosted work for that target could change this recommendation.
 
 The expensive remaining case is rebuilding a changed dependency-heavy package. A previous native Intel macOS run spent 1,945 seconds in the PostGIS job and 1,077 seconds in pg_jsonschema; the complete run took 4,559 seconds. Those are whole-job timings from an earlier revision, including setup and downloads, rather than measured dependency-compilation savings. Local repeat-build results suggest useful savings are possible, but do not establish hosted cache transfer cost or expected hit rate.
 
 GitHub exposed step states while Windows jobs ran but withheld full logs until completion, delaying diagnosis of silent setup failures. Fresh hosted PostgreSQL builds took between 18 minutes 24 seconds and 30 minutes 7 seconds across trials, including dependency preparation, compilation and packaging. These are uncontrolled whole-step timings.
 
-Reusing those PostgreSQL archives took six seconds for selection and three seconds for staging and input checks in one subsequent run. The runtime checkpoint still ran. This avoided another PostgreSQL build while diagnosing Windows verification problems, although each hosted retry still needed runner startup and tool preparation. Local Windows iteration must be measured before deciding whether that remaining delay warrants a compiled-dependency cache.
+Reusing those PostgreSQL archives took six seconds for selection and three seconds for staging and input checks in one subsequent run. The runtime checkpoint still ran. This avoided another PostgreSQL build while diagnosing Windows verification problems, although each hosted retry still needed runner startup and tool preparation.
 
 If hosted iteration remains necessary, PostGIS is the first candidate for a measured cache experiment. The dependency phase gives the harness a reusable boundary without adding cache logic to individual build scripts. Hosted reuse would still need a stable installation path or verified relocation, complete invalidation and a timed cache restore. No hosted compiled-dependency cache is currently configured.
 
