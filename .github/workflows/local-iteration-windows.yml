@@ -1,0 +1,159 @@
+name: Local iteration Windows validation
+
+"on":
+  push:
+    branches: [agent/local-iteration-windows]
+  workflow_dispatch:
+    inputs:
+      phase:
+        description: PostgreSQL plus the selected extension group
+        required: true
+        default: small
+        type: choice
+        options: [core, small, postgis, rust, all]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: windows-2022
+    timeout-minutes: 120
+    defaults:
+      run:
+        shell: powershell
+    env:
+      PG_WINDOWS_TOOLS: C:\pg-binaries-tools
+      PG_ITERATION: C:\pg-iteration
+      PG_PHASE: ${{ inputs.phase || 'small' }}
+      PG_BUILD_JOBS: '2'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Bootstrap native build tools
+        run: |
+          New-Item -ItemType Directory -Force "$env:PG_ITERATION/logs","$env:PG_ITERATION/output","$env:PG_ITERATION/reports" | Out-Null
+          Start-Transcript -Path "$env:PG_ITERATION/logs/bootstrap.log"
+          try {
+            # Git for Windows also supplies Perl when it is absent from the runner PATH.
+            $gitPerl = Join-Path $env:ProgramFiles 'Git/usr/bin'
+            if (-not (Get-Command perl.exe -ErrorAction SilentlyContinue) -and (Test-Path (Join-Path $gitPerl 'perl.exe'))) {
+              $env:PATH += ";$gitPerl"
+              Add-Content $env:GITHUB_PATH $gitPerl
+            }
+            # windows-2022 provides Git, Perl and VS2022; winget is not guaranteed.
+            foreach ($tool in @('git.exe','perl.exe')) {
+              if (-not (Get-Command $tool -ErrorAction SilentlyContinue) -and -not (Get-Command winget.exe -ErrorAction SilentlyContinue)) {
+                throw "$tool and winget are both missing from this runner. Restore the documented windows-2022 image prerequisites before retrying."
+              }
+            }
+            $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio/Installer/vswhere.exe'
+            if (-not (Test-Path $vswhere) -and -not (Get-Command winget.exe -ErrorAction SilentlyContinue)) {
+              throw 'VS2022 Installer and winget are missing; use the documented windows-2022 image with VS2022 installed.'
+            }
+            & ./platforms/windows/bootstrap.ps1 -Tools $env:PG_WINDOWS_TOOLS
+          } finally { Stop-Transcript }
+
+      - name: Build and verify PostgreSQL checkpoint
+        id: core
+        run: |
+          Start-Transcript -Path "$env:PG_ITERATION/logs/postgresql.log"
+          try {
+            . ./platforms/windows/environment.ps1
+            $python = Join-Path $env:PG_WINDOWS_TOOLS 'python/python.exe'
+            & ./platforms/windows/build-postgresql-local.ps1 -Workspace "$env:PG_ITERATION/workspaces/postgresql" -OutputDirectory "$env:PG_ITERATION/output/postgresql" -SourceCache "$env:PG_ITERATION/sources"
+            $build = Get-Content "$env:PG_ITERATION/output/postgresql/postgresql-build.json" -Raw | ConvertFrom-Json
+            $archive = Join-Path "$env:PG_ITERATION/output/postgresql" $build.archive.filename
+            $development = Join-Path "$env:PG_ITERATION/output/postgresql" $build.development_archive.filename
+            & $python build.py --target windows-x86_64 archive-check $archive
+            if ($LASTEXITCODE) { throw 'PostgreSQL archive check failed' }
+            & $python build.py --target windows-x86_64 build-record postgresql $archive "$env:PG_ITERATION/output/postgresql/record.json" --revision $env:GITHUB_SHA --development-archive $development
+            if ($LASTEXITCODE) { throw 'PostgreSQL build record failed' }
+            & $python build.py --target windows-x86_64 runtime-check $archive "$env:PG_ITERATION/reports/postgresql"
+            if ($LASTEXITCODE) { throw 'PostgreSQL runtime checkpoint failed' }
+          } finally { Stop-Transcript }
+
+      - name: Build and verify selected extensions sequentially
+        id: packages
+        if: inputs.phase != 'core'
+        run: |
+          . ./platforms/windows/environment.ps1
+          $python = Join-Path $env:PG_WINDOWS_TOOLS 'python/python.exe'
+          $build = Get-Content "$env:PG_ITERATION/output/postgresql/postgresql-build.json" -Raw | ConvertFrom-Json
+          $archive = Join-Path "$env:PG_ITERATION/output/postgresql" $build.archive.filename
+          $development = Join-Path "$env:PG_ITERATION/output/postgresql" $build.development_archive.filename
+          $small = @(Get-ChildItem packages -Directory | Where-Object { $_.Name -notin @('postgresql','postgis','pg_jsonschema') -and (Test-Path (Join-Path $_.FullName 'build.json')) } | ForEach-Object { $_.Name } | Sort-Object)
+          switch ($env:PG_PHASE) {
+            'small' { $selected = $small }
+            'postgis' { $selected = @('postgis') }
+            'rust' { $selected = @('pg_jsonschema') }
+            'all' { $selected = @($small) + @('postgis','pg_jsonschema') }
+            default { throw "Unknown extension phase: $env:PG_PHASE" }
+          }
+          $summary = @()
+          foreach ($package in $selected) {
+            Start-Transcript -Path "$env:PG_ITERATION/logs/$package.log"
+            try {
+              if ($package -eq 'postgis') { & ./platforms/windows/bootstrap.ps1 -Tools $env:PG_WINDOWS_TOOLS -Package postgis }
+              & ./platforms/windows/build-extension-local.ps1 -Package $package -DevelopmentArchive $development -Workspace "$env:PG_ITERATION/workspaces/$package" -OutputDirectory "$env:PG_ITERATION/output/$package" -SourceCache "$env:PG_ITERATION/sources"
+              $extension = Get-Content "$env:PG_ITERATION/output/$package/extension-build.json" -Raw | ConvertFrom-Json
+              $packageArchive = Join-Path "$env:PG_ITERATION/output/$package" $extension.archive.filename
+              & $python build.py --target windows-x86_64 build-record $package $packageArchive "$env:PG_ITERATION/output/$package/record.json" --revision $env:GITHUB_SHA --postgresql-archive $archive
+              if ($LASTEXITCODE) { throw "$package build record failed" }
+              & $python build.py --target windows-x86_64 runtime-check $archive "$env:PG_ITERATION/reports/$package" --package-archive "$package=$packageArchive"
+              if ($LASTEXITCODE) { throw "$package runtime checkpoint failed" }
+              $summary += [pscustomobject]@{ package = $package; outcome = 'passed'; reason = $null }
+            } catch {
+              Write-Host "FAILED ${package}: $_"
+              $summary += [pscustomobject]@{ package = $package; outcome = 'failed'; reason = $_.ToString() }
+            } finally {
+              Stop-Transcript
+              ConvertTo-Json -InputObject @($summary) -Depth 5 | Set-Content "$env:PG_ITERATION/output/package-summary.json"
+            }
+          }
+          $failed = @($summary | Where-Object { $_.outcome -ne 'passed' })
+          if ($failed.Count) { throw "$($failed.Count) extension checkpoint(s) failed; see package-summary.json" }
+
+      - name: Verify combined archive bytes
+        if: steps.core.outcome == 'success' && steps.packages.outcome == 'success'
+        run: |
+          Start-Transcript -Path "$env:PG_ITERATION/logs/combined.log"
+          try {
+            . ./platforms/windows/environment.ps1
+            $python = Join-Path $env:PG_WINDOWS_TOOLS 'python/python.exe'
+            $build = Get-Content "$env:PG_ITERATION/output/postgresql/postgresql-build.json" -Raw | ConvertFrom-Json
+            $archive = Join-Path "$env:PG_ITERATION/output/postgresql" $build.archive.filename
+            $packages = @((Get-Content "$env:PG_ITERATION/output/package-summary.json" -Raw | ConvertFrom-Json) | ForEach-Object { $_.package })
+            $command = @('build.py','--target','windows-x86_64')
+            if ($env:PG_PHASE -eq 'all') {
+              $command += @('release-check', $archive, "$env:PG_ITERATION/reports/release", '--build-record', "postgresql=$env:PG_ITERATION/output/postgresql/record.json")
+            } else {
+              $command += @('runtime-check', $archive, "$env:PG_ITERATION/reports/combined")
+            }
+            foreach ($package in $packages) {
+              $extension = Get-Content "$env:PG_ITERATION/output/$package/extension-build.json" -Raw | ConvertFrom-Json
+              $packageArchive = Join-Path "$env:PG_ITERATION/output/$package" $extension.archive.filename
+              $command += @('--package-archive', "$package=$packageArchive")
+              if ($env:PG_PHASE -eq 'all') { $command += @('--build-record', "$package=$env:PG_ITERATION/output/$package/record.json") }
+            }
+            # The shared verifier supplies each PostgreSQL process with its clean environment.
+            & $python @command
+            if ($LASTEXITCODE) { throw 'Combined archive verification failed' }
+          } finally { Stop-Transcript }
+
+      - name: Preserve archives, reports and build diagnostics
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: windows-x86_64-${{ inputs.phase || 'small' }}-${{ github.run_id }}-${{ github.run_attempt }}
+          compression-level: 0
+          retention-days: 7
+          if-no-files-found: warn
+          path: |
+            C:/pg-iteration/output/
+            C:/pg-iteration/reports/
+            C:/pg-iteration/logs/
+            C:/pg-iteration/workspaces/**/config.log
+            C:/pg-iteration/workspaces/**/meson-logs/**
+            C:/pg-iteration/workspaces/**/CMakeConfigureLog.yaml
+            C:/pg-iteration/workspaces/**/CMakeCache.txt

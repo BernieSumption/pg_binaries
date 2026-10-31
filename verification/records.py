@@ -41,6 +41,8 @@ def selected_inputs(support: dict[str, Any], target: str,
         raise RecordError(f"unknown component: {component}")
     package_dir = root / "packages" / component
     input_paths = [package_dir / "build.json", package_dir / "build.sh"]
+    input_paths.extend(path for name in ("build-dependencies.sh", "build.ps1", "build-dependencies.ps1")
+                       if (path := package_dir / name).is_file())
     input_paths.extend(path for path in (package_dir / "internal").rglob("*")
                        if path.is_file() and "__pycache__" not in path.parts
                        and path.suffix not in (".pyc", ".pyo") and path.name != ".DS_Store")

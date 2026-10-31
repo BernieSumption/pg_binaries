@@ -60,11 +60,12 @@ def builtin_controls(archive: Path) -> list[str]:
                   and "/" not in path[len(prefix):] and entry.kind == "file")
 
 
-def main(argv=None) -> int:
-    parser = argparse.ArgumentParser(description=__doc__)
+def main(argv=None, *, platform_configuration=None) -> int:
+    configuration = platform_configuration or {"targets": TARGETS, "default": TARGET, "system": "Linux", "machines": MACHINES, "version_key": "linux_version", "version": linux_version}
+    parser = argparse.ArgumentParser(description=configuration.get("description", __doc__))
     parser.add_argument("postgresql_archive", type=Path)
     parser.add_argument("output", type=Path, help="directory for report and per-combination logs")
-    parser.add_argument("--target", choices=TARGETS, default=TARGET)
+    parser.add_argument("--target", choices=configuration["targets"], default=configuration["default"])
     parser.add_argument("--package-archive", action="append", default=[], metavar="PACKAGE=PATH",
                         help="selected package archive; repeat once for each package")
     parser.add_argument("--build-record", action="append", default=[], metavar="COMPONENT=PATH",
@@ -73,8 +74,8 @@ def main(argv=None) -> int:
                         help="workflow run that produced a selected archive; repeat for each component")
     arguments = parser.parse_args(argv)
     target = arguments.target
-    if platform.system() != "Linux" or platform.machine().lower() not in MACHINES[target]:
-        parser.error(f"{target} verification must run on a matching Linux host")
+    if platform.system() != configuration["system"] or platform.machine().lower() not in configuration["machines"][target]:
+        parser.error(f"{target} verification must run on a matching {configuration['system']} host")
 
     support = load_selection(ROOT / "support.json")
     metadata = package_metadata()
@@ -155,7 +156,7 @@ def main(argv=None) -> int:
     report = {
         "schema_version": 1,
         "target": target,
-        "linux_version": linux_version(),
+        configuration["version_key"]: configuration["version"](),
         "verification_git_revision": git_revision(),
         "archives": {
             name: {"filename": path.name, "sha256": archive_hashes[name],

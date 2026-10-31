@@ -13,6 +13,12 @@ import sys
 import tempfile
 
 
+try:
+    from .environment import executable, clean_environment, connection
+except ImportError:
+    from environment import executable, clean_environment, connection
+
+
 def run(arguments: list[str], *, environment: dict[str, str] | None = None) -> subprocess.CompletedProcess[str]:
     return subprocess.run(arguments, capture_output=True, text=True, check=False, env=environment)
 
@@ -26,7 +32,7 @@ def require_command(arguments: list[str], *, environment: dict[str, str] | None 
 
 def probe(installation: Path, work_parent: Path) -> list[str]:
     bin_dir = installation / "bin"
-    binaries = {name: bin_dir / name for name in ("initdb", "pg_ctl", "psql", "pg_dump", "pg_restore")}
+    binaries = {name: executable(bin_dir, name) for name in ("initdb", "pg_ctl", "psql", "pg_dump", "pg_restore")}
     missing = [str(path) for path in binaries.values() if not path.is_file()]
     if missing:
         raise RuntimeError("missing PostgreSQL binaries: " + ", ".join(missing))
@@ -38,20 +44,14 @@ def probe(installation: Path, work_parent: Path) -> list[str]:
     socket_parent = Path("/tmp") if Path("/tmp").is_dir() else Path(tempfile.gettempdir())
     socket = Path(tempfile.mkdtemp(prefix="pgc-", dir=socket_parent))
     log = temporary / "postgres.log"
-    environment = {
-        "HOME": str(Path.home()),
-        "PATH": f"{bin_dir}:/usr/bin:/bin:/usr/sbin:/sbin",
-        "LANG": os.environ.get("LANG", "en_US.UTF-8"),
-        "PGHOST": str(socket),
-        "PGPORT": "5432",
-        "PGUSER": getpass.getuser(),
-    }
+    environment, connection_settings = connection(bin_dir, socket)
+
     started = False
     stopped = False
     try:
         require_command([str(binaries["initdb"]), "-D", str(data), "--no-sync", "--encoding=UTF8"], environment=environment)
         with (data / "postgresql.conf").open("a", encoding="utf-8") as config:
-            config.write(f"\nunix_socket_directories = '{socket}'\nlisten_addresses = ''\nssl = off\n")
+            config.write(connection_settings + "ssl = off\n")
         require_command([str(binaries["pg_ctl"]), "-D", str(data), "-l", str(log), "-w", "start"], environment=environment)
         started = True
         psql = [str(binaries["psql"]), "-X", "-qAt", "-v", "ON_ERROR_STOP=1", "-d", "postgres"]

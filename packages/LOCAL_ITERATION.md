@@ -1,0 +1,136 @@
+# Local build iteration
+
+This document records the working development process, commands and measurements for package builds. Agents maintain it as the tooling changes. Product requirements and release verification remain in [build-and-test.md](../design/build-and-test.md).
+
+Compilation, dependency installation and execution of built software happen inside a development VM or container. The Mac host manages environments and transfers source files and archives. Final archive verification uses a separate clean environment.
+
+## Target environments
+
+The environment comparison is in progress. The established routes are:
+
+- Linux ARM64: the retained Docker development container runs ARM binaries directly.
+- Linux x86_64: an amd64 Docker container runs through Rosetta inside Docker Desktop's ARM Linux VM. Both builds and final-archive verification have passed through this route.
+- macOS ARM64: Lume development and clean verification VMs have passed the complete package set.
+- macOS x86_64: native GitHub Intel runners have passed the complete package set. A viable local route still needs investigation.
+- Windows x86_64: the Windows 11 ARM download has completed, but the Parallels VM has not started. ARM-hosted MSVC can target x64; running the resulting programs through Windows translation still needs to be demonstrated for this project.
+
+Parallels will replace an established route only after equivalent builds and verification work and the measured turnaround or simpler operation justify the change. The comparison includes startup, source transfer, dependency preparation, compilation, packaging and verification, rather than compiler speed alone.
+
+## Comparing the routes
+
+Each plausible route receives an actual setup and build attempt. The comparison covers Parallels Linux and macOS guests as well as Windows, the existing Docker and Lume environments, local x86 translation or emulation, and hosted GitHub iteration. A documented limitation guides the experiment; it is not a substitute for trying a route when the required tools are available. A route that cannot be tried has its concrete blocker recorded.
+
+For each route, the experiment record includes host and guest versions, CPU/RAM allocation, setup time, manual steps, failures and recovery work. Comparable workloads record cold and repeat build time, verification and transfer time, and which caches were warm. Representative workloads include a small native extension and a dependency-heavy package. Repeated timings are reported individually or with their range; parallel activity and network downloads are identified so they are not mistaken for compiler performance.
+
+The recommendation distinguishes routes that were tested successfully, tested with poor results, blocked before a useful trial, and not yet attempted. Qualitative evidence about reliability and agent effort accompanies timings. Retaining Docker or Lume alongside Parallels requires evidence of a useful advantage, rather than familiarity alone.
+
+## Development loop
+
+Agents develop build scripts locally before running them on GitHub Actions. A local iteration produces an archive and resolves build failures quickly; inexpensive smoke checks can help diagnose a failure. GitHub jobs run the same package build commands after preparing their runner environments. A failure found on GitHub is fixed in the shared build script or runner setup and checked again where it occurred.
+
+A development environment retains its installed tools and files across stops and starts. Agents may install tools and libraries as needed. Separate workspaces isolate build files; changes to system dependencies in a shared VM or container still require coordination. Another environment is appropriate when concurrent work needs incompatible system changes. The measured environment comparison will determine the default allocation and concurrency limits.
+
+Adding or updating a package includes the [dependency and licence review](../design/dependency-licenses.md#dependency-review-during-development).
+
+### Docker commands
+
+From the host repository, a Linux package build uses the development archive for its target:
+
+```sh
+bash platforms/linux/build-extension-local.sh \
+  address_standardizer /path/to/postgresql-development.tar.gz \
+  out/local-iteration/build-output linux-x86_64 agent-1-linux-x86
+```
+
+The helper creates or starts the named retained container, caches the supplied development archive by checksum and builds in `/work/local-iteration/<target>/<package>/workspace`. Different container names give agents separate writable environments. The repository is mounted read-only, so host edits become visible without a source-transfer step. `linux-arm64` selects the native ARM route.
+
+Clean verification runs separately:
+
+```sh
+bash verification/linux/run-local.sh --target linux-x86_64 \
+  /path/to/postgresql.tar.gz out/local-iteration/verification \
+  address_standardizer=/path/to/address_standardizer.tar.gz
+```
+
+The verifier creates and removes a disposable container; the development container and its workspace remain available. Named development containers retain their installed tools across `docker stop` and `docker start`. New containers keep `/work` in the ignored repository directory `out/local-environments/<container-name>/`; `PG_BINARIES_LINUX_WORK` can select another host location at creation. Existing containers retain their original mounts, reported by `docker inspect`. Older development containers use host temporary directories; deleting those directories loses their build caches.
+
+### Lume commands
+
+The measured Mac setup uses `spike2-macos-arm64-build` for compilation and `spike2-macos-arm64-clean` for verification. Both guests have four vCPUs and 8 GiB RAM. Lume 0.6.1 provides headless lifecycle and address discovery:
+
+```sh
+lume run --no-display --detach spike2-macos-arm64-build
+lume get spike2-macos-arm64-build --format json
+```
+
+Guest access uses SSH as user `lume`, with the configured development key and known-hosts file. The current host key files are `/private/tmp/spike2-lume-id_ed25519` and `/private/tmp/spike2-lume-known_hosts`; these must remain available while reusing these VMs. Guest IP addresses can change and come from `lume get`.
+
+Source transfers go into a guest-local checkout; compilation runs against the guest filesystem. The measurements used `~/local-iteration-src`, with workspaces kept separately for each package. Editing a host build script therefore requires transferring that file before invoking the shared `build.py` command over SSH. The clean VM receives the verifier source and final archives, without the development toolchain or dependency prefixes.
+
+The clean guest can be shut down through its enabled SSH service with `sudo shutdown -h now`; `lume get` confirms that it has stopped. During this trial, Lume's own shutdown helper could not use guest SSH even though direct SSH worked. Preserve a working access key and address-discovery command rather than relying on an untested guest-control helper.
+
+Two measured starts reached SSH readiness in 9.74 and 10.39 seconds. A 54,071,920-byte PostgreSQL development archive transferred from host to guest in 0.264 seconds with matching SHA-256; the host file was already warm in the filesystem cache. Graceful shutdown took 11.23 seconds from supplying the sudo credential to confirmed stopped state. These are retained-VM timings, excluding initial macOS installation and guest setup.
+
+## Persistent build state
+
+The source-download cache contains checksum-verified archives. It is separate from compiled dependency installations, Cargo's compiled output and installed toolchains. Keeping downloaded archives alone does not make a repeat build incremental.
+
+Local extension iteration uses one stable workspace per agent, package and target. Dependency prefixes can contain absolute paths, so the workspace stays at the same path between runs. The harness owns reuse and invalidation; package scripts consume the prepared state without implementing a local or GitHub cache backend.
+
+Inside the development environment, the shared command is:
+
+```sh
+python3 build.py --target linux-arm64 extension-build \
+  address_standardizer /work/postgresql-development.tar.gz /work/output \
+  --workspace /work/agents/agent-1/address_standardizer \
+  --source-cache /work/source-cache --reuse-workspace
+```
+
+The target, package and development archive select the build. The output directory receives the finished archive. The workspace is an absolute path without whitespace, retained between runs; the source cache may be shared because archives are checksum-verified. Each simultaneous build needs its own workspace. Outputs stay outside the workspace.
+
+Before each invocation, the harness replaces the private PostgreSQL copy and empties `payload/` and `build/stage/`. With unchanged inputs, it retains prepared sources, build intermediates and successful dependency installations. Changing the main build script refreshes sources and main intermediates while retaining `build/dependencies/`, Cargo's `build/target/` and pgrx state. Changing a source checksum, dependency-build implementation, PostgreSQL development archive, or recorded toolchain/settings refreshes source and build state. A failed dependency phase is retried.
+
+The optional `build-dependencies.sh` or `build-dependencies.ps1` entry point prepares dependencies without implementing caching itself. Its helpers live in `internal/dependencies/`; changes there invalidate the dependency installation. The entry-point contract is documented in [README.md](README.md).
+
+The harness rejects simultaneous use of a workspace. A crash can leave `.pg-binaries-extension-workspace.lock`; its error names the owning PID. Remove the lock only after confirming that process has exited. Fresh-workspace builds remain available by omitting `--reuse-workspace`.
+
+## Measured iteration time
+
+These measurements used verified source-download caches. “Cold” means a new compiled dependency prefix or Cargo target directory, rather than a machine without installed tools. Times include the extension-build command through archive production; clean runtime verification is timed separately.
+
+- Docker Linux ARM64, Address Standardizer, four allocated CPUs: 9.76 seconds cold, 3.00 seconds warm, 4.13 seconds after a main-script comment edit. Three further warm runs took 2.98–2.99 seconds.
+- Docker Linux x86_64 through Rosetta, Address Standardizer, four allocated CPUs: 51.51 seconds cold, 7.58 seconds warm, 10.04 seconds after the comment edit. Three further warm runs took 7.44–7.47 seconds. Both SQL extensions passed clean runtime checks.
+- Lume macOS ARM64, four vCPUs and 8 GiB RAM: Address Standardizer took 19.61 seconds cold, 3.22 warm and 7.01 after the edit. PostGIS took 417.41, 48.71 and 51.61 seconds respectively. PostGIS used an existing conda package-download cache but prepared a fresh installed environment and SFCGAL build.
+- In the same Mac VM, pg_jsonschema took 68.72 seconds with an empty Cargo target directory, 8.45 warm and 9.54 after the edit. Rust and the Cargo registry were already installed. Before fixing repeated pgrx initialisation and identical-file rewrites, warm iterations took about 45 seconds. A small SQL-generation helper still recompiles each time.
+
+The Mac archives passed SQL probes together in a separate clean VM: 201 Mach-O files checked, no findings, 29.22 seconds for the final verification run. These results establish that retained dependency state helps iteration; they do not yet compare Parallels against Docker or Lume. Native Windows and local macOS x86_64 trials remain outstanding.
+
+### Concurrent builds
+
+One Linux ARM64 trial built HypoPG and pgvector in separate workspaces. Serial execution took 6.57 seconds using 16 allocated CPUs; two concurrent containers with eight CPUs each took 4.35 seconds, about 34% less wall time. Both scenarios passed archive checks. The serial container peaked at 528 MiB; the concurrent containers peaked individually at 299 and 252 MiB. Their peaks were not necessarily simultaneous and exclude the Docker VM's overhead.
+
+This demonstrates useful two-package concurrency for small native builds. It does not establish a safe limit for PostGIS, Rust or whole VMs. Docker's VM had 16 CPUs and about 47 GiB available, with no per-container memory limit; actual CPU affinity constrained concurrent jobs even though the guest CPU-count query still reported 16.
+
+The x86_64 clean-verification helper passed the Address Standardizer SQL checks in 39.77 seconds, including a cached verifier-image build and container setup. The development container remained stopped afterwards and retained its cache.
+
+## GitHub dependency caching
+
+The provisional recommendation is to defer a separate hosted compiled-dependency cache until local Windows and macOS x86_64 iteration have been assessed. The current workflows can retry one extension using an existing PostgreSQL archive, and archive selection can reuse unchanged packages. This already avoids rebuilding the whole distribution for one package edit.
+
+The expensive remaining case is rebuilding a changed dependency-heavy package. A previous native Intel macOS run spent 1,945 seconds in the PostGIS job and 1,077 seconds in pg_jsonschema; the complete run took 4,559 seconds. Those are whole-job timings from an earlier revision, including setup and downloads, rather than measured dependency-compilation savings. Local repeat-build results suggest useful savings are possible, but do not establish hosted cache transfer cost or expected hit rate.
+
+If hosted iteration remains necessary, PostGIS is the first candidate for a measured cache experiment. The dependency phase gives the harness a reusable boundary without adding cache logic to individual build scripts. Hosted reuse would still need a stable installation path or verified relocation, complete invalidation and a timed cache restore. No hosted compiled-dependency cache is currently configured.
+
+## Initial Parallels setup
+
+The existing `Windows 11` VM has its downloaded installation ISO and unattended setup image ready. Starting it, creating a Linux VM and listing snapshots have each failed with “available only in Parallels Desktop for Mac Pro or Business Edition.” Activation needs resolving before command-line provisioning can be evaluated. Computer use briefly connected after permission approval, but subsequent attempts failed with a native-pipe startup error. These are setup blockers, not performance results.
+
+Routine lifecycle and guest work use `prlctl`; computer use is authorised for Parallels and its Windows guests when a command-line operation is unavailable. Other Mac applications and the host browser remain outside that authorisation.
+
+The command-line client is `/Applications/Parallels Desktop.app/Contents/MacOS/prlctl`. In this agent's sandbox, service queries require an approved execution outside the sandbox. A sandbox-only “Unable to connect to Parallels Service” error does not establish that Parallels needs restarting.
+
+Linux builds in a Parallels guest must use the guest's own filesystem: Parallels documents limitations on `mmap()` in Linux shared folders. Source and archive transfer must be tested separately from build execution. [Shared-folder limitations](https://kb.parallels.com/en/128914).
+
+## Evidence
+
+The earlier four-target package validation is recorded in [IMPLEMENTATION_STATUS.md](../IMPLEMENTATION_STATUS.md). New local-iteration timings and machine-readable evidence belong under `out/local-iteration/`; this document records their interpretation and the commands needed to reproduce them.

@@ -14,6 +14,12 @@ import tarfile
 import tempfile
 
 
+try:
+    from .environment import executable, clean_environment, connection
+except ImportError:
+    from environment import executable, clean_environment, connection
+
+
 def run(arguments: list[str], environment: dict[str, str]) -> str:
     result = subprocess.run(arguments, capture_output=True, text=True, check=False, env=environment)
     if result.returncode:
@@ -21,7 +27,7 @@ def run(arguments: list[str], environment: dict[str, str]) -> str:
     return result.stdout.strip()
 
 
-def expected_extensions(source_archive: Path) -> set[str]:
+def expected_extensions(source_archive: Path, *, windows: bool | None = None) -> set[str]:
     """Read contrib control names from PostgreSQL source, excluding disabled languages."""
     with tarfile.open(source_archive, "r:gz") as archive:
         names = {
@@ -34,6 +40,9 @@ def expected_extensions(source_archive: Path) -> set[str]:
             for member in archive.getmembers()
             if member.isfile() and "/src/pl/" in member.name and member.name.endswith(".control")
         )
+    windows = os.name == "nt" if windows is None else windows
+    if windows:
+        names.discard("uuid-ossp")
     return {name for name in names if "plperl" not in name and "plpython" not in name
             and name not in {"pltcl", "pltclu"}}
 
@@ -49,7 +58,7 @@ def probe(installation: Path, source_archive: Path, work_parent: Path) -> list[s
         return failures
 
     bin_dir = installation / "bin"
-    binaries = {name: bin_dir / name for name in ("initdb", "pg_ctl", "psql")}
+    binaries = {name: executable(bin_dir, name) for name in ("initdb", "pg_ctl", "psql")}
     missing = [str(path) for path in binaries.values() if not path.is_file()]
     if missing:
         raise RuntimeError("missing PostgreSQL binaries: " + ", ".join(missing))
@@ -58,18 +67,14 @@ def probe(installation: Path, source_archive: Path, work_parent: Path) -> list[s
     data, log = temporary / "data", temporary / "postgres.log"
     socket_parent = Path("/tmp") if Path("/tmp").is_dir() else Path(tempfile.gettempdir())
     socket = Path(tempfile.mkdtemp(prefix="pgb-", dir=socket_parent))
-    environment = {
-        "HOME": str(Path.home()),
-        "PATH": f"{bin_dir}:/usr/bin:/bin:/usr/sbin:/sbin",
-        "LANG": os.environ.get("LANG", "en_US.UTF-8"),
-        "PGHOST": str(socket), "PGPORT": "5432", "PGUSER": getpass.getuser(),
-    }
+    environment, connection_settings = connection(bin_dir, socket)
+
     started = False
     stopped = False
     try:
         run([str(binaries["initdb"]), "-D", str(data), "--no-sync", "--encoding=UTF8"], environment)
         with (data / "postgresql.conf").open("a", encoding="utf-8") as config:
-            config.write(f"\nunix_socket_directories = '{socket}'\nlisten_addresses = ''\n"
+            config.write(connection_settings +
                          "shared_preload_libraries = 'pg_stat_statements'\nwal_level = logical\n")
         run([str(binaries["pg_ctl"]), "-D", str(data), "-l", str(log), "-w", "start"], environment)
         started = True
@@ -94,7 +99,7 @@ def probe(installation: Path, source_archive: Path, work_parent: Path) -> list[s
         for filename in ("builtin_ops_a_l.sql", "builtin_ops_m_z.sql", "builtin_ops_remaining.sql"):
             script = Path(__file__).with_name(filename)
             try:
-                output = run([*psql, "-v", f"fixture_path={fixture}", "-f", str(script)], environment)
+                output = run([*psql, "-v", f"fixture_path={fixture.as_posix()}", "-f", str(script)], environment)
                 if filename == "builtin_ops_remaining.sql":
                     payload = '"builtin_tcn_remaining",I,"id"=\'91\''
                     if 'Asynchronous notification "tcn"' not in output or payload not in output:

@@ -12,6 +12,13 @@ import socket
 import subprocess
 import sys
 import tempfile
+import tarfile
+
+
+try:
+    from .environment import executable, clean_environment, connection
+except ImportError:
+    from environment import executable, clean_environment, connection
 
 
 def run(arguments: list[str], environment: dict[str, str]) -> str:
@@ -22,26 +29,42 @@ def run(arguments: list[str], environment: dict[str, str]) -> str:
     return result.stdout.strip()
 
 
-def probe(installation: Path, work_parent: Path) -> None:
+def source_certificates(source_archive: Path, destination: Path) -> None:
+    """Read PostgreSQL's public TLS identities from a caller-verified source archive."""
+    names = {"server.crt": "server-cn-only+server_ca.crt", "server.key": "server-cn-only.key",
+             "client.crt": "client+client_ca.crt", "client.key": "client.key",
+             "ca.crt": "root_ca.crt", "server-ca.crt": "root+client_ca.crt"}
+    with tarfile.open(source_archive, "r:gz") as archive:
+        for output, source in names.items():
+            matches = [member for member in archive.getmembers()
+                       if member.isfile() and member.name.endswith("/src/test/ssl/ssl/" + source)]
+            if len(matches) != 1:
+                raise RuntimeError(f"PostgreSQL TLS fixture missing or ambiguous: {source}")
+            stream = archive.extractfile(matches[0])
+            if stream is None:
+                raise RuntimeError(f"cannot read PostgreSQL TLS fixture: {source}")
+            (destination / output).write_bytes(stream.read())
+
+
+def probe(installation: Path, work_parent: Path, source_archive: Path | None = None) -> None:
     bin_dir = installation / "bin"
-    binaries = {name: bin_dir / name for name in ("initdb", "pg_ctl", "psql")}
+    binaries = {name: executable(bin_dir, name) for name in ("initdb", "pg_ctl", "psql")}
     missing = [str(path) for path in binaries.values() if not path.is_file()]
     if missing:
         raise RuntimeError("missing PostgreSQL binaries: " + ", ".join(missing))
-    openssl = Path("/usr/bin/openssl")
-    if not openssl.is_file():
-        raise RuntimeError("system OpenSSL was not found at /usr/bin/openssl")
+    openssl = Path(os.environ.get("PG_TEST_OPENSSL", "/usr/bin/openssl"))
+    if source_archive is None and not openssl.is_file():
+        raise RuntimeError("test OpenSSL was not found; set PG_TEST_OPENSSL to an absolute executable path")
 
-    user = getpass.getuser()
+    user = "ssltestuser" if source_archive is not None else getpass.getuser()
     work_parent.mkdir(parents=True, exist_ok=True)
     temporary = Path(tempfile.mkdtemp(prefix="pg-tls-", dir=work_parent))
     data, certs, log = temporary / "data", temporary / "certs", temporary / "postgres.log"
     certs.mkdir()
-    environment = {
-        "HOME": str(Path.home()),
-        "PATH": f"{bin_dir}:/usr/bin:/bin:/usr/sbin:/sbin",
-        "LANG": os.environ.get("LANG", "en_US.UTF-8"),
-    }
+    openssl_config = certs / "openssl.cnf"
+    openssl_config.write_text("[req]\ndistinguished_name = dn\n[dn]\n", encoding="utf-8")
+    environment = clean_environment(bin_dir)
+
     started = False
     stopped = False
     try:
@@ -49,31 +72,35 @@ def probe(installation: Path, work_parent: Path) -> None:
             listener.bind(("127.0.0.1", 0))
             port = listener.getsockname()[1]
 
-        run([str(openssl), "req", "-x509", "-newkey", "rsa:2048", "-sha256", "-days", "1", "-nodes",
-             "-subj", "/CN=pg-tls-probe-ca", "-keyout", str(certs / "ca.key"),
-             "-out", str(certs / "ca.crt")], environment)
-        for peer, common_name in (("server", "localhost"), ("client", user)):
-            run([str(openssl), "req", "-newkey", "rsa:2048", "-sha256", "-nodes", "-subj",
-                 f"/CN={common_name}", "-keyout", str(certs / f"{peer}.key"), "-out",
-                 str(certs / f"{peer}.csr")], environment)
-            run([str(openssl), "x509", "-req", "-in", str(certs / f"{peer}.csr"), "-CA",
-                 str(certs / "ca.crt"), "-CAkey", str(certs / "ca.key"), "-CAcreateserial",
-                 "-days", "1", "-sha256", "-out", str(certs / f"{peer}.crt")], environment)
+        if source_archive is not None:
+            source_certificates(source_archive, certs)
+        else:
+            run([str(openssl), "req", "-config", str(openssl_config), "-x509", "-newkey", "rsa:2048", "-sha256", "-days", "1", "-nodes",
+                 "-subj", "/CN=pg-tls-probe-ca", "-keyout", str(certs / "ca.key"),
+                 "-out", str(certs / "ca.crt")], environment)
+            for peer, common_name in (("server", "localhost"), ("client", user)):
+                run([str(openssl), "req", "-config", str(openssl_config), "-newkey", "rsa:2048", "-sha256", "-nodes", "-subj",
+                     f"/CN={common_name}", "-keyout", str(certs / f"{peer}.key"), "-out",
+                     str(certs / f"{peer}.csr")], environment)
+                run([str(openssl), "x509", "-req", "-in", str(certs / f"{peer}.csr"), "-CA",
+                     str(certs / "ca.crt"), "-CAkey", str(certs / "ca.key"), "-CAcreateserial",
+                     "-days", "1", "-sha256", "-out", str(certs / f"{peer}.crt")], environment)
+        server_ca = certs / ("server-ca.crt" if source_archive is not None else "ca.crt")
         for key in certs.glob("*.key"):
             key.chmod(0o600)
 
         run([str(binaries["initdb"]), "-D", str(data), "--no-sync", "--encoding=UTF8", "--username", user], environment)
         (data / "pg_hba.conf").write_text(
-            "local all all trust\n"
+            ("" if os.name == "nt" else "local all all trust\n") +
             f"hostssl all all 127.0.0.1/32 cert\n",
             encoding="utf-8",
         )
         with (data / "postgresql.conf").open("a", encoding="utf-8") as config:
             config.write(
                 f"\nlisten_addresses = '127.0.0.1'\nport = {port}\nssl = on\n"
-                f"ssl_cert_file = '{certs / 'server.crt'}'\n"
-                f"ssl_key_file = '{certs / 'server.key'}'\n"
-                f"ssl_ca_file = '{certs / 'ca.crt'}'\n"
+                f"ssl_cert_file = '{(certs / 'server.crt').as_posix()}'\n"
+                f"ssl_key_file = '{(certs / 'server.key').as_posix()}'\n"
+                f"ssl_ca_file = '{server_ca.as_posix()}'\n"
             )
         run([str(binaries["pg_ctl"]), "-D", str(data), "-l", str(log), "-w", "start"], environment)
         started = True
@@ -116,9 +143,10 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("installation", type=Path, help="extracted postgresql/ installation")
     parser.add_argument("work_parent", type=Path, help="directory for disposable cluster and TLS files")
+    parser.add_argument("--source-archive", type=Path, help="checksum-verified PostgreSQL source archive supplying public TLS test identities")
     arguments = parser.parse_args()
     try:
-        probe(arguments.installation.resolve(), arguments.work_parent.resolve())
+        probe(arguments.installation.resolve(), arguments.work_parent.resolve(), arguments.source_archive)
     except (OSError, RuntimeError) as error:
         print(f"FAIL: {error}", file=sys.stderr)
         return 1

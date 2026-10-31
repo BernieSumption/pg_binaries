@@ -12,6 +12,9 @@
     },
     "linux-x86_64": {
       "minimum_os_version": "5.15"
+    },
+    "windows-x86_64": {
+      "minimum_os_version": "10.0"
     }
   }
 }

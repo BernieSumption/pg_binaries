@@ -269,7 +269,10 @@ DO $$
 DECLARE
     generated uuid;
 BEGIN
-    generated := uuid_generate_v4();
+    IF NOT EXISTS (SELECT FROM pg_extension WHERE extname = 'uuid-ossp') THEN
+        RETURN;
+    END IF;
+    EXECUTE 'SELECT uuid_generate_v4()' INTO generated;
     IF generated IS NULL OR substring(generated::text FROM 15 FOR 1) <> '4' THEN
         RAISE EXCEPTION 'uuid-ossp did not generate a version 4 UUID';
     END IF;

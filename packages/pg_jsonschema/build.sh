@@ -6,32 +6,14 @@ source_dir="$workspace/sources/pg_jsonschema"
 pg_prefix="$workspace/postgresql"
 pg_config="$pg_prefix/bin/pg_config"
 payload="$workspace/payload"
-source "$(dirname "${BASH_SOURCE[0]}")/internal/toolchain.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/internal/dependencies/environment.sh"
+pg_jsonschema_set_environment "$workspace"
 
-export CARGO_HOME=${CARGO_HOME:-$HOME/.cargo}
-export RUSTUP_HOME=${RUSTUP_HOME:-$HOME/.rustup}
-export PATH="$CARGO_HOME/bin:$PATH"
-export PGRX_HOME="$workspace/build/pgrx"
-export CARGO_TARGET_DIR="$workspace/build/target"
-export PGRX_BUILD_FLAGS="--locked${PGRX_BUILD_FLAGS:+ $PGRX_BUILD_FLAGS}"
-
-if ! command -v rustup >/dev/null; then
-  curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs |
-    sh -s -- -y --profile minimal --default-toolchain none --no-modify-path
-fi
-rustup toolchain install "$rust_version" --profile minimal
-
-tool_prefix="$CARGO_HOME/pg-binaries-tools/cargo-pgrx-$pgrx_version-rust-$rust_version"
-if [[ ! -x "$tool_prefix/bin/cargo-pgrx" ]]; then
-  rustup run "$rust_version" cargo install cargo-pgrx --version "$pgrx_version" --locked --root "$tool_prefix"
-fi
-export PATH="$tool_prefix/bin:$PATH"
-
-cp "$(dirname "${BASH_SOURCE[0]}")/internal/build.rs" "$source_dir/build.rs"
+hook="$(dirname "${BASH_SOURCE[0]}")/internal/build.rs"
+if ! cmp -s "$hook" "$source_dir/build.rs"; then cp "$hook" "$source_dir/build.rs"; fi
 pg_version=$("$pg_config" --version)
 pg_major=${pg_version#PostgreSQL }
 pg_feature="pg${pg_major%%.*}"
-rustup run "$rust_version" cargo pgrx init "--$pg_feature" "$pg_config"
 cd "$source_dir"
 rustup run "$rust_version" cargo pgrx install --release --no-default-features --features "$pg_feature" --pg-config "$pg_config"
 

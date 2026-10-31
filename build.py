@@ -19,17 +19,23 @@ PACKAGES = packages()
 def release_module(target: str) -> str:
     if target.startswith("linux-"):
         return "verification.linux.release"
+    if target.startswith("windows-"):
+        return "verification.windows.release"
     return "verification.macos.release"
 
 
 def run_recipe(path: Path, arguments: list[str], target: str) -> None:
+    if target.startswith("windows-"):
+        path = path.with_suffix(".ps1")
     if not path.is_file():
         raise SystemExit(f"No {target} recipe: {path.relative_to(ROOT)}")
     environment = os.environ.copy()
     if target.startswith("macos-"):
         environment["MACOSX_DEPLOYMENT_TARGET"] = SUPPORT["targets"][target]["minimum_os_version"]
         environment["COPYFILE_DISABLE"] = "1"
-    result = subprocess.run(["bash", str(path), *arguments], env=environment, check=False)
+    command = (["powershell.exe", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File"]
+               if target.startswith("windows-") else ["bash"])
+    result = subprocess.run([*command, str(path), *arguments], env=environment, check=False)
     if result.returncode:
         raise SystemExit(result.returncode)
 
@@ -54,8 +60,10 @@ def main() -> None:
     extension_build.add_argument("package", choices=PACKAGES)
     extension_build.add_argument("development_archive", help="PostgreSQL development archive or extracted installation")
     extension_build.add_argument("output_dir")
-    extension_build.add_argument("--workspace", help="Empty directory without whitespace in its path; defaults to a new directory under /tmp")
+    extension_build.add_argument("--workspace", help="Build directory without whitespace; defaults to a new temporary directory")
     extension_build.add_argument("--source-cache", help="Verified download cache outside the workspace")
+    extension_build.add_argument("--reuse-workspace", action="store_true",
+                                 help="Retain this package's sources and build intermediates for local iteration")
 
     archive_check = commands.add_parser("archive-check", help="Validate archive contents and overlaps")
     archive_check.add_argument("archives", nargs="+")
@@ -107,6 +115,11 @@ def main() -> None:
             result = subprocess.run([sys.executable, str(ROOT / "platforms/linux/prepare_dependencies.py"), args.component], check=False)
             if result.returncode:
                 raise SystemExit(result.returncode)
+        elif target.startswith("windows-"):
+            result = subprocess.run(["powershell.exe", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass",
+                                     "-File", str(ROOT / "platforms/windows/bootstrap.ps1"), "-Package", args.component], check=False)
+            if result.returncode:
+                raise SystemExit(result.returncode)
         else:
             run_recipe(ROOT / "platforms/macos/prepare-dependencies.sh", [args.component], target)
     elif args.command == "postgresql-build":
@@ -130,8 +143,11 @@ def main() -> None:
         print(json.dumps(package_postgresql(Path(args.workspace).resolve(), target, Path(args.output_dir).resolve())))
     elif args.command == "extension-build":
         from build_support.extensions import build_extension
-        print(build_extension(args.package, target, args.development_archive, args.output_dir,
-                              args.workspace, args.source_cache))
+        arguments = [args.package, target, args.development_archive, args.output_dir,
+                     args.workspace, args.source_cache]
+        if args.reuse_workspace:
+            arguments.append(True)
+        print(build_extension(*arguments))
     elif args.command == "archive-check":
         result = subprocess.run([sys.executable, str(ROOT / "verification" / "archive.py"), *args.archives], check=False)
         if result.returncode:

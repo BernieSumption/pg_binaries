@@ -24,6 +24,7 @@ from packages.postgresql.probes.capabilities import probe as probe_capabilities
 from verification.macos.static import inspect as inspect_macho
 from verification.linux.static import inspect as inspect_elf
 from packages.postgresql.probes.tls import probe as probe_tls
+from packages.postgresql.probes.environment import executable, connection
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -135,12 +136,12 @@ def selected_postgresql_source(output: Path) -> Path:
     return destination
 
 
-def archive_contents(postgresql_archive: Path, package_archives: dict[str, Path]) -> None:
+def archive_contents(postgresql_archive: Path, package_archives: dict[str, Path], target: str = "macos-arm64") -> None:
     contents = read_archive(postgresql_archive)
     for executable in ("initdb", "pg_ctl", "psql", "pg_dump", "pg_restore"):
-        path = f"postgresql/bin/{executable}"
+        path = f"postgresql/bin/{executable}" + (".exe" if target.startswith("windows-") else "")
         entry = contents.get(path)
-        if entry is None or entry.kind not in ("file", "hardlink") or not entry.mode & 0o111:
+        if entry is None or entry.kind not in ("file", "hardlink") or (not target.startswith("windows-") and not entry.mode & 0o111):
             raise RuntimeError(f"missing or non-executable PostgreSQL tool in archive: {path}")
     for package, archive_path in package_archives.items():
         package_contents = read_archive(archive_path)
@@ -154,18 +155,26 @@ def archive_contents(postgresql_archive: Path, package_archives: dict[str, Path]
             raise RuntimeError(f"{package} SQL extensions differ: missing={sorted(expected - actual)}, unexpected={sorted(actual - expected)}")
 
 
+def validate_for_target(archives, target):
+    entries = validate_archives(archives)
+    if target.startswith("windows-"):
+        from verification.windows.archive import validate_paths
+        validate_paths(entries)
+    return entries
+
+
 def verify(postgresql_archive: Path, package_archives: dict[str, Path], output: Path,
            target: str = "macos-arm64") -> list[dict[str, str | None]]:
     results: list[dict[str, str | None]] = []
     archives = [postgresql_archive, *package_archives.values()]
-    safe, _ = check(results, "archive safety and overlap", lambda: validate_archives(archives))
+    safe, _ = check(results, "archive safety and overlap", lambda: validate_for_target(archives, target))
     if not safe:
         for name in ("archive contents", "extraction", "native libraries", CHECK_NAME, "PostgreSQL version", "configuration",
                      "database startup", "SQL probes", "failed-operation diagnostics",
                      "PostgreSQL capabilities", "PostgreSQL built-ins", "TLS and sslinfo"):
             skipped(results, name, "archive safety check failed")
         return results
-    check(results, "archive contents", lambda: archive_contents(postgresql_archive, package_archives))
+    check(results, "archive contents", lambda: archive_contents(postgresql_archive, package_archives, target))
 
     output.parent.mkdir(parents=True, exist_ok=True)
     output.mkdir(parents=True, exist_ok=False)
@@ -186,6 +195,13 @@ def verify(postgresql_archive: Path, package_archives: dict[str, Path], output: 
 
     installation = installation_parent / "postgresql"
     def inspect() -> None:
+        if target.startswith("windows-"):
+            from verification.windows.static import inspect as inspect_pe
+            dumpbin = shutil.which("dumpbin")
+            if not dumpbin:
+                raise RuntimeError("Visual Studio dumpbin is required for PE inspection")
+            inspect_pe(installation, dumpbin, {"files": []})
+            return
         inspector = inspect_elf if target.startswith("linux-") else inspect_macho
         _, static_failures = inspector(installation, target)
         if static_failures:
@@ -204,18 +220,10 @@ def verify(postgresql_archive: Path, package_archives: dict[str, Path], output: 
     socket.mkdir()
     log = output / "server.log"
     bin_dir = installation / "bin"
-    environment = {
-        "HOME": str(Path.home()),
-        "PATH": f"{bin_dir}:/usr/bin:/bin:/usr/sbin:/sbin",
-        "LANG": os.environ.get("LANG", "en_US.UTF-8"),
-        "PGHOST": str(socket),
-        "PGPORT": "5432",
-    }
-    if "TMPDIR" in os.environ:
-        environment["TMPDIR"] = os.environ["TMPDIR"]
+    environment, connection_settings = connection(bin_dir, socket, windows=target.startswith("windows-"))
 
     def postgres_version() -> str:
-        version = run([str(bin_dir / "postgres"), "--version"], environment).strip()
+        version = run([str(executable(bin_dir, "postgres")), "--version"], environment).strip()
         match = re.fullmatch(r"postgres \(PostgreSQL\) ([0-9][A-Za-z0-9._-]*)", version)
         if not match:
             raise RuntimeError(f"unexpected packaged PostgreSQL version: {version!r}")
@@ -239,16 +247,16 @@ def verify(postgresql_archive: Path, package_archives: dict[str, Path], output: 
     try:
         if configured:
             def start() -> None:
-                run([str(bin_dir / "initdb"), "-D", str(database), "--no-sync", "--encoding=UTF8"], environment)
+                run([str(executable(bin_dir, "initdb")), "-D", str(database), "--no-sync", "--encoding=UTF8"], environment)
                 with (database / "postgresql.conf").open("a", encoding="utf-8") as settings:
-                    settings.write(f"\nunix_socket_directories = '{socket}'\nlisten_addresses = ''\n")
+                    settings.write(connection_settings)
                     if preloads:
                         settings.write(f"shared_preload_libraries = '{','.join(preloads)}'\n")
-                run([str(bin_dir / "pg_ctl"), "-D", str(database), "-l", str(log), "-w", "start"], environment)
+                run([str(executable(bin_dir, "pg_ctl")), "-D", str(database), "-l", str(log), "-w", "start"], environment)
             started, _ = check(results, "database startup", start)
         else:
             skipped(results, "database startup", "configuration failed")
-        psql = [str(bin_dir / "psql"), "-X", "-v", "ON_ERROR_STOP=1", "-d", "postgres"]
+        psql = [str(executable(bin_dir, "psql")), "-X", "-v", "ON_ERROR_STOP=1", "-d", "postgres"]
         if not started:
             skipped(results, "SQL probes", "database startup did not succeed")
             skipped(results, "failed-operation diagnostics", "database startup did not succeed")
@@ -263,7 +271,7 @@ def verify(postgresql_archive: Path, package_archives: dict[str, Path], output: 
     finally:
         if started:
             check(results, "database shutdown", lambda: run(
-                [str(bin_dir / "pg_ctl"), "-D", str(database), "-m", "fast", "-w", "stop"], environment))
+                [str(executable(bin_dir, "pg_ctl")), "-D", str(database), "-m", "fast", "-w", "stop"], environment))
     if selected:
         for name in ("PostgreSQL capabilities", "PostgreSQL built-ins", "TLS and sslinfo"):
             not_applicable(results, name, "covered by the PostgreSQL-only combination")
@@ -273,13 +281,22 @@ def verify(postgresql_archive: Path, package_archives: dict[str, Path], output: 
             if failures:
                 raise RuntimeError("\n".join(failures))
         check(results, "PostgreSQL capabilities", capability_check)
+        postgresql_source = None
         def builtin_check() -> None:
-            source_archive = selected_postgresql_source(output)
-            failures = probe_builtins(installation, source_archive, output / "builtins")
+            nonlocal postgresql_source
+            postgresql_source = selected_postgresql_source(output)
+            failures = probe_builtins(installation, postgresql_source, output / "builtins")
             if failures:
                 raise RuntimeError("\n".join(failures))
         check(results, "PostgreSQL built-ins", builtin_check)
-        check(results, "TLS and sslinfo", lambda: probe_tls(installation, output / "tls"))
+        def tls_check() -> None:
+            if target.startswith("windows-"):
+                if postgresql_source is None:
+                    raise RuntimeError("checksum-verified PostgreSQL source is required for TLS fixtures")
+                probe_tls(installation, output / "tls", postgresql_source)
+            else:
+                probe_tls(installation, output / "tls")
+        check(results, "TLS and sslinfo", tls_check)
     clean_disposable(output, installation_parent, database, results)
     return results
 
@@ -318,10 +335,10 @@ def dump_restore_probe(output: Path, bin_dir: Path, psql: list[str],
                        environment: dict[str, str]) -> None:
     run([*psql, "-c", "CREATE TABLE spike2_smoke (value text); INSERT INTO spike2_smoke VALUES ('seed')"], environment)
     dump = output / "database.dump"
-    run([str(bin_dir / "pg_dump"), "-Fc", "-f", str(dump), "postgres"], environment)
+    run([str(executable(bin_dir, "pg_dump")), "-Fc", "-f", str(dump), "postgres"], environment)
     run([*psql, "-c", "CREATE DATABASE spike2_restore"], environment)
-    run([str(bin_dir / "pg_restore"), "-d", "spike2_restore", str(dump)], environment)
-    value = run([str(bin_dir / "psql"), "-X", "-tA", "-d", "spike2_restore", "-c",
+    run([str(executable(bin_dir, "pg_restore")), "-d", "spike2_restore", str(dump)], environment)
+    value = run([str(executable(bin_dir, "psql")), "-X", "-tA", "-d", "spike2_restore", "-c",
                  "SELECT value FROM spike2_smoke"], environment).strip()
     if value != "seed":
         raise RuntimeError(f"dump and restore returned {value!r}")

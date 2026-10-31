@@ -16,14 +16,6 @@ else
 fi
 link_flags="-L$dependencies/lib${PG_LDFLAGS:+ $PG_LDFLAGS}"
 
-(
-  cd "$workspace/sources/pcre2"
-  ./configure --prefix="$dependencies" --disable-shared --enable-static --with-pic \
-    --disable-pcre2-16 --disable-pcre2-32 --enable-jit
-  make -j "$jobs"
-  make install
-)
-
 if [[ $os == macos ]]; then
   pcre_symbols="$workspace/build/pcre2-unexported-symbols.txt"
   nm -gU "$dependencies/lib/libpcre2-8.a" | awk '$NF ~ /^_/ { print $NF }' > "$pcre_symbols"

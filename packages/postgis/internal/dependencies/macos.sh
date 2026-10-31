@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-arch=$1 workspace=$2
+os=$1 arch=$2 workspace=$3
 internal=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 work="$workspace/build"
 prefix="$work/dependencies"

@@ -1,8 +1,19 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+target=linux-arm64
+if [[ ${1:-} == --target ]]; then
+  target=${2:-}
+  shift 2
+fi
+case "$target" in
+  linux-arm64) platform=linux/arm64 ;;
+  linux-x86_64) platform=linux/amd64 ;;
+  *) echo "Unsupported Linux verification target: $target" >&2; exit 2 ;;
+esac
+
 if (( $# < 2 )); then
-  echo "usage: $0 POSTGRESQL_ARCHIVE OUTPUT_DIRECTORY [PACKAGE=ARCHIVE ...]" >&2
+  echo "usage: $0 [--target TARGET] POSTGRESQL_ARCHIVE OUTPUT_DIRECTORY [PACKAGE=ARCHIVE ...]" >&2
   exit 2
 fi
 repo=$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)
@@ -15,11 +26,12 @@ output_directory=$(cd "$output_directory" && pwd)
 postgresql_directory=$(cd "$(dirname "$postgresql_archive")" && pwd)
 postgresql_name=$(basename "$postgresql_archive")
 
-docker build --platform linux/arm64 --build-arg "VERIFY_UID=$(id -u)" \
-  -f "$repo/verification/linux/Dockerfile" -t pg-binaries-linux-arm64-verifier "$repo" >/dev/null
+image=pg-binaries-${target}-verifier
+docker build --platform "$platform" --build-arg "VERIFY_UID=$(id -u)" \
+  -f "$repo/verification/linux/Dockerfile" -t "$image" "$repo" >/dev/null
 
 mounts=(-v "$repo:/src:ro" -v "$postgresql_directory:/archives/postgresql:ro")
-arguments=("/archives/postgresql/$postgresql_name" /home/verifier/results --target linux-arm64)
+arguments=("/archives/postgresql/$postgresql_name" /home/verifier/results --target "$target")
 index=0
 for selection in "$@"; do
   package=${selection%%=*}
@@ -35,8 +47,8 @@ for selection in "$@"; do
   ((index+=1))
 done
 
-container=$(docker create --platform linux/arm64 "${mounts[@]}" \
-  pg-binaries-linux-arm64-verifier "${arguments[@]}")
+container=$(docker create --platform "$platform" "${mounts[@]}" \
+  "$image" "${arguments[@]}")
 trap 'docker rm -f "$container" >/dev/null 2>&1 || true' EXIT
 docker start -a "$container" || true
 status=$(docker inspect --format '{{.State.ExitCode}}' "$container")

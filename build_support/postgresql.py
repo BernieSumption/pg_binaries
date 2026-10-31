@@ -17,7 +17,8 @@ PATHS_FILE = "share/pg_build_paths.json"
 
 def built_version(prefix):
     prefix = Path(prefix)
-    output = subprocess.check_output([str(prefix / "bin/pg_config"), "--version"], text=True).strip()
+    executable = prefix / ("bin/pg_config.exe" if (prefix / "bin/pg_config.exe").exists() else "bin/pg_config")
+    output = subprocess.check_output([str(executable), "--version"], text=True).strip()
     match = re.fullmatch(r"PostgreSQL ([0-9][a-zA-Z0-9._-]*)", output)
     if not match:
         raise ValueError(f"unexpected PostgreSQL version: {output!r}")
@@ -66,6 +67,10 @@ def package_postgresql(workspace, target, output_dir):
     workspace, output_dir = Path(workspace).resolve(), Path(output_dir).resolve()
     install = workspace / "postgresql"
     dependencies = workspace / "build/dependencies"
+    os_name, arch = target.split("-", 1)
+    if os_name == "windows":
+        dependencies = dependencies / "x64-windows"
+    config_name = "pg_config.exe" if os_name == "windows" else "pg_config"
     payload, development = workspace / "payload", workspace / "development"
     version = built_version(install)
     for stage in (payload, development):
@@ -74,16 +79,20 @@ def package_postgresql(workspace, target, output_dir):
     _copy(install, payload)
     for relative in ("include", "lib/pgxs"):
         shutil.rmtree(payload / relative, ignore_errors=True)
-    (payload / "bin/pg_config").unlink()
-    for path in (payload / "lib").glob("*.a"):
+    (payload / "bin" / config_name).unlink()
+    for pattern in ("*.a", "*.lib", "*.exp"):
+        for path in (payload / "lib").rglob(pattern):
+            path.unlink()
+    for path in payload.rglob("*.pdb"):
         path.unlink()
 
-    os_name, arch = target.split("-", 1)
     if os_name == "linux":
         subprocess.run(["bash", str(ROOT / "packages/postgresql/internal/package-linux-runtime.sh"),
                         str(payload), str(install), arch], check=True)
     elif os_name == "macos":
         subprocess.run(["python3", str(ROOT / "platforms/macos/bundle.py"), str(payload), str(dependencies)], check=True)
+    elif os_name == "windows":
+        _bundle_windows(payload, dependencies)
     else:
         raise ValueError(f"unsupported PostgreSQL target: {target}")
     (payload / "LICENCE").write_text("See https://github.com/BernieSumption/pg_binaries/blob/main/LICENSES.md\n")
@@ -102,7 +111,7 @@ def package_postgresql(workspace, target, output_dir):
         # Bundle the development tree once, so dependency collision checks
         # compare original libraries rather than patched and unpatched copies.
         _copy(install, development)
-    shutil.copy2(install / "bin/pg_config", development / "bin/pg_config.bin")
+    shutil.copy2(install / "bin" / config_name, development / "bin" / ("pg_config.bin.exe" if os_name == "windows" else "pg_config.bin"))
     if dependencies.is_dir():
         _copy_dependency_development(dependencies, development / "dependencies")
     (development / PATHS_FILE).write_text(json.dumps({
@@ -112,6 +121,8 @@ def package_postgresql(workspace, target, output_dir):
     _write_pg_config_wrapper(development)
     if os_name == "macos":
         subprocess.run(["python3", str(ROOT / "platforms/macos/bundle.py"), str(development), str(dependencies)], check=True)
+    elif os_name == "windows":
+        _bundle_windows(development, dependencies)
     else:
         subprocess.run(["patchelf", "--set-rpath", "$ORIGIN/../lib:$ORIGIN/../lib/runtime", str(development / "bin/pg_config.bin")], check=True)
     _normalise_permissions(development)
@@ -125,9 +136,36 @@ def package_postgresql(workspace, target, output_dir):
     return record
 
 
+def _bundle_windows(prefix, dependencies):
+    from platforms.windows.bundle import bundle
+    redist = os.environ.get("PG_WINDOWS_REDIST")
+    if not redist or not Path(redist).is_dir():
+        raise ValueError("PG_WINDOWS_REDIST must name the official Visual Studio x64 CRT directory")
+    bundle(prefix, [dependencies / "bin", Path(redist)])
+
+
+def _write_windows_pg_config_wrapper(prefix):
+    original = json.loads((prefix / PATHS_FILE).read_text())
+    # The constants remain the original build paths when a development tree moves.
+    import tempfile
+    with tempfile.TemporaryDirectory() as temporary:
+        build = Path(temporary)
+        header = []
+        for key in ("dependencies", "postgresql"):
+            for suffix, value in (("", original[key].replace("\\", "/")), ("_NATIVE", original[key])):
+                header.append(f"#define ORIGINAL_{key.upper()}{suffix} {json.dumps(value)}")
+        (build / "pg_config_paths.h").write_text("\n".join(header) + "\n")
+        subprocess.run(["cl", "/nologo", "/O2", "/MT", "/utf-8", "/I" + str(build),
+                        str(ROOT / "packages/postgresql/internal/pg_config_windows.c"),
+                        "/Fe:" + str(prefix / "bin/pg_config.exe"), "/Fo:" + str(build / "pg_config.obj")], check=True, cwd=build)
+
+
 def _write_pg_config_wrapper(prefix):
+    if (prefix / "bin/pg_config.bin.exe").is_file():
+        _write_windows_pg_config_wrapper(prefix)
+        return
     wrapper = prefix / "bin/pg_config"
-    wrapper.write_text('''#!/usr/bin/env python3
+    text = '''#!/usr/bin/env python3
 import json
 from pathlib import Path
 import subprocess
@@ -141,7 +179,9 @@ for key, destination in (("dependencies", prefix / "dependencies"), ("postgresql
     output = output.replace(original[key], str(destination))
 sys.stdout.write(output)
 sys.exit(result.returncode)
-''')
+'''
+    if not wrapper.is_file() or wrapper.read_text() != text:
+        wrapper.write_text(text)
     wrapper.chmod(0o755)
 
 
@@ -155,6 +195,8 @@ def prepare_development(source_prefix, destination):
                     (original["dependencies"], str(destination / "dependencies")),
                     (str(source_prefix), str(destination)),
                     (original["postgresql"], str(destination)))
+    replacements = tuple(variant for before, after in replacements
+                         for variant in ((before, after), (before.replace("\\", "/"), after.replace("\\", "/"))))
     for path in destination.rglob("*"):
         if not path.is_file() or path.is_symlink() or path == destination / PATHS_FILE:
             continue
@@ -169,4 +211,5 @@ def prepare_development(source_prefix, destination):
             updated = updated.replace(before, after)
         if updated != text:
             path.write_text(updated)
-    _write_pg_config_wrapper(destination)
+    if not (destination / "bin/pg_config.bin.exe").is_file():
+        _write_pg_config_wrapper(destination)

@@ -1,0 +1,20 @@
+LIBRARY pg_ivm
+EXPORTS
+  IVM_immediate_before
+  IVM_immediate_maintenance
+  IVM_prevent_immv_change
+  Pg_magic_func
+  _PG_init
+  create_immv
+  get_immv_def
+  ivm_visible_in_prestate
+  pg_finfo_IVM_immediate_before
+  pg_finfo_IVM_immediate_maintenance
+  pg_finfo_IVM_prevent_immv_change
+  pg_finfo_create_immv
+  pg_finfo_get_immv_def
+  pg_finfo_ivm_visible_in_prestate
+  pg_finfo_refresh_immv
+  pg_finfo_restore_immv
+  refresh_immv
+  restore_immv

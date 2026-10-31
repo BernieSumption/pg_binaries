@@ -4,10 +4,23 @@ import subprocess
 import tempfile
 import unittest
 
-from build_support.postgresql import PATHS_FILE, _copy_dependency_development, prepare_development
+from build_support.postgresql import PATHS_FILE, _copy_dependency_development, _write_pg_config_wrapper, prepare_development
 
 
 class DevelopmentTests(unittest.TestCase):
+    def test_unchanged_pg_config_wrapper_preserves_cargo_input_mtime(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            prefix = Path(temporary)
+            (prefix / "bin").mkdir()
+            _write_pg_config_wrapper(prefix)
+            wrapper = prefix / "bin/pg_config"
+            initial = wrapper.stat().st_mtime_ns
+            _write_pg_config_wrapper(prefix)
+            self.assertEqual(wrapper.stat().st_mtime_ns, initial)
+            wrapper.write_text("old wrapper")
+            _write_pg_config_wrapper(prefix)
+            self.assertTrue(wrapper.read_text().startswith("#!/usr/bin/env python3"))
+
     def test_dependency_development_files_exclude_build_tools(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary).resolve()
@@ -73,3 +86,47 @@ class DevelopmentTests(unittest.TestCase):
             prepare_development(source, destination)
             (destination / "bin/pg_config.bin").write_text("changed")
             self.assertEqual((source / "bin/pg_config.bin").read_text(), "original")
+
+
+class WindowsDevelopmentTests(unittest.TestCase):
+    def test_windows_copy_preserves_native_wrapper_and_relocates_forward_slash_metadata(self):
+        from unittest.mock import patch
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            source = root / 'source'
+            (source / 'bin').mkdir(parents=True)
+            (source / 'share').mkdir()
+            (source / 'dependencies/lib/pkgconfig').mkdir(parents=True)
+            (source / 'bin/pg_config.exe').write_bytes(b'native wrapper')
+            (source / 'bin/pg_config.bin.exe').write_bytes(b'upstream executable')
+            (source / PATHS_FILE).write_text(json.dumps({'postgresql': r'C:\build\postgresql', 'dependencies': r'C:\build\dependencies\x64-windows'}))
+            (source / 'dependencies/lib/pkgconfig/example.pc').write_text('prefix=C:/build/dependencies/x64-windows\n')
+            destination = root / 'relocated'
+            with patch('build_support.postgresql._write_windows_pg_config_wrapper') as compile_wrapper:
+                prepare_development(source, destination)
+            compile_wrapper.assert_not_called()
+            self.assertEqual((destination / 'bin/pg_config.exe').read_bytes(), b'native wrapper')
+            self.assertEqual((destination / 'dependencies/lib/pkgconfig/example.pc').read_text(), f'prefix={destination.resolve()}/dependencies\n')
+
+    def test_windows_packaging_retains_import_libraries_only_in_development_archive(self):
+        import tarfile
+        from unittest.mock import patch
+        from build_support.postgresql import package_postgresql
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            install = root / 'postgresql'
+            for directory in ('bin', 'include', 'share/extension', 'lib'):
+                (install / directory).mkdir(parents=True)
+            for name in ('bin/pg_config.exe', 'bin/postgres.exe', 'include/postgres.h', 'share/extension/plpgsql.control', 'lib/postgres.lib', 'lib/plpgsql.dll'):
+                (install / name).write_bytes(name.encode())
+            with patch('build_support.postgresql.built_version', return_value='18.6'), patch('build_support.postgresql._bundle_windows'), patch('build_support.postgresql._write_windows_pg_config_wrapper'):
+                record = package_postgresql(root, 'windows-x86_64', root / 'dist')
+            with tarfile.open(root / 'dist' / record['archive']['filename']) as archive:
+                names = archive.getnames()
+                self.assertIn('postgresql/bin/postgres.exe', names)
+                self.assertNotIn('postgresql/bin/pg_config.exe', names)
+                self.assertNotIn('postgresql/lib/postgres.lib', names)
+            with tarfile.open(root / 'dist' / record['development_archive']['filename']) as archive:
+                names = archive.getnames()
+                self.assertIn('postgresql/bin/pg_config.bin.exe', names)
+                self.assertIn('postgresql/lib/postgres.lib', names)

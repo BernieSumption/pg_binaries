@@ -8,11 +8,10 @@ work="$workspace/build"
 deps="$work/dependencies"
 tools="$work/tools"
 mkdir -p "$tools"
-bash "$internal/dependencies-macos.sh" "$arch" "$workspace"
 
 [[ $("$deps/bin/xml2-config" --version) == 2.15.4 ]] || { echo 'PostGIS libxml2 version differs from PostgreSQL' >&2; exit 1; }
 [[ -f "$pg/lib/libxml2.16.dylib" ]] || { echo 'PostgreSQL lacks libxml2.16.dylib' >&2; exit 1; }
-ln -s "$deps/bin/protoc-gen-c" "$tools/protoc-c"
+ln -sfn "$deps/bin/protoc-gen-c" "$tools/protoc-c"
 export POSTGIS_DEPS_PREFIX="$deps" POSTGIS_PG_PREFIX="$pg"
 # Use PostgreSQL's libxml2 so both projects load the same copy.
 cat > "$tools/xml2-config" <<'SH'

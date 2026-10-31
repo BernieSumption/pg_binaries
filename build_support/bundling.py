@@ -62,6 +62,12 @@ def finish_extension(workspace: Path, target: str, output_dir: Path,
     elif target.startswith("macos-"):
         subprocess.run([sys.executable, str(ROOT / "platforms/macos/bundle.py"),
                         str(payload), str(dependencies), private_name, "--postgresql-prefix", str(postgres)], check=True)
+    elif target == "windows-x86_64":
+        from platforms.windows.bundle import bundle
+        providers = [dependencies]
+        if os.environ.get("PG_WINDOWS_REDIST"):
+            providers.append(Path(os.environ["PG_WINDOWS_REDIST"]))
+        bundle(payload, providers, postgres=postgres)
     else:
         raise ValueError(f"unsupported target: {target}")
 

@@ -72,17 +72,7 @@ GitHub Actions workflows schedule jobs and transfer artefacts. Build commands pe
 
 ### Local iteration
 
-Agents develop build recipes locally before running them on GitHub Actions. The local loop aims to produce a plausible archive and resolve build failures quickly. An agent may run inexpensive smoke checks to diagnose a recipe.
-
-macOS development runs in a Lume VM. Linux development runs in a Docker container or Lume VM. The host starts and stops the environment and transfers source files and archives. Compilation, dependency installation and execution of built software happen inside that environment, without installing build dependencies on the host.
-
-Agents may install tools and libraries and otherwise change the development environment as their work requires. Reuse an environment across packages when that saves setup time. It may contain dependencies for many packages. If agents genuinely need incompatible changes or concurrent builds that would interfere with one another, create another VM or container when needed to enable parallel work.
-
-A Lume development VM retains installed tools and build files across stops and starts. Agents use its headless start, SSH and file transfer facilities for the build loop. Linux containers may likewise retain installed tools and use persistent storage when that makes repeated builds cheaper.
-
-The same package build commands run locally and in GitHub Actions jobs. GitHub jobs prepare their runner environments before invoking those commands. Local development can continue after GitHub builds begin; a failure found on a hosted runner is fixed in the shared recipe or runner setup and checked again where it occurred. Archive verification uses a separate clean environment as described below.
-
-Adding or updating a project includes the dependency and licence review in [dependency-licenses.md](dependency-licenses.md#dependency-review-during-development).
+The agent-maintained [local iteration guide](../packages/LOCAL_ITERATION.md) defines development environments, repeat-build commands, cache reuse and measured target-specific choices. Compilation and execution stay inside VMs, containers or hosted runners; final archives receive the clean verification described below.
 
 ## Verification job details
 
@@ -131,7 +121,7 @@ Examples of checks include:
 
 ### Dependency symbol isolation
 
-The verifier examines the PostgreSQL backend, its loadable modules and their native dependencies together. It reports competing library identities and symbol bindings that can make a consumer call another dependency implementation. The check uses final archive bytes and accounts for ELF symbol versions and relocations, expected PostgreSQL entry points, compiler ABI metadata and Mach-O named library bindings. Renaming dependency files alone does not establish isolation.
+The verifier examines the PostgreSQL backend, its loadable modules and their native dependencies together. It reports competing library identities and symbol bindings between different extension packages, using archive ownership to identify which package supplies each binary. Files supplied by the PostgreSQL archive and overlaps within a single extension package are outside this check's scope. A file shared with the PostgreSQL archive is treated as PostgreSQL-supplied. Missing ownership fails inspection. The check uses final archive bytes and accounts for ELF symbol versions and relocations, expected PostgreSQL entry points, compiler ABI metadata and Mach-O named library bindings. Renaming dependency files alone does not establish isolation.
 
 The report identifies affected packages, libraries, consumers and symbols. A required failure or unavailable inspection fails release verification and blocks inventory generation and publication preflight. Exceptions identify the examined binaries and the reason their overlap is safe. Libraries loaded by application code and computed symbol lookups still require representative runtime probes.
 

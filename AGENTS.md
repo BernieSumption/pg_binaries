@@ -39,7 +39,11 @@ Keep shared orchestration, platform support and verification machinery separate 
 
 ## Repository operations
 
-Keep commits reviewable and coordinate edits to shared files. Do not push to `main`, force push, merge, delete branches, alter repository settings, publish a permanent GitHub Release or change public release assets without the human's explicit authorization. Do not control the host browser or desktop for this project. Repository instructions do not bypass sandbox or GitHub permissions. If a required operation is blocked by those controls, continue unaffected work and report the specific blocker.
+Keep commits reviewable and coordinate edits to shared files. Do not push to `main`, force push, merge, delete branches, alter repository settings, publish a permanent GitHub Release or change public release assets without the human's explicit authorization. Computer use is authorised for Parallels Desktop and its Windows guests; other host browser or desktop control requires separate human authorisation. Prefer command-line operations where sufficient. Repository instructions do not bypass sandbox or GitHub permissions. If a required operation is blocked by those controls, continue unaffected work and report the specific blocker.
+
+## Local iteration
+
+[packages/LOCAL_ITERATION.md](packages/LOCAL_ITERATION.md) defines the development environments, commands and cache behaviour. Agents maintain this operational guide as implementation and measurements change; it is not a design document requiring human approval for routine updates.
 
 ## Writing style guide
 
