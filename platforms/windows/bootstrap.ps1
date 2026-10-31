@@ -55,7 +55,7 @@ $hasCpp = $false
 Write-Stage 'Check Visual Studio C++ and Clang components' 'started'
 if (Test-Path $vswhere) {
     Write-Stage 'Query Visual Studio for the complete C++ and Clang toolchain' 'started'
-    $complete = & $vswhere -latest -version '[17.0,18.0)' -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 Microsoft.VisualStudio.Component.VC.Llvm.Clang -property installationPath
+    $complete = & $vswhere -latest -version '[17.0,18.0)' -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 Microsoft.VisualStudio.Component.VC.Llvm.Clang Microsoft.VisualStudio.Component.Windows11SDK.26100 -property installationPath
     Write-Stage 'Query Visual Studio for the complete C++ and Clang toolchain' 'completed'
     Write-Stage 'Query Visual Studio for the C++ toolchain' 'started'
     $existing = & $vswhere -latest -version '[17.0,18.0)' -products '*' -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
@@ -71,15 +71,15 @@ Write-Stage 'Check Visual Studio C++ and Clang components' 'completed'
 if (-not $complete) {
     if ($existing) {
         $installer = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio/Installer/setup.exe'
-        $options = @('modify', '--installPath', "`"$existing`"", '--quiet', '--norestart', '--add', 'Microsoft.VisualStudio.Component.VC.Llvm.Clang')
-        if (-not $hasCpp) { $options += @('--add', 'Microsoft.VisualStudio.Workload.VCTools', '--includeRecommended') }
+        $options = @('modify', '--installPath', "`"$existing`"", '--quiet', '--norestart', '--add', 'Microsoft.VisualStudio.Component.VC.Llvm.Clang', '--add', 'Microsoft.VisualStudio.Component.VC.Tools.x86.x64', '--add', 'Microsoft.VisualStudio.Component.Windows11SDK.26100')
+        if (-not $hasCpp) { $options += @('--add', 'Microsoft.VisualStudio.Workload.VCTools') }
         Write-Stage 'Install Visual Studio C++ and Clang components' 'started'
         $process = Start-Process $installer -ArgumentList $options -Wait -PassThru
         if ($process.ExitCode -notin @(0, 3010)) { throw "Visual Studio component installation failed: $($process.ExitCode)" }
         Write-Stage 'Install Visual Studio C++ and Clang components' 'completed'
     } else {
         Write-Stage 'Install Visual Studio Build Tools' 'started'
-        Run winget @('install', '--id', 'Microsoft.VisualStudio.2022.BuildTools', '--exact', '--silent', '--accept-package-agreements', '--accept-source-agreements', '--override', '--wait --quiet --add Microsoft.VisualStudio.Workload.VCTools --add Microsoft.VisualStudio.Component.VC.Llvm.Clang --includeRecommended')
+        Run winget @('install', '--id', 'Microsoft.VisualStudio.2022.BuildTools', '--exact', '--silent', '--accept-package-agreements', '--accept-source-agreements', '--override', '--wait --quiet --add Microsoft.VisualStudio.Workload.VCTools --add Microsoft.VisualStudio.Component.VC.Tools.x86.x64 --add Microsoft.VisualStudio.Component.Windows11SDK.26100 --add Microsoft.VisualStudio.Component.VC.Llvm.Clang')
         Write-Stage 'Install Visual Studio Build Tools' 'completed'
     }
 }

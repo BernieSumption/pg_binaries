@@ -52,7 +52,9 @@ $staticMainPath = Join-Path $staticDir 'sql/pgtap.sql'
 $staticSql = [IO.File]::ReadAllText($template)
 $patches = @(Get-ChildItem (Join-Path $source 'compat') -File -Filter 'install-*.patch' | Sort-Object Name -Descending)
 if ($patches.Count -eq 0) { throw 'Upstream pgTAP install patches are missing' }
-$git = (Get-Command 'git.exe' -ErrorAction Stop).Source
+$gitCommand = Get-Command 'git.exe' -ErrorAction SilentlyContinue
+if (-not $gitCommand) { throw 'Git is required to apply pgTAP compatibility patches; provide git.exe on PATH' }
+$git = $gitCommand.Source
 [IO.File]::WriteAllText($staticMainPath, $staticSql, [Text.UTF8Encoding]::new($false))
 foreach ($patch in $patches) {
     & $git '-C' $staticDir 'apply' '-p0' $patch.FullName
@@ -63,7 +65,16 @@ $staticSql = $staticSql.Replace('MODULE_PATHNAME', '$libdir/pgtap').Replace('__O
 $staticPath = Join-Path $sqlSource 'pgtap-static.sql'
 [IO.File]::WriteAllText($staticPath, $staticSql, [Text.UTF8Encoding]::new($false))
 
-$perl = (Get-Command 'perl.exe' -ErrorAction Stop).Source
+$perlCommand = Get-Command 'perl.exe' -ErrorAction SilentlyContinue
+if ($perlCommand) {
+    $perl = $perlCommand.Source
+} else {
+    $gitRoot = Split-Path -Parent (Split-Path -Parent $git)
+    $perl = Join-Path $gitRoot 'usr/bin/perl.exe'
+    if (-not (Test-Path $perl -PathType Leaf)) {
+        throw "Perl is required to generate pgTAP SQL; install Perl or provide Git's bundled Perl at $perl"
+    }
+}
 $generator = Join-Path $source 'compat/gencore'
 foreach ($variant in @(@{ Name = 'core'; Invert = '0' }, @{ Name = 'schema'; Invert = '1' })) {
     $generatedPath = Join-Path $sqlSource "pgtap-$($variant.Name).sql"
