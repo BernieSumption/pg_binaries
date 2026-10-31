@@ -45,6 +45,7 @@ done
 cmake -S "$(cygpath -m "$workspace/sources/sfcgal")" -B "$(cygpath -m "$workspace/build/sfcgal-build")" -G Ninja \
   -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX="$(cygpath -m "$prefix")" \
   -DCMAKE_PREFIX_PATH="$(cygpath -m /mingw64)" -DBUILD_SHARED_LIBS=ON \
+  -Dnlohmann_json_DIR="$(cygpath -m /mingw64/share/cmake/nlohmann_json)" \
   -DSFCGAL_BUILD_TESTS=OFF -DSFCGAL_BUILD_EXAMPLES=OFF -DSFCGAL_BUILD_DOC=OFF
 cmake --build "$(cygpath -m "$workspace/build/sfcgal-build")" --parallel "$jobs"
 cmake --install "$(cygpath -m "$workspace/build/sfcgal-build")"
