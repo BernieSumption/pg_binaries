@@ -73,9 +73,25 @@ foreach ($variant in @(@{ Name = 'core'; Invert = '0' }, @{ Name = 'schema'; Inv
 }
 
 $uninstallPath = Join-Path $sqlSource 'uninstall_pgtap.sql'
-$uninstallPerl = 'for (grep { /^CREATE /} reverse <>) { chomp; s/CREATE (OR REPLACE )?/DROP /; s/DROP (FUNCTION|VIEW|TYPE) /DROP $1 IF EXISTS /; s/ (DEFAULT|=)[ ]+[a-zA-Z0-9]+//g; print "$_;\n" }'
-$uninstallCode = 'open STDOUT, q(>:raw), shift or die $!; exec $^X, q(-e), shift, @ARGV or die $!;'
-& $perl '-e' $uninstallCode $uninstallPath $uninstallPerl $mainPath
+$uninstallGenerator = Join-Path $Workspace 'build/generate-pgtap-uninstall.pl'
+New-Item -ItemType Directory -Force (Split-Path $uninstallGenerator -Parent) | Out-Null
+$uninstallPerl = @'
+use strict;
+use warnings;
+my ($output, $input) = @ARGV;
+open STDOUT, '>:raw', $output or die "open $output: $!";
+open my $source, '<', $input or die "open $input: $!";
+my @lines = <$source>;
+for (grep { /^CREATE / } reverse @lines) {
+    chomp;
+    s/CREATE (OR REPLACE )?/DROP /;
+    s/DROP (FUNCTION|VIEW|TYPE) /DROP $1 IF EXISTS /;
+    s/ (DEFAULT|=)[ ]+[a-zA-Z0-9]+//g;
+    print "$_;\n";
+}
+'@
+[IO.File]::WriteAllText($uninstallGenerator, $uninstallPerl, [Text.UTF8Encoding]::new($false))
+& $perl $uninstallGenerator $uninstallPath $mainPath
 if ($LASTEXITCODE -ne 0 -or -not (Test-Path $uninstallPath -PathType Leaf)) { throw 'Upstream pgTAP uninstall SQL generation failed' }
 
 Copy-Item $mainPath (Join-Path $sqlSource "pgtap--$version.sql") -Force

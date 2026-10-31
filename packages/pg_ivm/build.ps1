@@ -43,15 +43,28 @@ $extensionPayload = Join-Path (Join-Path $payload $sharedRelative) 'extension'
 New-Item -ItemType Directory -Force $modulePayload,$extensionPayload | Out-Null
 
 $build = Join-Path $Workspace 'build/pg_ivm'
+$mesonFile = Join-Path $source 'meson.build'
+$mesonText = [IO.File]::ReadAllText($mesonFile)
+$modulePath = ([IO.Path]::GetFullPath($moduleDefinition) -replace '\\', '/')
+if ($modulePath.Contains("'")) { throw 'pg_ivm module definition path cannot contain a single quote' }
+$targetAnchor = '    install: true,'
+$targetReplacement = "    link_args: ['/DEF:$modulePath'],`n$targetAnchor"
+if (-not $mesonText.Contains($targetReplacement)) {
+    if ([regex]::Matches($mesonText, [regex]::Escape($targetAnchor)).Count -ne 1) {
+        throw 'Could not find the expected pg_ivm Meson shared-module target'
+    }
+    $mesonText = $mesonText.Replace($targetAnchor, $targetReplacement)
+    [IO.File]::WriteAllText($mesonFile, $mesonText, [Text.UTF8Encoding]::new($false))
+}
 $env:PATH = "$(Join-Path $pgRoot 'bin');$env:PATH"
 $previousCC = $env:CC
 $env:CC = 'cl'
 Push-Location $source
 try {
     if (Test-Path (Join-Path $build 'meson-private/coredata.dat')) {
-        & $meson.Source 'setup' '--reconfigure' $build "--prefix=$pgRoot" '--libdir=lib' '-Dbuildtype=release' "-Dc_link_args=/DEF:$moduleDefinition"
+        & $meson.Source 'setup' '--reconfigure' $build "--prefix=$pgRoot" '--libdir=lib' '-Dbuildtype=release'
     } else {
-        & $meson.Source 'setup' $build "--prefix=$pgRoot" '--libdir=lib' '-Dbuildtype=release' "-Dc_link_args=/DEF:$moduleDefinition"
+        & $meson.Source 'setup' $build "--prefix=$pgRoot" '--libdir=lib' '-Dbuildtype=release'
     }
     if ($LASTEXITCODE -ne 0) { throw 'pg_ivm Meson configuration failed' }
     & $meson.Source 'compile' '-C' $build

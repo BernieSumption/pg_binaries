@@ -30,7 +30,12 @@ New-Item -ItemType Directory -Force $dataDir | Out-Null
 function Write-ConcatenatedSql([string[]]$Inputs, [string]$Output) {
     $contents = [Text.StringBuilder]::new()
     foreach ($input in $Inputs) {
-        [void]$contents.Append([IO.File]::ReadAllText((Join-Path $source ($input -replace '/', '\'))))
+        $inputPath = Join-Path $dataDir ($input -replace '/', '\')
+        if (-not (Test-Path $inputPath -PathType Leaf)) {
+            $inputPath = Join-Path $source ($input -replace '/', '\')
+        }
+        if (-not (Test-Path $inputPath -PathType Leaf)) { throw "SQL input is missing: $input" }
+        [void]$contents.Append([IO.File]::ReadAllText($inputPath))
     }
     [IO.File]::WriteAllText((Join-Path $dataDir $Output), $contents.ToString(), [Text.UTF8Encoding]::new($false))
 }
