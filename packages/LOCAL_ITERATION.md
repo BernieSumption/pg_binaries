@@ -90,7 +90,7 @@ The target, package and development archive select the build. The output directo
 
 Before each invocation, the harness replaces the private PostgreSQL copy and empties `payload/` and `build/stage/`. With unchanged inputs, it retains prepared sources, build intermediates and successful dependency installations. Changing the main build script refreshes sources and main intermediates while retaining `build/dependencies/`, Cargo's `build/target/` and pgrx state. Changing a source checksum, dependency-build implementation, PostgreSQL development archive, or recorded toolchain/settings refreshes source and build state. A failed dependency phase is retried.
 
-The optional `build-dependencies.sh` or `build-dependencies.ps1` entry point prepares dependencies without implementing caching itself. Its helpers live in `internal/dependencies/`; changes there invalidate the dependency installation. The entry-point contract is documented in [README.md](README.md).
+The optional `build-dependencies.sh` or `build-dependencies.ps1` entry point prepares dependencies without implementing caching itself. Its helpers live in `internal/dependencies/`; changes there invalidate the dependency installation. Installed Debian and MSYS2 package versions also form part of the build context, so updating a system dependency invalidates retained build state. The entry-point contract is documented in [README.md](README.md).
 
 The harness rejects simultaneous use of a workspace. A crash can leave `.pg-binaries-extension-workspace.lock`; its error names the owning PID. Remove the lock only after confirming that process has exited. Fresh-workspace builds remain available by omitting `--reuse-workspace`.
 

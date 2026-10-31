@@ -4,6 +4,7 @@ import shutil
 import tempfile
 import unittest
 from unittest.mock import patch
+from types import SimpleNamespace
 
 from build_support.extensions import build_extension, prepare_workspace
 from build_support.sources import sha256
@@ -11,6 +12,25 @@ from build_support.iteration import WorkspaceLock, development_identity, iterati
 
 
 class ExtensionWorkspaceTests(unittest.TestCase):
+    def test_installed_linux_dependency_update_changes_build_context(self):
+        packages = ["libgeos=1.0\n"]
+
+        def run(command, **kwargs):
+            return SimpleNamespace(stdout=packages[0] if command[0] == "dpkg-query" else "compiler 1.0")
+
+        with tempfile.TemporaryDirectory() as temporary:
+            package = Path(temporary)
+            (package / "build.sh").write_text("main")
+            (package / "build-dependencies.sh").write_text("dependencies")
+            with patch("build_support.iteration.shutil.which", side_effect=lambda name, **kwargs: name), \
+                    patch("build_support.iteration.subprocess.run", side_effect=run):
+                before = iteration_keys("demo", "linux-arm64", {"sources": {}}, "sdk", package, {})
+                packages[0] = "libgeos=2.0\n"
+                after = iteration_keys("demo", "linux-arm64", {"sources": {}}, "sdk", package, {})
+        self.assertNotEqual(before["context_key"], after["context_key"])
+        self.assertNotEqual(before["dependency_key"], after["dependency_key"])
+        self.assertEqual(before["main_key"], after["main_key"])
+
     def test_fresh_workspace_prepares_sources_postgresql_and_empty_stages(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary)

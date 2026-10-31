@@ -15,7 +15,7 @@ KEY_ENVIRONMENT = (
     "LDFLAGS", "PG_LDFLAGS", "PKG_CONFIG_PATH", "MACOSX_DEPLOYMENT_TARGET",
     "SDKROOT", "DEVELOPER_DIR", "VSINSTALLDIR", "VCToolsVersion", "WindowsSDKVersion",
     "PG_WINDOWS_TOOLS", "PG_MSYS2_ROOT",
-    "SDKROOT", "ARCHFLAGS", "MAKEFLAGS", "CMAKE_ARGS", "RUSTFLAGS",
+    "ARCHFLAGS", "MAKEFLAGS", "CMAKE_ARGS", "RUSTFLAGS",
     "CARGO_ENCODED_RUSTFLAGS", "CARGO_HOME", "RUSTUP_HOME", "RUSTC_WRAPPER",
     "PATH",
 )
@@ -94,6 +94,11 @@ def _compiler_identity(environment):
             pass
         result[name] = {"path": str(Path(resolved).resolve()) if Path(resolved).exists() else resolved,
                         "version": version}
+    dpkg = shutil.which("dpkg-query", path=environment.get("PATH"))
+    if dpkg:
+        state = subprocess.run([dpkg, "-W", "-f=${binary:Package}=${Version}\\n"],
+                               text=True, capture_output=True, check=True)
+        result["debian_packages"] = hashlib.sha256(state.stdout.encode()).hexdigest()
     msys = environment.get("PG_MSYS2_ROOT")
     if not msys and environment.get("PG_WINDOWS_TOOLS"):
         msys = str(Path(environment["PG_WINDOWS_TOOLS"]) / "msys64")
