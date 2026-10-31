@@ -14,10 +14,10 @@ import tempfile
 
 
 try:
-    from .environment import executable, clean_environment, connection
+    from .environment import executable, clean_environment, connection, _probe_scratch_directory
     from .process import run as run_process
 except ImportError:
-    from environment import executable, clean_environment, connection
+    from environment import executable, clean_environment, connection, _probe_scratch_directory
     from process import run as run_process
 
 
@@ -41,7 +41,7 @@ def probe(installation: Path, work_parent: Path) -> list[str]:
 
     failures: list[str] = []
     work_parent.mkdir(parents=True, exist_ok=True)
-    temporary = Path(tempfile.mkdtemp(prefix="pg-capabilities-", dir=work_parent))
+    temporary = _probe_scratch_directory(work_parent, "pg-capabilities-")
     data = temporary / "data"
     socket_parent = Path("/tmp") if Path("/tmp").is_dir() else Path(tempfile.gettempdir())
     socket = Path(tempfile.mkdtemp(prefix="pgc-", dir=socket_parent))

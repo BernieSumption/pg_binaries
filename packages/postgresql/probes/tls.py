@@ -10,15 +10,14 @@ from pathlib import Path
 import shutil
 import socket
 import sys
-import tempfile
 import tarfile
 
 
 try:
-    from .environment import executable, clean_environment, connection
+    from .environment import executable, clean_environment, connection, _probe_scratch_directory
     from .process import run as run_process
 except ImportError:
-    from environment import executable, clean_environment, connection
+    from environment import executable, clean_environment, connection, _probe_scratch_directory
     from process import run as run_process
 
 
@@ -59,7 +58,7 @@ def probe(installation: Path, work_parent: Path, source_archive: Path | None = N
 
     user = "ssltestuser" if source_archive is not None else getpass.getuser()
     work_parent.mkdir(parents=True, exist_ok=True)
-    temporary = Path(tempfile.mkdtemp(prefix="pg-tls-", dir=work_parent))
+    temporary = _probe_scratch_directory(work_parent, "pg-tls-")
     data, certs, log = temporary / "data", temporary / "certs", temporary / "postgres.log"
     certs.mkdir()
     openssl_config = certs / "openssl.cnf"

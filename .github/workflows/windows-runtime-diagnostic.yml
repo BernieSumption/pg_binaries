@@ -51,7 +51,7 @@ jobs:
           $artifact = Join-Path $base 'original-artifact/output/postgresql'
           $archive = Join-Path $artifact 'postgresql-18.6-windows-x86_64.tar.gz'
           $reports = Join-Path $base 'runtime-check'
-          python -m verification.measure "$base/runtime-metrics.json" -- python -c "import subprocess, sys; result = subprocess.run([sys.executable, 'build.py', '--target', 'windows-x86_64', 'runtime-check', sys.argv[1], sys.argv[2]], timeout=600); sys.exit(result.returncode)" $archive $reports
+          python -m verification.measure --disk-path $env:RUNNER_TEMP "$base/runtime-metrics.json" -- python -c "import subprocess, sys; result = subprocess.run([sys.executable, 'build.py', '--target', 'windows-x86_64', 'runtime-check', sys.argv[1], sys.argv[2]], timeout=600); sys.exit(result.returncode)" $archive $reports
           $runtimeExit = $LASTEXITCODE
           Set-Content -Path (Join-Path $base 'runtime-check-exit-code.txt') -Value $runtimeExit
           if ($runtimeExit) { Write-Host "Runtime verification returned $runtimeExit; its checks and diagnostics are retained." }

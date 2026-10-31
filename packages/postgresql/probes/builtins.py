@@ -14,10 +14,10 @@ import tempfile
 
 
 try:
-    from .environment import executable, clean_environment, connection
+    from .environment import executable, clean_environment, connection, _probe_scratch_directory
     from .process import run as run_process
 except ImportError:
-    from environment import executable, clean_environment, connection
+    from environment import executable, clean_environment, connection, _probe_scratch_directory
     from process import run as run_process
 
 
@@ -64,7 +64,7 @@ def probe(installation: Path, source_archive: Path, work_parent: Path) -> list[s
     if missing:
         raise RuntimeError("missing PostgreSQL binaries: " + ", ".join(missing))
     work_parent.mkdir(parents=True, exist_ok=True)
-    temporary = Path(tempfile.mkdtemp(prefix="pg-builtins-", dir=work_parent))
+    temporary = _probe_scratch_directory(work_parent, "pg-builtins-")
     data, log = temporary / "data", temporary / "postgres.log"
     socket_parent = Path("/tmp") if Path("/tmp").is_dir() else Path(tempfile.gettempdir())
     socket = Path(tempfile.mkdtemp(prefix="pgb-", dir=socket_parent))

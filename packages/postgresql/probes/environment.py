@@ -4,10 +4,22 @@ import getpass
 import os
 from pathlib import Path
 import socket
+import tempfile
+import uuid
 
 
 def executable(bin_dir, name):
     return Path(bin_dir) / (name + '.exe' if os.name == 'nt' else name)
+
+
+def _probe_scratch_directory(parent, prefix):
+    parent = Path(parent)
+    if os.name == 'nt':
+        # PostgreSQL's restricted child process needs inherited Windows ACLs.
+        path = parent / f'{prefix}{uuid.uuid4().hex[:12]}'
+        path.mkdir()
+        return path
+    return Path(tempfile.mkdtemp(prefix=prefix, dir=parent))
 
 
 def clean_environment(bin_dir, *, windows=None):
