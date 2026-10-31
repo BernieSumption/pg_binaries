@@ -70,6 +70,7 @@ $compiler = (Get-Command 'cl.exe' -ErrorAction Stop).Source
 $linker = (Get-Command 'link.exe' -ErrorAction Stop).Source
 if ($env:VSCMD_ARG_TGT_ARCH -and $env:VSCMD_ARG_TGT_ARCH -ne 'x64') { throw 'MSVC must target x64 for the Windows package' }
 $cflags = @(Split-Flags (Get-PgConfigValue '--cflags'))
+$cflags = @($cflags | Where-Object { $_ -notin @('-Wall','/Wall') })
 $cppflags = @(Split-Flags (Get-PgConfigValue '--cppflags'))
 $build = Join-Path $Workspace 'build/hypopg'
 $payload = Join-Path $Workspace 'payload'
@@ -80,7 +81,7 @@ foreach ($objectName in $objects) {
     $sourcePath = Join-Path $source ($relativeSource -replace '/', '\')
     if (-not (Test-Path $sourcePath -PathType Leaf)) { throw "Upstream HypoPG source is missing: $relativeSource" }
     $objectPath = Join-Path $build (($relativeSource -replace '[/\\]', '_') -replace '\.c$', '.obj')
-    $arguments = @('/nologo','/c','/MD','/O2','/DWIN32','/D_WINDOWS','/D_CRT_SECURE_NO_WARNINGS') + $cppflags + $cflags + @(
+    $arguments = @('/nologo','/c','/MD','/O2','/W3','/DWIN32','/D_WINDOWS','/D_CRT_SECURE_NO_WARNINGS') + $cppflags + $cflags + @(
         "/I$pgInclude", "/I$(Join-Path $pgInclude 'port/win32')", "/I$(Join-Path $pgInclude 'port/win32_msvc')",
         "/I$pgPublicInclude", "/I$source", "/Fo$objectPath", $sourcePath
     )

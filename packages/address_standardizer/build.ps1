@@ -78,6 +78,29 @@ if ($legacyMacroCount -eq 1 -and $portableMacroCount -eq 0) {
 } elseif ($legacyMacroCount -ne 0 -or $portableMacroCount -ne 1) {
     throw 'Pinned Address Standardizer debug macro no longer matches the expected Windows compatibility patch'
 }
+$entryPoints = @{
+    'address_parser.c' = @('parse_address','strip_explicit_country')
+    'address_standardizer.c' = @('debug_standardize_address','standardize_address','standardize_address1')
+}
+foreach ($file in $entryPoints.Keys) {
+    $sourcePath = Join-Path $source "src/$file"
+    $sourceText = [IO.File]::ReadAllText($sourcePath)
+    $originalText = $sourceText
+    foreach ($entryPoint in $entryPoints[$file]) {
+        $plainPrototype = "Datum $entryPoint(PG_FUNCTION_ARGS);"
+        $exportedPrototype = "extern PGDLLEXPORT Datum $entryPoint(PG_FUNCTION_ARGS);"
+        $plainCount = [regex]::Matches($sourceText, '(?m)^' + [regex]::Escape($plainPrototype) + '\r?$').Count
+        $exportedCount = [regex]::Matches($sourceText, '(?m)^' + [regex]::Escape($exportedPrototype) + '\r?$').Count
+        if ($plainCount -eq 1 -and $exportedCount -eq 0) {
+            $sourceText = $sourceText.Replace($plainPrototype, $exportedPrototype)
+        } elseif ($plainCount -ne 0 -or $exportedCount -ne 1) {
+            throw "Pinned Address Standardizer declaration for $entryPoint does not match the expected Windows compatibility patch"
+        }
+    }
+    if ($sourceText -cne $originalText) {
+        [IO.File]::WriteAllText($sourcePath, $sourceText, [Text.UTF8Encoding]::new($false))
+    }
+}
 $compileDirectory = Join-Path $Workspace 'build/address_standardizer'
 $asVersionDefine = 'AS_VERSION=\"' + $version + '\"'
 & (Join-Path $repo 'platforms/windows/build-module.ps1') -PostgreSQL $pgRoot -SourceDirectory $source `

@@ -37,8 +37,10 @@ $libDir = Get-PgConfigValue '--libdir'
 $compiler = (Get-Command 'cl.exe' -ErrorAction Stop).Source
 $linker = (Get-Command 'link.exe' -ErrorAction Stop).Source
 if ($env:VSCMD_ARG_TGT_ARCH -and $env:VSCMD_ARG_TGT_ARCH -ne 'x64') { throw 'MSVC must target x64 for Windows modules' }
-$commonFlags = @('/nologo','/c','/MD','/O2','/DWIN32','/D_WINDOWS','/D_CRT_SECURE_NO_WARNINGS')
+$commonFlags = @('/nologo','/c','/MD','/O2','/W3','/DWIN32','/D_WINDOWS','/D_CRT_SECURE_NO_WARNINGS')
 $pgFlags = @(Split-Flags (Get-PgConfigValue '--cppflags')) + @(Split-Flags (Get-PgConfigValue '--cflags'))
+# MSVC treats pg_config's -Wall as /Wall, including off-by-default warnings.
+$pgFlags = @($pgFlags | Where-Object { $_ -notin @('-Wall','/Wall') })
 $includeFlags = @("/I$serverInclude", "/I$(Join-Path $serverInclude 'port/win32')",
     "/I$(Join-Path $serverInclude 'port/win32_msvc')", "/I$publicInclude", "/I$dependencyInclude")
 $includeFlags += @($IncludeDirectories | ForEach-Object { "/I$_" })
