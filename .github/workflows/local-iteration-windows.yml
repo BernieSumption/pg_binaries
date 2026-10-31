@@ -246,7 +246,7 @@ jobs:
           if ($failed.Count) { throw "$($failed.Count) extension checkpoint(s) failed; see package-summary.json" }
 
       - name: Verify combined archive bytes
-        if: steps.core.outcome == 'success' && steps.packages.outcome == 'success'
+        if: steps.core.outcome == 'success' && steps.packages.outcome == 'success' && inputs.phase != 'all'
         run: |
           Start-Transcript -Path "$env:PG_ITERATION/logs/combined.log"
           try {
@@ -255,17 +255,11 @@ jobs:
             $build = Get-Content "$env:PG_ITERATION/output/postgresql/postgresql-build.json" -Raw | ConvertFrom-Json
             $archive = Join-Path "$env:PG_ITERATION/output/postgresql" $build.archive.filename
             $packages = @((Get-Content "$env:PG_ITERATION/output/package-summary.json" -Raw | ConvertFrom-Json) | ForEach-Object { $_.package })
-            $command = @('build.py','--target','windows-x86_64')
-            if ($env:PG_PHASE -eq 'all') {
-              $command += @('release-check', $archive, "$env:PG_ITERATION/reports/release", '--build-record', "postgresql=$env:PG_ITERATION/output/postgresql/record.json")
-            } else {
-              $command += @('runtime-check', $archive, "$env:PG_ITERATION/reports/combined")
-            }
+            $command = @('build.py','--target','windows-x86_64','runtime-check', $archive, "$env:PG_ITERATION/reports/combined")
             foreach ($package in $packages) {
               $extension = Get-Content "$env:PG_ITERATION/output/$package/extension-build.json" -Raw | ConvertFrom-Json
               $packageArchive = Join-Path "$env:PG_ITERATION/output/$package" $extension.archive.filename
               $command += @('--package-archive', "$package=$packageArchive")
-              if ($env:PG_PHASE -eq 'all') { $command += @('--build-record', "$package=$env:PG_ITERATION/output/$package/record.json") }
             }
             # The shared verifier supplies each PostgreSQL process with its clean environment.
             & $python @command
@@ -289,6 +283,75 @@ jobs:
             C:/pg-iteration/workspaces/**/meson-logs/**
             C:/pg-iteration/workspaces/**/CMakeConfigureLog.yaml
             C:/pg-iteration/workspaces/**/CMakeCache.txt
+
+  verify_all:
+    if: inputs.phase == 'all' && needs.validate.result == 'success'
+    needs: [validate]
+    runs-on: windows-2022
+    timeout-minutes: 30
+    defaults:
+      run:
+        shell: powershell
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download PostgreSQL component
+        uses: actions/download-artifact@v4
+        with:
+          name: spike2-windows-x86_64-postgresql
+          path: ${{ runner.temp }}/windows-release/postgresql
+
+      - name: Download extension build outputs
+        uses: actions/download-artifact@v4
+        with:
+          name: windows-x86_64-all-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/windows-release/extensions
+
+      - name: Verify all release archives on a fresh runner
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $root = Join-Path $env:RUNNER_TEMP 'windows-release'
+          $postgresqlRoot = Join-Path $root 'postgresql'
+          $extensionOutput = Join-Path $root 'extensions/output'
+          $reports = Join-Path $root 'reports'
+          New-Item -ItemType Directory -Force $reports | Out-Null
+          $pythonCommand = Get-Command python.exe -ErrorAction Stop
+          $python = $pythonCommand.Source
+          & $python -c "import sys; print(sys.executable); print(sys.version)"
+          if ($LASTEXITCODE) { throw 'Preinstalled Python is not usable' }
+          . ./platforms/windows/environment.ps1
+          Start-Transcript -Path (Join-Path $root 'release-check.log')
+          try {
+            $postgresqlBuild = Get-Content (Join-Path $postgresqlRoot 'postgresql-build.json') -Raw | ConvertFrom-Json
+            $postgresqlArchive = Join-Path $postgresqlRoot $postgresqlBuild.archive.filename
+            $postgresqlRecord = Join-Path $postgresqlRoot 'record.json'
+            $command = @('build.py','--target','windows-x86_64','release-check', $postgresqlArchive, $reports,
+              '--build-record', "postgresql=$postgresqlRecord")
+            foreach ($packageDirectory in Get-ChildItem $extensionOutput -Directory | Sort-Object Name) {
+              $package = $packageDirectory.Name
+              $manifestPath = Join-Path $packageDirectory.FullName 'extension-build.json'
+              $recordPath = Join-Path $packageDirectory.FullName 'record.json'
+              if (-not (Test-Path $manifestPath -PathType Leaf) -or -not (Test-Path $recordPath -PathType Leaf)) {
+                throw "Downloaded extension output is missing its manifest or build record: $package"
+              }
+              $extension = Get-Content $manifestPath -Raw | ConvertFrom-Json
+              $packageArchive = Join-Path $packageDirectory.FullName $extension.archive.filename
+              $command += @('--package-archive', "$package=$packageArchive", '--build-record', "$package=$recordPath")
+            }
+            & $python @command
+            if ($LASTEXITCODE) { throw 'Fresh-runner release verification failed' }
+          } finally { Stop-Transcript }
+
+      - name: Preserve fresh-runner release reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: windows-x86_64-all-release-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            ${{ runner.temp }}/windows-release/reports/
+            ${{ runner.temp }}/windows-release/release-check.log
+          if-no-files-found: warn
+          retention-days: 7
 
   bootstrap_postgis:
     if: inputs.phase == 'bootstrap-postgis'

@@ -120,6 +120,8 @@ Windows verification extracts archives with Python's `data` filter so directorie
 
 The hosted trial lives in `.github/workflows/local-iteration-windows.yml`. Its phases are `core`, `small`, `postgis`, `rust`, `all`, `package` and `bootstrap-postgis`. Manual dispatch selects the phase; `small` covers PostgreSQL and seven extension packages. Completed PostgreSQL archives and their build record are retained before runtime verification, so a later checker failure does not lose the SDK. Extension builds still require the runtime checkpoint to pass.
 
+The `all` phase sends its final archives and build records to a separate Windows runner for `release-check`. That job uses the runner's preinstalled Python and Visual Studio inspection tools and installs no dependencies. Package-level checks during iteration remain separate from this final gate.
+
 A manual run can supply `postgresql_run` to reuse that run's recorded PostgreSQL runtime and development archives; selection checks current build inputs and archive hashes, and the checkpoint still runs runtime verification. This requires the component artefact `spike2-windows-x86_64-postgresql`; the first two trial runs predate that artefact and cannot be selected.
 
 The optional `repeat_builds` input runs each selected extension build twice in the same workspace. `package-summary.json` records first and repeat build times separately from the total including verification, and checks that the recorded workspace keys remain unchanged. The first build can use installed tools and download caches; its timing is not necessarily a cold-machine measurement.
