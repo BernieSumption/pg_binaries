@@ -71,6 +71,24 @@ The clean guest can be shut down through its enabled SSH service with `sudo shut
 
 Two measured starts reached SSH readiness in 9.74 and 10.39 seconds. A 54,071,920-byte PostgreSQL development archive transferred from host to guest in 0.264 seconds with matching SHA-256; the host file was already warm in the filesystem cache. Graceful shutdown took 11.23 seconds from supplying the sudo credential to confirmed stopped state. These are retained-VM timings, excluding initial macOS installation and guest setup.
 
+### Windows commands
+
+These scripts run inside Windows, from its local repository checkout. They are undergoing native GitHub validation; the local Parallels guest has not reached this stage.
+
+```powershell
+./platforms/windows/bootstrap.ps1
+./platforms/windows/build-postgresql-local.ps1 `
+  -Workspace C:/pg-work/postgresql -OutputDirectory C:/pg-output/postgresql
+./platforms/windows/build-extension-local.ps1 `
+  -Package pgvector `
+  -DevelopmentArchive C:/pg-output/postgresql/postgresql-development-18.6-windows-x86_64.tar.gz `
+  -Workspace C:/pg-work/agent-1/pgvector -OutputDirectory C:/pg-output/pgvector
+```
+
+Bootstrap prepares tools under `C:/pg-binaries-tools` by default; `PG_WINDOWS_TOOLS` selects that root for subsequent scripts. PostGIS additionally uses `bootstrap.ps1 -Package postgis` to prepare MSYS2. The PostgreSQL build needs an empty workspace and produces separate runtime and development archives. Extension builds reuse their named workspace and cache sources beneath the tools root. The archive filename comes from `postgresql-build.json` in the PostgreSQL output directory; the example uses the current selected version.
+
+The hosted trial lives in `.github/workflows/local-iteration-windows.yml`. Its `core`, `small`, `postgis`, `rust` and `all` phases retain diagnostics and final archives. The automatic test-branch run selects `small`, covering PostgreSQL and seven extension packages. A native x64 hosted success does not establish that Windows ARM can build and run the same software through x64 translation.
+
 ## Persistent build state
 
 The source-download cache contains checksum-verified archives. It is separate from compiled dependency installations, Cargo's compiled output and installed toolchains. Keeping downloaded archives alone does not make a repeat build incremental.

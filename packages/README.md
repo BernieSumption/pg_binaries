@@ -65,6 +65,7 @@ WORKSPACE/
   postgresql/       PostgreSQL development installation - can be modified if required
   build/            Intermediate build files
     dependencies/   Installation prefix for private dependencies
+      bin/          Windows dependency DLLs
       lib/          Private dependency libraries
       lib64/        Where used by the dependency's build system
   payload/          Selected runtime files
@@ -72,7 +73,7 @@ WORKSPACE/
 
 On Mac the harness sets `MACOSX_DEPLOYMENT_TARGET` to the minimum supported macOS version and supplies linker options in `PG_LDFLAGS` to reserve space for later library-path changes. Standard PGXS builds use these settings without extra arguments. Build scripts leave `MACOSX_DEPLOYMENT_TARGET` unchanged and retain the supplied `PG_LDFLAGS` when adding their own linker options. For build systems that do not interpret these environment variables, build scripts pass the equivalent compiler and linker options explicitly. Any prebuilt runtime libraries included by the build script must support the supplied minimum macOS version.
 
-Build scripts use `WORKSPACE/postgresql/bin/pg_config`. They may install into this private PostgreSQL copy or use `build/` for build output.
+Build scripts use `WORKSPACE/postgresql/bin/pg_config` (`pg_config.exe` on Windows). They may install into this private PostgreSQL copy or use `build/` for build output.
 
 The build script copies the files needed to use the extension into `payload/`, including libraries, control files, SQL files and required data. `payload/<path>` installs as `postgresql/<path>`. Build tools, headers and sources stay out of the payload.
 
@@ -80,9 +81,9 @@ Build scripts should default to statically linking package-private dependency li
 
 Dynamic linking is used where static linking creates substantial build, plugin or licence constraints. The reason is recorded with the package's build implementation. libc and compiler support libraries retain their platform-specific linkage.
 
-The harness copies required libraries from the build environment into `payload/`, then patches executables and libraries to find them using paths relative to their own location. This allows the installation directory to be moved. Libraries supplied by PostgreSQL or guaranteed by the operating system are reused. The harness handles any required signing.
+The harness copies required libraries from the build environment into `payload/`. On Linux and macOS it patches executables and libraries to find them using paths relative to their own location. On Windows it places dependency DLLs in `payload/bin/`, beside PostgreSQL's executables after installation. This allows the installation directory to be moved. Libraries supplied by PostgreSQL or guaranteed by the operating system are reused. The harness handles any required signing.
 
-The build script installs private dependencies under `WORKSPACE/build/dependencies/`. PGXS builds put private `-L` options first in command-line `PG_LDFLAGS`, retaining the harness flags, so private libraries precede inherited system paths. The build harness resolves library references using the build environment and this prefix's `lib/` and `lib64/` directories, copying only required libraries into `payload/`.
+The build script installs private dependencies under `WORKSPACE/build/dependencies/`. PGXS builds put private `-L` options first in command-line `PG_LDFLAGS`, retaining the harness flags, so private libraries precede inherited system paths. The build harness resolves library references using the build environment and this prefix, copying only required libraries into `payload/`.
 
 The build script includes runtime data and dynamically loaded libraries that binary inspection cannot discover, such as PostGIS's PROJ/GDAL data. The harness adds the licence pointer and creates the archive and checksum, following the [distribution layout and overlap rules](../design/distribution.md#archive-format-and-installation).
 
