@@ -66,6 +66,18 @@ New-Item -ItemType Directory -Force $modulePayload,$extensionPayload | Out-Null
 
 $sources = @(Get-ChildItem (Join-Path $source 'src') -File -Filter '*.c' | Sort-Object Name |
     ForEach-Object { "src/$($_.Name)" })
+$parserPath = Join-Path $source 'src/address_parser.c'
+$parserText = [IO.File]::ReadAllText($parserPath)
+$legacyDebugMacro = '#define DBG(format, arg...) do { ; } while (0)'
+$portableDebugMacro = '#define DBG(...) do { ; } while (0)'
+$legacyMacroCount = [regex]::Matches($parserText, [regex]::Escape($legacyDebugMacro)).Count
+$portableMacroCount = [regex]::Matches($parserText, [regex]::Escape($portableDebugMacro)).Count
+if ($legacyMacroCount -eq 1 -and $portableMacroCount -eq 0) {
+    $parserText = $parserText.Replace($legacyDebugMacro, $portableDebugMacro)
+    [IO.File]::WriteAllText($parserPath, $parserText, [Text.UTF8Encoding]::new($false))
+} elseif ($legacyMacroCount -ne 0 -or $portableMacroCount -ne 1) {
+    throw 'Pinned Address Standardizer debug macro no longer matches the expected Windows compatibility patch'
+}
 $compileDirectory = Join-Path $Workspace 'build/address_standardizer'
 $asVersionDefine = 'AS_VERSION=\"' + $version + '\"'
 & (Join-Path $repo 'platforms/windows/build-module.ps1') -PostgreSQL $pgRoot -SourceDirectory $source `

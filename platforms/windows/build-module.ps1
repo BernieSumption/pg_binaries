@@ -13,6 +13,10 @@ $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 
 $pgConfig = Join-Path $PostgreSQL 'bin/pg_config.exe'
+$dependencyInclude = Join-Path $PostgreSQL 'dependencies/include'
+if (-not (Test-Path $dependencyInclude -PathType Container)) {
+    throw "PostgreSQL development dependency headers are missing: $dependencyInclude"
+}
 function Get-PgConfigValue([string]$Option) {
     $value = (& $pgConfig $Option).Trim()
     if ($LASTEXITCODE -ne 0) { throw "pg_config $Option failed" }
@@ -36,7 +40,7 @@ if ($env:VSCMD_ARG_TGT_ARCH -and $env:VSCMD_ARG_TGT_ARCH -ne 'x64') { throw 'MSV
 $commonFlags = @('/nologo','/c','/MD','/O2','/DWIN32','/D_WINDOWS','/D_CRT_SECURE_NO_WARNINGS')
 $pgFlags = @(Split-Flags (Get-PgConfigValue '--cppflags')) + @(Split-Flags (Get-PgConfigValue '--cflags'))
 $includeFlags = @("/I$serverInclude", "/I$(Join-Path $serverInclude 'port/win32')",
-    "/I$(Join-Path $serverInclude 'port/win32_msvc')", "/I$publicInclude")
+    "/I$(Join-Path $serverInclude 'port/win32_msvc')", "/I$publicInclude", "/I$dependencyInclude")
 $includeFlags += @($IncludeDirectories | ForEach-Object { "/I$_" })
 $defineFlags = @($Defines | ForEach-Object { "/D$_" })
 New-Item -ItemType Directory -Force $OutputDirectory | Out-Null
