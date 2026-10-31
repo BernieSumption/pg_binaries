@@ -19,8 +19,9 @@ $null = Set-PgJsonschemaWindowsEnvironment $Workspace $pins
 $rustup = Join-Path $env:CARGO_HOME 'bin/rustup.exe'
 
 $pgVersion = (& $pgConfig '--version').Trim()
-if ($LASTEXITCODE -ne 0 -or $pgVersion -notmatch '^PostgreSQL\s+(\d+)') { throw "Could not determine PostgreSQL major version from pg_config: $pgVersion" }
-$pgFeature = "pg$($Matches[1])"
+$versionMatch = [regex]::Match($pgVersion, '^PostgreSQL\s+(\d+)')
+if ($LASTEXITCODE -ne 0 -or -not $versionMatch.Success) { throw "Could not determine PostgreSQL major version from pg_config: $pgVersion" }
+$pgFeature = "pg$($versionMatch.Groups[1].Value)"
 $buildHook = Join-Path $PSScriptRoot 'internal/build.rs'
 $sourceHook = Join-Path $source 'build.rs'
 if (-not (Test-Path $sourceHook -PathType Leaf) -or
