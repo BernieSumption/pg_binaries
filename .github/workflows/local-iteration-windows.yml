@@ -8,7 +8,11 @@ name: Local iteration Windows validation
         required: true
         default: small
         type: choice
-        options: [core, small, postgis, rust, all]
+        options: [core, small, postgis, rust, all, package, bootstrap-postgis]
+      package:
+        description: Extension package when phase is package
+        required: false
+        type: string
       postgresql_run:
         description: Reuse PostgreSQL archives from an existing workflow run
         required: false
@@ -25,6 +29,7 @@ permissions:
 
 jobs:
   validate:
+    if: inputs.phase != 'bootstrap-postgis'
     runs-on: windows-2022
     timeout-minutes: 120
     defaults:
@@ -34,14 +39,19 @@ jobs:
       PG_WINDOWS_TOOLS: C:\pg-binaries-tools
       PG_ITERATION: C:\pg-iteration
       PG_PHASE: ${{ inputs.phase || 'small' }}
+      PG_PACKAGE: ${{ inputs.package || '' }}
       PG_POSTGRESQL_RUN: ${{ inputs.postgresql_run || '' }}
       PG_REPEAT_BUILDS: ${{ inputs.repeat_builds && 'true' || 'false' }}
       PG_BUILD_JOBS: '2'
     steps:
       - uses: actions/checkout@v4
 
-      - name: Validate PostgreSQL workflow run input
+      - name: Validate build selection
         run: |
+          if ($env:PG_PHASE -eq 'package') {
+            $available = @(Get-ChildItem packages -Directory | Where-Object { $_.Name -ne 'postgresql' -and (Test-Path (Join-Path $_.FullName 'build.json')) } | ForEach-Object { $_.Name })
+            if ($available -cnotcontains $env:PG_PACKAGE) { throw "Unknown extension package: $env:PG_PACKAGE" }
+          }
           if (-not [string]::IsNullOrWhiteSpace($env:PG_POSTGRESQL_RUN)) {
             [long]$runId = 0
             if ($env:PG_POSTGRESQL_RUN -notmatch '^[0-9]+$' -or
@@ -59,12 +69,13 @@ jobs:
         run: |
           New-Item -ItemType Directory -Force "$env:PG_ITERATION/logs","$env:PG_ITERATION/output","$env:PG_ITERATION/reports" | Out-Null
           $machine = Get-CimInstance Win32_ComputerSystem
-          [ordered]@{
+          $machineMetadata = [ordered]@{
             logical_processors = [Environment]::ProcessorCount
             physical_memory_bytes = [long]$machine.TotalPhysicalMemory
             windows_version = [Environment]::OSVersion.Version.ToString()
             process_architecture = $env:PROCESSOR_ARCHITECTURE
-          } | ConvertTo-Json | Set-Content "$env:PG_ITERATION/output/machine.json"
+          }
+          [IO.File]::WriteAllText("$env:PG_ITERATION/output/machine.json", ($machineMetadata | ConvertTo-Json), [Text.UTF8Encoding]::new($false))
           Start-Transcript -Path "$env:PG_ITERATION/logs/bootstrap.log"
           try {
             # Git for Windows also supplies Perl when it is absent from the runner PATH.
@@ -139,7 +150,7 @@ jobs:
                 archive = $record.archive
                 development_archive = $record.development_archive
               }
-              ConvertTo-Json -InputObject $manifest -Depth 5 | Set-Content -Encoding UTF8 (Join-Path $postgresqlOutput 'postgresql-build.json')
+              [IO.File]::WriteAllText((Join-Path $postgresqlOutput 'postgresql-build.json'), (ConvertTo-Json -InputObject $manifest -Depth 5), [Text.UTF8Encoding]::new($false))
             } else {
               & ./platforms/windows/build-postgresql-local.ps1 -Workspace "$env:PG_ITERATION/workspaces/postgresql" -OutputDirectory $postgresqlOutput -SourceCache "$env:PG_ITERATION/sources"
               if ($LASTEXITCODE) { throw 'PostgreSQL build failed' }
@@ -190,6 +201,7 @@ jobs:
             'small' { $selected = $small }
             'postgis' { $selected = @('postgis') }
             'rust' { $selected = @('pg_jsonschema') }
+            'package' { $selected = @($env:PG_PACKAGE) }
             'all' { $selected = @($small) + @('postgis','pg_jsonschema') }
             default { throw "Unknown extension phase: $env:PG_PHASE" }
           }
@@ -227,7 +239,7 @@ jobs:
             } finally {
               $packageClock.Stop()
               Stop-Transcript
-              ConvertTo-Json -InputObject @($summary) -Depth 5 | Set-Content "$env:PG_ITERATION/output/package-summary.json"
+              [IO.File]::WriteAllText("$env:PG_ITERATION/output/package-summary.json", (ConvertTo-Json -InputObject @($summary) -Depth 5), [Text.UTF8Encoding]::new($false))
             }
           }
           $failed = @($summary | Where-Object { $_.outcome -ne 'passed' })
@@ -277,3 +289,31 @@ jobs:
             C:/pg-iteration/workspaces/**/meson-logs/**
             C:/pg-iteration/workspaces/**/CMakeConfigureLog.yaml
             C:/pg-iteration/workspaces/**/CMakeCache.txt
+
+  bootstrap_postgis:
+    if: inputs.phase == 'bootstrap-postgis'
+    runs-on: windows-2022
+    timeout-minutes: 20
+    defaults:
+      run:
+        shell: powershell
+    env:
+      PG_WINDOWS_TOOLS: C:\pg-binaries-tools
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare PostGIS platform tools
+        run: |
+          $logs = Join-Path $env:RUNNER_TEMP 'postgis-bootstrap'
+          New-Item -ItemType Directory -Force $logs | Out-Null
+          $gitPerl = Join-Path $env:ProgramFiles 'Git/usr/bin'
+          if (Test-Path (Join-Path $gitPerl 'perl.exe')) { $env:PATH += ";$gitPerl" }
+          Start-Transcript -Path (Join-Path $logs 'bootstrap.log')
+          try {
+            & ./platforms/windows/bootstrap.ps1 -Tools $env:PG_WINDOWS_TOOLS -Package postgis
+          } finally { Stop-Transcript }
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: windows-x86_64-bootstrap-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/postgis-bootstrap/
+          retention-days: 7

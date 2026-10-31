@@ -48,7 +48,7 @@ $defineFlags = @($Defines | ForEach-Object { "/D$_" })
 New-Item -ItemType Directory -Force $OutputDirectory | Out-Null
 $compiledObjects = @()
 foreach ($relativeSource in $Sources) {
-    if ($relativeSource -notmatch '^[A-Za-z0-9_./]+\.c$' -or $relativeSource -match '(^|/)\.\.?(/|$)') {
+    if ($relativeSource -notmatch '^[A-Za-z0-9_./-]+\.c$' -or $relativeSource -match '(^|/)\.\.?(/|$)') {
         throw "Unsupported module source path: $relativeSource"
     }
     $sourcePath = Join-Path $SourceDirectory ($relativeSource -replace '/', '\')
