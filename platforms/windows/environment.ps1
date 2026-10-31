@@ -9,10 +9,23 @@ if (-not (Get-Command cl.exe -ErrorAction SilentlyContinue) -or $env:VSCMD_ARG_T
     if (-not $vs) { throw 'Visual Studio C++ Build Tools missing; run bootstrap.ps1' }
     $hostArch = if ($env:PROCESSOR_ARCHITECTURE -eq 'ARM64' -or $env:PROCESSOR_ARCHITEW6432 -eq 'ARM64') { 'arm64' } else { 'x64' }
     $devcmd = Join-Path $vs 'Common7/Tools/VsDevCmd.bat'
-    & cmd.exe /s /c "`"`"$devcmd`" -no_logo -arch=x64 -host_arch=$hostArch >nul && set`"" | ForEach-Object {
-        if ($_ -match '^([^=]+)=(.*)$') { [Environment]::SetEnvironmentVariable($matches[1], $matches[2], 'Process') }
+    $environmentScript = Join-Path ([IO.Path]::GetTempPath()) ("pg-vsdevcmd-{0}-{1}.cmd" -f $PID, [guid]::NewGuid().ToString('N'))
+    try {
+        @(
+            '@echo off'
+            "call `"$devcmd`" -no_logo -arch=x64 -host_arch=$hostArch >nul"
+            'if errorlevel 1 exit /b %errorlevel%'
+            'set'
+        ) | Set-Content -Path $environmentScript -Encoding Ascii
+        $environmentOutput = & $env:ComSpec /d /c $environmentScript
+        $developerEnvironmentExitCode = $LASTEXITCODE
+        if ($developerEnvironmentExitCode) { throw 'Visual Studio developer environment failed' }
+        $environmentOutput | ForEach-Object {
+            if ($_ -match '^([^=]+)=(.*)$') { [Environment]::SetEnvironmentVariable($matches[1], $matches[2], 'Process') }
+        }
+    } finally {
+        Remove-Item -LiteralPath $environmentScript -Force -ErrorAction SilentlyContinue
     }
-    if ($LASTEXITCODE) { throw 'Visual Studio developer environment failed' }
 }
 if (-not $env:VCToolsRedistDir) { throw 'Visual Studio redistributable directory missing' }
 $env:PG_WINDOWS_REDIST = Join-Path $env:VCToolsRedistDir 'x64/Microsoft.VC143.CRT'

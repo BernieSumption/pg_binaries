@@ -30,6 +30,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Check developer environment
+        run: |
+          . ./platforms/windows/environment.ps1
+
       - name: Bootstrap native build tools
         run: |
           New-Item -ItemType Directory -Force "$env:PG_ITERATION/logs","$env:PG_ITERATION/output","$env:PG_ITERATION/reports" | Out-Null
