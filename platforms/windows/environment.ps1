@@ -3,7 +3,6 @@ if (-not $env:PG_WINDOWS_TOOLS) { $env:PG_WINDOWS_TOOLS = Join-Path $env:SystemD
 $vcpkgCommit = (Get-Content (Join-Path $PSScriptRoot '../../packages/postgresql/internal/vcpkg-commit.txt') -Raw).Trim()
 if ($vcpkgCommit -notmatch '^[0-9a-f]{40}$') { throw 'Invalid PostgreSQL vcpkg commit pin' }
 $env:VCPKG_INSTALLATION_ROOT = Join-Path $env:PG_WINDOWS_TOOLS "vcpkg-$vcpkgCommit"
-$env:PATH = "C:/Strawberry/perl/bin;C:/Strawberry/c/bin;$(Join-Path $env:PG_WINDOWS_TOOLS 'python/Scripts');$(Join-Path $env:PG_WINDOWS_TOOLS 'python');$(Join-Path $env:PG_WINDOWS_TOOLS 'winflexbison');$env:PATH"
 if (-not (Get-Command cl.exe -ErrorAction SilentlyContinue) -or $env:VSCMD_ARG_TGT_ARCH -ne 'x64') {
     $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio/Installer/vswhere.exe'
     if (-not (Test-Path $vswhere)) { throw 'Visual Studio Installer is missing; run bootstrap.ps1' }
@@ -29,6 +28,20 @@ if (-not (Get-Command cl.exe -ErrorAction SilentlyContinue) -or $env:VSCMD_ARG_T
         Remove-Item -LiteralPath $environmentScript -Force -ErrorAction SilentlyContinue
     }
 }
+$toolPaths = @(
+    'C:/Strawberry/perl/bin'
+    'C:/Strawberry/c/bin'
+    (Join-Path $env:PG_WINDOWS_TOOLS 'python/Scripts')
+    (Join-Path $env:PG_WINDOWS_TOOLS 'python')
+    (Join-Path $env:PG_WINDOWS_TOOLS 'winflexbison')
+)
+$seenPaths = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+$pathEntries = [Collections.Generic.List[string]]::new()
+foreach ($entry in @($toolPaths + ($env:PATH -split ';'))) {
+    $pathKey = $entry.Replace('\', '/').TrimEnd('/')
+    if ($seenPaths.Add($pathKey)) { $pathEntries.Add($entry) }
+}
+$env:PATH = [string]::Join(';', $pathEntries)
 if (-not $env:VCToolsRedistDir) { throw 'Visual Studio redistributable directory missing' }
 $env:PG_WINDOWS_REDIST = Join-Path $env:VCToolsRedistDir 'x64/Microsoft.VC143.CRT'
 if (-not (Test-Path $env:PG_WINDOWS_REDIST)) { throw "Visual Studio x64 CRT files are missing: $env:PG_WINDOWS_REDIST" }
