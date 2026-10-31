@@ -24,6 +24,8 @@ For each route, the experiment record includes host and guest versions, CPU/RAM 
 
 The recommendation distinguishes routes that were tested successfully, tested with poor results, blocked before a useful trial, and not yet attempted. Qualitative evidence about reliability and agent effort accompanies timings. Retaining Docker or Lume alongside Parallels requires evidence of a useful advantage, rather than familiarity alone.
 
+A headless Ubuntu ARM64 cloud-image trial under Lume reached SSH without an interactive installer. Growing its disk, installing Docker and registering Lume's Rosetta share also succeeded; an amd64 container executed successfully. Comparable extension builds are still being measured. This route therefore has a working unattended setup, but no build-performance verdict yet.
+
 UTM 4.7.5 is also installed, with metadata for an ARM64 Windows guest allocated 8 GiB RAM. Its CLI help worked, but version and inventory queries returned `OSStatus error -1712`; both exited with status zero despite the errors. Guest control and build performance could not be tested. No UTM desktop control or VM changes were attempted. VMware Fusion is not installed, and standalone QEMU system executables were absent from `PATH`.
 
 ## Development loop
@@ -73,6 +75,8 @@ The clean guest can be shut down through its enabled SSH service with `sudo shut
 
 Two measured starts reached SSH readiness in 9.74 and 10.39 seconds. A 54,071,920-byte PostgreSQL development archive transferred from host to guest in 0.264 seconds with matching SHA-256; the host file was already warm in the filesystem cache. Graceful shutdown took 11.23 seconds from supplying the sudo credential to confirmed stopped state. These are retained-VM timings, excluding initial macOS installation and guest setup.
 
+Lume and Parallels both document a limit of two concurrent macOS guests on Apple Silicon. Budget two across both products: a separate allowance for each has not been demonstrated. Two Lume guests have run together; a mixed-product trial has not run. This makes a shared development VM with separate workspaces more practical than one Mac VM per agent while retaining a clean verification VM. The limit does not apply to Linux or Windows guests. [Lume](https://cua.ai/docs/lume), [Parallels](https://kb.parallels.com/en/128867).
+
 ### Windows commands
 
 These scripts run inside Windows, from its local repository checkout. They are undergoing native GitHub validation; the local Parallels guest has not reached this stage.
@@ -96,6 +100,10 @@ The hosted trial lives in `.github/workflows/local-iteration-windows.yml`. Its `
 A manual run can supply `postgresql_run` to reuse that run's recorded PostgreSQL runtime and development archives; selection checks current build inputs and archive hashes, and the checkpoint still runs runtime verification. This requires the component artefact `spike2-windows-x86_64-postgresql`; the first two trial runs predate that artefact and cannot be selected.
 
 The optional `repeat_builds` input runs each selected extension build twice in the same workspace. `package-summary.json` records first and repeat build times separately from the total including verification, and checks that the recorded workspace keys remain unchanged. The first build can use installed tools and download caches; its timing is not necessarily a cold-machine measurement.
+
+The `package` phase accepts one package name through the `package` input. The separate `bootstrap-postgis` phase diagnoses tool preparation without building PostgreSQL or extensions. Bootstrap logs timestamp each external operation; downloads have a five-minute timeout. A previous PostGIS trial exhausted its two-hour job limit before any recorded compilation, so that failure cannot establish a need for compiled-dependency caching.
+
+Build records use forward-slash paths and checkout files use LF line endings on every host. A cross-host SDK audit found that Windows path separators and Git's CRLF conversion otherwise made identical source revisions appear different. Fresh Windows SDK run `41175933237` passed the native record tests and PostgreSQL runtime checkpoint with this correction. Earlier records remain historical evidence and are not rewritten to bypass current input checks.
 
 A native x64 hosted success does not establish that Windows ARM can build and run the same software through x64 translation.
 
@@ -140,7 +148,9 @@ Applying that fix in the Mac VM took 50.34 seconds for the first build after the
 
 The Mac archives passed SQL probes together in a separate clean VM: 201 Mach-O files checked, no findings, 29.22 seconds for the final verification run. These results establish that retained dependency state helps iteration; they do not yet compare Parallels against Docker or Lume. Windows extension validation and local macOS x86_64 trials remain incomplete.
 
-PowerShell 7.4.2 syntax-check processes in an amd64 container twice crashed with a Rosetta assertion after reporting successful parses; isolated checks also passed. This is observed tooling friction under translation; the measured Linux C builds did not encounter it.
+On native Windows GitHub runners, six small packages passed first and repeat builds with stable workspace keys and SQL verification. Their repeat builds took 10.00–14.68 seconds. pg_jsonschema took 585.19 seconds initially and 33.33 seconds on repeat, including first-time Rust and cargo-pgrx preparation in the initial build. Its archive and combined SQL verification passed. These results prove Windows cache reuse; they do not measure local Windows translation. Address Standardizer and PostGIS remain under investigation.
+
+PowerShell 7.4.2 syntax-check processes in an amd64 container repeatedly crashed with a Rosetta assertion after reporting successful parses; isolated checks also passed. These checks do not establish compatibility with Windows PowerShell 5.1, which runs the native Windows trials. The measured Linux C builds did not encounter this translation failure.
 
 ### Starting another Linux agent
 
@@ -155,6 +165,8 @@ One Linux ARM64 trial built HypoPG and pgvector in separate workspaces. Serial e
 This demonstrates useful two-package concurrency for small native builds. It does not establish a safe limit for PostGIS, Rust or whole VMs. Docker's VM had 16 CPUs and about 47 GiB available, with no per-container memory limit; actual CPU affinity constrained concurrent jobs even though the guest CPU-count query still reported 16.
 
 The separate x86 PostGIS container peaked at 906 MiB across its cold, repeat, edit and diagnostic runs. This cgroup measurement includes charged file cache and excludes Docker's VM overhead. It used preinstalled geospatial libraries and does not measure the memory needed to compile that dependency stack from source.
+
+A host snapshot attributed an 8.01 GiB memory footprint to the running Lume Mac VM and 30.07 GiB to Docker Desktop's Linux VM. The Docker VM had a larger allocation and retained state; these were not matched fresh environments. The figures describe this machine at that moment, rather than minimum requirements or an intrinsic Docker overhead. The host has 128 GiB RAM and 18 logical CPUs.
 
 In the four-vCPU, 8 GiB Mac VM, warm PostGIS and pg_jsonschema builds took 51.88 seconds serially and 49.54 seconds together in separate workspaces. Both succeeded and retained their dependency keys; their archives passed checks together with PostgreSQL. Guest memory pressure reported 79% free before and after, with no swap. The single trial's 2.34-second difference does not establish a reliable throughput improvement. It shows that these two warm builds can share a VM without needing separate environments. The trial used the earlier isolated Mac recipe snapshot, excluding subsequent Windows metadata and helper additions.
 
