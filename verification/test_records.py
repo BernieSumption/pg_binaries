@@ -20,6 +20,8 @@ class BuildRecordTests(unittest.TestCase):
                 "sources": {"postgresql": {"project": "PostgreSQL", "url": "https://example.invalid/postgresql.tar.gz", "sha256": "a" * 64}}
             }))
             (folder / "build.sh").write_text("#!/bin/sh\n")
+            (folder / "internal").mkdir()
+            (folder / "internal/helpers.sh").write_bytes(b"#!/bin/sh\n")
             runtime = root / "postgresql.tar.gz"
             development = root / "postgresql-development.tar.gz"
             runtime.write_bytes(b"runtime")
@@ -34,7 +36,8 @@ class BuildRecordTests(unittest.TestCase):
                 "filename": development.name, "sha256": sha256_file(development)})
             self.assertEqual(record["postgresql_version"], "18.6")
             self.assertEqual(record["sources"][0]["id"], "postgresql")
-            self.assertEqual(set(record["build_inputs"]["files"]), {"build.json", "build.sh"})
+            self.assertEqual(set(record["build_inputs"]["files"]),
+                             {"build.json", "build.sh", "internal/helpers.sh"})
             runtime.write_bytes(b"changed after build")
             with self.assertRaisesRegex(RecordError, "does not match produced archive"):
                 make_record(support, "macos-arm64", "postgresql", runtime, "0" * 40)

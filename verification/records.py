@@ -46,7 +46,7 @@ def selected_inputs(support: dict[str, Any], target: str,
     input_paths.extend(path for path in (package_dir / "internal").rglob("*")
                        if path.is_file() and "__pycache__" not in path.parts
                        and path.suffix not in (".pyc", ".pyo") and path.name != ".DS_Store")
-    build_inputs = {"files": {str(path.relative_to(package_dir)): sha256_file(path)
+    build_inputs = {"files": {path.relative_to(package_dir).as_posix(): sha256_file(path)
                              for path in sorted(input_paths)}}
     sources = [{"id": name, **source} for name, source in sorted(selection.get("sources", {}).items())]
     if not sources:

@@ -86,6 +86,12 @@ jobs:
             & ./platforms/windows/bootstrap.ps1 -Tools $env:PG_WINDOWS_TOOLS
           } finally { Stop-Transcript }
 
+      - name: Check portable build records
+        run: |
+          $python = Join-Path $env:PG_WINDOWS_TOOLS 'python/python.exe'
+          & $python -m unittest verification.test_records
+          if ($LASTEXITCODE) { throw 'Build-record portability checks failed' }
+
       - name: Select PostgreSQL build from existing run
         if: github.event_name == 'workflow_dispatch' && inputs.postgresql_run != ''
         env:
