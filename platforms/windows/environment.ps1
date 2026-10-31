@@ -1,6 +1,8 @@
 $ErrorActionPreference = 'Stop'
 if (-not $env:PG_WINDOWS_TOOLS) { $env:PG_WINDOWS_TOOLS = Join-Path $env:SystemDrive 'pg-binaries-tools' }
-$env:VCPKG_INSTALLATION_ROOT = Join-Path $env:PG_WINDOWS_TOOLS 'vcpkg-9e593bb18ea69cc5095e012465dcd675a822ed0d'
+$vcpkgCommit = (Get-Content (Join-Path $PSScriptRoot '../../packages/postgresql/internal/vcpkg-commit.txt') -Raw).Trim()
+if ($vcpkgCommit -notmatch '^[0-9a-f]{40}$') { throw 'Invalid PostgreSQL vcpkg commit pin' }
+$env:VCPKG_INSTALLATION_ROOT = Join-Path $env:PG_WINDOWS_TOOLS "vcpkg-$vcpkgCommit"
 $env:PATH = "C:/Strawberry/perl/bin;C:/Strawberry/c/bin;$(Join-Path $env:PG_WINDOWS_TOOLS 'python/Scripts');$(Join-Path $env:PG_WINDOWS_TOOLS 'python');$(Join-Path $env:PG_WINDOWS_TOOLS 'winflexbison');$env:PATH"
 if (-not (Get-Command cl.exe -ErrorAction SilentlyContinue) -or $env:VSCMD_ARG_TGT_ARCH -ne 'x64') {
     $vswhere = Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio/Installer/vswhere.exe'

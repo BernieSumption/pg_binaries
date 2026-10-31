@@ -50,7 +50,8 @@ $zip = Join-Path $Tools 'winflexbison.zip'
 if (-not (Test-Path $zip)) { Invoke-WebRequest https://github.com/lexxmark/winflexbison/releases/download/v2.5.25/win_flex_bison-2.5.25.zip -OutFile $zip }
 if ((Get-FileHash $zip -Algorithm SHA256).Hash.ToLowerInvariant() -ne '8d324b62be33604b2c45ad1dd34ab93d722534448f55a16ca7292de32b6ac135') { throw 'WinFlexBison checksum mismatch' }
 if (-not (Test-Path (Join-Path $Tools 'winflexbison/win_flex.exe'))) { Expand-Archive $zip -DestinationPath (Join-Path $Tools 'winflexbison') -Force }
-$revision = '9e593bb18ea69cc5095e012465dcd675a822ed0d'
+$revision = (Get-Content (Join-Path $PSScriptRoot '../../packages/postgresql/internal/vcpkg-commit.txt') -Raw).Trim()
+if ($revision -notmatch '^[0-9a-f]{40}$') { throw 'Invalid PostgreSQL vcpkg commit pin' }
 $vcpkg = Join-Path $Tools "vcpkg-$revision"
 if (-not (Test-Path (Join-Path $vcpkg '.git'))) {
     Run git @('init', $vcpkg)
