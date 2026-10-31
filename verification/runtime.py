@@ -13,6 +13,7 @@ import shutil
 import subprocess
 import sys
 import tarfile
+import time
 from typing import Any, Callable
 import urllib.request
 import uuid
@@ -84,10 +85,22 @@ def clean_disposable(output: Path, installation_parent: Path, database: Path,
         return
     def remove() -> None:
         if installation_parent.exists():
-            shutil.rmtree(installation_parent)
+            remove_disposable_tree(installation_parent)
         if database.exists():
-            shutil.rmtree(database)
+            remove_disposable_tree(database)
     check(results, "cleanup", remove)
+
+
+def remove_disposable_tree(path: Path) -> None:
+    for attempt in range(11):
+        try:
+            shutil.rmtree(path)
+            return
+        except PermissionError:
+            if sys.platform != "win32" or attempt == 10:
+                raise
+            # Windows services, including the ARM translation cache, can briefly lock used DLLs.
+            time.sleep(0.5)
 
 
 def run(args: list[str], environment: dict[str, str]) -> str:

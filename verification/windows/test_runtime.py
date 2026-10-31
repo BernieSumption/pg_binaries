@@ -9,7 +9,35 @@ from unittest.mock import patch
 
 from packages.postgresql.probes.environment import clean_environment, connection
 from packages.postgresql.probes.builtins import expected_extensions
-from verification.runtime import archive_contents, main, run
+from verification.runtime import archive_contents, main, remove_disposable_tree, run
+
+
+class CleanupTests(unittest.TestCase):
+    def test_windows_retries_a_transient_file_lock(self):
+        with patch('verification.runtime.sys.platform', 'win32'), \
+                patch('verification.runtime.shutil.rmtree', side_effect=[PermissionError('locked'), None]) as remove, \
+                patch('verification.runtime.time.sleep') as sleep:
+            remove_disposable_tree(Path('disposable'))
+        self.assertEqual(remove.call_count, 2)
+        sleep.assert_called_once_with(0.5)
+
+    def test_windows_persistent_lock_still_fails(self):
+        with patch('verification.runtime.sys.platform', 'win32'), \
+                patch('verification.runtime.shutil.rmtree', side_effect=PermissionError('locked')) as remove, \
+                patch('verification.runtime.time.sleep') as sleep:
+            with self.assertRaises(PermissionError):
+                remove_disposable_tree(Path('disposable'))
+        self.assertEqual(remove.call_count, 11)
+        self.assertEqual(sleep.call_count, 10)
+
+    def test_other_platforms_preserve_the_original_error(self):
+        with patch('verification.runtime.sys.platform', 'linux'), \
+                patch('verification.runtime.shutil.rmtree', side_effect=PermissionError('denied')) as remove, \
+                patch('verification.runtime.time.sleep') as sleep:
+            with self.assertRaises(PermissionError):
+                remove_disposable_tree(Path('disposable'))
+        remove.assert_called_once()
+        sleep.assert_not_called()
 
 
 class WindowsEnvironmentTests(unittest.TestCase):
@@ -33,9 +61,9 @@ class WindowsEnvironmentTests(unittest.TestCase):
                 run(["initdb.exe"], {})
 
     def test_environment_excludes_builders_path_and_retains_windows_process_support(self):
-        with patch.dict(os.environ, {'PATH': 'C:/developer/bin', 'SystemRoot': 'C:/Windows', 'TEMP': 'C:/Temp'}, clear=True):
+        with patch.dict(os.environ, {'PATH': 'C:/developer/bin', 'SystemRoot': 'C:/Windows', 'TEMP': 'C:/Temp', 'USERPROFILE': 'C:/Users/test'}, clear=True):
             environment = clean_environment(Path('C:/distribution/bin'), windows=True)
-        self.assertEqual(environment['PATH'], 'C:/distribution/bin')
+        self.assertEqual(environment['PATH'], str(Path('C:/distribution/bin')))
         self.assertEqual(environment['SystemRoot'], 'C:/Windows')
         self.assertEqual(environment['TEMP'], 'C:/Temp')
         self.assertNotIn('C:/developer', str(environment))

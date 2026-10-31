@@ -10,5 +10,12 @@ $ErrorActionPreference = 'Stop'
 $repo = (Resolve-Path (Join-Path $PSScriptRoot '../..')).Path
 if (-not $SourceCache) { $SourceCache = Join-Path $env:PG_WINDOWS_TOOLS 'sources' }
 $python = Join-Path $env:PG_WINDOWS_TOOLS 'python/python.exe'
-& $python (Join-Path $repo 'build.py') --target windows-x86_64 extension-build $Package $DevelopmentArchive $OutputDirectory --workspace $Workspace --source-cache $SourceCache --reuse-workspace
-if ($LASTEXITCODE) { throw "Extension build failed: $Package" }
+$previousPreference = $ErrorActionPreference
+try {
+    # PowerShell 5 otherwise treats redirected native stderr as a terminating error.
+    $ErrorActionPreference = 'Continue'
+    & $python (Join-Path $repo 'build.py') --target windows-x86_64 extension-build $Package $DevelopmentArchive $OutputDirectory --workspace $Workspace --source-cache $SourceCache --reuse-workspace
+    if ($LASTEXITCODE) { throw "Extension build failed: $Package (exit $LASTEXITCODE)" }
+} finally {
+    $ErrorActionPreference = $previousPreference
+}
