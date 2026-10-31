@@ -4,7 +4,9 @@
 
 The remaining decisions are which local environments to use, whether each active build agent gets its own environment, and practical concurrency limits. Separate workspaces isolate build files, but agents sharing a container or VM can still interfere through changes to installed system dependencies.
 
-The Parallels assessment in `IMPLEMENTATION_STATUS.md` recommends a Pro trial starting with Windows 11 ARM. Whether to adopt it for Linux and Mac, retain Docker or Lume, and allocate one environment per agent remains undecided. The proposed experiment measures host memory pressure and useful build throughput before setting concurrency limits.
+Parallels is installed and the Windows installation media has downloaded. Actual Windows startup and Linux/macOS guest creation commands are blocked by a Pro/Business edition requirement; computer control also fails to connect. Parallels activation needs resolving before those routes can be compared. Local macOS x86 translation is waiting for the human's Rosetta licence decision.
+
+Docker and Lume build, cache and concurrency trials are recorded in [packages/LOCAL_ITERATION.md](packages/LOCAL_ITERATION.md). Whether to use Parallels for every OS, retain Docker or Lume, and allocate one environment per agent remains undecided. The recommendation will distinguish measured results from routes blocked before testing.
 
 ## Compiled dependency caching
 

@@ -133,6 +133,8 @@ These measurements used verified source-download caches. “Cold” means a new 
 
 The Mac archives passed SQL probes together in a separate clean VM: 201 Mach-O files checked, no findings, 29.22 seconds for the final verification run. These results establish that retained dependency state helps iteration; they do not yet compare Parallels against Docker or Lume. Native Windows and local macOS x86_64 trials remain outstanding.
 
+A PowerShell 7.4.2 syntax-check process in an amd64 container crashed once with a Rosetta assertion after reporting successful parses. An isolated retry passed. This is observed tooling friction under translation; the measured Linux C builds did not encounter it.
+
 ### Starting another Linux agent
 
 A fresh ARM64 container took 0.61 seconds to provision from the existing Docker image and cached APT layer, with no manual steps. Its initially empty source cache was populated during an Address Standardizer build taking 13.60 seconds. Repeat and post-restart builds took 3.39 and 3.42 seconds. This measures another agent joining an established installation, rather than fresh-machine setup.
