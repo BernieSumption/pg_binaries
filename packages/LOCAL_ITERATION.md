@@ -122,7 +122,17 @@ The hosted trial lives in `.github/workflows/local-iteration-windows.yml`. Its p
 
 The `all` phase sends its final archives and build records to a separate Windows runner for `release-check`. That job uses the runner's preinstalled Python and Visual Studio inspection tools and installs no dependencies. Package-level checks during iteration remain separate from this final gate.
 
-A manual run can supply `postgresql_run` to reuse that run's recorded PostgreSQL runtime and development archives; selection checks current build inputs and archive hashes, and the checkpoint still runs runtime verification. This requires the component artefact `spike2-windows-x86_64-postgresql`; the first two trial runs predate that artefact and cannot be selected.
+A manual run can supply `postgresql_run` to reuse that run's recorded PostgreSQL runtime and development archives; selection checks current build inputs and archive hashes, and the checkpoint still runs runtime verification. This requires the component artefact `spike2-windows-x86_64-postgresql`.
+
+From the Mac host, a focused hosted retry uses:
+
+```sh
+gh workflow run local-iteration-windows.yml --ref BRANCH \
+  -f phase=package -f package=pgvector \
+  -f postgresql_run=SUCCESSFUL_POSTGRESQL_RUN -f repeat_builds=true
+```
+
+`BRANCH` selects the build-script revision; `SUCCESSFUL_POSTGRESQL_RUN` is the numeric run ID containing a compatible SDK. For a new PostgreSQL build, select `phase=core` and omit `postgresql_run`.
 
 The optional `repeat_builds` input runs each selected extension build twice in the same workspace. `package-summary.json` records first and repeat build times separately from the total including verification, and checks that the recorded workspace keys remain unchanged. The first build can use installed tools and download caches; its timing is not necessarily a cold-machine measurement.
 
