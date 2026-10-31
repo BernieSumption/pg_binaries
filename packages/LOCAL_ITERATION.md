@@ -116,6 +116,8 @@ The optional `build-dependencies.sh` or `build-dependencies.ps1` entry point pre
 
 The harness rejects simultaneous use of a workspace. A crash can leave `.pg-binaries-extension-workspace.lock`; its error names the owning PID. Remove the lock only after confirming that process has exited. Fresh-workspace builds remain available by omitting `--reuse-workspace`.
 
+Upgrading the harness's cache-key definition can invalidate existing workspaces. During these trials, adding empty Windows environment fields changed a Mac workspace's context fingerprint and cleared its compiled dependencies. The sources, compiler, SDK and dependency script were unchanged. Recovery and subsequent identical-input reuse are being measured separately from the original cold/warm results.
+
 ## Measured iteration time
 
 These measurements used verified source-download caches. “Cold” means a new compiled dependency prefix or Cargo target directory, rather than a machine without installed tools. Times include the extension-build command through archive production; clean runtime verification is timed separately.

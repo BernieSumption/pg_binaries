@@ -2,6 +2,8 @@
 
 This file identifies the declared terms for PostgreSQL, the selected extension projects and dependencies copied into the distribution. Source archives and checksums are recorded in each package's `build.json`. Build tools listed separately below are not included in the downloads.
 
+Windows PostgreSQL dependency sources and patches come from the [pinned vcpkg ports](https://github.com/microsoft/vcpkg/tree/9e593bb18ea69cc5095e012465dcd675a822ed0d/ports), selected by `packages/postgresql/internal/vcpkg-commit.txt`.
+
 ## PostgreSQL and extension projects
 
 - PostgreSQL — PostgreSQL License. [Source and `COPYRIGHT`](https://github.com/postgres/postgres/blob/REL_18_6/COPYRIGHT).
@@ -30,6 +32,7 @@ This file identifies the declared terms for PostgreSQL, the selected extension p
 - libxslt — terms declared in its `Copyright` file. [Source and `Copyright`](https://gitlab.gnome.org/GNOME/libxslt/-/blob/master/Copyright); [Ubuntu Jammy package](https://packages.ubuntu.com/jammy/libxslt1.1).
 - GNU C Library — LGPL-2.1-or-later for the copied runtime libraries and loader. [Source and licence](https://sourceware.org/glibc/); [Ubuntu Jammy package](https://packages.ubuntu.com/jammy/libc6).
 - musl libc — MIT for the static Linux launcher. [Source and copyright declaration](https://git.musl-libc.org/cgit/musl/tree/COPYRIGHT); [Ubuntu Jammy package](https://packages.ubuntu.com/jammy/musl-dev).
+- Microsoft Visual C++ runtime — Microsoft licence terms for the listed, unmodified runtime DLLs. [Visual Studio 2022 licence terms](https://visualstudio.microsoft.com/license-terms/); [redistributable-file list](https://learn.microsoft.com/en-us/visualstudio/releases/2022/redistribution#visual-c-runtime-files).
 - GNU Compiler Collection runtime libraries (`libgcc_s`, `libstdc++` and `libgfortran`) — GPL-3.0-or-later WITH GCC Runtime Library Exception 3.1. [Source and terms](https://gcc.gnu.org/onlinedocs/libstdc++/manual/license.html); [Ubuntu Jammy `libgcc-s1`](https://packages.ubuntu.com/jammy/libgcc-s1), [`libstdc++6`](https://packages.ubuntu.com/jammy/libstdc++6) and [`libgfortran5`](https://packages.ubuntu.com/jammy/libgfortran5).
 
 ## Extension build dependencies
