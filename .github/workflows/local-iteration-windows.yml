@@ -204,6 +204,34 @@ jobs:
               ConvertTo-Json -InputObject @($summary) -Depth 5 | Set-Content "$env:PG_ITERATION/output/package-summary.json"
             }
           }
+          if ($env:PG_PHASE -eq 'small') {
+            $traceSdk = Join-Path $env:PG_ITERATION 'workspaces/hypopg/postgresql/bin'
+            function Get-PgConfigValue([string]$Option) {
+              $value = (& $pgConfig $Option).Trim()
+              if ($LASTEXITCODE -ne 0) { throw "pg_config $Option failed" }
+              return $value
+            }
+            $trace = @()
+            foreach ($binaryName in @('pg_config.exe','pg_config.bin.exe')) {
+              $pgConfig = Join-Path $traceSdk $binaryName
+              foreach ($option in @('--version','--includedir-server','--includedir','--libdir','--pkglibdir','--sharedir','--cppflags','--cflags')) {
+                foreach ($capture in @('direct','function')) {
+                  try {
+                    if ($capture -eq 'direct') { $value = (& $pgConfig $option).Trim() }
+                    else { $value = Get-PgConfigValue $option }
+                    $exitCode = $LASTEXITCODE
+                    $type = if ($null -eq $value) { 'null' } else { $value.GetType().FullName }
+                    $trace += [pscustomobject]@{ binary=$binaryName; capture=$capture; option=$option; exit=$exitCode; type=$type; count=@($value).Count; length=([string]$value).Length; value=$value }
+                  } catch {
+                    $trace += [pscustomobject]@{ binary=$binaryName; capture=$capture; option=$option; error=$_.ToString(); exit=$LASTEXITCODE }
+                  }
+                }
+              }
+            }
+            $traceJson = $trace | ConvertTo-Json -Depth 5
+            [IO.File]::WriteAllText("$env:PG_ITERATION/output/pg-config-trace.json", $traceJson, [Text.UTF8Encoding]::new($false))
+            Write-Host $traceJson
+          }
           $failed = @($summary | Where-Object { $_.outcome -ne 'passed' })
           if ($failed.Count) { throw "$($failed.Count) extension checkpoint(s) failed; see package-summary.json" }
 
