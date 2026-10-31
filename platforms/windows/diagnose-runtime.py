@@ -14,6 +14,7 @@ import shutil
 import subprocess
 import sys
 import tarfile
+import time
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
@@ -151,7 +152,103 @@ def startup_matrix(archive_path: Path, output: Path, result: dict) -> dict:
     return result
 
 
-def diagnose(archive_path: Path, record_path: Path, output: Path, *, matrix_only: bool = False) -> dict:
+
+def pg_ctl_capture_probe(archive_path: Path, output: Path, result: dict) -> dict:
+    if os.name != "nt":
+        raise RuntimeError("the pg_ctl comparison requires a native Windows runner")
+    extraction = output / "extracted distribution with spaces"
+    extraction.mkdir()
+    with tarfile.open(archive_path, "r:gz") as archive:
+        archive.extractall(extraction, filter="data")
+    bin_dir = extraction / "postgresql/bin"
+    result["pg_ctl_cases"] = []
+    for capture in ("pipe", "file"):
+        data = output / f"pg-ctl-{capture}-data"
+        environment, settings = connection(bin_dir, output / "unused-socket", windows=True)
+        item = {"capture": capture, "data": str(data), "port": environment["PGPORT"]}
+        result["pg_ctl_cases"].append(item)
+        (output / "diagnostics.json").write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
+        item["initdb"] = run_probe(f"{capture}:initdb", [str(bin_dir / "initdb.exe"), "-D", str(data),
+                                                     "--no-sync", "--encoding=UTF8"], environment)
+        command = [str(bin_dir / "pg_ctl.exe"), "-D", str(data), "-l", str(output / f"{capture}-server.log"),
+                   "-w", "-t", "10", "start"]
+        item["start_command"] = command
+        child = None
+        stdout_path, stderr_path = output / f"{capture}-stdout.txt", output / f"{capture}-stderr.txt"
+        try:
+            if item["initdb"].get("returncode") != 0:
+                raise RuntimeError("initdb did not finish successfully")
+            with (data / "postgresql.conf").open("a", encoding="utf-8") as config:
+                config.write(settings)
+            started = time.monotonic()
+            if capture == "pipe":
+                child = subprocess.Popen(command, cwd=ROOT, env=environment, stdin=subprocess.DEVNULL,
+                                         stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+                                         encoding="utf-8", errors="replace")
+                try:
+                    stdout, stderr = child.communicate(timeout=10)
+                    item.update(communicate_timed_out=False, returncode=child.returncode,
+                                stdout=stdout, stderr=stderr)
+                except subprocess.TimeoutExpired:
+                    item.update(communicate_timed_out=True, pg_ctl_poll_at_timeout=child.poll())
+            else:
+                with stdout_path.open("w", encoding="utf-8") as stdout, stderr_path.open("w", encoding="utf-8") as stderr:
+                    child = subprocess.Popen(command, cwd=ROOT, env=environment, stdin=subprocess.DEVNULL,
+                                             stdout=stdout, stderr=stderr)
+                    try:
+                        item.update(wait_timed_out=False, returncode=child.wait(timeout=10))
+                    except subprocess.TimeoutExpired:
+                        item.update(wait_timed_out=True, pg_ctl_poll_at_timeout=child.poll())
+            item["start_wait_seconds"] = time.monotonic() - started
+            with (output / f"{capture}-status.txt").open("w", encoding="utf-8") as status:
+                status_result = subprocess.run([str(bin_dir / "pg_ctl.exe"), "-D", str(data), "status"],
+                                               cwd=ROOT, env=environment, stdin=subprocess.DEVNULL,
+                                               stdout=status, stderr=subprocess.STDOUT, timeout=10, check=False)
+            item["status_returncode_before_stop"] = status_result.returncode
+        except Exception as error:
+            item["exception"] = f"{type(error).__name__}: {error}"
+        finally:
+            item["stop_attempts"] = []
+            for mode in ("fast", "immediate"):
+                try:
+                    with (output / f"{capture}-stop-{mode}.txt").open("w", encoding="utf-8") as stop:
+                        stopped = subprocess.run([str(bin_dir / "pg_ctl.exe"), "-D", str(data), "-m", mode,
+                                                  "-w", "-t", "10", "stop"], cwd=ROOT, env=environment,
+                                                 stdin=subprocess.DEVNULL, stdout=stop, stderr=subprocess.STDOUT,
+                                                 timeout=20, check=False)
+                    item["stop_attempts"].append({"mode": mode, "returncode": stopped.returncode})
+                    if stopped.returncode == 0 or not (data / "postmaster.pid").exists():
+                        break
+                except Exception as error:
+                    item["stop_attempts"].append({"mode": mode, "exception": f"{type(error).__name__}: {error}"})
+            if child is not None and capture == "pipe":
+                try:
+                    stdout, stderr = child.communicate(timeout=10)
+                    item.update(harvest_after_stop_timed_out=False, pg_ctl_returncode_after_stop=child.returncode,
+                                stdout=stdout, stderr=stderr)
+                except subprocess.TimeoutExpired:
+                    item.update(harvest_after_stop_timed_out=True, pg_ctl_poll_after_stop=child.poll())
+                    if child.poll() is None:
+                        child.kill()
+            elif child is not None:
+                item["pg_ctl_poll_after_stop"] = child.poll()
+                if child.poll() is None:
+                    child.kill()
+                    child.wait(timeout=10)
+                item["stdout"] = stdout_path.read_text(encoding="utf-8", errors="replace")
+                item["stderr"] = stderr_path.read_text(encoding="utf-8", errors="replace")
+            item["postmaster_pid_file_after_stop"] = (data / "postmaster.pid").exists()
+            (output / "diagnostics.json").write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
+        if item["initdb"].get("timed_out"):
+            raise RuntimeError("initdb timed out; probe files are retained")
+        if item["postmaster_pid_file_after_stop"]:
+            raise RuntimeError(f"own {capture} probe server may still be running; files retained")
+        shutil.rmtree(data, ignore_errors=True)
+    shutil.rmtree(extraction)
+    return result
+
+
+def diagnose(archive_path: Path, record_path: Path, output: Path, *, matrix_only: bool = False, pg_ctl_only: bool = False) -> dict:
     output.mkdir(parents=True, exist_ok=True)
     record = json.loads(record_path.read_text(encoding="utf-8"))
     expected = record["archive"]["sha256"].lower()
@@ -170,6 +267,8 @@ def diagnose(archive_path: Path, record_path: Path, output: Path, *, matrix_only
     if actual != expected:
         raise RuntimeError(f"archive SHA-256 {actual} differs from record {expected}")
 
+    if pg_ctl_only:
+        return pg_ctl_capture_probe(archive_path, output, result)
     if matrix_only:
         return startup_matrix(archive_path, output, result)
 
@@ -227,14 +326,17 @@ def main() -> None:
     parser.add_argument("--record", required=True, type=Path)
     parser.add_argument("--output", required=True, type=Path)
     parser.add_argument("--matrix-only", action="store_true", help="isolate extraction ACLs and process error mode at identical verifier paths")
+    parser.add_argument("--pg-ctl-only", action="store_true", help="compare bounded pg_ctl startup with pipe and file capture")
     arguments = parser.parse_args()
     try:
-        result = diagnose(arguments.archive, arguments.record, arguments.output, matrix_only=arguments.matrix_only)
+        result = diagnose(arguments.archive, arguments.record, arguments.output, matrix_only=arguments.matrix_only, pg_ctl_only=arguments.pg_ctl_only)
     except Exception as error:
         arguments.output.mkdir(parents=True, exist_ok=True)
         (arguments.output / "diagnostic-error.txt").write_text(
             f"{type(error).__name__}: {error}\n", encoding="utf-8")
         raise
+    for case in result.get("pg_ctl_cases", []):
+        print(json.dumps({key: value for key, value in case.items() if key not in ("stdout", "stderr", "initdb")}, sort_keys=True))
     probes = result["diagnostics"] + [probe for case in result.get("matrix", []) for probe in case["probes"]]
     for item in probes:
         print(f"{item['name']}: returncode={item.get('returncode')} "
