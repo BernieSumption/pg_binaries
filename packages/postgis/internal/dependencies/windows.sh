@@ -25,7 +25,7 @@ source_version=$(sed -n 's/^AC_INIT(\[PostgreSQL\], \[\([^]]*\)\].*/PostgreSQL \
 mkdir -p "$workspace/build/mingw-postgresql-build"
 cd "$workspace/build/mingw-postgresql-build"
 "$workspace/sources/postgresql/configure" --host=x86_64-w64-mingw32 --prefix="$shadow" \
-  --without-readline --without-zlib --without-icu --without-ssl --without-libxml \
+  --without-readline --without-zlib --without-icu --without-libxml \
   --without-lz4 --without-zstd --without-ldap --without-gssapi --without-libcurl \
   --without-perl --without-python --without-tcl --without-pam --without-bonjour \
   --without-libnuma --without-liburing --without-selinux
