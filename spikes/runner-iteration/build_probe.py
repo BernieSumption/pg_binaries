@@ -3,6 +3,7 @@ import json
 import os
 from pathlib import Path
 import shutil
+import shlex
 import subprocess
 import sys
 import time
@@ -26,7 +27,8 @@ def selection():
 
 
 def build_command(output):
-    return ['python3', 'build.py', '--target', 'linux-x86_64', 'extension-build', 'address_standardizer',
+    baseline_path = (OUT / 'build-path.txt').read_text()
+    return ['env', f'PATH={baseline_path}', 'python3', 'build.py', '--target', 'linux-x86_64', 'extension-build', 'address_standardizer',
             selection()['development_archive'], str(output), '--workspace', str(WORK),
             '--source-cache', '/tmp/pg-runner-spike/sources', '--reuse-workspace']
 
@@ -85,6 +87,7 @@ Keep experimental dependencies and work at the existing paths. Commit the packag
 '''
 
 if PHASE == 'prepare':
+    (OUT / 'build-path.txt').write_text(os.environ['PATH'])
     run(['git', 'config', 'user.name', 'runner-spike'])
     run(['git', 'config', 'user.email', 'runner-spike@users.noreply.github.com'])
     text = PACKAGE.read_text()
@@ -105,7 +108,7 @@ elif PHASE == 'develop':
     auth.write_text(raw)
     os.chmod(auth, 0o600)
     invoke(COMMON + '\nThe initial build failed; inspect out/runner-spike/initial-failure.log, fix only the invalid make invocation and rerun this harness command until it succeeds:\n' +
-           ' '.join(build_command(OUT / 'agent-output')) +
+           shlex.join(build_command(OUT / 'agent-output')) +
            '\nLeave the deliberate final SQL-file removal in place for the next clean-verification experiment. Commit the build fix.', 'develop')
     candidate(1)
 elif PHASE == 'repair':
@@ -115,7 +118,7 @@ elif PHASE == 'repair':
     assert any(c['name'] == 'database startup' and c['outcome'] == 'passed' for c in checks), 'Verifier setup failed before package tests'
     assert any(c['name'] == 'SQL probes' and c['outcome'] == 'failed' for c in checks), 'Expected SQL packaging fault was not observed'
     invoke(COMMON + '\nThe package compiled, but clean-machine verification failed. Read out/runner-spike/clean-1/check-result.json and its runtime.log and checks files. Fix the package recipe to address the reported failure. Rebuild with:\n' +
-           ' '.join(build_command(OUT / 'agent-output')) + '\nCommit the packaging fix.', 'repair')
+           shlex.join(build_command(OUT / 'agent-output')) + '\nCommit the packaging fix.', 'repair')
     candidate(2)
     first = json.loads((OUT / 'candidate-1/candidate.json').read_text())
     second = json.loads((OUT / 'candidate-2/candidate.json').read_text())
