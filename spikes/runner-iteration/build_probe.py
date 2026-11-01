@@ -3,7 +3,6 @@ import json
 import os
 from pathlib import Path
 import shutil
-import shlex
 import subprocess
 import sys
 import time
@@ -84,6 +83,8 @@ Use gpt-6-luna for this bounded task; do not spawn agents. Only edit packages/ad
 Do not read authentication files or environment credentials. Do not change tests, harness, metadata or workflows.
 No runtime tests run on this development runner: a separate clean runner performs them.
 Keep experimental dependencies and work at the existing paths. Commit the package fix, but do not merge or force-push.
+For every harness build, use exactly: python3 spikes/runner-iteration/build_probe.py build
+That wrapper restores the fixed build environment. Do not reconstruct its underlying command or alter the wrapper.
 '''
 
 if PHASE == 'prepare':
@@ -100,6 +101,8 @@ if PHASE == 'prepare':
         failed = subprocess.run(build_command(OUT / 'initial-output'), stdout=log, stderr=subprocess.STDOUT)
     (OUT / 'initial-failure.json').write_text(json.dumps({'exit_code': failed.returncode, 'seconds': time.monotonic()-start})+'\n')
     assert failed.returncode != 0, 'Expected controlled build failure'
+elif PHASE == 'build':
+    run(build_command(OUT / 'agent-output'))
 elif PHASE == 'develop':
     HOME.mkdir(mode=0o700, parents=True, exist_ok=True)
     os.chmod(HOME, 0o700)
@@ -107,9 +110,7 @@ elif PHASE == 'develop':
     auth = HOME / 'auth.json'
     auth.write_text(raw)
     os.chmod(auth, 0o600)
-    invoke(COMMON + '\nThe initial build failed; inspect out/runner-spike/initial-failure.log, fix only the invalid make invocation and rerun this harness command until it succeeds:\n' +
-           shlex.join(build_command(OUT / 'agent-output')) +
-           '\nLeave the deliberate final SQL-file removal in place for the next clean-verification experiment. Commit the build fix.', 'develop')
+    invoke(COMMON + '\nThe initial build failed; inspect out/runner-spike/initial-failure.log, fix only the invalid make invocation and rerun the build wrapper until it succeeds. Leave the deliberate final SQL-file removal in place for the next clean-verification experiment. Commit the build fix.', 'develop')
     candidate(1)
 elif PHASE == 'repair':
     report = json.loads((OUT / 'clean-1/check-result.json').read_text())
@@ -117,8 +118,7 @@ elif PHASE == 'repair':
     checks = json.loads(next((OUT / 'clean-1').rglob('checks.json')).read_text())
     assert any(c['name'] == 'database startup' and c['outcome'] == 'passed' for c in checks), 'Verifier setup failed before package tests'
     assert any(c['name'] == 'SQL probes' and c['outcome'] == 'failed' for c in checks), 'Expected SQL packaging fault was not observed'
-    invoke(COMMON + '\nThe package compiled, but clean-machine verification failed. Read out/runner-spike/clean-1/check-result.json and its runtime.log and checks files. Fix the package recipe to address the reported failure. Rebuild with:\n' +
-           shlex.join(build_command(OUT / 'agent-output')) + '\nCommit the packaging fix.', 'repair')
+    invoke(COMMON + '\nThe package compiled, but clean-machine verification failed. Read out/runner-spike/clean-1/check-result.json and its runtime.log and checks files. Fix the package recipe to address the reported failure. Rebuild using the build wrapper and commit the packaging fix.', 'repair')
     candidate(2)
     first = json.loads((OUT / 'candidate-1/candidate.json').read_text())
     second = json.loads((OUT / 'candidate-2/candidate.json').read_text())
