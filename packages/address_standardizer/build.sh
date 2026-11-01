@@ -2,7 +2,6 @@
 set -euo pipefail
 
 os=$1 workspace=$3
-make --runner-spike-invalid-option
 source_dir="$workspace/sources/address_standardizer"
 pg_prefix="$workspace/postgresql"
 pg_config="$pg_prefix/bin/pg_config"
