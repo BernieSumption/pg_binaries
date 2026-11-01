@@ -1,0 +1,67 @@
+name: Runner authentication lifecycle spike
+
+on:
+  push:
+    branches: [runner-spike-20261101]
+    paths: [.github/workflows/runner-auth-lifecycle.yml]
+
+permissions:
+  contents: write
+
+jobs:
+  first-refresh:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install -g @openai/codex@0.166.0
+      - name: Request using a copy with an aged cache timestamp
+        env:
+          RUNNER_AUTH_JSON: ${{ secrets.RUNNER_SPIKE_AUTH_20261101 }}
+          CODEX_HOME: ${{ runner.temp }}/runner-spike-codex
+          AGE_CACHE_TIMESTAMP: '1'
+          PROBE_JOB: refresh-first
+          RESULT_BRANCH: runner-spike-results-20261101-refresh-first
+        run: python3 spikes/runner-iteration/auth_probe.py
+      - name: Remove temporary authentication
+        if: always()
+        run: rm -rf "$RUNNER_TEMP/runner-spike-codex"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: runner-spike-refresh-first
+          path: out/runner-spike/auth-result.json
+          retention-days: 3
+
+  original-after-discard:
+    needs: first-refresh
+    if: always()
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install -g @openai/codex@0.166.0
+      - name: Reuse original locally supplied credentials after discarding first runner state
+        env:
+          RUNNER_AUTH_JSON: ${{ secrets.RUNNER_SPIKE_AUTH_20261101 }}
+          CODEX_HOME: ${{ runner.temp }}/runner-spike-codex
+          AGE_CACHE_TIMESTAMP: '1'
+          PROBE_JOB: refresh-original
+          RESULT_BRANCH: runner-spike-results-20261101-refresh-original
+        run: python3 spikes/runner-iteration/auth_probe.py
+      - name: Remove temporary authentication
+        if: always()
+        run: rm -rf "$RUNNER_TEMP/runner-spike-codex"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: runner-spike-refresh-original
+          path: out/runner-spike/auth-result.json
+          retention-days: 3
+
