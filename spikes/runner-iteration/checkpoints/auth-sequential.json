@@ -1,0 +1,33 @@
+{
+  "job": "auth-sequential",
+  "requests": [
+    {
+      "attempt": 1,
+      "seconds": 3.6680114660000243,
+      "exit_code": 0,
+      "expected_reply": true,
+      "usage": {
+        "input_tokens": 15126,
+        "cached_input_tokens": 11520,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 5,
+        "reasoning_output_tokens": 0
+      }
+    },
+    {
+      "attempt": 2,
+      "seconds": 2.1414147770000227,
+      "exit_code": 0,
+      "expected_reply": true,
+      "usage": {
+        "input_tokens": 15998,
+        "cached_input_tokens": 11520,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 5,
+        "reasoning_output_tokens": 0
+      }
+    }
+  ],
+  "auth_changed": false,
+  "auth_file_removed": true
+}
