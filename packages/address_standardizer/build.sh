@@ -26,6 +26,25 @@ else
 fi
 
 sql_version=$(sed -n "s/^default_version = '\([^']*\)'/\1/p" "$source_dir/address_standardizer.control")
+write_sql() {
+  output=$1
+  shift
+  : > "$source_dir/data/$output"
+  for input in "$@"; do
+    if [[ -f $source_dir/data/$input ]]; then
+      cat "$source_dir/data/$input" >> "$source_dir/data/$output"
+    else
+      cat "$source_dir/$input" >> "$source_dir/data/$output"
+    fi
+  done
+}
+mkdir -p "$source_dir/data"
+write_sql address_standardizer_core.sql sql/01_types.sql sql/12_functions.sql
+write_sql "address_standardizer--$sql_version.sql" address_standardizer_core.sql
+write_sql "address_standardizer--ANY--$sql_version.sql" sql/12_functions.sql
+write_sql address_standardizer_data_us_core.sql sql/13_us_lex.sql sql/14_us_gaz.sql sql/15_us_rules.sql sql/16_data_extension.sql
+write_sql "address_standardizer_data_us--$sql_version.sql" address_standardizer_data_us_core.sql
+write_sql "address_standardizer_data_us--ANY--$sql_version.sql" address_standardizer_data_us_core.sql
 flags="-I$dependencies/include -DAS_VERSION=\\\"$sql_version\\\" -DPCRE_VERSION=2"
 make -C "$source_dir" PG_CONFIG="$pg_config" PG_CPPFLAGS="$flags" PG_LDFLAGS="$link_flags" -j "$jobs"
 make -C "$source_dir" PG_CONFIG="$pg_config" PG_CPPFLAGS="$flags" PG_LDFLAGS="$link_flags" DESTDIR="$stage" install
@@ -40,5 +59,3 @@ find "$stage$pkglibdir" -maxdepth 1 -type f \
   -exec cp {} "$payload/$lib_rel/" \;
 cp "$stage$sharedir"/extension/address_standardizer*.control "$payload/$share_rel/extension/"
 cp "$stage$sharedir"/extension/address_standardizer*.sql "$payload/$share_rel/extension/"
-
-find "$payload/$share_rel/extension" -name "address_standardizer--*.sql" -delete
