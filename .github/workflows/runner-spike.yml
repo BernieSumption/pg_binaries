@@ -10,7 +10,36 @@ permissions:
   actions: read
 
 jobs:
+  inputs:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare PostgreSQL build prerequisites
+        run: python3 build.py --target linux-x86_64 prepare-dependencies postgresql
+      - name: Build a matching runtime and development archive pair
+        run: |
+          python3 build.py --target linux-x86_64 postgresql-build /tmp/runner-spike-postgresql
+          python3 build.py --target linux-x86_64 postgresql-package /tmp/runner-spike-postgresql out/postgresql
+          python3 - <<'PYBUILD'
+          import json,os,subprocess
+          from pathlib import Path
+          root=Path('out/postgresql')
+          manifest=json.loads((root/'postgresql-build.json').read_text())
+          subprocess.run(['python3','build.py','--target','linux-x86_64','build-record','postgresql',
+                          str(root/manifest['archive']['filename']),str(root/'record.json'),
+                          '--revision',os.environ['GITHUB_SHA'],'--development-archive',
+                          str(root/manifest['development_archive']['filename'])],check=True)
+          PYBUILD
+      - uses: actions/upload-artifact@v4
+        with:
+          name: spike2-linux-x86_64-postgresql
+          path: out/postgresql/
+          compression-level: 0
+          retention-days: 3
+
   develop:
+    needs: inputs
     runs-on: ubuntu-22.04
     timeout-minutes: 40
     permissions:
@@ -30,7 +59,7 @@ jobs:
       - name: Select existing PostgreSQL archives
         env:
           GH_TOKEN: ${{ github.token }}
-        run: python3 build.py --target linux-x86_64 select-runs out/runner-spike/selection --run 40868792904 --component postgresql
+        run: python3 build.py --target linux-x86_64 select-runs out/runner-spike/selection --run "$GITHUB_RUN_ID" --component postgresql
       - name: Introduce faults and observe first build failure
         run: python3 spikes/runner-iteration/build_probe.py prepare
       - name: Agent fixes build failure in retained workspace
@@ -75,6 +104,7 @@ jobs:
             out/runner-spike/*.log
 
   clean:
+    needs: inputs
     runs-on: ubuntu-22.04
     timeout-minutes: 40
     steps:
