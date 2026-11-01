@@ -17,7 +17,7 @@ jobs:
       contents: write
       actions: read
     env:
-      CODEX_HOME: ${{ runner.temp }}/runner-spike-codex
+      CODEX_HOME: /tmp/runner-spike-codex
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
