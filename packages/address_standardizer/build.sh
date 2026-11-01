@@ -41,4 +41,3 @@ find "$stage$pkglibdir" -maxdepth 1 -type f \
 cp "$stage$sharedir"/extension/address_standardizer*.control "$payload/$share_rel/extension/"
 cp "$stage$sharedir"/extension/address_standardizer*.sql "$payload/$share_rel/extension/"
 
-find "$payload/$share_rel/extension" -name "address_standardizer--*.sql" -delete
