@@ -1,0 +1,40 @@
+name: Runner authentication failure cleanup
+
+on:
+  push:
+    branches: [runner-spike-20261101]
+    paths: [.github/workflows/runner-auth-cleanup.yml]
+
+permissions:
+  contents: read
+
+jobs:
+  failure-cleanup:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Deliberately fail after restoring the authentication file
+        id: probe
+        continue-on-error: true
+        env:
+          RUNNER_AUTH_JSON: ${{ secrets.RUNNER_SPIKE_AUTH_20261101 }}
+          CODEX_HOME: ${{ runner.temp }}/runner-spike-codex
+          FAIL_AFTER_RESTORE: '1'
+          PROBE_JOB: cleanup
+        run: python3 spikes/runner-iteration/auth_probe.py
+      - name: Check failure cleanup
+        env:
+          EXPECTED_FAILURE: ${{ steps.probe.outcome }}
+        run: |
+          test "$EXPECTED_FAILURE" = failure
+          test ! -e "$RUNNER_TEMP/runner-spike-codex/auth.json"
+      - name: Remove temporary authentication directory
+        if: always()
+        run: rm -rf "$RUNNER_TEMP/runner-spike-codex"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: runner-spike-failure-cleanup
+          path: out/runner-spike/auth-result.json
+          retention-days: 3

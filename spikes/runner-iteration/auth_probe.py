@@ -12,6 +12,9 @@ os.chmod(home, 0o700)
 raw = os.environ.pop('RUNNER_AUTH_JSON')
 auth = json.loads(raw)
 assert auth.get('auth_mode') == 'chatgpt' and auth.get('tokens'), 'ChatGPT login required'
+if os.environ.get('AGE_CACHE_TIMESTAMP') == '1':
+    auth['last_refresh'] = '2020-01-01T00:00:00Z'
+    raw = json.dumps(auth)
 assert not any(os.environ.get(k) for k in ('OPENAI_API_KEY', 'CODEX_API_KEY', 'CODEX_ACCESS_TOKEN'))
 path = home / 'auth.json'
 path.write_text(raw)
@@ -22,6 +25,8 @@ result = {'job': os.environ['PROBE_JOB'], 'requests': []}
 output = Path('out/runner-spike')
 output.mkdir(parents=True, exist_ok=True)
 try:
+    if os.environ.get('FAIL_AFTER_RESTORE') == '1':
+        raise RuntimeError('Deliberate post-restore failure to test cleanup')
     for attempt in range(2):
         message = home / f'message-{attempt}.txt'
         start = time.monotonic()
@@ -51,6 +56,12 @@ try:
             raise RuntimeError('Subscription inference probe failed')
     result['auth_changed'] = hashlib.sha256(path.read_bytes()).digest() != original
 finally:
+    if path.is_file():
+        final = json.loads(path.read_text())
+        result['auth_changed'] = hashlib.sha256(path.read_bytes()).digest() != original
+        result['access_token_changed'] = final.get('tokens', {}).get('access_token') != auth['tokens'].get('access_token')
+        result['refresh_token_changed'] = final.get('tokens', {}).get('refresh_token') != auth['tokens'].get('refresh_token')
+        result['last_refresh_changed'] = final.get('last_refresh') != auth.get('last_refresh')
     path.unlink(missing_ok=True)
     result['auth_file_removed'] = not path.exists()
     (output / 'auth-result.json').write_text(json.dumps(result, indent=2) + '\n')
