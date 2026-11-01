@@ -12,6 +12,10 @@ jobs:
   auth:
     runs-on: ubuntu-22.04
     timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        probe: [parallel-a, parallel-b]
     permissions:
       contents: write
     steps:
@@ -25,8 +29,8 @@ jobs:
         env:
           RUNNER_AUTH_JSON: ${{ secrets.RUNNER_SPIKE_AUTH_20261101 }}
           CODEX_HOME: ${{ runner.temp }}/runner-spike-codex
-          PROBE_JOB: auth-sequential
-          RESULT_BRANCH: runner-spike-results-20261101-auth
+          PROBE_JOB: ${{ matrix.probe }}
+          RESULT_BRANCH: runner-spike-results-20261101-${{ matrix.probe }}
         run: python3 spikes/runner-iteration/auth_probe.py
       - name: Remove temporary authentication
         if: always()
@@ -34,7 +38,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: runner-spike-auth-result
+          name: runner-spike-auth-${{ matrix.probe }}
           path: out/runner-spike/auth-result.json
           retention-days: 3
           if-no-files-found: warn
