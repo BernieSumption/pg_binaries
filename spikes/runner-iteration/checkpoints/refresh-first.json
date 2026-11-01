@@ -1,0 +1,36 @@
+{
+  "job": "refresh-first",
+  "requests": [
+    {
+      "attempt": 1,
+      "seconds": 4.805670909,
+      "exit_code": 0,
+      "expected_reply": true,
+      "usage": {
+        "input_tokens": 15126,
+        "cached_input_tokens": 11520,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 5,
+        "reasoning_output_tokens": 0
+      }
+    },
+    {
+      "attempt": 2,
+      "seconds": 2.4930555579999947,
+      "exit_code": 0,
+      "expected_reply": true,
+      "usage": {
+        "input_tokens": 15998,
+        "cached_input_tokens": 11520,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 5,
+        "reasoning_output_tokens": 0
+      }
+    }
+  ],
+  "auth_changed": false,
+  "access_token_changed": false,
+  "refresh_token_changed": false,
+  "last_refresh_changed": false,
+  "auth_file_removed": true
+}
