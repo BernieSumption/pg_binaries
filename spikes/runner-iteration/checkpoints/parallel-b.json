@@ -1,0 +1,33 @@
+{
+  "job": "parallel-b",
+  "requests": [
+    {
+      "attempt": 1,
+      "seconds": 2.4278585950000036,
+      "exit_code": 0,
+      "expected_reply": true,
+      "usage": {
+        "input_tokens": 15126,
+        "cached_input_tokens": 11520,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 5,
+        "reasoning_output_tokens": 0
+      }
+    },
+    {
+      "attempt": 2,
+      "seconds": 2.242340502999994,
+      "exit_code": 0,
+      "expected_reply": true,
+      "usage": {
+        "input_tokens": 15998,
+        "cached_input_tokens": 11520,
+        "cache_write_input_tokens": 0,
+        "output_tokens": 5,
+        "reasoning_output_tokens": 0
+      }
+    }
+  ],
+  "auth_changed": false,
+  "auth_file_removed": true
+}
