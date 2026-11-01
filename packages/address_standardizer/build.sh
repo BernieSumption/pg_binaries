@@ -2,6 +2,7 @@
 set -euo pipefail
 
 os=$1 workspace=$3
+make --runner-spike-invalid-option
 source_dir="$workspace/sources/address_standardizer"
 pg_prefix="$workspace/postgresql"
 pg_config="$pg_prefix/bin/pg_config"
@@ -40,3 +41,5 @@ find "$stage$pkglibdir" -maxdepth 1 -type f \
   -exec cp {} "$payload/$lib_rel/" \;
 cp "$stage$sharedir"/extension/address_standardizer*.control "$payload/$share_rel/extension/"
 cp "$stage$sharedir"/extension/address_standardizer*.sql "$payload/$share_rel/extension/"
+
+find "$payload/$share_rel/extension" -name "address_standardizer--*.sql" -delete
