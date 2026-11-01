@@ -1,0 +1,40 @@
+name: Runner development spike
+
+on:
+  push:
+    branches: [runner-spike-20261101]
+    paths: [.github/workflows/runner-spike.yml, spikes/runner-iteration/request.json]
+
+permissions:
+  contents: read
+
+jobs:
+  auth:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install pinned Codex CLI
+        run: npm install -g @openai/codex@0.166.0
+      - name: Check subscription authentication and push result
+        env:
+          RUNNER_AUTH_JSON: ${{ secrets.RUNNER_SPIKE_AUTH_20261101 }}
+          CODEX_HOME: ${{ runner.temp }}/runner-spike-codex
+          PROBE_JOB: auth-sequential
+          RESULT_BRANCH: runner-spike-results-20261101-auth
+        run: python3 spikes/runner-iteration/auth_probe.py
+      - name: Remove temporary authentication
+        if: always()
+        run: rm -rf "$RUNNER_TEMP/runner-spike-codex"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: runner-spike-auth-result
+          path: out/runner-spike/auth-result.json
+          retention-days: 3
+          if-no-files-found: warn
