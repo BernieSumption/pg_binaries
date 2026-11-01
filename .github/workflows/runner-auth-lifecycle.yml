@@ -18,11 +18,11 @@ jobs:
         with:
           node-version: '22'
       - run: npm install -g @openai/codex@0.166.0
-      - name: Request using a copy with an aged cache timestamp
+      - name: Exercise refresh after a deliberately invalid access token
         env:
           RUNNER_AUTH_JSON: ${{ secrets.RUNNER_SPIKE_AUTH_20261101 }}
           CODEX_HOME: ${{ runner.temp }}/runner-spike-codex
-          AGE_CACHE_TIMESTAMP: '1'
+          INVALIDATE_ACCESS_TOKEN: '1'
           PROBE_JOB: refresh-first
           RESULT_BRANCH: runner-spike-results-20261101-refresh-first
         run: python3 spikes/runner-iteration/auth_probe.py
@@ -51,7 +51,7 @@ jobs:
         env:
           RUNNER_AUTH_JSON: ${{ secrets.RUNNER_SPIKE_AUTH_20261101 }}
           CODEX_HOME: ${{ runner.temp }}/runner-spike-codex
-          AGE_CACHE_TIMESTAMP: '1'
+          INVALIDATE_ACCESS_TOKEN: '1'
           PROBE_JOB: refresh-original
           RESULT_BRANCH: runner-spike-results-20261101-refresh-original
         run: python3 spikes/runner-iteration/auth_probe.py

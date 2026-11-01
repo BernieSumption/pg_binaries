@@ -15,6 +15,9 @@ assert auth.get('auth_mode') == 'chatgpt' and auth.get('tokens'), 'ChatGPT login
 if os.environ.get('AGE_CACHE_TIMESTAMP') == '1':
     auth['last_refresh'] = '2020-01-01T00:00:00Z'
     raw = json.dumps(auth)
+if os.environ.get('INVALIDATE_ACCESS_TOKEN') == '1':
+    auth['tokens']['access_token'] = 'invalid-access-token-for-runner-refresh-test'
+    raw = json.dumps(auth)
 assert not any(os.environ.get(k) for k in ('OPENAI_API_KEY', 'CODEX_API_KEY', 'CODEX_ACCESS_TOKEN'))
 path = home / 'auth.json'
 path.write_text(raw)
