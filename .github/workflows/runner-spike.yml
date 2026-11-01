@@ -7,38 +7,101 @@ on:
 
 permissions:
   contents: read
+  actions: read
 
 jobs:
-  auth:
+  develop:
     runs-on: ubuntu-22.04
-    timeout-minutes: 10
-    strategy:
-      fail-fast: false
-      matrix:
-        probe: [parallel-a, parallel-b]
+    timeout-minutes: 40
     permissions:
       contents: write
+      actions: read
+    env:
+      CODEX_HOME: ${{ runner.temp }}/runner-spike-codex
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Install pinned Codex CLI
-        run: npm install -g @openai/codex@0.166.0
-      - name: Check subscription authentication and push result
+      - name: Install pinned agent and build prerequisites
+        run: |
+          npm install -g @openai/codex@0.166.0
+          python3 build.py --target linux-x86_64 prepare-dependencies address_standardizer
+      - name: Select existing PostgreSQL archives
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 build.py --target linux-x86_64 select-runs out/runner-spike/selection --run 40868792904 --component postgresql
+      - name: Introduce faults and observe first build failure
+        run: python3 spikes/runner-iteration/build_probe.py prepare
+      - name: Agent fixes build failure in retained workspace
         env:
           RUNNER_AUTH_JSON: ${{ secrets.RUNNER_SPIKE_AUTH_20261101 }}
-          CODEX_HOME: ${{ runner.temp }}/runner-spike-codex
-          PROBE_JOB: ${{ matrix.probe }}
-          RESULT_BRANCH: runner-spike-results-20261101-${{ matrix.probe }}
-        run: python3 spikes/runner-iteration/auth_probe.py
+        run: python3 spikes/runner-iteration/build_probe.py develop
+      - uses: actions/upload-artifact@v4
+        with:
+          name: runner-spike-candidate-1
+          path: out/runner-spike/candidate-1/
+          retention-days: 3
+          compression-level: 0
+      - name: Receive first clean-runner report
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 spikes/runner-iteration/artifact.py runner-spike-clean-1 out/runner-spike/clean-1
+      - name: Agent repairs packaging failure in same runner
+        run: python3 spikes/runner-iteration/build_probe.py repair
+      - uses: actions/upload-artifact@v4
+        with:
+          name: runner-spike-candidate-2
+          path: out/runner-spike/candidate-2/
+          retention-days: 3
+          compression-level: 0
+      - name: Receive final clean-runner report
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 spikes/runner-iteration/artifact.py runner-spike-clean-2 out/runner-spike/clean-2
+      - name: Require final clean verification success
+        run: python3 spikes/runner-iteration/build_probe.py finish
       - name: Remove temporary authentication
         if: always()
-        run: rm -rf "$RUNNER_TEMP/runner-spike-codex"
+        run: rm -rf "$CODEX_HOME"
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: runner-spike-auth-${{ matrix.probe }}
-          path: out/runner-spike/auth-result.json
+          name: runner-spike-development-diagnostics
           retention-days: 3
-          if-no-files-found: warn
+          path: |
+            out/runner-spike/*.json
+            out/runner-spike/*.jsonl
+            out/runner-spike/*.log
+
+  clean:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Receive first candidate while developer stays alive
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 spikes/runner-iteration/artifact.py runner-spike-candidate-1 out/runner-spike/download-1
+      - name: Verify first candidate without build dependencies
+        run: python3 spikes/runner-iteration/build_probe.py verify 1
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: runner-spike-clean-1
+          path: out/runner-spike/verification-1/
+          retention-days: 3
+      - name: Receive repaired candidate
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 spikes/runner-iteration/artifact.py runner-spike-candidate-2 out/runner-spike/download-2
+      - name: Verify repaired archive in a fresh installation
+        run: python3 spikes/runner-iteration/build_probe.py verify 2
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: runner-spike-clean-2
+          path: out/runner-spike/verification-2/
+          retention-days: 3
