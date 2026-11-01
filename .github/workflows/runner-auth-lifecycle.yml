@@ -1,4 +1,5 @@
 name: Runner authentication lifecycle spike
+run-name: Confirm refresh recovery and stateless reuse
 
 on:
   push:
