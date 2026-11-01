@@ -73,7 +73,7 @@ def candidate(number):
               'dependency_mtime_ns': dependency.stat().st_mtime_ns,
               'workspace_marker': json.loads((WORK / '.pg-binaries-extension-workspace.json').read_text())}
     (dest / 'candidate.json').write_text(json.dumps(report, indent=2)+'\n')
-    run(['git', 'push', 'origin', 'HEAD:refs/heads/runner-spike-results-20261101-build'])
+    run(['git', 'push', 'origin', f"HEAD:refs/heads/runner-spike-results-{os.environ['GITHUB_RUN_ID']}-build"])
     print(json.dumps(report), flush=True)
 
 
@@ -111,6 +111,9 @@ elif PHASE == 'develop':
 elif PHASE == 'repair':
     report = json.loads((OUT / 'clean-1/check-result.json').read_text())
     assert report['runtime_exit_code'] != 0, 'Expected broken packaging candidate to fail on clean runner'
+    checks = json.loads(next((OUT / 'clean-1').rglob('checks.json')).read_text())
+    assert any(c['name'] == 'database startup' and c['outcome'] == 'passed' for c in checks), 'Verifier setup failed before package tests'
+    assert any(c['name'] == 'SQL probes' and c['outcome'] == 'failed' for c in checks), 'Expected SQL packaging fault was not observed'
     invoke(COMMON + '\nThe package compiled, but clean-machine verification failed. Read out/runner-spike/clean-1/check-result.json and its runtime.log and checks files. Fix the package recipe to address the reported failure. Rebuild with:\n' +
            ' '.join(build_command(OUT / 'agent-output')) + '\nCommit the packaging fix.', 'repair')
     candidate(2)
@@ -124,11 +127,18 @@ elif PHASE == 'verify':
     details = json.loads((src / 'candidate.json').read_text())
     dest = OUT / f'verification-{number}'
     dest.mkdir(parents=True, exist_ok=True)
+    scratch = Path(f'/tmp/rv{number}')
     start = time.monotonic()
     with (dest / 'runtime.log').open('w') as log:
         checked = subprocess.run(['python3', 'build.py', '--target', 'linux-x86_64', 'runtime-check',
-                                  str(src / details['postgresql']), str(dest), '--package-archive',
+                                  str(src / details['postgresql']), str(scratch), '--package-archive',
                                   f"address_standardizer={src / details['extension']}"], stdout=log, stderr=subprocess.STDOUT)
+    if scratch.exists():
+        for child in scratch.iterdir():
+            if child.is_dir():
+                shutil.copytree(child, dest / child.name)
+            else:
+                shutil.copyfile(child, dest / child.name)
     (dest / 'check-result.json').write_text(json.dumps({'runtime_exit_code': checked.returncode,
         'candidate': details, 'verification_seconds': time.monotonic()-start}, indent=2)+'\n')
     print(f'Round {number}: runtime verification exit={checked.returncode}', flush=True)
